@@ -16,14 +16,12 @@ import os
 import uuid
 from collections import deque
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 import socketio  # type: ignore
 from agents import gen_trace_id, trace
 from app.db import get_session
 from app.extensions import SKETCH_FOLDER
-
-from typing import TYPE_CHECKING
 
 WEBRTC_ENABLED = os.getenv("WEBRTC_ENABLED", "true").lower() == "true"
 
@@ -161,6 +159,9 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
                     seniority=scenario.seniority,
                     crowdedness=scenario.crowdedness,
                     intensity=scenario.intensity,
+                    tod=scenario.tod,
+                    urgency=scenario.urgency,
+                    location=scenario.location,
                     group_id=new_attempt.id,
                     session=db_session,
                 )
@@ -367,6 +368,9 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                             seniority=next_scenario.seniority,
                             crowdedness=next_scenario.crowdedness,
                             intensity=next_scenario.intensity,
+                            tod=next_scenario.tod,
+                            urgency=next_scenario.urgency,
+                            location=next_scenario.location,
                             group_id=attempt_id,
                             session=db_session,
                         )
