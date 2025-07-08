@@ -31,6 +31,28 @@ interface RowOriginalData {
   [key: string]: unknown;
 }
 
+// TAPerformanceData interface for Reports page
+interface TAPerformanceData {
+  firstName: string;
+  lastName: string;
+  username: string;
+  avgScore: number;
+  completedSessions: number;
+  totalSessions: number;
+  passRate: number;
+  avgTimeMinutes: number;
+  completionRate: number;
+  trend: "improving" | "declining" | "stable";
+  lastActivity: Date | null;
+  scenariosCompleted: number;
+  messagesPerSession: number;
+  totalAttempts: number;
+  taCohorts: string[];
+  isStruggling: boolean;
+  hasNoSessions: boolean;
+  [key: string]: unknown;
+}
+
 type ExportableData = ChatData | AttemptData;
 
 // Column name mapping for CSV export
@@ -48,6 +70,21 @@ const columnMap = {
   averageScore: "Score",
   chats: "Chats",
   agentsTested: "Agents",
+  // Reports page columns
+  firstName: "Name",
+  username: "Alias",
+  avgScore: "Score",
+  totalSessions: "Sessions",
+  passRate: "Pass Rate",
+  avgTimeMinutes: "Avg Time (min)",
+  completionRate: "Completion Rate",
+  trend: "Trend",
+  lastActivity: "Last Activity",
+  scenariosCompleted: "Scenarios",
+  messagesPerSession: "Messages/Session",
+  totalAttempts: "Total Attempts",
+  taCohorts: "Cohorts",
+  isStruggling: "Status",
 };
 
 // Helper function to determine chat status
@@ -178,6 +215,82 @@ export function ExportButton<TData>({
                 : `"${cellValue}"`;
             }
 
+            // Reports page specific handling
+            if (column.id === "firstName" && cellValue) {
+              const original = row.original as TAPerformanceData;
+              return `"${original.firstName} ${original.lastName}"`;
+            }
+
+            if (column.id === "username" && cellValue) {
+              return `"${cellValue}"`;
+            }
+
+            if (column.id === "avgScore" && cellValue !== undefined) {
+              const original = row.original as TAPerformanceData;
+              return original.hasNoSessions ? '"N/A"' : `"${cellValue}%"`;
+            }
+
+            if (column.id === "totalSessions" && cellValue !== undefined) {
+              const original = row.original as TAPerformanceData;
+              return `"${original.completedSessions}/${cellValue}"`;
+            }
+
+            if (column.id === "passRate" && cellValue !== undefined) {
+              const original = row.original as TAPerformanceData;
+              return original.hasNoSessions ? '"N/A"' : `"${cellValue}%"`;
+            }
+
+            if (column.id === "avgTimeMinutes" && cellValue !== undefined) {
+              const original = row.original as TAPerformanceData;
+              return original.hasNoSessions ? '"N/A"' : `"${cellValue} min"`;
+            }
+
+            if (column.id === "completionRate" && cellValue !== undefined) {
+              return `"${cellValue}%"`;
+            }
+
+            if (column.id === "trend" && cellValue) {
+              const trendMap = {
+                improving: "Improving",
+                declining: "Declining",
+                stable: "Stable",
+              };
+              return `"${trendMap[cellValue as keyof typeof trendMap] || cellValue}"`;
+            }
+
+            if (column.id === "lastActivity" && cellValue) {
+              const date = new Date(cellValue as string);
+              return `"${date.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}"`;
+            }
+
+            if (column.id === "scenariosCompleted" && cellValue !== undefined) {
+              return `"${cellValue}"`;
+            }
+
+            if (column.id === "messagesPerSession" && cellValue !== undefined) {
+              const original = row.original as TAPerformanceData;
+              return original.hasNoSessions ? '"N/A"' : `"${cellValue}"`;
+            }
+
+            if (column.id === "totalAttempts" && cellValue !== undefined) {
+              return `"${cellValue}"`;
+            }
+
+            if (column.id === "taCohorts" && cellValue) {
+              const cohorts = cellValue as string[];
+              return `"${cohorts.join(", ")}"`;
+            }
+
+            if (column.id === "isStruggling" && cellValue !== undefined) {
+              const original = row.original as TAPerformanceData;
+              if (original.hasNoSessions) return '"No Sessions"';
+              return cellValue ? '"At Risk"' : '"Good"';
+            }
+
             // Handle string values that might contain commas
             if (typeof cellValue === "string") {
               return `"${cellValue.replace(/"/g, '""')}"`;
@@ -199,7 +312,14 @@ export function ExportButton<TData>({
 
       // Create a temporary link element to download the file
       const today = new Date();
-      const filename = `simulations_export_${today.toISOString().slice(0, 10)}.csv`;
+      // Determine filename based on data type
+      const isReportsData =
+        selectedData.length > 0 &&
+        selectedData[0]?.original &&
+        "firstName" in (selectedData[0].original as Record<string, unknown>);
+      const filename = isReportsData
+        ? `ta_reports_export_${today.toISOString().slice(0, 10)}.csv`
+        : `simulations_export_${today.toISOString().slice(0, 10)}.csv`;
 
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);

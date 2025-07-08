@@ -91,7 +91,7 @@ export function ReportsDataTable({
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <ReportsDataTableToolbar
         table={table}
         performanceOptions={performanceOptions}
@@ -112,9 +112,9 @@ export function ReportsDataTable({
                     <TableHead
                       key={header.id}
                       colSpan={header.colSpan}
-                      className={`border-r px-1 py-1 text-xs text-center ${
+                      className={`border-r py-1 text-xs text-center ${
                         header.id === "select" ? "w-12" : ""
-                      }`}
+                      } ${header.column.getCanSort() ? "pl-4" : ""}`}
                     >
                       {header.isPlaceholder
                         ? null
@@ -143,7 +143,7 @@ export function ReportsDataTable({
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      className={`border-r px-1 py-1 text-center ${
+                      className={`border-r px-2 py-1 text-center ${
                         cell.column.id === "select" ? "w-12" : ""
                       }`}
                     >

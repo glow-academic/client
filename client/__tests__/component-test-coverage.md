@@ -1,12 +1,12 @@
 # Component Test Coverage Report
 
-Generated on: 2025-07-08T15:41:07.946Z
+Generated on: 2025-07-08T18:03:14.452Z
 
 ## Summary
-- **Total Components**: 97
-- **Tests Created**: 0
+- **Total Components**: 100
+- **Tests Created**: 6
 - **Tests Updated**: 50
-- **Tests Skipped** (already implemented): 47
+- **Tests Skipped** (already implemented): 44
 
 ## Component Coverage
 
@@ -16,6 +16,9 @@ Generated on: 2025-07-08T15:41:07.946Z
 | History | analytics/History.tsx | History.test.tsx | ✅ Implemented |
 | Report | analytics/Report.tsx | Report.test.tsx | ❌ Needs Implementation |
 | Reports | analytics/Reports.tsx | Reports.test.tsx | ✅ Implemented |
+| reports-columns | analytics/reports-columns.tsx | reports-columns.test.tsx | ❌ Needs Implementation |
+| reports-data-table-toolbar | analytics/reports-data-table-toolbar.tsx | reports-data-table-toolbar.test.tsx | ❌ Needs Implementation |
+| reports-data-table | analytics/reports-data-table.tsx | reports-data-table.test.tsx | ❌ Needs Implementation |
 | Agent | common/agent/Agent.tsx | Agent.test.tsx | ✅ Implemented |
 | Registry | common/analytics/Registry.tsx | Registry.test.tsx | ❌ Needs Implementation |
 | CohortCompletion | common/analytics/footer/CohortCompletion.tsx | CohortCompletion.test.tsx | ✅ Implemented |
@@ -87,9 +90,6 @@ Generated on: 2025-07-08T15:41:07.946Z
 | CohortEdit | create/cohorts/CohortEdit.tsx | CohortEdit.test.tsx | ❌ Needs Implementation |
 | Cohorts | create/cohorts/Cohorts.tsx | Cohorts.test.tsx | ❌ Needs Implementation |
 | NewCohort | create/cohorts/NewCohort.tsx | NewCohort.test.tsx | ❌ Needs Implementation |
-| NewRubric | create/rubrics/NewRubric.tsx | NewRubric.test.tsx | ✅ Implemented |
-| RubricEdit | create/rubrics/RubricEdit.tsx | RubricEdit.test.tsx | ✅ Implemented |
-| Rubrics | create/rubrics/Rubrics.tsx | Rubrics.test.tsx | ✅ Implemented |
 | NewScenario | create/scenarios/NewScenario.tsx | NewScenario.test.tsx | ✅ Implemented |
 | ScenarioEdit | create/scenarios/ScenarioEdit.tsx | ScenarioEdit.test.tsx | ✅ Implemented |
 | Scenarios | create/scenarios/Scenarios.tsx | Scenarios.test.tsx | ✅ Implemented |
@@ -105,6 +105,9 @@ Generated on: 2025-07-08T15:41:07.946Z
 | ModelEdit | management/models/ModelEdit.tsx | ModelEdit.test.tsx | ❌ Needs Implementation |
 | Models | management/models/Models.tsx | Models.test.tsx | ❌ Needs Implementation |
 | NewModel | management/models/NewModel.tsx | NewModel.test.tsx | ❌ Needs Implementation |
+| NewRubric | management/rubrics/NewRubric.tsx | NewRubric.test.tsx | ❌ Needs Implementation |
+| RubricEdit | management/rubrics/RubricEdit.tsx | RubricEdit.test.tsx | ❌ Needs Implementation |
+| Rubrics | management/rubrics/Rubrics.tsx | Rubrics.test.tsx | ❌ Needs Implementation |
 | NewStaff | management/staff/NewStaff.tsx | NewStaff.test.tsx | ✅ Implemented |
 | Staff | management/staff/Staff.tsx | Staff.test.tsx | ✅ Implemented |
 | StaffEdit | management/staff/StaffEdit.tsx | StaffEdit.test.tsx | ✅ Implemented |
@@ -119,6 +122,9 @@ __tests__/
 │   ├── History.test.tsx
 │   ├── Report.test.tsx
 │   ├── Reports.test.tsx
+│   ├── reports-columns.test.tsx
+│   ├── reports-data-table-toolbar.test.tsx
+│   ├── reports-data-table.test.tsx
 ├── common/
 │   ├── agent/
 │   │   ├── Agent.test.tsx
@@ -213,10 +219,6 @@ __tests__/
 │   │   ├── CohortEdit.test.tsx
 │   │   ├── Cohorts.test.tsx
 │   │   ├── NewCohort.test.tsx
-│   ├── rubrics/
-│   │   ├── NewRubric.test.tsx
-│   │   ├── RubricEdit.test.tsx
-│   │   ├── Rubrics.test.tsx
 │   ├── scenarios/
 │   │   ├── NewScenario.test.tsx
 │   │   ├── ScenarioEdit.test.tsx
@@ -239,6 +241,10 @@ __tests__/
 │   │   ├── ModelEdit.test.tsx
 │   │   ├── Models.test.tsx
 │   │   ├── NewModel.test.tsx
+│   ├── rubrics/
+│   │   ├── NewRubric.test.tsx
+│   │   ├── RubricEdit.test.tsx
+│   │   ├── Rubrics.test.tsx
 │   ├── staff/
 │   │   ├── NewStaff.test.tsx
 │   │   ├── Staff.test.tsx

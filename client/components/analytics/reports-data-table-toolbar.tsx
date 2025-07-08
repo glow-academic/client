@@ -41,16 +41,18 @@ export function ReportsDataTableToolbar({
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-1 items-center space-x-2 flex-wrap">
-        <Input
-          placeholder="Search TAs by name or alias..."
-          value={(firstNameColumn?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            firstNameColumn?.setFilterValue(event.target.value)
-          }
-          className="h-8 w-[150px] lg:w-[250px]"
-        />
+        <div className="mb-2">
+          <Input
+            placeholder="Search TAs by name or alias..."
+            value={(firstNameColumn?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              firstNameColumn?.setFilterValue(event.target.value)
+            }
+            className="h-8 w-[150px] lg:w-[250px]"
+          />
+        </div>
 
-        <div className="flex items-center space-x-2 flex-wrap">
+        <div className="flex items-center space-x-2 flex-wrap mb-2">
           {/* Performance Filter */}
           {avgScoreColumn && performanceOptions.length > 0 && (
             <DataTableFacetedFilter
@@ -118,7 +120,7 @@ export function ReportsDataTableToolbar({
         </div>
       </div>
 
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-2 mb-2">
         {showExport && (
           <ExportButton
             table={table}
