@@ -20,22 +20,50 @@ TA_USERS = [
 ]
 
 SIMULATIONS = [
-    "aaaaaaaa-1111-2222-3333-444444444444",
-    "bbbbbbbb-1111-2222-3333-444444444444",
-    "cccccccc-1111-2222-3333-444444444444",
-    "c5a0b001-aaaa-bbbb-cccc-dddddddddddd",
-    "c5a0b002-bbbb-cccc-dddd-eeeeeeeeeeee",
-    "c5a0b003-cccc-dddd-eeee-ffffffffffff",
+    # single-scenario practice sims
+    "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",  # Aggressive Practice
+    "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",  # Happy Practice
+    "cccccccc-cccc-cccc-cccc-cccccccccccc",  # Confused Practice
+
+    # Week-1 beginner multi-scenario sims
+    "f2511b01-aaaa-bbbb-cccc-dddddddddddd",  # Arrays
+    "f2511b02-aaaa-bbbb-cccc-dddddddddddd",  # Loops
+    "f2511b03-aaaa-bbbb-cccc-dddddddddddd",  # File-I/O
 ]
-SIM_QUOTA = [50] * 6
+SIM_QUOTA = [50] * len(SIMULATIONS)
+
+# ------------------------------------------------------------------#
+# lookup so chats always reference a scenario that belongs to the
+# simulation they're generated for
+# (fill the lists with the UUIDs visible in your scenarios seed)
+SCENARIOS_BY_SIM = {
+    "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa": ["aaaaaaaa-1111-2222-3333-444444444444"],
+    "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb": ["bbbbbbbb-1111-2222-3333-444444444444"],
+    "cccccccc-cccc-cccc-cccc-cccccccccccc": ["cccccccc-1111-2222-3333-444444444444"],
+    "f2511b01-aaaa-bbbb-cccc-dddddddddddd": [
+        "f2511b01-aaaa-bbbb-cccc-111111111111",
+        "f2511b02-aaaa-bbbb-cccc-222222222222",
+        "f2511b03-aaaa-bbbb-cccc-333333333333",
+    ],
+    "f2511b02-aaaa-bbbb-cccc-dddddddddddd": [
+        "f2511b01-aaaa-bbbb-cccc-111111111111",
+        "f2511b02-aaaa-bbbb-cccc-222222222222",
+        "f2511b03-aaaa-bbbb-cccc-333333333333",
+    ],
+    "f2511b03-aaaa-bbbb-cccc-dddddddddddd": [
+        "f2511b01-aaaa-bbbb-cccc-111111111111",
+        "f2511b02-aaaa-bbbb-cccc-222222222222",
+        "f2511b03-aaaa-bbbb-cccc-333333333333",
+    ],
+}
 
 RUBRIC_ID = "33333333-3333-3333-3333-333333333333"
 
 STANDARD_GROUPS = {
-    "Problem Understanding": [f"11111111-{i:04d}-aaaa-bbbb-333333333333" for i in range(1, 6)],
-    "Algorithm Design":      [f"22222222-{i:04d}-aaaa-bbbb-333333333333" for i in range(1, 6)],
-    "Code Implementation":   [f"33333333-{i:04d}-aaaa-bbbb-333333333333" for i in range(1, 6)],
-    "Testing & Debugging":   [f"44444444-{i:04d}-aaaa-bbbb-333333333333" for i in range(1, 6)],
+    "Problem Understanding": [f"11111111-{i}{i}{i}{i}-aaaa-bbbb-333333333333" for i in range(1, 6)],
+    "Algorithm Design":      [f"22222222-{i}{i}{i}{i}-aaaa-bbbb-333333333333" for i in range(1, 6)],
+    "Code Implementation":   [f"33333333-{i}{i}{i}{i}-aaaa-bbbb-333333333333" for i in range(1, 6)],
+    "Testing & Debugging":   [f"44444444-{i}{i}{i}{i}-aaaa-bbbb-333333333333" for i in range(1, 6)],
 }
 ALL_STANDARDS = [s for g in STANDARD_GROUPS.values() for s in g]
 
@@ -142,7 +170,7 @@ for sim_id, quota in zip(SIMULATIONS, SIM_QUOTA):
         # ---------- simulation_chats -------------
         completed   = random.random() < (0.6 + prog * 0.3)
         completed_ts= q(rand_ts(prog+0.01)) if completed else "NULL"
-        scenario_id = "11111111-aaaa-aaaa-aaaa-111111111111"
+        scenario_id = random.choice(SCENARIOS_BY_SIM[sim_id])
         title       = random.choice(CHAT_TITLES)
         chat_rows.append(
             f"({q(chat_id)}, {q(created_ts)}, {q(created_ts)}, "
@@ -211,7 +239,7 @@ out_path = pathlib.Path("database/init/generated_simulation_data.sql")
 out_path.parent.mkdir(parents=True, exist_ok=True)
 out_path.write_text(sql)
 
-# Quick “mock run” preview – first 3 rows of each table
+# Quick "mock run" preview – first 3 rows of each table
 preview = (
     ("simulation_attempts", attempt_rows[:3]),
     ("simulation_chats",    chat_rows[:3]),
