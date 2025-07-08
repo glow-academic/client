@@ -377,7 +377,7 @@ export default function SessionActivity({
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
-        <div className="h-full">
+        <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={sessionActivityData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
