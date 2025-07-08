@@ -78,8 +78,8 @@ export default function Agent({
     queryFn: () => getAllModels(),
   });
 
-  // Combined loading state
-  const isLoading = (isEditMode && isLoadingAgent) || isModelsLoading;
+  // Loading state for the entire form (only when agent is loading in edit mode)
+  const isFormLoading = isEditMode && isLoadingAgent;
 
   useEffect(() => {
     if (agent && isEditMode) {
@@ -164,7 +164,7 @@ export default function Agent({
     }
   };
 
-  if (isLoading) {
+  if (isFormLoading) {
     return (
       <div className="space-y-6">
         <div>
@@ -269,110 +269,103 @@ export default function Agent({
           >
             <div className="space-y-2">
               <Label htmlFor="modelId">Text Model *</Label>
-              <Select
-                value={formData.modelId || "default"}
-                onValueChange={(value) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    modelId: value === "default" ? null : value,
-                  }))
-                }
-                required
-                disabled={isModelsLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      isModelsLoading ? "Loading models..." : "Select a model"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {models
-                    ?.filter(
-                      (model) => model.active && model.modelType === "ttt"
-                    )
-                    ?.map((model) => (
-                      <SelectItem key={model.id} value={model.id}>
-                        {model.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              {isModelsLoading ? (
+                <Skeleton className="h-10 w-full" />
+              ) : (
+                <Select
+                  value={formData.modelId || "default"}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      modelId: value === "default" ? null : value,
+                    }))
+                  }
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {models
+                      ?.filter(
+                        (model) => model.active && model.modelType === "ttt"
+                      )
+                      ?.map((model) => (
+                        <SelectItem key={model.id} value={model.id}>
+                          {model.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             {formData.voiceAgent && (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="sttModelId">Speech-to-Text Model</Label>
-                  <Select
-                    value={formData.sttModelId || "default"}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        sttModelId: value === "default" ? null : value,
-                      }))
-                    }
-                    disabled={isModelsLoading}
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          isModelsLoading
-                            ? "Loading models..."
-                            : "Select STT model"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="default">Default</SelectItem>
-                      {models
-                        ?.filter(
-                          (model) => model.active && model.modelType === "stt"
-                        )
-                        ?.map((model) => (
-                          <SelectItem key={model.id} value={model.id}>
-                            {model.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                  {isModelsLoading ? (
+                    <Skeleton className="h-10 w-full" />
+                  ) : (
+                    <Select
+                      value={formData.sttModelId || "default"}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          sttModelId: value === "default" ? null : value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select STT model" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="default">Default</SelectItem>
+                        {models
+                          ?.filter(
+                            (model) => model.active && model.modelType === "stt"
+                          )
+                          ?.map((model) => (
+                            <SelectItem key={model.id} value={model.id}>
+                              {model.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="ttsModelId">Text-to-Speech Model</Label>
-                  <Select
-                    value={formData.ttsModelId || "default"}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        ttsModelId: value === "default" ? null : value,
-                      }))
-                    }
-                    disabled={isModelsLoading}
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          isModelsLoading
-                            ? "Loading models..."
-                            : "Select TTS model"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="default">Default</SelectItem>
-                      {models
-                        ?.filter(
-                          (model) => model.active && model.modelType === "tts"
-                        )
-                        ?.map((model) => (
-                          <SelectItem key={model.id} value={model.id}>
-                            {model.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                  {isModelsLoading ? (
+                    <Skeleton className="h-10 w-full" />
+                  ) : (
+                    <Select
+                      value={formData.ttsModelId || "default"}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          ttsModelId: value === "default" ? null : value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select TTS model" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="default">Default</SelectItem>
+                        {models
+                          ?.filter(
+                            (model) => model.active && model.modelType === "tts"
+                          )
+                          ?.map((model) => (
+                            <SelectItem key={model.id} value={model.id}>
+                              {model.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </>
             )}

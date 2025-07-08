@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 
 import { useRole } from "@/contexts/role-context";
@@ -83,8 +84,8 @@ export default function Model({ modelId }: ModelProps) {
     queryFn: () => getAllProviders(),
   });
 
-  // Combined loading state
-  const isLoading = (isEditMode && isModelLoading) || areProvidersLoading;
+  // Loading state for the entire form (only when model is loading in edit mode)
+  const isFormLoading = isEditMode && isModelLoading;
 
   // Single consolidated useEffect to handle all form state scenarios
   useEffect(() => {
@@ -120,7 +121,7 @@ export default function Model({ modelId }: ModelProps) {
   }
 
   // Show error state if model not found (only in edit mode)
-  if (isEditMode && !isLoading && !modelToEdit) {
+  if (isEditMode && !isFormLoading && !modelToEdit) {
     return (
       <div className="space-y-6">
         <Card>
@@ -240,27 +241,30 @@ export default function Model({ modelId }: ModelProps) {
 
   return (
     <div className="space-y-6">
-      {isLoading ? (
+      {isFormLoading ? (
         <div className="space-y-6">
           <div className="space-y-2">
-            <div className="h-4 bg-muted rounded animate-pulse w-16" />
-            <div className="h-10 bg-muted rounded animate-pulse" />
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-10 w-full" />
           </div>
           <div className="space-y-2">
-            <div className="h-4 bg-muted rounded animate-pulse w-20" />
-            <div className="h-20 bg-muted rounded animate-pulse" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-20 w-full" />
           </div>
           <div className="space-y-2">
-            <div className="h-4 bg-muted rounded animate-pulse w-16" />
-            <div className="h-10 bg-muted rounded animate-pulse" />
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-10 w-full" />
           </div>
           <div className="space-y-2">
-            <div className="h-4 bg-muted rounded animate-pulse w-20" />
-            <div className="h-10 bg-muted rounded animate-pulse" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-10 w-full" />
           </div>
           <div className="space-y-2">
-            <div className="h-4 bg-muted rounded animate-pulse w-12" />
-            <div className="h-10 bg-muted rounded animate-pulse" />
+            <Skeleton className="h-4 w-12" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="flex justify-end gap-4">
+            <Skeleton className="h-10 w-32" />
           </div>
         </div>
       ) : (
@@ -297,23 +301,29 @@ export default function Model({ modelId }: ModelProps) {
 
           <div className="space-y-2">
             <Label htmlFor="providerId">Provider</Label>
-            <Select
-              value={formData.providerId || ""}
-              onValueChange={(value) => handleInputChange("providerId", value)}
-            >
-              <SelectTrigger
-                className={errors.providerId ? "border-destructive" : ""}
+            {areProvidersLoading ? (
+              <Skeleton className="h-10 w-full" />
+            ) : (
+              <Select
+                value={formData.providerId || ""}
+                onValueChange={(value) =>
+                  handleInputChange("providerId", value)
+                }
               >
-                <SelectValue placeholder="Select a provider..." />
-              </SelectTrigger>
-              <SelectContent>
-                {providers.map((provider: Provider) => (
-                  <SelectItem key={provider.id} value={provider.id}>
-                    {provider.name} - {provider.description}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                <SelectTrigger
+                  className={errors.providerId ? "border-destructive" : ""}
+                >
+                  <SelectValue placeholder="Select a provider..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {providers.map((provider: Provider) => (
+                    <SelectItem key={provider.id} value={provider.id}>
+                      {provider.name} - {provider.description}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             {errors.providerId && (
               <p className="text-sm text-destructive">{errors.providerId}</p>
             )}
@@ -363,7 +373,7 @@ export default function Model({ modelId }: ModelProps) {
           <div className="flex justify-end gap-4">
             <Button
               type="submit"
-              disabled={isSubmitting || isLoading}
+              disabled={isSubmitting || isFormLoading}
               className="min-w-[120px]"
             >
               {isSubmitting ? (

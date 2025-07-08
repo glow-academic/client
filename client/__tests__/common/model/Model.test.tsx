@@ -5,7 +5,6 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-
 // Mock the queries
 vi.mock("@/utils/queries/models/get-all-models", () => ({
   getAllModels: vi.fn(() => Promise.resolve([])),
@@ -72,14 +71,17 @@ describe("Model Component", () => {
   });
 
   describe("Create Mode (Admin Only)", () => {
-    it("renders create form with correct initial state", () => {
+    it("renders create form with correct initial state", async () => {
       renderWithProviders(<Model />, "admin");
 
       // Check form elements are present
       expect(screen.getByLabelText(/name/i)).toBeVisible();
       expect(screen.getByLabelText(/description/i)).toBeVisible();
       expect(screen.getByText("Provider")).toBeVisible();
-      expect(screen.getByText("Select a provider...")).toBeVisible();
+
+      // Wait for providers to load and the select to appear
+      expect(await screen.findByText("Select a provider...")).toBeVisible();
+
       expect(screen.getByText("Status")).toBeVisible();
       expect(
         screen.getByRole("button", { name: /create model/i })
