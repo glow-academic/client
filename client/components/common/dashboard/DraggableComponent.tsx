@@ -20,6 +20,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
@@ -147,23 +155,39 @@ export default function DraggableComponent({
   }, [component.id, layoutForm, onUpdateLayout]);
 
   const renderFormField = (key: string, value: unknown) => {
-    if (typeof value === "string") {
+    // Get metadata for this prop if available
+    const propMetadata = registryEntry?.metadata?.[key];
+
+    // Handle select type with options
+    if (propMetadata?.type === "select" && propMetadata.options) {
       return (
         <div key={key} className="space-y-2">
           <Label htmlFor={key}>{camelToTitleCase(key)}</Label>
-          <Input
-            id={key}
+          <Select
             value={(layoutForm[key] as string) || ""}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setLayoutForm((prev) => ({ ...prev, [key]: e.target.value }))
+            onValueChange={(selectedValue) =>
+              setLayoutForm((prev) => ({ ...prev, [key]: selectedValue }))
             }
-            placeholder={`Enter ${camelToTitleCase(key).toLowerCase()}`}
-          />
+          >
+            <SelectTrigger>
+              <SelectValue
+                placeholder={`Select ${camelToTitleCase(key).toLowerCase()}`}
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {propMetadata.options.map((option: string) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       );
     }
 
-    if (typeof value === "boolean") {
+    // Handle boolean type
+    if (propMetadata?.type === "boolean" || typeof value === "boolean") {
       return (
         <div key={key} className="flex items-center space-x-2">
           <Switch
@@ -178,7 +202,8 @@ export default function DraggableComponent({
       );
     }
 
-    if (typeof value === "number") {
+    // Handle number type
+    if (propMetadata?.type === "number" || typeof value === "number") {
       return (
         <div key={key} className="space-y-2">
           <Label htmlFor={key}>{camelToTitleCase(key)}</Label>
@@ -198,6 +223,24 @@ export default function DraggableComponent({
       );
     }
 
+    // Handle string type (default)
+    if (propMetadata?.type === "string" || typeof value === "string") {
+      return (
+        <div key={key} className="space-y-2">
+          <Label htmlFor={key}>{camelToTitleCase(key)}</Label>
+          <Input
+            id={key}
+            value={(layoutForm[key] as string) || ""}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setLayoutForm((prev) => ({ ...prev, [key]: e.target.value }))
+            }
+            placeholder={`Enter ${camelToTitleCase(key).toLowerCase()}`}
+          />
+        </div>
+      );
+    }
+
+    // Fallback for unknown types
     return null;
   };
 
@@ -332,8 +375,8 @@ export default function DraggableComponent({
               variant="ghost"
               className={cn(
                 "absolute h-6 w-6 p-0 transition-opacity bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full z-10",
-                isManagementView 
-                  ? "top-2.5 right-2.5 opacity-100" 
+                isManagementView
+                  ? "top-2.5 right-2.5 opacity-100"
                   : "top-1 right-1 opacity-0 group-hover:opacity-100"
               )}
               onClick={onRemove}

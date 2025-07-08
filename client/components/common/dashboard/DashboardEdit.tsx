@@ -150,13 +150,28 @@ export default function DashboardEdit() {
 
     return components
       .filter((comp) => !usedComponentIds.includes(comp.id))
-      .map((comp) => ({
-        id: comp.id,
-        name: comp.name,
-        fileName: comp.fileName,
-        layout: (comp.layout as Record<string, unknown>) || {},
-        stat: comp.stat,
-      }));
+      .map((comp) => {
+        // Handle both old and new layout structures
+        let layout: Record<string, unknown> = {};
+        if (comp.layout) {
+          // Check if layout has the new structure with props and metadata
+          const layoutData = comp.layout as Record<string, unknown>;
+          if (layoutData["props"] && typeof layoutData["props"] === "object") {
+            layout = layoutData["props"] as Record<string, unknown>;
+          } else {
+            // Fallback to old structure
+            layout = comp.layout as Record<string, unknown>;
+          }
+        }
+
+        return {
+          id: comp.id,
+          name: comp.name,
+          fileName: comp.fileName,
+          layout: layout,
+          stat: comp.stat,
+        };
+      });
   }, [components, dashboardConfig]);
 
   // Update available components when data changes
@@ -221,7 +236,19 @@ export default function DashboardEdit() {
             id: component.id,
             name: component.name,
             fileName: component.fileName,
-            layout: (component.layout as Record<string, unknown>) || {},
+            layout: (() => {
+              if (component.layout) {
+                const layoutData = component.layout as Record<string, unknown>;
+                if (
+                  layoutData["props"] &&
+                  typeof layoutData["props"] === "object"
+                ) {
+                  return layoutData["props"] as Record<string, unknown>;
+                }
+                return component.layout as Record<string, unknown>;
+              }
+              return {};
+            })(),
             stat: component.stat,
           },
         ]);
@@ -341,7 +368,6 @@ export default function DashboardEdit() {
 
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["dashboards"] });
-
     } catch (error) {
       logError("Failed to save dashboard", error);
       toast.error("Failed to save dashboard");
@@ -524,7 +550,19 @@ export default function DashboardEdit() {
         id: comp.id,
         name: comp.name,
         fileName: comp.fileName,
-        layout: (comp.layout as Record<string, unknown>) || {},
+        layout: (() => {
+          if (comp.layout) {
+            const layoutData = comp.layout as Record<string, unknown>;
+            if (
+              layoutData["props"] &&
+              typeof layoutData["props"] === "object"
+            ) {
+              return layoutData["props"] as Record<string, unknown>;
+            }
+            return comp.layout as Record<string, unknown>;
+          }
+          return {};
+        })(),
         stat: comp.stat,
       }));
 
@@ -588,7 +626,19 @@ export default function DashboardEdit() {
             id: comp.id,
             name: comp.name,
             fileName: comp.fileName,
-            layout: (comp.layout as Record<string, unknown>) || {},
+            layout: (() => {
+              if (comp.layout) {
+                const layoutData = comp.layout as Record<string, unknown>;
+                if (
+                  layoutData["props"] &&
+                  typeof layoutData["props"] === "object"
+                ) {
+                  return layoutData["props"] as Record<string, unknown>;
+                }
+                return comp.layout as Record<string, unknown>;
+              }
+              return {};
+            })(),
             stat: comp.stat,
           }));
 
@@ -764,7 +814,40 @@ export default function DashboardEdit() {
   const handleUpdateLayout = useCallback(
     async (componentId: string, layout: Record<string, unknown>) => {
       try {
-        await updateComponent(componentId, { layout });
+        // Find the current component to get existing metadata
+        const currentComponent = components?.find(
+          (comp) => comp.id === componentId
+        );
+        let newLayoutData: Record<string, unknown>;
+
+        if (currentComponent?.layout) {
+          const currentLayoutData = currentComponent.layout as Record<
+            string,
+            unknown
+          >;
+          // Check if current layout has the new structure
+          if (currentLayoutData["metadata"]) {
+            // Preserve existing metadata and update props
+            newLayoutData = {
+              props: layout,
+              metadata: currentLayoutData["metadata"],
+            };
+          } else {
+            // Migrate to new structure
+            newLayoutData = {
+              props: layout,
+              metadata: {},
+            };
+          }
+        } else {
+          // No existing layout, create new structure
+          newLayoutData = {
+            props: layout,
+            metadata: {},
+          };
+        }
+
+        await updateComponent(componentId, { layout: newLayoutData });
 
         // Update local state
         setAvailableComponents((prev) =>
@@ -780,7 +863,7 @@ export default function DashboardEdit() {
         toast.error("Failed to update component layout");
       }
     },
-    [queryClient]
+    [queryClient, components]
   );
 
   if (!dashboardConfig) {

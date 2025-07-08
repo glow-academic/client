@@ -101,14 +101,32 @@ function parseComponentProps(filePath) {
       }
     }
 
-    // If we found function defaults, use them
-    if (Object.keys(functionDefaults).length > 0) {
-      return functionDefaults;
+    // Extract type definitions and interfaces to get dropdown options
+    const typeDefinitions = {};
+    const interfaceDefinitions = {};
+
+    // Extract type definitions like: type ColorTheme = "blue" | "green" | "purple";
+    const typeRegex = /type\s+(\w+)\s*=\s*([^;]+);/g;
+    let typeMatch;
+    while ((typeMatch = typeRegex.exec(content)) !== null) {
+      const [, typeName, typeDefinition] = typeMatch;
+
+      // Extract union type options
+      const unionOptions = typeDefinition
+        .split("|")
+        .map((option) => option.trim())
+        .filter((option) => option.startsWith('"') && option.endsWith('"'))
+        .map((option) => option.slice(1, -1)); // Remove quotes
+
+      if (unionOptions.length > 0) {
+        typeDefinitions[typeName] = unionOptions;
+      }
     }
 
-    // Fallback to interface parsing if no function defaults found
+    // Parse interface to get prop types and link them to type definitions
     const interfaceRegex = /interface\s+(\w*Props)\s*{([^}]*)}/g;
     const props = {};
+    const propMetadata = {};
 
     let match;
     while ((match = interfaceRegex.exec(content)) !== null) {
@@ -134,41 +152,92 @@ function parseComponentProps(filePath) {
         const propMatch = line.match(/(\w+)(\?)?:\s*([^;]+)/);
         if (propMatch) {
           const [, propName, optional, propType] = propMatch;
+          const cleanPropType = propType.trim();
+
+          // Check if this prop type matches a type definition
+          const matchedTypeDef = Object.keys(typeDefinitions).find((typeName) =>
+            cleanPropType.includes(typeName)
+          );
 
           // Determine default value based on type
           let defaultValue = null;
+          let metadata = {};
 
           // Handle function types
           if (
-            propType.includes("=>") ||
-            propType.includes("function") ||
-            propType.includes("Function")
+            cleanPropType.includes("=>") ||
+            cleanPropType.includes("function") ||
+            cleanPropType.includes("Function")
           ) {
             // Skip function props - they should be handled dynamically
             continue;
-          } else if (propType.includes('"') && propType.includes("|")) {
-            // Union of string literals, pick the first one
-            const firstOption = propType.match(/"([^"]+)"/);
-            defaultValue = firstOption ? firstOption[1] : null;
-          } else if (propType.includes("boolean")) {
+          } else if (matchedTypeDef && typeDefinitions[matchedTypeDef]) {
+            // This is a union type with predefined options
+            const options = typeDefinitions[matchedTypeDef];
+            defaultValue = options[0]; // Use first option as default
+            metadata = {
+              type: "select",
+              options: options,
+              multiple: false,
+            };
+          } else if (
+            cleanPropType.includes('"') &&
+            cleanPropType.includes("|")
+          ) {
+            // Inline union of string literals
+            const options = cleanPropType
+              .split("|")
+              .map((option) => option.trim())
+              .filter(
+                (option) => option.startsWith('"') && option.endsWith('"')
+              )
+              .map((option) => option.slice(1, -1));
+
+            if (options.length > 0) {
+              defaultValue = options[0];
+              metadata = {
+                type: "select",
+                options: options,
+                multiple: false,
+              };
+            }
+          } else if (cleanPropType.includes("boolean")) {
             defaultValue = false;
-          } else if (propType.includes("number")) {
+            metadata = { type: "boolean" };
+          } else if (cleanPropType.includes("number")) {
             defaultValue = 0;
-          } else if (propType.includes("string")) {
+            metadata = { type: "number" };
+          } else if (cleanPropType.includes("string")) {
             defaultValue = "";
-          } else if (propType.includes("className")) {
+            metadata = { type: "string" };
+          } else if (cleanPropType.includes("className")) {
             // Special case for className
             defaultValue = "";
+            metadata = { type: "string" };
           }
 
           if (defaultValue !== null) {
             props[propName] = defaultValue;
+            if (Object.keys(metadata).length > 0) {
+              propMetadata[propName] = metadata;
+            }
           }
         }
       }
     }
 
-    return Object.keys(props).length > 0 ? props : null;
+    // If we found function defaults, merge them with interface-derived props
+    if (Object.keys(functionDefaults).length > 0) {
+      // Use function defaults as the primary source, but keep metadata from interface parsing
+      const mergedProps = { ...props, ...functionDefaults };
+      return Object.keys(mergedProps).length > 0
+        ? { props: mergedProps, metadata: propMetadata }
+        : null;
+    }
+
+    return Object.keys(props).length > 0
+      ? { props, metadata: propMetadata }
+      : null;
   } catch (error) {
     console.warn(
       `Warning: Could not parse props from ${filePath}:`,
@@ -196,7 +265,9 @@ function scanComponents(dir, basePath = "") {
       const folderName = path.basename(basePath) || "root";
 
       // Parse props from the file
-      const props = parseComponentProps(fullPath);
+      const propsResult = parseComponentProps(fullPath);
+      const props = propsResult?.props || null;
+      const metadata = propsResult?.metadata || {};
 
       components.push({
         name: componentName,
@@ -205,6 +276,7 @@ function scanComponents(dir, basePath = "") {
         folderName: folderName,
         fullPath: fullPath,
         props: props,
+        metadata: metadata,
         uuid: generateDeterministicUUID(relativePath),
         titleCase: toTitleCase(componentName),
         camelCase: toCamelCase(componentName),
@@ -231,7 +303,16 @@ function generateRegistry(components) {
             "\n    "
           )}`
         : "";
-      return `  "${comp.uuid}": { component: ${comp.name}${propsConfig} }`;
+
+      const metadataConfig =
+        comp.metadata && Object.keys(comp.metadata).length > 0
+          ? `, metadata: ${JSON.stringify(comp.metadata, null, 2).replace(
+              /\n/g,
+              "\n    "
+            )}`
+          : "";
+
+      return `  "${comp.uuid}": { component: ${comp.name}${propsConfig}${metadataConfig} }`;
     })
     .join(",\n");
 
@@ -243,9 +324,16 @@ import React from "react";
 
 ${imports}
 
+export interface PropMetadata {
+  type: "string" | "number" | "boolean" | "select";
+  options?: string[];
+  multiple?: boolean;
+}
+
 export interface ComponentConfig {
   component: React.ComponentType<Record<string, unknown>>;
   props?: Record<string, unknown>;
+  metadata?: Record<string, PropMetadata>;
 }
 
 export const registry: Record<string, ComponentConfig> = {
@@ -260,9 +348,12 @@ export default registry;
 function generateSQL(components) {
   const componentInserts = components
     .map((comp) => {
-      const layout = comp.props
-        ? JSON.stringify(comp.props).replace(/'/g, "''")
-        : "{}";
+      const layoutData = {
+        props: comp.props || {},
+        metadata: comp.metadata || {},
+      };
+      const layout = JSON.stringify(layoutData).replace(/'/g, "''");
+
       // Set stat to true for header components
       const isStatComponent = comp.folderName === "header";
       return `  ('${comp.uuid}', '${
@@ -304,7 +395,7 @@ CREATE TABLE components (
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
   file_name   TEXT        NOT NULL,
-  layout JSONB       NOT NULL DEFAULT '{}', -- extra props for the component
+  layout JSONB       NOT NULL DEFAULT '{}', -- extra props for the component and metadata
   stat BOOLEAN NOT NULL DEFAULT FALSE, -- if this is a statistic
   default_component      BOOLEAN     NOT NULL DEFAULT FALSE
 );
