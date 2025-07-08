@@ -204,7 +204,7 @@ export default function SkillBreakdown({
       ? "grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-y-auto"
       : "space-y-6 flex-1 overflow-y-auto";
 
-  const itemClasses = layout === "horizontal" ? "space-y-2" : "space-y-2";
+  const itemClasses = layout === "horizontal" ? "space-y-6" : "space-y-4";
 
   return (
     <Card className={cn("w-full h-full flex flex-col", className)}>

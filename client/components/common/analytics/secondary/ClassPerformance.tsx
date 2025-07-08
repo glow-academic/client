@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
@@ -188,8 +189,6 @@ export default function ClassPerformance({
     );
   }
 
-  const maxScore = Math.max(...classMetrics.map((cls) => cls.avgScore));
-
   return (
     <Card className={cn("w-full h-full flex flex-col", className)}>
       <CardHeader>
@@ -202,7 +201,7 @@ export default function ClassPerformance({
       <CardContent className="flex-1 overflow-y-auto">
         <div className="space-y-4">
           {classMetrics.map((classData) => (
-            <div key={classData.classCode} className="space-y-2">
+            <div key={classData.classCode} className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-sm">
@@ -216,17 +215,7 @@ export default function ClassPerformance({
                   {classData.avgScore}%
                 </span>
               </div>
-              <div className="relative">
-                <div className="h-6 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full transition-all duration-500 ease-out"
-                    style={{
-                      width: `${maxScore > 0 ? (classData.avgScore / maxScore) * 100 : 0}%`,
-                      backgroundColor: colorConfig.primary,
-                    }}
-                  />
-                </div>
-              </div>
+              <Progress value={classData.avgScore} className="h-2" />
             </div>
           ))}
         </div>

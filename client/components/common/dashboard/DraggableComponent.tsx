@@ -39,6 +39,7 @@ import { logError } from "@/utils/logger";
 import { Edit, X } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
+const showEditDialog = false;
 
 // Utility function to convert camelCase to Title Case
 const camelToTitleCase = (str: string): string => {
@@ -391,7 +392,7 @@ export default function DraggableComponent({
       )}
 
       {/* Edit button for components with props */}
-      {hasProps && (
+      {hasProps && showEditDialog && (
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <Tooltip>
             <TooltipTrigger asChild>
