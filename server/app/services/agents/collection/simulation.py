@@ -105,12 +105,35 @@ async def _handle_simulation_chat(
             raise ValueError(f"Documents not found for scenario {scenario.id}")
         for document in documents:
             file_path = document.file_path
-            # use pdf reader to get txt content
-            with open(os.path.join(UPLOAD_FOLDER, file_path), "rb") as file:
-                pdf_reader = PyPDF2.PdfReader(file)
-                content = ""
-                for page in pdf_reader.pages:
-                    content += page.extract_text() + "\n"
+            full_path = os.path.join(UPLOAD_FOLDER, file_path)
+            
+            # Determine file type and read content accordingly
+            content = ""
+            if file_path.lower().endswith('.pdf'):
+                # Handle PDF files
+                try:
+                    with open(full_path, "rb") as file:
+                        pdf_reader = PyPDF2.PdfReader(file)
+                        for page in pdf_reader.pages:
+                            content += page.extract_text() + "\n"
+                except Exception as e:
+                    raise ValueError(f"Error reading PDF file {file_path}: {str(e)}")
+            else:
+                # Handle text files and other text-based formats
+                try:
+                    with open(full_path, "r", encoding="utf-8") as file:
+                        content = file.read()
+                except UnicodeDecodeError:
+                    # Try with different encoding if UTF-8 fails
+                    try:
+                        with open(full_path, "r", encoding="latin-1") as file:
+                            content = file.read()
+                    except Exception as e:
+                        raise ValueError(f"Error reading text file {file_path}: {str(e)}")
+                except Exception as e:
+                    raise ValueError(f"Error reading file {file_path}: {str(e)}")
+            
+            if content.strip():  # Only add non-empty content
                 input_items.append({"role": "user", "content": content})
 
     

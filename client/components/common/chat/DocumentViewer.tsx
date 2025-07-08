@@ -163,7 +163,7 @@ export default function DocumentViewer({
     // PDF viewer - always fit to width
     if (type?.includes("application/pdf")) {
       return (
-        <div className="w-full h-full min-h-[400px] flex flex-col">
+        <div className="w-full h-full min-h-[400px]">
           <iframe
             src={`${content}#view=FitH&toolbar=1&navpanes=0&scrollbar=1`}
             title={current.name ?? ""}
@@ -199,13 +199,13 @@ export default function DocumentViewer({
     // Text/Markdown viewer
     if (type?.includes("text/") || current.name?.endsWith(".md")) {
       return (
-        <div className="w-full p-4">
+        <div className="w-full h-full p-4 flex flex-col">
           {current.name?.endsWith(".md") ? (
-            <div className="prose prose-sm max-w-none dark:prose-invert">
+            <div className="prose prose-sm max-w-none dark:prose-invert flex-1 min-h-0 overflow-y-auto">
               <Markdown>{content ?? ""}</Markdown>
             </div>
           ) : (
-            <pre className="whitespace-pre-wrap text-sm font-mono bg-muted/30 p-3 rounded-md overflow-x-auto">
+            <pre className="whitespace-pre-wrap text-sm font-mono bg-muted/30 p-3 rounded-md overflow-auto flex-1 min-h-0">
               {content}
             </pre>
           )}
