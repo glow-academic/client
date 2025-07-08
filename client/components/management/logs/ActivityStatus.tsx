@@ -7,6 +7,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -24,8 +25,9 @@ import {
 } from "@/components/ui/table";
 import { getActiveProfiles } from "@/utils/queries/profiles/get-active-profiles";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { useQuery } from "@tanstack/react-query";
-import { Activity, Clock, Users } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Activity, Clock, RefreshCw, Users } from "lucide-react";
+import { useState } from "react";
 
 interface Profile {
   id: string;
@@ -38,6 +40,9 @@ interface Profile {
 }
 
 export default function ActivityStatus() {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const queryClient = useQueryClient();
+
   const { data: activeProfiles, isLoading: loadingActiveProfiles } = useQuery({
     queryKey: ["activeProfiles"],
     queryFn: () => getActiveProfiles(),
@@ -49,6 +54,18 @@ export default function ActivityStatus() {
     queryFn: () => getAllProfiles(),
     refetchInterval: 30000, // Refetch every 30 seconds
   });
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["activeProfiles"] }),
+        queryClient.invalidateQueries({ queryKey: ["allProfiles"] }),
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const getRoleVariant = (role: string) => {
     switch (role.toLowerCase()) {
@@ -86,13 +103,27 @@ export default function ActivityStatus() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
-            Activity Status
-          </CardTitle>
-          <CardDescription>
-            Current user activity and session status
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Activity Status
+              </CardTitle>
+              <CardDescription>
+                Current user activity and session status
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-32">
@@ -131,6 +162,16 @@ export default function ActivityStatus() {
                 {inactiveCount} Inactive
               </span>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+            </Button>
           </div>
         </div>
       </CardHeader>
