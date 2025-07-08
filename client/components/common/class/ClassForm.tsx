@@ -35,7 +35,7 @@ import { logError, logInfo } from "@/utils/logger";
 import { createClass } from "@/utils/mutations/classes/create-class";
 import { updateClass } from "@/utils/mutations/classes/update-class";
 import { updateDocument } from "@/utils/mutations/documents/update-document";
-import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
+import { getDocumentsByClass } from "@/utils/queries/documents/get-documents-by-class";
 import {
   AlertTriangle,
   Brain,
@@ -170,7 +170,7 @@ export default function ClassForm({
   // Fetch documents for this class
   const { data: documents = [], isLoading: documentsLoading } = useQuery({
     queryKey: ["documents", classId],
-    queryFn: () => getAllDocuments(),
+    queryFn: () => getDocumentsByClass([classId!]),
     enabled: classId !== undefined && classId !== null,
   });
 
