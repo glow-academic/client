@@ -41,7 +41,7 @@ import { logError } from "@/utils/logger";
 import { deleteProfile } from "@/utils/mutations/profiles/delete-profile";
 import { updateProfile } from "@/utils/mutations/profiles/update-profile";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getProfile } from "@/utils/queries/profiles/get-profile";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -81,10 +81,11 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
       enabled: !!userId,
     });
 
-  // Fetch all users to find the target user
-  const { data: allProfiles = [], isLoading: isProfilesLoading } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
+  // Fetch the specific target user profile directly
+  const { data: targetUser, isLoading: isProfileLoading } = useQuery({
+    queryKey: ["profile", profileId],
+    queryFn: () => getProfile(profileId),
+    enabled: !!profileId,
   });
 
   // Fetch all classes for multi-select
@@ -93,15 +94,11 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
     queryFn: () => getAllClasses(),
   });
 
-  const targetUser = allProfiles.find(
-    (profile: Profile) => profile.id === profileId
-  );
   const isCurrentUserAdmin = currentUserProfile?.role === "admin";
 
   // Determine overall loading state
   const isLoading =
-    isProfilesLoading || isClassesLoading || isCurrentUserProfileLoading;
-  const isDataReady = !isLoading && targetUser;
+    isProfileLoading || isClassesLoading || isCurrentUserProfileLoading;
 
   const handleInputChange = (field: string, value: string | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -131,6 +128,7 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
       });
       setHasChanges(false);
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["profile", profileId] });
       queryClient.invalidateQueries({ queryKey: ["classes"] });
       queryClient.invalidateQueries({ queryKey: ["profile", userId] });
       toast.success("User updated successfully");
@@ -147,6 +145,7 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
     try {
       await deleteProfile(profileId);
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["profile", profileId] });
       queryClient.invalidateQueries({ queryKey: ["classes"] });
       queryClient.invalidateQueries({ queryKey: ["profile", userId] });
       toast.success("User deleted successfully");
@@ -250,11 +249,6 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
         </Card>
       </div>
     );
-  }
-
-  // Only render the form when data is ready
-  if (!isDataReady) {
-    return null;
   }
 
   return (

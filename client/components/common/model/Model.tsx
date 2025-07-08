@@ -32,7 +32,7 @@ import { useRole } from "@/contexts/role-context";
 import { Model as ModelType, Provider } from "@/types";
 import { createModel } from "@/utils/mutations/models/create-model";
 import { updateModel } from "@/utils/mutations/models/update-model";
-import { getAllModels } from "@/utils/queries/models/get-all-models";
+import { getModel } from "@/utils/queries/models/get-model";
 import { getAllProviders } from "@/utils/queries/providers/get-all-providers";
 import { useRouter } from "next/navigation";
 
@@ -55,7 +55,7 @@ export default function Model({ modelId }: ModelProps) {
   const { effectiveRole } = useRole();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editingModelId, setEditingModelId] = useState<string | null>(null);
+  const isEditMode = !!modelId;
 
   const initialFormData: Partial<ModelType> = {
     name: "",
@@ -68,33 +68,33 @@ export default function Model({ modelId }: ModelProps) {
   const [formData, setFormData] = useState<Partial<ModelType>>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // Fetch models for the list mode
-  const { data: models = [] } = useQuery({
-    queryKey: ["models"],
-    queryFn: () => getAllModels(),
+  // Fetch the specific model directly if in edit mode
+  const { data: modelToEdit, isLoading: isModelLoading } = useQuery({
+    queryKey: ["model", modelId],
+    queryFn: () => getModel(modelId!),
+    enabled: isEditMode,
   });
 
-  const { data: providers = [] } = useQuery({
+  const { data: providers = [], isLoading: areProvidersLoading } = useQuery({
     queryKey: ["providers"],
     queryFn: () => getAllProviders(),
   });
 
+  // Combined loading state
+  const isLoading = (isEditMode && isModelLoading) || areProvidersLoading;
+
   // Load model data if editing
   useEffect(() => {
-    const targetModelId = modelId || editingModelId;
-    if (targetModelId) {
-      const modelToEdit = models.find((m: ModelType) => m.id === targetModelId);
-      if (modelToEdit) {
-        setFormData({
-          name: modelToEdit.name || "",
-          description: modelToEdit.description || "",
-          providerId: modelToEdit.providerId || "",
-          active: modelToEdit.active ?? true,
-          modelType: modelToEdit.modelType || "ttt",
-        });
-      }
+    if (isEditMode && modelToEdit) {
+      setFormData({
+        name: modelToEdit.name || "",
+        description: modelToEdit.description || "",
+        providerId: modelToEdit.providerId || "",
+        active: modelToEdit.active ?? true,
+        modelType: modelToEdit.modelType || "ttt",
+      });
     }
-  }, [modelId, editingModelId, models]);
+  }, [isEditMode, modelToEdit]);
 
   // Role-based access control - check after all hooks
   if (effectiveRole !== "admin") {
@@ -107,6 +107,61 @@ export default function Model({ modelId }: ModelProps) {
               You need admin privileges to access model management.
             </CardDescription>
           </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <div className="h-4 bg-muted rounded animate-pulse w-16" />
+          <div className="h-10 bg-muted rounded animate-pulse" />
+        </div>
+        <div className="space-y-2">
+          <div className="h-4 bg-muted rounded animate-pulse w-20" />
+          <div className="h-20 bg-muted rounded animate-pulse" />
+        </div>
+        <div className="space-y-2">
+          <div className="h-4 bg-muted rounded animate-pulse w-16" />
+          <div className="h-10 bg-muted rounded animate-pulse" />
+        </div>
+        <div className="space-y-2">
+          <div className="h-4 bg-muted rounded animate-pulse w-20" />
+          <div className="h-10 bg-muted rounded animate-pulse" />
+        </div>
+        <div className="space-y-2">
+          <div className="h-4 bg-muted rounded animate-pulse w-12" />
+          <div className="h-10 bg-muted rounded animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if model not found (only in edit mode)
+  if (isEditMode && !isLoading && !modelToEdit) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Model Not Found</CardTitle>
+            <CardDescription>
+              The requested model could not be found.
+            </CardDescription>
+          </CardHeader>
+          <div className="p-6">
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">
+                The model with ID "{modelId}" does not exist or you don't have
+                permission to view it.
+              </p>
+              <Button onClick={() => router.push("/management/models")}>
+                Back to Models
+              </Button>
+            </div>
+          </div>
         </Card>
       </div>
     );
@@ -147,7 +202,6 @@ export default function Model({ modelId }: ModelProps) {
 
   const resetFormAndState = () => {
     setFormData(initialFormData);
-    setEditingModelId(null);
     setErrors({});
   };
 
@@ -163,9 +217,8 @@ export default function Model({ modelId }: ModelProps) {
 
     try {
       let result;
-      const targetModelId = modelId || editingModelId;
-      if (targetModelId) {
-        result = await updateModel(targetModelId, {
+      if (isEditMode && modelId) {
+        result = await updateModel(modelId, {
           ...formData,
           updatedAt: new Date().toISOString(),
         });
@@ -188,16 +241,18 @@ export default function Model({ modelId }: ModelProps) {
 
       resetFormAndState();
       queryClient.invalidateQueries({ queryKey: ["models"] });
+      if (isEditMode && modelId) {
+        queryClient.invalidateQueries({ queryKey: ["model", modelId] });
+      }
       toast.success(
-        targetModelId
+        isEditMode && modelId
           ? "Model updated successfully!"
           : "Model created successfully!"
       );
       router.push(`/management/models`);
     } catch (error) {
-      const targetModelId = modelId || editingModelId;
       toast.error(
-        `Failed to ${targetModelId ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode && modelId ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsSubmitting(false);
@@ -305,15 +360,15 @@ export default function Model({ modelId }: ModelProps) {
         <div className="flex justify-end gap-4">
           <Button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isLoading}
             className="min-w-[120px]"
           >
             {isSubmitting ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                {modelId || editingModelId ? "Updating..." : "Creating..."}
+                {isEditMode && modelId ? "Updating..." : "Creating..."}
               </>
-            ) : modelId || editingModelId ? (
+            ) : isEditMode && modelId ? (
               "Update Model"
             ) : (
               "Create Model"
