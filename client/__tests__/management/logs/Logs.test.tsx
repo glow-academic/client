@@ -121,7 +121,7 @@ describe('Logs', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: useQuery, useState
+ * - Uses hooks: useQuery, useQueryClient, useState
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

@@ -502,8 +502,7 @@ export function UnifiedSidebar({
             <div className="px-2 pb-2">
               <ReportProblem>
                 <div className="relative group">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg blur opacity-15 group-hover:opacity-25 transition duration-300"></div>
-                  <div className="relative bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-lg px-4 py-2.5 transition-all duration-200 shadow-md hover:shadow-lg opacity-80 hover:opacity-90">
+                  <div className="relative border border-blue-500 dark:border-purple-600 rounded-lg px-4 py-2.5 transition-all duration-200 bg-transparent hover:bg-blue-50 dark:hover:bg-purple-950 text-blue-700 dark:text-purple-200 shadow-none hover:shadow-md">
                     <div className="flex items-center justify-center gap-2">
                       <MessageSquare className="h-4 w-4" />
                       <span className="font-medium text-sm">Feedback</span>

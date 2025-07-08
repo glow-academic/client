@@ -121,7 +121,7 @@ describe('ActivityStatus', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: useQuery, useQueryClient, useState, user, users
+ * - Uses hooks: useQuery, useQueryClient, useMemo, useState, users, user
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

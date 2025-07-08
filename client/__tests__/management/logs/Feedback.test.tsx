@@ -121,7 +121,7 @@ describe('Feedback', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: users, user, useQuery, useMemo, useState
+ * - Uses hooks: users, useQuery, useQueryClient, useMemo, useState
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

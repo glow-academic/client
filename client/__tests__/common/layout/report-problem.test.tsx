@@ -138,7 +138,7 @@ describe('report-problem', () => {
  * - Has props: true
  * - Props interface: ReportProblemProps
  * - Client component: true
- * - Uses hooks: useRole, user, useMutation, useQuery, useQueryClient, useSession, useState, userId
+ * - Uses hooks: user, useMutation, useQuery, useQueryClient, useSession, useState, userId
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: true
