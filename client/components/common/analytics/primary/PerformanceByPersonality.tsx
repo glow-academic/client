@@ -1,11 +1,12 @@
 /**
  * PerformanceByPersonality.tsx
- * This is used to show the bar chart of performance by personality.
+ * This is used to show the horizontal bar chart of performance by personality.
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -13,12 +14,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getAgentConfig } from "@/utils/agents";
+import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { useQuery } from "@tanstack/react-query";
-import { subDays } from "date-fns";
+import { isAfter, subDays } from "date-fns";
 import { Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -85,7 +89,7 @@ export default function PerformanceByPersonality({
   title = "Performance by Personality",
   showTimeSelector = true,
 }: PerformanceByPersonalityProps) {
-  const [performanceTimeRange, setPerformanceTimeRange] =
+  const [personalityTimeRange, setPersonalityTimeRange] =
     useState<TimeRange>(defaultTimeRange);
   const colorConfig = COLOR_CONFIGS[color];
 
@@ -93,6 +97,16 @@ export default function PerformanceByPersonality({
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
+  });
+
+  const { data: agents } = useQuery({
+    queryKey: ["agents"],
+    queryFn: () => getAllAgents(),
+  });
+
+  const { data: scenarios } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => getAllScenarios(),
   });
 
   const { data: attempts } = useQuery({
@@ -116,10 +130,11 @@ export default function PerformanceByPersonality({
     enabled: !!chats && chats.length > 0,
   });
 
-  // Calculate performance by personality data
-  const performanceByPersonalityData = useMemo(() => {
-    if (!profiles || !grades) return [];
+  // Calculate performance by personality
+  const performanceData = useMemo(() => {
+    if (!agents || !scenarios || !chats || !grades) return [];
 
+    // Filter data by time range
     const getDaysFromTimeRange = (range: TimeRange) => {
       switch (range) {
         case "7d":
@@ -137,67 +152,44 @@ export default function PerformanceByPersonality({
       }
     };
 
-    const days = getDaysFromTimeRange(performanceTimeRange);
-    const cutoffDate = subDays(new Date(), days);
-
-    // Filter grades by time range
-    const filteredGrades = grades.filter((grade) => {
-      const gradeDate = new Date(grade.createdAt);
-      return gradeDate >= cutoffDate;
-    });
-
-    // Group profiles by personality type (using a placeholder field)
-    const personalityGroups = profiles.reduce(
-      (acc, profile) => {
-        // Placeholder: use first letter of firstName as personality type
-        // In real implementation, this would use actual personality data
-        const personality =
-          profile.firstName?.charAt(0)?.toUpperCase() || "Unknown";
-
-        if (!acc[personality]) {
-          acc[personality] = [];
-        }
-        acc[personality].push(profile.id);
-        return acc;
-      },
-      {} as Record<string, string[]>
+    const days = getDaysFromTimeRange(personalityTimeRange);
+    const cutoff = subDays(new Date(), days);
+    const filteredGrades = grades.filter((grade) =>
+      isAfter(new Date(grade.createdAt), cutoff)
     );
 
-    // Calculate average scores for each personality type
-    return Object.entries(personalityGroups)
-      .map(([personality, profileIds]) => {
-        const personalityGrades = filteredGrades.filter((grade) => {
-          // Find the profile for this grade through attempts and chats
-          const relatedChat = chats?.find(
-            (chat) => chat.id === grade.simulationChatId
-          );
-          const relatedAttempt = attempts?.find(
-            (attempt) => attempt.id === relatedChat?.attemptId
-          );
-          return profileIds.includes(relatedAttempt?.profileId || "");
-        });
+    // Performance by student type (scenario-based)
+    const performanceByType = agents
+      .filter((agent) => agent.name) // Filter for student agents
+      .map((agent) => {
+        const agentScenarios = scenarios.filter((s) => s.agentId === agent.id);
+        const agentChats = chats.filter((chat) =>
+          agentScenarios.some((scenario) => scenario.id === chat.scenarioId)
+        );
+        const agentGrades = filteredGrades.filter((grade) =>
+          agentChats.some((chat) => chat.id === grade.simulationChatId)
+        );
 
         const avgScore =
-          personalityGrades.length > 0
+          agentGrades.length > 0
             ? Math.round(
-                personalityGrades.reduce((sum, g) => sum + g.score, 0) /
-                  personalityGrades.length
+                agentGrades.reduce((sum, g) => sum + g.score, 0) /
+                  agentGrades.length
               )
             : 0;
 
         return {
-          personality:
-            personality.length > 10
-              ? personality.substring(0, 10) + "..."
-              : personality,
+          name: agent.name,
           score: avgScore,
-          sessions: personalityGrades.length,
+          sessions: agentChats.length,
+          color: getAgentConfig(agent.name).colors.bgColor,
         };
       })
-      .filter((item) => item.sessions > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 8); // Show top 8 personality types
-  }, [profiles, grades, chats, attempts, performanceTimeRange]);
+      .filter((agent) => agent.sessions > 0) // Only show agents with sessions
+      .sort((a, b) => b.score - a.score); // Sort by score descending
+
+    return performanceByType;
+  }, [agents, scenarios, chats, grades, personalityTimeRange]);
 
   const timeOptions = [
     // Weekly group
@@ -209,7 +201,7 @@ export default function PerformanceByPersonality({
     { value: "90d" as const, label: "90 days", group: "monthly" },
   ];
 
-  if (!performanceByPersonalityData.length) {
+  if (!performanceData.length) {
     return (
       <Card>
         <CardHeader>
@@ -220,7 +212,7 @@ export default function PerformanceByPersonality({
                 {title}
               </CardTitle>
               <CardDescription>
-                Average performance scores by personality type
+                How TAs handle different student types during training
               </CardDescription>
             </div>
             {showTimeSelector && (
@@ -228,9 +220,9 @@ export default function PerformanceByPersonality({
                 {timeOptions.map((option) => (
                   <button
                     key={option.value}
-                    onClick={() => setPerformanceTimeRange(option.value)}
+                    onClick={() => setPersonalityTimeRange(option.value)}
                     className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                      performanceTimeRange === option.value
+                      personalityTimeRange === option.value
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground hover:bg-muted/80"
                     }`}
@@ -245,7 +237,7 @@ export default function PerformanceByPersonality({
         <CardContent>
           <div className="flex items-center justify-center h-[300px]">
             <p className="text-muted-foreground">
-              No personality performance data available
+              No performance data available
             </p>
           </div>
         </CardContent>
@@ -263,7 +255,7 @@ export default function PerformanceByPersonality({
               {title}
             </CardTitle>
             <CardDescription>
-              Average performance scores by personality type
+              How TAs handle different student types during training
             </CardDescription>
           </div>
           {showTimeSelector && (
@@ -271,9 +263,9 @@ export default function PerformanceByPersonality({
               {timeOptions.map((option) => (
                 <button
                   key={option.value}
-                  onClick={() => setPerformanceTimeRange(option.value)}
+                  onClick={() => setPersonalityTimeRange(option.value)}
                   className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                    performanceTimeRange === option.value
+                    personalityTimeRange === option.value
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-muted-foreground hover:bg-muted/80"
                   }`}
@@ -286,40 +278,73 @@ export default function PerformanceByPersonality({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={performanceByPersonalityData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis
-                dataKey="personality"
-                className="text-xs"
-                angle={-45}
-                textAnchor="end"
-                height={80}
-              />
-              <YAxis className="text-xs" domain={[0, 100]} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--background))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "6px",
-                }}
-                formatter={(value: number, name: string) => [
-                  name === "score" ? `${value}%` : value,
-                  name === "score" ? "Average Score" : "Sessions",
-                ]}
-              />
-              <Bar
-                dataKey="score"
-                fill={colorConfig.primary}
-                name="score"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="grid gap-6 md:grid-cols-2 h-[300px]">
+          <div className="h-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={performanceData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis type="number" domain={[0, 100]} className="text-xs" />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  width={80}
+                  className="text-xs"
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--background))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "6px",
+                  }}
+                  formatter={(value: number) => [`${value}%`, "Average Score"]}
+                  labelFormatter={(label) => `${label} Students`}
+                />
+                <Bar
+                  dataKey="score"
+                  fill={colorConfig.primary}
+                  radius={[0, 4, 4, 0]}
+                  name="Average Score"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="space-y-4 overflow-y-auto">
+            {performanceData.map((type) => (
+              <div
+                key={type.name}
+                className="flex items-center justify-between p-4 rounded-lg border"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-4 h-4 rounded-full ${type.color}`}></div>
+                  <div>
+                    <p className="font-medium">{type.name} Student</p>
+                    <p className="text-sm text-muted-foreground">
+                      {type.sessions} sessions
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold">{type.score}%</p>
+                  <Badge
+                    variant={
+                      type.score >= 80
+                        ? "default"
+                        : type.score >= 70
+                          ? "secondary"
+                          : "destructive"
+                    }
+                  >
+                    {type.score >= 80
+                      ? "Excellent"
+                      : type.score >= 70
+                        ? "Good"
+                        : "Needs Work"}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </CardContent>
     </Card>
