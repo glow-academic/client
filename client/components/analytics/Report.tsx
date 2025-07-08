@@ -8,7 +8,6 @@
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -32,7 +31,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { logError } from "@/utils/logger";
 import { getProfile } from "@/utils/queries/profiles/get-profile";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -50,7 +48,6 @@ import {
   Calendar,
   CheckCircle,
   Clock,
-  Download,
   GraduationCap,
   Target,
   TrendingDown,
@@ -72,7 +69,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { toast } from "sonner";
 
 // Chart configurations
 const timeChartConfig = {
@@ -386,35 +382,6 @@ export default function Report({ profileId }: { profileId: string }) {
     profileId,
     simulations,
   ]);
-
-  const handleDownloadReport = async () => {
-    try {
-      const response = await fetch(`/api/download/report/${profileId}`, {
-        method: "GET",
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to download report: ${response.statusText}`);
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${profile?.firstName}_${profile?.lastName}_Report.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-
-      toast.success("Report downloaded successfully");
-    } catch (error) {
-      toast.error("Failed to download report");
-      logError("Failed to download report", error);
-    }
-  };
-
   // Loading state
   if (isLoadingProfile || !profile) {
     return (
@@ -466,10 +433,6 @@ export default function Report({ profileId }: { profileId: string }) {
             </Badge>
           </div>
         </div>
-        <Button onClick={handleDownloadReport}>
-          <Download className="h-4 w-4 mr-2" />
-          Download PDF
-        </Button>
       </div>
 
       {/* Overview Cards */}

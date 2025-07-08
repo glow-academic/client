@@ -80,11 +80,11 @@ export default function Cohorts() {
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/management/cohorts/c/${id}`);
+    router.push(`/create/cohorts/c/${id}`);
   };
 
   const handleCreateNew = () => {
-    router.push("/management/cohorts/new");
+    router.push("/create/cohorts/new");
   };
 
   return (

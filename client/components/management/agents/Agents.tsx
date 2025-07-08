@@ -69,7 +69,7 @@ export default function Agents() {
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/create/agents/a/${id}`);
+    router.push(`/management/agents/a/${id}`);
   };
 
   return (

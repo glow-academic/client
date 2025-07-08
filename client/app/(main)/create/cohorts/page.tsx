@@ -1,10 +1,10 @@
 /**
- * app/(main)/management/cohorts/page.tsx
+ * app/(main)/create/cohorts/page.tsx
  * Cohorts list page - redirects to home with cohorts section
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
-import Cohorts from "@/components/management/cohorts/Cohorts";
+import Cohorts from "@/components/create/cohorts/Cohorts";
 
 import type { Metadata } from "next";
 

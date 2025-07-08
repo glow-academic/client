@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import AgentEdit from "@/components/create/agents/AgentEdit";
+import AgentEdit from "@/components/management/agents/AgentEdit";
 import { use } from "react";
 
 import type { Metadata, ResolvingMetadata } from "next";

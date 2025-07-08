@@ -1,4 +1,4 @@
-import AgentEdit from "@/components/create/agents/AgentEdit";
+import AgentEdit from "@/components/management/agents/AgentEdit";
 import { renderWithProviders } from "@/mocks/utils";
 import { getAgent } from "@/utils/queries/agents/get-agent";
 import { screen } from "@testing-library/react";

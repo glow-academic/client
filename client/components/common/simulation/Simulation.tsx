@@ -23,9 +23,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Rubric, Scenario, Simulation as SimulationType } from "@/types";
+import {
+  Cohort,
+  Rubric,
+  Scenario,
+  Simulation as SimulationType,
+} from "@/types";
 import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
 import { updateSimulation } from "@/utils/mutations/simulations/update-simulation";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
@@ -40,6 +46,7 @@ interface FormErrors {
   title?: string;
   timeLimit?: string;
   rubricId?: string;
+  cohortIds?: string[];
 }
 
 export default function Simulation({ simulationId }: SimulationProps) {
@@ -50,6 +57,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
     null
   );
   const [draggedScenario, setDraggedScenario] = useState<string | null>(null);
+  const [draggedCohort, setDraggedCohort] = useState<string | null>(null);
   const router = useRouter();
 
   const initialFormData: Partial<SimulationType> = {
@@ -58,6 +66,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
     scenarioIds: [],
     active: true,
     rubricId: "",
+    cohortIds: [],
   };
 
   const [formData, setFormData] =
@@ -68,6 +77,11 @@ export default function Simulation({ simulationId }: SimulationProps) {
   const { data: simulations = [] } = useQuery({
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
+  });
+
+  const { data: cohorts = [] } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
   });
 
   const { data: rubrics = [] } = useQuery({
@@ -94,6 +108,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
           scenarioIds: simulationToEdit.scenarioIds || [],
           active: simulationToEdit.active ?? true,
           rubricId: simulationToEdit.rubricId || "",
+          cohortIds: simulationToEdit.cohortIds || [],
         });
       }
     }
@@ -107,6 +122,22 @@ export default function Simulation({ simulationId }: SimulationProps) {
     if (errors[field as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
+  };
+
+  const addCohort = (cohortId: string) => {
+    if (!formData.cohortIds?.includes(cohortId)) {
+      setFormData((prev) => ({
+        ...prev,
+        cohortIds: [...(prev.cohortIds || []), cohortId],
+      }));
+    }
+  };
+
+  const removeCohort = (cohortId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      cohortIds: prev.cohortIds?.filter((id) => id !== cohortId) || [],
+    }));
   };
 
   const addScenario = (scenarioId: string) => {
@@ -125,8 +156,13 @@ export default function Simulation({ simulationId }: SimulationProps) {
     }));
   };
 
-  const handleDragStart = (e: React.DragEvent, scenarioId: string) => {
+  const handleDragStartScenario = (e: React.DragEvent, scenarioId: string) => {
     setDraggedScenario(scenarioId);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragStartCohort = (e: React.DragEvent, cohortId: string) => {
+    setDraggedCohort(cohortId);
     e.dataTransfer.effectAllowed = "move";
   };
 
@@ -170,6 +206,10 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
     if (!formData.rubricId) {
       newErrors.rubricId = "Rubric is required";
+    }
+
+    if (!formData.cohortIds?.length) {
+      newErrors.cohortIds = ["At least one cohort is required"];
     }
 
     setErrors(newErrors);
@@ -239,6 +279,10 @@ export default function Simulation({ simulationId }: SimulationProps) {
     router.push(`/create/scenarios/s/${scenarioId}`);
   };
 
+  const editCohort = (cohortId: string) => {
+    router.push(`/create/cohorts/c/${cohortId}`);
+  };
+
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -301,6 +345,122 @@ export default function Simulation({ simulationId }: SimulationProps) {
           )}
         </div>
 
+        {/* Cohorts */}
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <div>
+              <Label htmlFor="cohortIds">Cohorts</Label>
+              <p className="text-sm text-muted-foreground mt-1">
+                Select cohorts to include in this simulation.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Select
+                value=""
+                onValueChange={(value: string) => {
+                  if (value) addCohort(value);
+                }}
+              >
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Add cohort" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cohorts
+                    .filter(
+                      (cohort: Cohort) =>
+                        !formData.cohortIds?.includes(cohort.id)
+                    )
+                    .map((cohort: Cohort) => (
+                      <SelectItem key={cohort.id} value={cohort.id}>
+                        {cohort.title}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {formData.cohortIds?.length === 0 ? (
+            <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
+              <div>
+                <p className="font-medium mb-1">No cohorts selected</p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {formData.cohortIds?.map((cohortId) => {
+                const cohort = cohorts.find(
+                  (c: Cohort) => c.id === cohortId
+                );
+                if (!cohort) return null;
+
+                return (
+                  <Card
+                    key={cohortId}
+                    className={`p-3 cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
+                      draggedCohort === cohortId ? "opacity-50" : ""
+                    }`}
+                    draggable
+                    onDragStart={(e) => handleDragStartCohort(e, cohortId)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, cohortId)}
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-sm">
+                          {cohort.title || "Unnamed Cohort"}
+                        </h4>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => editCohort(cohortId)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeCohort(cohortId)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                          <GripVertical className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground line-clamp-3">
+                          {cohort.description || "No description provided"}
+                        </p>
+
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Badge variant="outline" className="text-xs">
+                            {cohort.profileIds?.length || 0} members
+                          </Badge>
+                        </div>
+
+                        <Badge
+                          className={`text-xs ${
+                            cohort.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {cohort.active ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Scenarios */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <div>
@@ -357,7 +517,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                       draggedScenario === scenarioId ? "opacity-50" : ""
                     }`}
                     draggable
-                    onDragStart={(e) => handleDragStart(e, scenarioId)}
+                    onDragStart={(e) => handleDragStartScenario(e, scenarioId)}
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, scenarioId)}
                   >

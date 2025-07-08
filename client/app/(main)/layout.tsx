@@ -174,9 +174,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/create/agents") {
+    if (pathname === "/management/agents") {
       return (
-        <Button onClick={() => router.push("/create/agents/new")} size="sm">
+        <Button onClick={() => router.push("/management/agents/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Agent
         </Button>
@@ -201,10 +201,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/management/cohorts") {
+    if (pathname === "/create/cohorts") {
       return (
         <Button
-          onClick={() => router.push("/management/cohorts/new")}
+          onClick={() => router.push("/create/cohorts/new")}
           size="sm"
         >
           <Plus className="h-4 w-4 mr-2" />

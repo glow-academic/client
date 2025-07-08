@@ -34,28 +34,28 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
       sections.push("home");
       break;
     case "ta":
-      sections.push("home", "growth");
+      sections.push("home");
       break;
     case "instructor":
       sections.push(
-        "dashboard", "performance", "reports", "history", // Analytics
+        "dashboard", "reports", "history", // Analytics
         "scenarios", "simulations", "rubrics", // Create
         "classes" // Classes (filtered by assignment)
       );
       break;
     case "instructional":
       sections.push(
-        "dashboard", "performance", "reports", "history", // Analytics
+        "dashboard", "reports", "history", // Analytics
         "scenarios", "simulations", "rubrics", // Create
-        "classes" // Classes (all)
+        "classes", "cohorts" // Classes (all)
       );
       break;
     case "admin":
       sections.push(
-        "dashboard", "performance", "reports", "history", // Analytics
+        "dashboard", "reports", "history", // Analytics
         "scenarios", "simulations", "rubrics", // Create
-        "classes", // Classes (all)
-        "staff", "agents", "evals" // Management
+        "classes", "cohorts", // Classes (all)
+        "staff", "agents", "logs", "models" // Management
       );
       break;
   }
@@ -88,11 +88,10 @@ export const getSectionRoute = (section: string): string => {
   switch (section) {
     case "home":
       return "/home";
-    case "growth":
-      return "/growth";
 
     // Analytics routes
     case "analytics":
+      return "/analytics";
     case "dashboard":
       return "/analytics/dashboard";
     case "reports":
@@ -111,18 +110,16 @@ export const getSectionRoute = (section: string): string => {
       return "/create/rubrics";
     case "classes":
       return "/create/classes";
-    case "agents":
-      return "/create/agents";
+    case "cohorts":
+      return "/create/cohorts";
 
     // Management routes
     case "management":
       return "/management";
     case "staff":
       return "/management/staff";
-    case "evals":
-      return "/management/evals";
-    case "cohorts":
-      return "/management/cohorts";
+    case "agents":
+      return "/management/agents";
     case "models":
       return "/management/models";
     case "logs":
@@ -145,7 +142,7 @@ export const getSectionRoute = (section: string): string => {
       }
       if (section.startsWith("agent-")) {
         const agentId = section.replace("agent-", "");
-        return `/create/agents/a/${agentId}`;
+        return `/management/agents/a/${agentId}`;
       }
       if (section.startsWith("scenario-")) {
         const scenarioId = section.replace("scenario-", "");
@@ -170,6 +167,18 @@ export const getSectionRoute = (section: string): string => {
       if (section.startsWith("eval-")) {
         const evalId = section.replace("eval-", "");
         return `/management/evals/e/${evalId}`;
+      }
+      if (section.startsWith("cohort-")) {
+        const cohortId = section.replace("cohort-", "");
+        return `/create/cohorts/c/${cohortId}`;
+      }
+      if (section.startsWith("model-")) {
+        const modelId = section.replace("model-", "");
+        return `/management/models/m/${modelId}`;
+      }
+      if (section.startsWith("report-")) {
+        const profileId = section.replace("report-", "");
+        return `/analytics/reports/p/${profileId}`;
       }
 
       return "/home"; // Default fallback to home

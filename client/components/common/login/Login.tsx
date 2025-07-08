@@ -234,7 +234,9 @@ export default function Login() {
       // Log the error to database
       await logError("Microsoft login attempt failed", error as Error);
 
-      toast.error("An error occurred during login: " + errorMessage);
+      if (!errorMessage.toLowerCase().includes("load failed")) {
+        toast.error("An error occurred during login: " + errorMessage);
+      }
     } finally {
       setLoadingMicrosoft(false);
     }
@@ -271,7 +273,9 @@ export default function Login() {
       // Log failed guest access
       await logError("Guest access attempt failed", error as Error);
 
-      toast.error("An error occurred during login: " + errorMessage);
+      if (!errorMessage.toLowerCase().includes("load failed")) {
+        toast.error("An error occurred during login: " + errorMessage);
+      }
     } finally {
       setLoadingGuest(false);
     }

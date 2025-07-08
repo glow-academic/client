@@ -11,14 +11,6 @@ import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -37,7 +29,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 // Removed downloadReport import - now calling API directly
-import { logError } from "@/utils/logger";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -51,13 +42,10 @@ import {
   AlertTriangle,
   ArrowUp,
   Award,
-  Download,
-  Loader2,
   Search,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import { toast } from "sonner";
 
 export interface ReportOptions {
   includeStudentTypeChart: boolean;
@@ -81,9 +69,6 @@ export default function Reports() {
   const [sortBy, setSortBy] = useState<SortOption>("score-desc");
   const [filterBy, setFilterBy] = useState<FilterOption>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [downloadingReports, setDownloadingReports] = useState<Set<string>>(
-    new Set()
-  );
 
   // Fetch data
   const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
@@ -371,105 +356,6 @@ export default function Reports() {
     return filtered;
   }, [analytics, sortBy, filterBy, searchQuery]);
 
-  const handleDownloadReport = async (
-    profileId: string,
-    options: ReportOptions
-  ) => {
-    setDownloadingReports((prev) => new Set(prev).add(profileId));
-
-    try {
-      // Build query parameters
-      const queryParams = new URLSearchParams();
-      if (options.includeStudentTypeChart !== undefined) {
-        queryParams.set(
-          "includeStudentTypeChart",
-          options.includeStudentTypeChart.toString()
-        );
-      }
-      if (options.includePerformanceChart !== undefined) {
-        queryParams.set(
-          "includePerformanceChart",
-          options.includePerformanceChart.toString()
-        );
-      }
-      if (options.includeRadarChart !== undefined) {
-        queryParams.set(
-          "includeRadarChart",
-          options.includeRadarChart.toString()
-        );
-      }
-      if (options.includeTimeChart !== undefined) {
-        queryParams.set(
-          "includeTimeChart",
-          options.includeTimeChart.toString()
-        );
-      }
-      if (options.includeDetailedScores !== undefined) {
-        queryParams.set(
-          "includeDetailedScores",
-          options.includeDetailedScores.toString()
-        );
-      }
-      if (options.includeFeedback !== undefined) {
-        queryParams.set("includeFeedback", options.includeFeedback.toString());
-      }
-
-      // Call the API route directly
-      const url = `/api/download/report/${profileId}${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
-      const response = await fetch(url, {
-        method: "GET",
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        // Try to get error details from JSON response
-        let errorMessage = `Failed to download report: ${response.status} ${response.statusText}`;
-        try {
-          const errorData = await response.json();
-          if (errorData.message) {
-            errorMessage = errorData.message;
-          }
-        } catch {
-          // If not JSON, use the default error message
-        }
-        throw new Error(errorMessage);
-      }
-
-      // Extract filename from Content-Disposition header
-      const contentDisposition = response.headers.get("content-disposition");
-      const filename = contentDisposition
-        ? contentDisposition.split("filename=")[1]?.replace(/"/g, "") ||
-          `TA_Report_${profileId}.pdf`
-        : `TA_Report_${profileId}.pdf`;
-
-      // Create blob and download
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(blobUrl);
-
-      toast.success("Report downloaded successfully");
-    } catch (error) {
-      toast.error(
-        `Failed to download report: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
-      logError(
-        `Failed to download report: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
-    } finally {
-      setDownloadingReports((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(profileId);
-        return newSet;
-      });
-    }
-  };
-
   const handleViewReport = (profileId: string) => {
     router.push(`/analytics/reports/p/${profileId}`);
   };
@@ -748,13 +634,13 @@ export default function Reports() {
 
                   {/* Actions */}
                   <TableCell>
-                    <ReportDownloadDialog
-                      ta={ta}
-                      onDownload={(options) =>
-                        handleDownloadReport(ta.id, options)
-                      }
-                      isDownloading={downloadingReports.has(ta.id)}
-                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewReport(ta.id)}
+                    >
+                      View
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -790,174 +676,4 @@ export default function Reports() {
       </div>
     </div>
   );
-}
-
-interface ReportDownloadDialogProps {
-  ta: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    username: string;
-  };
-  onDownload: (options: ReportOptions) => void;
-  isDownloading: boolean;
-}
-
-function ReportDownloadDialog({
-  ta,
-  onDownload,
-  isDownloading,
-}: ReportDownloadDialogProps) {
-  const [options, setOptions] = useState<ReportOptions>({
-    includeStudentTypeChart: true,
-    includePerformanceChart: true,
-    includeRadarChart: true,
-    includeTimeChart: true,
-    includeDetailedScores: true,
-    includeFeedback: true,
-  });
-
-  const handleOptionChange = (key: keyof ReportOptions, value: boolean) => {
-    setOptions((prev) => ({ ...prev, [key]: value }));
-  };
-
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={isDownloading}
-          className="h-6 w-6 p-0"
-        >
-          {isDownloading ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <Download className="h-3 w-3" />
-          )}
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            Download Report for {ta.firstName} {ta.lastName}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Select which sections to include in the PDF report:
-          </p>
-
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="studentTypeChart"
-                checked={options.includeStudentTypeChart}
-                onCheckedChange={(checked) =>
-                  handleOptionChange(
-                    "includeStudentTypeChart",
-                    checked as boolean
-                  )
-                }
-              />
-              <Label htmlFor="studentTypeChart" className="text-sm">
-                Student Type Distribution Chart
-              </Label>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="performanceChart"
-                checked={options.includePerformanceChart}
-                onCheckedChange={(checked) =>
-                  handleOptionChange(
-                    "includePerformanceChart",
-                    checked as boolean
-                  )
-                }
-              />
-              <Label htmlFor="performanceChart" className="text-sm">
-                Performance by Student Type Chart
-              </Label>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="radarChart"
-                checked={options.includeRadarChart}
-                onCheckedChange={(checked) =>
-                  handleOptionChange("includeRadarChart", checked as boolean)
-                }
-              />
-              <Label htmlFor="radarChart" className="text-sm">
-                Skills Radar Chart
-              </Label>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="timeChart"
-                checked={options.includeTimeChart}
-                onCheckedChange={(checked) =>
-                  handleOptionChange("includeTimeChart", checked as boolean)
-                }
-              />
-              <Label htmlFor="timeChart" className="text-sm">
-                Performance Over Time Chart
-              </Label>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="detailedScores"
-                checked={options.includeDetailedScores}
-                onCheckedChange={(checked) =>
-                  handleOptionChange(
-                    "includeDetailedScores",
-                    checked as boolean
-                  )
-                }
-              />
-              <Label htmlFor="detailedScores" className="text-sm">
-                Detailed Score Table
-              </Label>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="feedback"
-                checked={options.includeFeedback}
-                onCheckedChange={(checked) =>
-                  handleOptionChange("includeFeedback", checked as boolean)
-                }
-              />
-              <Label htmlFor="feedback" className="text-sm">
-                Detailed Feedback Section
-              </Label>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-4">
-            <Button
-              onClick={() => onDownload(options)}
-              disabled={isDownloading}
-              className="w-full"
-            >
-              {isDownloading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Generating Report...
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4 mr-2" />
-                  Generate & Download PDF
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
+} 

@@ -1,4 +1,4 @@
-import Agents from "@/components/create/agents/Agents";
+import Agents from "@/components/management/agents/Agents";
 import { renderWithProviders } from "@/mocks/utils";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -11,8 +11,8 @@ vi.mock("@/utils/mutations/agents/delete-agent", () => ({
   deleteAgent: vi.fn(),
 }));
 
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { deleteAgent } from "@/utils/mutations/agents/delete-agent";
+import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 
 const mockAgents = [
   {
@@ -73,7 +73,9 @@ describe("Agents Component", () => {
     renderComponent();
     await waitFor(() => {
       expect(
-        screen.getByText("No agents found. Create your first agent to get started.")
+        screen.getByText(
+          "No agents found. Create your first agent to get started."
+        )
       ).toBeInTheDocument();
     });
   });

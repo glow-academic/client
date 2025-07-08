@@ -226,7 +226,7 @@ export default function Cohort({ cohortId }: CohortProps) {
           ? "Cohort updated successfully!"
           : "Cohort created successfully!"
       );
-      router.push(`/management/cohorts`);
+      router.push(`/create/cohorts`);
     } catch (error) {
       const targetCohortId = cohortId || editingCohortId;
       toast.error(

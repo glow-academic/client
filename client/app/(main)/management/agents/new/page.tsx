@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import NewAgent from "@/components/create/agents/NewAgent";
+import NewAgent from "@/components/management/agents/NewAgent";
 
 import type { Metadata } from "next";
 

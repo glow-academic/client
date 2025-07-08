@@ -159,7 +159,7 @@ export default function Agent({
         toast.success("Agent created successfully!");
       }
 
-      router.push("/create/agents");
+      router.push("/management/agents");
     } catch (error) {
       toast.error(
         `Failed to ${isEditMode ? "update" : "create"} agent: ${error}`
@@ -206,7 +206,7 @@ export default function Agent({
             The agent you're looking for doesn't exist.
           </p>
         </div>
-        <Button onClick={() => router.push("/create/agents")}>
+        <Button onClick={() => router.push("/management/agents")}>
           Back to Agents
         </Button>
       </div>

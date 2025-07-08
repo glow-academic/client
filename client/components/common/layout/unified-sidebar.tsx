@@ -207,9 +207,9 @@ export function UnifiedSidebar({
             section: "classes",
           },
           {
-            title: "Agents",
+            title: "Cohorts",
             url: "#",
-            section: "agents",
+            section: "cohorts",
           },
           {
             title: "Scenarios",
@@ -241,11 +241,11 @@ export function UnifiedSidebar({
         section: "staff",
       });
 
-      // Cohorts - available for admin
+      // Agents - available for admin
       managementItems.push({
-        title: "Cohorts",
+        title: "Agents",
         url: "#",
-        section: "cohorts",
+        section: "agents",
       });
 
       // Models - available for admin

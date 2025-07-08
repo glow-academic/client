@@ -94,62 +94,62 @@ CREATE TABLE simulation_chat_grades (
 -- ============================================================================
 
 -- Insert Default Practice Simulations (single focused for aggressive, happy, and confused)
-INSERT INTO simulations (id, title, description, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Aggressive Practice', 'Practice simulation for handling aggressive student interactions', '1a19da05-aaaa-bbbb-cccc-555555555555', NULL, ARRAY['aaaaaaaa-1111-2222-3333-444444444444']::UUID[], true),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Happy Practice', 'Practice simulation for handling happy student interactions', '1a19da05-aaaa-bbbb-cccc-555555555555', NULL, ARRAY['bbbbbbbb-1111-2222-3333-444444444444']::UUID[], true),
-  ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'Confused Practice', 'Practice simulation for handling confused student interactions', '1a19da05-aaaa-bbbb-cccc-555555555555', NULL, ARRAY['cccccccc-1111-2222-3333-444444444444']::UUID[], true);
+INSERT INTO simulations (id, title, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Aggressive Practice', '33333333-3333-3333-3333-333333333333', NULL, ARRAY['aaaaaaaa-1111-2222-3333-444444444444']::UUID[], true),
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Happy Practice', '33333333-3333-3333-3333-333333333333', NULL, ARRAY['bbbbbbbb-1111-2222-3333-444444444444']::UUID[], true),
+  ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'Confused Practice', '33333333-3333-3333-3333-333333333333', NULL, ARRAY['cccccccc-1111-2222-3333-444444444444']::UUID[], true);
 
 -- ============================================================================
 -- FALL 2025 W1 TRAINING (BEGINNER) SIMULATIONS
 -- ============================================================================
 
-INSERT INTO simulations (id, title, description, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
-  ('f25w1b-s01-aaaa-bbbb-cccc-dddddddd', 'Basic Student Interaction - Arrays', 'Practice fundamental student interaction skills while helping with array-related programming concepts. Focus on building confidence with basic tutoring scenarios.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w1b01-aaaa-bbbb-cccc-111111111111', 'f25w1b02-aaaa-bbbb-cccc-222222222222', 'f25w1b03-aaaa-bbbb-cccc-333333333333']::UUID[], false),
-  ('f25w1b-s02-aaaa-bbbb-cccc-dddddddd', 'Handling Confused Students - Loops', 'Develop skills for working with confused students while covering loop concepts. Learn to break down complex problems into manageable steps.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w1b04-aaaa-bbbb-cccc-444444444444', 'f25w1b05-aaaa-bbbb-cccc-555555555555', 'f25w1b06-aaaa-bbbb-cccc-666666666666']::UUID[], false),
-  ('f25w1b-s03-aaaa-bbbb-cccc-dddddddd', 'Time Management Practice - File I/O', 'Practice managing time effectively while helping students with file input/output concepts. Balance thoroughness with efficiency.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w1b07-aaaa-bbbb-cccc-777777777777', 'f25w1b08-aaaa-bbbb-cccc-888888888888', 'f25w1b09-aaaa-bbbb-cccc-999999999999']::UUID[], false);
+INSERT INTO simulations (id, title, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
+  ('f2511b01-aaaa-bbbb-cccc-dddddddddddd', 'Basic Student Interaction - Arrays', '33333333-3333-3333-3333-333333333333', 900, ARRAY['f2511b01-aaaa-bbbb-cccc-111111111111', 'f2511b02-aaaa-bbbb-cccc-222222222222', 'f2511b03-aaaa-bbbb-cccc-333333333333']::UUID[], false),
+  ('f2511b02-aaaa-bbbb-cccc-dddddddddddd', 'Handling Confused Students - Loops', '33333333-3333-3333-3333-333333333333', 900, ARRAY['f2511b04-aaaa-bbbb-cccc-444444444444', 'f2511b05-aaaa-bbbb-cccc-555555555555', 'f2511b06-aaaa-bbbb-cccc-666666666666']::UUID[], false),
+  ('f2511b03-aaaa-bbbb-cccc-dddddddddddd', 'Time Management Practice - File I/O', '33333333-3333-3333-3333-333333333333', 900, ARRAY['f2511b07-aaaa-bbbb-cccc-777777777777', 'f2511b08-aaaa-bbbb-cccc-888888888888', 'f2511b09-aaaa-bbbb-cccc-999999999999']::UUID[], false);
 
 -- ============================================================================
 -- FALL 2025 W1 TRAINING (ADVANCED) SIMULATIONS
 -- ============================================================================
 
-INSERT INTO simulations (id, title, description, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
-  ('f25w1a-s01-aaaa-bbbb-cccc-dddddddd', 'Graph Theory Tutoring - DFS/BFS', 'Handle challenging graph theory concepts with potentially frustrated students. Practice de-escalation while maintaining technical accuracy.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w1a01-aaaa-bbbb-cccc-111111111111', 'f25w1a02-aaaa-bbbb-cccc-222222222222', 'f25w1a03-aaaa-bbbb-cccc-333333333333']::UUID[], false),
-  ('f25w1a-s02-aaaa-bbbb-cccc-dddddddd', 'Mathematical Induction Practice', 'Guide students through complex mathematical induction problems. Develop skills for handling abstract mathematical concepts with struggling students.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w1a04-aaaa-bbbb-cccc-444444444444', 'f25w1a05-aaaa-bbbb-cccc-555555555555', 'f25w1a06-aaaa-bbbb-cccc-666666666666']::UUID[], false),
-  ('f25w1a-s03-aaaa-bbbb-cccc-dddddddd', 'Advanced Data Structures - Trees', 'Work with advanced tree data structures while managing impatient or frustrated students. Practice maintaining composure under pressure.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w1a07-aaaa-bbbb-cccc-777777777777', 'f25w1a08-aaaa-bbbb-cccc-888888888888', 'f25w1a09-aaaa-bbbb-cccc-999999999999']::UUID[], false);
+INSERT INTO simulations (id, title, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
+  ('f2511a01-aaaa-bbbb-cccc-dddddddddddd', 'Graph Theory Tutoring - DFS/BFS', '33333333-3333-3333-3333-333333333333', 900, ARRAY['f2511a01-aaaa-bbbb-cccc-111111111111', 'f2511a02-aaaa-bbbb-cccc-222222222222', 'f2511a03-aaaa-bbbb-cccc-333333333333']::UUID[], false),
+  ('f2511a02-aaaa-bbbb-cccc-dddddddddddd', 'Mathematical Induction Practice', '33333333-3333-3333-3333-333333333333', 900, ARRAY['f2511a04-aaaa-bbbb-cccc-444444444444', 'f2511a05-aaaa-bbbb-cccc-555555555555', 'f2511a06-aaaa-bbbb-cccc-666666666666']::UUID[], false),
+  ('f2511a03-aaaa-bbbb-cccc-dddddddddddd', 'Advanced Data Structures - Trees', '33333333-3333-3333-3333-333333333333', 900, ARRAY['f2511a07-aaaa-bbbb-cccc-777777777777', 'f2511a08-aaaa-bbbb-cccc-888888888888', 'f2511a09-aaaa-bbbb-cccc-999999999999']::UUID[], false);
 
 -- ============================================================================
 -- FALL 2025 W2 TRAINING (CS 1XX/2XX) SIMULATIONS - DOCUMENT BASED
 -- ============================================================================
 
-INSERT INTO simulations (id, title, description, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
-  ('f25w2l-s01-aaaa-bbbb-cccc-dddddddd', 'Coding Project OOP', 'Help students with object-oriented programming projects using course documents. Practice referencing materials while maintaining student engagement.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w2l01-aaaa-bbbb-cccc-111111111111', 'f25w2l02-aaaa-bbbb-cccc-222222222222', 'f25w2l03-aaaa-bbbb-cccc-333333333333']::UUID[], false),
-  ('f25w2l-s02-aaaa-bbbb-cccc-dddddddd', 'Basic Induction & Proofs', 'Guide students through fundamental proof techniques using course materials. Develop skills for explaining abstract mathematical concepts clearly.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w2l04-aaaa-bbbb-cccc-444444444444', 'f25w2l05-aaaa-bbbb-cccc-555555555555', 'f25w2l06-aaaa-bbbb-cccc-666666666666']::UUID[], false),
-  ('f25w2l-s03-aaaa-bbbb-cccc-dddddddd', 'Data Structures and Algorithms', 'Work with students on fundamental data structures and algorithms using course documents. Practice balancing theory with practical implementation.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w2l07-aaaa-bbbb-cccc-777777777777', 'f25w2l08-aaaa-bbbb-cccc-888888888888', 'f25w2l09-aaaa-bbbb-cccc-999999999999']::UUID[], false);
+INSERT INTO simulations (id, title, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
+  ('f2522101-aaaa-bbbb-cccc-dddddddddddd', 'Coding Project OOP', '33333333-3333-3333-3333-333333333333', 900, ARRAY['f2522101-aaaa-bbbb-cccc-111111111111', 'f2522102-aaaa-bbbb-cccc-222222222222', 'f2522103-aaaa-bbbb-cccc-333333333333']::UUID[], false),
+  ('f2522102-aaaa-bbbb-cccc-dddddddddddd', 'Basic Induction & Proofs', '33333333-3333-3333-3333-333333333333', 900, ARRAY['f2522104-aaaa-bbbb-cccc-444444444444', 'f2522105-aaaa-bbbb-cccc-555555555555', 'f2522106-aaaa-bbbb-cccc-666666666666']::UUID[], false),
+  ('f2522103-aaaa-bbbb-cccc-dddddddddddd', 'Data Structures and Algorithms', '33333333-3333-3333-3333-333333333333', 900, ARRAY['f2522107-aaaa-bbbb-cccc-777777777777', 'f2522108-aaaa-bbbb-cccc-888888888888', 'f2522109-aaaa-bbbb-cccc-999999999999']::UUID[], false);
 
 -- ============================================================================
 -- FALL 2025 W2 TRAINING (CS 3XX/4XX) SIMULATIONS - DOCUMENT BASED
 -- ============================================================================
 
-INSERT INTO simulations (id, title, description, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
-  ('f25w2h-s01-aaaa-bbbb-cccc-dddddddd', 'Analysis of Algorithms', 'Handle advanced algorithm analysis with upper-level students using course documents. Practice managing high-stakes academic pressure and complex theoretical concepts.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w2h01-aaaa-bbbb-cccc-111111111111', 'f25w2h02-aaaa-bbbb-cccc-222222222222', 'f25w2h03-aaaa-bbbb-cccc-333333333333']::UUID[], false),
-  ('f25w2h-s02-aaaa-bbbb-cccc-dddddddd', 'Networking', 'Support students with networking concepts and implementation using course materials. Develop skills for explaining complex systems concepts clearly.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w2h04-aaaa-bbbb-cccc-444444444444', 'f25w2h05-aaaa-bbbb-cccc-555555555555', 'f25w2h06-aaaa-bbbb-cccc-666666666666']::UUID[], false),
-  ('f25w2h-s03-aaaa-bbbb-cccc-dddddddd', 'Machine Learning', 'Guide students through machine learning concepts using course documents. Practice handling advanced mathematical concepts with potentially frustrated students.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w2h07-aaaa-bbbb-cccc-777777777777', 'f25w2h08-aaaa-bbbb-cccc-888888888888', 'f25w2h09-aaaa-bbbb-cccc-999999999999']::UUID[], false);
+INSERT INTO simulations (id, title, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
+  ('f2522201-aaaa-bbbb-cccc-dddddddddddd', 'Analysis of Algorithms', '33333333-3333-3333-3333-333333333333', 900, ARRAY['f2522201-aaaa-bbbb-cccc-111111111111', 'f2522202-aaaa-bbbb-cccc-222222222222', 'f2522203-aaaa-bbbb-cccc-333333333333']::UUID[], false),
+  ('f2522202-aaaa-bbbb-cccc-dddddddddddd', 'Networking', '33333333-3333-3333-3333-333333333333', 900, ARRAY['f2522204-aaaa-bbbb-cccc-444444444444', 'f2522205-aaaa-bbbb-cccc-555555555555', 'f2522206-aaaa-bbbb-cccc-666666666666']::UUID[], false),
+  ('f2522203-aaaa-bbbb-cccc-dddddddddddd', 'Machine Learning', '33333333-3333-3333-3333-333333333333', 900, ARRAY['f2522207-aaaa-bbbb-cccc-777777777777', 'f2522208-aaaa-bbbb-cccc-888888888888', 'f2522209-aaaa-bbbb-cccc-999999999999']::UUID[], false);
 
 -- ============================================================================
 -- FALL 2025 W3 COMMUNICATION TRAINING SIMULATIONS
 -- ============================================================================
 
-INSERT INTO simulations (id, title, description, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
-  ('f25w3c-s01-aaaa-bbbb-cccc-dddddddd', 'Campus Belonging & Identity', 'Address sensitive topics related to campus identity and belonging. Practice empathetic communication while maintaining professional boundaries.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w3c01-aaaa-bbbb-cccc-111111111111', 'f25w3c02-aaaa-bbbb-cccc-222222222222', 'f25w3c03-aaaa-bbbb-cccc-333333333333']::UUID[], false),
-  ('f25w3c-s02-aaaa-bbbb-cccc-dddddddd', 'Academic Preparedness & Equity', 'Handle conversations about academic preparedness and equity issues. Develop skills for supportive communication with struggling students.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w3c04-aaaa-bbbb-cccc-444444444444', 'f25w3c05-aaaa-bbbb-cccc-555555555555', 'f25w3c06-aaaa-bbbb-cccc-666666666666']::UUID[], false),
-  ('f25w3c-s03-aaaa-bbbb-cccc-dddddddd', 'Resource Awareness & Cultural Sensitivity', 'Navigate conversations about resource access and cultural sensitivity. Practice inclusive communication and appropriate referral techniques.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w3c07-aaaa-bbbb-cccc-777777777777', 'f25w3c08-aaaa-bbbb-cccc-888888888888', 'f25w3c09-aaaa-bbbb-cccc-999999999999']::UUID[], false);
+INSERT INTO simulations (id, title, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
+  ('f2533c01-aaaa-bbbb-cccc-dddddddddddd', 'Campus Belonging & Identity', '33333333-3333-3333-3333-333333333333', 900, ARRAY['f2533c01-aaaa-bbbb-cccc-111111111111', 'f2533c02-aaaa-bbbb-cccc-222222222222', 'f2533c03-aaaa-bbbb-cccc-333333333333']::UUID[], false),
+  ('f2533c02-aaaa-bbbb-cccc-dddddddddddd', 'Academic Preparedness & Equity', '33333333-3333-3333-3333-333333333333', 900, ARRAY['f2533c04-aaaa-bbbb-cccc-444444444444', 'f2533c05-aaaa-bbbb-cccc-555555555555', 'f2533c06-aaaa-bbbb-cccc-666666666666']::UUID[], false),
+  ('f2533c03-aaaa-bbbb-cccc-dddddddddddd', 'Resource Awareness & Cultural Sensitivity', '33333333-3333-3333-3333-333333333333', 900, ARRAY['f2533c07-aaaa-bbbb-cccc-777777777777', 'f2533c08-aaaa-bbbb-cccc-888888888888', 'f2533c09-aaaa-bbbb-cccc-999999999999']::UUID[], false);
 
 -- ============================================================================
 -- FALL 2025 TRAINING COHORTS
 -- ============================================================================
 
 INSERT INTO cohorts (id, title, description, profile_ids, active) VALUES
-  ('f25w1b-cohort-aaaa-bbbb-cccc-dddd', 'Fall 2025 W1 Training (Beginner)', 'Foundational TA training focusing on basic student interaction skills, handling confused students, and time management. Designed for new TAs with limited tutoring experience.',
+  ('f2511b00-aaaa-bbbb-cccc-dddddddddddd', 'Fall 2025 W1 Training (Beginner)', 'Foundational TA training focusing on basic student interaction skills, handling confused students, and time management. Designed for new TAs with limited tutoring experience.',
    ARRAY[
      -- Instructors supervising CS 180 and CS 182 courses
      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-aaaa-bbbb-cccc-111111111111', '33333333-aaaa-bbbb-cccc-333333333333',
@@ -161,7 +161,7 @@ INSERT INTO cohorts (id, title, description, profile_ids, active) VALUES
      'c5180001-1111-2222-3333-444444444444', 'c5180002-1111-2222-3333-444444444444', '99b90118-7b9e-4e12-8e81-d7ccc2916601'
    ]::UUID[], true),
 
-  ('f25w1a-cohort-aaaa-bbbb-cccc-dddd', 'Fall 2025 W1 Training (Advanced)', 'Advanced TA training focusing on complex technical concepts, handling frustrated students, and maintaining composure under pressure. For experienced TAs ready for challenging scenarios.',
+  ('f2511a00-aaaa-bbbb-cccc-dddddddddddd', 'Fall 2025 W1 Training (Advanced)', 'Advanced TA training focusing on complex technical concepts, handling frustrated students, and maintaining composure under pressure. For experienced TAs ready for challenging scenarios.',
    ARRAY[
      -- Instructors supervising CS 251 and CS 381 courses
      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '44444444-aaaa-bbbb-cccc-444444444444', '55555555-aaaa-bbbb-cccc-555555555555',
@@ -172,7 +172,7 @@ INSERT INTO cohorts (id, title, description, profile_ids, active) VALUES
      'c5abc003-aaaa-bbbb-cccc-dddddddddddd', 'c5abc004-aaaa-bbbb-cccc-dddddddddddd', '99b90118-7b9e-4e12-8e81-d7ccc2916610'
    ]::UUID[], true),
 
-  ('f25w2l-cohort-aaaa-bbbb-cccc-dddd', 'Fall 2025 W2 Training (CS 1XX/2XX)', 'Document-based training for lower-level CS courses. Focus on using course materials effectively while maintaining student engagement and explaining foundational concepts clearly.',
+  ('f2522100-aaaa-bbbb-cccc-dddddddddddd', 'Fall 2025 W2 Training (CS 1XX/2XX)', 'Document-based training for lower-level CS courses. Focus on using course materials effectively while maintaining student engagement and explaining foundational concepts clearly.',
    ARRAY[
      -- Instructors for CS 180, CS 182, and CS 251
      '11111111-aaaa-bbbb-cccc-111111111111', '22222222-aaaa-bbbb-cccc-222222222222', '33333333-aaaa-bbbb-cccc-333333333333',
@@ -185,7 +185,7 @@ INSERT INTO cohorts (id, title, description, profile_ids, active) VALUES
      'c5abc002-aaaa-bbbb-cccc-dddddddddddd', '99b90118-7b9e-4e12-8e81-d7ccc2916603', '99b90118-7b9e-4e12-8e81-d7ccc2916605'
    ]::UUID[], true),
 
-  ('f25w2h-cohort-aaaa-bbbb-cccc-dddd', 'Fall 2025 W2 Training (CS 3XX/4XX)', 'Document-based training for upper-level CS courses. Advanced technical communication skills, handling high-stakes academic pressure, and complex theoretical concepts.',
+  ('f2522200-aaaa-bbbb-cccc-dddddddddddd', 'Fall 2025 W2 Training (CS 3XX/4XX)', 'Document-based training for upper-level CS courses. Advanced technical communication skills, handling high-stakes academic pressure, and complex theoretical concepts.',
    ARRAY[
      -- Instructors for advanced courses
      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '22222222-aaaa-bbbb-cccc-222222222222', '55555555-aaaa-bbbb-cccc-555555555555',
@@ -198,7 +198,7 @@ INSERT INTO cohorts (id, title, description, profile_ids, active) VALUES
      '99b90118-7b9e-4e12-8e81-d7ccc2916610'
    ]::UUID[], true),
 
-  ('f25w3c-cohort-aaaa-bbbb-cccc-dddd', 'Fall 2025 W3 Communication Training', 'Specialized training for sensitive communication topics including campus belonging, academic equity, and cultural sensitivity. Essential skills for all TAs working with diverse student populations.',
+  ('f2533c00-aaaa-bbbb-cccc-dddddddddddd', 'Fall 2025 W3 Communication Training', 'Specialized training for sensitive communication topics including campus belonging, academic equity, and cultural sensitivity. Essential skills for all TAs working with diverse student populations.',
    ARRAY[
      -- All instructors for comprehensive communication training
      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-aaaa-bbbb-cccc-111111111111', '22222222-aaaa-bbbb-cccc-222222222222',

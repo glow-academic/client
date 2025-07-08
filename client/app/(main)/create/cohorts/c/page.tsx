@@ -1,5 +1,5 @@
 /**
- * app/(main)/management/cohorts/c/page.tsx
+ * app/(main)/create/cohorts/c/page.tsx
  * Cohort edit page for the cohorts section.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
@@ -15,5 +15,5 @@ export const metadata: Metadata = {
 };
 
 export default function CohortEditPage() {
-  return redirect("/management/cohorts");
+  return redirect("/create/cohorts");
 }

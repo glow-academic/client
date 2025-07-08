@@ -81,6 +81,10 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         const modelData = await getModel(id);
         return modelData?.name || `Model ${id.substring(0, 8)}...`;
 
+      case "report":
+        const reportProfileData = await getProfile(id);
+        return reportProfileData?.firstName + " " + reportProfileData?.lastName || `Profile ${id.substring(0, 8)}...`;
+
       default:
         return id.length > 10 ? `${id.substring(0, 8)}...` : id;
     }
@@ -141,6 +145,8 @@ export const generateEnhancedBreadcrumbs = async (
         context = "profile";
       } else if (prevSegment === "r" && segments.includes("rubrics")) {
         context = "rubric";
+      } else if (prevSegment === "p" && segments.includes("reports")) {
+        context = "report";
       }
 
       if (context) {
@@ -152,9 +158,6 @@ export const generateEnhancedBreadcrumbs = async (
         // Main sections
         case "home":
           title = "Home";
-          break;
-        case "growth":
-          title = "Growth";
           break;
         case "history":
           title = "History";
@@ -253,9 +256,6 @@ const getSectionFromSegments = (segments: string[]): string => {
   switch (first) {
     case "home":
       return "home";
-
-    case "growth":
-      return "growth";
 
     case "history":
       return "history";
@@ -377,9 +377,6 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
       // Main sections
       case "home":
         title = "Home";
-        break;
-      case "growth":
-        title = "Growth";
         break;
       case "history":
         title = "History";

@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
-import Agents from "@/components/create/agents/Agents";
+import Agents from "@/components/management/agents/Agents";
 
 import type { Metadata } from "next";
 

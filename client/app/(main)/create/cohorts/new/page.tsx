@@ -1,11 +1,11 @@
 /**
- * app/(main)/management/cohorts/new/page.tsx
+ * app/(main)/create/cohorts/new/page.tsx
  * New cohort page for the cohorts section.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
 
-import NewCohort from "@/components/management/cohorts/NewCohort";
+import NewCohort from "@/components/create/cohorts/NewCohort";
 
 import type { Metadata } from "next";
 

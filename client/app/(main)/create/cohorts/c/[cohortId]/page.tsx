@@ -1,11 +1,11 @@
 /**
- * app/(main)/management/cohorts/c/[cohortId]/page.tsx
+ * app/(main)/create/cohorts/c/[cohortId]/page.tsx
  * Cohort edit page for the cohort.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
 
-import CohortEdit from "@/components/management/cohorts/CohortEdit";
+import CohortEdit from "@/components/create/cohorts/CohortEdit";
 import { use } from "react";
 
 import type { Metadata, ResolvingMetadata } from "next";

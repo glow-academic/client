@@ -1,61 +1,45 @@
-import { render } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import NewCohort from '@/components/management/cohorts/NewCohort';
+import NewCohort from "@/components/create/cohorts/NewCohort";
+import { render } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock external dependencies
 
-
-
-
-describe('NewCohort', () => {
+describe("NewCohort", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
   });
 
-  
-
-  describe('Rendering', () => {
-    it('should render without crashing', () => {
+  describe("Rendering", () => {
+    it("should render without crashing", () => {
       // TODO: Implement basic rendering test for NewCohort
       render(<NewCohort />);
-      
+
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for NewCohort
     });
 
-    
-
-    it('should have correct accessibility attributes', () => {
+    it("should have correct accessibility attributes", () => {
       // TODO: Test accessibility features
-      
+
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Accessibility testing for NewCohort
     });
   });
 
-  
-
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it('should handle edge cases gracefully', () => {
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
       // TODO: Test edge cases and error scenarios
-      
+
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Edge cases test for NewCohort
     });
-
-    
   });
 });
 
 /*
  * Component Analysis for NewCohort:
  * Path: management/cohorts/NewCohort.tsx
- * 
+ *
  * Features detected:
  * - Default export: true
  * - Named exports: None
@@ -69,20 +53,20 @@ describe('NewCohort', () => {
  * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
- * 
+ *
  * TODO: Implement the failing tests above with actual test logic
- * 
+ *
  * Example implementations:
- * 
+ *
  * Basic rendering:
  * render(<NewCohort />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
+ *
  * Props testing:
  * const props = { ... };
  * render(<NewCohort {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
+ *
  * User interaction:
  * const button = screen.getByRole('button');
  * await user.click(button);

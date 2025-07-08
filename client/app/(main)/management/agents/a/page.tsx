@@ -15,5 +15,5 @@ export const metadata: Metadata = {
 };
 
 export default function AgentPage() {
-  return redirect("/create/agents/new");
+  return redirect("/management/agents/new");
 }
