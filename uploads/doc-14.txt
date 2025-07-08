@@ -1,0 +1,21 @@
+// =========================================
+// Socket Programming Lab: Client-Server Challenge
+// =========================================
+
+Assignment Summary:
+Build a basic client-server system using TCP sockets that exchanges messages reliably.
+
+Client:
+- Connect to server using IP and port
+- Send user-generated message
+- Wait for and print server response
+
+Server:
+- Bind to port, listen for connection
+- Accept client socket, read message
+- Respond with acknowledgment
+
+Debug Tips:
+- Ensure both client and server use the same protocol and port
+- Handle exceptions (e.g. connection reset)
+- Use Wireshark or logging to trace packets
