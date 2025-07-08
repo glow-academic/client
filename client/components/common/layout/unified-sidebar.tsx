@@ -221,11 +221,6 @@ export function UnifiedSidebar({
             url: "#",
             section: "simulations",
           },
-          {
-            title: "Rubrics",
-            url: "#",
-            section: "rubrics",
-          },
         ],
       });
     }

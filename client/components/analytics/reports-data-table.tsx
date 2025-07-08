@@ -61,6 +61,8 @@ export function ReportsDataTable({
       totalAttempts: false,
       lastActivity: false,
       completionRate: false,
+      avgTimeMinutes: false,
+      passRate: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
