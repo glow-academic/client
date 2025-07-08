@@ -619,65 +619,73 @@ export default function Reports() {
       <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-[40px] border-r">#</TableHead>
-              <TableHead className="min-w-[120px] border-r">Name</TableHead>
-              <TableHead className="w-[80px] border-r">Alias</TableHead>
-              <TableHead className="w-[60px] text-center border-r">
+            <TableRow className="h-8">
+              <TableHead className="w-[30px] border-r px-1 py-1 text-xs">
+                #
+              </TableHead>
+              <TableHead className="min-w-[100px] border-r px-2 py-1 text-xs">
+                Name
+              </TableHead>
+              <TableHead className="w-[60px] border-r px-1 py-1 text-xs">
+                Alias
+              </TableHead>
+              <TableHead className="w-[50px] text-center border-r px-1 py-1 text-xs">
                 Score
               </TableHead>
-              <TableHead className="w-[70px] text-center border-r">
+              <TableHead className="w-[60px] text-center border-r px-1 py-1 text-xs">
                 Sessions
               </TableHead>
-              <TableHead className="w-[60px] text-center border-r">
+              <TableHead className="w-[45px] text-center border-r px-1 py-1 text-xs">
                 Pass
               </TableHead>
-              <TableHead className="w-[60px] text-center border-r">
+              <TableHead className="w-[45px] text-center border-r px-1 py-1 text-xs">
                 Time
               </TableHead>
-              <TableHead className="w-[70px] text-center border-r">
+              <TableHead className="w-[55px] text-center border-r px-1 py-1 text-xs">
                 Complete
               </TableHead>
-              <TableHead className="w-[60px] text-center border-r">
+              <TableHead className="w-[45px] text-center border-r px-1 py-1 text-xs">
                 Trend
               </TableHead>
-              <TableHead className="w-[80px] text-center border-r">
+              <TableHead className="w-[65px] text-center border-r px-1 py-1 text-xs">
                 Weakest
               </TableHead>
-              <TableHead className="w-[80px] text-center border-r">
+              <TableHead className="w-[65px] text-center border-r px-1 py-1 text-xs">
                 Strongest
               </TableHead>
-              <TableHead className="w-[90px] text-center border-r">
+              <TableHead className="w-[70px] text-center border-r px-1 py-1 text-xs">
                 Last Activity
               </TableHead>
-              <TableHead className="w-[70px] text-center border-r">
+              <TableHead className="w-[55px] text-center border-r px-1 py-1 text-xs">
                 Scenarios
               </TableHead>
-              <TableHead className="w-[70px] text-center border-r">
-                Msgs/Session
+              <TableHead className="w-[55px] text-center border-r px-1 py-1 text-xs">
+                Msgs/Sess
               </TableHead>
-              <TableHead className="w-[70px] text-center border-r">
+              <TableHead className="w-[55px] text-center border-r px-1 py-1 text-xs">
                 Resp Time
               </TableHead>
-              <TableHead className="w-[70px] text-center border-r">
+              <TableHead className="w-[55px] text-center border-r px-1 py-1 text-xs">
                 Feedback
               </TableHead>
-              <TableHead className="w-[60px] text-center border-r">
+              <TableHead className="w-[45px] text-center border-r px-1 py-1 text-xs">
                 Retry %
               </TableHead>
-              <TableHead className="w-[70px] text-center border-r">
+              <TableHead className="w-[50px] text-center border-r px-1 py-1 text-xs">
                 Recent
               </TableHead>
-              <TableHead className="w-[60px] text-center border-r">
+              <TableHead className="w-[45px] text-center border-r px-1 py-1 text-xs">
                 Peak
               </TableHead>
-              <TableHead className="w-[80px] text-center border-r">
+              <TableHead className="w-[65px] text-center border-r px-1 py-1 text-xs">
                 Consistency
               </TableHead>
-              <TableHead className="w-[60px] text-center border-r">
+              <TableHead className="w-[50px] text-center border-r px-1 py-1 text-xs">
                 Status
               </TableHead>
-              <TableHead className="w-[50px]">Action</TableHead>
+              <TableHead className="w-[45px] px-1 py-1 text-xs">
+                Action
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -685,41 +693,45 @@ export default function Reports() {
               sortedFilteredAndSearchedTAs.map((ta, index) => (
                 <TableRow
                   key={ta.id}
-                  className={`${
+                  className={`h-8 ${
                     ta.isStruggling
                       ? "bg-orange-50/50 border-orange-200"
                       : "hover:bg-muted/30"
                   } transition-colors`}
                 >
                   {/* Rank */}
-                  <TableCell className="font-medium text-center border-r">
-                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary font-bold text-xs">
+                  <TableCell className="font-medium text-center border-r px-1 py-1">
+                    <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary font-bold text-[10px]">
                       {index + 1}
                     </div>
                   </TableCell>
 
                   {/* Name */}
-                  <TableCell className="border-r">
+                  <TableCell className="border-r px-2 py-1">
                     <div className="flex items-center gap-1">
                       <div
-                        className="font-medium text-sm cursor-pointer hover:text-primary hover:underline"
+                        className="font-medium text-xs cursor-pointer hover:text-primary hover:underline truncate"
                         onClick={() => handleViewReport(ta.id)}
+                        title={`${ta.firstName} ${ta.lastName}`}
                       >
                         {ta.firstName} {ta.lastName}
                       </div>
                       {ta.isStruggling && (
-                        <AlertTriangle className="h-3 w-3 text-orange-600 flex-shrink-0" />
+                        <AlertTriangle className="h-2.5 w-2.5 text-orange-600 flex-shrink-0" />
                       )}
                     </div>
                   </TableCell>
 
                   {/* Alias */}
-                  <TableCell className="text-sm text-muted-foreground border-r">
+                  <TableCell
+                    className="text-xs text-muted-foreground border-r px-1 py-1 truncate"
+                    title={ta.username}
+                  >
                     {ta.username}
                   </TableCell>
 
                   {/* Score */}
-                  <TableCell className="text-center border-r">
+                  <TableCell className="text-center border-r px-1 py-1">
                     <Badge
                       variant={
                         ta.avgScore >= 80
@@ -728,62 +740,65 @@ export default function Reports() {
                             ? "secondary"
                             : "destructive"
                       }
-                      className="text-xs font-medium px-1 py-0"
+                      className="text-[10px] font-medium px-1 py-0 h-4"
                     >
                       {ta.hasNoSessions ? "N/A" : `${ta.avgScore}%`}
                     </Badge>
                   </TableCell>
 
                   {/* Sessions */}
-                  <TableCell className="text-center border-r">
-                    <div className="text-xs font-medium">
+                  <TableCell className="text-center border-r px-1 py-1">
+                    <div className="text-[10px] font-medium">
                       {ta.completedSessions}/{ta.totalSessions}
                     </div>
                   </TableCell>
 
                   {/* Pass Rate */}
-                  <TableCell className="text-center border-r">
-                    <div className="text-xs font-medium">
+                  <TableCell className="text-center border-r px-1 py-1">
+                    <div className="text-[10px] font-medium">
                       {ta.hasNoSessions ? "N/A" : `${ta.passRate}%`}
                     </div>
                   </TableCell>
 
                   {/* Avg Time */}
-                  <TableCell className="text-center border-r">
-                    <div className="text-xs font-medium">
+                  <TableCell className="text-center border-r px-1 py-1">
+                    <div className="text-[10px] font-medium">
                       {ta.hasNoSessions ? "N/A" : `${ta.avgTimeMinutes}m`}
                     </div>
                   </TableCell>
 
                   {/* Completion Rate */}
-                  <TableCell className="text-center border-r">
-                    <div className="text-xs font-medium">
+                  <TableCell className="text-center border-r px-1 py-1">
+                    <div className="text-[10px] font-medium">
                       {ta.completionRate}%
                     </div>
                   </TableCell>
 
                   {/* Trend */}
-                  <TableCell className="text-center border-r">
+                  <TableCell className="text-center border-r px-1 py-1">
                     {ta.trend === "improving" ? (
                       <div className="flex items-center justify-center text-green-600">
-                        <TrendingUp className="h-3 w-3" />
+                        <TrendingUp className="h-2.5 w-2.5" />
                       </div>
                     ) : ta.trend === "declining" ? (
                       <div className="flex items-center justify-center text-red-600">
-                        <TrendingDown className="h-3 w-3" />
+                        <TrendingDown className="h-2.5 w-2.5" />
                       </div>
                     ) : (
                       <div className="flex items-center justify-center text-gray-600">
-                        <ArrowUp className="h-3 w-3 rotate-90" />
+                        <ArrowUp className="h-2.5 w-2.5 rotate-90" />
                       </div>
                     )}
                   </TableCell>
 
                   {/* Weakest Skill */}
-                  <TableCell className="text-center border-r">
+                  <TableCell className="text-center border-r px-1 py-1">
                     {!ta.hasNoSessions && (
-                      <div className="text-xs">
-                        <div className="font-medium text-red-600 truncate">
+                      <div className="text-[10px]">
+                        <div
+                          className="font-medium text-red-600 truncate"
+                          title={ta.weakestSkill.skill}
+                        >
                           {ta.weakestSkill.skill}
                         </div>
                         <div className="text-red-500">
@@ -794,10 +809,13 @@ export default function Reports() {
                   </TableCell>
 
                   {/* Strongest Skill */}
-                  <TableCell className="text-center border-r">
+                  <TableCell className="text-center border-r px-1 py-1">
                     {!ta.hasNoSessions && (
-                      <div className="text-xs">
-                        <div className="font-medium text-green-600 truncate">
+                      <div className="text-[10px]">
+                        <div
+                          className="font-medium text-green-600 truncate"
+                          title={ta.strongestSkill.skill}
+                        >
                           {ta.strongestSkill.skill}
                         </div>
                         <div className="text-green-500">
@@ -808,75 +826,77 @@ export default function Reports() {
                   </TableCell>
 
                   {/* Last Activity */}
-                  <TableCell className="text-center border-r">
-                    <div className="text-xs font-medium flex items-center justify-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {ta.lastActivity
-                        ? new Date(ta.lastActivity).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                            }
-                          )
-                        : "Never"}
+                  <TableCell className="text-center border-r px-1 py-1">
+                    <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
+                      <Clock className="h-2.5 w-2.5" />
+                      <span className="truncate">
+                        {ta.lastActivity
+                          ? new Date(ta.lastActivity).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                              }
+                            )
+                          : "Never"}
+                      </span>
                     </div>
                   </TableCell>
 
                   {/* Scenarios Completed */}
-                  <TableCell className="text-center border-r">
-                    <div className="text-xs font-medium flex items-center justify-center gap-1">
-                      <Target className="h-3 w-3" />
+                  <TableCell className="text-center border-r px-1 py-1">
+                    <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
+                      <Target className="h-2.5 w-2.5" />
                       {ta.scenariosCompleted}
                     </div>
                   </TableCell>
 
                   {/* Messages Per Session */}
-                  <TableCell className="text-center border-r">
-                    <div className="text-xs font-medium flex items-center justify-center gap-1">
-                      <MessageCircle className="h-3 w-3" />
+                  <TableCell className="text-center border-r px-1 py-1">
+                    <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
+                      <MessageCircle className="h-2.5 w-2.5" />
                       {ta.hasNoSessions ? "N/A" : ta.messagesPerSession}
                     </div>
                   </TableCell>
 
                   {/* Response Time */}
-                  <TableCell className="text-center border-r">
-                    <div className="text-xs font-medium">
+                  <TableCell className="text-center border-r px-1 py-1">
+                    <div className="text-[10px] font-medium">
                       {ta.hasNoSessions ? "N/A" : `${ta.avgResponseTime}s`}
                     </div>
                   </TableCell>
 
                   {/* Feedback Score */}
-                  <TableCell className="text-center border-r">
-                    <div className="text-xs font-medium">
+                  <TableCell className="text-center border-r px-1 py-1">
+                    <div className="text-[10px] font-medium">
                       {ta.hasNoSessions ? "N/A" : `${ta.avgFeedbackScore}%`}
                     </div>
                   </TableCell>
 
                   {/* Retry Rate */}
-                  <TableCell className="text-center border-r">
-                    <div className="text-xs font-medium">
+                  <TableCell className="text-center border-r px-1 py-1">
+                    <div className="text-[10px] font-medium">
                       {ta.hasNoSessions ? "N/A" : `${ta.retryRate}%`}
                     </div>
                   </TableCell>
 
                   {/* Recent Performance */}
-                  <TableCell className="text-center border-r">
-                    <div className="text-xs font-medium">
+                  <TableCell className="text-center border-r px-1 py-1">
+                    <div className="text-[10px] font-medium">
                       {ta.hasNoSessions ? "N/A" : `${ta.recentPerformance}%`}
                     </div>
                   </TableCell>
 
                   {/* Peak Performance */}
-                  <TableCell className="text-center border-r">
-                    <div className="text-xs font-medium flex items-center justify-center gap-1">
-                      <Zap className="h-3 w-3" />
+                  <TableCell className="text-center border-r px-1 py-1">
+                    <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
+                      <Zap className="h-2.5 w-2.5" />
                       {ta.hasNoSessions ? "N/A" : `${ta.peakPerformance}%`}
                     </div>
                   </TableCell>
 
                   {/* Consistency Score */}
-                  <TableCell className="text-center border-r">
+                  <TableCell className="text-center border-r px-1 py-1">
                     <Badge
                       variant={
                         ta.consistencyScore >= 80
@@ -885,32 +905,32 @@ export default function Reports() {
                             ? "secondary"
                             : "destructive"
                       }
-                      className="text-xs font-medium px-1 py-0"
+                      className="text-[10px] font-medium px-1 py-0 h-4"
                     >
                       {ta.hasNoSessions ? "N/A" : `${ta.consistencyScore}%`}
                     </Badge>
                   </TableCell>
 
                   {/* Status */}
-                  <TableCell className="text-center border-r">
+                  <TableCell className="text-center border-r px-1 py-1">
                     {ta.hasNoSessions ? (
                       <Badge
                         variant="destructive"
-                        className="text-xs px-1 py-0"
+                        className="text-[10px] px-1 py-0 h-4"
                       >
                         None
                       </Badge>
                     ) : ta.isStruggling ? (
                       <Badge
                         variant="secondary"
-                        className="text-xs bg-orange-100 text-orange-800 px-1 py-0"
+                        className="text-[10px] bg-orange-100 text-orange-800 px-1 py-0 h-4"
                       >
                         Risk
                       </Badge>
                     ) : (
                       <Badge
                         variant="default"
-                        className="text-xs bg-green-100 text-green-800 px-1 py-0"
+                        className="text-[10px] bg-green-100 text-green-800 px-1 py-0 h-4"
                       >
                         Good
                       </Badge>
@@ -918,10 +938,11 @@ export default function Reports() {
                   </TableCell>
 
                   {/* Actions */}
-                  <TableCell>
+                  <TableCell className="px-1 py-1">
                     <Button
                       variant="outline"
                       size="sm"
+                      className="h-6 px-2 text-[10px]"
                       onClick={() => handleViewReport(ta.id)}
                     >
                       View
@@ -931,21 +952,22 @@ export default function Reports() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={22} className="text-center py-12">
-                  <div className="flex flex-col items-center gap-4">
-                    <Award className="h-16 w-16 text-muted-foreground" />
+                <TableCell colSpan={22} className="text-center py-8">
+                  <div className="flex flex-col items-center gap-3">
+                    <Award className="h-12 w-12 text-muted-foreground" />
                     <div>
-                      <h3 className="text-lg font-medium mb-2">
+                      <h3 className="text-base font-medium mb-1">
                         {searchQuery.trim()
                           ? `No TAs found matching "${searchQuery}"`
                           : "No TAs match the current filter"}
                       </h3>
-                      <p className="text-muted-foreground mb-4">
+                      <p className="text-sm text-muted-foreground mb-3">
                         Try adjusting your search or filter criteria
                       </p>
                       {searchQuery.trim() && (
                         <Button
                           variant="outline"
+                          size="sm"
                           onClick={() => setSearchQuery("")}
                         >
                           Clear search
