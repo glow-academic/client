@@ -34,7 +34,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getAllAppFeedback } from "@/utils/queries/app_feedback/get-all-app-feedback";
-import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageSquare, RefreshCw, X } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -78,13 +78,7 @@ export default function Feedback() {
   // Fetch profiles for feedback authors
   const { data: profiles = [] } = useQuery({
     queryKey: ["profiles", profileIds],
-    queryFn: async () => {
-      const profilePromises = profileIds.map((id) =>
-        getProfilesByUser(parseInt(id!)).then((profiles) => profiles[0])
-      );
-      const results = await Promise.all(profilePromises);
-      return results.filter(Boolean);
-    },
+    queryFn: async () => getAllProfiles(),
     enabled: profileIds.length > 0,
   });
 
@@ -201,10 +195,6 @@ export default function Feedback() {
     const profile = profileMap[profileId];
     if (!profile) return "";
     return profile.alias;
-  };
-
-  const openDialog = (feedback: AppFeedback) => {
-    setSelectedFeedback(feedback);
   };
 
   const clearFilters = () => {
