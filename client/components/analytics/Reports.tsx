@@ -29,6 +29,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 // Removed downloadReport import - now calling API directly
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
@@ -44,13 +45,15 @@ import {
   AlertTriangle,
   ArrowUp,
   Award,
+  Calendar,
   Clock,
   MessageCircle,
   Search,
   Target,
   TrendingDown,
   TrendingUp,
-  Zap,
+  Trophy,
+  Users,
 } from "lucide-react";
 
 export interface ReportOptions {
@@ -93,6 +96,11 @@ export default function Reports() {
   const { data: scenarios, isLoading: isLoadingScenarios } = useQuery({
     queryKey: ["scenarios"],
     queryFn: () => getAllScenarios(),
+  });
+
+  const { data: cohorts, isLoading: isLoadingCohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
   });
 
   const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
@@ -164,11 +172,36 @@ export default function Reports() {
       !rubrics ||
       !scenarios ||
       !simulations ||
-      !messages
+      !messages ||
+      !cohorts
     )
       return null;
 
     const tas = profiles.filter((profile) => profile.role === "ta");
+
+    // Calculate cohort performance averages
+    const cohortPerformance = cohorts.reduce(
+      (acc, cohort) => {
+        const cohortTAs = tas.filter((ta) => cohort.profileIds.includes(ta.id));
+        const cohortGrades = grades.filter((grade) => {
+          const chat = chats.find((c) => c.id === grade.simulationChatId);
+          const attempt = attempts?.find((a) => a.id === chat?.attemptId);
+          return attempt && cohortTAs.some((ta) => ta.id === attempt.profileId);
+        });
+
+        const avgScore =
+          cohortGrades.length > 0
+            ? Math.round(
+                cohortGrades.reduce((sum, g) => sum + g.score, 0) /
+                  cohortGrades.length
+              )
+            : 0;
+
+        acc[cohort.id] = { avgScore, memberCount: cohortTAs.length };
+        return acc;
+      },
+      {} as Record<string, { avgScore: number; memberCount: number }>
+    );
 
     // TA leaderboard based on actual grades
     const taPerformance = tas.map((ta) => {
@@ -286,7 +319,7 @@ export default function Reports() {
         else if (lastAvg < firstAvg - 5) trend = "declining";
       }
 
-      // NEW ANALYTICS - Additional columns
+      // COHORT-BASED ANALYTICS
 
       // Last Activity
       const lastActivity =
@@ -308,93 +341,76 @@ export default function Reports() {
       const messagesPerSession =
         taChats.length > 0 ? Math.round(taMessages.length / taChats.length) : 0;
 
-      // Average Response Time (time between messages)
-      const avgResponseTime =
-        taMessages.length > 1
-          ? Math.round(
-              taMessages.reduce((sum, msg, index) => {
-                if (index === 0) return sum;
-                const prevMsg = taMessages[index - 1];
-                if (!prevMsg) return sum;
-                const timeDiff =
-                  new Date(msg.createdAt).getTime() -
-                  new Date(prevMsg.createdAt).getTime();
-                return sum + timeDiff;
-              }, 0) /
-                (taMessages.length - 1) /
-                1000
-            ) // Convert to seconds
-          : 0;
-
-      // Feedback Quality (average feedback score)
-      const avgFeedbackScore =
-        taFeedbacks.length > 0
-          ? Math.round(
-              taFeedbacks.reduce((sum, f) => sum + f.total, 0) /
-                taFeedbacks.length
-            )
-          : 0;
-
-      // Retry Rate (sessions that took multiple attempts)
-      const simulationAttempts = taAttempts.reduce(
-        (acc, attempt) => {
-          const simulationId = attempt.simulationId;
-          acc[simulationId] = (acc[simulationId] || 0) + 1;
-          return acc;
-        },
-        {} as Record<string, number>
+      // Cohorts this TA belongs to
+      const taCohorts = cohorts.filter((cohort) =>
+        cohort.profileIds.includes(ta.id)
       );
+      const activeCohorts = taCohorts.filter((cohort) => cohort.active);
 
-      const retryRate =
-        Object.keys(simulationAttempts).length > 0
-          ? Math.round(
-              (Object.values(simulationAttempts).filter(
-                (count: number) => count > 1
-              ).length /
-                Object.keys(simulationAttempts).length) *
-                100
-            )
+      // Cohort Performance Comparison
+      const cohortComparison = taCohorts.map((cohort) => {
+        const cohortAvg = cohortPerformance[cohort.id]?.avgScore || 0;
+        const difference = avgScore - cohortAvg;
+        return {
+          cohortId: cohort.id,
+          cohortName: cohort.title,
+          cohortAvg,
+          difference,
+          rank: 0, // Will calculate below
+        };
+      });
+
+      // Calculate rank within each cohort
+      cohortComparison.forEach((comparison) => {
+        const cohortTAs = tas.filter((ta) =>
+          cohorts
+            .find((c) => c.id === comparison.cohortId)
+            ?.profileIds.includes(ta.id)
+        );
+        const cohortScores = cohortTAs
+          .map((ta) => {
+            const taGrades = grades.filter((grade) => {
+              const chat = chats.find((c) => c.id === grade.simulationChatId);
+              const attempt = attempts?.find((a) => a.id === chat?.attemptId);
+              return attempt && attempt.profileId === ta.id;
+            });
+            return taGrades.length > 0
+              ? Math.round(
+                  taGrades.reduce((sum, g) => sum + g.score, 0) /
+                    taGrades.length
+                )
+              : 0;
+          })
+          .sort((a, b) => b - a);
+
+        comparison.rank = cohortScores.indexOf(avgScore) + 1;
+      });
+
+      // Best cohort performance
+      const bestCohortPerformance =
+        cohortComparison.length > 0
+          ? Math.max(...cohortComparison.map((c) => c.difference))
           : 0;
 
-      // Recent Performance (last 5 sessions)
-      const recentGrades = sortedGrades.slice(-5);
-      const recentPerformance =
-        recentGrades.length > 0
-          ? Math.round(
-              recentGrades.reduce((sum, g) => sum + g.score, 0) /
-                recentGrades.length
+      // Days active (from first to last session)
+      const daysActive =
+        taChats.length > 1
+          ? Math.ceil(
+              (new Date(
+                Math.max(
+                  ...taChats.map((chat) => new Date(chat.createdAt).getTime())
+                )
+              ).getTime() -
+                new Date(
+                  Math.min(
+                    ...taChats.map((chat) => new Date(chat.createdAt).getTime())
+                  )
+                ).getTime()) /
+                (1000 * 60 * 60 * 24)
             )
-          : 0;
-
-      // Simulation Types
-      const simulationTypes = new Set(
-        taAttempts.map((attempt) => {
-          const simulation = simulations.find(
-            (s) => s.id === attempt.simulationId
-          );
-          return simulation?.title || "Unknown";
-        })
-      );
-
-      // Peak Performance
-      const peakPerformance =
-        taGrades.length > 0 ? Math.max(...taGrades.map((g) => g.score)) : 0;
-
-      // Consistency Score (standard deviation of scores)
-      const consistencyScore =
-        taGrades.length > 1
-          ? Math.round(
-              100 -
-                (Math.sqrt(
-                  taGrades.reduce(
-                    (sum, g) => sum + Math.pow(g.score - avgScore, 2),
-                    0
-                  ) / taGrades.length
-                ) /
-                  avgScore) *
-                  100
-            )
-          : 100;
+          : taChats.length === 1
+            ? 1
+            : 0;
 
       return {
         id: ta.id,
@@ -424,17 +440,19 @@ export default function Reports() {
         trend,
         isStruggling,
         hasNoSessions: totalSessions === 0,
-        // New fields
+        // Cohort-based fields
         lastActivity,
         scenariosCompleted,
         messagesPerSession,
-        avgResponseTime,
-        avgFeedbackScore,
-        retryRate,
-        recentPerformance,
-        simulationTypes: Array.from(simulationTypes),
-        peakPerformance,
-        consistencyScore,
+        taCohorts: taCohorts.map((c) => c.title),
+        activeCohorts: activeCohorts.length,
+        cohortComparison,
+        bestCohortRank:
+          cohortComparison.length > 0
+            ? Math.min(...cohortComparison.map((c) => c.rank))
+            : 0,
+        avgVsCohort: bestCohortPerformance,
+        daysActive,
       };
     });
 
@@ -453,6 +471,7 @@ export default function Reports() {
     simulations,
     scenarios,
     messages,
+    cohorts,
   ]);
 
   // Sort, filter, and search TAs
@@ -509,7 +528,7 @@ export default function Reports() {
         });
         break;
       case "consistency-desc":
-        filtered.sort((a, b) => b.consistencyScore - a.consistencyScore);
+        filtered.sort((a, b) => b.avgVsCohort - a.avgVsCohort);
         break;
       case "scenarios-desc":
         filtered.sort((a, b) => b.scenariosCompleted - a.scenariosCompleted);
@@ -535,7 +554,8 @@ export default function Reports() {
     isLoadingRubrics ||
     isLoadingSimulations ||
     isLoadingScenarios ||
-    isLoadingMessages
+    isLoadingMessages ||
+    isLoadingCohorts
   ) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -656,23 +676,20 @@ export default function Reports() {
               <TableHead className="w-[55px] text-center border-r px-1 py-1 text-xs">
                 Msgs/Sess
               </TableHead>
-              <TableHead className="w-[55px] text-center border-r px-1 py-1 text-xs">
-                Resp Time
+              <TableHead className="w-[60px] text-center border-r px-1 py-1 text-xs">
+                Cohorts
               </TableHead>
               <TableHead className="w-[55px] text-center border-r px-1 py-1 text-xs">
-                Feedback
+                Cohort Rank
               </TableHead>
-              <TableHead className="w-[45px] text-center border-r px-1 py-1 text-xs">
-                Retry %
+              <TableHead className="w-[60px] text-center border-r px-1 py-1 text-xs">
+                vs Cohort
               </TableHead>
-              <TableHead className="w-[50px] text-center border-r px-1 py-1 text-xs">
-                Recent
+              <TableHead className="w-[55px] text-center border-r px-1 py-1 text-xs">
+                Active
               </TableHead>
-              <TableHead className="w-[45px] text-center border-r px-1 py-1 text-xs">
-                Peak
-              </TableHead>
-              <TableHead className="w-[65px] text-center border-r px-1 py-1 text-xs">
-                Consistency
+              <TableHead className="w-[55px] text-center border-r px-1 py-1 text-xs">
+                Days Active
               </TableHead>
               <TableHead className="w-[50px] text-center border-r px-1 py-1 text-xs">
                 Status
@@ -819,56 +836,47 @@ export default function Reports() {
                     </div>
                   </TableCell>
 
-                  {/* Response Time */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    <div className="text-[10px] font-medium">
-                      {ta.hasNoSessions ? "N/A" : `${ta.avgResponseTime}s`}
-                    </div>
-                  </TableCell>
-
-                  {/* Feedback Score */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    <div className="text-[10px] font-medium">
-                      {ta.hasNoSessions ? "N/A" : `${ta.avgFeedbackScore}%`}
-                    </div>
-                  </TableCell>
-
-                  {/* Retry Rate */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    <div className="text-[10px] font-medium">
-                      {ta.hasNoSessions ? "N/A" : `${ta.retryRate}%`}
-                    </div>
-                  </TableCell>
-
-                  {/* Recent Performance */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    <div className="text-[10px] font-medium">
-                      {ta.hasNoSessions ? "N/A" : `${ta.recentPerformance}%`}
-                    </div>
-                  </TableCell>
-
-                  {/* Peak Performance */}
+                  {/* Cohorts */}
                   <TableCell className="text-center border-r px-1 py-1">
                     <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
-                      <Zap className="h-2.5 w-2.5" />
-                      {ta.hasNoSessions ? "N/A" : `${ta.peakPerformance}%`}
+                      <Users className="h-2.5 w-2.5" />
+                      <span title={ta.taCohorts.join(", ")}>
+                        {ta.taCohorts.length}
+                      </span>
                     </div>
                   </TableCell>
 
-                  {/* Consistency Score */}
+                  {/* Cohort Rank */}
                   <TableCell className="text-center border-r px-1 py-1">
-                    <Badge
-                      variant={
-                        ta.consistencyScore >= 80
-                          ? "default"
-                          : ta.consistencyScore >= 60
-                            ? "secondary"
-                            : "destructive"
-                      }
-                      className="text-[10px] font-medium px-1 py-0 h-4"
+                    <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
+                      <Trophy className="h-2.5 w-2.5" />
+                      {ta.bestCohortRank > 0 ? `#${ta.bestCohortRank}` : "N/A"}
+                    </div>
+                  </TableCell>
+
+                  {/* Avg vs Cohort */}
+                  <TableCell className="text-center border-r px-1 py-1">
+                    <div
+                      className={`text-[10px] font-medium ${ta.avgVsCohort > 0 ? "text-green-600" : ta.avgVsCohort < 0 ? "text-red-600" : "text-gray-600"}`}
                     >
-                      {ta.hasNoSessions ? "N/A" : `${ta.consistencyScore}%`}
-                    </Badge>
+                      {ta.avgVsCohort > 0 ? "+" : ""}
+                      {ta.avgVsCohort}%
+                    </div>
+                  </TableCell>
+
+                  {/* Active Cohorts */}
+                  <TableCell className="text-center border-r px-1 py-1">
+                    <div className="text-[10px] font-medium">
+                      {ta.activeCohorts}
+                    </div>
+                  </TableCell>
+
+                  {/* Days Active */}
+                  <TableCell className="text-center border-r px-1 py-1">
+                    <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
+                      <Calendar className="h-2.5 w-2.5" />
+                      {ta.daysActive}
+                    </div>
                   </TableCell>
 
                   {/* Status */}
@@ -912,7 +920,7 @@ export default function Reports() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={20} className="text-center py-8">
+                <TableCell colSpan={19} className="text-center py-8">
                   <div className="flex flex-col items-center gap-3">
                     <Award className="h-12 w-12 text-muted-foreground" />
                     <div>
