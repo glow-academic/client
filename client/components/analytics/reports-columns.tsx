@@ -13,7 +13,6 @@ import {
   Target,
   TrendingDown,
   TrendingUp,
-  Trophy,
   Users,
 } from "lucide-react";
 import { useMemo } from "react";
@@ -22,6 +21,8 @@ import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 
 // Enhanced types for the TA performance data
 export interface TAPerformanceData {
@@ -69,6 +70,11 @@ export interface TAPerformanceData {
   }>;
   bestCohortRank: number;
   avgVsCohort: number;
+  // Additional fields for filtering
+  classIds: string[];
+  agentsTested: string[];
+  scenarioIds: string[];
+  simulationIds: string[];
 }
 
 export function useReportsColumns({
@@ -97,6 +103,16 @@ export function useReportsColumns({
   const { data: agents } = useQuery({
     queryKey: ["agents"],
     queryFn: () => getAllAgents(),
+  });
+
+  const { data: scenarios } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => getAllScenarios(),
+  });
+
+  const { data: simulations } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getAllSimulations(),
   });
 
   // Create filter options
@@ -142,6 +158,22 @@ export function useReportsColumns({
     }));
   }, [agents]);
 
+  const scenarioOptions = useMemo(() => {
+    if (!scenarios) return [];
+    return scenarios.map((scenario) => ({
+      value: scenario.id,
+      label: scenario.name,
+    }));
+  }, [scenarios]);
+
+  const simulationOptions = useMemo(() => {
+    if (!simulations) return [];
+    return simulations.map((simulation) => ({
+      value: simulation.id,
+      label: simulation.title,
+    }));
+  }, [simulations]);
+
   // Define columns
   const columns = useMemo(() => {
     const reportColumns: ColumnDef<TAPerformanceData>[] = [
@@ -178,23 +210,7 @@ export function useReportsColumns({
             },
           ]
         : []),
-      // Rank column
-      {
-        accessorKey: "rank",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="#" />
-        ),
-        cell: ({ row }) => {
-          const index = row.index;
-          return (
-            <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary font-bold text-[10px]">
-              {index + 1}
-            </div>
-          );
-        },
-        enableSorting: false,
-        enableHiding: false,
-      },
+
       // Name column
       {
         accessorKey: "firstName",
@@ -490,52 +506,7 @@ export function useReportsColumns({
         },
         enableSorting: true,
       },
-      // Cohort Rank column
-      {
-        accessorKey: "bestCohortRank",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Cohort Rank" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
-            <div className="text-center">
-              <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
-                <Trophy className="h-2.5 w-2.5" />
-                {ta.bestCohortRank > 0 ? `#${ta.bestCohortRank}` : "N/A"}
-              </div>
-            </div>
-          );
-        },
-        enableSorting: true,
-      },
-      // Avg vs Cohort column
-      {
-        accessorKey: "avgVsCohort",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="vs Cohort" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
-            <div className="text-center">
-              <div
-                className={`text-[10px] font-medium ${
-                  ta.avgVsCohort > 0
-                    ? "text-green-600"
-                    : ta.avgVsCohort < 0
-                      ? "text-red-600"
-                      : "text-gray-600"
-                }`}
-              >
-                {ta.avgVsCohort > 0 ? "+" : ""}
-                {ta.avgVsCohort}%
-              </div>
-            </div>
-          );
-        },
-        enableSorting: true,
-      },
+
       // Status column
       {
         accessorKey: "isStruggling",
@@ -593,6 +564,63 @@ export function useReportsColumns({
         enableSorting: false,
         enableHiding: false,
       },
+      // Hidden columns for filtering
+      {
+        accessorKey: "classIds",
+        header: "Class IDs",
+        cell: () => null,
+        enableSorting: false,
+        enableHiding: true,
+        enableColumnFilter: true,
+        filterFn: (row, _, value) => {
+          const ta = row.original;
+          if (!value || value.length === 0) return true;
+          return ta.classIds.some((classId) => value.includes(classId));
+        },
+      },
+      {
+        accessorKey: "agentsTested",
+        header: "Agents Tested",
+        cell: () => null,
+        enableSorting: false,
+        enableHiding: true,
+        enableColumnFilter: true,
+        filterFn: (row, _, value) => {
+          const ta = row.original;
+          if (!value || value.length === 0) return true;
+          return ta.agentsTested.some((agentId) => value.includes(agentId));
+        },
+      },
+      {
+        accessorKey: "scenarioIds",
+        header: "Scenario IDs",
+        cell: () => null,
+        enableSorting: false,
+        enableHiding: true,
+        enableColumnFilter: true,
+        filterFn: (row, _, value) => {
+          const ta = row.original;
+          if (!value || value.length === 0) return true;
+          return ta.scenarioIds.some((scenarioId) =>
+            value.includes(scenarioId)
+          );
+        },
+      },
+      {
+        accessorKey: "simulationIds",
+        header: "Simulation IDs",
+        cell: () => null,
+        enableSorting: false,
+        enableHiding: true,
+        enableColumnFilter: true,
+        filterFn: (row, _, value) => {
+          const ta = row.original;
+          if (!value || value.length === 0) return true;
+          return ta.simulationIds.some((simulationId) =>
+            value.includes(simulationId)
+          );
+        },
+      },
     ];
 
     return reportColumns;
@@ -604,5 +632,7 @@ export function useReportsColumns({
     classOptions,
     cohortOptions,
     agentOptions,
+    scenarioOptions,
+    simulationOptions,
   };
 }

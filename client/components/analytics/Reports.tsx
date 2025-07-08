@@ -48,6 +48,8 @@ export default function Reports() {
     classOptions,
     cohortOptions,
     agentOptions,
+    scenarioOptions,
+    simulationOptions,
   } = useReportsColumns({
     showExport: true,
     onViewReport: handleViewReport,
@@ -374,6 +376,40 @@ export default function Reports() {
           ? Math.max(...cohortComparison.map((c) => c.difference))
           : 0;
 
+      // Get unique class IDs from scenarios this TA has worked on
+      const taClassIds = [
+        ...new Set(
+          taChats
+            .map((chat) => {
+              const scenario = scenarios.find((s) => s.id === chat.scenarioId);
+              return scenario?.classId;
+            })
+            .filter((classId): classId is string => classId !== null)
+        ),
+      ];
+
+      // Get unique agent IDs from scenarios this TA has worked on
+      const taAgentIds = [
+        ...new Set(
+          taChats
+            .map((chat) => {
+              const scenario = scenarios.find((s) => s.id === chat.scenarioId);
+              return scenario?.agentId;
+            })
+            .filter((agentId): agentId is string => agentId !== null)
+        ),
+      ];
+
+      // Get unique scenario IDs this TA has worked on
+      const taScenarioIds = [
+        ...new Set(taChats.map((chat) => chat.scenarioId)),
+      ];
+
+      // Get unique simulation IDs this TA has worked on
+      const taSimulationIds = [
+        ...new Set(taAttempts.map((attempt) => attempt.simulationId)),
+      ];
+
       return {
         id: ta.id,
         firstName: ta.firstName,
@@ -414,6 +450,11 @@ export default function Reports() {
             ? Math.min(...cohortComparison.map((c) => c.rank))
             : 0,
         avgVsCohort: bestCohortPerformance,
+        // Additional fields for filtering
+        classIds: taClassIds,
+        agentsTested: taAgentIds,
+        scenarioIds: taScenarioIds,
+        simulationIds: taSimulationIds,
       };
     });
 
@@ -469,6 +510,8 @@ export default function Reports() {
         classOptions={classOptions}
         cohortOptions={cohortOptions}
         agentOptions={agentOptions}
+        scenarioOptions={scenarioOptions}
+        simulationOptions={simulationOptions}
         showExport={true}
       />
     </div>

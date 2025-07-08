@@ -34,6 +34,8 @@ interface ReportsDataTableProps {
   classOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
   agentOptions: { value: string; label: string }[];
+  scenarioOptions: { value: string; label: string }[];
+  simulationOptions: { value: string; label: string }[];
   showExport?: boolean;
 }
 
@@ -44,11 +46,18 @@ export function ReportsDataTable({
   classOptions,
   cohortOptions,
   agentOptions,
+  scenarioOptions,
+  simulationOptions,
   showExport = true,
 }: ReportsDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+    React.useState<VisibilityState>({
+      classIds: false,
+      agentsTested: false,
+      scenarioIds: false,
+      simulationIds: false,
+    });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
@@ -85,6 +94,8 @@ export function ReportsDataTable({
         classOptions={classOptions}
         cohortOptions={cohortOptions}
         agentOptions={agentOptions}
+        scenarioOptions={scenarioOptions}
+        simulationOptions={simulationOptions}
         showExport={showExport}
       />
       <div className="rounded-md border overflow-x-auto">

@@ -16,6 +16,8 @@ interface ReportsDataTableToolbarProps {
   classOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
   agentOptions: { value: string; label: string }[];
+  scenarioOptions: { value: string; label: string }[];
+  simulationOptions: { value: string; label: string }[];
   showExport?: boolean;
 }
 
@@ -24,7 +26,9 @@ export function ReportsDataTableToolbar({
   performanceOptions,
   classOptions,
   cohortOptions,
-  agentOptions: _agentOptions,
+  agentOptions,
+  scenarioOptions,
+  simulationOptions,
   showExport = true,
 }: ReportsDataTableToolbarProps) {
   // Check if any filters are active
@@ -36,7 +40,7 @@ export function ReportsDataTableToolbar({
 
   return (
     <div className="flex items-center justify-between">
-      <div className="flex flex-1 items-center space-x-2">
+      <div className="flex flex-1 items-center space-x-2 flex-wrap">
         <Input
           placeholder="Search TAs by name or alias..."
           value={(firstNameColumn?.getFilterValue() as string) ?? ""}
@@ -46,40 +50,72 @@ export function ReportsDataTableToolbar({
           className="h-8 w-[150px] lg:w-[250px]"
         />
 
-        {/* Performance Filter */}
-        {avgScoreColumn && performanceOptions.length > 0 && (
-          <DataTableFacetedFilter
-            column={avgScoreColumn}
-            title="Performance"
-            options={performanceOptions}
-          />
-        )}
+        <div className="flex items-center space-x-2 flex-wrap">
+          {/* Performance Filter */}
+          {avgScoreColumn && performanceOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={avgScoreColumn}
+              title="Performance"
+              options={performanceOptions}
+            />
+          )}
 
-        {/* Class Filter - Note: This would need to be implemented based on profile data */}
-        {/* For now, we'll skip this as it requires more complex filtering logic */}
+          {/* Class Filter */}
+          {classOptions.length > 0 && table.getColumn("classIds") && (
+            <DataTableFacetedFilter
+              column={table.getColumn("classIds")!}
+              title="Class"
+              options={classOptions}
+            />
+          )}
 
-        {/* Cohort Filter */}
-        {taCohortsColumn && cohortOptions.length > 0 && (
-          <DataTableFacetedFilter
-            column={taCohortsColumn}
-            title="Cohort"
-            options={cohortOptions}
-          />
-        )}
+          {/* Cohort Filter */}
+          {taCohortsColumn && cohortOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={taCohortsColumn}
+              title="Cohort"
+              options={cohortOptions}
+            />
+          )}
 
-        {/* Agent Filter - Note: This would need to be implemented based on scenario data */}
-        {/* For now, we'll skip this as it requires more complex filtering logic */}
+          {/* Agent Filter */}
+          {agentOptions.length > 0 && table.getColumn("agentsTested") && (
+            <DataTableFacetedFilter
+              column={table.getColumn("agentsTested")!}
+              title="Agent"
+              options={agentOptions}
+            />
+          )}
 
-        {isFiltered && (
-          <Button
-            variant="ghost"
-            onClick={() => table.resetColumnFilters()}
-            className="h-8 px-2 lg:px-3"
-          >
-            Reset
-            <X className="ml-2 h-4 w-4" />
-          </Button>
-        )}
+          {/* Scenario Filter */}
+          {scenarioOptions.length > 0 && table.getColumn("scenarioIds") && (
+            <DataTableFacetedFilter
+              column={table.getColumn("scenarioIds")!}
+              title="Scenario"
+              options={scenarioOptions}
+            />
+          )}
+
+          {/* Simulation Filter */}
+          {simulationOptions.length > 0 && table.getColumn("simulationIds") && (
+            <DataTableFacetedFilter
+              column={table.getColumn("simulationIds")!}
+              title="Simulation"
+              options={simulationOptions}
+            />
+          )}
+
+          {isFiltered && (
+            <Button
+              variant="ghost"
+              onClick={() => table.resetColumnFilters()}
+              className="h-8 px-2 lg:px-3"
+            >
+              Reset
+              <X className="ml-2 h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center space-x-2">

@@ -23,7 +23,6 @@ const columnMap = {
   agentsTested: "Agents",
   averageScore: "Score",
   // Reports page columns
-  rank: "#",
   firstName: "Name",
   username: "Alias",
   avgScore: "Score",
@@ -37,8 +36,6 @@ const columnMap = {
   messagesPerSession: "Msgs/Sess",
   totalAttempts: "Total Attempts",
   taCohorts: "Cohorts",
-  bestCohortRank: "Cohort Rank",
-  avgVsCohort: "vs Cohort",
   isStruggling: "Status",
 };
 
