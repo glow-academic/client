@@ -49,7 +49,6 @@ type TimeRange = "7d" | "14d" | "30d" | "60d" | "90d";
 type ChartType = "bar";
 
 interface PerformanceByPersonalityProps {
-  className?: string;
   color?: ColorTheme;
   defaultTimeRange?: TimeRange;
   chartType?: ChartType;
@@ -85,7 +84,6 @@ const COLOR_CONFIGS = {
 };
 
 export default function PerformanceByPersonality({
-  className,
   color = "blue",
   defaultTimeRange = "30d",
   chartType: _chartType = "bar",
@@ -206,7 +204,7 @@ export default function PerformanceByPersonality({
 
   if (!performanceData.length) {
     return (
-      <Card className={cn("w-full h-full flex flex-col", className)}>
+      <Card className={cn("w-full h-full flex flex-col")}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -245,7 +243,7 @@ export default function PerformanceByPersonality({
   }
 
   return (
-    <Card className={cn("w-full h-full flex flex-col", className)}>
+    <Card className={cn("w-full h-full flex flex-col")}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

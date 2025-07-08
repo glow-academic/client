@@ -44,7 +44,6 @@ type TimeRange = "1h" | "12h" | "24h" | "1d" | "3d" | "7d" | "14d" | "30d";
 type ChartType = "bar";
 
 interface SessionActivityProps {
-  className?: string;
   color?: ColorTheme;
   defaultTimeRange?: TimeRange;
   chartType?: ChartType;
@@ -123,7 +122,6 @@ const CustomBarTooltip = ({
 };
 
 export default function SessionActivity({
-  className,
   color = "blue",
   defaultTimeRange = "24h",
   chartType: _chartType = "bar",
@@ -304,7 +302,7 @@ export default function SessionActivity({
 
   if (!sessionActivityData.length) {
     return (
-      <Card className={cn("w-full h-full flex flex-col", className)}>
+      <Card className={cn("w-full h-full flex flex-col")}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -345,7 +343,7 @@ export default function SessionActivity({
   }
 
   return (
-    <Card className={cn("w-full h-full flex flex-col", className)}>
+    <Card className={cn("w-full h-full flex flex-col")}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

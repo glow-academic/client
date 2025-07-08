@@ -425,16 +425,12 @@ export const registry: Record<string, ComponentConfig> = {
       }
     } },
   "bab2e342-c823-2e94-a85a-816d9cb78bd2": { component: PerformanceByPersonality, props: {
-      "className": "",
       "color": "blue",
       "defaultTimeRange": "30d",
       "chartType": "bar",
       "title": "Performance by Personality",
       "showTimeSelector": true
     }, metadata: {
-      "className": {
-        "type": "string"
-      },
       "color": {
         "type": "select",
         "options": [
@@ -475,16 +471,12 @@ export const registry: Record<string, ComponentConfig> = {
       }
     } },
   "a7e8e793-011f-b291-eec4-a74232db4491": { component: PerformanceTrends, props: {
-      "className": "",
       "color": "blue",
       "defaultTimeRange": "30d",
       "chartType": "area",
       "title": "Performance Trends",
       "showTimeSelector": true
     }, metadata: {
-      "className": {
-        "type": "string"
-      },
       "color": {
         "type": "select",
         "options": [
@@ -524,16 +516,12 @@ export const registry: Record<string, ComponentConfig> = {
       }
     } },
   "c2940e17-d668-43e3-ad76-9abf53d5b21f": { component: SessionActivity, props: {
-      "className": "",
       "color": "blue",
       "defaultTimeRange": "24h",
       "chartType": "bar",
       "title": "Session Activity",
       "showTimeSelector": true
     }, metadata: {
-      "className": {
-        "type": "string"
-      },
       "color": {
         "type": "select",
         "options": [

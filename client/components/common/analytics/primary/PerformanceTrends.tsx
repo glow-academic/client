@@ -47,7 +47,6 @@ type TimeRange = "7d" | "30d" | "90d";
 type ChartType = "area" | "line";
 
 interface PerformanceTrendsProps {
-  className?: string;
   color?: ColorTheme;
   defaultTimeRange?: TimeRange;
   chartType?: ChartType;
@@ -83,7 +82,6 @@ const COLOR_CONFIGS = {
 };
 
 export default function PerformanceTrends({
-  className,
   color = "blue",
   defaultTimeRange = "30d",
   chartType = "area",
@@ -165,7 +163,7 @@ export default function PerformanceTrends({
 
   if (!performanceTrendData.length) {
     return (
-      <Card className={cn("w-full h-full flex flex-col", className)}>
+      <Card className={cn("w-full h-full flex flex-col")}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -206,7 +204,7 @@ export default function PerformanceTrends({
   }
 
   return (
-    <Card className={cn("w-full h-full flex flex-col", className)}>
+    <Card className={cn("w-full h-full flex flex-col")}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
