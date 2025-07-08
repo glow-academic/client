@@ -355,24 +355,15 @@ export default function Scenario({
   const selectedAgent = agents.find((agent) => agent.id === formData.agentId);
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
-      {/* Header */}
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">
-          {isEditMode ? "Edit Scenario" : "Create New Scenario"}
-        </h1>
-        <p className="text-muted-foreground">
-          Follow the steps below to create a realistic training scenario for
-          GTAs
-        </p>
-      </div>
-
+    <div className="w-full p-6 space-y-8">
       {/* Progress Flow */}
       <div className="space-y-6">
         {/* Step 1: Class Selection */}
         <Card
-          className={`transition-all ${getStepStatus("class") === "active" ? "ring-2 ring-primary" : ""} ${
-            getStepStatus("class") === "pending" ? "opacity-50" : ""
+          className={`transition-all ${!isEditMode && getStepStatus("class") === "active" ? "ring-2 ring-primary" : ""} ${
+            !isEditMode && getStepStatus("class") === "pending"
+              ? "opacity-50"
+              : ""
           }`}
         >
           <CardHeader className="flex flex-row items-center space-y-0 pb-4">
@@ -427,8 +418,10 @@ export default function Scenario({
 
         {/* Step 2: Documents */}
         <Card
-          className={`transition-all ${getStepStatus("documents") === "active" ? "ring-2 ring-primary" : ""} ${
-            getStepStatus("documents") === "pending" ? "opacity-50" : ""
+          className={`transition-all ${!isEditMode && getStepStatus("documents") === "active" ? "ring-2 ring-primary" : ""} ${
+            !isEditMode && getStepStatus("documents") === "pending"
+              ? "opacity-50"
+              : ""
           }`}
         >
           <CardHeader className="flex flex-row items-center space-y-0 pb-4">
@@ -499,8 +492,10 @@ export default function Scenario({
 
         {/* Step 3: Agent Selection */}
         <Card
-          className={`transition-all ${getStepStatus("agent") === "active" ? "ring-2 ring-primary" : ""} ${
-            getStepStatus("agent") === "pending" ? "opacity-50" : ""
+          className={`transition-all ${!isEditMode && getStepStatus("agent") === "active" ? "ring-2 ring-primary" : ""} ${
+            !isEditMode && getStepStatus("agent") === "pending"
+              ? "opacity-50"
+              : ""
           }`}
         >
           <CardHeader className="flex flex-row items-center space-y-0 pb-4">
@@ -555,8 +550,10 @@ export default function Scenario({
 
         {/* Step 4: Context Parameters */}
         <Card
-          className={`transition-all ${getStepStatus("context") === "active" ? "ring-2 ring-primary" : ""} ${
-            getStepStatus("context") === "pending" ? "opacity-50" : ""
+          className={`transition-all ${!isEditMode && getStepStatus("context") === "active" ? "ring-2 ring-primary" : ""} ${
+            !isEditMode && getStepStatus("context") === "pending"
+              ? "opacity-50"
+              : ""
           }`}
         >
           <CardHeader className="flex flex-row items-center space-y-0 pb-4">
@@ -676,8 +673,10 @@ export default function Scenario({
 
         {/* Step 5: Environment Details */}
         <Card
-          className={`transition-all ${getStepStatus("environment") === "active" ? "ring-2 ring-primary" : ""} ${
-            getStepStatus("environment") === "pending" ? "opacity-50" : ""
+          className={`transition-all ${!isEditMode && getStepStatus("environment") === "active" ? "ring-2 ring-primary" : ""} ${
+            !isEditMode && getStepStatus("environment") === "pending"
+              ? "opacity-50"
+              : ""
           }`}
         >
           <CardHeader className="flex flex-row items-center space-y-0 pb-4">
@@ -764,7 +763,7 @@ export default function Scenario({
 
             {/* Urgency */}
             <div className="space-y-2">
-              <Label>Urgency</Label>
+              <Label>Assignment Deadline</Label>
               <Select
                 value={formData.urgency || "none"}
                 onValueChange={(value) =>
@@ -788,7 +787,7 @@ export default function Scenario({
         {/* Step 6: Generated Content - Only show after generation is triggered */}
         {formData.description && (
           <Card
-            className={`transition-all ${getStepStatus("content") === "active" ? "ring-2 ring-primary" : ""}`}
+            className={`transition-all ${!isEditMode && getStepStatus("content") === "active" ? "ring-2 ring-primary" : ""}`}
           >
             <CardHeader className="flex flex-row items-center space-y-0 pb-4">
               <div className="flex items-center space-x-3">
