@@ -1,0 +1,22 @@
+// =========================================
+// CS381 Topic: Graph Algorithm Optimization
+// =========================================
+
+Assignment Summary:
+Optimize classic graph algorithms for time/memory in large-scale inputs.
+
+Scenarios:
+- Improve Dijkstra using a priority queue (min-heap) → O((V + E) log V)
+- Use BFS for unweighted shortest paths → O(V + E)
+- Optimize Prim’s/MST using adjacency list vs matrix
+
+Tips:
+- Use adjacency list for sparse graphs
+- Avoid nested loops over all vertices
+- Memoize or prune unnecessary paths
+- Consider early stopping in BFS/DFS variants
+
+Common Challenges:
+- Handling large inputs in time limits
+- Confusing directed vs undirected graphs
+- Misusing visited flags or parent tracking

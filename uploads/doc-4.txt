@@ -1,0 +1,23 @@
+// =========================================
+// CS182 Homework: Proof Techniques Selection
+// =========================================
+
+Assignment Summary:
+You are given five statements and must determine the most appropriate proof technique (Direct, Contrapositive, Contradiction, or Induction).
+
+Examples:
+
+1. If n is odd, then n^2 is odd. → Direct Proof
+2. If n^2 is even, then n is even. → Contrapositive
+3. There is no smallest positive real number. → Proof by Contradiction
+4. For all n ≥ 1, 1 + 2 + 3 + ... + n = n(n+1)/2 → Induction
+
+Template:
+- State what is given and what you must prove.
+- Choose a technique and justify it.
+- Write out the steps of the proof clearly.
+
+Common Pitfalls:
+- Confusing contrapositive with converse.
+- Using induction without a clear base and inductive step.
+- Failing to assume the negation properly in contradiction.

@@ -1,0 +1,22 @@
+// =========================================
+// CS182 Lecture: Logic Foundations
+// =========================================
+
+Assignment Summary:
+Analyze the logical structure of five compound propositions using truth tables and logical equivalences.
+
+Examples:
+
+1. Construct a truth table for: (P ∧ Q) → R
+2. Show ¬(P ∧ Q) ≡ ¬P ∨ ¬Q using De Morgan’s Law
+3. Determine whether (P → Q) ∨ (Q → P) is a tautology
+4. Identify the converse, inverse, and contrapositive of a conditional
+
+Steps:
+- Define variables (e.g., P = "It is raining")
+- Build truth tables with all possible combinations
+- Compare columns to evaluate equivalences
+
+Useful Laws:
+- Identity, Domination, Idempotent
+- De Morgan’s, Distributive, Double Negation

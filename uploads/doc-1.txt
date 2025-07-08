@@ -1,0 +1,116 @@
+// CS180 Project Assignment: OOP Design Patterns
+// Scenario: A sophomore student needs help designing classes using inheritance
+
+/*
+Project Description:
+Design a class hierarchy for a campus ride-sharing system. It should include:
+- Base class: Vehicle
+- Subclasses: Car, Bike, Scooter
+- Interface: Rentable (with methods like rent(), returnItem())
+- Consider attributes like vehicleID, availability, location, and maxSpeed
+*/
+
+interface Rentable {
+    void rent();
+    void returnItem();
+}
+
+class Vehicle implements Rentable {
+    protected String vehicleID;
+    protected boolean isAvailable;
+    protected String location;
+    protected int maxSpeed;
+
+    public Vehicle(String vehicleID, String location, int maxSpeed) {
+        this.vehicleID = vehicleID;
+        this.location = location;
+        this.maxSpeed = maxSpeed;
+        this.isAvailable = true;
+    }
+
+    public void rent() {
+        if (isAvailable) {
+            isAvailable = false;
+            System.out.println(vehicleID + " rented.");
+        } else {
+            System.out.println(vehicleID + " is not available.");
+        }
+    }
+
+    public void returnItem() {
+        isAvailable = true;
+        System.out.println(vehicleID + " returned.");
+    }
+}
+
+class Car extends Vehicle {
+    private int numberOfDoors;
+
+    public Car(String vehicleID, String location, int maxSpeed, int numberOfDoors) {
+        super(vehicleID, location, maxSpeed);
+        this.numberOfDoors = numberOfDoors;
+    }
+}
+
+class Bike extends Vehicle {
+    private boolean hasGear;
+
+    public Bike(String vehicleID, String location, int maxSpeed, boolean hasGear) {
+        super(vehicleID, location, maxSpeed);
+        this.hasGear = hasGear;
+    }
+}
+
+class Scooter extends Vehicle {
+    private boolean isElectric;
+
+    public Scooter(String vehicleID, String location, int maxSpeed, boolean isElectric) {
+        super(vehicleID, location, maxSpeed);
+        this.isElectric = isElectric;
+    }
+}
+
+public class RideSharingApp {
+    public static void main(String[] args) {
+        Car c1 = new Car("CAR001", "DSAI Lab", 80, 4);
+        c1.rent();
+        c1.returnItem();
+    }
+}
+
+
+// CS180 Homework: Interfaces and Abstract Classes
+// Scenario: A junior student is trying to differentiate between abstract classes and interfaces
+
+/*
+Assignment Prompt:
+Build a payment system that supports different methods: Credit Card, PayPal, and Cryptocurrency.
+- Interface: PaymentMethod (methods: authorize(), pay())
+- Abstract class: DigitalPayment (shared implementation for logTransaction())
+- Subclasses: CreditCard, PayPal, Crypto implement full logic
+*/
+
+interface PaymentMethod {
+    void authorize();
+    void pay(double amount);
+}
+
+abstract class DigitalPayment implements PaymentMethod {
+    protected String accountEmail;
+
+    public DigitalPayment(String accountEmail) {
+        this.accountEmail = accountEmail;
+    }
+
+    public void logTransaction(double amount) {
+        System.out.println("Logged transaction of $" + amount + " from " + accountEmail);
+    }
+}
+
+class CreditCard extends DigitalPayment {
+    private String cardNumber;
+
+    public CreditCard(String email, String cardNumber) {
+        super(email);
+        this.cardNumber = cardNumber;
+    }

@@ -1,0 +1,31 @@
+// =========================================
+// CS253 Midterm Topics: Binary Tree Operations
+// =========================================
+
+Assignment Summary:
+Implement basic binary search tree (BST) operations:
+- insert
+- delete
+- inorder / preorder / postorder traversal
+
+Key Notes:
+- Left subtree < root < right subtree
+- Recursive structure
+- Deletion cases: leaf, one-child, two-child (use inorder successor)
+
+Recursive Template:
+insert(root, key):
+  if root == null → return new node
+  if key < root.val → root.left = insert(root.left, key)
+  else → root.right = insert(root.right, key)
+
+traverseInOrder(root):
+  if root == null → return
+  traverseInOrder(root.left)
+  visit(root)
+  traverseInOrder(root.right)
+
+Tips:
+- Draw tree diagrams to clarify structure
+- Recurse until base case, then propagate changes up
+- Debug with small test cases (3–5 nodes)

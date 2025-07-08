@@ -1,0 +1,85 @@
+// CS180 Homework: Interfaces and Abstract Classes
+// Scenario: A junior student is trying to differentiate between abstract classes and interfaces
+
+/*
+Assignment Prompt:
+Build a payment system that supports different methods: Credit Card, PayPal, and Cryptocurrency.
+- Interface: PaymentMethod (methods: authorize(), pay())
+- Abstract class: DigitalPayment (shared implementation for logTransaction())
+- Subclasses: CreditCard, PayPal, Crypto implement full logic
+*/
+
+interface PaymentMethod {
+    void authorize();
+    void pay(double amount);
+}
+
+abstract class DigitalPayment implements PaymentMethod {
+    protected String accountEmail;
+
+    public DigitalPayment(String accountEmail) {
+        this.accountEmail = accountEmail;
+    }
+
+    public void logTransaction(double amount) {
+        System.out.println("Logged transaction of $" + amount + " from " + accountEmail);
+    }
+}
+
+class CreditCard extends DigitalPayment {
+    private String cardNumber;
+
+    public CreditCard(String email, String cardNumber) {
+        super(email);
+        this.cardNumber = cardNumber;
+    }
+
+    public void authorize() {
+        System.out.println("Authorizing credit card...");
+    }
+
+    public void pay(double amount) {
+        authorize();
+        System.out.println("Paid $" + amount + " using Credit Card.");
+        logTransaction(amount);
+    }
+}
+
+class PayPal extends DigitalPayment {
+    public PayPal(String email) {
+        super(email);
+    }
+
+    public void authorize() {
+        System.out.println("Authorizing PayPal account...");
+    }
+
+    public void pay(double amount) {
+        authorize();
+        System.out.println("Paid $" + amount + " using PayPal.");
+        logTransaction(amount);
+    }
+}
+
+class Crypto extends DigitalPayment {
+    public Crypto(String email) {
+        super(email);
+    }
+
+    public void authorize() {
+        System.out.println("Verifying blockchain wallet...");
+    }
+
+    public void pay(double amount) {
+        authorize();
+        System.out.println("Transferred $" + amount + " in crypto.");
+        logTransaction(amount);
+    }
+}
+
+class PaymentApp {
+    public static void main(String[] args) {
+        PaymentMethod m = new PayPal("redacted@purdue.edu");
+        m.pay(50.0);
+    }
+}

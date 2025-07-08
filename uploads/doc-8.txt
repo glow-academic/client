@@ -1,0 +1,30 @@
+// =========================================
+// CS253 Midterm Topics: Linked List Implementation
+// =========================================
+
+Assignment Summary:
+Implement a singly linked list from scratch, supporting insertion, deletion, and traversal.
+
+Concepts:
+- Node class with value + next pointer
+- Head and possibly tail references
+- Edge cases: empty list, deleting head/tail, inserting at end
+
+Pseudocode Snippet:
+class Node {
+    int val;
+    Node next;
+}
+
+insert(val):
+  newNode = new Node(val)
+  if (head == null): head = newNode
+  else: traverse to end and append
+
+delete(val):
+  search for node, fix links
+
+Tips:
+- Watch for null pointer exceptions.
+- Use dummy head to simplify deletion logic.
+- Trace list with a visual diagram.

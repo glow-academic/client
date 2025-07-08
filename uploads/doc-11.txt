@@ -1,0 +1,22 @@
+// =========================================
+// CS381 Topic: NP-Completeness Reductions
+// =========================================
+
+Assignment Summary:
+Given a known NP-complete problem A, reduce it to target problem B to show B is NP-hard.
+
+Examples:
+1. 3SAT ≤p CLIQUE
+2. VERTEX-COVER ≤p SET-COVER
+3. SUBSET-SUM ≤p KNAPSACK
+
+Steps:
+- Understand both problem structures
+- Define transformation logic between instances
+- Prove transformation is polynomial-time
+- Explain that a solver for B implies a solver for A
+
+Advice:
+- Keep the reduction constructive and readable
+- Draw mappings (graph to graph, set to set, etc.)
+- Look at Cook-Levin or Karp reductions for patterns

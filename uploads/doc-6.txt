@@ -1,0 +1,22 @@
+// =========================================
+// CS182 Lecture: The Language of Mathematics
+// =========================================
+
+Assignment Summary:
+Interpret formal mathematical expressions and rewrite them in plain English.
+
+Examples:
+1. ∀x ∈ ℕ, ∃y ∈ ℕ such that x < y  → "For every natural number x, there exists a natural number y greater than x."
+2. ¬∃x (P(x)) ≡ ∀x ¬P(x)
+3. Translate ∑_{i=1}^{n} i^2 into summation form and write an informal explanation.
+4. Differentiate between ⊆ and ⊂ in set notation.
+
+Skills Covered:
+- Quantifiers (∀, ∃)
+- Set notation ({x ∈ ℝ | x > 0})
+- Logical symbols (¬, ∧, ∨, →)
+
+Tips:
+- Break down complex symbols into known parts.
+- Sketch a Venn diagram if interpreting sets.
+- Use English approximations before refining the translation.
