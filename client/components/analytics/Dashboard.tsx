@@ -357,12 +357,15 @@ export default function Dashboard() {
 
       {/* Main Content Section with Responsive Layout */}
       {(primaryComponentIds.length > 0 || secondaryComponentIds.length > 0) && (
-        <div className="grid gap-6 grid-cols-1 lg:grid-cols-[3fr_2fr] pb-8 items-stretch">
+        <div
+          className="grid gap-6 grid-cols-1 lg:grid-cols-[3fr_2fr] pb-8 items-stretch"
+          style={{ gridAutoRows: "1fr" }}
+        >
           {/* Primary Section */}
           {primaryComponentIds.length > 0 && (
-            <div className="space-y-4">
+            <div className="flex flex-col space-y-4">
               <div
-                className="relative"
+                className="relative flex-1"
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
               >
@@ -397,14 +400,16 @@ export default function Dashboard() {
 
           {/* Secondary Section */}
           {secondaryComponentIds.length > 0 && (
-            <div className="space-y-4">
-              {secondaryComponentIds.length > 0 &&
-                renderComponent(
-                  secondaryComponentIds[
-                    secondaryCarouselIndex % secondaryComponentIds.length
-                  ]!,
-                  `secondary-${secondaryCarouselIndex}`
-                )}
+            <div className="flex flex-col space-y-4">
+              <div className="flex-1">
+                {secondaryComponentIds.length > 0 &&
+                  renderComponent(
+                    secondaryComponentIds[
+                      secondaryCarouselIndex % secondaryComponentIds.length
+                    ]!,
+                    `secondary-${secondaryCarouselIndex}`
+                  )}
+              </div>
 
               {/* Secondary carousel indicators */}
               {showIndicators && secondaryComponentIds.length > 1 && (
