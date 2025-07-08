@@ -286,7 +286,9 @@ export default function Cohort({ cohortId }: CohortProps) {
                   {profiles
                     .filter(
                       (profile: Profile) =>
-                        !formData.profileIds?.includes(profile.id)
+                        !formData.profileIds?.includes(profile.id) &&
+                        profile.role !== "admin" &&
+                        profile.role !== "instructional"
                     )
                     .map((profile: Profile) => (
                       <SelectItem key={profile.id} value={profile.id}>
@@ -296,6 +298,14 @@ export default function Cohort({ cohortId }: CohortProps) {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              <strong>Note:</strong> Admin and instructional staff automatically
+              have access to all cohorts and simulations, so they don't need to
+              be added as members.
+            </p>
           </div>
 
           {formData.profileIds?.length === 0 ? (

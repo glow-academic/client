@@ -90,6 +90,13 @@ export default function ChatWidget() {
                   <span className="text-sm font-medium truncate">
                     {getCurrentChatTitle()}
                   </span>
+                  {/* show BETA */}
+                  <span
+                    className="text-xs ml-2 px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 font-semibold shadow-sm"
+                    style={{ backgroundColor: "#FEF3C7" }}
+                  >
+                    BETA
+                  </span>
                 </div>
               </SelectValue>
             </SelectTrigger>

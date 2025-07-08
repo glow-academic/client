@@ -38,7 +38,7 @@ import { useRole } from "@/contexts/role-context";
 import { logError } from "@/utils/logger";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BookOpen,
   ChartBar,
@@ -130,6 +130,7 @@ export function UnifiedSidebar({
   ...props
 }: UnifiedSidebarProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
 
@@ -319,6 +320,10 @@ export function UnifiedSidebar({
     } else {
       setRole(mode as ProfileRole, true); // Set simulated role and navigate
     }
+
+    // Invalidate queries to force a refresh on the home page
+    queryClient.invalidateQueries({ queryKey: ["cohorts"] });
+    queryClient.invalidateQueries({ queryKey: ["simulations"] });
   };
 
   const handleSearch = (value: string) => {
