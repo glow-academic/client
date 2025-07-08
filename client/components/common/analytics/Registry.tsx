@@ -37,73 +37,107 @@ export const registry: Record<string, ComponentConfig> = {
       "className": ""
     } },
   "6b8684a8-cd06-6f6a-9a53-d57ad527041b": { component: SimulationPerformance, props: {
-      "className": "",
-      "defaultSelection": "",
-      "title": "",
-      "showSelector": false
+      "color": "blue",
+      "defaultSelection": "all",
+      "chartType": "bar",
+      "title": "Simulation Performance",
+      "showSelector": true
     } },
   "2e3380af-e6a2-6080-ceee-1c91b65121c4": { component: SkillGrowth, props: {
       "className": ""
     } },
   "595e7002-360b-afce-83bd-3164dfc7a203": { component: ActiveCohorts, props: {
-      "title": "",
-      "showDialog": false
+      "color": "blue",
+      "timeRange": "30d",
+      "title": "Active Cohorts",
+      "showDialog": true
     } },
   "71c51fa2-e117-853b-4da5-2de4ee328c7d": { component: AverageScore, props: {
-      "title": "",
-      "showDialog": false
+      "color": "emerald",
+      "timeRange": "30d",
+      "title": "Average Score",
+      "showDialog": true
     } },
   "25c97e74-2e60-efeb-0277-b57c7ce720e1": { component: CompletionRate, props: {
-      "title": "",
-      "showDialog": false
+      "color": "teal",
+      "timeRange": "7d",
+      "title": "Completion Rate",
+      "showDialog": true
     } },
   "7b058d9e-2968-3e69-4ff7-8bc7a13e5cfc": { component: NeedSupport, props: {
-      "title": "",
-      "showDialog": false
+      "color": "red",
+      "timeRange": "30d",
+      "title": "Need Support",
+      "showDialog": true
     } },
   "32aae137-f974-5b45-60eb-6b9b2eca6433": { component: PassRate, props: {
-      "title": "",
-      "showDialog": false
+      "color": "emerald",
+      "timeRange": "7d",
+      "title": "Pass Rate",
+      "showDialog": true
     } },
   "c3bebe15-6231-0b14-704a-67545389be60": { component: TotalSessions, props: {
-      "title": "",
-      "showDialog": false
+      "color": "teal",
+      "timeRange": "30d",
+      "title": "Total Sessions",
+      "showDialog": true
     } },
   "e412e43b-468c-489c-f262-1607bc64dc43": { component: TotalTas, props: {
-      "title": "",
-      "showDialog": false
+      "color": "purple",
+      "timeRange": "30d",
+      "title": "Total TAs",
+      "showDialog": true
     } },
   "71724c23-ef68-189d-94b3-8ed2c8ffded3": { component: TrainingHours, props: {
-      "title": "",
-      "showDialog": false
+      "color": "orange",
+      "timeRange": "30d",
+      "title": "Training Hours",
+      "showDialog": true
     } },
   "654ffdaa-be1f-8f87-c2ac-5a11b7076c8f": { component: TrainingSessions, props: {
-      "title": "",
-      "showDialog": false
+      "color": "green",
+      "timeRange": "7d",
+      "title": "Training Sessions",
+      "showDialog": true
     } },
   "bab2e342-c823-2e94-a85a-816d9cb78bd2": { component: PerformanceByPersonality, props: {
-      "title": "",
-      "showTimeSelector": false
+      "color": "purple",
+      "defaultTimeRange": "30d",
+      "chartType": "bar",
+      "title": "Performance by Personality",
+      "showTimeSelector": true
     } },
   "a7e8e793-011f-b291-eec4-a74232db4491": { component: PerformanceTrends, props: {
-      "title": "",
-      "showTimeSelector": false
+      "color": "blue",
+      "defaultTimeRange": "30d",
+      "chartType": "area",
+      "title": "Performance Trends",
+      "showTimeSelector": true
     } },
   "c2940e17-d668-43e3-ad76-9abf53d5b21f": { component: SessionActivity, props: {
-      "title": "",
-      "showTimeSelector": false
+      "color": "blue",
+      "defaultTimeRange": "24h",
+      "chartType": "bar",
+      "title": "Session Activity",
+      "showTimeSelector": true
     } },
   "2a27f6d4-e6a9-f2fd-d691-7de103d7c443": { component: ClassPerformance, props: {
-      "maxItems": 0,
-      "title": ""
+      "color": "blue",
+      "maxItems": 5,
+      "title": "Class Performance",
+      "layout": "vertical"
     } },
   "ce392c42-3858-091d-cd39-3fc69bca92c2": { component: SkillBreakdown, props: {
-      "maxItems": 0,
-      "title": ""
+      "color": "blue",
+      "maxItems": 4,
+      "title": "Skill Breakdown",
+      "layout": "vertical"
     } },
   "e5fd9fa5-5da1-7262-f40a-c2300888e1ad": { component: TrainingInsights, props: {
-      "maxItems": 0,
-      "title": ""
+      "color": "blue",
+      "maxItems": 4,
+      "title": "Training Insights",
+      "layout": "vertical"
     } }
 };
 

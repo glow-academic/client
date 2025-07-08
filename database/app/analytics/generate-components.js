@@ -49,7 +49,64 @@ function parseComponentProps(filePath) {
   try {
     const content = fs.readFileSync(filePath, "utf8");
 
-    // Look for interface definitions that end with "Props"
+    // First, try to extract default values from function parameters
+    const functionDefaults = {};
+
+    // Look for function definition with destructured parameters
+    const functionRegex =
+      /export\s+default\s+function\s+\w+\s*\(\s*\{([^}]+)\}\s*:\s*\w*Props\s*\)/s;
+    const functionMatch = content.match(functionRegex);
+
+    if (functionMatch) {
+      const paramString = functionMatch[1];
+
+      // Parse individual parameters with defaults
+      const paramLines = paramString
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line && !line.startsWith("//"));
+
+      for (const line of paramLines) {
+        // Match patterns like: propName = defaultValue,
+        const paramMatch = line.match(/(\w+)(?:\s*:\s*[^=]+)?\s*=\s*([^,]+)/);
+        if (paramMatch) {
+          const [, propName, defaultValue] = paramMatch;
+          let parsedDefault = defaultValue.trim();
+
+          // Remove trailing comma if present
+          if (parsedDefault.endsWith(",")) {
+            parsedDefault = parsedDefault.slice(0, -1);
+          }
+
+          // Parse the default value based on its type
+          if (parsedDefault === "true" || parsedDefault === "false") {
+            functionDefaults[propName] = parsedDefault === "true";
+          } else if (
+            parsedDefault.startsWith('"') &&
+            parsedDefault.endsWith('"')
+          ) {
+            functionDefaults[propName] = parsedDefault.slice(1, -1);
+          } else if (
+            parsedDefault.startsWith("'") &&
+            parsedDefault.endsWith("'")
+          ) {
+            functionDefaults[propName] = parsedDefault.slice(1, -1);
+          } else if (!isNaN(Number(parsedDefault))) {
+            functionDefaults[propName] = Number(parsedDefault);
+          } else {
+            // For string literals without quotes, keep as string
+            functionDefaults[propName] = parsedDefault.replace(/['"]/g, "");
+          }
+        }
+      }
+    }
+
+    // If we found function defaults, use them
+    if (Object.keys(functionDefaults).length > 0) {
+      return functionDefaults;
+    }
+
+    // Fallback to interface parsing if no function defaults found
     const interfaceRegex = /interface\s+(\w*Props)\s*{([^}]*)}/g;
     const props = {};
 
