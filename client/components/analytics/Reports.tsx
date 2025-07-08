@@ -31,10 +31,12 @@ import {
 // Removed downloadReport import - now calling API directly
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getSimulationMessagesByChats } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chats";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
@@ -42,9 +44,13 @@ import {
   AlertTriangle,
   ArrowUp,
   Award,
+  Clock,
+  MessageCircle,
   Search,
+  Target,
   TrendingDown,
   TrendingUp,
+  Zap,
 } from "lucide-react";
 
 export interface ReportOptions {
@@ -61,7 +67,10 @@ type SortOption =
   | "score-asc"
   | "name-asc"
   | "name-desc"
-  | "sessions-desc";
+  | "sessions-desc"
+  | "last-activity-desc"
+  | "consistency-desc"
+  | "scenarios-desc";
 type FilterOption = "all" | "struggling" | "performing-well";
 
 export default function Reports() {
@@ -79,6 +88,11 @@ export default function Reports() {
   const { data: simulations, isLoading: isLoadingSimulations } = useQuery({
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
+  });
+
+  const { data: scenarios, isLoading: isLoadingScenarios } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => getAllScenarios(),
   });
 
   const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
@@ -116,6 +130,12 @@ export default function Reports() {
     enabled: !!attempts && attempts.length > 0,
   });
 
+  const { data: messages, isLoading: isLoadingMessages } = useQuery({
+    queryKey: ["simulationMessages", chats?.map((chat) => chat.id)],
+    queryFn: () => getSimulationMessagesByChats(chats!.map((chat) => chat.id)),
+    enabled: !!chats && chats.length > 0,
+  });
+
   const { data: grades, isLoading: isLoadingGrades } = useQuery({
     queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
     queryFn: () =>
@@ -141,7 +161,10 @@ export default function Reports() {
       !feedbacks ||
       !standards ||
       !standardGroups ||
-      !rubrics
+      !rubrics ||
+      !scenarios ||
+      !simulations ||
+      !messages
     )
       return null;
 
@@ -156,6 +179,9 @@ export default function Reports() {
       );
       const taGrades = grades.filter((grade) =>
         taChats.some((chat) => chat.id === grade.simulationChatId)
+      );
+      const taMessages = messages.filter((message) =>
+        taChats.some((chat) => chat.id === message.chatId)
       );
 
       const avgScore =
@@ -260,6 +286,116 @@ export default function Reports() {
         else if (lastAvg < firstAvg - 5) trend = "declining";
       }
 
+      // NEW ANALYTICS - Additional columns
+
+      // Last Activity
+      const lastActivity =
+        taChats.length > 0
+          ? new Date(
+              Math.max(
+                ...taChats.map((chat) =>
+                  new Date(chat.completedAt || chat.updatedAt).getTime()
+                )
+              )
+            )
+          : null;
+
+      // Scenarios Completed
+      const uniqueScenarios = new Set(taChats.map((chat) => chat.scenarioId));
+      const scenariosCompleted = uniqueScenarios.size;
+
+      // Messages Per Session
+      const messagesPerSession =
+        taChats.length > 0 ? Math.round(taMessages.length / taChats.length) : 0;
+
+      // Average Response Time (time between messages)
+      const avgResponseTime =
+        taMessages.length > 1
+          ? Math.round(
+              taMessages.reduce((sum, msg, index) => {
+                if (index === 0) return sum;
+                const prevMsg = taMessages[index - 1];
+                if (!prevMsg) return sum;
+                const timeDiff =
+                  new Date(msg.createdAt).getTime() -
+                  new Date(prevMsg.createdAt).getTime();
+                return sum + timeDiff;
+              }, 0) /
+                (taMessages.length - 1) /
+                1000
+            ) // Convert to seconds
+          : 0;
+
+      // Feedback Quality (average feedback score)
+      const avgFeedbackScore =
+        taFeedbacks.length > 0
+          ? Math.round(
+              taFeedbacks.reduce((sum, f) => sum + f.total, 0) /
+                taFeedbacks.length
+            )
+          : 0;
+
+      // Retry Rate (sessions that took multiple attempts)
+      const simulationAttempts = taAttempts.reduce(
+        (acc, attempt) => {
+          const simulationId = attempt.simulationId;
+          acc[simulationId] = (acc[simulationId] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
+
+      const retryRate =
+        Object.keys(simulationAttempts).length > 0
+          ? Math.round(
+              (Object.values(simulationAttempts).filter(
+                (count: number) => count > 1
+              ).length /
+                Object.keys(simulationAttempts).length) *
+                100
+            )
+          : 0;
+
+      // Recent Performance (last 5 sessions)
+      const recentGrades = sortedGrades.slice(-5);
+      const recentPerformance =
+        recentGrades.length > 0
+          ? Math.round(
+              recentGrades.reduce((sum, g) => sum + g.score, 0) /
+                recentGrades.length
+            )
+          : 0;
+
+      // Simulation Types
+      const simulationTypes = new Set(
+        taAttempts.map((attempt) => {
+          const simulation = simulations.find(
+            (s) => s.id === attempt.simulationId
+          );
+          return simulation?.title || "Unknown";
+        })
+      );
+
+      // Peak Performance
+      const peakPerformance =
+        taGrades.length > 0 ? Math.max(...taGrades.map((g) => g.score)) : 0;
+
+      // Consistency Score (standard deviation of scores)
+      const consistencyScore =
+        taGrades.length > 1
+          ? Math.round(
+              100 -
+                (Math.sqrt(
+                  taGrades.reduce(
+                    (sum, g) => sum + Math.pow(g.score - avgScore, 2),
+                    0
+                  ) / taGrades.length
+                ) /
+                  avgScore) *
+                  100
+            )
+          : 100;
+
       return {
         id: ta.id,
         firstName: ta.firstName,
@@ -288,6 +424,17 @@ export default function Reports() {
         trend,
         isStruggling,
         hasNoSessions: totalSessions === 0,
+        // New fields
+        lastActivity,
+        scenariosCompleted,
+        messagesPerSession,
+        avgResponseTime,
+        avgFeedbackScore,
+        retryRate,
+        recentPerformance,
+        simulationTypes: Array.from(simulationTypes),
+        peakPerformance,
+        consistencyScore,
       };
     });
 
@@ -304,6 +451,8 @@ export default function Reports() {
     attempts,
     rubrics,
     simulations,
+    scenarios,
+    messages,
   ]);
 
   // Sort, filter, and search TAs
@@ -351,6 +500,20 @@ export default function Reports() {
       case "sessions-desc":
         filtered.sort((a, b) => b.totalSessions - a.totalSessions);
         break;
+      case "last-activity-desc":
+        filtered.sort((a, b) => {
+          if (!a.lastActivity && !b.lastActivity) return 0;
+          if (!a.lastActivity) return 1;
+          if (!b.lastActivity) return -1;
+          return b.lastActivity.getTime() - a.lastActivity.getTime();
+        });
+        break;
+      case "consistency-desc":
+        filtered.sort((a, b) => b.consistencyScore - a.consistencyScore);
+        break;
+      case "scenarios-desc":
+        filtered.sort((a, b) => b.scenariosCompleted - a.scenariosCompleted);
+        break;
     }
 
     return filtered;
@@ -370,7 +533,9 @@ export default function Reports() {
     isLoadingStandards ||
     isLoadingStandardGroups ||
     isLoadingRubrics ||
-    isLoadingSimulations
+    isLoadingSimulations ||
+    isLoadingScenarios ||
+    isLoadingMessages
   ) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -424,7 +589,7 @@ export default function Reports() {
               value={sortBy}
               onValueChange={(value: SortOption) => setSortBy(value)}
             >
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-[180px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -435,6 +600,15 @@ export default function Reports() {
                 <SelectItem value="sessions-desc">
                   Sessions (Most to Least)
                 </SelectItem>
+                <SelectItem value="last-activity-desc">
+                  Last Activity (Recent)
+                </SelectItem>
+                <SelectItem value="consistency-desc">
+                  Consistency (High to Low)
+                </SelectItem>
+                <SelectItem value="scenarios-desc">
+                  Scenarios (Most to Least)
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -442,7 +616,7 @@ export default function Reports() {
       </div>
 
       {/* Dense Table */}
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -472,6 +646,33 @@ export default function Reports() {
               </TableHead>
               <TableHead className="w-[80px] text-center border-r">
                 Strongest
+              </TableHead>
+              <TableHead className="w-[90px] text-center border-r">
+                Last Activity
+              </TableHead>
+              <TableHead className="w-[70px] text-center border-r">
+                Scenarios
+              </TableHead>
+              <TableHead className="w-[70px] text-center border-r">
+                Msgs/Session
+              </TableHead>
+              <TableHead className="w-[70px] text-center border-r">
+                Resp Time
+              </TableHead>
+              <TableHead className="w-[70px] text-center border-r">
+                Feedback
+              </TableHead>
+              <TableHead className="w-[60px] text-center border-r">
+                Retry %
+              </TableHead>
+              <TableHead className="w-[70px] text-center border-r">
+                Recent
+              </TableHead>
+              <TableHead className="w-[60px] text-center border-r">
+                Peak
+              </TableHead>
+              <TableHead className="w-[80px] text-center border-r">
+                Consistency
               </TableHead>
               <TableHead className="w-[60px] text-center border-r">
                 Status
@@ -606,6 +807,90 @@ export default function Reports() {
                     )}
                   </TableCell>
 
+                  {/* Last Activity */}
+                  <TableCell className="text-center border-r">
+                    <div className="text-xs font-medium flex items-center justify-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {ta.lastActivity
+                        ? new Date(ta.lastActivity).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                            }
+                          )
+                        : "Never"}
+                    </div>
+                  </TableCell>
+
+                  {/* Scenarios Completed */}
+                  <TableCell className="text-center border-r">
+                    <div className="text-xs font-medium flex items-center justify-center gap-1">
+                      <Target className="h-3 w-3" />
+                      {ta.scenariosCompleted}
+                    </div>
+                  </TableCell>
+
+                  {/* Messages Per Session */}
+                  <TableCell className="text-center border-r">
+                    <div className="text-xs font-medium flex items-center justify-center gap-1">
+                      <MessageCircle className="h-3 w-3" />
+                      {ta.hasNoSessions ? "N/A" : ta.messagesPerSession}
+                    </div>
+                  </TableCell>
+
+                  {/* Response Time */}
+                  <TableCell className="text-center border-r">
+                    <div className="text-xs font-medium">
+                      {ta.hasNoSessions ? "N/A" : `${ta.avgResponseTime}s`}
+                    </div>
+                  </TableCell>
+
+                  {/* Feedback Score */}
+                  <TableCell className="text-center border-r">
+                    <div className="text-xs font-medium">
+                      {ta.hasNoSessions ? "N/A" : `${ta.avgFeedbackScore}%`}
+                    </div>
+                  </TableCell>
+
+                  {/* Retry Rate */}
+                  <TableCell className="text-center border-r">
+                    <div className="text-xs font-medium">
+                      {ta.hasNoSessions ? "N/A" : `${ta.retryRate}%`}
+                    </div>
+                  </TableCell>
+
+                  {/* Recent Performance */}
+                  <TableCell className="text-center border-r">
+                    <div className="text-xs font-medium">
+                      {ta.hasNoSessions ? "N/A" : `${ta.recentPerformance}%`}
+                    </div>
+                  </TableCell>
+
+                  {/* Peak Performance */}
+                  <TableCell className="text-center border-r">
+                    <div className="text-xs font-medium flex items-center justify-center gap-1">
+                      <Zap className="h-3 w-3" />
+                      {ta.hasNoSessions ? "N/A" : `${ta.peakPerformance}%`}
+                    </div>
+                  </TableCell>
+
+                  {/* Consistency Score */}
+                  <TableCell className="text-center border-r">
+                    <Badge
+                      variant={
+                        ta.consistencyScore >= 80
+                          ? "default"
+                          : ta.consistencyScore >= 60
+                            ? "secondary"
+                            : "destructive"
+                      }
+                      className="text-xs font-medium px-1 py-0"
+                    >
+                      {ta.hasNoSessions ? "N/A" : `${ta.consistencyScore}%`}
+                    </Badge>
+                  </TableCell>
+
                   {/* Status */}
                   <TableCell className="text-center border-r">
                     {ta.hasNoSessions ? (
@@ -646,7 +931,7 @@ export default function Reports() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={13} className="text-center py-12">
+                <TableCell colSpan={22} className="text-center py-12">
                   <div className="flex flex-col items-center gap-4">
                     <Award className="h-16 w-16 text-muted-foreground" />
                     <div>
@@ -676,4 +961,4 @@ export default function Reports() {
       </div>
     </div>
   );
-} 
+}

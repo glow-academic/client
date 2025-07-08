@@ -1,11 +1,11 @@
 # Component Test Coverage Report
 
-Generated on: 2025-07-08T14:53:29.812Z
+Generated on: 2025-07-08T15:41:07.946Z
 
 ## Summary
-- **Total Components**: 98
+- **Total Components**: 97
 - **Tests Created**: 0
-- **Tests Updated**: 51
+- **Tests Updated**: 50
 - **Tests Skipped** (already implemented): 47
 
 ## Component Coverage
@@ -66,7 +66,6 @@ Generated on: 2025-07-08T14:53:29.812Z
 | export-button | common/history/export-button.tsx | export-button.test.tsx | ✅ Implemented |
 | ChatDialog | common/home/ChatDialog.tsx | ChatDialog.test.tsx | ❌ Needs Implementation |
 | ChatFab | common/home/ChatFab.tsx | ChatFab.test.tsx | ❌ Needs Implementation |
-| ChatHeaderBadge | common/home/ChatHeaderBadge.tsx | ChatHeaderBadge.test.tsx | ❌ Needs Implementation |
 | ChatInput | common/home/ChatInput.tsx | ChatInput.test.tsx | ❌ Needs Implementation |
 | ChatMessages | common/home/ChatMessages.tsx | ChatMessages.test.tsx | ❌ Needs Implementation |
 | ChatStarterPrompts | common/home/ChatStarterPrompts.tsx | ChatStarterPrompts.test.tsx | ✅ Implemented |
@@ -184,7 +183,6 @@ __tests__/
 │   ├── home/
 │   │   ├── ChatDialog.test.tsx
 │   │   ├── ChatFab.test.tsx
-│   │   ├── ChatHeaderBadge.test.tsx
 │   │   ├── ChatInput.test.tsx
 │   │   ├── ChatMessages.test.tsx
 │   │   ├── ChatStarterPrompts.test.tsx
