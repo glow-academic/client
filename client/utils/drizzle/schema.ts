@@ -296,9 +296,9 @@ export const dashboards = pgTable("dashboards", {
 	primaryComponentIds: uuid("primary_component_ids").array().default(["RAY"]).notNull(),
 	secondaryComponentIds: uuid("secondary_component_ids").array().default(["RAY"]).notNull(),
 	footerComponentIds: uuid("footer_component_ids").array().default(["RAY"]).notNull(),
-	autoScroll: boolean("auto_scroll").default(true).notNull(),
+	autoScroll: boolean("auto_scroll").default(false).notNull(),
 	showIndicators: boolean("show_indicators").default(true).notNull(),
-	headerComponents: integer("header_components").default(4).notNull(),
+	headerComponents: integer("header_components").default(3).notNull(),
 	mainSplit: doublePrecision("main_split").default(0.65).notNull(),
 	footerSplit: doublePrecision("footer_split").default(0.5).notNull()}, (table) => [
 	foreignKey({

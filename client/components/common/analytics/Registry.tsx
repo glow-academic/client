@@ -37,26 +37,74 @@ export const registry: Record<string, ComponentConfig> = {
       "className": ""
     } },
   "6b8684a8-cd06-6f6a-9a53-d57ad527041b": { component: SimulationPerformance, props: {
-      "className": ""
+      "className": "",
+      "defaultSelection": "",
+      "title": "",
+      "showSelector": false
     } },
   "2e3380af-e6a2-6080-ceee-1c91b65121c4": { component: SkillGrowth, props: {
       "className": ""
     } },
-  "595e7002-360b-afce-83bd-3164dfc7a203": { component: ActiveCohorts },
-  "71c51fa2-e117-853b-4da5-2de4ee328c7d": { component: AverageScore },
-  "25c97e74-2e60-efeb-0277-b57c7ce720e1": { component: CompletionRate },
-  "7b058d9e-2968-3e69-4ff7-8bc7a13e5cfc": { component: NeedSupport },
-  "32aae137-f974-5b45-60eb-6b9b2eca6433": { component: PassRate },
-  "c3bebe15-6231-0b14-704a-67545389be60": { component: TotalSessions },
-  "e412e43b-468c-489c-f262-1607bc64dc43": { component: TotalTas },
-  "71724c23-ef68-189d-94b3-8ed2c8ffded3": { component: TrainingHours },
-  "654ffdaa-be1f-8f87-c2ac-5a11b7076c8f": { component: TrainingSessions },
-  "bab2e342-c823-2e94-a85a-816d9cb78bd2": { component: PerformanceByPersonality },
-  "a7e8e793-011f-b291-eec4-a74232db4491": { component: PerformanceTrends },
-  "c2940e17-d668-43e3-ad76-9abf53d5b21f": { component: SessionActivity },
-  "2a27f6d4-e6a9-f2fd-d691-7de103d7c443": { component: ClassPerformance },
-  "ce392c42-3858-091d-cd39-3fc69bca92c2": { component: SkillBreakdown },
-  "e5fd9fa5-5da1-7262-f40a-c2300888e1ad": { component: TrainingInsights }
+  "595e7002-360b-afce-83bd-3164dfc7a203": { component: ActiveCohorts, props: {
+      "title": "",
+      "showDialog": false
+    } },
+  "71c51fa2-e117-853b-4da5-2de4ee328c7d": { component: AverageScore, props: {
+      "title": "",
+      "showDialog": false
+    } },
+  "25c97e74-2e60-efeb-0277-b57c7ce720e1": { component: CompletionRate, props: {
+      "title": "",
+      "showDialog": false
+    } },
+  "7b058d9e-2968-3e69-4ff7-8bc7a13e5cfc": { component: NeedSupport, props: {
+      "title": "",
+      "showDialog": false
+    } },
+  "32aae137-f974-5b45-60eb-6b9b2eca6433": { component: PassRate, props: {
+      "title": "",
+      "showDialog": false
+    } },
+  "c3bebe15-6231-0b14-704a-67545389be60": { component: TotalSessions, props: {
+      "title": "",
+      "showDialog": false
+    } },
+  "e412e43b-468c-489c-f262-1607bc64dc43": { component: TotalTas, props: {
+      "title": "",
+      "showDialog": false
+    } },
+  "71724c23-ef68-189d-94b3-8ed2c8ffded3": { component: TrainingHours, props: {
+      "title": "",
+      "showDialog": false
+    } },
+  "654ffdaa-be1f-8f87-c2ac-5a11b7076c8f": { component: TrainingSessions, props: {
+      "title": "",
+      "showDialog": false
+    } },
+  "bab2e342-c823-2e94-a85a-816d9cb78bd2": { component: PerformanceByPersonality, props: {
+      "title": "",
+      "showTimeSelector": false
+    } },
+  "a7e8e793-011f-b291-eec4-a74232db4491": { component: PerformanceTrends, props: {
+      "title": "",
+      "showTimeSelector": false
+    } },
+  "c2940e17-d668-43e3-ad76-9abf53d5b21f": { component: SessionActivity, props: {
+      "title": "",
+      "showTimeSelector": false
+    } },
+  "2a27f6d4-e6a9-f2fd-d691-7de103d7c443": { component: ClassPerformance, props: {
+      "maxItems": 0,
+      "title": ""
+    } },
+  "ce392c42-3858-091d-cd39-3fc69bca92c2": { component: SkillBreakdown, props: {
+      "maxItems": 0,
+      "title": ""
+    } },
+  "e5fd9fa5-5da1-7262-f40a-c2300888e1ad": { component: TrainingInsights, props: {
+      "maxItems": 0,
+      "title": ""
+    } }
 };
 
 export default registry;

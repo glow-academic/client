@@ -43,7 +43,13 @@ describe('TrainingInsights', () => {
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for TrainingInsights
     });
 
-    
+    it('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: TrainingInsightsProps
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Props testing for TrainingInsights
+    });
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -88,7 +94,12 @@ describe('TrainingInsights', () => {
       expect(true).toBe(false); // IMPLEMENT: Edge cases test for TrainingInsights
     });
 
-    
+    it('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Invalid props test for TrainingInsights
+    });
   });
 });
 
@@ -99,8 +110,8 @@ describe('TrainingInsights', () => {
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Has props: true
+ * - Props interface: TrainingInsightsProps
  * - Client component: true
  * - Uses hooks: used, useQuery, useMemo
  * - Uses router: false
@@ -115,7 +126,7 @@ describe('TrainingInsights', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<TrainingInsights />);
+ * render(<TrainingInsights {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

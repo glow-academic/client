@@ -43,7 +43,13 @@ describe('ClassPerformance', () => {
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for ClassPerformance
     });
 
-    
+    it('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: ClassPerformanceProps
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Props testing for ClassPerformance
+    });
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -88,7 +94,12 @@ describe('ClassPerformance', () => {
       expect(true).toBe(false); // IMPLEMENT: Edge cases test for ClassPerformance
     });
 
-    
+    it('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Invalid props test for ClassPerformance
+    });
   });
 });
 
@@ -99,8 +110,8 @@ describe('ClassPerformance', () => {
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Has props: true
+ * - Props interface: ClassPerformanceProps
  * - Client component: true
  * - Uses hooks: useQuery, useMemo
  * - Uses router: false
@@ -115,7 +126,7 @@ describe('ClassPerformance', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<ClassPerformance />);
+ * render(<ClassPerformance {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

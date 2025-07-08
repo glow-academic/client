@@ -44,7 +44,13 @@ describe('NeedSupport', () => {
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for NeedSupport
     });
 
-    
+    it('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: NeedSupportProps
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Props testing for NeedSupport
+    });
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -107,7 +113,12 @@ describe('NeedSupport', () => {
       expect(true).toBe(false); // IMPLEMENT: Edge cases test for NeedSupport
     });
 
-    
+    it('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Invalid props test for NeedSupport
+    });
   });
 });
 
@@ -118,9 +129,9 @@ describe('NeedSupport', () => {
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
+ * - Has props: true
+ * - Props interface: NeedSupportProps
+ * - Client component: true
  * - Uses hooks: used, useQuery, useMemo, useState
  * - Uses router: false
  * - Has API calls: true
@@ -134,7 +145,7 @@ describe('NeedSupport', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<NeedSupport />);
+ * render(<NeedSupport {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

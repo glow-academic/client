@@ -44,7 +44,13 @@ describe('ActiveCohorts', () => {
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for ActiveCohorts
     });
 
-    
+    it('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: ActiveCohortsProps
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Props testing for ActiveCohorts
+    });
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -107,7 +113,12 @@ describe('ActiveCohorts', () => {
       expect(true).toBe(false); // IMPLEMENT: Edge cases test for ActiveCohorts
     });
 
-    
+    it('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Invalid props test for ActiveCohorts
+    });
   });
 });
 
@@ -118,10 +129,10 @@ describe('ActiveCohorts', () => {
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: used, useQuery, useState
+ * - Has props: true
+ * - Props interface: ActiveCohortsProps
+ * - Client component: true
+ * - Uses hooks: used, useQuery, useMemo, useState
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false
@@ -134,7 +145,7 @@ describe('ActiveCohorts', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<ActiveCohorts />);
+ * render(<ActiveCohorts {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

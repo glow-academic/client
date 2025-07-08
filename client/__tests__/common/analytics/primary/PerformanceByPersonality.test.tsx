@@ -44,7 +44,13 @@ describe('PerformanceByPersonality', () => {
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for PerformanceByPersonality
     });
 
-    
+    it('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: PerformanceByPersonalityProps
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Props testing for PerformanceByPersonality
+    });
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -107,7 +113,12 @@ describe('PerformanceByPersonality', () => {
       expect(true).toBe(false); // IMPLEMENT: Edge cases test for PerformanceByPersonality
     });
 
-    
+    it('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Invalid props test for PerformanceByPersonality
+    });
   });
 });
 
@@ -118,8 +129,8 @@ describe('PerformanceByPersonality', () => {
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Has props: true
+ * - Props interface: PerformanceByPersonalityProps
  * - Client component: true
  * - Uses hooks: used, useQuery, useMemo, useState
  * - Uses router: false
@@ -134,7 +145,7 @@ describe('PerformanceByPersonality', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<PerformanceByPersonality />);
+ * render(<PerformanceByPersonality {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

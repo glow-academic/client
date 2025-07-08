@@ -44,7 +44,13 @@ describe('CompletionRate', () => {
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for CompletionRate
     });
 
-    
+    it('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: CompletionRateProps
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Props testing for CompletionRate
+    });
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -107,7 +113,12 @@ describe('CompletionRate', () => {
       expect(true).toBe(false); // IMPLEMENT: Edge cases test for CompletionRate
     });
 
-    
+    it('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Invalid props test for CompletionRate
+    });
   });
 });
 
@@ -118,8 +129,8 @@ describe('CompletionRate', () => {
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Has props: true
+ * - Props interface: CompletionRateProps
  * - Client component: true
  * - Uses hooks: used, useQuery, useMemo, useState
  * - Uses router: false
@@ -134,7 +145,7 @@ describe('CompletionRate', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<CompletionRate />);
+ * render(<CompletionRate {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

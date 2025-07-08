@@ -44,7 +44,13 @@ describe('TotalTas', () => {
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for TotalTas
     });
 
-    
+    it('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: TotalTasProps
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Props testing for TotalTas
+    });
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -107,7 +113,12 @@ describe('TotalTas', () => {
       expect(true).toBe(false); // IMPLEMENT: Edge cases test for TotalTas
     });
 
-    
+    it('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Invalid props test for TotalTas
+    });
   });
 });
 
@@ -118,8 +129,8 @@ describe('TotalTas', () => {
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Has props: true
+ * - Props interface: TotalTasProps
  * - Client component: true
  * - Uses hooks: used, useQuery, useMemo, useState
  * - Uses router: false
@@ -134,7 +145,7 @@ describe('TotalTas', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<TotalTas />);
+ * render(<TotalTas {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

@@ -44,7 +44,13 @@ describe('TotalSessions', () => {
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for TotalSessions
     });
 
-    
+    it('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: TotalSessionsProps
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Props testing for TotalSessions
+    });
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -107,7 +113,12 @@ describe('TotalSessions', () => {
       expect(true).toBe(false); // IMPLEMENT: Edge cases test for TotalSessions
     });
 
-    
+    it('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Invalid props test for TotalSessions
+    });
   });
 });
 
@@ -118,8 +129,8 @@ describe('TotalSessions', () => {
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Has props: true
+ * - Props interface: TotalSessionsProps
  * - Client component: true
  * - Uses hooks: used, useQuery, useMemo, useState
  * - Uses router: false
@@ -134,7 +145,7 @@ describe('TotalSessions', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<TotalSessions />);
+ * render(<TotalSessions {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

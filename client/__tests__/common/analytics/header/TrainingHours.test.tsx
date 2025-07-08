@@ -44,7 +44,13 @@ describe('TrainingHours', () => {
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for TrainingHours
     });
 
-    
+    it('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: TrainingHoursProps
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Props testing for TrainingHours
+    });
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -107,7 +113,12 @@ describe('TrainingHours', () => {
       expect(true).toBe(false); // IMPLEMENT: Edge cases test for TrainingHours
     });
 
-    
+    it('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Invalid props test for TrainingHours
+    });
   });
 });
 
@@ -118,9 +129,9 @@ describe('TrainingHours', () => {
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
+ * - Has props: true
+ * - Props interface: TrainingHoursProps
+ * - Client component: true
  * - Uses hooks: used, useQuery, useMemo, useState
  * - Uses router: false
  * - Has API calls: true
@@ -134,7 +145,7 @@ describe('TrainingHours', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<TrainingHours />);
+ * render(<TrainingHours {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
