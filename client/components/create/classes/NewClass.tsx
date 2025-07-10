@@ -170,7 +170,7 @@ export default function NewClass() {
 
               // Route to the status page
               setTimeout(() => {
-                router.push(`/classes/new/c/${tempClassId}`);
+                router.push(`/create/classes/new/c/${tempClassId}`);
               }, 1000);
 
               resolve();
@@ -255,7 +255,7 @@ export default function NewClass() {
 
   return (
     <div className="min-h-screen py-4 px-4">
-      <div className="w-full">
+      <div className="w-full space-y-4">
         {/* Processing Status Bar */}
         {processingStep !== "idle" && (
           <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3">
@@ -355,7 +355,9 @@ export default function NewClass() {
             </p>
             <div className="flex justify-center gap-2 mt-4">
               <Button
-                onClick={() => router.push(`/classes/new/c/${createdClassId}`)}
+                onClick={() =>
+                  router.push(`/create/classes/new/c/${createdClassId}`)
+                }
               >
                 View Processing Status
               </Button>

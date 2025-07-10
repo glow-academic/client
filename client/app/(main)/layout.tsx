@@ -118,11 +118,11 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    // Check for individual class page pattern: /create/classes/c/[classId]
+    // Check for individual class page pattern: /create/classes/new/c/[classId]
     const classPageMatch = pathname.match(
-      /^\/create\/classes\/c\/([^\/]+)(?:\/.*)?$/
+      /^\/create\/classes\/new\/c\/([^\/]+)(?:\/.*)?$/
     );
-    if (classPageMatch && !pathname.includes("/edit")) {
+    if (classPageMatch) {
       const classId = classPageMatch[1];
       return (
         <Button
