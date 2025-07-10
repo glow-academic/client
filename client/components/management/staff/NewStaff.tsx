@@ -34,10 +34,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Class as ClassData } from "@/types";
 import { logError } from "@/utils/logger";
+import { createProfile } from "@/utils/mutations/profiles/create-profile";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useSession } from "next-auth/react";
-import { createProfile } from "@/utils/mutations/profiles/create-profile";
 
 type ProfileRole = "admin" | "instructional" | "instructor" | "ta";
 
@@ -506,6 +506,44 @@ export default function NewStaff() {
                       })}
                     </TableBody>
                   </Table>
+                </div>
+
+                {/* Role Information Section */}
+                <div className="space-y-2">
+                  <Label>Role Information</Label>
+                  <div className="space-y-2">
+                    {Array.from(
+                      new Set(csvPreview.map((user) => user.role))
+                    ).map((role) => {
+                      const RoleIcon = getRoleIcon(role);
+                      const userCount = csvPreview.filter(
+                        (user) => user.role === role
+                      ).length;
+                      return (
+                        <div key={role} className="p-3 bg-muted rounded-md">
+                          <div className="flex items-center gap-2 mb-2">
+                            <RoleIcon className="h-4 w-4" />
+                            <Badge variant={getRoleBadgeVariant(role)}>
+                              {getRoleDisplayName(role)}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              ({userCount} user{userCount !== 1 ? "s" : ""})
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {role === "admin" &&
+                              "Will have full system access and user management permissions."}
+                            {role === "instructional" &&
+                              "Will have permissions to manage instructors and teaching assistants."}
+                            {role === "instructor" &&
+                              "Will have permissions to manage assigned classes and teaching assistants."}
+                            {role === "ta" &&
+                              "Will have permissions to assist with assigned classes."}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {/* Bulk Class Assignment Section */}
