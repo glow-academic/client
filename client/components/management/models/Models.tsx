@@ -12,7 +12,6 @@ import {
   Edit,
   Eye,
   EyeOff,
-  Plus,
   Save,
   Settings,
   Sparkles,
@@ -150,10 +149,6 @@ export default function Models() {
     router.push(`/management/models/m/${id}`);
   };
 
-  const handleCreateNew = () => {
-    router.push("/management/models/new");
-  };
-
   const handleProviderSettings = (provider: Provider) => {
     setSelectedProvider(provider);
     setEditForm({
@@ -260,13 +255,6 @@ export default function Models() {
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Sparkles className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">No models yet</h3>
-              <p className="text-muted-foreground text-center mb-4">
-                Create your first AI model to get started with the platform
-              </p>
-              <Button onClick={handleCreateNew}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Your First Model
-              </Button>
             </CardContent>
           </Card>
         </div>

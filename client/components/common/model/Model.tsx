@@ -24,13 +24,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 
 import { cn } from "@/lib/utils";
+import { Model as ModelType } from "@/types";
+import { modelType } from "@/utils/drizzle/schema";
 import { createModel } from "@/utils/mutations/models/create-model";
 import { updateModel } from "@/utils/mutations/models/update-model";
 import { getModel } from "@/utils/queries/models/get-model";
 import { getAllProviders } from "@/utils/queries/providers/get-all-providers";
 import { useRouter } from "next/navigation";
-import { Model as ModelType } from "@/types";
-import { modelType } from "@/utils/drizzle/schema";
 interface FormErrors {
   name?: string;
   description?: string;
@@ -43,7 +43,7 @@ interface FormData {
   description?: string;
   providerId?: string;
   active?: string;
-  modelType?: ModelType["modelType"];
+  modelType?: string;
 }
 
 interface ModelProps {
@@ -57,22 +57,33 @@ export default function Model({ modelId }: ModelProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!modelId;
 
-  const initialFormData: FormData = useMemo(() => ({}), []);
+  const initialFormData: FormData = useMemo(
+    () => ({
+      name: "",
+      description: "",
+      providerId: "",
+      active: "true",
+      modelType: "ttt",
+    }),
+    []
+  );
 
-  const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [formData, setFormData] = useState<FormData>({});
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const { data: providers } = useQuery({
+  const { data: providers, isLoading: isProvidersLoading } = useQuery({
     queryKey: ["providers"],
     queryFn: () => getAllProviders(),
   });
 
   // Fetch the specific model directly if in edit mode
-  const { data: modelToEdit } = useQuery({
+  const { data: modelToEdit, isLoading: isModelLoading } = useQuery({
     queryKey: ["model", modelId],
     queryFn: () => getModel(modelId!),
     enabled: isEditMode,
   });
+
+  const isLoading = isProvidersLoading || isModelLoading;
 
   // Single consolidated useEffect to handle all form state scenarios
   useEffect(() => {
@@ -115,7 +126,10 @@ export default function Model({ modelId }: ModelProps) {
     }
 
     if (!formData.description) {
-      setErrors((prev) => ({ ...prev, description: "Description is required" }));
+      setErrors((prev) => ({
+        ...prev,
+        description: "Description is required",
+      }));
       return;
     }
 
@@ -135,7 +149,10 @@ export default function Model({ modelId }: ModelProps) {
       let result;
       if (isEditMode && modelId) {
         result = await updateModel(modelId, {
-          ...formData,
+          name: formData.name,
+          description: formData.description,
+          providerId: formData.providerId,
+          modelType: formData.modelType as ModelType["modelType"],
           active: formData.active === "true" ? true : false,
           updatedAt: new Date().toISOString(),
         });
@@ -145,7 +162,7 @@ export default function Model({ modelId }: ModelProps) {
           description: formData.description,
           providerId: formData.providerId,
           active: formData.active === "true" ? true : false,
-          modelType: formData.modelType,
+          modelType: formData.modelType as ModelType["modelType"],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
@@ -182,14 +199,15 @@ export default function Model({ modelId }: ModelProps) {
         {/* Basic Model Information */}
         <div className="space-y-2">
           <Label htmlFor="name">Name</Label>
-          {formData.name !== undefined ? (
+          {formData.name !== undefined && !isLoading ? (
             <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => handleInputChange("name", e.target.value)}
-            placeholder="Enter model name"
-            className={errors.name ? "border-destructive" : ""}
-          />) : (
+              id="name"
+              value={formData.name}
+              onChange={(e) => handleInputChange("name", e.target.value)}
+              placeholder="Enter model name"
+              className={errors.name ? "border-destructive" : ""}
+            />
+          ) : (
             <Skeleton className="h-10 w-full" />
           )}
           {errors.name && (
@@ -199,14 +217,16 @@ export default function Model({ modelId }: ModelProps) {
 
         <div className="space-y-2">
           <Label htmlFor="description">Description</Label>
-          {formData.description !== undefined ? (<Textarea
-            id="description"
-            value={formData.description}
-            onChange={(e) => handleInputChange("description", e.target.value)}
-            placeholder="Enter model description"
-            rows={3}
-            className={errors.description ? "border-destructive" : ""}
-          />) : (
+          {formData.description !== undefined && !isLoading ? (
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => handleInputChange("description", e.target.value)}
+              placeholder="Enter model description"
+              rows={3}
+              className={errors.description ? "border-destructive" : ""}
+            />
+          ) : (
             <Skeleton className="h-10 w-full" />
           )}
           {errors.description && (
@@ -224,11 +244,7 @@ export default function Model({ modelId }: ModelProps) {
               <SelectTrigger
                 className={cn(errors.providerId && "border-destructive")}
               >
-                <SelectValue
-                  placeholder={
-                    "Select a provider…"
-                  }
-                />
+                <SelectValue placeholder={"Select a provider…"} />
               </SelectTrigger>
               <SelectContent>
                 {providers.map((p) => (
@@ -248,7 +264,7 @@ export default function Model({ modelId }: ModelProps) {
 
         <div className="space-y-2">
           <Label htmlFor="modelType">Model type</Label>
-          {formData.modelType !== undefined ? (
+          {formData.modelType !== undefined && !isLoading ? (
             <Select
               key={formData.modelType}
               value={formData.modelType}
@@ -259,17 +275,19 @@ export default function Model({ modelId }: ModelProps) {
               <SelectTrigger
                 className={cn(errors.modelType && "border-destructive")}
               >
-                <SelectValue
-                  placeholder={
-                    "Select model type…"
-                  }
-                />
+                <SelectValue placeholder={"Select model type…"} />
               </SelectTrigger>
 
               <SelectContent>
                 {Object.values(modelType.enumValues).map((o) => (
                   <SelectItem key={o} value={o}>
-                    {o.toUpperCase()}
+                    {o === "ttt"
+                      ? "Text-to-Text (TTT)"
+                      : o === "stt"
+                        ? "Speech-to-Text (STT)"
+                        : o === "tts"
+                          ? "Text-to-Speech (TTS)"
+                          : o}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -284,21 +302,19 @@ export default function Model({ modelId }: ModelProps) {
 
         <div className="space-y-2">
           <Label htmlFor="active">Status</Label>
-          {formData.active !== undefined ? (
+          {formData.active !== undefined && !isLoading ? (
             <Select
-            value={formData.active}
-            onValueChange={(value) =>
-              handleInputChange("active", value)
-            }
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="true">Active</SelectItem>
-              <SelectItem value="false">Inactive</SelectItem>
-            </SelectContent>
-          </Select>
+              value={formData.active}
+              onValueChange={(value) => handleInputChange("active", value)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">Active</SelectItem>
+                <SelectItem value="false">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
           ) : (
             <Skeleton className="h-10 w-full" />
           )}
@@ -308,7 +324,7 @@ export default function Model({ modelId }: ModelProps) {
         <div className="flex justify-end gap-4">
           <Button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isLoading}
             className="min-w-[120px]"
           >
             {isSubmitting ? (
