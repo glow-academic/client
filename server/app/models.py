@@ -416,6 +416,7 @@ class Scenarios(_Base, table=True):
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     default_scenario: bool = Field(sa_column=Column('default_scenario', Boolean, server_default=text('false')))
+    generated: bool = Field(sa_column=Column('generated', Boolean, server_default=text('false')))
     agent_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('agent_id', Uuid(as_uuid=True)))
     class_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('class_id', Uuid(as_uuid=True)))
     crowdedness: Optional[int] = Field(default=None, sa_column=Column('crowdedness', Integer))

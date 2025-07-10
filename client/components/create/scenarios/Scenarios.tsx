@@ -13,7 +13,6 @@ import {
   Clock,
   Copy,
   Edit,
-  Filter,
   GraduationCap,
   MapPin,
   Search,
@@ -419,7 +418,7 @@ export function Scenarios() {
     if (totalPages <= 1) return null;
 
     return (
-      <div className="flex items-center justify-between mt-6">
+      <div className="flex items-center justify-between mt-6 mb-10">
         <div className="text-sm text-muted-foreground">
           Showing{" "}
           {Math.min(
@@ -461,11 +460,6 @@ export function Scenarios() {
       {/* Search and Filters */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-4 items-center">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Filters:</span>
-          </div>
-
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -518,24 +512,6 @@ export function Scenarios() {
         </div>
 
         {/* Items per page selector */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Items per page:</span>
-          <Select
-            value={itemsPerPage.toString()}
-            onValueChange={(value) => setItemsPerPage(parseInt(value))}
-          >
-            <SelectTrigger className="w-20">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {ITEMS_PER_PAGE_OPTIONS.map((option) => (
-                <SelectItem key={option} value={option.toString()}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
       {/* Tabs */}
@@ -544,26 +520,47 @@ export function Scenarios() {
         onValueChange={setActiveTab}
         className="space-y-6"
       >
-        <TabsList>
-          <TabsTrigger value="general" className="flex items-center gap-2">
-            General
-            <Badge variant="outline" className="text-xs">
-              {generalScenarios.length}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="generated" className="flex items-center gap-2">
-            Generated
-            <Badge variant="outline" className="text-xs">
-              {generatedScenarios.length}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="default" className="flex items-center gap-2">
-            Default
-            <Badge variant="outline" className="text-xs">
-              {defaultScenarios.length}
-            </Badge>
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="general" className="flex items-center gap-2">
+              General
+              <Badge variant="outline" className="text-xs">
+                {generalScenarios.length}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="generated" className="flex items-center gap-2">
+              Generated
+              <Badge variant="outline" className="text-xs">
+                {generatedScenarios.length}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="default" className="flex items-center gap-2">
+              Default
+              <Badge variant="outline" className="text-xs">
+                {defaultScenarios.length}
+              </Badge>
+            </TabsTrigger>
+          </TabsList>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">Items per page:</span>
+            <Select
+              value={itemsPerPage.toString()}
+              onValueChange={(value) => setItemsPerPage(parseInt(value))}
+            >
+              <SelectTrigger className="w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={option.toString()}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
         <TabsContent value="general" className="space-y-4">
           <div className="grid gap-4">

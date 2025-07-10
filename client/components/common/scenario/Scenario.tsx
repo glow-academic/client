@@ -161,11 +161,7 @@ export default function Scenario({
             ? "completed"
             : "active";
       case "content":
-        return !formData.agentId
-          ? "pending"
-          : formData.description
-            ? "completed"
-            : "active";
+        return !formData.agentId ? "pending" : "active"; // Always active once agent is selected, user can choose to fill or leave blank
       default:
         return "pending";
     }
@@ -207,8 +203,9 @@ export default function Scenario({
     },
     {
       id: "content",
-      title: "Generate Content",
-      description: "AI will create a realistic scenario description",
+      title: "Scenario Content",
+      description:
+        "Add a custom description or leave blank for auto-generation",
       status: getStepStatus("content"),
     },
   ];
@@ -298,9 +295,43 @@ export default function Scenario({
     setIsSubmitting(true);
 
     try {
+      let finalDescription = formData.description?.trim() || "";
+      let finalName = formData.name?.trim() || "";
+
+      // If description is blank, auto-generate content
+      if (!finalDescription) {
+        try {
+          const result = await newScenario({
+            agentId: formData.agentId || null,
+            classId: formData.classId || null,
+            documentIds: formData.documents || [],
+            seniority: formData.seniority || null,
+            crowdedness: formData.crowdedness || null,
+            intensity: formData.intensity || null,
+            location: formData.location || null,
+            tod: formData.tod || null,
+            urgency: formData.urgency || null,
+          });
+
+          if (result.success && result.description) {
+            finalDescription = result.description;
+            finalName = result.title || finalName;
+            toast.success("Scenario content generated automatically!");
+          } else {
+            throw new Error("Failed to generate scenario content");
+          }
+        } catch (genError) {
+          logError("Error auto-generating scenario content:", genError);
+          toast.error(
+            "Failed to generate scenario content. Please add a description manually."
+          );
+          return;
+        }
+      }
+
       const payload = {
-        name: formData.name?.trim() || "",
-        description: formData.description?.trim() || "",
+        name: finalName,
+        description: finalDescription,
         agentId: formData.agentId,
         classId: formData.classId,
         documents: formData.documents,
@@ -785,65 +816,96 @@ export default function Scenario({
           </CardContent>
         </Card>
 
-        {/* Step 6: Generated Content - Only show after generation is triggered */}
-        {formData.description && (
-          <Card
-            className={`transition-all ${!isEditMode && getStepStatus("content") === "active" ? "ring-2 ring-primary" : ""}`}
-          >
-            <CardHeader className="flex flex-row items-center space-y-0 pb-4">
-              <div className="flex items-center space-x-3">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    getStepStatus("content") === "completed"
-                      ? "bg-green-500 text-white"
-                      : getStepStatus("content") === "active"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
-                  }`}
+        {/* Step 6: Content */}
+        <Card
+          className={`transition-all ${!isEditMode && getStepStatus("content") === "active" ? "ring-2 ring-primary" : ""} ${
+            !isEditMode && getStepStatus("content") === "pending"
+              ? "opacity-50"
+              : ""
+          }`}
+        >
+          <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
+            <div className="flex items-center space-x-3">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  getStepStatus("content") === "completed"
+                    ? "bg-green-500 text-white"
+                    : getStepStatus("content") === "active"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                }`}
+              >
+                {getStepStatus("content") === "completed" ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  "6"
+                )}
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-lg">
+                  {steps[5]?.title || ""}
+                </CardTitle>
+                <CardDescription>{steps[5]?.description || ""}</CardDescription>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {formData.description && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateScenario}
+                  disabled={isSubmitting || isGeneratingScenario}
                 >
-                  {getStepStatus("content") === "completed" ? (
-                    <Check className="w-4 h-4" />
+                  {isGeneratingScenario ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Regenerating...
+                    </>
                   ) : (
-                    "6"
+                    "Regenerate"
                   )}
-                </div>
-                <div className="flex-1">
-                  <CardTitle className="text-lg">
-                    {steps[5]?.title || ""}
-                  </CardTitle>
-                  <CardDescription>
-                    {steps[5]?.description || ""}
-                  </CardDescription>
+                </Button>
+              )}
+              {getStepStatus("content") === "completed" && (
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="description">Scenario Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description || ""}
+                onChange={(e) =>
+                  handleInputChange("description", e.target.value)
+                }
+                placeholder="Enter a custom scenario description or leave blank to auto-generate..."
+                className="min-h-[120px]"
+              />
+              <div className="flex items-start gap-2 p-3 rounded-md bg-blue-50 border border-blue-200">
+                <div className="text-blue-600 text-sm">
+                  <strong>💡 Tip:</strong> Leave this blank and we'll
+                  automatically generate a realistic scenario description based
+                  on your selections above when you save.
                 </div>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="description">
-                  Generated Scenario Description
-                </Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    handleInputChange("description", e.target.value)
-                  }
-                  placeholder="Generated scenario description will appear here..."
-                  className="min-h-[120px]"
-                />
-                <p className="text-xs text-muted-foreground">
-                  You can edit the generated description if needed.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end gap-3">
         <Button
-          onClick={formData.description ? handleSubmit : handleGenerateScenario}
+          variant="outline"
+          onClick={() => router.push("/create/scenarios")}
+          disabled={isSubmitting || isGeneratingScenario}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSubmit}
           disabled={isSubmitting || isGeneratingScenario}
           className="min-w-[120px]"
         >
@@ -852,19 +914,10 @@ export default function Scenario({
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               {isEditMode ? "Updating..." : "Saving..."}
             </>
-          ) : isGeneratingScenario ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Generating...
-            </>
-          ) : formData.description ? (
-            isEditMode ? (
-              "Update Scenario"
-            ) : (
-              "Save Scenario"
-            )
+          ) : isEditMode ? (
+            "Update Scenario"
           ) : (
-            "Create Scenario"
+            "Save Scenario"
           )}
         </Button>
       </div>

@@ -225,6 +225,13 @@
       "when": 1752002723446,
       "tag": "0031_sour_veda",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1752187285891,
+      "tag": "0032_nebulous_callisto",
+      "breakpoints": true
     }
   ]
 }
