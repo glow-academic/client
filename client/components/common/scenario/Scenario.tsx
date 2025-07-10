@@ -8,10 +8,21 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 // UI Components
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +47,13 @@ import { ScenarioPicker, type Model } from "./ScenarioPicker";
 import { ScenarioSlider } from "./ScenarioSlider";
 
 // Types and API functions
-import { Agent, Class, Document, Scenario as ScenarioType } from "@/types";
+import {
+  Agent,
+  Class,
+  Document,
+  Scenario as ScenarioType,
+  Simulation,
+} from "@/types";
 import { newScenario } from "@/utils/api/scenarios/new-scenario";
 import { logError } from "@/utils/logger";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
@@ -45,6 +62,7 @@ import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 
 interface ScenarioProps {
   scenarioId?: string;
@@ -88,6 +106,9 @@ export default function Scenario({
     useState<Partial<ScenarioType>>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+  const [originalFormData, setOriginalFormData] =
+    useState<Partial<ScenarioType>>(initialFormData);
 
   // Data fetching
   const { data: documents = [] } = useQuery({
@@ -105,6 +126,12 @@ export default function Scenario({
     queryFn: () => getAllClasses(),
   });
 
+  const { data: simulations = [] } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getAllSimulations(),
+    enabled: isEditMode, // Only fetch when in edit mode
+  });
+
   // Only fetch scenario data if in edit mode
   const { data: scenario, isLoading } = useQuery({
     queryKey: ["scenario", scenarioId],
@@ -115,7 +142,7 @@ export default function Scenario({
   // Load scenario data if editing
   useEffect(() => {
     if (isEditMode && scenario) {
-      setFormData({
+      const scenarioData = {
         classId: scenario.classId,
         documents: scenario.documents || [],
         agentId: scenario.agentId,
@@ -127,9 +154,43 @@ export default function Scenario({
         urgency: scenario.urgency,
         name: scenario.name || "",
         description: scenario.description || "",
-      });
+      };
+      setFormData(scenarioData);
+      setOriginalFormData(scenarioData); // Set original data for comparison
     }
   }, [isEditMode, scenario]);
+
+  // Check if form has changes
+  const hasChanges = useMemo(() => {
+    if (!isEditMode) return false;
+
+    const current = formData;
+    const original = originalFormData;
+
+    return (
+      current.classId !== original.classId ||
+      current.agentId !== original.agentId ||
+      current.seniority !== original.seniority ||
+      current.crowdedness !== original.crowdedness ||
+      current.intensity !== original.intensity ||
+      current.location !== original.location ||
+      current.tod !== original.tod ||
+      current.urgency !== original.urgency ||
+      current.name !== original.name ||
+      current.description !== original.description ||
+      JSON.stringify(current.documents?.sort()) !==
+        JSON.stringify(original.documents?.sort())
+    );
+  }, [formData, originalFormData, isEditMode]);
+
+  // Count simulations using this scenario
+  const affectedSimulations = useMemo(() => {
+    if (!isEditMode || !scenarioId) return [];
+    return simulations.filter(
+      (sim: Simulation) =>
+        sim.scenarioIds && sim.scenarioIds.includes(scenarioId)
+    );
+  }, [simulations, scenarioId, isEditMode]);
 
   // Calculate step status
   const getStepStatus = (stepId: string): StepStatus => {
@@ -363,6 +424,19 @@ export default function Scenario({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleUpdateClick = () => {
+    if (isEditMode && affectedSimulations.length > 0) {
+      setShowUpdateDialog(true);
+    } else {
+      handleSubmit();
+    }
+  };
+
+  const handleConfirmUpdate = () => {
+    setShowUpdateDialog(false);
+    handleSubmit();
   };
 
   // Loading state for edit mode
@@ -902,11 +976,13 @@ export default function Scenario({
           onClick={() => router.push("/create/scenarios")}
           disabled={isSubmitting || isGeneratingScenario}
         >
-          Cancel
+          Back
         </Button>
         <Button
-          onClick={handleSubmit}
-          disabled={isSubmitting || isGeneratingScenario}
+          onClick={isEditMode ? handleUpdateClick : handleSubmit}
+          disabled={
+            isSubmitting || isGeneratingScenario || (isEditMode && !hasChanges)
+          }
           className="min-w-[120px]"
         >
           {isSubmitting ? (
@@ -921,6 +997,42 @@ export default function Scenario({
           )}
         </Button>
       </div>
+
+      {/* Update Confirmation Dialog */}
+      <AlertDialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Update Scenario</AlertDialogTitle>
+            <AlertDialogDescription>
+              This scenario is currently used by {affectedSimulations.length}{" "}
+              simulation{affectedSimulations.length !== 1 ? "s" : ""}:
+              <ul className="mt-2 list-disc list-inside">
+                {affectedSimulations.map((sim) => (
+                  <li key={sim.id} className="text-sm">
+                    {sim.title}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3 text-sm font-medium">
+                Updating this scenario will affect all of these simulations. Are
+                you sure you want to proceed?
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmUpdate}
+              disabled={isSubmitting}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {isSubmitting ? "Updating..." : "Update"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
