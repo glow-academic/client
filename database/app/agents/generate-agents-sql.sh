@@ -51,31 +51,31 @@ INSERT INTO agents (id, name, description, system_prompt, temperature, default_a
 
   -- Insert Assistant Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
-  ('55555555-eeee-eeee-eeee-555555555555', 'Assistant', 'A helpful assistant that can help with a variety of tasks.', '$ASSISTANT_PROMPT', 0, true, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+  ('55555555-eeee-eeee-eeee-555555555555', 'Assistant', 'A helpful assistant that can help with a variety of tasks.', '$ASSISTANT_PROMPT', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Grade Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
-  ('66666666-ffff-ffff-ffff-666666666666', 'Grade', 'A helpful assistant that can help with a variety of tasks.', '$GRADE_PROMPT', 0, true, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+  ('66666666-ffff-ffff-ffff-666666666666', 'Grade', 'A helpful assistant that can help with a variety of tasks.', '$GRADE_PROMPT', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Evaluate Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
-  ('77777777-7777-7777-7777-777777777777', 'Evaluate', 'A helpful assistant that can help with a variety of tasks.', '$EVALUATE_PROMPT', 0, true, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+  ('77777777-7777-7777-7777-777777777777', 'Evaluate', 'A helpful assistant that can help with a variety of tasks.', '$EVALUATE_PROMPT', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Scenario Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
-  ('88888888-8888-8888-8888-888888888888', 'Scenario', 'A helpful assistant that can help with a variety of tasks.', '$SCENARIO_PROMPT', 0, true, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+  ('88888888-8888-8888-8888-888888888888', 'Scenario', 'A helpful assistant that can help with a variety of tasks.', '$SCENARIO_PROMPT', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Classify Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
-  ('99999999-9999-9999-9999-999999999999', 'Classify', 'A helpful assistant that can help with a variety of tasks.', '$CLASSIFY_PROMPT', 0, true, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+  ('99999999-9999-9999-9999-999999999999', 'Classify', 'A helpful assistant that can help with a variety of tasks.', '$CLASSIFY_PROMPT', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Course Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Course', 'A helpful assistant that can help with a variety of tasks.', '$COURSE_PROMPT', 0, true, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Course', 'A helpful assistant that can help with a variety of tasks.', '$COURSE_PROMPT', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Title Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Title', 'A helpful assistant that can help with a variety of tasks.', '$TITLE_PROMPT', 0, true, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Title', 'A helpful assistant that can help with a variety of tasks.', '$TITLE_PROMPT', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
 EOF
 

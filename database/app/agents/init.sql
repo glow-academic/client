@@ -395,7 +395,7 @@ Your responses should feel like talking to an experienced data analyst who knows
 ## 10. Fallback / Errors
 
 - On tool errors, apologise briefly and offer a next step ("Could you check the student name or ID?").
-- If a write operation fails, roll back in code (the server handles this) and inform the user.', 0, true, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+- If a write operation fails, roll back in code (the server handles this) and inform the user.', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Grade Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
@@ -420,7 +420,7 @@ Focus on evaluating the TA''s performance in:
 - Their time management and session structure
 - Their ability to adapt to the student''s needs and learning style
 
-Your evaluation should be fair, consistent, and based solely on observable evidence in the conversation.', 0, true, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+Your evaluation should be fair, consistent, and based solely on observable evidence in the conversation.', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Evaluate Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
@@ -439,7 +439,7 @@ For each criterion:
 - Provide specific feedback citing examples from the conversation
 - Keep feedback concise but specific (1-2 sentences)
 
-Your evaluation should be fair, consistent, and based solely on observable evidence in the conversation.', 0, true, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+Your evaluation should be fair, consistent, and based solely on observable evidence in the conversation.', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Scenario Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
@@ -453,7 +453,7 @@ You want to help the GTA with working through the process of dealing with a stud
 
 Try to always give a sense of how many other people are in line, to test the ability of the GTA to manage time.
 
-You can also create a chat title to go along with the scenario. Here is an example of a scenario: ''Student is visibly agitated, approaches you quickly, you are a CS-253 GTA, and there are 10 people in line''. Here is an example of a chat title: ''Induction Homework Help''. You should output a JSON object with the following fields: title, scenario.', 0, true, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+You can also create a chat title to go along with the scenario. Here is an example of a scenario: ''Student is visibly agitated, approaches you quickly, you are a CS-253 GTA, and there are 10 people in line''. Here is an example of a chat title: ''Induction Homework Help''. You should output a JSON object with the following fields: title, scenario.', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Classify Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
@@ -479,7 +479,7 @@ Return a JSON object with arrays containing the document numbers (as strings) fo
   "syllabi": ["8"]
 }
 
-Only include document numbers that actually exist in the input. Leave arrays empty if no documents match that category.', 0, true, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+Only include document numbers that actually exist in the input. Leave arrays empty if no documents match that category.', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Course Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
@@ -534,9 +534,9 @@ Return a JSON object with the course information:
     "prereqs": "list[str]",
     "schedules": "list[Schedule]",
     "debug_info": "string"
-}', 0, true, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+}', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Title Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Title', 'A helpful assistant that can help with a variety of tasks.', 'Your goal is to find the title of a given chat. It must be exactly 3-4 words.', 0, true, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Title', 'A helpful assistant that can help with a variety of tasks.', 'Your goal is to find the title of a given chat. It must be exactly 3-4 words.', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
