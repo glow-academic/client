@@ -214,10 +214,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
       newErrors.rubricId = "Rubric is required";
     }
 
-    if (!formData.cohortIds?.length) {
-      newErrors.cohortIds = ["At least one cohort is required"];
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -360,9 +356,10 @@ export default function Simulation({ simulationId }: SimulationProps) {
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <div>
-                <Label htmlFor="cohortIds">Cohorts</Label>
+                <Label htmlFor="cohortIds">Cohorts (Optional)</Label>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Select cohorts to include in this simulation.
+                  Select cohorts to include in this simulation. If no cohorts
+                  are selected, the simulation will be available to all users.
                 </p>
               </div>
               <div className="flex gap-2">

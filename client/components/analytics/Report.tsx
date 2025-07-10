@@ -232,7 +232,7 @@ export default function Report({ profileId }: { profileId: string }) {
     const totalSessions = profileChats.length;
     const completionRate =
       totalSessions > 0
-        ? Math.round((completedSessions / totalSessions) * 100)
+        ? Math.round((completedSessions / totalSessions) * 20)
         : 0;
 
     const passRate =
@@ -240,7 +240,7 @@ export default function Report({ profileId }: { profileId: string }) {
         ? Math.round(
             (profileGrades.filter((g) => g.passed).length /
               profileGrades.length) *
-              100
+              20
           )
         : 0;
 
@@ -278,8 +278,8 @@ export default function Report({ profileId }: { profileId: string }) {
               (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
                 groupFeedbacks.length /
                 (rubrics?.find((r) => r.id === group.rubricId)?.points ||
-                  100)) *
-                100
+                  20)) *
+                20
             )
           : 0;
 
