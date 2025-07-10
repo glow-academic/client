@@ -15,9 +15,11 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { format, subDays } from "date-fns";
 import { TrendingUp } from "lucide-react";
@@ -119,9 +121,19 @@ export default function PerformanceTrends({
     enabled: !!chats && chats.length > 0,
   });
 
+  const { data: simulations } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getAllSimulations(),
+  });
+
+  const { data: rubrics } = useQuery({
+    queryKey: ["rubrics"],
+    queryFn: () => getAllRubrics(),
+  });
+
   // Calculate performance trends
   const performanceTrendData = useMemo(() => {
-    if (!grades) return [];
+    if (!grades || !attempts || !chats || !simulations || !rubrics) return [];
 
     const days =
       performanceTrendTimeRange === "7d"
@@ -139,21 +151,41 @@ export default function PerformanceTrends({
         return gradeDate === dateStr;
       });
 
+      // Calculate average score for the day using rubric points
+      let avgScore = 0;
+      if (dayGrades.length > 0) {
+        const scoreSum = dayGrades.reduce((sum, grade) => {
+          const chat = chats.find((c) => c.id === grade.simulationChatId);
+          const attempt = attempts.find((a) => a.id === chat?.attemptId);
+          const simulation = simulations.find(
+            (s) => s.id === attempt?.simulationId
+          );
+          const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
+          const rubricTotalPoints = rubric?.points || 100;
+          const scorePercent = Math.round(
+            (grade.score / rubricTotalPoints) * 100
+          );
+          return sum + scorePercent;
+        }, 0);
+        avgScore = Math.round(scoreSum / dayGrades.length);
+      }
+
       return {
         date: format(
           date,
           days === 7 ? "MMM dd" : days === 30 ? "MM/dd" : "M/d"
         ),
-        score:
-          dayGrades.length > 0
-            ? Math.round(
-                dayGrades.reduce((sum, g) => sum + g.score, 0) /
-                  dayGrades.length
-              )
-            : 0,
+        score: avgScore,
       };
     });
-  }, [grades, performanceTrendTimeRange]);
+  }, [
+    grades,
+    attempts,
+    chats,
+    simulations,
+    rubrics,
+    performanceTrendTimeRange,
+  ]);
 
   const timeOptions = [
     { value: "7d" as const, label: "7 days" },

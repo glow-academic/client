@@ -15,9 +15,11 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { subDays } from "date-fns";
 import { Award, Clock, MessageSquare, Target, TrendingUp } from "lucide-react";
@@ -321,9 +323,20 @@ export default function TrainingInsights({
     enabled: !!chats && chats.length > 0,
   });
 
+  const { data: simulations } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getAllSimulations(),
+  });
+
+  const { data: rubrics } = useQuery({
+    queryKey: ["rubrics"],
+    queryFn: () => getAllRubrics(),
+  });
+
   // Calculate insights
   const insights = useMemo(() => {
-    if (!grades || !profiles || !chats) return null;
+    if (!grades || !profiles || !chats || !attempts || !simulations || !rubrics)
+      return null;
 
     // Calculate dynamic metrics for training insights
     const currentWeekGrades = grades.filter((grade) => {
@@ -339,21 +352,43 @@ export default function TrainingInsights({
       return gradeDate >= twoWeeksAgo && gradeDate < weekAgo;
     });
 
-    const currentWeekAvg =
-      currentWeekGrades.length > 0
-        ? Math.round(
-            currentWeekGrades.reduce((sum, g) => sum + g.score, 0) /
-              currentWeekGrades.length
-          )
-        : 0;
+    // Calculate current week average using rubric points
+    let currentWeekAvg = 0;
+    if (currentWeekGrades.length > 0) {
+      const currentWeekSum = currentWeekGrades.reduce((sum, grade) => {
+        const chat = chats.find((c) => c.id === grade.simulationChatId);
+        const attempt = attempts.find((a) => a.id === chat?.attemptId);
+        const simulation = simulations.find(
+          (s) => s.id === attempt?.simulationId
+        );
+        const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
+        const rubricTotalPoints = rubric?.points || 100;
+        const scorePercent = Math.round(
+          (grade.score / rubricTotalPoints) * 100
+        );
+        return sum + scorePercent;
+      }, 0);
+      currentWeekAvg = Math.round(currentWeekSum / currentWeekGrades.length);
+    }
 
-    const lastWeekAvg =
-      lastWeekGrades.length > 0
-        ? Math.round(
-            lastWeekGrades.reduce((sum, g) => sum + g.score, 0) /
-              lastWeekGrades.length
-          )
-        : 0;
+    // Calculate last week average using rubric points
+    let lastWeekAvg = 0;
+    if (lastWeekGrades.length > 0) {
+      const lastWeekSum = lastWeekGrades.reduce((sum, grade) => {
+        const chat = chats.find((c) => c.id === grade.simulationChatId);
+        const attempt = attempts.find((a) => a.id === chat?.attemptId);
+        const simulation = simulations.find(
+          (s) => s.id === attempt?.simulationId
+        );
+        const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
+        const rubricTotalPoints = rubric?.points || 100;
+        const scorePercent = Math.round(
+          (grade.score / rubricTotalPoints) * 100
+        );
+        return sum + scorePercent;
+      }, 0);
+      lastWeekAvg = Math.round(lastWeekSum / lastWeekGrades.length);
+    }
 
     const weeklyTrend = currentWeekAvg - lastWeekAvg;
     const passRate =
@@ -371,13 +406,24 @@ export default function TrainingInsights({
           )
         : 45;
 
-    // Calculate overall average score from grades
-    const avgOverallScore =
-      grades.length > 0
-        ? Math.round(
-            grades.reduce((sum, g) => sum + g.score, 0) / grades.length
-          )
-        : 0;
+    // Calculate overall average score from grades using rubric points
+    let avgOverallScore = 0;
+    if (grades.length > 0) {
+      const totalScoreSum = grades.reduce((sum, grade) => {
+        const chat = chats.find((c) => c.id === grade.simulationChatId);
+        const attempt = attempts.find((a) => a.id === chat?.attemptId);
+        const simulation = simulations.find(
+          (s) => s.id === attempt?.simulationId
+        );
+        const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
+        const rubricTotalPoints = rubric?.points || 100;
+        const scorePercent = Math.round(
+          (grade.score / rubricTotalPoints) * 100
+        );
+        return sum + scorePercent;
+      }, 0);
+      avgOverallScore = Math.round(totalScoreSum / grades.length);
+    }
 
     return {
       weeklyTrend,
@@ -385,7 +431,7 @@ export default function TrainingInsights({
       passRate,
       avgOverallScore,
     };
-  }, [grades, profiles, chats]);
+  }, [grades, profiles, chats, attempts, simulations, rubrics]);
 
   if (!insights) {
     return (

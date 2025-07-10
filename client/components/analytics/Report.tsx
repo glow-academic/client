@@ -217,14 +217,24 @@ export default function Report({ profileId }: { profileId: string }) {
       profileGrades.some((g) => g.id === f.simulationChatGradeId)
     );
 
-    // Basic metrics
-    const avgScore =
-      profileGrades.length > 0
-        ? Math.round(
-            profileGrades.reduce((sum, g) => sum + g.score, 0) /
-              profileGrades.length
-          )
-        : 0;
+    // Basic metrics - calculate avgScore using rubric points
+    let avgScore = 0;
+    if (profileGrades.length > 0) {
+      const scoreSum = profileGrades.reduce((sum, grade) => {
+        const chat = profileChats.find((c) => c.id === grade.simulationChatId);
+        const attempt = profileAttempts.find((a) => a.id === chat?.attemptId);
+        const simulation = simulations?.find(
+          (s) => s.id === attempt?.simulationId
+        );
+        const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
+        const rubricTotalPoints = rubric?.points || 100;
+        const scorePercent = Math.round(
+          (grade.score / rubricTotalPoints) * 100
+        );
+        return sum + scorePercent;
+      }, 0);
+      avgScore = Math.round(scoreSum / profileGrades.length);
+    }
 
     const completedSessions = profileChats.filter(
       (chat) => chat.completed
@@ -232,7 +242,7 @@ export default function Report({ profileId }: { profileId: string }) {
     const totalSessions = profileChats.length;
     const completionRate =
       totalSessions > 0
-        ? Math.round((completedSessions / totalSessions) * 20)
+        ? Math.round((completedSessions / totalSessions) * 100)
         : 0;
 
     const passRate =
@@ -240,7 +250,7 @@ export default function Report({ profileId }: { profileId: string }) {
         ? Math.round(
             (profileGrades.filter((g) => g.passed).length /
               profileGrades.length) *
-              20
+              100
           )
         : 0;
 
@@ -276,11 +286,9 @@ export default function Report({ profileId }: { profileId: string }) {
         groupFeedbacks.length > 0
           ? Math.round(
               (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
-                groupFeedbacks.length /
-                (rubrics?.find((r) => r.id === group.rubricId)?.points ||
-                  20)) *
-                20
-            )
+                groupFeedbacks.length) *
+                10
+            ) / 10 // Round to 1 decimal place, score out of 5
           : 0;
 
       return {
@@ -291,29 +299,72 @@ export default function Report({ profileId }: { profileId: string }) {
       };
     });
 
-    // Performance over time
+    // Performance over time - calculate scores using rubric points
     const sortedGrades = [...profileGrades].sort(
       (a, b) =>
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
-    const performanceOverTime = sortedGrades.map((grade, index) => ({
-      session: index + 1,
-      score: grade.score,
-      date: format(new Date(grade.createdAt), "MM/dd"),
-      passed: grade.passed,
-      timeTaken: Math.round(grade.timeTaken / 60), // Convert to minutes
-    }));
+    const performanceOverTime = sortedGrades.map((grade, index) => {
+      const chat = profileChats.find((c) => c.id === grade.simulationChatId);
+      const attempt = profileAttempts.find((a) => a.id === chat?.attemptId);
+      const simulation = simulations?.find(
+        (s) => s.id === attempt?.simulationId
+      );
+      const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
+      const rubricTotalPoints = rubric?.points || 100;
+      const scorePercent = Math.round((grade.score / rubricTotalPoints) * 100);
 
-    // Trend calculation
+      return {
+        session: index + 1,
+        score: scorePercent,
+        date: format(new Date(grade.createdAt), "MM/dd"),
+        passed: grade.passed,
+        timeTaken: Math.round(grade.timeTaken / 60), // Convert to minutes
+      };
+    });
+
+    // Trend calculation using rubric-based scores
     let trend = "stable";
     if (sortedGrades.length >= 3) {
       const firstThree = sortedGrades.slice(0, 3);
       const lastThree = sortedGrades.slice(-3);
+
+      // Calculate first three average using rubric points
       const firstAvg =
-        firstThree.reduce((sum, g) => sum + g.score, 0) / firstThree.length;
+        firstThree.reduce((sum, grade) => {
+          const chat = profileChats.find(
+            (c) => c.id === grade.simulationChatId
+          );
+          const attempt = profileAttempts.find((a) => a.id === chat?.attemptId);
+          const simulation = simulations?.find(
+            (s) => s.id === attempt?.simulationId
+          );
+          const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
+          const rubricTotalPoints = rubric?.points || 100;
+          const scorePercent = Math.round(
+            (grade.score / rubricTotalPoints) * 100
+          );
+          return sum + scorePercent;
+        }, 0) / firstThree.length;
+
+      // Calculate last three average using rubric points
       const lastAvg =
-        lastThree.reduce((sum, g) => sum + g.score, 0) / lastThree.length;
+        lastThree.reduce((sum, grade) => {
+          const chat = profileChats.find(
+            (c) => c.id === grade.simulationChatId
+          );
+          const attempt = profileAttempts.find((a) => a.id === chat?.attemptId);
+          const simulation = simulations?.find(
+            (s) => s.id === attempt?.simulationId
+          );
+          const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
+          const rubricTotalPoints = rubric?.points || 100;
+          const scorePercent = Math.round(
+            (grade.score / rubricTotalPoints) * 100
+          );
+          return sum + scorePercent;
+        }, 0) / lastThree.length;
 
       if (lastAvg > firstAvg + 5) trend = "improving";
       else if (lastAvg < firstAvg - 5) trend = "declining";
@@ -691,10 +742,10 @@ export default function Report({ profileId }: { profileId: string }) {
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">{skill.skill}</span>
                       <span className="text-sm text-muted-foreground">
-                        {skill.score}%
+                        {skill.score}/5
                       </span>
                     </div>
-                    <Progress value={skill.score} className="h-2" />
+                    <Progress value={(skill.score / 5) * 100} className="h-2" />
                   </div>
                 ))}
               </div>
@@ -722,7 +773,7 @@ export default function Report({ profileId }: { profileId: string }) {
                     <p className="font-medium">Strongest Skill</p>
                     <p className="text-sm text-muted-foreground">
                       {displayAnalytics.strongestSkill.skill} (
-                      {displayAnalytics.strongestSkill.score}%)
+                      {displayAnalytics.strongestSkill.score}/5)
                     </p>
                   </div>
                 </div>
@@ -733,7 +784,7 @@ export default function Report({ profileId }: { profileId: string }) {
                     <p className="font-medium">Area for Improvement</p>
                     <p className="text-sm text-muted-foreground">
                       {displayAnalytics.weakestSkill.skill} (
-                      {displayAnalytics.weakestSkill.score}%)
+                      {displayAnalytics.weakestSkill.score}/5)
                     </p>
                   </div>
                 </div>
@@ -786,32 +837,55 @@ export default function Report({ profileId }: { profileId: string }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {displayAnalytics.recentGrades.map((grade, index) => (
-                  <TableRow key={index}>
-                    <TableCell>
-                      {format(new Date(grade.createdAt), "MMM dd, yyyy")}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          grade.score >= 80
-                            ? "default"
-                            : grade.score >= 70
-                              ? "secondary"
-                              : "destructive"
-                        }
-                      >
-                        {grade.score}%
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={grade.passed ? "default" : "destructive"}>
-                        {grade.passed ? "Passed" : "Failed"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{Math.round(grade.timeTaken / 60)}m</TableCell>
-                  </TableRow>
-                ))}
+                {displayAnalytics.recentGrades.map((grade, index) => {
+                  // Calculate score percentage using rubric points
+                  const profileGrade = grades?.find((g) => g.id === grade.id);
+                  const profileChat = chats?.find(
+                    (c) => c.id === profileGrade?.simulationChatId
+                  );
+                  const profileAttempt = attempts?.find(
+                    (a) => a.id === profileChat?.attemptId
+                  );
+                  const simulation = simulations?.find(
+                    (s) => s.id === profileAttempt?.simulationId
+                  );
+                  const rubric = rubrics?.find(
+                    (r) => r.id === simulation?.rubricId
+                  );
+                  const rubricTotalPoints = rubric?.points || 100;
+                  const scorePercent = Math.round(
+                    (grade.score / rubricTotalPoints) * 100
+                  );
+
+                  return (
+                    <TableRow key={index}>
+                      <TableCell>
+                        {format(new Date(grade.createdAt), "MMM dd, yyyy")}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            scorePercent >= 80
+                              ? "default"
+                              : scorePercent >= 70
+                                ? "secondary"
+                                : "destructive"
+                          }
+                        >
+                          {scorePercent}%
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={grade.passed ? "default" : "destructive"}
+                        >
+                          {grade.passed ? "Passed" : "Failed"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{Math.round(grade.timeTaken / 60)}m</TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           ) : (

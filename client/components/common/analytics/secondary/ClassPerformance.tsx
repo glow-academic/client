@@ -17,9 +17,11 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllSimulationAttempts } from "@/utils/queries/simulation_attempts/get-all-simulation-attempts";
 import { getAllSimulationChatGrades } from "@/utils/queries/simulation_chat_grades/get-all-simulation-chat-grades";
 import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-simulation-chats";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen } from "lucide-react";
 import { useMemo } from "react";
@@ -112,9 +114,28 @@ export default function ClassPerformance({
     queryFn: getAllSimulationChatGrades,
   });
 
+  const { data: simulations } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: getAllSimulations,
+  });
+
+  const { data: rubrics } = useQuery({
+    queryKey: ["rubrics"],
+    queryFn: getAllRubrics,
+  });
+
   // Calculate class performance metrics
   const classMetrics = useMemo(() => {
-    if (!classes || !profiles || !attempts || !chats || !grades) return [];
+    if (
+      !classes ||
+      !profiles ||
+      !attempts ||
+      !chats ||
+      !grades ||
+      !simulations ||
+      !rubrics
+    )
+      return [];
 
     // Create a map of class ID to class data
     const classMap = new Map();
@@ -149,8 +170,16 @@ export default function ClassPerformance({
       const classData = classMap.get(classId);
       if (!classData) return;
 
+      // Find the simulation and rubric to get total points
+      const simulation = simulations.find((s) => s.id === attempt.simulationId);
+      const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
+      const rubricTotalPoints = rubric?.points || 100;
+
+      // Convert grade score to percentage using rubric points
+      const scorePercent = Math.round((grade.score / rubricTotalPoints) * 100);
+
       // Update the class metrics
-      classData.totalScore += grade.score;
+      classData.totalScore += scorePercent;
       classData.totalGrades += 1;
       classData.avgScore = Math.round(
         classData.totalScore / classData.totalGrades
@@ -168,7 +197,16 @@ export default function ClassPerformance({
       }))
       .sort((a, b) => b.avgScore - a.avgScore)
       .slice(0, maxItems);
-  }, [classes, profiles, attempts, chats, grades, maxItems]);
+  }, [
+    classes,
+    profiles,
+    attempts,
+    chats,
+    grades,
+    simulations,
+    rubrics,
+    maxItems,
+  ]);
 
   if (!classMetrics || classMetrics.length === 0) {
     return (

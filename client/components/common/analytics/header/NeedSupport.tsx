@@ -14,9 +14,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { format, subDays } from "date-fns";
 import { AlertTriangle } from "lucide-react";
@@ -157,9 +159,20 @@ export default function NeedSupport({
     enabled: !!chats && chats.length > 0,
   });
 
+  const { data: simulations } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getAllSimulations(),
+  });
+
+  const { data: rubrics } = useQuery({
+    queryKey: ["rubrics"],
+    queryFn: () => getAllRubrics(),
+  });
+
   // Calculate TAs who need support for the selected time range
   const needSupportCount = useMemo(() => {
-    if (!profiles || !grades || !chats || !attempts) return 0;
+    if (!profiles || !grades || !chats || !attempts || !simulations || !rubrics)
+      return 0;
 
     const getDaysFromTimeRange = (range: TimeRange) => {
       switch (range) {
@@ -197,11 +210,28 @@ export default function NeedSupport({
           return relatedAttempt?.profileId === profile.id;
         });
 
-        const avgScore =
-          profileGradesList.length > 0
-            ? profileGradesList.reduce((sum, g) => sum + g.score, 0) /
-              profileGradesList.length
-            : 0;
+        // Calculate average score using rubric points
+        let avgScore = 0;
+        if (profileGradesList.length > 0) {
+          const scoreSum = profileGradesList.reduce((sum, grade) => {
+            const relatedChat = chats.find(
+              (chat) => chat.id === grade.simulationChatId
+            );
+            const relatedAttempt = attempts.find(
+              (attempt) => attempt.id === relatedChat?.attemptId
+            );
+            const simulation = simulations.find(
+              (s) => s.id === relatedAttempt?.simulationId
+            );
+            const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
+            const rubricTotalPoints = rubric?.points || 100;
+            const scorePercent = Math.round(
+              (grade.score / rubricTotalPoints) * 100
+            );
+            return sum + scorePercent;
+          }, 0);
+          avgScore = Math.round(scoreSum / profileGradesList.length);
+        }
 
         return {
           profile,
@@ -214,7 +244,7 @@ export default function NeedSupport({
     return profileGrades.filter(
       (pg) => pg.avgScore < 70 && pg.sessionCount >= 3
     ).length;
-  }, [profiles, grades, chats, attempts, timeRange]);
+  }, [profiles, grades, chats, attempts, simulations, rubrics, timeRange]);
 
   // Support trend data
   const supportTrend = useMemo(() => {

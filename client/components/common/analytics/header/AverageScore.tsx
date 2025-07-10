@@ -14,9 +14,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { format, subDays } from "date-fns";
 import { TrendingUp } from "lucide-react";
@@ -157,9 +159,19 @@ export default function AverageScore({
     enabled: !!chats && chats.length > 0,
   });
 
+  const { data: simulations } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getAllSimulations(),
+  });
+
+  const { data: rubrics } = useQuery({
+    queryKey: ["rubrics"],
+    queryFn: () => getAllRubrics(),
+  });
+
   // Calculate average score for the selected time range
   const averageScore = useMemo(() => {
-    if (!grades) return 0;
+    if (!grades || !attempts || !chats || !simulations || !rubrics) return 0;
 
     const getDaysFromTimeRange = (range: TimeRange) => {
       switch (range) {
@@ -184,16 +196,25 @@ export default function AverageScore({
 
     if (filteredGrades.length === 0) return 0;
 
-    const totalScore = filteredGrades.reduce(
-      (sum, grade) => sum + grade.score,
-      0
-    );
-    return Math.round(totalScore / filteredGrades.length);
-  }, [grades, timeRange]);
+    // Calculate average score using rubric points
+    const scoreSum = filteredGrades.reduce((sum, grade) => {
+      const chat = chats.find((c) => c.id === grade.simulationChatId);
+      const attempt = attempts.find((a) => a.id === chat?.attemptId);
+      const simulation = simulations.find(
+        (s) => s.id === attempt?.simulationId
+      );
+      const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
+      const rubricTotalPoints = rubric?.points || 100;
+      const scorePercent = Math.round((grade.score / rubricTotalPoints) * 100);
+      return sum + scorePercent;
+    }, 0);
+
+    return Math.round(scoreSum / filteredGrades.length);
+  }, [grades, attempts, chats, simulations, rubrics, timeRange]);
 
   // Score trend data
   const scoreTrend = useMemo(() => {
-    if (!grades) return [];
+    if (!grades || !attempts || !chats || !simulations || !rubrics) return [];
 
     const getDaysFromTimeRange = (range: TimeRange) => {
       switch (range) {
@@ -233,13 +254,24 @@ export default function AverageScore({
         return gradeDate === dateStr;
       });
 
-      const avgScore =
-        dayGrades.length > 0
-          ? Math.round(
-              dayGrades.reduce((sum, grade) => sum + grade.score, 0) /
-                dayGrades.length
-            )
-          : 0;
+      // Calculate average score for the day using rubric points
+      let avgScore = 0;
+      if (dayGrades.length > 0) {
+        const dayScoreSum = dayGrades.reduce((sum, grade) => {
+          const chat = chats.find((c) => c.id === grade.simulationChatId);
+          const attempt = attempts.find((a) => a.id === chat?.attemptId);
+          const simulation = simulations.find(
+            (s) => s.id === attempt?.simulationId
+          );
+          const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
+          const rubricTotalPoints = rubric?.points || 100;
+          const scorePercent = Math.round(
+            (grade.score / rubricTotalPoints) * 100
+          );
+          return sum + scorePercent;
+        }, 0);
+        avgScore = Math.round(dayScoreSum / dayGrades.length);
+      }
 
       return {
         date: format(date, dateFormat),
@@ -247,7 +279,7 @@ export default function AverageScore({
         sessions: dayGrades.length,
       };
     });
-  }, [grades, timeRange]);
+  }, [grades, attempts, chats, simulations, rubrics, timeRange]);
 
   const getTimeRangeLabel = (range: TimeRange) => {
     switch (range) {

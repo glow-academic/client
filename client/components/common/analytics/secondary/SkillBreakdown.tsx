@@ -151,17 +151,11 @@ export default function SkillBreakdown({
         );
 
         if (groupFeedbacks.length > 0) {
-          // Use the rubric's total points instead of max standard points
-          const rubric = rubrics?.find((r) => r.id === group.rubricId);
-          const rubricTotalPoints = rubric?.points || 100;
-
-          const avgScore = Math.round(
-            (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
-              groupFeedbacks.length /
-              rubricTotalPoints) *
-              100
-          );
-          acc[group.shortName || group.name] = avgScore;
+          // Calculate average score out of 5 points
+          const avgScore =
+            groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
+            groupFeedbacks.length;
+          acc[group.shortName || group.name] = Math.round(avgScore * 10) / 10; // Round to 1 decimal place
         }
 
         return acc;
@@ -224,9 +218,9 @@ export default function SkillBreakdown({
                   <skill.icon className={`h-4 w-4 ${colorConfig.accent}`} />
                   <span className="font-medium">{skill.shortName}</span>
                 </div>
-                <span className="font-bold text-lg">{skill.score}%</span>
+                <span className="font-bold text-lg">{skill.score}/5</span>
               </div>
-              <Progress value={skill.score} className="h-2" />
+              <Progress value={(skill.score / 5) * 100} className="h-2" />
             </div>
           ))}
         </div>

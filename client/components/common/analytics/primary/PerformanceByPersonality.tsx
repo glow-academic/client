@@ -18,10 +18,12 @@ import { cn } from "@/lib/utils";
 import { getAgentConfig } from "@/utils/agents";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { isAfter, subDays } from "date-fns";
 import { Users } from "lucide-react";
@@ -131,9 +133,28 @@ export default function PerformanceByPersonality({
     enabled: !!chats && chats.length > 0,
   });
 
+  const { data: simulations } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getAllSimulations(),
+  });
+
+  const { data: rubrics } = useQuery({
+    queryKey: ["rubrics"],
+    queryFn: () => getAllRubrics(),
+  });
+
   // Calculate performance by personality
   const performanceData = useMemo(() => {
-    if (!agents || !scenarios || !chats || !grades) return [];
+    if (
+      !agents ||
+      !scenarios ||
+      !chats ||
+      !grades ||
+      !attempts ||
+      !simulations ||
+      !rubrics
+    )
+      return [];
 
     // Filter data by time range
     const getDaysFromTimeRange = (range: TimeRange) => {
@@ -171,13 +192,24 @@ export default function PerformanceByPersonality({
           agentChats.some((chat) => chat.id === grade.simulationChatId)
         );
 
-        const avgScore =
-          agentGrades.length > 0
-            ? Math.round(
-                agentGrades.reduce((sum, g) => sum + g.score, 0) /
-                  agentGrades.length
-              )
-            : 0;
+        // Calculate average score using rubric points
+        let avgScore = 0;
+        if (agentGrades.length > 0) {
+          const scoreSum = agentGrades.reduce((sum, grade) => {
+            const chat = chats.find((c) => c.id === grade.simulationChatId);
+            const attempt = attempts.find((a) => a.id === chat?.attemptId);
+            const simulation = simulations.find(
+              (s) => s.id === attempt?.simulationId
+            );
+            const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
+            const rubricTotalPoints = rubric?.points || 100;
+            const scorePercent = Math.round(
+              (grade.score / rubricTotalPoints) * 100
+            );
+            return sum + scorePercent;
+          }, 0);
+          avgScore = Math.round(scoreSum / agentGrades.length);
+        }
 
         return {
           name: agent.name,
@@ -190,7 +222,16 @@ export default function PerformanceByPersonality({
       .sort((a, b) => b.score - a.score); // Sort by score descending
 
     return performanceByType;
-  }, [agents, scenarios, chats, grades, personalityTimeRange]);
+  }, [
+    agents,
+    scenarios,
+    chats,
+    grades,
+    attempts,
+    simulations,
+    rubrics,
+    personalityTimeRange,
+  ]);
 
   const timeOptions = [
     // Weekly group

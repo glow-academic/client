@@ -177,15 +177,29 @@ export default function Reports() {
           );
         });
 
-        const avgScore =
-          cohortGrades.length > 0
-            ? Math.round(
-                cohortGrades.reduce((sum, g) => sum + g.score, 0) /
-                  cohortGrades.length
-              )
-            : 0;
+        // Calculate cohort average using rubric points
+        let cohortAvgScore = 0;
+        if (cohortGrades.length > 0) {
+          const cohortScoreSum = cohortGrades.reduce((sum, grade) => {
+            const chat = chats.find((c) => c.id === grade.simulationChatId);
+            const attempt = attempts?.find((a) => a.id === chat?.attemptId);
+            const simulation = simulations?.find(
+              (s) => s.id === attempt?.simulationId
+            );
+            const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
+            const rubricTotalPoints = rubric?.points || 100;
+            const scorePercent = Math.round(
+              (grade.score / rubricTotalPoints) * 100
+            );
+            return sum + scorePercent;
+          }, 0);
+          cohortAvgScore = Math.round(cohortScoreSum / cohortGrades.length);
+        }
 
-        acc[cohort.id] = { avgScore, memberCount: cohortMembers.length };
+        acc[cohort.id] = {
+          avgScore: cohortAvgScore,
+          memberCount: cohortMembers.length,
+        };
         return acc;
       },
       {} as Record<string, { avgScore: number; memberCount: number }>
@@ -205,13 +219,24 @@ export default function Reports() {
         userChats.some((chat) => chat.id === message.chatId)
       );
 
-      const avgScore =
-        userGrades.length > 0
-          ? Math.round(
-              userGrades.reduce((sum, g) => sum + g.score, 0) /
-                userGrades.length
-            )
-          : 0;
+      // Calculate average score using rubric points
+      let avgScore = 0;
+      if (userGrades.length > 0) {
+        const scoreSum = userGrades.reduce((sum, grade) => {
+          const chat = chats.find((c) => c.id === grade.simulationChatId);
+          const attempt = userAttempts.find((a) => a.id === chat?.attemptId);
+          const simulation = simulations?.find(
+            (s) => s.id === attempt?.simulationId
+          );
+          const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
+          const rubricTotalPoints = rubric?.points || 100;
+          const scorePercent = Math.round(
+            (grade.score / rubricTotalPoints) * 100
+          );
+          return sum + scorePercent;
+        }, 0);
+        avgScore = Math.round(scoreSum / userGrades.length);
+      }
 
       const completedSessions = userChats.filter(
         (chat) => chat.completed
@@ -293,7 +318,7 @@ export default function Reports() {
       const isStruggling =
         totalSessions === 0 || (avgScore < 70 && totalSessions > 0);
 
-      // Calculate trend (last 3 vs first 3 sessions)
+      // Calculate trend (last 3 vs first 3 sessions) using rubric-based scores
       const sortedGrades = userGrades.sort(
         (a, b) =>
           new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
@@ -302,10 +327,38 @@ export default function Reports() {
       if (sortedGrades.length >= 3) {
         const firstThree = sortedGrades.slice(0, 3);
         const lastThree = sortedGrades.slice(-3);
+
+        // Calculate first three average using rubric points
         const firstAvg =
-          firstThree.reduce((sum, g) => sum + g.score, 0) / firstThree.length;
+          firstThree.reduce((sum, grade) => {
+            const chat = chats.find((c) => c.id === grade.simulationChatId);
+            const attempt = userAttempts.find((a) => a.id === chat?.attemptId);
+            const simulation = simulations?.find(
+              (s) => s.id === attempt?.simulationId
+            );
+            const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
+            const rubricTotalPoints = rubric?.points || 100;
+            const scorePercent = Math.round(
+              (grade.score / rubricTotalPoints) * 100
+            );
+            return sum + scorePercent;
+          }, 0) / firstThree.length;
+
+        // Calculate last three average using rubric points
         const lastAvg =
-          lastThree.reduce((sum, g) => sum + g.score, 0) / lastThree.length;
+          lastThree.reduce((sum, grade) => {
+            const chat = chats.find((c) => c.id === grade.simulationChatId);
+            const attempt = userAttempts.find((a) => a.id === chat?.attemptId);
+            const simulation = simulations?.find(
+              (s) => s.id === attempt?.simulationId
+            );
+            const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
+            const rubricTotalPoints = rubric?.points || 100;
+            const scorePercent = Math.round(
+              (grade.score / rubricTotalPoints) * 100
+            );
+            return sum + scorePercent;
+          }, 0) / lastThree.length;
 
         if (lastAvg > firstAvg + 5) trend = "improving";
         else if (lastAvg < firstAvg - 5) trend = "declining";
@@ -355,7 +408,7 @@ export default function Reports() {
         };
       });
 
-      // Calculate rank within each cohort
+      // Calculate rank within each cohort using rubric-based scores
       cohortComparison.forEach((comparison) => {
         const cohortTAs = tas.filter((ta) =>
           cohorts
@@ -369,12 +422,26 @@ export default function Reports() {
               const attempt = attempts?.find((a) => a.id === chat?.attemptId);
               return attempt && attempt.profileId === ta.id;
             });
-            return taGrades.length > 0
-              ? Math.round(
-                  taGrades.reduce((sum, g) => sum + g.score, 0) /
-                    taGrades.length
-                )
-              : 0;
+
+            if (taGrades.length === 0) return 0;
+
+            const taScoreSum = taGrades.reduce((sum, grade) => {
+              const chat = chats.find((c) => c.id === grade.simulationChatId);
+              const attempt = attempts?.find((a) => a.id === chat?.attemptId);
+              const simulation = simulations?.find(
+                (s) => s.id === attempt?.simulationId
+              );
+              const rubric = rubrics?.find(
+                (r) => r.id === simulation?.rubricId
+              );
+              const rubricTotalPoints = rubric?.points || 100;
+              const scorePercent = Math.round(
+                (grade.score / rubricTotalPoints) * 100
+              );
+              return sum + scorePercent;
+            }, 0);
+
+            return Math.round(taScoreSum / taGrades.length);
           })
           .sort((a, b) => b - a);
 
