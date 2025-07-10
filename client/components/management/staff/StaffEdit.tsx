@@ -36,7 +36,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Class as ClassData, Profile, ProfileRole } from "@/types";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Class as ClassData, ProfileRole } from "@/types";
 import { logError } from "@/utils/logger";
 import { deleteProfile } from "@/utils/mutations/profiles/delete-profile";
 import { updateProfile } from "@/utils/mutations/profiles/update-profile";
@@ -45,7 +46,6 @@ import { getProfile } from "@/utils/queries/profiles/get-profile";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowLeft,
   GraduationCap,
   Save,
   Shield,
@@ -57,16 +57,18 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+type FormData = {
+  firstName?: string;
+  lastName?: string;
+  alias?: string;
+  classIds?: string[];
+  role?: string;
+};
+
 export default function StaffEdit({ profileId }: { profileId: string }) {
   const queryClient = useQueryClient();
   const router = useRouter();
-  const [formData, setFormData] = useState<Partial<Profile>>({
-    firstName: "",
-    lastName: "",
-    alias: "",
-    classIds: [],
-    role: "ta",
-  });
+  const [formData, setFormData] = useState<FormData>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -124,7 +126,7 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
         lastName: formData.lastName || "",
         alias: formData.alias || "",
         classIds: formData.classIds || [],
-        role: formData.role || "ta",
+        role: formData.role as ProfileRole,
       });
       setHasChanges(false);
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
@@ -177,79 +179,11 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
         firstName: targetUser.firstName,
         lastName: targetUser.lastName,
         alias: targetUser.alias,
-        classIds: targetUser.classIds || [],
+        classIds: targetUser.classIds,
         role: targetUser.role,
       });
     }
   }, [targetUser]);
-
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Loading...</CardTitle>
-            <CardDescription>
-              Please wait while we load the user information.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="h-4 bg-muted rounded animate-pulse" />
-                  <div className="h-10 bg-muted rounded animate-pulse" />
-                </div>
-                <div className="space-y-2">
-                  <div className="h-4 bg-muted rounded animate-pulse" />
-                  <div className="h-10 bg-muted rounded animate-pulse" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="h-4 bg-muted rounded animate-pulse" />
-                  <div className="h-10 bg-muted rounded animate-pulse" />
-                </div>
-                <div className="space-y-2">
-                  <div className="h-4 bg-muted rounded animate-pulse" />
-                  <div className="h-10 bg-muted rounded animate-pulse" />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Show error state if user not found
-  if (!isLoading && !targetUser) {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>User Not Found</CardTitle>
-            <CardDescription>
-              The requested user could not be found.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-8">
-              <p className="text-muted-foreground mb-4">
-                The user with ID "{profileId}" does not exist or you don't have
-                permission to view it.
-              </p>
-              <Button onClick={() => router.push("/management/staff")}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Staff Management
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -266,20 +200,25 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    value={formData.firstName || ""}
-                    onChange={(e) =>
-                      handleInputChange("firstName", e.target.value)
-                    }
-                    placeholder="Jane"
-                    required
-                    disabled={isSubmitting}
-                  />
+                  {formData?.firstName !== undefined && !isLoading ? (
+                    <Input
+                      id="firstName"
+                      value={formData.firstName || ""}
+                      onChange={(e) =>
+                        handleInputChange("firstName", e.target.value)
+                      }
+                      placeholder="Jane"
+                      required
+                      disabled={isSubmitting}
+                    />
+                  ) : (
+                    <Skeleton className="h-10 w-full" />
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Last Name</Label>
-                  <Input
+                  {formData?.lastName !== undefined && !isLoading ? (
+                    <Input
                     id="lastName"
                     value={formData.lastName || ""}
                     onChange={(e) =>
@@ -287,26 +226,34 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
                     }
                     placeholder="Smith"
                     required
-                    disabled={isSubmitting}
-                  />
+                      disabled={isSubmitting}
+                    />
+                  ) : (
+                    <Skeleton className="h-10 w-full" />
+                  )}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="alias">Username/Alias</Label>
-                  <Input
+                  {formData?.alias !== undefined && !isLoading ? (
+                    <Input
                     id="alias"
                     value={formData.alias || ""}
                     onChange={(e) => handleInputChange("alias", e.target.value)}
                     placeholder="jsmith"
                     required
-                    disabled={isSubmitting}
-                  />
+                      disabled={isSubmitting}
+                    />
+                  ) : (
+                    <Skeleton className="h-10 w-full" />
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="role">Role</Label>
-                  <Select
+                  {formData?.role !== undefined && !isLoading ? (
+                    <Select
                     value={formData.role || ""}
                     onValueChange={(value: ProfileRole) =>
                       handleInputChange("role", value)
@@ -344,7 +291,10 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
                         </div>
                       </SelectItem>
                     </SelectContent>
-                  </Select>
+                    </Select>
+                  ) : (
+                    <Skeleton className="h-10 w-full" />
+                  )}
                 </div>
               </div>
 
@@ -352,7 +302,7 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
               <div className="space-y-2">
                 <Label>Classes</Label>
                 <div className="border rounded-md p-4 max-h-60 overflow-y-auto">
-                  {allClasses.length === 0 ? (
+                  {allClasses.length === 0 || isLoading ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
                       No classes available
                     </p>
