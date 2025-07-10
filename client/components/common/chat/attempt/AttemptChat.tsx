@@ -32,8 +32,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Clock,
   FileText,
-  PanelRightClose,
-  PanelRightOpen,
   Table,
 } from "lucide-react";
 
@@ -491,19 +489,17 @@ export default function AttemptChat() {
                               0 && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button
-                                    variant="outline"
+                                <Button
+                                    variant={
+                                      showDocuments ? "default" : "outline"
+                                    }
                                     size="sm"
                                     onClick={() =>
                                       setShowDocuments(!showDocuments)
                                     }
-                                    className="p-2"
+                                    className={`p-2 ${showDocuments ? "bg-primary text-primary-foreground" : ""}`}
                                   >
-                                    {showDocuments ? (
-                                      <PanelRightClose className="h-4 w-4" />
-                                    ) : (
-                                      <PanelRightOpen className="h-4 w-4" />
-                                    )}
+                                    <FileText className="h-4 w-4" />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>

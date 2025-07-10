@@ -378,6 +378,7 @@ export function useColumns({
           );
         },
         enableSorting: true,
+        sortDescFirst: true, // Default to descending order
         filterFn: (row, id, value) => {
           if (!value || value.length === 0) return true;
           const rowDate = new Date(row.getValue(id) as string);

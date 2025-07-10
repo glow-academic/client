@@ -19,6 +19,8 @@ const columnMap = {
   userId: "Name",
   simulationTitle: "Simulation",
   classCode: "Classes",
+  classIds: "Classes",
+  agentsTested: "Agents",
   averageScore: "Score",
   // Reports page columns
   firstName: "Name",

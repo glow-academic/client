@@ -54,7 +54,9 @@ export function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [sorting, setSorting] = React.useState<SortingState>([
+    { id: "createdAt", desc: true }, // Default to descending order by date
+  ]);
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
 
   const table = useReactTable({
@@ -120,7 +122,11 @@ export function DataTable<TData, TValue>({
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id} colSpan={header.colSpan}>
+                    <TableHead
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      className="pl-6"
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
