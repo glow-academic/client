@@ -29,38 +29,8 @@ import { updateModel } from "@/utils/mutations/models/update-model";
 import { getModel } from "@/utils/queries/models/get-model";
 import { getAllProviders } from "@/utils/queries/providers/get-all-providers";
 import { useRouter } from "next/navigation";
-
-const MODEL_TYPE_OPTIONS = [
-  { id: "ttt", label: "Text-to-Text (TTT)" },
-  { id: "stt", label: "Speech-to-Text (STT)" },
-  { id: "tts", label: "Text-to-Speech (TTS)" },
-] as const;
-
-type ModelTypeId = (typeof MODEL_TYPE_OPTIONS)[number]["id"];
-
-// Normalize incoming DB values (future-proof)
-function normaliseModelType(
-  raw: string | null | undefined
-): ModelTypeId | undefined {
-  switch ((raw ?? "").toLowerCase()) {
-    case "ttt":
-    case "text_to_text":
-      return "ttt";
-    case "stt":
-    case "speech_to_text":
-      return "stt";
-    case "tts":
-    case "text_to_speech":
-      return "tts";
-    default:
-      return undefined; // triggers placeholder + validation
-  }
-}
-
-interface ModelProps {
-  modelId?: string;
-}
-
+import { Model as ModelType } from "@/types";
+import { modelType } from "@/utils/drizzle/schema";
 interface FormErrors {
   name?: string;
   description?: string;
@@ -71,9 +41,13 @@ interface FormErrors {
 interface FormData {
   name?: string;
   description?: string;
-  providerId: string;
-  active?: boolean;
-  modelType?: ModelTypeId | undefined;
+  providerId?: string;
+  active?: string;
+  modelType?: ModelType["modelType"];
+}
+
+interface ModelProps {
+  modelId?: string;
 }
 
 export default function Model({ modelId }: ModelProps) {
@@ -83,34 +57,22 @@ export default function Model({ modelId }: ModelProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!modelId;
 
-  const initialFormData: FormData = useMemo(
-    () => ({
-      name: "",
-      description: "",
-      providerId: "",
-      active: true,
-      modelType: undefined,
-    }),
-    []
-  );
+  const initialFormData: FormData = useMemo(() => ({}), []);
 
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
-
-  // Fetch the specific model directly if in edit mode
-  const { data: modelToEdit, isLoading: isModelLoading } = useQuery({
-    queryKey: ["model", modelId],
-    queryFn: () => getModel(modelId!),
-    enabled: isEditMode,
-  });
 
   const { data: providers } = useQuery({
     queryKey: ["providers"],
     queryFn: () => getAllProviders(),
   });
 
-  // Loading state for the entire form (only when model is loading in edit mode)
-  const isFormLoading = isEditMode && isModelLoading;
+  // Fetch the specific model directly if in edit mode
+  const { data: modelToEdit } = useQuery({
+    queryKey: ["model", modelId],
+    queryFn: () => getModel(modelId!),
+    enabled: isEditMode,
+  });
 
   // Single consolidated useEffect to handle all form state scenarios
   useEffect(() => {
@@ -119,9 +81,9 @@ export default function Model({ modelId }: ModelProps) {
       setFormData({
         name: modelToEdit.name,
         description: modelToEdit.description,
-        providerId: String(modelToEdit.providerId ?? ""),
-        active: modelToEdit.active,
-        modelType: normaliseModelType(modelToEdit.modelType),
+        providerId: modelToEdit.providerId,
+        active: modelToEdit.active ? "true" : "false",
+        modelType: modelToEdit.modelType,
       });
     } else if (!isEditMode) {
       // We are in CREATE mode, so reset the form to its initial state
@@ -129,60 +91,14 @@ export default function Model({ modelId }: ModelProps) {
     }
   }, [isEditMode, modelToEdit, initialFormData]);
 
-  // Fix for provider field - only set providerId after providers are loaded
-  useEffect(() => {
-    if (
-      isEditMode &&
-      modelToEdit &&
-      providers &&
-      providers.some((p) => String(p.id) === String(modelToEdit.providerId))
-    ) {
-      setFormData((f) => ({
-        ...f,
-        providerId: String(modelToEdit.providerId),
-      }));
-    }
-  }, [isEditMode, modelToEdit, providers]);
-
-  const providerMissing =
-    !!formData.providerId &&
-    !providers?.some((p) => String(p.id) === formData.providerId);
-
-  const modelTypeMissing =
-    formData.modelType &&
-    !MODEL_TYPE_OPTIONS.some((o) => o.id === formData.modelType);
-
   const handleInputChange = (
-    field: keyof FormData,
-    value: string | boolean | ModelTypeId
+    field: keyof ModelType,
+    value: string | boolean | ModelType["modelType"] | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!formData.name?.trim()) {
-      newErrors.name = "Name is required";
-    }
-
-    if (!formData.description?.trim()) {
-      newErrors.description = "Description is required";
-    }
-
-    if (!formData.providerId.trim()) {
-      newErrors.providerId = "Provider is required";
-    }
-
-    if (!formData.modelType) {
-      newErrors.modelType = "Model type is required";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   const resetFormAndState = () => {
@@ -193,8 +109,23 @@ export default function Model({ modelId }: ModelProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      toast.error("Please fill in all required fields");
+    if (!formData.name) {
+      setErrors((prev) => ({ ...prev, name: "Name is required" }));
+      return;
+    }
+
+    if (!formData.description) {
+      setErrors((prev) => ({ ...prev, description: "Description is required" }));
+      return;
+    }
+
+    if (!formData.providerId) {
+      setErrors((prev) => ({ ...prev, providerId: "Provider is required" }));
+      return;
+    }
+
+    if (!formData.modelType) {
+      setErrors((prev) => ({ ...prev, modelType: "Model type is required" }));
       return;
     }
 
@@ -205,15 +136,16 @@ export default function Model({ modelId }: ModelProps) {
       if (isEditMode && modelId) {
         result = await updateModel(modelId, {
           ...formData,
+          active: formData.active === "true" ? true : false,
           updatedAt: new Date().toISOString(),
         });
       } else {
         result = await createModel({
-          name: formData.name || "",
-          description: formData.description || "",
+          name: formData.name,
+          description: formData.description,
           providerId: formData.providerId,
-          active: formData.active || true,
-          modelType: formData.modelType || "ttt",
+          active: formData.active === "true" ? true : false,
+          modelType: formData.modelType,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
@@ -250,13 +182,16 @@ export default function Model({ modelId }: ModelProps) {
         {/* Basic Model Information */}
         <div className="space-y-2">
           <Label htmlFor="name">Name</Label>
-          <Input
+          {formData.name !== undefined ? (
+            <Input
             id="name"
             value={formData.name}
             onChange={(e) => handleInputChange("name", e.target.value)}
             placeholder="Enter model name"
             className={errors.name ? "border-destructive" : ""}
-          />
+          />) : (
+            <Skeleton className="h-10 w-full" />
+          )}
           {errors.name && (
             <p className="text-sm text-destructive">{errors.name}</p>
           )}
@@ -264,14 +199,16 @@ export default function Model({ modelId }: ModelProps) {
 
         <div className="space-y-2">
           <Label htmlFor="description">Description</Label>
-          <Textarea
+          {formData.description !== undefined ? (<Textarea
             id="description"
-            value={formData.description || ""}
+            value={formData.description}
             onChange={(e) => handleInputChange("description", e.target.value)}
             placeholder="Enter model description"
             rows={3}
             className={errors.description ? "border-destructive" : ""}
-          />
+          />) : (
+            <Skeleton className="h-10 w-full" />
+          )}
           {errors.description && (
             <p className="text-sm text-destructive">{errors.description}</p>
           )}
@@ -281,7 +218,7 @@ export default function Model({ modelId }: ModelProps) {
           <Label htmlFor="providerId">Provider</Label>
           {providers && formData.providerId !== undefined ? (
             <Select
-              value={providerMissing ? "" : formData.providerId}
+              value={formData.providerId}
               onValueChange={(v) => handleInputChange("providerId", v)}
             >
               <SelectTrigger
@@ -289,9 +226,7 @@ export default function Model({ modelId }: ModelProps) {
               >
                 <SelectValue
                   placeholder={
-                    providerMissing
-                      ? "Previous provider no longer available"
-                      : "Select a provider…"
+                    "Select a provider…"
                   }
                 />
               </SelectTrigger>
@@ -316,9 +251,9 @@ export default function Model({ modelId }: ModelProps) {
           {formData.modelType !== undefined ? (
             <Select
               key={formData.modelType}
-              value={modelTypeMissing ? "" : (formData.modelType ?? "")}
+              value={formData.modelType}
               onValueChange={(v) =>
-                handleInputChange("modelType", v as ModelTypeId)
+                handleInputChange("modelType", v as ModelType["modelType"])
               }
             >
               <SelectTrigger
@@ -326,17 +261,15 @@ export default function Model({ modelId }: ModelProps) {
               >
                 <SelectValue
                   placeholder={
-                    modelTypeMissing
-                      ? "Previous type is no longer valid"
-                      : "Select model type…"
+                    "Select model type…"
                   }
                 />
               </SelectTrigger>
 
               <SelectContent>
-                {MODEL_TYPE_OPTIONS.map((o) => (
-                  <SelectItem key={o.id} value={o.id}>
-                    {o.label}
+                {Object.values(modelType.enumValues).map((o) => (
+                  <SelectItem key={o} value={o}>
+                    {o.toUpperCase()}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -351,10 +284,11 @@ export default function Model({ modelId }: ModelProps) {
 
         <div className="space-y-2">
           <Label htmlFor="active">Status</Label>
-          <Select
-            value={formData.active ? "true" : "false"}
+          {formData.active !== undefined ? (
+            <Select
+            value={formData.active}
             onValueChange={(value) =>
-              handleInputChange("active", value === "true")
+              handleInputChange("active", value)
             }
           >
             <SelectTrigger>
@@ -365,13 +299,16 @@ export default function Model({ modelId }: ModelProps) {
               <SelectItem value="false">Inactive</SelectItem>
             </SelectContent>
           </Select>
+          ) : (
+            <Skeleton className="h-10 w-full" />
+          )}
         </div>
 
         {/* Submit Button */}
         <div className="flex justify-end gap-4">
           <Button
             type="submit"
-            disabled={isSubmitting || isFormLoading}
+            disabled={isSubmitting}
             className="min-w-[120px]"
           >
             {isSubmitting ? (
