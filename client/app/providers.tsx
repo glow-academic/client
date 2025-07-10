@@ -4,7 +4,7 @@
 import { RoleProvider } from "@/contexts/role-context";
 import { WebSocketProvider } from "@/contexts/websocket-context";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
-import { createQueryClient } from "@/utils/react-query/queryClient";
+import { getQueryClient } from "@/utils/react-query/queryClient";
 import {
   QueryClientProvider,
   useQuery,
@@ -35,7 +35,7 @@ const RoleAndWebSocketProviderWrapper = ({
 };
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => createQueryClient());
+  const [queryClient] = useState(() => getQueryClient());
 
   return (
     <SessionProvider>

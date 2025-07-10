@@ -10,7 +10,7 @@ import type { Metadata } from "next";
 import type { ResolvingMetadata } from "next";
 import { getModel } from "@/utils/queries/models/get-model";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { createQueryClient } from "@/utils/react-query/queryClient";
+import { getQueryClient } from "@/utils/react-query/queryClient";
 import { getAllProviders } from "@/utils/queries/providers/get-all-providers";
 
 export async function generateMetadata(
@@ -36,7 +36,7 @@ export default async function ModelEditPage({
   params: Promise<{ modelId: string }>;
 }) {
   const { modelId } = await params;
-  const queryClient = createQueryClient();
+  const queryClient = getQueryClient();
 
   await queryClient.prefetchQuery({
     queryKey: ['model', modelId],

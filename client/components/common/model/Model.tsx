@@ -20,15 +20,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 
-import { Model as ModelType } from "@/types";
+import { cn } from "@/lib/utils";
 import { createModel } from "@/utils/mutations/models/create-model";
 import { updateModel } from "@/utils/mutations/models/update-model";
 import { getModel } from "@/utils/queries/models/get-model";
 import { getAllProviders } from "@/utils/queries/providers/get-all-providers";
 import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
 
 const MODEL_TYPE_OPTIONS = [
   { id: "ttt", label: "Text-to-Text (TTT)" },
@@ -37,6 +37,25 @@ const MODEL_TYPE_OPTIONS = [
 ] as const;
 
 type ModelTypeId = (typeof MODEL_TYPE_OPTIONS)[number]["id"];
+
+// Normalize incoming DB values (future-proof)
+function normaliseModelType(
+  raw: string | null | undefined
+): ModelTypeId | undefined {
+  switch ((raw ?? "").toLowerCase()) {
+    case "ttt":
+    case "text_to_text":
+      return "ttt";
+    case "stt":
+    case "speech_to_text":
+      return "stt";
+    case "tts":
+    case "text_to_speech":
+      return "tts";
+    default:
+      return undefined; // triggers placeholder + validation
+  }
+}
 
 interface ModelProps {
   modelId?: string;
@@ -49,6 +68,14 @@ interface FormErrors {
   modelType?: string;
 }
 
+interface FormData {
+  name?: string;
+  description?: string;
+  providerId?: string;
+  active?: boolean;
+  modelType?: ModelTypeId | undefined;
+}
+
 export default function Model({ modelId }: ModelProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -56,17 +83,18 @@ export default function Model({ modelId }: ModelProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!modelId;
 
-  const initialFormData: Partial<ModelType> = useMemo(
+  const initialFormData: FormData = useMemo(
     () => ({
       name: "",
       description: "",
       providerId: "",
       active: true,
+      modelType: undefined,
     }),
     []
   );
 
-  const [formData, setFormData] = useState<Partial<ModelType>>(initialFormData);
+  const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
 
   // Fetch the specific model directly if in edit mode
@@ -76,7 +104,7 @@ export default function Model({ modelId }: ModelProps) {
     enabled: isEditMode,
   });
 
-  const { data: providers = [], isLoading: areProvidersLoading } = useQuery({
+  const { data: providers = [] } = useQuery({
     queryKey: ["providers"],
     queryFn: () => getAllProviders(),
   });
@@ -93,7 +121,7 @@ export default function Model({ modelId }: ModelProps) {
         description: modelToEdit.description,
         providerId: modelToEdit.providerId,
         active: modelToEdit.active,
-        modelType: modelToEdit.modelType,
+        modelType: normaliseModelType(modelToEdit.modelType),
       });
     } else if (!isEditMode) {
       // We are in CREATE mode, so reset the form to its initial state
@@ -127,8 +155,8 @@ export default function Model({ modelId }: ModelProps) {
     !MODEL_TYPE_OPTIONS.some((o) => o.id === formData.modelType);
 
   const handleInputChange = (
-    field: keyof Partial<ModelType>,
-    value: string | boolean
+    field: keyof FormData,
+    value: string | boolean | ModelTypeId
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -253,25 +281,28 @@ export default function Model({ modelId }: ModelProps) {
 
         <div className="space-y-2">
           <Label htmlFor="providerId">Provider</Label>
-          <Select
-            value={providerMissing ? "" : (formData.providerId ?? "")}
-            onValueChange={(v) => handleInputChange("providerId", v)}
-          >
-            <SelectTrigger
-              className={cn(errors.providerId && "border-destructive")}
+          {providers.length ? (
+            <Select
+              key={providers.length}
+              value={providerMissing ? "" : (formData.providerId ?? "")}
+              onValueChange={(v) => handleInputChange("providerId", v)}
             >
-              <SelectValue
-                placeholder={
-                  areProvidersLoading
-                    ? "Loading providers…"
-                    : providerMissing
+              <SelectTrigger
+                className={cn(errors.providerId && "border-destructive")}
+              >
+                <SelectValue
+                  placeholder={
+                    providerMissing
                       ? "Previous provider no longer available"
                       : "Select a provider…"
-                }
-              />
-            </SelectTrigger>
-            <SelectContent>{providerOptions}</SelectContent>
-          </Select>
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>{providerOptions}</SelectContent>
+            </Select>
+          ) : (
+            <Skeleton className="h-10 w-full" />
+          )}
           {errors.providerId && (
             <p className="text-sm text-destructive">{errors.providerId}</p>
           )}
@@ -279,32 +310,37 @@ export default function Model({ modelId }: ModelProps) {
 
         <div className="space-y-2">
           <Label htmlFor="modelType">Model type</Label>
-          <Select
-            value={modelTypeMissing ? "" : (formData.modelType ?? "")}
-            onValueChange={(v) =>
-              handleInputChange("modelType", v as ModelTypeId)
-            }
-          >
-            <SelectTrigger
-              className={cn(errors.modelType && "border-destructive")}
+          {formData.modelType !== undefined ? (
+            <Select
+              key={formData.modelType}
+              value={modelTypeMissing ? "" : (formData.modelType ?? "")}
+              onValueChange={(v) =>
+                handleInputChange("modelType", v as ModelTypeId)
+              }
             >
-              <SelectValue
-                placeholder={
-                  modelTypeMissing
-                    ? "Previous type is no longer valid"
-                    : "Select model type…"
-                }
-              />
-            </SelectTrigger>
+              <SelectTrigger
+                className={cn(errors.modelType && "border-destructive")}
+              >
+                <SelectValue
+                  placeholder={
+                    modelTypeMissing
+                      ? "Previous type is no longer valid"
+                      : "Select model type…"
+                  }
+                />
+              </SelectTrigger>
 
-            <SelectContent>
-              {MODEL_TYPE_OPTIONS.map((o) => (
-                <SelectItem key={o.id} value={o.id}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <SelectContent>
+                {MODEL_TYPE_OPTIONS.map((o) => (
+                  <SelectItem key={o.id} value={o.id}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Skeleton className="h-10 w-full" />
+          )}
           {errors.modelType && (
             <p className="text-sm text-destructive">{errors.modelType}</p>
           )}
