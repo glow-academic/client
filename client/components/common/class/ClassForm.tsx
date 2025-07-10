@@ -646,8 +646,8 @@ export default function ClassForm({
             )}
           </div>
 
-          {/* Documents Section */}
-          {
+          {/* Documents Section - Only show in edit mode */}
+          {mode === "edit" && (
             <div className="space-y-4">
               <Label>Documents</Label>
 
@@ -957,7 +957,7 @@ export default function ClassForm({
                 )}
               </div>
             </div>
-          }
+          )}
 
           {/* Action Buttons */}
           <div className="flex justify-between">

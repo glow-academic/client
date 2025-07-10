@@ -6,35 +6,53 @@
  */
 
 import ModelEdit from "@/components/management/models/ModelEdit";
-import { use } from "react";
 import type { Metadata } from "next";
 import type { ResolvingMetadata } from "next";
 import { getModel } from "@/utils/queries/models/get-model";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { createQueryClient } from "@/utils/react-query/queryClient";
+import { getAllProviders } from "@/utils/queries/providers/get-all-providers";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ modelId: string }> },
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   // read route params
-  const { modelId } = await params
+  const { modelId } = await params;
 
   const model = await getModel(modelId);
 
   return {
     title: `${model?.name || "Model"}`,
-    description: model?.description || "Manage individual AI models in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+    description:
+      model?.description ||
+      "Manage individual AI models in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
   };
 }
 
-export default function ModelEditPage({
+export default async function ModelEditPage({
   params,
 }: {
   params: Promise<{ modelId: string }>;
 }) {
-  const { modelId } = use(params);
+  const { modelId } = await params;
+  const queryClient = createQueryClient();
+
+  await queryClient.prefetchQuery({
+    queryKey: ['model', modelId],
+    queryFn: () => getModel(modelId)
+  });
+
+  await queryClient.prefetchQuery({
+    queryKey: ["providers"],
+    queryFn: () => getAllProviders(),
+  });
+
   return (
     <div className="space-y-6">
-      <ModelEdit modelId={modelId} />
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <ModelEdit modelId={modelId} />
+      </HydrationBoundary>
     </div>
   );
 }

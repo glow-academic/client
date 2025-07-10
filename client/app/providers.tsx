@@ -6,24 +6,12 @@ import { WebSocketProvider } from "@/contexts/websocket-context";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { createQueryClient } from "@/utils/react-query/queryClient";
 import {
-  QueryClient,
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
 import { SessionProvider, useSession } from "next-auth/react";
 import { useState } from "react";
 import { Toaster } from "sonner";
-
-const ReactQueryClientProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
-  const [queryClient] = useState(() => createQueryClient()); // Use a single instance
-  return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
-};
 
 // Wrapper component to provide role context with user data and WebSocket connection
 const RoleAndWebSocketProviderWrapper = ({
@@ -47,17 +35,15 @@ const RoleAndWebSocketProviderWrapper = ({
 };
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient());
+  const [queryClient] = useState(() => createQueryClient());
 
   return (
     <SessionProvider>
       <QueryClientProvider client={queryClient}>
-        <ReactQueryClientProvider>
           <RoleAndWebSocketProviderWrapper>
             {children}
             <Toaster />
           </RoleAndWebSocketProviderWrapper>
-        </ReactQueryClientProvider>
       </QueryClientProvider>
     </SessionProvider>
   );
