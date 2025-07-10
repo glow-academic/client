@@ -396,18 +396,29 @@ export default function Report({ profileId }: { profileId: string }) {
     );
   }
 
-  if (!analytics) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="text-muted-foreground">Loading analytics...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Default analytics when no data is available
+  const defaultAnalytics = {
+    avgScore: 0,
+    completedSessions: 0,
+    totalSessions: 0,
+    completionRate: 0,
+    passRate: 0,
+    avgTimeMinutes: 0,
+    skillBreakdown: [],
+    performanceOverTime: [],
+    trend: "stable" as const,
+    weakestSkill: { skill: "N/A", score: 0, feedbackCount: 0 },
+    strongestSkill: { skill: "N/A", score: 0, feedbackCount: 0 },
+    sessionTypeData: [
+      { type: "Completed", count: 0 },
+      { type: "Incomplete", count: 0 },
+    ],
+    isStruggling: false,
+    hasNoSessions: true,
+    recentGrades: [],
+  };
+
+  const displayAnalytics = analytics || defaultAnalytics;
 
   return (
     <div className="space-y-6">
@@ -444,15 +455,17 @@ export default function Report({ profileId }: { profileId: string }) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {analytics.hasNoSessions ? "N/A" : `${analytics.avgScore}%`}
+              {displayAnalytics.hasNoSessions
+                ? "N/A"
+                : `${displayAnalytics.avgScore}%`}
             </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              {analytics.trend === "improving" ? (
+              {displayAnalytics.trend === "improving" ? (
                 <TrendingUp className="h-3 w-3 text-green-600" />
-              ) : analytics.trend === "declining" ? (
+              ) : displayAnalytics.trend === "declining" ? (
                 <TrendingDown className="h-3 w-3 text-red-600" />
               ) : null}
-              {analytics.trend} trend
+              {displayAnalytics.trend} trend
             </div>
           </CardContent>
         </Card>
@@ -464,10 +477,11 @@ export default function Report({ profileId }: { profileId: string }) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {analytics.completedSessions}/{analytics.totalSessions}
+              {displayAnalytics.completedSessions}/
+              {displayAnalytics.totalSessions}
             </div>
             <div className="text-xs text-muted-foreground">
-              {analytics.completionRate}% completion rate
+              {displayAnalytics.completionRate}% completion rate
             </div>
           </CardContent>
         </Card>
@@ -479,7 +493,9 @@ export default function Report({ profileId }: { profileId: string }) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {analytics.hasNoSessions ? "N/A" : `${analytics.passRate}%`}
+              {displayAnalytics.hasNoSessions
+                ? "N/A"
+                : `${displayAnalytics.passRate}%`}
             </div>
             <div className="text-xs text-muted-foreground">
               of completed sessions
@@ -494,7 +510,9 @@ export default function Report({ profileId }: { profileId: string }) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {analytics.hasNoSessions ? "N/A" : `${analytics.avgTimeMinutes}m`}
+              {displayAnalytics.hasNoSessions
+                ? "N/A"
+                : `${displayAnalytics.avgTimeMinutes}m`}
             </div>
             <div className="text-xs text-muted-foreground">per session</div>
           </CardContent>
@@ -502,19 +520,19 @@ export default function Report({ profileId }: { profileId: string }) {
       </div>
 
       {/* Status Alert */}
-      {analytics.isStruggling && (
+      {displayAnalytics.isStruggling && (
         <Card className="border-orange-200 bg-orange-50">
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-orange-600" />
               <div>
                 <p className="font-medium text-orange-800">
-                  {analytics.hasNoSessions
+                  {displayAnalytics.hasNoSessions
                     ? "No Session Data"
                     : "Performance Alert"}
                 </p>
                 <p className="text-sm text-orange-700">
-                  {analytics.hasNoSessions
+                  {displayAnalytics.hasNoSessions
                     ? "This student has not completed any sessions yet."
                     : "This student may need additional support based on current performance metrics."}
                 </p>
@@ -533,10 +551,10 @@ export default function Report({ profileId }: { profileId: string }) {
             <CardDescription>Score progression across sessions</CardDescription>
           </CardHeader>
           <CardContent>
-            {analytics.performanceOverTime.length > 0 ? (
+            {displayAnalytics.performanceOverTime.length > 0 ? (
               <ChartContainer config={timeChartConfig} className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={analytics.performanceOverTime}>
+                  <AreaChart data={displayAnalytics.performanceOverTime}>
                     <defs>
                       <linearGradient
                         id="scoreGradient"
@@ -594,10 +612,10 @@ export default function Report({ profileId }: { profileId: string }) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {analytics.skillBreakdown.length > 0 ? (
+            {displayAnalytics.skillBreakdown.length > 0 ? (
               <ChartContainer config={skillsChartConfig} className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={analytics.skillBreakdown}>
+                  <RadarChart data={displayAnalytics.skillBreakdown}>
                     <PolarGrid />
                     <PolarAngleAxis dataKey="skill" />
                     <ChartTooltip
@@ -632,10 +650,10 @@ export default function Report({ profileId }: { profileId: string }) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {analytics.sessionTypeData.some((item) => item.count > 0) ? (
+          {displayAnalytics.sessionTypeData.some((item) => item.count > 0) ? (
             <ChartContainer config={sessionChartConfig} className="h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.sessionTypeData}>
+                <BarChart data={displayAnalytics.sessionTypeData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="type" />
                   <YAxis />
@@ -666,9 +684,9 @@ export default function Report({ profileId }: { profileId: string }) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {analytics.skillBreakdown.length > 0 ? (
+            {displayAnalytics.skillBreakdown.length > 0 ? (
               <div className="space-y-4">
-                {analytics.skillBreakdown.map((skill) => (
+                {displayAnalytics.skillBreakdown.map((skill) => (
                   <div key={skill.skill} className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">{skill.skill}</span>
@@ -696,15 +714,15 @@ export default function Report({ profileId }: { profileId: string }) {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {!analytics.hasNoSessions ? (
+            {!displayAnalytics.hasNoSessions ? (
               <>
                 <div className="flex items-center gap-2">
                   <Award className="h-5 w-5 text-green-600" />
                   <div>
                     <p className="font-medium">Strongest Skill</p>
                     <p className="text-sm text-muted-foreground">
-                      {analytics.strongestSkill.skill} (
-                      {analytics.strongestSkill.score}%)
+                      {displayAnalytics.strongestSkill.skill} (
+                      {displayAnalytics.strongestSkill.score}%)
                     </p>
                   </div>
                 </div>
@@ -714,16 +732,16 @@ export default function Report({ profileId }: { profileId: string }) {
                   <div>
                     <p className="font-medium">Area for Improvement</p>
                     <p className="text-sm text-muted-foreground">
-                      {analytics.weakestSkill.skill} (
-                      {analytics.weakestSkill.score}%)
+                      {displayAnalytics.weakestSkill.skill} (
+                      {displayAnalytics.weakestSkill.score}%)
                     </p>
                   </div>
                 </div>
                 <Separator />
                 <div className="flex items-center gap-2">
-                  {analytics.trend === "improving" ? (
+                  {displayAnalytics.trend === "improving" ? (
                     <TrendingUp className="h-5 w-5 text-green-600" />
-                  ) : analytics.trend === "declining" ? (
+                  ) : displayAnalytics.trend === "declining" ? (
                     <TrendingDown className="h-5 w-5 text-red-600" />
                   ) : (
                     <Calendar className="h-5 w-5 text-gray-600" />
@@ -731,9 +749,9 @@ export default function Report({ profileId }: { profileId: string }) {
                   <div>
                     <p className="font-medium">Performance Trend</p>
                     <p className="text-sm text-muted-foreground">
-                      {analytics.trend === "improving"
+                      {displayAnalytics.trend === "improving"
                         ? "Improving over time"
-                        : analytics.trend === "declining"
+                        : displayAnalytics.trend === "declining"
                           ? "Declining performance"
                           : "Stable performance"}
                     </p>
@@ -757,7 +775,7 @@ export default function Report({ profileId }: { profileId: string }) {
           <CardDescription>Latest 5 completed sessions</CardDescription>
         </CardHeader>
         <CardContent>
-          {analytics.recentGrades.length > 0 ? (
+          {displayAnalytics.recentGrades.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -768,7 +786,7 @@ export default function Report({ profileId }: { profileId: string }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {analytics.recentGrades.map((grade, index) => (
+                {displayAnalytics.recentGrades.map((grade, index) => (
                   <TableRow key={index}>
                     <TableCell>
                       {format(new Date(grade.createdAt), "MMM dd, yyyy")}

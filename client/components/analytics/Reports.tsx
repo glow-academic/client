@@ -160,16 +160,21 @@ export default function Reports() {
     )
       return [];
 
-    const tas = profiles.filter((profile) => profile.role === "ta");
+    const tas = profiles; // Show all profiles, not just TAs
 
     // Calculate cohort performance averages
     const cohortPerformance = cohorts.reduce(
       (acc, cohort) => {
-        const cohortTAs = tas.filter((ta) => cohort.profileIds.includes(ta.id));
+        const cohortMembers = tas.filter((member) =>
+          cohort.profileIds.includes(member.id)
+        );
         const cohortGrades = grades.filter((grade) => {
           const chat = chats.find((c) => c.id === grade.simulationChatId);
           const attempt = attempts?.find((a) => a.id === chat?.attemptId);
-          return attempt && cohortTAs.some((ta) => ta.id === attempt.profileId);
+          return (
+            attempt &&
+            cohortMembers.some((member) => member.id === attempt.profileId)
+          );
         });
 
         const avgScore =
@@ -180,39 +185,42 @@ export default function Reports() {
               )
             : 0;
 
-        acc[cohort.id] = { avgScore, memberCount: cohortTAs.length };
+        acc[cohort.id] = { avgScore, memberCount: cohortMembers.length };
         return acc;
       },
       {} as Record<string, { avgScore: number; memberCount: number }>
     );
 
-    // TA leaderboard based on actual grades
-    const taPerformance = tas.map((ta): TAPerformanceData => {
-      const taAttempts =
-        attempts?.filter((attempt) => attempt.profileId === ta.id) || [];
-      const taChats = chats.filter((chat) =>
-        taAttempts.some((attempt) => attempt.id === chat.attemptId)
+    // User performance based on actual grades
+    const taPerformance = tas.map((user): TAPerformanceData => {
+      const userAttempts =
+        attempts?.filter((attempt) => attempt.profileId === user.id) || [];
+      const userChats = chats.filter((chat) =>
+        userAttempts.some((attempt) => attempt.id === chat.attemptId)
       );
-      const taGrades = grades.filter((grade) =>
-        taChats.some((chat) => chat.id === grade.simulationChatId)
+      const userGrades = grades.filter((grade) =>
+        userChats.some((chat) => chat.id === grade.simulationChatId)
       );
-      const taMessages = messages.filter((message) =>
-        taChats.some((chat) => chat.id === message.chatId)
+      const userMessages = messages.filter((message) =>
+        userChats.some((chat) => chat.id === message.chatId)
       );
 
       const avgScore =
-        taGrades.length > 0
+        userGrades.length > 0
           ? Math.round(
-              taGrades.reduce((sum, g) => sum + g.score, 0) / taGrades.length
+              userGrades.reduce((sum, g) => sum + g.score, 0) /
+                userGrades.length
             )
           : 0;
 
-      const completedSessions = taChats.filter((chat) => chat.completed).length;
-      const totalSessions = taChats.length;
+      const completedSessions = userChats.filter(
+        (chat) => chat.completed
+      ).length;
+      const totalSessions = userChats.length;
 
-      // Calculate skill breakdown for this TA using only simulation chat rubrics
-      const taFeedbacks = feedbacks.filter((f) =>
-        taGrades.some((g) => g.id === f.simulationChatGradeId)
+      // Calculate skill breakdown for this user using only simulation chat rubrics
+      const userFeedbacks = feedbacks.filter((f) =>
+        userGrades.some((g) => g.id === f.simulationChatGradeId)
       );
 
       const validRubrics = rubrics?.filter((r) =>
@@ -229,7 +237,7 @@ export default function Reports() {
         const groupStandards = validStandards.filter(
           (s) => s.standardGroupId === group.id
         );
-        const groupFeedbacks = taFeedbacks.filter((f) =>
+        const groupFeedbacks = userFeedbacks.filter((f) =>
           groupStandards.some((s) => s.id === f.standardId)
         );
 
@@ -264,19 +272,20 @@ export default function Reports() {
 
       // Calculate average time taken
       const avgTimeMinutes =
-        taGrades.length > 0
+        userGrades.length > 0
           ? Math.round(
-              taGrades.reduce((sum, g) => sum + g.timeTaken, 0) /
-                taGrades.length /
+              userGrades.reduce((sum, g) => sum + g.timeTaken, 0) /
+                userGrades.length /
                 60
             )
           : 0;
 
       // Calculate pass rate
       const passRate =
-        taGrades.length > 0
+        userGrades.length > 0
           ? Math.round(
-              (taGrades.filter((g) => g.passed).length / taGrades.length) * 100
+              (userGrades.filter((g) => g.passed).length / userGrades.length) *
+                100
             )
           : 0;
 
@@ -285,7 +294,7 @@ export default function Reports() {
         totalSessions === 0 || (avgScore < 70 && totalSessions > 0);
 
       // Calculate trend (last 3 vs first 3 sessions)
-      const sortedGrades = taGrades.sort(
+      const sortedGrades = userGrades.sort(
         (a, b) =>
           new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
@@ -304,10 +313,10 @@ export default function Reports() {
 
       // Last Activity
       const lastActivity =
-        taChats.length > 0
+        userChats.length > 0
           ? new Date(
               Math.max(
-                ...taChats.map((chat) =>
+                ...userChats.map((chat) =>
                   new Date(chat.completedAt || chat.updatedAt).getTime()
                 )
               )
@@ -315,24 +324,26 @@ export default function Reports() {
           : null;
 
       // Scenarios Completed
-      const uniqueScenarios = new Set(taChats.map((chat) => chat.scenarioId));
+      const uniqueScenarios = new Set(userChats.map((chat) => chat.scenarioId));
       const scenariosCompleted = uniqueScenarios.size;
 
       // Messages Per Session
       const messagesPerSession =
-        taChats.length > 0 ? Math.round(taMessages.length / taChats.length) : 0;
+        userChats.length > 0
+          ? Math.round(userMessages.length / userChats.length)
+          : 0;
 
       // Total Simulation Attempts
-      const totalAttempts = taAttempts.length;
+      const totalAttempts = userAttempts.length;
 
-      // Cohorts this TA belongs to
-      const taCohorts = cohorts.filter((cohort) =>
-        cohort.profileIds.includes(ta.id)
+      // Cohorts this user belongs to
+      const userCohorts = cohorts.filter((cohort) =>
+        cohort.profileIds.includes(user.id)
       );
-      const activeCohorts = taCohorts.filter((cohort) => cohort.active);
+      const activeCohorts = userCohorts.filter((cohort) => cohort.active);
 
       // Cohort Performance Comparison
-      const cohortComparison = taCohorts.map((cohort) => {
+      const cohortComparison = userCohorts.map((cohort) => {
         const cohortAvg = cohortPerformance[cohort.id]?.avgScore || 0;
         const difference = avgScore - cohortAvg;
         return {
@@ -376,10 +387,10 @@ export default function Reports() {
           ? Math.max(...cohortComparison.map((c) => c.difference))
           : 0;
 
-      // Get unique class IDs from scenarios this TA has worked on
-      const taClassIds = [
+      // Get unique class IDs from scenarios this user has worked on
+      const userClassIds = [
         ...new Set(
-          taChats
+          userChats
             .map((chat) => {
               const scenario = scenarios.find((s) => s.id === chat.scenarioId);
               return scenario?.classId;
@@ -388,10 +399,10 @@ export default function Reports() {
         ),
       ];
 
-      // Get unique agent IDs from scenarios this TA has worked on
-      const taAgentIds = [
+      // Get unique agent IDs from scenarios this user has worked on
+      const userAgentIds = [
         ...new Set(
-          taChats
+          userChats
             .map((chat) => {
               const scenario = scenarios.find((s) => s.id === chat.scenarioId);
               return scenario?.agentId;
@@ -400,21 +411,21 @@ export default function Reports() {
         ),
       ];
 
-      // Get unique scenario IDs this TA has worked on
-      const taScenarioIds = [
-        ...new Set(taChats.map((chat) => chat.scenarioId)),
+      // Get unique scenario IDs this user has worked on
+      const userScenarioIds = [
+        ...new Set(userChats.map((chat) => chat.scenarioId)),
       ];
 
-      // Get unique simulation IDs this TA has worked on
-      const taSimulationIds = [
-        ...new Set(taAttempts.map((attempt) => attempt.simulationId)),
+      // Get unique simulation IDs this user has worked on
+      const userSimulationIds = [
+        ...new Set(userAttempts.map((attempt) => attempt.simulationId)),
       ];
 
       return {
-        id: ta.id,
-        firstName: ta.firstName,
-        lastName: ta.lastName,
-        username: ta.alias,
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.alias,
         avgScore,
         completedSessions,
         totalSessions,
@@ -423,9 +434,9 @@ export default function Reports() {
             ? Math.round((completedSessions / totalSessions) * 100)
             : 0,
         initials:
-          ta.firstName +
+          user.firstName +
           " " +
-          ta.lastName
+          user.lastName
             .split(" ")
             .map((n) => n[0])
             .join("")
@@ -442,7 +453,7 @@ export default function Reports() {
         scenariosCompleted,
         messagesPerSession,
         totalAttempts,
-        taCohorts: taCohorts.map((c) => c.title),
+        taCohorts: userCohorts.map((c) => c.title),
         activeCohorts: activeCohorts.length,
         cohortComparison,
         bestCohortRank:
@@ -451,10 +462,10 @@ export default function Reports() {
             : 0,
         avgVsCohort: bestCohortPerformance,
         // Additional fields for filtering
-        classIds: taClassIds,
-        agentsTested: taAgentIds,
-        scenarioIds: taScenarioIds,
-        simulationIds: taSimulationIds,
+        classIds: userClassIds,
+        agentsTested: userAgentIds,
+        scenarioIds: userScenarioIds,
+        simulationIds: userSimulationIds,
       };
     });
 
