@@ -104,6 +104,7 @@ export default function NewStaff() {
   });
   const [csvFile, setCsvFile] = React.useState<File | null>(null);
   const [csvPreview, setCsvPreview] = React.useState<CSVUser[]>([]);
+  const [selectedClassIds, setSelectedClassIds] = React.useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Get current user's profile to check if they're admin
@@ -163,6 +164,14 @@ export default function NewStaff() {
       : [...currentClassIds, classId];
 
     handleInputChange("classIds", newClassIds);
+  };
+
+  const handleBulkClassToggle = (classId: string) => {
+    const newClassIds = selectedClassIds.includes(classId)
+      ? selectedClassIds.filter((id) => id !== classId)
+      : [...selectedClassIds, classId];
+
+    setSelectedClassIds(newClassIds);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -229,8 +238,8 @@ export default function NewStaff() {
     const headers = ["firstName", "lastName", "alias", "role", "classIds"];
     const examples = [
       ["Sarah", "Johnson", "sjohnson", "instructional", "class1;class2"],
-      ["Jane", "Smith", "jsmith", "instructor", "class1;class2"],
-      ["John", "Doe", "jdoe", "ta", "class1;class2"],
+      ["Jane", "Smith", "jsmith", "instructor", "class1"],
+      ["John", "Doe", "jdoe", "ta", ""],
     ];
 
     const csvContent =
@@ -253,8 +262,11 @@ export default function NewStaff() {
 
     setIsSubmitting(true);
     try {
-      // TODO: Implement API call to bulk create staff members
-      logInfo("Creating staff members from CSV:", { csvPreview });
+      // TODO: Implement API call to bulk create staff members with class assignments
+      logInfo("Creating staff members from CSV:", {
+        csvPreview,
+        selectedClassIds,
+      });
 
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -445,7 +457,8 @@ export default function NewStaff() {
               </div>
               <div className="text-sm text-muted-foreground">
                 Include the following columns in the CSV file: firstName,
-                lastName, alias, role, classIds.
+                lastName, alias, role, classIds (optional - separate multiple
+                class IDs with semicolons).
               </div>
             </div>
 
@@ -491,6 +504,7 @@ export default function NewStaff() {
                     onClick={() => {
                       setCsvFile(null);
                       setCsvPreview([]);
+                      setSelectedClassIds([]);
                     }}
                   >
                     <X className="h-4 w-4" />
@@ -549,6 +563,11 @@ export default function NewStaff() {
                                     {classId}
                                   </Badge>
                                 ))}
+                                {user.classIds.length === 0 && (
+                                  <span className="text-xs text-muted-foreground">
+                                    None
+                                  </span>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -558,12 +577,70 @@ export default function NewStaff() {
                   </Table>
                 </div>
 
+                {/* Bulk Class Assignment Section */}
+                <div className="space-y-2">
+                  <Label>Bulk Class Assignment</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Select which classes to assign to all uploaded users. This
+                    will be added to any individual class assignments specified
+                    in the CSV.
+                  </p>
+                  <div className="border rounded-md p-4 max-h-60 overflow-y-auto">
+                    {allClasses.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        No classes available
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {allClasses.map((classItem: ClassData) => (
+                          <div
+                            key={classItem.id}
+                            className="flex items-center space-x-2"
+                          >
+                            <Checkbox
+                              id={`bulk-class-${classItem.id}`}
+                              checked={selectedClassIds.includes(classItem.id)}
+                              onCheckedChange={() =>
+                                handleBulkClassToggle(classItem.id)
+                              }
+                            />
+                            <Label
+                              htmlFor={`bulk-class-${classItem.id}`}
+                              className="text-sm font-normal cursor-pointer flex-1"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <span className="font-medium">
+                                    {classItem.classCode}
+                                  </span>
+                                  <span className="text-muted-foreground ml-2">
+                                    {classItem.name}
+                                  </span>
+                                </div>
+                                <Badge variant="outline" className="text-xs">
+                                  {classItem.term} {classItem.year}
+                                </Badge>
+                              </div>
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedClassIds.length} class
+                    {selectedClassIds.length !== 1 ? "es" : ""} selected for all
+                    users
+                  </p>
+                </div>
+
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="outline"
                     onClick={() => {
                       setCsvFile(null);
                       setCsvPreview([]);
+                      setSelectedClassIds([]);
                     }}
                   >
                     Cancel

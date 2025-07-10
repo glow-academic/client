@@ -301,7 +301,8 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
               {/* Classes Section */}
               <div className="space-y-2">
                 <Label>Classes</Label>
-                <div className="border rounded-md p-4 max-h-60 overflow-y-auto">
+                {formData?.classIds !== undefined && !isLoading ? (
+                  <div className="border rounded-md p-4 max-h-60 overflow-y-auto">
                   {allClasses.length === 0 || isLoading ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
                       No classes available
@@ -345,8 +346,11 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                ) : (
+                  <Skeleton className="h-40 w-full" />
+                )}
                 <p className="text-sm text-muted-foreground">
                   {formData.classIds?.length || 0} class
                   {(formData.classIds?.length || 0) !== 1 ? "es" : ""} selected
