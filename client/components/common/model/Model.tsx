@@ -71,7 +71,7 @@ interface FormErrors {
 interface FormData {
   name?: string;
   description?: string;
-  providerId?: string;
+  providerId: string;
   active?: boolean;
   modelType?: ModelTypeId | undefined;
 }
@@ -104,7 +104,7 @@ export default function Model({ modelId }: ModelProps) {
     enabled: isEditMode,
   });
 
-  const { data: providers = [] } = useQuery({
+  const { data: providers } = useQuery({
     queryKey: ["providers"],
     queryFn: () => getAllProviders(),
   });
@@ -119,7 +119,7 @@ export default function Model({ modelId }: ModelProps) {
       setFormData({
         name: modelToEdit.name,
         description: modelToEdit.description,
-        providerId: modelToEdit.providerId,
+        providerId: String(modelToEdit.providerId ?? ""),
         active: modelToEdit.active,
         modelType: normaliseModelType(modelToEdit.modelType),
       });
@@ -134,21 +134,19 @@ export default function Model({ modelId }: ModelProps) {
     if (
       isEditMode &&
       modelToEdit &&
-      providers.length &&
-      providers.some((p) => p.id === modelToEdit.providerId)
+      providers &&
+      providers.some((p) => String(p.id) === String(modelToEdit.providerId))
     ) {
-      setFormData((f) => ({ ...f, providerId: modelToEdit.providerId }));
+      setFormData((f) => ({
+        ...f,
+        providerId: String(modelToEdit.providerId),
+      }));
     }
-  }, [isEditMode, modelToEdit, providers]); // <-- watch providers, not length
+  }, [isEditMode, modelToEdit, providers]);
 
-  // 2️⃣  fallback when model's provider is no longer in the list
-  const providerOptions = providers.map((p) => (
-    <SelectItem key={p.id} value={p.id}>
-      {p.name} - {p.description}
-    </SelectItem>
-  ));
   const providerMissing =
-    formData.providerId && !providers.find((p) => p.id === formData.providerId);
+    !!formData.providerId &&
+    !providers?.some((p) => String(p.id) === formData.providerId);
 
   const modelTypeMissing =
     formData.modelType &&
@@ -175,7 +173,7 @@ export default function Model({ modelId }: ModelProps) {
       newErrors.description = "Description is required";
     }
 
-    if (!formData.providerId) {
+    if (!formData.providerId.trim()) {
       newErrors.providerId = "Provider is required";
     }
 
@@ -213,7 +211,7 @@ export default function Model({ modelId }: ModelProps) {
         result = await createModel({
           name: formData.name || "",
           description: formData.description || "",
-          providerId: formData.providerId || "",
+          providerId: formData.providerId,
           active: formData.active || true,
           modelType: formData.modelType || "ttt",
           createdAt: new Date().toISOString(),
@@ -281,10 +279,9 @@ export default function Model({ modelId }: ModelProps) {
 
         <div className="space-y-2">
           <Label htmlFor="providerId">Provider</Label>
-          {providers.length ? (
+          {providers && formData.providerId !== undefined ? (
             <Select
-              key={providers.length}
-              value={providerMissing ? "" : (formData.providerId ?? "")}
+              value={providerMissing ? "" : formData.providerId}
               onValueChange={(v) => handleInputChange("providerId", v)}
             >
               <SelectTrigger
@@ -298,7 +295,13 @@ export default function Model({ modelId }: ModelProps) {
                   }
                 />
               </SelectTrigger>
-              <SelectContent>{providerOptions}</SelectContent>
+              <SelectContent>
+                {providers.map((p) => (
+                  <SelectItem key={p.id} value={String(p.id)}>
+                    {p.name} - {p.description}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           ) : (
             <Skeleton className="h-10 w-full" />
