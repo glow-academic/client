@@ -16,12 +16,13 @@ import {
   Filter,
   GraduationCap,
   MapPin,
+  Search,
   Trash2,
   Users,
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -37,6 +38,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -44,13 +46,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Cohort, Scenario, Simulation } from "@/types";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
 import { deleteScenario } from "@/utils/mutations/scenarios/delete-scenario";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+
+const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50, 100];
+const DEFAULT_ITEMS_PER_PAGE = 20;
 
 export function Scenarios() {
   const router = useRouter();
@@ -63,6 +68,14 @@ export function Scenarios() {
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const [simulationFilter, setSimulationFilter] = useState<string>("all");
   const [cohortFilter, setCohortFilter] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("general");
+
+  // Pagination states for each tab
+  const [generalPage, setGeneralPage] = useState(1);
+  const [generatedPage, setGeneratedPage] = useState(1);
+  const [defaultPage, setDefaultPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_ITEMS_PER_PAGE);
 
   // Fetch data
   const { data: scenarios = [], refetch: refetchScenarios } = useQuery({
@@ -80,41 +93,131 @@ export function Scenarios() {
     queryFn: () => getAllCohorts(),
   });
 
-  // Filter scenarios based on selected filters
-  const filteredScenarios = scenarios.filter((scenario: Scenario) => {
-    let matchesSimulation = simulationFilter === "all";
-    let matchesCohort = cohortFilter === "all";
+  // Filter scenarios based on selected filters and search
+  const filteredScenarios = useMemo(() => {
+    return scenarios.filter((scenario: Scenario) => {
+      let matchesSimulation = simulationFilter === "all";
+      let matchesCohort = cohortFilter === "all";
+      let matchesSearch = true;
 
-    if (simulationFilter !== "all") {
-      const simulation = simulations.find(
-        (s: Simulation) => s.id === simulationFilter
-      );
-      if (simulation && simulation.scenarioIds.includes(scenario.id)) {
-        matchesSimulation = true;
+      if (simulationFilter !== "all") {
+        const simulation = simulations.find(
+          (s: Simulation) => s.id === simulationFilter
+        );
+        if (simulation && simulation.scenarioIds.includes(scenario.id)) {
+          matchesSimulation = true;
+        }
       }
-    }
 
-    if (cohortFilter !== "all") {
-      const simulation = simulations.find(
-        (s: Simulation) =>
-          s.cohortIds.includes(cohortFilter) &&
-          s.scenarioIds.includes(scenario.id)
-      );
-      if (simulation) {
-        matchesCohort = true;
+      if (cohortFilter !== "all") {
+        const simulation = simulations.find(
+          (s: Simulation) =>
+            s.cohortIds.includes(cohortFilter) &&
+            s.scenarioIds.includes(scenario.id)
+        );
+        if (simulation) {
+          matchesCohort = true;
+        }
       }
+
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        matchesSearch =
+          (scenario.name?.toLowerCase().includes(searchLower) ?? false) ||
+          (scenario.description?.toLowerCase().includes(searchLower) ??
+            false) ||
+          (scenario.location?.toLowerCase().includes(searchLower) ?? false) ||
+          (scenario.seniority?.toLowerCase().includes(searchLower) ?? false) ||
+          (scenario.tod?.toLowerCase().includes(searchLower) ?? false) ||
+          (scenario.urgency?.toLowerCase().includes(searchLower) ?? false);
+      }
+
+      return matchesSimulation && matchesCohort && matchesSearch;
+    });
+  }, [scenarios, simulationFilter, cohortFilter, searchTerm, simulations]);
+
+  // Separate scenarios by type
+  const generalScenarios = useMemo(() => {
+    return filteredScenarios.filter(
+      (scenario: Scenario) => !scenario.defaultScenario && !scenario.generated
+    );
+  }, [filteredScenarios]);
+
+  const generatedScenarios = useMemo(() => {
+    return filteredScenarios.filter(
+      (scenario: Scenario) => scenario.generated === true
+    );
+  }, [filteredScenarios]);
+
+  const defaultScenarios = useMemo(() => {
+    return filteredScenarios.filter(
+      (scenario: Scenario) => scenario.defaultScenario
+    );
+  }, [filteredScenarios]);
+
+  // Pagination logic
+  const getPaginatedScenarios = (scenarios: Scenario[], page: number) => {
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return scenarios.slice(startIndex, endIndex);
+  };
+
+  const getTotalPages = (scenarios: Scenario[]) => {
+    return Math.ceil(scenarios.length / itemsPerPage);
+  };
+
+  const getCurrentPageScenarios = () => {
+    switch (activeTab) {
+      case "general":
+        return getPaginatedScenarios(generalScenarios, generalPage);
+      case "generated":
+        return getPaginatedScenarios(generatedScenarios, generatedPage);
+      case "default":
+        return getPaginatedScenarios(defaultScenarios, defaultPage);
+      default:
+        return [];
     }
+  };
 
-    return matchesSimulation && matchesCohort;
-  });
+  const getCurrentPage = () => {
+    switch (activeTab) {
+      case "general":
+        return generalPage;
+      case "generated":
+        return generatedPage;
+      case "default":
+        return defaultPage;
+      default:
+        return 1;
+    }
+  };
 
-  // Separate scenarios by default status
-  const defaultScenarios = filteredScenarios.filter(
-    (scenario: Scenario) => scenario.defaultScenario
-  );
-  const customScenarios = filteredScenarios.filter(
-    (scenario: Scenario) => !scenario.defaultScenario
-  );
+  const setCurrentPage = (page: number) => {
+    switch (activeTab) {
+      case "general":
+        setGeneralPage(page);
+        break;
+      case "generated":
+        setGeneratedPage(page);
+        break;
+      case "default":
+        setDefaultPage(page);
+        break;
+    }
+  };
+
+  const getCurrentScenarios = () => {
+    switch (activeTab) {
+      case "general":
+        return generalScenarios;
+      case "generated":
+        return generatedScenarios;
+      case "default":
+        return defaultScenarios;
+      default:
+        return [];
+    }
+  };
 
   const handleDelete = async () => {
     if (!deleteItem) return;
@@ -139,6 +242,12 @@ export function Scenarios() {
   };
 
   const handleDuplicate = async (scenario: Scenario) => {
+    // Only allow duplicating general scenarios
+    if (scenario.defaultScenario || scenario.generated === true) {
+      toast.error("This scenario cannot be duplicated");
+      return;
+    }
+
     setIsDuplicating(scenario.id);
     try {
       await createScenario({
@@ -147,6 +256,7 @@ export function Scenarios() {
         createdAt: undefined,
         updatedAt: undefined,
         defaultScenario: false,
+        generated: false,
         name: `${scenario.name} Copy`,
       });
       logInfo("Scenario duplicated successfully:", {
@@ -179,9 +289,16 @@ export function Scenarios() {
   const clearFilters = () => {
     setSimulationFilter("all");
     setCohortFilter("all");
+    setSearchTerm("");
   };
 
-  const hasActiveFilters = simulationFilter !== "all" || cohortFilter !== "all";
+  const hasActiveFilters =
+    simulationFilter !== "all" || cohortFilter !== "all" || searchTerm;
+
+  const canDuplicate = (scenario: Scenario) => {
+    // Can only duplicate general scenarios (not default or generated)
+    return !scenario.defaultScenario && scenario.generated !== true;
+  };
 
   const renderScenarioCard = (scenario: Scenario) => (
     <Card key={scenario.id} className="hover:shadow-md transition-shadow">
@@ -196,6 +313,11 @@ export function Scenarios() {
                 {scenario.defaultScenario && (
                   <Badge variant="secondary" className="text-xs">
                     Default
+                  </Badge>
+                )}
+                {scenario.generated === true && (
+                  <Badge variant="outline" className="text-xs">
+                    Generated
                   </Badge>
                 )}
                 {scenario.location && (
@@ -229,7 +351,7 @@ export function Scenarios() {
             </p>
           </div>
           <div className="flex gap-2 items-center">
-            {scenario.defaultScenario && (
+            {canDuplicate(scenario) && (
               <Button
                 variant="outline"
                 size="sm"
@@ -289,93 +411,208 @@ export function Scenarios() {
     </Card>
   );
 
-  return (
-    <div className="space-y-6">
-      {/* Filters */}
-      <div className="flex flex-wrap gap-4 items-center">
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Filters:</span>
+  const renderPagination = () => {
+    const currentScenarios = getCurrentScenarios();
+    const totalPages = getTotalPages(currentScenarios);
+    const currentPage = getCurrentPage();
+
+    if (totalPages <= 1) return null;
+
+    return (
+      <div className="flex items-center justify-between mt-6">
+        <div className="text-sm text-muted-foreground">
+          Showing{" "}
+          {Math.min(
+            (currentPage - 1) * itemsPerPage + 1,
+            currentScenarios.length
+          )}{" "}
+          to {Math.min(currentPage * itemsPerPage, currentScenarios.length)} of{" "}
+          {currentScenarios.length} scenarios
         </div>
-
-        <Select value={simulationFilter} onValueChange={setSimulationFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by simulation" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Simulations</SelectItem>
-            {simulations.map((simulation: Simulation) => (
-              <SelectItem key={simulation.id} value={simulation.id}>
-                {simulation.title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={cohortFilter} onValueChange={setCohortFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by cohort" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Cohorts</SelectItem>
-            {cohorts.map((cohort: Cohort) => (
-              <SelectItem key={cohort.id} value={cohort.id}>
-                {cohort.title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {hasActiveFilters && (
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={clearFilters}
-            className="text-muted-foreground"
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
           >
-            <X className="h-4 w-4 mr-1" />
-            Clear Filters
+            Previous
           </Button>
-        )}
-      </div>
-
-      {/* Default Scenarios Section */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold">Default Scenarios</h2>
-          <Badge variant="outline">{defaultScenarios.length}</Badge>
+          <span className="text-sm">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              setCurrentPage(Math.min(totalPages, currentPage + 1))
+            }
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
         </div>
-        <div className="grid gap-4">
-          {defaultScenarios
-            .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-            .map(renderScenarioCard)}
-          {defaultScenarios.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No default scenarios found.
-            </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Search and Filters */}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium">Filters:</span>
+          </div>
+
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search scenarios..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          <Select value={simulationFilter} onValueChange={setSimulationFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filter by simulation" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Simulations</SelectItem>
+              {simulations.map((simulation: Simulation) => (
+                <SelectItem key={simulation.id} value={simulation.id}>
+                  {simulation.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={cohortFilter} onValueChange={setCohortFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filter by cohort" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Cohorts</SelectItem>
+              {cohorts.map((cohort: Cohort) => (
+                <SelectItem key={cohort.id} value={cohort.id}>
+                  {cohort.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {hasActiveFilters && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearFilters}
+              className="text-muted-foreground"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Clear Filters
+            </Button>
           )}
         </div>
-      </div>
 
-      <Separator />
-
-      {/* Custom Scenarios Section */}
-      <div className="space-y-4">
+        {/* Items per page selector */}
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold">Custom Scenarios</h2>
-          <Badge variant="outline">{customScenarios.length}</Badge>
-        </div>
-        <div className="grid gap-4">
-          {customScenarios
-            .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-            .map(renderScenarioCard)}
-          {customScenarios.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No custom scenarios found.
-            </div>
-          )}
+          <span className="text-sm font-medium">Items per page:</span>
+          <Select
+            value={itemsPerPage.toString()}
+            onValueChange={(value) => setItemsPerPage(parseInt(value))}
+          >
+            <SelectTrigger className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+                <SelectItem key={option} value={option.toString()}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
+
+      {/* Tabs */}
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-6"
+      >
+        <TabsList>
+          <TabsTrigger value="general" className="flex items-center gap-2">
+            General
+            <Badge variant="outline" className="text-xs">
+              {generalScenarios.length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="generated" className="flex items-center gap-2">
+            Generated
+            <Badge variant="outline" className="text-xs">
+              {generatedScenarios.length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="default" className="flex items-center gap-2">
+            Default
+            <Badge variant="outline" className="text-xs">
+              {defaultScenarios.length}
+            </Badge>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="general" className="space-y-4">
+          <div className="grid gap-4">
+            {getCurrentPageScenarios()
+              .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+              .map(renderScenarioCard)}
+            {getCurrentPageScenarios().length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                {generalScenarios.length === 0
+                  ? "No general scenarios found."
+                  : "No scenarios match the current filters."}
+              </div>
+            )}
+          </div>
+          {renderPagination()}
+        </TabsContent>
+
+        <TabsContent value="generated" className="space-y-4">
+          <div className="grid gap-4">
+            {getCurrentPageScenarios()
+              .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+              .map(renderScenarioCard)}
+            {getCurrentPageScenarios().length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                {generatedScenarios.length === 0
+                  ? "No generated scenarios found."
+                  : "No scenarios match the current filters."}
+              </div>
+            )}
+          </div>
+          {renderPagination()}
+        </TabsContent>
+
+        <TabsContent value="default" className="space-y-4">
+          <div className="grid gap-4">
+            {getCurrentPageScenarios()
+              .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+              .map(renderScenarioCard)}
+            {getCurrentPageScenarios().length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                {defaultScenarios.length === 0
+                  ? "No default scenarios found."
+                  : "No scenarios match the current filters."}
+              </div>
+            )}
+          </div>
+          {renderPagination()}
+        </TabsContent>
+      </Tabs>
 
       {/* Empty State */}
       {filteredScenarios.length === 0 && scenarios.length > 0 && (
