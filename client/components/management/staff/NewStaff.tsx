@@ -7,7 +7,7 @@
 
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { Download, GraduationCap, Shield, User, X } from "lucide-react";
+import { Download, GraduationCap, Shield, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
 
@@ -33,10 +33,11 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Class as ClassData } from "@/types";
-import { logError, logInfo } from "@/utils/logger";
+import { logError } from "@/utils/logger";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useSession } from "next-auth/react";
+import { createProfile } from "@/utils/mutations/profiles/create-profile";
 
 type ProfileRole = "admin" | "instructional" | "instructor" | "ta";
 
@@ -45,7 +46,6 @@ interface CSVUser {
   lastName: string;
   alias: string;
   role: ProfileRole;
-  classIds: string[];
 }
 
 const getRoleIcon = (role: string) => {
@@ -102,7 +102,6 @@ export default function NewStaff() {
     role: "" as ProfileRole | "",
     classIds: [] as string[],
   });
-  const [csvFile, setCsvFile] = React.useState<File | null>(null);
   const [csvPreview, setCsvPreview] = React.useState<CSVUser[]>([]);
   const [selectedClassIds, setSelectedClassIds] = React.useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -180,12 +179,13 @@ export default function NewStaff() {
 
     setIsSubmitting(true);
     try {
-      // TODO: Implement API call to create staff member
-      logInfo("Creating staff member:", formData);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
+      await createProfile({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        alias: formData.alias,
+        role: formData.role,
+        classIds: formData.classIds,
+      });
       router.push("/management/staff");
     } catch (error) {
       logError("Error creating staff member:", error);
@@ -197,7 +197,6 @@ export default function NewStaff() {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type === "text/csv") {
-      setCsvFile(file);
       parseCSV(file);
     }
   };
@@ -219,9 +218,6 @@ export default function NewStaff() {
             lastName: values[1] || "",
             alias: values[2] || "",
             role: role,
-            classIds: values[4]
-              ? values[4].split(";").map((id) => id.trim())
-              : [],
           };
         })
         .filter(
@@ -235,11 +231,11 @@ export default function NewStaff() {
   };
 
   const downloadTemplate = () => {
-    const headers = ["firstName", "lastName", "alias", "role", "classIds"];
+    const headers = ["firstName", "lastName", "alias", "role"];
     const examples = [
-      ["Sarah", "Johnson", "sjohnson", "instructional", "class1;class2"],
-      ["Jane", "Smith", "jsmith", "instructor", "class1"],
-      ["John", "Doe", "jdoe", "ta", ""],
+      ["Sarah", "Johnson", "sjohnson", "instructional"],
+      ["Jane", "Smith", "jsmith", "instructor"],
+      ["John", "Doe", "jdoe", "ta"],
     ];
 
     const csvContent =
@@ -262,15 +258,17 @@ export default function NewStaff() {
 
     setIsSubmitting(true);
     try {
-      // TODO: Implement API call to bulk create staff members with class assignments
-      logInfo("Creating staff members from CSV:", {
-        csvPreview,
-        selectedClassIds,
-      });
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
+      await Promise.all(
+        csvPreview.map((user) =>
+          createProfile({
+            firstName: user.firstName,
+            lastName: user.lastName,
+            alias: user.alias,
+            role: user.role,
+            classIds: selectedClassIds,
+          })
+        )
+      );
       router.push("/management/staff");
     } catch (error) {
       logError("Error creating staff members from CSV:", error);
@@ -282,10 +280,16 @@ export default function NewStaff() {
   return (
     <div className="space-y-6 py-4 px-4">
       <Tabs defaultValue="single" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="single">Single User</TabsTrigger>
-          <TabsTrigger value="csv">CSV Import</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="single">Single User</TabsTrigger>
+            <TabsTrigger value="csv">CSV Import</TabsTrigger>
+          </TabsList>
+          <Button variant="outline" onClick={downloadTemplate}>
+            <Download className="h-4 w-4 mr-2" />
+            Download Template
+          </Button>
+        </div>
 
         <TabsContent value="single">
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -361,9 +365,6 @@ export default function NewStaff() {
             {/* Class Assignment Section */}
             <div className="space-y-2">
               <Label>Class Assignments</Label>
-              <p className="text-sm text-muted-foreground">
-                Select which classes this user should have access to.
-              </p>
               <div className="border rounded-md p-4 max-h-60 overflow-y-auto">
                 {allClasses.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
@@ -387,7 +388,7 @@ export default function NewStaff() {
                           htmlFor={`class-${classItem.id}`}
                           className="text-sm font-normal cursor-pointer flex-1"
                         >
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between gap-2">
                             <div>
                               <span className="font-medium">
                                 {classItem.classCode}
@@ -397,7 +398,9 @@ export default function NewStaff() {
                               </span>
                             </div>
                             <Badge variant="outline" className="text-xs">
-                              {classItem.term} {classItem.year}
+                              {classItem.term.charAt(0).toUpperCase() +
+                                classItem.term.slice(1)}{" "}
+                              {classItem.year}
                             </Badge>
                           </div>
                         </Label>
@@ -449,34 +452,9 @@ export default function NewStaff() {
         <TabsContent value="csv">
           <div className="space-y-4">
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={downloadTemplate}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Template
-                </Button>
-              </div>
               <div className="text-sm text-muted-foreground">
                 Include the following columns in the CSV file: firstName,
-                lastName, alias, role, classIds (optional - separate multiple
-                class IDs with semicolons).
-              </div>
-            </div>
-
-            <div className="p-3 bg-muted rounded-md">
-              <p className="text-sm font-medium mb-1">Available Roles:</p>
-              <div className="flex gap-2 flex-wrap">
-                {availableRoles.map((role) => {
-                  const RoleIcon = role.icon;
-                  return (
-                    <Badge
-                      key={role.value}
-                      variant={getRoleBadgeVariant(role.value)}
-                    >
-                      <RoleIcon className="h-3 w-3 mr-1" />
-                      {role.value}
-                    </Badge>
-                  );
-                })}
+                lastName, alias, role.
               </div>
             </div>
 
@@ -489,40 +467,12 @@ export default function NewStaff() {
               />
             </div>
 
-            {csvFile && (
-              <div className="p-3 bg-muted rounded-md">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Selected file:</p>
-                    <p className="text-sm text-muted-foreground">
-                      {csvFile.name}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setCsvFile(null);
-                      setCsvPreview([]);
-                      setSelectedClassIds([]);
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-
             {csvPreview.length > 0 && (
               <div className="space-y-4">
                 <div>
                   <h3 className="text-lg font-medium">
                     Preview ({csvPreview.length} users)
                   </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Review the staff members that will be created from your CSV
-                    file.
-                  </p>
                 </div>
 
                 <div className="rounded-md border max-h-96 overflow-auto">
@@ -533,7 +483,6 @@ export default function NewStaff() {
                         <TableHead>Last Name</TableHead>
                         <TableHead>Username</TableHead>
                         <TableHead>Role</TableHead>
-                        <TableHead>Classes</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -552,24 +501,6 @@ export default function NewStaff() {
                                 </Badge>
                               </div>
                             </TableCell>
-                            <TableCell>
-                              <div className="flex gap-1 flex-wrap">
-                                {user.classIds.map((classId, i) => (
-                                  <Badge
-                                    key={i}
-                                    variant="outline"
-                                    className="text-xs"
-                                  >
-                                    {classId}
-                                  </Badge>
-                                ))}
-                                {user.classIds.length === 0 && (
-                                  <span className="text-xs text-muted-foreground">
-                                    None
-                                  </span>
-                                )}
-                              </div>
-                            </TableCell>
                           </TableRow>
                         );
                       })}
@@ -580,11 +511,7 @@ export default function NewStaff() {
                 {/* Bulk Class Assignment Section */}
                 <div className="space-y-2">
                   <Label>Bulk Class Assignment</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Select which classes to assign to all uploaded users. This
-                    will be added to any individual class assignments specified
-                    in the CSV.
-                  </p>
+
                   <div className="border rounded-md p-4 max-h-60 overflow-y-auto">
                     {allClasses.length === 0 ? (
                       <p className="text-sm text-muted-foreground text-center py-4">
@@ -608,7 +535,7 @@ export default function NewStaff() {
                               htmlFor={`bulk-class-${classItem.id}`}
                               className="text-sm font-normal cursor-pointer flex-1"
                             >
-                              <div className="flex items-center justify-between">
+                              <div className="flex items-center justify-between gap-2">
                                 <div>
                                   <span className="font-medium">
                                     {classItem.classCode}
@@ -618,7 +545,9 @@ export default function NewStaff() {
                                   </span>
                                 </div>
                                 <Badge variant="outline" className="text-xs">
-                                  {classItem.term} {classItem.year}
+                                  {classItem.term.charAt(0).toUpperCase() +
+                                    classItem.term.slice(1)}{" "}
+                                  {classItem.year}
                                 </Badge>
                               </div>
                             </Label>
@@ -638,7 +567,6 @@ export default function NewStaff() {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      setCsvFile(null);
                       setCsvPreview([]);
                       setSelectedClassIds([]);
                     }}
