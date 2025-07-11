@@ -32,6 +32,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Class, Document, DocumentType } from "@/types";
 import { deleteDocument } from "@/utils/api/documents/delete-document";
@@ -41,6 +42,7 @@ import { logError, logInfo } from "@/utils/logger";
 import { createClass } from "@/utils/mutations/classes/create-class";
 import { updateClass } from "@/utils/mutations/classes/update-class";
 import { updateDocument } from "@/utils/mutations/documents/update-document";
+import { getClass } from "@/utils/queries/classes/get-class";
 import { getDocumentsByClass } from "@/utils/queries/documents/get-documents-by-class";
 import {
   AlertTriangle,
@@ -58,8 +60,18 @@ import {
   Upload,
   UploadCloud,
 } from "lucide-react";
-import { getClass } from "@/utils/queries/classes/get-class";
-import { Skeleton } from "@/components/ui/skeleton";
+
+// A new type to represent a document that is either saved or new
+type EditableDocument =
+  | Document
+  | {
+      isNew: true;
+      id: string; // A temporary client-side ID
+      name: string;
+      type: DocumentType;
+      file: File; // The actual File object
+      url: string; // A temporary object URL for local previews
+    };
 
 interface FormErrors {
   name?: string;
@@ -106,6 +118,12 @@ export default function ClassForm({ classId, onSuccess }: ClassFormProps) {
 
   const [formData, setFormData] = useState<FormData>();
 
+  // --- MODIFIED STATE MANAGEMENT ---
+  const [editedDocuments, setEditedDocuments] = useState<EditableDocument[]>(
+    []
+  );
+  const [documentsToDelete, setDocumentsToDelete] = useState<string[]>([]);
+
   // Document management state
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -114,14 +132,11 @@ export default function ClassForm({ classId, onSuccess }: ClassFormProps) {
     null
   );
   const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(
-    null
-  );
+  const [documentToDelete, setDocumentToDelete] =
+    useState<EditableDocument | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [isDeletingDoc, setIsDeletingDoc] = useState(false);
 
-  // Upload state
-  const [isUploading, setIsUploading] = useState(false);
+  // Upload state (simplified since we're not uploading immediately)
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Course processing state
@@ -135,11 +150,24 @@ export default function ClassForm({ classId, onSuccess }: ClassFormProps) {
   });
 
   // Fetch documents for this class
-  const { data: documents = [], isLoading: isLoadingDocuments } = useQuery({
+  const { data: documents, isLoading: isLoadingDocuments } = useQuery({
     queryKey: ["documents", classId],
     queryFn: () => getDocumentsByClass([classId!]),
     enabled: editMode,
   });
+
+  // --- MODIFIED: Initialize or reset the local document state ---
+  const resetFormState = useCallback(() => {
+    if (documents) {
+      setEditedDocuments(documents);
+      setDocumentsToDelete([]);
+    }
+  }, [documents]);
+
+  useEffect(() => {
+    // When the fetched documents change, reset the local state
+    resetFormState();
+  }, [resetFormState]);
 
   // Handle course processing
   const handleCourseProcessing = async () => {
@@ -215,6 +243,7 @@ export default function ClassForm({ classId, onSuccess }: ClassFormProps) {
     }
   }, [classData, editMode, initialFormData]);
 
+  // --- MODIFIED: `handleSubmit` orchestrates all uploads and updates ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -239,186 +268,139 @@ export default function ClassForm({ classId, onSuccess }: ClassFormProps) {
     }
 
     setIsSubmitting(true);
+    const toastId = toast.loading(
+      `${editMode ? "Updating" : "Creating"} class...`
+    );
 
     try {
-      let result;
+      let finalClassId = classId;
 
+      // --- Step 1: Create the class if it's new, to get a classId ---
       if (!editMode) {
-        result = await createClass(formData as Class);
+        const newClass = await createClass(formData as Class);
+        if (!newClass?.id) throw new Error("Failed to create class.");
+        finalClassId = newClass.id;
+        toast.success("Class created, now uploading documents...");
+      }
 
-        queryClient.invalidateQueries({ queryKey: ["classes"] });
-        toast.success("Class created successfully!");
-        if (onSuccess && result) {
-          onSuccess(result.id);
-        } else if (result) {
-          router.push(`/classes/c/${result.id}`);
-        }
-      } else {
-        if (!classId) throw new Error("Class ID is required for editing");
+      if (!finalClassId) {
+        throw new Error("Cannot upload documents without a class ID.");
+      }
 
-        result = await updateClass(classId, formData as Class);
+      // --- Step 2: Handle all document operations ---
+      const newFileUploads = editedDocuments.filter(
+        (doc) => "isNew" in doc && doc.isNew
+      ) as Extract<EditableDocument, { isNew: true }>[];
 
-        queryClient.invalidateQueries({ queryKey: ["classes"] });
-        queryClient.invalidateQueries({ queryKey: ["class", classId] });
-        queryClient.invalidateQueries({ queryKey: ["documents", classId] });
-        toast.success("Class updated successfully!");
-        if (onSuccess) {
-          onSuccess(classId);
-        }
+      // Create upload promises for new files
+      const uploadPromises = newFileUploads.map((doc) => {
+        return new Promise<void>((resolve, reject) => {
+          const fileId = crypto.randomUUID();
+          const upload = new tus.Upload(doc.file, {
+            endpoint: `/api/upload`,
+            retryDelays: [0, 3000, 5000],
+            metadata: {
+              filename: doc.file.name,
+              filetype: doc.file.type,
+              class: finalClassId!,
+              fileId: fileId,
+              ...(doc.file.type === "application/zip" && {
+                zip: "true",
+                autoClassify: "true",
+              }),
+            },
+            onSuccess: async () => {
+              try {
+                await finalizeDocumentUpload(
+                  fileId,
+                  finalClassId!,
+                  doc.file.type === "application/zip",
+                  true
+                );
+                resolve();
+              } catch (error) {
+                reject(error);
+              }
+            },
+            onError: (error) => {
+              logError(`Failed to upload ${doc.file.name}: `, error);
+              reject(error);
+            },
+          });
+          upload.start();
+        });
+      });
+
+      // Create deletion promises for marked documents
+      const deletePromises = documentsToDelete.map((docId) =>
+        deleteDocument(docId)
+      );
+
+      // Create update promises for modified documents
+      const updatePromises = editedDocuments
+        .filter((doc) => !("isNew" in doc)) // Only existing documents
+        .map((doc) => {
+          const originalDoc = documents?.find((d) => d.id === doc.id);
+          if (originalDoc && originalDoc.type !== doc.type) {
+            return updateDocument(doc.id, { type: doc.type });
+          }
+          return null;
+        })
+        .filter((p) => p !== null);
+
+      // Wait for all document operations to complete
+      await Promise.all([
+        ...uploadPromises,
+        ...deletePromises,
+        ...updatePromises,
+      ]);
+
+      // --- Step 3: Update class details (if in edit mode) ---
+      if (editMode) {
+        await updateClass(finalClassId, formData as Class);
+      }
+
+      toast.dismiss(toastId);
+      toast.success(`Class ${editMode ? "updated" : "created"} successfully!`);
+
+      // --- Step 4: Invalidate queries and navigate ---
+      queryClient.invalidateQueries({ queryKey: ["classes"] });
+      queryClient.invalidateQueries({ queryKey: ["class", finalClassId] });
+      queryClient.invalidateQueries({ queryKey: ["documents", finalClassId] });
+
+      if (onSuccess) {
+        onSuccess(finalClassId);
+      } else if (!editMode) {
+        router.push(`/classes/c/${finalClassId}`);
       }
     } catch (error) {
+      toast.dismiss(toastId);
       toast.error(
-        `Failed to ${editMode ? "edit" : "create"} class: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to save class: ${error instanceof Error ? error.message : "Unknown error"}`
       );
-      logError(`Error ${editMode ? "editing" : "creating"} class:`, error);
+      logError(`Error saving class:`, error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // File upload handling
-  const handleFiles = useCallback(
-    async (files: FileList) => {
-      if (!files || files.length === 0) return;
-      if (!classId) {
-        if (!editMode) {
-          toast.error(
-            "Please create the class first before uploading documents"
-          );
-        } else {
-          toast.error("Please save the class first before uploading documents");
-        }
-        return;
-      }
+  // --- MODIFIED: `handleFiles` now only stages files locally ---
+  const handleFiles = useCallback((files: FileList) => {
+    if (!files || files.length === 0) return;
 
-      const fileArray = Array.from(files);
+    // Create temporary document objects for each new file
+    const newDocs: EditableDocument[] = Array.from(files).map((file) => ({
+      isNew: true,
+      id: crypto.randomUUID(), // Unique client-side ID
+      name: file.name,
+      file: file,
+      type: "lecture", // A sensible default
+      url: URL.createObjectURL(file), // URL for local preview
+    }));
 
-      try {
-        setIsUploading(true);
-
-        // Create initial file upload statuses
-        const initialStatuses = fileArray.map((file) => ({
-          id: crypto.randomUUID(),
-          name: file.name,
-          progress: 0,
-          status: "uploading" as const,
-        }));
-
-        // Show toast for multiple files
-        let toastId: string | number = "";
-        if (fileArray.length > 1) {
-          toastId = toast.loading(`Uploading ${fileArray.length} files...`);
-        } else if (fileArray[0]) {
-          toastId = toast.loading(`Uploading ${fileArray[0].name}...`);
-        }
-
-        const uploadPromises = fileArray.map((file, index) => {
-          return new Promise<void>((resolve, reject) => {
-            // Generate a unique file ID
-            const fileId = initialStatuses[index]?.id;
-            if (!fileId) {
-              reject(new Error("File ID not found"));
-              return;
-            }
-
-            const tusMetadata = {
-              filename: file.name,
-              filetype: file.type,
-              class: classId,
-              fileId: fileId,
-              // Add ZIP support with auto-classification
-              ...(file.type === "application/zip" && {
-                zip: "true",
-                autoClassify: "true",
-              }),
-            };
-
-            // Create a new tus upload
-            const upload = new tus.Upload(file, {
-              endpoint: `/api/upload`,
-              retryDelays: [0, 3000, 5000, 10000, 20000],
-              metadata: tusMetadata,
-              onError: (error) => {
-                logError(`Failed to upload ${file.name}: `, error);
-
-                toast.error(
-                  `Failed to upload ${file.name}: ${error.message || "Unknown error"}`
-                );
-
-                reject(error);
-              },
-              onProgress: (bytesUploaded, bytesTotal) => {
-                const percentage = Math.round(
-                  (bytesUploaded / bytesTotal) * 100
-                );
-                logInfo(`${file.name} uploaded ${percentage}%`);
-              },
-              onSuccess: async () => {
-                // Finalize the upload
-                try {
-                  const response = await finalizeDocumentUpload(
-                    fileId,
-                    classId,
-                    file.type === "application/zip",
-                    true
-                  );
-
-                  if (!response.success) {
-                    throw new Error(
-                      response.message || "Failed to finalize upload"
-                    );
-                  }
-
-                  toast.success(`${file.name} uploaded successfully!`);
-                  resolve();
-                } catch (error) {
-                  logError(`Finalization error for ${file.name}:`, error);
-
-                  toast.error(
-                    `Failed to process ${file.name}: ${error instanceof Error ? error.message : "Unknown error"}`
-                  );
-
-                  reject(error);
-                }
-              },
-            });
-
-            // Start the upload
-            upload.start();
-          });
-        });
-
-        // Wait for all uploads to complete
-        try {
-          await Promise.allSettled(uploadPromises);
-
-          // Dismiss the loading toast
-          toast.dismiss(toastId);
-
-          // Reset form
-          if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-          }
-
-          // Invalidate queries to refresh data
-          queryClient.invalidateQueries({ queryKey: ["documents", classId] });
-        } catch (error) {
-          logError("Some uploads failed:", error);
-          // Dismiss the loading toast
-          toast.dismiss(toastId);
-        } finally {
-          setIsUploading(false);
-        }
-      } catch (error) {
-        logError("Upload initialization error:", error);
-        toast.error(
-          `Upload error: ${error instanceof Error ? error.message : "Unknown error"}`
-        );
-        setIsUploading(false);
-      }
-    },
-    [classId, queryClient, editMode]
-  );
+    setEditedDocuments((prev) => [...prev, ...newDocs]);
+    toast.info(`${newDocs.length} file(s) staged. Save the class to upload.`);
+  }, []);
 
   // Drag and drop handlers
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -454,49 +436,35 @@ export default function ClassForm({ classId, onSuccess }: ClassFormProps) {
   );
 
   const handleClick = useCallback(() => {
-    if (!isUploading) {
+    if (!isSubmitting) {
       fileInputRef.current?.click();
     }
-  }, [isUploading]);
+  }, [isSubmitting]);
 
-  const handleDeleteDocument = async (documentId: string) => {
-    try {
-      setIsDeletingDoc(true);
+  // --- MODIFIED: Deletion logic now handles both new and existing files ---
+  const stageDocumentForDeletion = (docId: string) => {
+    const docToRemove = editedDocuments.find((d) => d.id === docId);
+    if (!docToRemove) return;
 
-      const result = await deleteDocument(documentId);
-
-      if (!result.success) {
-        throw new Error(result.message);
-      }
-
-      queryClient.invalidateQueries({ queryKey: ["documents", classId] });
-      toast.success("Document deleted successfully");
-      setShowDeleteDialog(false);
-      setDocumentToDelete(null);
-    } catch (error) {
-      logError("Delete document error:", error);
-      toast.error(
-        `Failed to delete document: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
-    } finally {
-      setIsDeletingDoc(false);
+    // If it's an existing document, add its ID to the deletion queue
+    if (!("isNew" in docToRemove)) {
+      setDocumentsToDelete((prev) => [...prev, docId]);
     }
+
+    // Remove the document from the visible UI state
+    setEditedDocuments((prev) => prev.filter((d) => d.id !== docId));
+
+    setShowDeleteDialog(false);
+    setDocumentToDelete(null);
+    toast.info(`'${docToRemove.name}' will be deleted on save.`);
   };
 
-  const handleDocumentTypeChange = async (
-    documentId: string,
-    newType: string
-  ) => {
-    try {
-      await updateDocument(documentId, { type: newType as DocumentType });
-      queryClient.invalidateQueries({ queryKey: ["documents", classId] });
-      toast.success("Document type updated");
-    } catch (error) {
-      toast.error("Failed to update document type");
-      logError("Update error:", error);
-    }
+  const handleDocumentTypeChange = (docId: string, newType: string) => {
+    setEditedDocuments((prev) =>
+      prev.map((doc) =>
+        doc.id === docId ? { ...doc, type: newType as DocumentType } : doc
+      )
+    );
   };
 
   const getDocumentTypeInfo = (type: string) => {
@@ -542,13 +510,30 @@ export default function ClassForm({ classId, onSuccess }: ClassFormProps) {
     return <File className="h-6 w-6 text-gray-500" />;
   };
 
-  const viewDocument = (document: Document) => {
-    setSelectedDocument(document);
+  const viewDocument = (document: EditableDocument) => {
+    // For new documents, create a temporary document object for the viewer
+    if ("isNew" in document && document.isNew) {
+      const tempDoc: Document = {
+        id: document.id,
+        name: document.name,
+        type: document.type,
+        filePath: document.url, // Use filePath instead of url
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        classId: classId || "",
+        mimeType: document.file.type,
+        classified: false,
+        fileId: null,
+      };
+      setSelectedDocument(tempDoc);
+    } else {
+      setSelectedDocument(document as Document);
+    }
     setShowPreviewModal(true);
   };
 
-  // Filter documents
-  const filteredDocuments = documents.filter((doc: Document) => {
+  // Filter documents from the *edited* state for rendering
+  const filteredDocuments = editedDocuments.filter((doc: EditableDocument) => {
     const matchesSearch = searchQuery
       ? doc.name.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
@@ -692,322 +677,313 @@ export default function ClassForm({ classId, onSuccess }: ClassFormProps) {
             )}
           </div>
 
-          {/* Documents Section - Only show in edit mode */}
-          {editMode && (
-            <div className="space-y-4">
-              <Label>Documents</Label>
+          {/* Documents Section - Show in both create and edit modes */}
+          <div className="space-y-4">
+            <Label>Documents</Label>
 
-              {/* Controls Bar */}
-              {formData?.documentIds !== undefined && !isLoading ? (
-                <div className="flex items-center justify-between gap-4">
-                  {/* Left side - Search and Filters */}
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search documents..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-8 h-9 w-64"
-                      />
-                    </div>
+            {/* Controls Bar */}
+            <div className="flex items-center justify-between gap-4">
+              {/* Left side - Search and Filters */}
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search documents..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-8 h-9 w-64"
+                  />
+                </div>
 
-                    <Select value={typeFilter} onValueChange={setTypeFilter}>
-                      <SelectTrigger className="w-40 h-9">
-                        <SelectValue placeholder="Filter by type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="homework">📝 Homework</SelectItem>
-                        <SelectItem value="project">🚀 Project</SelectItem>
-                        <SelectItem value="quiz">❓ Quiz</SelectItem>
-                        <SelectItem value="midterm">📊 Midterm</SelectItem>
-                        <SelectItem value="lab">🧪 Lab</SelectItem>
-                        <SelectItem value="lecture">📚 Lecture</SelectItem>
-                        <SelectItem value="syllabus">📋 Syllabus</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-40 h-9">
+                    <SelectValue placeholder="Filter by type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="homework">📝 Homework</SelectItem>
+                    <SelectItem value="project">🚀 Project</SelectItem>
+                    <SelectItem value="quiz">❓ Quiz</SelectItem>
+                    <SelectItem value="midterm">📊 Midterm</SelectItem>
+                    <SelectItem value="lab">🧪 Lab</SelectItem>
+                    <SelectItem value="lecture">📚 Lecture</SelectItem>
+                    <SelectItem value="syllabus">📋 Syllabus</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                  {/* Right side - View Toggle */}
-                  <div className="flex items-center gap-4">
-                    <div className="flex border rounded-md">
-                      <Button
-                        type="button"
-                        variant={viewMode === "grid" ? "default" : "ghost"}
-                        size="sm"
-                        onClick={() => setViewMode("grid")}
-                        className="rounded-r-none"
-                      >
-                        <Grid3X3 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={viewMode === "list" ? "default" : "ghost"}
-                        size="sm"
-                        onClick={() => setViewMode("list")}
-                        className="rounded-l-none border-l"
-                      >
-                        <List className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        multiple
-                        onChange={handleFileInputChange}
-                        disabled={isUploading}
-                        accept="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/zip"
-                        className="hidden"
-                      />
-                      <Button
-                        type="button"
-                        variant="default"
-                        onClick={handleClick}
-                        disabled={isUploading}
-                        className="flex items-center gap-2"
-                      >
-                        <Upload className="h-4 w-4" />
-                        {isUploading ? "Uploading..." : "Upload"}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowCourseProcessDialog(true)}
-                        className="flex items-center gap-2"
-                        title="Process Course Information"
-                        disabled={isProcessingCourse}
-                      >
-                        {isProcessingCourse ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Brain className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
+              {/* Right side - View Toggle */}
+              <div className="flex items-center gap-4">
+                <div className="flex border rounded-md">
+                  <Button
+                    type="button"
+                    variant={viewMode === "grid" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("grid")}
+                    className="rounded-r-none"
+                  >
+                    <Grid3X3 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={viewMode === "list" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                    className="rounded-l-none border-l"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    onChange={handleFileInputChange}
+                    disabled={isSubmitting}
+                    accept="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/zip"
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="default"
+                    onClick={handleClick}
+                    disabled={isSubmitting}
+                    className="flex items-center gap-2"
+                  >
+                    <Upload className="h-4 w-4" />
+                    {isSubmitting ? "Uploading..." : "Upload"}
+                  </Button>
+                  {editMode && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowCourseProcessDialog(true)}
+                      className="flex items-center gap-2"
+                      title="Process Course Information"
+                      disabled={isProcessingCourse}
+                    >
+                      {isProcessingCourse ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Brain className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Documents Display Area */}
+            <div
+              className={cn(
+                "min-h-[200px] rounded-lg",
+                filteredDocuments.length === 0 ? "border-2 border-dashed" : ""
+              )}
+            >
+              {filteredDocuments.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <UploadCloud className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-lg font-medium text-muted-foreground mb-2">
+                    {editedDocuments.length === 0
+                      ? "No documents yet"
+                      : "No documents match your filters"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {editedDocuments.length === 0
+                      ? "Drag and drop files here or click Upload to get started"
+                      : "Try adjusting your search or filters"}
+                  </p>
                 </div>
               ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
-
-              {/* Documents Display Area */}
-              <div
-                className={cn(
-                  "min-h-[200px] rounded-lg",
-                  documents.length === 0 ? "border-2 border-dashed" : ""
-                )}
-              >
-                {isLoadingDocuments ? (
-                  <div className="p-6">
-                    <div
-                      className={
-                        viewMode === "grid"
-                          ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
-                          : "space-y-3"
-                      }
-                    >
-                      {[...Array(6)].map((_, i) => (
-                        <div
-                          key={i}
-                          className={
-                            viewMode === "grid"
-                              ? "aspect-square bg-muted animate-pulse rounded-lg"
-                              : "h-16 bg-muted animate-pulse rounded-lg"
-                          }
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : filteredDocuments.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <UploadCloud className="h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-lg font-medium text-muted-foreground mb-2">
-                      {documents.length === 0
-                        ? "No documents yet"
-                        : "No documents match your filters"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {documents.length === 0
-                        ? "Drag and drop files below to get started"
-                        : "Try adjusting your search or filters"}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="p-4">
-                    {viewMode === "grid" ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        {filteredDocuments.map((doc) => {
-                          return (
-                            <div
-                              key={doc.id}
-                              className="group relative border rounded-lg hover:shadow-md transition-all"
-                            >
-                              {/* Type selector in top left */}
-                              <div className="absolute top-2 left-2 z-10">
-                                <Select
-                                  value={doc.type}
-                                  onValueChange={(value) =>
-                                    handleDocumentTypeChange(doc.id, value)
-                                  }
-                                >
-                                  <SelectTrigger
-                                    className="text-xs bg-white/90 backdrop-blur-sm border-0 shadow-sm justify-center"
-                                    size="sm"
-                                  >
-                                    <span className="text-sm">
-                                      {getDocumentTypeIcon(doc.type)}
-                                    </span>
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="homework">
-                                      📝 Homework
-                                    </SelectItem>
-                                    <SelectItem value="project">
-                                      🚀 Project
-                                    </SelectItem>
-                                    <SelectItem value="quiz">
-                                      ❓ Quiz
-                                    </SelectItem>
-                                    <SelectItem value="midterm">
-                                      📊 Midterm
-                                    </SelectItem>
-                                    <SelectItem value="lab">🧪 Lab</SelectItem>
-                                    <SelectItem value="lecture">
-                                      📚 Lecture
-                                    </SelectItem>
-                                    <SelectItem value="syllabus">
-                                      📋 Syllabus
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
-                              {/* Action buttons in top right */}
-                              <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button
-                                  type="button"
-                                  variant="outline"
+                <div className="p-4">
+                  {viewMode === "grid" ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      {filteredDocuments.map((doc) => {
+                        const isNewDoc = "isNew" in doc && doc.isNew;
+                        return (
+                          <div
+                            key={doc.id}
+                            className={cn(
+                              "group relative border rounded-lg hover:shadow-md transition-all",
+                              isNewDoc && "border-blue-300 bg-blue-50/50"
+                            )}
+                          >
+                            {/* Type selector in top left */}
+                            <div className="absolute top-2 left-2 z-10">
+                              <Select
+                                value={doc.type}
+                                onValueChange={(value) =>
+                                  handleDocumentTypeChange(doc.id, value)
+                                }
+                              >
+                                <SelectTrigger
+                                  className="text-xs bg-white/90 backdrop-blur-sm border-0 shadow-sm justify-center"
                                   size="sm"
-                                  className="h-7 w-7 p-0 bg-white/90 backdrop-blur-sm"
-                                  onClick={() => viewDocument(doc)}
                                 >
-                                  <Eye className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-7 w-7 p-0 text-destructive hover:text-destructive bg-white/90 backdrop-blur-sm"
-                                  onClick={() => {
-                                    setDocumentToDelete(doc);
-                                    setShowDeleteDialog(true);
-                                  }}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
+                                  <span className="text-sm">
+                                    {getDocumentTypeIcon(doc.type)}
+                                  </span>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="homework">
+                                    📝 Homework
+                                  </SelectItem>
+                                  <SelectItem value="project">
+                                    🚀 Project
+                                  </SelectItem>
+                                  <SelectItem value="quiz">❓ Quiz</SelectItem>
+                                  <SelectItem value="midterm">
+                                    📊 Midterm
+                                  </SelectItem>
+                                  <SelectItem value="lab">🧪 Lab</SelectItem>
+                                  <SelectItem value="lecture">
+                                    📚 Lecture
+                                  </SelectItem>
+                                  <SelectItem value="syllabus">
+                                    📋 Syllabus
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
 
-                              {/* Image area */}
-                              <div className="aspect-square bg-muted rounded-lg flex items-center justify-center relative">
-                                {getDocumentIcon(doc.name)}
+                            {/* Action buttons in top right */}
+                            <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 w-7 p-0 bg-white/90 backdrop-blur-sm"
+                                onClick={() => viewDocument(doc)}
+                              >
+                                <Eye className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 w-7 p-0 text-destructive hover:text-destructive bg-white/90 backdrop-blur-sm"
+                                onClick={() => {
+                                  setDocumentToDelete(doc);
+                                  setShowDeleteDialog(true);
+                                }}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
 
-                                {/* Title in bottom right of image */}
-                                <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded max-w-[calc(100%-1rem)] truncate">
-                                  {doc.name}
+                            {/* Image area */}
+                            <div className="aspect-square bg-muted rounded-lg flex items-center justify-center relative">
+                              {getDocumentIcon(doc.name)}
+                              {isNewDoc && (
+                                <div className="absolute top-1 right-1 bg-blue-500 text-white text-xs px-1 py-0.5 rounded text-[10px]">
+                                  NEW
                                 </div>
+                              )}
+
+                              {/* Title in bottom right of image */}
+                              <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded max-w-[calc(100%-1rem)] truncate">
+                                {doc.name}
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {filteredDocuments.map((doc) => {
-                          return (
-                            <div
-                              key={doc.id}
-                              className="flex items-center gap-4 p-3 border rounded-lg hover:shadow-sm transition-all"
-                            >
-                              <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
-                                {getDocumentIcon(doc.name)}
-                              </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {filteredDocuments.map((doc) => {
+                        const isNewDoc = "isNew" in doc && doc.isNew;
+                        return (
+                          <div
+                            key={doc.id}
+                            className={cn(
+                              "flex items-center gap-4 p-3 border rounded-lg hover:shadow-sm transition-all",
+                              isNewDoc && "border-blue-300 bg-blue-50/50"
+                            )}
+                          >
+                            <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
+                              {getDocumentIcon(doc.name)}
+                            </div>
 
-                              <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
                                 <p
                                   className="font-medium truncate"
                                   title={doc.name}
                                 >
                                   {doc.name}
                                 </p>
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                <Select
-                                  value={doc.type}
-                                  onValueChange={(value) =>
-                                    handleDocumentTypeChange(doc.id, value)
-                                  }
-                                >
-                                  <SelectTrigger className="w-40 h-8">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="homework">
-                                      📝 Homework
-                                    </SelectItem>
-                                    <SelectItem value="project">
-                                      🚀 Project
-                                    </SelectItem>
-                                    <SelectItem value="quiz">
-                                      ❓ Quiz
-                                    </SelectItem>
-                                    <SelectItem value="midterm">
-                                      📊 Midterm
-                                    </SelectItem>
-                                    <SelectItem value="lab">🧪 Lab</SelectItem>
-                                    <SelectItem value="lecture">
-                                      📚 Lecture
-                                    </SelectItem>
-                                    <SelectItem value="syllabus">
-                                      📋 Syllabus
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
-
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => viewDocument(doc)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-destructive hover:text-destructive"
-                                  onClick={() => {
-                                    setDocumentToDelete(doc);
-                                    setShowDeleteDialog(true);
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                {isNewDoc && (
+                                  <span className="bg-blue-500 text-white text-xs px-1 py-0.5 rounded">
+                                    NEW
+                                  </span>
+                                )}
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+
+                            <div className="flex items-center gap-2">
+                              <Select
+                                value={doc.type}
+                                onValueChange={(value) =>
+                                  handleDocumentTypeChange(doc.id, value)
+                                }
+                              >
+                                <SelectTrigger className="w-40 h-8">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="homework">
+                                    📝 Homework
+                                  </SelectItem>
+                                  <SelectItem value="project">
+                                    🚀 Project
+                                  </SelectItem>
+                                  <SelectItem value="quiz">❓ Quiz</SelectItem>
+                                  <SelectItem value="midterm">
+                                    📊 Midterm
+                                  </SelectItem>
+                                  <SelectItem value="lab">🧪 Lab</SelectItem>
+                                  <SelectItem value="lecture">
+                                    📚 Lecture
+                                  </SelectItem>
+                                  <SelectItem value="syllabus">
+                                    📋 Syllabus
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => viewDocument(doc)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => {
+                                  setDocumentToDelete(doc);
+                                  setShowDeleteDialog(true);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Action Buttons */}
           <div className="flex justify-between">
@@ -1018,8 +994,8 @@ export default function ClassForm({ classId, onSuccess }: ClassFormProps) {
                     ? "Updating..."
                     : "Creating..."
                   : editMode
-                    ? "Create Class"
-                    : "Update Class"}
+                    ? "Update Class"
+                    : "Create Class"}
               </Button>
             </div>
           </div>
@@ -1034,7 +1010,11 @@ export default function ClassForm({ classId, onSuccess }: ClassFormProps) {
           </DialogHeader>
           <div className="h-[70vh] overflow-hidden">
             {selectedDocument && (
-              <DocumentViewer document={selectedDocument} bare={true} />
+              <DocumentViewer
+                document={selectedDocument}
+                bare={true}
+                isFormDocument={selectedDocument.filePath?.startsWith("blob:")}
+              />
             )}
           </div>
         </DialogContent>
@@ -1044,33 +1024,34 @@ export default function ClassForm({ classId, onSuccess }: ClassFormProps) {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete Document</DialogTitle>
+            <DialogTitle>Remove Document</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <p>
-              Are you sure you want to delete{" "}
+              Are you sure you want to remove{" "}
               <strong>{documentToDelete?.name}</strong>?
             </p>
             <p className="text-sm text-muted-foreground mt-2">
-              This action cannot be undone.
+              We will officially delete this document from the class on save.
             </p>
           </div>
           <div className="flex justify-end gap-2">
             <Button
               variant="outline"
               onClick={() => setShowDeleteDialog(false)}
-              disabled={isDeletingDoc}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={() =>
-                documentToDelete && handleDeleteDocument(documentToDelete.id)
+                documentToDelete &&
+                stageDocumentForDeletion(documentToDelete.id)
               }
-              disabled={isDeletingDoc}
+              disabled={isSubmitting}
             >
-              {isDeletingDoc ? "Deleting..." : "Delete"}
+              {isSubmitting ? "Saving..." : "Remove"}
             </Button>
           </div>
         </DialogContent>

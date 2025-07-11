@@ -13,12 +13,12 @@ import * as tus from "tus-js-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Archive, CheckCircle, Loader2, Plus } from "lucide-react";
 import { logError } from "@/utils/logger";
+import { Archive, CheckCircle, Loader2, Plus } from "lucide-react";
 
 import ClassForm from "@/components/common/class/ClassForm";
-import { createClass } from "@/utils/mutations/classes/create-class";
 import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
+import { createClass } from "@/utils/mutations/classes/create-class";
 
 type ProcessingStep =
   | "idle"
@@ -336,7 +336,6 @@ export default function NewClass() {
         {/* Manual Creation Form */}
         {creationMode === "manual" && (
           <ClassForm
-            mode="create"
             onSuccess={(classId) => {
               router.push(`/create/classes/c/${classId}/edit`);
             }}

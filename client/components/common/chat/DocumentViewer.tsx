@@ -24,6 +24,7 @@ export interface DocumentViewerProps {
   document?: Document;
   bare?: boolean;
   classId?: string;
+  isFormDocument?: boolean;
 }
 
 // Simplified document type info
@@ -42,6 +43,7 @@ export default function DocumentViewer({
   document,
   classId,
   bare = true,
+  isFormDocument = false,
 }: DocumentViewerProps) {
   const [docId, setDocId] = useState<string | null>(null);
   const [content, setContent] = useState<string | null>(null);
@@ -85,11 +87,17 @@ export default function DocumentViewer({
         setLoading(true);
         setError(null);
 
-        // Call the API route directly
-        const response = await fetch(`/api/download/document/${docId}`, {
-          method: "GET",
-          credentials: "include",
-        });
+        // Call the API route directly or use blob URL for form documents
+        let response;
+        if (isFormDocument && document?.filePath?.startsWith("blob:")) {
+          // For form documents with blob URLs, fetch the blob directly
+          response = await fetch(document.filePath);
+        } else {
+          response = await fetch(`/api/download/document/${docId}`, {
+            method: "GET",
+            credentials: "include",
+          });
+        }
 
         if (!response.ok) {
           // Try to get error details from JSON response
@@ -122,7 +130,7 @@ export default function DocumentViewer({
     };
 
     loadDocument();
-  }, [docId]);
+  }, [docId, isFormDocument, document?.filePath]);
 
   // Loading state
   if (isLoading && !document) {
