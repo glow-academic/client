@@ -1,0 +1,142 @@
+import { screen } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { renderWithMocks } from '@/test/renderWithMocks';
+
+// ——————————————————————————————————————————
+import ScenarioData from '@/components/common/analytics/footer/ScenarioData';
+
+
+
+/* ------------------------------------------------------------------ *
+ * Auto-detected data fns used by this component
+ * (feel free to delete ones you don't need in a specific test) */
+const DEFAULT_OVERRIDES = {
+  queries: {
+    getAllAgents: /* TODO */ [],
+    getAllClasses: /* TODO */ [],
+    getAllDocuments: /* TODO */ [],
+    getAllScenarios: /* TODO */ [],
+    getAllSimulationAttempts: /* TODO */ [],
+    getAllSimulationChats: /* TODO */ [],
+  },
+  mutations: {
+    //
+  },
+};
+/* ------------------------------------------------------------------ */
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+import type { ScenarioDataProps } from '@/components/common/analytics/footer/ScenarioData';
+const mockProps: ScenarioDataProps = {
+  // className: 'test-className',  /* optional */
+};
+// ------------------------------------------------------------------
+
+
+describe('ScenarioData', () => {
+
+  describe('basic render smoke-test', () => {
+    it.skip('renders without crashing (replace skip when implemented)', async () => {
+      renderWithMocks(
+        <ScenarioData {...mockProps} />,
+        DEFAULT_OVERRIDES
+      );
+      /* TODO: add reasonable assertion */
+      expect(
+        await screen.findByRole('document', {}, { timeout: 2000 })
+      ).toBeTruthy();
+    });
+
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: ScenarioDataProps
+      
+      // TODO add props assertions
+    });
+
+    it.skip('should have correct accessibility attributes', () => {
+      // TODO: Test accessibility features
+      
+      // TODO add accessibility assertions
+
+    });
+  });
+
+  
+
+  describe('API Integration', () => {
+    it.skip('should handle API calls', async () => {
+      // TODO: Test API integration
+      
+      // TODO: API integration assertions
+    });
+
+    it.skip('should handle loading states', () => {
+      // TODO: Test loading states
+      
+      // TODO: loading states assertions
+    });
+
+    it.skip('should handle error states', () => {
+      // TODO: Test error handling
+      
+      // TODO: error handling assertions
+    });
+  });
+
+  
+
+  describe('Edge Cases', () => {
+    it.skip('should handle edge cases gracefully', () => {
+      // TODO: Test edge cases and error scenarios
+      
+      // TODO: edge-case assertions
+
+    });
+
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
+    });
+  });
+});
+
+/*
+ * Component Analysis for ScenarioData:
+ * Path: common/analytics/footer/ScenarioData.tsx
+ * 
+ * Features detected:
+ * - Default export: true
+ * - Named exports: None
+ * - Has props: true
+ * - Props interface: ScenarioDataProps
+ * - Client component: true
+ * - Uses hooks: used, useQuery, useMemo
+ * - Uses router: false
+ * - Has API calls: true
+ * - Has form handling: false
+ * - Uses state: false
+ * - Uses effects: false
+ * - Uses context: false
+ * 
+ * TODO: Implement the failing tests above with actual test logic
+ * 
+ * Example implementations:
+ * 
+ * Basic rendering:
+ * render(<ScenarioData {...mockProps} />);
+ * expect(screen.getByRole('...')).toBeInTheDocument();
+ * 
+ * Props testing:
+ * const props = { ... };
+ * render(<ScenarioData {...props} />);
+ * expect(screen.getByText(props.someText)).toBeInTheDocument();
+ * 
+ * User interaction:
+ * const button = screen.getByRole('button');
+ * await user.click(button);
+ * expect(mockFunction).toHaveBeenCalled();
+ */

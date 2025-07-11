@@ -61,37 +61,6 @@ function scanComponentFiles(dir, relativePath = "") {
 
   return components;
 }
-
-/**
- * Decide if an import must be mocked and what its mock module id is.
- * Throw if we hit something we don't know how to handle.
- */
-function mapImportToMock(specifier) {
-  // 1️⃣ queries
-  const q = specifier.match(/^@\/utils\/queries\/(.+)$/);
-  if (q) return "@/mocks/queries";
-
-  // 2️⃣ mutations
-  const m = specifier.match(/^@\/utils\/mutations\/(.+)$/);
-  if (m) return "@/mocks/mutations";
-
-  // 3️⃣ next.js navigation
-  if (specifier === "next/navigation" || specifier === "next/link")
-    return "@/mocks/navigation";
-
-  // 4️⃣ next-auth
-  if (specifier === "next-auth/react") return "@/mocks/auth";
-
-  // 5️⃣ auth helpers
-  if (specifier.match(/^@\/utils\/auth\/(.+)$/)) return "@/mocks/auth";
-
-  // 6️⃣ contexts
-  if (specifier.match(/^@\/contexts\/(.+)$/)) return "@/mocks/auth";
-
-  // 7️⃣ everything else: leave real module in place
-  return null;
-}
-
 /**
  * Analyze component file to extract props, exports, and hooks
  */
@@ -229,7 +198,14 @@ function generateTestTemplate(component, analysis) {
    * ────────────────────────────────────────────────────────── */
   const needsUserEvent =
     analysis.usesState || analysis.hasFormHandling || analysis.usesRouter;
-  const needsVi = analysis.hasDirectFetch; // only true if we call vi.fn()
+
+  const mockPropLines = analysis.hasProps
+    ? buildMockProps(analysis.content, analysis.propsInterface)
+    : [];
+
+  const needsVi =
+    analysis.hasDirectFetch || // we stub fetch
+    (analysis.hasProps && mockPropLines.some((l) => l.includes("vi.fn"))); // props
 
   let template = `import { screen } from '@testing-library/react';
 import { describe, it, expect${needsVi ? ", vi" : ""} } from 'vitest';
@@ -242,10 +218,6 @@ import userEvent from '@testing-library/user-event';`;
 
   /* helper to silence "declared but never read" while the test is .skip() */
   const touch = (v) => (needsUserEvent ? `void ${v};` : "");
-
-  const mockPropLines = analysis.hasProps
-    ? buildMockProps(analysis.content, analysis.propsInterface)
-    : [];
 
   template += `
 
@@ -574,8 +546,6 @@ function generateCoverageReport(components, stats) {
 
   let report = `# Component Test Coverage Report
 
-Generated on: ${new Date().toISOString()}
-
 ## Summary
 - **Total Components**: ${components.length}
 - **Tests Created**: ${stats.created}
@@ -760,30 +730,84 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 /**
- * Build mock props object from interface definition
+ * VERY–rough heuristic to turn an `interface FooProps { … }`
+ * into a compile-time-correct placeholder object.
+ *
+ * ✅  string            → 'test-foo'
+ * ✅  number            → 0
+ * ✅  boolean           → false
+ * ✅  string[] | …[]    → []
+ * ✅  Array<Foo>        → []
+ * ✅  Record / {[k:…]}  → {}
+ * ✅  Table<AnyThing>   → {} as unknown as Table<any>
+ * ✅  optional props    → commented-out line (dev re-adds if required)
  */
-function buildMockProps(content, iface) {
-  const block = content.match(
-    new RegExp(`interface\\s+${iface}\\s*\\{([\\s\\S]*?)\\}`)
+function buildMockProps(source, ifaceName) {
+  const iface = source.match(
+    new RegExp(`interface\\s+${ifaceName}\\s*\\{([\\s\\S]*?)\\}`, "m")
   );
-  if (!block) return [];
-  return block[1]
-    .split("\n")
-    .map((ln) => ln.trim())
-    .filter(Boolean)
+  if (!iface) return [];
+
+  // Parse the interface content more carefully
+  const content = iface[1];
+
+  // Simple approach: split by property declarations (look for patterns like "propName:")
+  const propRegex = /(\w+\??):\s*([^;]+)/g;
+  const props = [];
+  let match;
+
+  while ((match = propRegex.exec(content)) !== null) {
+    const [, propName, propType] = match;
+    props.push(`${propName}: ${propType.trim()}`);
+  }
+
+  return props
     .map((ln) => {
-      const [rawName, type] = ln
-        .replace(/;$/, "")
-        .split(":")
-        .map((s) => s.trim());
-      const name = rawName?.replace(/\?$/, ""); // Remove optional marker
-      if (!name) return "";
-      if (type?.startsWith("string")) return `  ${name}: 'test-${name}',`;
-      if (type?.startsWith("number")) return `  ${name}: 0,`;
-      if (type?.startsWith("boolean")) return `  ${name}: false,`;
-      if (/=>|Function/.test(type || "")) return `  ${name}: vi.fn(),`;
-      return `  ${name}: /* TODO <${type}> */ undefined!,`;
-    });
+      // chop trailing semicolon & split "foo?: type"
+      const [rawKey, rawType = "any"] = ln.replace(/;$/, "").split(":");
+      if (!rawKey) return "";
+
+      // Skip index signatures like [key: string]: ...
+      if (rawKey.trim().startsWith("[") && rawKey.includes(":")) {
+        return "";
+      }
+
+      const key = rawKey.replace(/\?$/, ""); // "foo?" → "foo"
+      const isOptional = rawKey.endsWith("?");
+      const baseType = rawType.trim();
+
+      /** helpers ---------------------------------------------------- */
+      const asLine = (v) =>
+        isOptional ? `  // ${key}: ${v},  /* optional */` : `  ${key}: ${v},`;
+
+      if (
+        /^\w+\[\]$/.test(baseType) ||
+        /^Array<.*>$/.test(baseType) ||
+        /.*\[\]$/.test(baseType) ||
+        /^\{.*\}\[\]$/.test(baseType)
+      ) {
+        return asLine("[]");
+      }
+
+      if (/^string\b/.test(baseType)) return asLine(`'test-${key}'`);
+      if (/^number\b/.test(baseType)) return asLine("0");
+      if (/^boolean\b/.test(baseType)) return asLine("false");
+
+      // TanStack Table<T>                 → {} as unknown as Table<any>
+      if (/^Table<.*>$/.test(baseType))
+        return asLine("{} as unknown as Table<any>");
+
+      // index-signature maps & Records    → {}
+      if (/^\{[^}]*\}$/.test(baseType) || /^Record<.*>$/.test(baseType))
+        return asLine("{}");
+
+      // functions & callbacks             → vi.fn()
+      if (/=>|Function/.test(baseType)) return asLine("vi.fn()");
+
+      // fallback                          → /* TODO <Type> */ undefined!
+      return asLine(`/* TODO <${baseType}> */ undefined!`);
+    })
+    .filter(Boolean);
 }
 
 export { generateCoverageReport, generateTestFiles, scanComponentFiles };

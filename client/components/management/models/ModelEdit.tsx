@@ -7,10 +7,12 @@
 "use client";
 import Model from "@/components/common/model/Model";
 
+export interface ModelEditProps {
+  modelId: string;
+}
+
 export default function ModelEdit({
   modelId,
-}: {
-  modelId: string;
-}) {
+}: ModelEditProps) {
   return <Model modelId={modelId} />;
 }

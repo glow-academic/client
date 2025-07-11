@@ -14,7 +14,7 @@ import { getClass } from "@/utils/queries/classes/get-class";
 import ClassForm from "@/components/common/class/ClassForm";
 import { useRouter } from "next/navigation";
 
-type ClassEditProps = {
+export interface ClassEditProps {
   classId: string;
 };
 
