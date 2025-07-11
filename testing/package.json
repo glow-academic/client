@@ -1,0 +1,22 @@
+{
+    "name": "testing",
+    "version": "1.0.0",
+    "description": "glow testing",
+    "type": "module",
+    "license": "MIT",
+    "scripts": {
+      "test": "yarn test:cypress",
+      "test:cypress": "cypress run --headless",
+      "test:cypress:open": "cypress open"
+    },
+    "dependencies": {
+      "pg": "^8.16.0"
+    },
+    "devDependencies": {
+      "@types/node": "^20.19.0",
+      "@types/pg": "^8.15.4",
+      "cypress": "^13.6.0",
+      "typescript": "^5.8.3"
+    }
+  }
+  

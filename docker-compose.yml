@@ -193,8 +193,8 @@ services:
   testing:
     container_name: glow-testing
     build:
-      context: ./database
-      dockerfile: Dockerfile.cypress
+      context: ./testing
+      dockerfile: Dockerfile
     environment:
       # Cypress configuration
       - CYPRESS_baseUrl=http://client:3000

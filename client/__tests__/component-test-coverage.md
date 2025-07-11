@@ -2,9 +2,9 @@
 
 ## Summary
 - **Total Components**: 100
-- **Tests Created**: 100
+- **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 0
+- **Tests Skipped** (already implemented): 100
 
 ## Component Coverage
 
