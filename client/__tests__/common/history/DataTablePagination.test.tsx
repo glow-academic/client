@@ -25,7 +25,7 @@ const DEFAULT_OVERRIDES = {
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
 
-const mockProps: DataTablePaginationProps = {
+const mockProps: DataTablePaginationProps<unknown> = {
   table: {} as unknown as Table<unknown>,
 };
 // ------------------------------------------------------------------

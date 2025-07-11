@@ -229,15 +229,22 @@ function generateTestTemplate(component, analysis) {
     ? buildMockProps(analysis.content, analysis.propsInterface)
     : [];
 
+  // Detect if the props interface itself is generic
+  const propsGenericInfo = analysis.hasProps
+    ? getPropsGenericInfo(analysis.content, analysis.propsInterface)
+    : { isGeneric: false, paramCount: 0 };
+
   const needsVi =
     analysis.hasDirectFetch || // we stub fetch
     (analysis.hasProps && mockPropLines.some((l) => l.includes("vi.fn"))); // props
 
+  // Use more reliable detection for @tanstack/react-table imports
+  const wantsTable = mockPropLines.some((l) => l.includes("Table<"));
+  const wantsColumn = mockPropLines.some((l) => l.includes("Column<"));
   const needsTanstackTable =
-    // ① the component imports the lib
     analysis.imports.includes("@tanstack/react-table") ||
-    // ② or any mock line contains Table<…> / Column<… , …>
-    mockPropLines.some((l) => /\b(Table|Column)\s*</.test(l));
+    wantsTable ||
+    wantsColumn;
 
   let template = `import { screen } from '@testing-library/react';
 import { describe, it, expect${needsVi ? ", vi" : ""} } from 'vitest';
@@ -249,15 +256,19 @@ import userEvent from '@testing-library/user-event';`;
   }
 
   if (needsTanstackTable) {
-    const wantsTable = mockPropLines.some((l) => /\bTable\s*</.test(l));
-    const wantsColumn = mockPropLines.some((l) => /\bColumn\s*</.test(l));
-
     template += `\nimport type { ${[
       wantsTable && "Table",
       wantsColumn && "Column",
     ]
       .filter(Boolean)
       .join(", ")} } from '@tanstack/react-table';`;
+  }
+
+  const needsTAPerformanceData = mockPropLines.some((l) =>
+    l.includes("TAPerformanceData")
+  );
+  if (needsTAPerformanceData) {
+    template += `\nimport type { TAPerformanceData } from '@/hooks/use-report-columns';`;
   }
 
   /* helper to silence "declared but never read" while the test is .skip() */
@@ -302,23 +313,9 @@ ${
     : ""
 }
 const mockProps: ${analysis.propsInterface}${
-        analysis.propsInterface &&
-        analysis.propsInterface.includes("DataTableProps")
-          ? "<unknown, unknown>"
-          : analysis.propsInterface &&
-              analysis.propsInterface.includes("DataTableColumnHeaderProps")
-            ? "<unknown, unknown>"
-            : analysis.propsInterface &&
-                analysis.propsInterface.includes("DataTableFacetedFilterProps")
-              ? "<unknown, unknown>"
-              : analysis.propsInterface &&
-                  (analysis.propsInterface.includes("DataTableToolbarProps") ||
-                    analysis.propsInterface.includes(
-                      "DataTableViewOptionsProps"
-                    ) ||
-                    analysis.propsInterface.includes("ExportButtonProps"))
-                ? "<unknown>"
-                : ""
+        propsGenericInfo.isGeneric
+          ? `<${"unknown, ".repeat(propsGenericInfo.paramCount).slice(0, -2)}>`
+          : ""
       } = {
 ${mockPropLines.join("\n")}
 };
@@ -797,6 +794,57 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 /**
+ * Get type reference information from AST instead of relying on formatted text
+ */
+function getTypeReferenceInfo(sym) {
+  try {
+    const decl = sym.getDeclarations()[0];
+    const node = decl?.getTypeNode?.();
+    if (!node || !node.isKind(SyntaxKind.TypeReference)) return null;
+
+    const ref = node.asKindOrThrow(SyntaxKind.TypeReference);
+    const name = ref.getTypeName().getText();
+    const typeArgs = ref.getTypeArguments();
+    return { name, argCount: typeArgs.length };
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Detect if the props interface itself is generic
+ */
+function getPropsGenericInfo(sourceText, ifaceName) {
+  if (!ifaceName) return { isGeneric: false, paramCount: 0 };
+
+  try {
+    const source = project.createSourceFile("temp-props.tsx", sourceText, {
+      overwrite: true,
+    });
+
+    const iface =
+      source.getInterface(ifaceName) ?? source.getTypeAlias(ifaceName);
+    if (!iface) return { isGeneric: false, paramCount: 0 };
+
+    const typeParams = iface.getTypeParameters();
+    const paramCount = typeParams.length;
+
+    source.delete();
+
+    return {
+      isGeneric: paramCount > 0,
+      paramCount,
+    };
+  } catch (error) {
+    console.error(
+      `❌ Error detecting generics for ${ifaceName}:`,
+      error.message
+    );
+    return { isGeneric: false, paramCount: 0 };
+  }
+}
+
+/**
  * Generate mock props using TypeScript AST to get accurate type information
  * This replaces the regex-based approach with proper type resolution
  */
@@ -919,15 +967,35 @@ function buildMockProps(sourceText, ifaceName) {
         return null;
       }
 
-      // Get the type text with proper formatting
-      const typeText = sym
-        .getTypeAtLocation(iface)
-        .getText(undefined, TypeFormatFlags.UseAliasDefinedOutsideCurrentScope);
-
       const line = (value) =>
         isOptional
           ? `  // ${name}: ${value}, /* optional */`
           : `  ${name}: ${value},`;
+
+      // Get the type text with proper formatting for other types
+      const typeText = sym
+        .getTypeAtLocation(iface)
+        .getText(undefined, TypeFormatFlags.UseAliasDefinedOutsideCurrentScope);
+
+      // Handle @tanstack/react-table types with proper generic arity
+      const tableMatch = typeText.match(/^Table<(.*)>$/);
+      if (tableMatch) {
+        // Grab the inner part - it may be "TAPerformanceData"
+        let inner = tableMatch[1] || "unknown";
+        if (inner === "TData") {
+          inner = "unknown";
+        }
+        return line(`{} as unknown as Table<${inner}>`);
+      }
+
+      const colMatch = typeText.match(/^Column<(.*)>$/);
+      if (colMatch) {
+        let inner = colMatch[1] || "unknown, unknown";
+        if (inner === "TData, TValue") {
+          inner = "unknown, unknown";
+        }
+        return line(`{} as unknown as Column<${inner}>`);
+      }
 
       // Handle different types based on the resolved type text
       // Check for functions first (most specific) - check if it starts with a function pattern
@@ -980,16 +1048,6 @@ function buildMockProps(sourceText, ifaceName) {
       // Handle complex object types (like { id: number; name: string; tags: string[]; })
       if (typeText.startsWith("{") && typeText.endsWith("}")) {
         return line("{}");
-      }
-
-      // Handle Table types from @tanstack/react-table
-      if (typeText.includes("Table<")) {
-        return line("{} as unknown as Table<unknown>");
-      }
-
-      // Handle Column types from @tanstack/react-table
-      if (typeText.includes("Column<")) {
-        return line("{} as unknown as Column<unknown, unknown>");
       }
 
       // Handle Date

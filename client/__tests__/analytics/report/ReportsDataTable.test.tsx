@@ -26,7 +26,7 @@ const DEFAULT_OVERRIDES = {
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
 
-const mockProps: ReportsDataTableProps<unknown, unknown> = {
+const mockProps: ReportsDataTableProps = {
   columns: [],
   data: [],
   performanceOptions: [],

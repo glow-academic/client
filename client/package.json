@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"next dev\" \"node scripts/generate-component-tests.js\"",
+    "dev": "concurrently \"next dev\" \"npm run generate-tests\"",
     "dev:next": "next dev",
-    "generate-tests": "node scripts/generate-component-tests.js",
+    "generate-tests": "node scripts/generate-component-tests.js && next lint --fix --dir __tests__",
     "typecheck": "tsc --noEmit",
     "typecheck:strict": "tsc --noEmit --strict",
     "build": "NODE_ENV=production next build",
