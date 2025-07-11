@@ -2,10 +2,10 @@ import { screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
+import type { Table } from '@tanstack/react-table';
 
 // ——————————————————————————————————————————
 import { ExportButton, ExportButtonProps } from '@/components/common/history/ExportButton';
-import { Table } from '@tanstack/react-table';
 
 
 

@@ -2,6 +2,7 @@ import { screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
+import type {  } from '@tanstack/react-table';
 
 // ——————————————————————————————————————————
 import { ReportsDataTable, ReportsDataTableProps } from '@/components/analytics/report/ReportsDataTable';
@@ -25,7 +26,7 @@ const DEFAULT_OVERRIDES = {
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
 
-const mockProps: ReportsDataTableProps = {
+const mockProps: ReportsDataTableProps<unknown, unknown> = {
   columns: [],
   data: [],
   performanceOptions: [],

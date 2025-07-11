@@ -1,6 +1,7 @@
 import { screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
+import type { Table } from '@tanstack/react-table';
 
 // ——————————————————————————————————————————
 import { ReportsDataTableToolbar, ReportsDataTableToolbarProps } from '@/components/analytics/report/ReportsDataTableToolbar';

@@ -2,6 +2,7 @@ import { screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
+import type {  } from '@tanstack/react-table';
 
 // ——————————————————————————————————————————
 import { DataTable, DataTableProps } from '@/components/common/history/DataTable';

@@ -26,7 +26,7 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 
 const mockProps: DraggableComponentProps = {
-  component: {},
+  component: /* TODO <Component> */ undefined!,
   // hideRemoveButton: false, /* optional */
   // section: 'test-section', /* optional */
   // index: 0, /* optional */

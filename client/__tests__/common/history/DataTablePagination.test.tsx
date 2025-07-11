@@ -1,10 +1,10 @@
 import { screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
+import type { Table } from '@tanstack/react-table';
 
 // ——————————————————————————————————————————
 import { DataTablePagination, DataTablePaginationProps } from '@/components/common/history/DataTablePagination';
-import { Table } from '@tanstack/react-table';
 
 
 
@@ -25,7 +25,7 @@ const DEFAULT_OVERRIDES = {
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
 
-const mockProps: DataTablePaginationProps<unknown> = {
+const mockProps: DataTablePaginationProps = {
   table: {} as unknown as Table<unknown>,
 };
 // ------------------------------------------------------------------

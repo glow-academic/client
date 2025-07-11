@@ -234,10 +234,10 @@ function generateTestTemplate(component, analysis) {
     (analysis.hasProps && mockPropLines.some((l) => l.includes("vi.fn"))); // props
 
   const needsTanstackTable =
-    analysis.hasProps &&
-    mockPropLines.some(
-      (l) => l.includes("Table<any>") || l.includes("Column<any, any>")
-    );
+    // ① the component imports the lib
+    analysis.imports.includes("@tanstack/react-table") ||
+    // ② or any mock line contains Table<…> / Column<… , …>
+    mockPropLines.some((l) => /\b(Table|Column)\s*</.test(l));
 
   let template = `import { screen } from '@testing-library/react';
 import { describe, it, expect${needsVi ? ", vi" : ""} } from 'vitest';
@@ -249,8 +249,15 @@ import userEvent from '@testing-library/user-event';`;
   }
 
   if (needsTanstackTable) {
-    template += `
-import { Table, Column } from '@tanstack/react-table';`;
+    const wantsTable = mockPropLines.some((l) => /\bTable\s*</.test(l));
+    const wantsColumn = mockPropLines.some((l) => /\bColumn\s*</.test(l));
+
+    template += `\nimport type { ${[
+      wantsTable && "Table",
+      wantsColumn && "Column",
+    ]
+      .filter(Boolean)
+      .join(", ")} } from '@tanstack/react-table';`;
   }
 
   /* helper to silence "declared but never read" while the test is .skip() */

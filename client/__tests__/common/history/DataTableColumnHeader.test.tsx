@@ -1,10 +1,10 @@
 import { screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
+import type { Column } from '@tanstack/react-table';
 
 // ——————————————————————————————————————————
 import { DataTableColumnHeader, DataTableColumnHeaderProps } from '@/components/common/history/DataTableColumnHeader';
-import { Column } from '@tanstack/react-table';
 
 
 

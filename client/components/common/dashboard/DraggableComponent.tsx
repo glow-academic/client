@@ -49,14 +49,16 @@ const camelToTitleCase = (str: string): string => {
     .trim();
 };
 
+type Component = {
+  id: string;
+  name: string;
+  fileName: string;
+  stat?: boolean;
+  layout?: Record<string, unknown>;
+};
+
 export interface DraggableComponentProps {
-  component: {
-    id: string;
-    name: string;
-    fileName: string;
-    stat?: boolean;
-    layout?: Record<string, unknown>;
-  };
+  component: Component;
   isInSidebar?: boolean;
   isManagementView?: boolean;
   hideRemoveButton?: boolean;
