@@ -1,148 +1,146 @@
-import { describe, it, vi, afterEach } from 'vitest';
+import { describe, it, vi, afterEach, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
+import { screen, waitFor, within } from '@testing-library/react';
 
 // ——————————————————————————————————————————
 import Classes from '@/components/create/classes/Classes';
+import { routerMock } from '@/mocks/navigation';
+import * as mockSchema from '@/mocks/schema';
 
-
-
-// ✨ Import comprehensive mock data from our centralized mock system
+// ✨ Import your centralized mock setups
 import '@/mocks/queries';
 import '@/mocks/mutations';
 import '@/mocks/api';
+
+// ✨ Import the functions you'll need to override or verify
+import { getAllClasses } from '@/utils/queries/classes/get-all-classes';
+import { deleteClass } from '@/utils/mutations/classes/delete-class';
+
+// Mock the next/navigation module to use our spy
+vi.mock('next/navigation', () => ({
+  useRouter: () => routerMock,
+}));
+
 describe('Classes', () => {
   
-  /* ------------------------------------------------------------------ *
-   * 💡 Mock Data Usage Guide:
-   * 
-   * All API functions are automatically mocked via imports above.
-   * Use mockSchema.* for realistic test data:
-   * 
-   * Examples:
-   * - mockSchema.users[0] - First user object
-   * - mockSchema.classes - Array of class objects  
-   * - mockSchema.profiles - Array of profile objects
-   * 
-   * To override specific mocks in individual tests:
-   * - vi.mocked(queryFunction).mockResolvedValue(customData)
-   * - vi.mocked(mutationFunction).mockResolvedValue(customResponse)
-   * ------------------------------------------------------------------ */
-  
-  // ✨ Reset mocks after each test
   afterEach(() => {
     vi.clearAllMocks();
   });
 
+  // ——————————————————————————————————————————
+  //    BASIC RENDERING
+  // ——————————————————————————————————————————
   describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Classes  />);
+    it('renders class cards with data from the mock schema', async () => {
+      renderWithMocks(<Classes />);
       
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      expect(await screen.findByText('Algebra I')).toBeInTheDocument();
+      expect(screen.getByText('MATH101')).toBeInTheDocument();
+
+      expect(await screen.findByText('General Chemistry')).toBeInTheDocument();
+      expect(screen.getByText('CHEM101')).toBeInTheDocument();
     });
 
-    
-
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
-    });
+    it.todo('should have correct accessibility attributes');
   });
 
+  // ——————————————————————————————————————————
+  //    USER INTERACTIONS
+  // ——————————————————————————————————————————
   describe('User Interactions', () => {
-    
-
-    it.skip('should handle state changes', async () => {
+    it('should open the delete confirmation when the delete button is clicked', async () => {
       const user = userEvent.setup();
-      void user;
-      // TODO: state management assertions
-      // Mock data is available from @/mocks/schema for realistic testing
+      renderWithMocks(<Classes />);
+      
+      const deleteButton = await screen.findByRole('button', { name: /Delete Algebra I/i });
+      await user.click(deleteButton);
+
+      expect(await screen.findByRole('alertdialog')).toBeInTheDocument();
+      expect(screen.getByText(/Are you sure you want to delete this class?/i)).toBeInTheDocument();
     });
 
-    it.skip('should handle user events', async () => {
+    it('should call the delete mutation when deletion is confirmed', async () => {
       const user = userEvent.setup();
-      void user;
-      // TODO: interaction assertions
+      renderWithMocks(<Classes />);
+      
+      const deleteButton = await screen.findByRole('button', { name: /Delete Algebra I/i });
+      await user.click(deleteButton);
 
+      const confirmButton = await screen.findByRole('button', { name: "Delete" });
+      await user.click(confirmButton);
+      
+      expect(deleteClass).toHaveBeenCalledWith(mockSchema.classes[0]?.id);
+      
+      await waitFor(() => {
+        expect(screen.queryByRole('alertdialog')).toBeNull();
+      });
     });
+
+    it.todo('should handle state changes');
   });
 
-  describe('API Integration', () => {
-    it.skip('should handle and display an API error state', async () => {
-      // Arrange: Override the default success mock with an error for this test.
-      // Example: vi.mocked(getAllClasses).mockRejectedValue(new Error('API Error'));
-
-      renderWithMocks(<Classes  />);
-      
-      // Assert: Check that your component shows an error message.
-      // TODO: Add specific error state assertions
-    });
-
-    it.skip('should handle loading states', () => {
-      // TODO: Test loading states
-      // Mock data is automatically loaded from @/mocks/schema
-      
-      // TODO: loading states assertions
-    });
-  });
-
+  // ——————————————————————————————————————————
+  //    NAVIGATION
+  // ——————————————————————————————————————————
   describe('Navigation', () => {
-    it.skip('should handle navigation', () => {
-      // TODO: Test navigation behavior
-      
-      // TODO: navigation assertions
+    it('should navigate to the edit page when the edit button is clicked', async () => {
+      const user = userEvent.setup();
+      renderWithMocks(<Classes />);
+
+      const editButton = await screen.findByRole('button', { name: /Edit General Chemistry/i });
+      await user.click(editButton);
+
+      expect(routerMock.push).toHaveBeenCalledWith(`/create/classes/c/${mockSchema.classes[1]?.id}`);
     });
   });
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
+  
+  // ——————————————————————————————————————————
+  //    API & EDGE CASES
+  // ——————————————————————————————————————————
+  describe('API and Edge Cases', () => {
+    it('should display skeleton components while loading', async () => {
+      // Arrange: Mock the query to be in a perpetual loading state
+      vi.mocked(getAllClasses).mockImplementation(() => new Promise(() => {}));
       
-      // TODO: edge-case assertions
+      renderWithMocks(<Classes />);
 
+      // Act: Find all the card elements, which now act as skeleton containers
+      const skeletons = await screen.findAllByRole('complementary'); // The <Card> component has a role of 'complementary' by default
+
+      // Assert: Check that the correct number of skeletons are rendered
+      expect(skeletons.length).toBe(6);
+
+      // Optional: Check for skeleton content within one of the cards
+      const firstSkeleton = skeletons[0];
+      expect(within(firstSkeleton as HTMLElement).getByText(/loading/i, { selector: '.sr-only' })).toBeInTheDocument(); // Assuming your <Skeleton> has accessible text
     });
 
-    
+    it('should handle and display an API error state', async () => {
+      // Arrange: Override the mock to simulate an API failure
+      vi.mocked(getAllClasses).mockRejectedValue(new Error('API Error'));
+
+      renderWithMocks(<Classes />);
+      
+      // Assert: Check that your component shows the specific error message
+      expect(await screen.findByText('Failed to load classes.')).toBeInTheDocument();
+      
+      // Assert that no data is rendered
+      expect(screen.queryByText('Algebra I')).toBeNull();
+    });
+
+    it('should display a "No classes found" message when the list is empty', async () => {
+      // Arrange: Override the mock to return an empty array
+      vi.mocked(getAllClasses).mockResolvedValue([]);
+      
+      renderWithMocks(<Classes />);
+
+      // Assert: Check for the specific "No classes found" message
+      expect(await screen.findByText('No classes found')).toBeInTheDocument();
+
+      // Assert that no class cards are rendered
+      expect(screen.queryByText('Algebra I')).toBeNull();
+      expect(screen.queryByText('General Chemistry')).toBeNull();
+    });
   });
 });
-
-/*
- * Component Analysis for Classes:
- * Path: create/classes/Classes.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: useMutation, useQuery, useQueryClient, useState, useRouter
- * - Uses router: true
- * - Has API calls: true
- * - Has form handling: false
- * - Uses state: true
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<Classes />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<Classes {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

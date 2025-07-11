@@ -4,16 +4,21 @@
 import React from "react";
 import { vi } from "vitest";
 
+// Export router mock for direct access in tests
+// This object will be the single source of truth for router functions.
+export const routerMock = {
+  push: vi.fn(),
+  back: vi.fn(),
+  forward: vi.fn(),
+  refresh: vi.fn(),
+  replace: vi.fn(),
+  prefetch: vi.fn(),
+};
+
 // Mock next/navigation
 vi.mock("next/navigation", () => ({
-  useRouter: vi.fn(() => ({
-    push: vi.fn(),
-    back: vi.fn(),
-    forward: vi.fn(),
-    refresh: vi.fn(),
-    replace: vi.fn(),
-    prefetch: vi.fn(),
-  })),
+  // IMPORTANT CHANGE: Make useRouter return the exported routerMock
+  useRouter: vi.fn(() => routerMock),
   usePathname: vi.fn(() => "/"),
   useSearchParams: vi.fn(() => new URLSearchParams()),
   useParams: vi.fn(() => ({})),
@@ -21,7 +26,7 @@ vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
 }));
 
-// Mock next/link
+// Mock next/link (This part is correct and doesn't need changes)
 vi.mock("next/link", () => ({
   default: ({
     href,
@@ -35,23 +40,3 @@ vi.mock("next/link", () => ({
     return React.createElement("a", { href, ...props }, children);
   },
 }));
-
-// Export router mock for direct access in tests
-export const routerMock = {
-  push: vi.fn(),
-  back: vi.fn(),
-  forward: vi.fn(),
-  refresh: vi.fn(),
-  replace: vi.fn(),
-  prefetch: vi.fn(),
-};
-
-// Export navigation utilities for tests
-export const navigationMocks = {
-  useRouter: vi.fn(() => routerMock),
-  usePathname: vi.fn(() => "/"),
-  useSearchParams: vi.fn(() => new URLSearchParams()),
-  useParams: vi.fn(() => ({})),
-  notFound: vi.fn(),
-  redirect: vi.fn(),
-};
