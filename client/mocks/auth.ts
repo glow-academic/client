@@ -3,6 +3,18 @@
 
 import { vi } from "vitest";
 
+// Create shared mock functions to avoid duplication
+const useSession = vi.fn(() => ({
+  data: null,
+  status: "loading",
+  update: vi.fn(),
+}));
+const signIn = vi.fn();
+const signOut = vi.fn();
+const getSession = vi.fn();
+const getCsrfToken = vi.fn();
+const getProviders = vi.fn();
+
 // Mock next-auth/react
 vi.mock("next-auth/react", async () => {
   const actual =
@@ -10,16 +22,12 @@ vi.mock("next-auth/react", async () => {
 
   return {
     ...actual,
-    useSession: vi.fn(() => ({
-      data: null,
-      status: "loading",
-      update: vi.fn(),
-    })),
-    signIn: vi.fn(),
-    signOut: vi.fn(),
-    getSession: vi.fn(),
-    getCsrfToken: vi.fn(),
-    getProviders: vi.fn(),
+    useSession,
+    signIn,
+    signOut,
+    getSession,
+    getCsrfToken,
+    getProviders,
   };
 });
 
@@ -61,15 +69,11 @@ vi.mock("@/contexts/role-context", () => ({
 
 // Export auth mocks for direct access in tests
 export const authMocks = {
-  useSession: vi.fn(() => ({
-    data: null,
-    status: "loading",
-    update: vi.fn(),
-  })),
-  signIn: vi.fn(),
-  signOut: vi.fn(),
-  getSession: vi.fn(),
-  getCsrfToken: vi.fn(),
-  getProviders: vi.fn(),
+  useSession,
+  signIn,
+  signOut,
+  getSession,
+  getCsrfToken,
+  getProviders,
   getProfileByAlias: vi.fn(),
 };

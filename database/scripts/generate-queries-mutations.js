@@ -1019,8 +1019,6 @@ async function generateQueriesAndMutations(options = {}) {
   const useSchema =
     process.argv.includes("--from-schema") || options.fromSchema;
   const usePull = process.argv.includes("--pull") || options.pull;
-  const generateMocks =
-    process.argv.includes("--with-mocks") || options.withMocks;
 
   if (!skipSnapshot) {
     if (usePull) {
@@ -1055,18 +1053,6 @@ async function generateQueriesAndMutations(options = {}) {
 
   console.log("\n✅ Generation complete!");
   console.log("📁 Check utils/queries/ and utils/mutations/ directories");
-
-  // Generate mocks if requested
-  if (generateMocks) {
-    console.log("\n🎭 Generating mock data...");
-    try {
-      const { generateMocks } = await import("./generate-mocks.js");
-      generateMocks();
-    } catch (error) {
-      console.warn("⚠️  Could not generate mocks:", error.message);
-      console.log("💡 Try running: node scripts/generate-mocks.js");
-    }
-  }
 }
 
 // Run if called directly
@@ -1082,7 +1068,6 @@ Options:
   --skip-snapshot    Skip generating fresh snapshot (use existing one)
   --pull             Use 'drizzle-kit pull' to get latest database state (recommended)
   --from-schema      Generate snapshot from schema file instead of database
-  --with-mocks       Also generate mock data for testing after queries/mutations
   --help, -h         Show this help message
 
 Description:
@@ -1100,7 +1085,6 @@ Examples:
   node scripts/generate-queries-mutations.js --pull          # Use pull (recommended for latest DB state)
   node scripts/generate-queries-mutations.js --from-schema   # Generate from schema file
   node scripts/generate-queries-mutations.js --skip-snapshot # Use existing snapshot (faster)
-  node scripts/generate-queries-mutations.js --with-mocks    # Generate queries, mutations, and mocks
 
 Recommended workflow:
   1. Make database changes (migrations, manual changes, etc.)
