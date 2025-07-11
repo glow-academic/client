@@ -966,10 +966,10 @@ export default function ClassForm({
                 {isSubmitting
                   ? mode === "create"
                     ? "Creating..."
-                    : "Saving..."
+                    : "Updating..."
                   : mode === "create"
                     ? "Create Class"
-                    : "Save Changes"}
+                    : "Update Class"}
               </Button>
             </div>
           </div>

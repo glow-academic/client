@@ -12,12 +12,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { getClass } from "@/utils/queries/classes/get-class";
 import ClassForm from "@/components/common/class/ClassForm";
+import { useRouter } from "next/navigation";
 
 type ClassEditProps = {
   classId: string;
 };
 
 export default function ClassEdit({ classId }: ClassEditProps) {
+  const router = useRouter();
   // Fetch class data
   const { data: classData, isLoading: classLoading } = useQuery({
     queryKey: ["class", classId],
@@ -64,6 +66,9 @@ export default function ClassEdit({ classId }: ClassEditProps) {
         year: classData.year || new Date().getFullYear(),
         term: classData.term || "fall",
         description: classData.description || "",
+      }}
+      onSuccess={() => {
+        router.push(`/create/classes`);
       }}
     />
   );
