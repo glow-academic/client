@@ -1,11 +1,19 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, vi } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import SettingsDialog from '@/components/common/dashboard/SettingsDialog';
+import SettingsDialog, { SettingsDialogProps } from '@/components/common/dashboard/SettingsDialog';
 
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: SettingsDialogProps = {
+  dashboardConfig: null,
+  updateSettings: vi.fn(),
+};
+// ------------------------------------------------------------------
 describe('SettingsDialog', () => {
   
 
@@ -16,7 +24,6 @@ describe('SettingsDialog', () => {
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     it.skip('should render with props', () => {

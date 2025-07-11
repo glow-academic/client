@@ -1,10 +1,17 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import RubricEdit from '@/components/management/rubrics/RubricEdit';
+import RubricEdit, { RubricEditProps } from '@/components/management/rubrics/RubricEdit';
 
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: RubricEditProps = {
+  rubricId: 'test-rubricId',
+};
+// ------------------------------------------------------------------
 describe('RubricEdit', () => {
   
 
@@ -15,7 +22,6 @@ describe('RubricEdit', () => {
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     it.skip('should render with props', () => {

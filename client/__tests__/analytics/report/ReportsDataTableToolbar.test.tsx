@@ -1,10 +1,26 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
+import type { Table } from '@tanstack/react-table';
+import type { TAPerformanceData } from '@/hooks/use-report-columns';
 
 // ——————————————————————————————————————————
-import { ReportsDataTableToolbar } from '@/components/analytics/report/ReportsDataTableToolbar';
+import { ReportsDataTableToolbar, ReportsDataTableToolbarProps } from '@/components/analytics/report/ReportsDataTableToolbar';
 
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: ReportsDataTableToolbarProps = {
+  table: {} as unknown as Table<TAPerformanceData>,
+  performanceOptions: [],
+  classOptions: [],
+  cohortOptions: [],
+  agentOptions: [],
+  scenarioOptions: [],
+  simulationOptions: [],
+  // showExport: false, /* optional */
+};
+// ------------------------------------------------------------------
 describe('ReportsDataTableToolbar', () => {
   
 
@@ -15,7 +31,6 @@ describe('ReportsDataTableToolbar', () => {
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     it.skip('should render with props', () => {

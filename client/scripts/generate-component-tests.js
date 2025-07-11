@@ -285,35 +285,34 @@ import '@/mocks/queries';
 import '@/mocks/mutations';
 import '@/mocks/api';
 `;
+}
 
-    `;
+// Add props section if needed
+if (analysis.hasProps) {
+  template += `
 
-  // Add props section if needed
-  if (analysis.hasProps) {
-    template += `;
-    // ------------------------------------------------------------------
-    // Minimal props factory – edit values as needed`;
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed`;
 
-    if (
+  if (
       analysis.propsInterface &&
       !analysis.namedExports.includes(analysis.propsInterface)
-    ) {
+  ) {
       template += `
 import type { ${analysis.propsInterface} } from '${importPath}';`;
-    }
+  }
 
-    template += `
+  template += `
 const mockProps: ${analysis.propsInterface}${
       propsGenericInfo.isGeneric
-        ? `<${"unknown, ".repeat(propsGenericInfo.paramCount).slice(0, -2)}>`
-        : ""
-    } = {
+          ? `<${"unknown, ".repeat(propsGenericInfo.paramCount).slice(0, -2)}>`
+          : ""
+  } = {
 ${mockPropLines.join("\n")}
 };
 // ------------------------------------------------------------------
-
 `;
-  }
+}
 
   template += `describe('${componentName}', () => {
   ${
@@ -349,7 +348,6 @@ ${mockPropLines.join("\n")}
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     ${

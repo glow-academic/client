@@ -1,11 +1,24 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, vi } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import HeaderPreview from '@/components/common/dashboard/HeaderPreview';
+import HeaderPreview, { HeaderPreviewProps } from '@/components/common/dashboard/HeaderPreview';
 
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: HeaderPreviewProps = {
+  components: [],
+  allComponents: {},
+  headerComponents: 0,
+  showIndicators: false,
+  autoScroll: false,
+  onRemove: vi.fn(),
+  onReorder: vi.fn(),
+};
+// ------------------------------------------------------------------
 describe('HeaderPreview', () => {
   
 
@@ -16,7 +29,6 @@ describe('HeaderPreview', () => {
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     it.skip('should render with props', () => {

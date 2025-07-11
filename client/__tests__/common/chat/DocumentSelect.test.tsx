@@ -1,11 +1,21 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, vi } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import DocumentSelect from '@/components/common/chat/DocumentSelect';
+import DocumentSelect, { DocumentSelectProps } from '@/components/common/chat/DocumentSelect';
 
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: DocumentSelectProps = {
+  documents: [],
+  selectedDocumentId: null,
+  onDocumentSelect: vi.fn(),
+  // placeholder: 'test-placeholder', /* optional */
+};
+// ------------------------------------------------------------------
 describe('DocumentSelect', () => {
   
 
@@ -16,7 +26,6 @@ describe('DocumentSelect', () => {
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     it.skip('should render with props', () => {

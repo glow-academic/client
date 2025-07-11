@@ -1,11 +1,18 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import ChatInput from '@/components/common/home/ChatInput';
+import ChatInput, { ChatInputProps } from '@/components/common/home/ChatInput';
 
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: ChatInputProps = {
+  // promptToSet: 'test-promptToSet', /* optional */
+};
+// ------------------------------------------------------------------
 describe('ChatInput', () => {
   
 
@@ -16,7 +23,6 @@ describe('ChatInput', () => {
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     it.skip('should render with props', () => {

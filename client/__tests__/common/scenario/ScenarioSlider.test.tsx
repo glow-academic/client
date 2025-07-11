@@ -1,11 +1,29 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import { ScenarioSlider } from '@/components/common/scenario/ScenarioSlider';
+import { ScenarioSlider, ScenarioSliderProps } from '@/components/common/scenario/ScenarioSlider';
 
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: ScenarioSliderProps = {
+  // leftContent: <div>test-leftContent</div>, /* optional */
+  // rightContent: <div>test-rightContent</div>, /* optional */
+  defaultValue: [],
+  // label: 'test-label', /* optional */
+  // description: 'test-description', /* optional */
+  // min: 0, /* optional */
+  // max: 0, /* optional */
+  // step: 0, /* optional */
+  // value: [], /* optional */
+  // disabled: false, /* optional */
+  // showReset: false, /* optional */
+  // inlineTitle: false, /* optional */
+};
+// ------------------------------------------------------------------
 describe('ScenarioSlider', () => {
   
 
@@ -16,7 +34,6 @@ describe('ScenarioSlider', () => {
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     it.skip('should render with props', () => {

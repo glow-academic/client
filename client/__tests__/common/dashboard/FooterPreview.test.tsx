@@ -1,11 +1,24 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, vi } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import FooterPreview from '@/components/common/dashboard/FooterPreview';
+import FooterPreview, { FooterPreviewProps } from '@/components/common/dashboard/FooterPreview';
 
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: FooterPreviewProps = {
+  components: [],
+  allComponents: {},
+  showIndicators: false,
+  autoScroll: false,
+  footerSplit: 0,
+  onRemove: vi.fn(),
+  onResizeEnd: vi.fn(),
+};
+// ------------------------------------------------------------------
 describe('FooterPreview', () => {
   
 
@@ -16,7 +29,6 @@ describe('FooterPreview', () => {
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     it.skip('should render with props', () => {

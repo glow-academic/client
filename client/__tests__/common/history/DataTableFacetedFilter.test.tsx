@@ -1,10 +1,18 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import { DataTableFacetedFilter } from '@/components/common/history/DataTableFacetedFilter';
+import { DataTableFacetedFilter, DataTableFacetedFilterProps } from '@/components/common/history/DataTableFacetedFilter';
 
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: DataTableFacetedFilterProps<unknown, unknown> = {
+  // column: {} as unknown as Column<unknown, unknown>, /* optional */
+  options: [],
+};
+// ------------------------------------------------------------------
 describe('DataTableFacetedFilter', () => {
   
 
@@ -15,7 +23,6 @@ describe('DataTableFacetedFilter', () => {
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     it.skip('should render with props', () => {

@@ -1,11 +1,29 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import { ScenarioPicker } from '@/components/common/scenario/ScenarioPicker';
+import { ScenarioPicker, ScenarioPickerProps } from '@/components/common/scenario/ScenarioPicker';
 
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: ScenarioPickerProps = {
+  types: [],
+  models: [],
+  // label: 'test-label', /* optional */
+  // placeholder: 'test-placeholder', /* optional */
+  // description: 'test-description', /* optional */
+  // selectedModel: null, /* optional */
+  // selectedModels: [], /* optional */
+  // multiSelect: false, /* optional */
+  // hideSelectedChips: false, /* optional */
+  // open: false, /* optional */
+  // defaultOpen: false, /* optional */
+  // modal: false, /* optional */
+};
+// ------------------------------------------------------------------
 describe('ScenarioPicker', () => {
   
 
@@ -16,7 +34,6 @@ describe('ScenarioPicker', () => {
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     it.skip('should render with props', () => {

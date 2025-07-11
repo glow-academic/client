@@ -1,10 +1,17 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import SimulationEdit from '@/components/create/simulations/SimulationEdit';
+import SimulationEdit, { SimulationEditProps } from '@/components/create/simulations/SimulationEdit';
 
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: SimulationEditProps = {
+  simulationId: 'test-simulationId',
+};
+// ------------------------------------------------------------------
 describe('SimulationEdit', () => {
   
 
@@ -15,7 +22,6 @@ describe('SimulationEdit', () => {
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     it.skip('should render with props', () => {

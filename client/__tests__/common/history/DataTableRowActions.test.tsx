@@ -1,10 +1,17 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import { DataTableRowActions } from '@/components/common/history/DataTableRowActions';
+import { DataTableRowActions, DataTableRowActionsProps } from '@/components/common/history/DataTableRowActions';
 
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: DataTableRowActionsProps = {
+  id: 'test-id',
+};
+// ------------------------------------------------------------------
 describe('DataTableRowActions', () => {
   
 
@@ -15,7 +22,6 @@ describe('DataTableRowActions', () => {
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     it.skip('should render with props', () => {

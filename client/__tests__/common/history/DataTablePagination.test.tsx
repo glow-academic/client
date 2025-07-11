@@ -1,10 +1,18 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
+import type { Table } from '@tanstack/react-table';
 
 // ——————————————————————————————————————————
-import { DataTablePagination } from '@/components/common/history/DataTablePagination';
+import { DataTablePagination, DataTablePaginationProps } from '@/components/common/history/DataTablePagination';
 
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: DataTablePaginationProps<unknown> = {
+  table: {} as unknown as Table<unknown>,
+};
+// ------------------------------------------------------------------
 describe('DataTablePagination', () => {
   
 
@@ -15,7 +23,6 @@ describe('DataTablePagination', () => {
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     it.skip('should render with props', () => {

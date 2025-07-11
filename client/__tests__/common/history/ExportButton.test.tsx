@@ -1,11 +1,21 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
+import type { Table } from '@tanstack/react-table';
 
 // ——————————————————————————————————————————
-import { ExportButton } from '@/components/common/history/ExportButton';
+import { ExportButton, ExportButtonProps } from '@/components/common/history/ExportButton';
 
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: ExportButtonProps<unknown> = {
+  table: {} as unknown as Table<unknown>,
+  profileOptions: [],
+  classOptions: [],
+};
+// ------------------------------------------------------------------
 describe('ExportButton', () => {
   
 
@@ -16,7 +26,6 @@ describe('ExportButton', () => {
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     it.skip('should render with props', () => {

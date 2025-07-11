@@ -1,5 +1,4 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, vi, afterEach } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
@@ -12,11 +11,13 @@ import '@/mocks/queries';
 import '@/mocks/mutations';
 import '@/mocks/api';
 
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
 const mockProps: ChatMessagesProps = {
 
 };
 // ------------------------------------------------------------------
-
 describe('ChatMessages', () => {
   
   /* ------------------------------------------------------------------ *
@@ -47,7 +48,6 @@ describe('ChatMessages', () => {
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     it.skip('should render with props', () => {

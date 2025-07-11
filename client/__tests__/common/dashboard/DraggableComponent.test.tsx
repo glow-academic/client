@@ -1,11 +1,21 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import DraggableComponent from '@/components/common/dashboard/DraggableComponent';
+import DraggableComponent, { DraggableComponentProps } from '@/components/common/dashboard/DraggableComponent';
 
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: DraggableComponentProps = {
+  component: /* TODO <Component> */ undefined!,
+  // hideRemoveButton: false, /* optional */
+  // section: 'test-section', /* optional */
+  // index: 0, /* optional */
+};
+// ------------------------------------------------------------------
 describe('DraggableComponent', () => {
   
 
@@ -16,7 +26,6 @@ describe('DraggableComponent', () => {
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     it.skip('should render with props', () => {

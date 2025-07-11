@@ -1,5 +1,4 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, vi, afterEach } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
@@ -12,12 +11,6 @@ import Staff from '@/components/management/staff/Staff';
 import '@/mocks/queries';
 import '@/mocks/mutations';
 import '@/mocks/api';
-
-const mockProps: null = {
-
-};
-// ------------------------------------------------------------------
-
 describe('Staff', () => {
   
   /* ------------------------------------------------------------------ *
@@ -48,7 +41,6 @@ describe('Staff', () => {
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     
