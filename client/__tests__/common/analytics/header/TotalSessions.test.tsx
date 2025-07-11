@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import TotalSessions from '@/components/common/analytics/header/TotalSessions';
+import TotalSessions, { TotalSessionsProps } from '@/components/common/analytics/header/TotalSessions';
 
 
 
@@ -26,11 +26,9 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { TotalSessionsProps } from '@/components/common/analytics/header/TotalSessions';
+
 const mockProps: TotalSessionsProps = {
-  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
   // timeRange: /* TODO <TimeRange> */ undefined!, /* optional */
-  // title: 'test-title', /* optional */
   // showDialog: false, /* optional */
 };
 // ------------------------------------------------------------------

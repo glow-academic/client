@@ -139,7 +139,7 @@ type TimelineItem = {
   data: AssistantMessage | AssistantToolCall;
 };
 
-interface ChatMessagesProps {
+export interface ChatMessagesProps {
   onPromptClick?: (prompt: string) => void;
 }
 

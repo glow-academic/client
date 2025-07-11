@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
@@ -24,10 +24,9 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { NavigationBreadcrumbsProps } from '@/components/common/layout/NavigationBreadcrumbs.tsx';
+
 const mockProps: NavigationBreadcrumbsProps = {
   breadcrumbs: [],
-  // onSectionChange: vi.fn(), /* optional */
 };
 // ------------------------------------------------------------------
 

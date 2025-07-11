@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import Report from '@/components/analytics/report/Report';
+import Report, { ReportProps } from '@/components/analytics/report/Report';
 
 
 
@@ -31,7 +31,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { ReportProps } from '@/components/analytics/report/Report';
+
 const mockProps: ReportProps = {
   profileId: 'test-profileId',
 };

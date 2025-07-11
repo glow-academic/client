@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import ActiveCohorts from '@/components/common/analytics/header/ActiveCohorts';
+import ActiveCohorts, { ActiveCohortsProps } from '@/components/common/analytics/header/ActiveCohorts';
 
 
 
@@ -24,11 +24,9 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { ActiveCohortsProps } from '@/components/common/analytics/header/ActiveCohorts';
+
 const mockProps: ActiveCohortsProps = {
-  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
   // timeRange: /* TODO <TimeRange> */ undefined!, /* optional */
-  // title: 'test-title', /* optional */
   // showDialog: false, /* optional */
 };
 // ------------------------------------------------------------------

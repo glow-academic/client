@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import TotalTas from '@/components/common/analytics/header/TotalTas';
+import TotalTas, { TotalTasProps } from '@/components/common/analytics/header/TotalTas';
 
 
 
@@ -24,11 +24,9 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { TotalTasProps } from '@/components/common/analytics/header/TotalTas';
+
 const mockProps: TotalTasProps = {
-  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
   // timeRange: /* TODO <TimeRange> */ undefined!, /* optional */
-  // title: 'test-title', /* optional */
   // showDialog: false, /* optional */
 };
 // ------------------------------------------------------------------

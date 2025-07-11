@@ -12,7 +12,7 @@ import { useRole } from "@/contexts/role-context";
 import { Send, Square } from "lucide-react";
 import { useEffect, useState } from "react";
 
-interface ChatInputProps {
+export interface ChatInputProps {
   promptToSet?: string;
   onPromptSet?: () => void;
 }

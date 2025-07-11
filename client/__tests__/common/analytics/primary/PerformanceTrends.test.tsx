@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import PerformanceTrends from '@/components/common/analytics/primary/PerformanceTrends';
+import PerformanceTrends, { PerformanceTrendsProps } from '@/components/common/analytics/primary/PerformanceTrends';
 
 
 
@@ -29,12 +29,10 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { PerformanceTrendsProps } from '@/components/common/analytics/primary/PerformanceTrends';
+
 const mockProps: PerformanceTrendsProps = {
-  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
   // defaultTimeRange: /* TODO <TimeRange> */ undefined!, /* optional */
   // chartType: /* TODO <ChartType> */ undefined!, /* optional */
-  // title: 'test-title', /* optional */
   // showTimeSelector: false, /* optional */
 };
 // ------------------------------------------------------------------

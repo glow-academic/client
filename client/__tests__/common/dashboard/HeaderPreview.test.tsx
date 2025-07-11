@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import HeaderPreview from '@/components/common/dashboard/HeaderPreview';
+import HeaderPreview, { HeaderPreviewProps } from '@/components/common/dashboard/HeaderPreview';
 
 
 
@@ -24,7 +24,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { HeaderPreviewProps } from '@/components/common/dashboard/HeaderPreview';
+
 const mockProps: HeaderPreviewProps = {
   components: [],
   allComponents: {},
@@ -32,7 +32,6 @@ const mockProps: HeaderPreviewProps = {
   showIndicators: false,
   autoScroll: false,
   onRemove: vi.fn(),
-  // onUpdateLayout: vi.fn(), /* optional */
   onReorder: vi.fn(),
 };
 // ------------------------------------------------------------------
@@ -110,7 +109,7 @@ describe('HeaderPreview', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: HeaderPreviewProps
  * - Has props: true
  * - Props interface: HeaderPreviewProps
  * - Client component: false

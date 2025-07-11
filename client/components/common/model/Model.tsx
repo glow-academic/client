@@ -46,7 +46,7 @@ interface FormData {
   modelType?: string;
 }
 
-interface ModelProps {
+export interface ModelProps {
   modelId?: string;
 }
 

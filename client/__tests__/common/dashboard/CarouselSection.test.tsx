@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import CarouselSection from '@/components/common/dashboard/CarouselSection';
+import CarouselSection, { CarouselSectionProps } from '@/components/common/dashboard/CarouselSection';
 
 
 
@@ -24,14 +24,13 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { CarouselSectionProps } from '@/components/common/dashboard/CarouselSection';
+
 const mockProps: CarouselSectionProps = {
   components: [],
   allComponents: {},
   showIndicators: false,
   autoScroll: false,
   onRemove: vi.fn(),
-  // onUpdateLayout: vi.fn(), /* optional */
   // interval: 0, /* optional */
 };
 // ------------------------------------------------------------------

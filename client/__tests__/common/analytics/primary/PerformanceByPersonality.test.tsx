@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import PerformanceByPersonality from '@/components/common/analytics/primary/PerformanceByPersonality';
+import PerformanceByPersonality, { PerformanceByPersonalityProps } from '@/components/common/analytics/primary/PerformanceByPersonality';
 
 
 
@@ -31,12 +31,10 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { PerformanceByPersonalityProps } from '@/components/common/analytics/primary/PerformanceByPersonality';
+
 const mockProps: PerformanceByPersonalityProps = {
-  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
   // defaultTimeRange: /* TODO <TimeRange> */ undefined!, /* optional */
   // chartType: /* TODO <"bar"> */ undefined!, /* optional */
-  // title: 'test-title', /* optional */
   // showTimeSelector: false, /* optional */
 };
 // ------------------------------------------------------------------

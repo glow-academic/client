@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import CohortCompletion from '@/components/common/analytics/footer/CohortCompletion';
+import CohortCompletion, { CohortCompletionProps } from '@/components/common/analytics/footer/CohortCompletion';
 
 
 
@@ -27,9 +27,9 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { CohortCompletionProps } from '@/components/common/analytics/footer/CohortCompletion';
+
 const mockProps: CohortCompletionProps = {
-  // className: 'test-className', /* optional */
+
 };
 // ------------------------------------------------------------------
 

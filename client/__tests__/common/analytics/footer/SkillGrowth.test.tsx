@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import SkillGrowth from '@/components/common/analytics/footer/SkillGrowth';
+import SkillGrowth, { SkillGrowthProps } from '@/components/common/analytics/footer/SkillGrowth';
 
 
 
@@ -28,9 +28,9 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { SkillGrowthProps } from '@/components/common/analytics/footer/SkillGrowth';
+
 const mockProps: SkillGrowthProps = {
-  // className: 'test-className', /* optional */
+
 };
 // ------------------------------------------------------------------
 

@@ -7,10 +7,12 @@
 "use client";
 import Simulation from "@/components/common/simulation/Simulation";
 
+export interface SimulationEditProps {
+  simulationId: string;
+}
+
 export default function SimulationEdit({
   simulationId,
-}: {
-  simulationId: string;
-}) {
+}: SimulationEditProps) {
   return <Simulation simulationId={simulationId} />;
 }

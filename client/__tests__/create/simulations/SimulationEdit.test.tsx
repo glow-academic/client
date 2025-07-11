@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import SimulationEdit from '@/components/create/simulations/SimulationEdit';
+import SimulationEdit, { SimulationEditProps } from '@/components/create/simulations/SimulationEdit';
 
 
 
@@ -21,13 +21,21 @@ const DEFAULT_OVERRIDES = {
 /* ------------------------------------------------------------------ */
 
 
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+
+const mockProps: SimulationEditProps = {
+  simulationId: 'test-simulationId',
+};
+// ------------------------------------------------------------------
+
 
 describe('SimulationEdit', () => {
 
   describe('basic render smoke-test', () => {
     it.skip('renders without crashing (replace skip when implemented)', async () => {
       renderWithMocks(
-        <SimulationEdit  />,
+        <SimulationEdit {...mockProps} />,
         DEFAULT_OVERRIDES
       );
       /* TODO: add reasonable assertion */
@@ -36,7 +44,12 @@ describe('SimulationEdit', () => {
       ).toBeTruthy();
     });
 
-    
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: SimulationEditProps
+      
+      // TODO add props assertions
+    });
 
     it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -60,7 +73,11 @@ describe('SimulationEdit', () => {
 
     });
 
-    
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
+    });
   });
 });
 
@@ -70,9 +87,9 @@ describe('SimulationEdit', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Named exports: SimulationEditProps
+ * - Has props: true
+ * - Props interface: SimulationEditProps
  * - Client component: true
  * - Uses hooks: None
  * - Uses router: false
@@ -87,7 +104,7 @@ describe('SimulationEdit', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<SimulationEdit />);
+ * render(<SimulationEdit {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

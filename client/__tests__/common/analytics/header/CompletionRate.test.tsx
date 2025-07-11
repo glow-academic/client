@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import CompletionRate from '@/components/common/analytics/header/CompletionRate';
+import CompletionRate, { CompletionRateProps } from '@/components/common/analytics/header/CompletionRate';
 
 
 
@@ -26,11 +26,9 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { CompletionRateProps } from '@/components/common/analytics/header/CompletionRate';
+
 const mockProps: CompletionRateProps = {
-  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
   // timeRange: /* TODO <TimeRange> */ undefined!, /* optional */
-  // title: 'test-title', /* optional */
   // showDialog: false, /* optional */
 };
 // ------------------------------------------------------------------

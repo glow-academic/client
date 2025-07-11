@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import RubricEdit from '@/components/management/rubrics/RubricEdit';
+import RubricEdit, { RubricEditProps } from '@/components/management/rubrics/RubricEdit';
 
 
 
@@ -21,13 +21,21 @@ const DEFAULT_OVERRIDES = {
 /* ------------------------------------------------------------------ */
 
 
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+
+const mockProps: RubricEditProps = {
+  rubricId: 'test-rubricId',
+};
+// ------------------------------------------------------------------
+
 
 describe('RubricEdit', () => {
 
   describe('basic render smoke-test', () => {
     it.skip('renders without crashing (replace skip when implemented)', async () => {
       renderWithMocks(
-        <RubricEdit  />,
+        <RubricEdit {...mockProps} />,
         DEFAULT_OVERRIDES
       );
       /* TODO: add reasonable assertion */
@@ -36,7 +44,12 @@ describe('RubricEdit', () => {
       ).toBeTruthy();
     });
 
-    
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: RubricEditProps
+      
+      // TODO add props assertions
+    });
 
     it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -60,7 +73,11 @@ describe('RubricEdit', () => {
 
     });
 
-    
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
+    });
   });
 });
 
@@ -70,9 +87,9 @@ describe('RubricEdit', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Named exports: RubricEditProps
+ * - Has props: true
+ * - Props interface: RubricEditProps
  * - Client component: true
  * - Uses hooks: None
  * - Uses router: false
@@ -87,7 +104,7 @@ describe('RubricEdit', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<RubricEdit />);
+ * render(<RubricEdit {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

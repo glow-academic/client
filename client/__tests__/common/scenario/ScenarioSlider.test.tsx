@@ -1,10 +1,10 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import { ScenarioSlider } from '@/components/common/scenario/ScenarioSlider';
+import { ScenarioSlider, ScenarioSliderProps } from '@/components/common/scenario/ScenarioSlider';
 
 
 
@@ -24,7 +24,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { ScenarioSliderProps } from '@/components/common/scenario/ScenarioSlider';
+
 const mockProps: ScenarioSliderProps = {
   // leftContent: <div>test-leftContent</div>, /* optional */
   // rightContent: <div>test-rightContent</div>, /* optional */
@@ -34,11 +34,9 @@ const mockProps: ScenarioSliderProps = {
   // min: 0, /* optional */
   // max: 0, /* optional */
   // step: 0, /* optional */
-  // onValueChange: [], /* optional */
   // value: [], /* optional */
   // disabled: false, /* optional */
   // showReset: false, /* optional */
-  // onReset: vi.fn(), /* optional */
   // inlineTitle: false, /* optional */
 };
 // ------------------------------------------------------------------
@@ -116,7 +114,7 @@ describe('ScenarioSlider', () => {
  * 
  * Features detected:
  * - Default export: false
- * - Named exports: ScenarioSlider
+ * - Named exports: ScenarioSlider, ScenarioSliderProps
  * - Has props: true
  * - Props interface: ScenarioSliderProps
  * - Client component: true

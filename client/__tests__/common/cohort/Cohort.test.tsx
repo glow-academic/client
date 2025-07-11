@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import Cohort from '@/components/common/cohort/Cohort';
+import Cohort, { CohortProps } from '@/components/common/cohort/Cohort';
 
 
 
@@ -26,7 +26,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { CohortProps } from '@/components/common/cohort/Cohort';
+
 const mockProps: CohortProps = {
   // cohortId: 'test-cohortId', /* optional */
 };

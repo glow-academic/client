@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import DocumentViewer from '@/components/common/chat/DocumentViewer';
+import DocumentViewer, { DocumentViewerProps } from '@/components/common/chat/DocumentViewer';
 
 global.fetch = vi.fn();
 
@@ -24,7 +24,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { DocumentViewerProps } from '@/components/common/chat/DocumentViewer';
+
 const mockProps: DocumentViewerProps = {
   // document: 'homework', /* optional */
   // bare: false, /* optional */

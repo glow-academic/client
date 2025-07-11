@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import TrainingInsights from '@/components/common/analytics/secondary/TrainingInsights';
+import TrainingInsights, { TrainingInsightsProps } from '@/components/common/analytics/secondary/TrainingInsights';
 
 
 
@@ -28,12 +28,9 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { TrainingInsightsProps } from '@/components/common/analytics/secondary/TrainingInsights';
+
 const mockProps: TrainingInsightsProps = {
-  // className: 'test-className', /* optional */
-  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
   // maxItems: 0, /* optional */
-  // title: 'test-title', /* optional */
   // layout: /* TODO <Layout> */ undefined!, /* optional */
 };
 // ------------------------------------------------------------------

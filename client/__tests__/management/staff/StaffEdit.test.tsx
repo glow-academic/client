@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import StaffEdit from '@/components/management/staff/StaffEdit';
+import StaffEdit, { StaffEditProps } from '@/components/management/staff/StaffEdit';
 
 
 
@@ -25,13 +25,21 @@ const DEFAULT_OVERRIDES = {
 /* ------------------------------------------------------------------ */
 
 
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+
+const mockProps: StaffEditProps = {
+  profileId: 'test-profileId',
+};
+// ------------------------------------------------------------------
+
 
 describe('StaffEdit', () => {
 
   describe('basic render smoke-test', () => {
     it.skip('renders without crashing (replace skip when implemented)', async () => {
       renderWithMocks(
-        <StaffEdit  />,
+        <StaffEdit {...mockProps} />,
         DEFAULT_OVERRIDES
       );
       /* TODO: add reasonable assertion */
@@ -40,7 +48,12 @@ describe('StaffEdit', () => {
       ).toBeTruthy();
     });
 
-    
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: StaffEditProps
+      
+      // TODO add props assertions
+    });
 
     it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -107,7 +120,11 @@ describe('StaffEdit', () => {
 
     });
 
-    
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
+    });
   });
 });
 
@@ -117,9 +134,9 @@ describe('StaffEdit', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Named exports: StaffEditProps
+ * - Has props: true
+ * - Props interface: StaffEditProps
  * - Client component: true
  * - Uses hooks: useQuery, useQueryClient, useSession, useRouter, useEffect, useState, userId, user
  * - Uses router: true
@@ -134,7 +151,7 @@ describe('StaffEdit', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<StaffEdit />);
+ * render(<StaffEdit {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

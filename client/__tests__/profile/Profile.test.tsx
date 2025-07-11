@@ -24,9 +24,9 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { ProfileProps } from '@/components/profile/Profile';
+
 const mockProps: ProfileProps = {
-  // className: 'test-className', /* optional */
+
 };
 // ------------------------------------------------------------------
 

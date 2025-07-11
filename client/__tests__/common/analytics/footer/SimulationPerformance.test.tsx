@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import SimulationPerformance from '@/components/common/analytics/footer/SimulationPerformance';
+import SimulationPerformance, { SimulationPerformanceProps } from '@/components/common/analytics/footer/SimulationPerformance';
 
 
 
@@ -28,13 +28,10 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { SimulationPerformanceProps } from '@/components/common/analytics/footer/SimulationPerformance';
+
 const mockProps: SimulationPerformanceProps = {
-  // className: 'test-className', /* optional */
-  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
   // defaultSelection: 'test-defaultSelection', /* optional */
   // chartType: /* TODO <"bar"> */ undefined!, /* optional */
-  // title: 'test-title', /* optional */
   // showSelector: false, /* optional */
 };
 // ------------------------------------------------------------------

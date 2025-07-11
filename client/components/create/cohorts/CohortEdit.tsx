@@ -7,10 +7,12 @@
 "use client";
 import Cohort from "@/components/common/cohort/Cohort";
 
+export interface CohortEditProps {
+  cohortId: string;
+}
+
 export default function CohortEdit({
   cohortId,
-}: {
-  cohortId: string;
-}) {
+}: CohortEditProps) {
   return <Cohort cohortId={cohortId} />;
 }

@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import ScenarioData from '@/components/common/analytics/footer/ScenarioData';
+import ScenarioData, { ScenarioDataProps } from '@/components/common/analytics/footer/ScenarioData';
 
 
 
@@ -28,9 +28,9 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { ScenarioDataProps } from '@/components/common/analytics/footer/ScenarioData';
+
 const mockProps: ScenarioDataProps = {
-  // className: 'test-className', /* optional */
+
 };
 // ------------------------------------------------------------------
 

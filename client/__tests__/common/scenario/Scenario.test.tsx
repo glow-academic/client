@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import Scenario from '@/components/common/scenario/Scenario';
+import Scenario, { ScenarioProps } from '@/components/common/scenario/Scenario';
 
 
 
@@ -29,7 +29,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { ScenarioProps } from '@/components/common/scenario/Scenario';
+
 const mockProps: ScenarioProps = {
   // scenarioId: 'test-scenarioId', /* optional */
   // mode: 'create', /* optional */
@@ -137,7 +137,7 @@ describe('Scenario', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: ScenarioProps
  * - Has props: true
  * - Props interface: ScenarioProps
  * - Client component: true

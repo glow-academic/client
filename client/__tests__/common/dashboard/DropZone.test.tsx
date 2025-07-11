@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import DropZone from '@/components/common/dashboard/DropZone';
+import DropZone, { DropZoneProps } from '@/components/common/dashboard/DropZone';
 
 
 
@@ -24,7 +24,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { DropZoneProps } from '@/components/common/dashboard/DropZone';
+
 const mockProps: DropZoneProps = {
   section: 'test-section',
   title: 'test-title',
@@ -32,8 +32,6 @@ const mockProps: DropZoneProps = {
   allComponents: {},
   onDrop: vi.fn(),
   onRemove: vi.fn(),
-  // onUpdateLayout: vi.fn(), /* optional */
-  // className: 'test-className', /* optional */
 };
 // ------------------------------------------------------------------
 

@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import ReportProblem from '@/components/common/layout/ReportProblem';
+import ReportProblem, { ReportProblemProps } from '@/components/common/layout/ReportProblem';
 
 
 
@@ -24,9 +24,9 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { ReportProblemProps } from '@/components/common/layout/ReportProblem';
+
 const mockProps: ReportProblemProps = {
-  // children: <div>test-children</div>, /* optional */
+
 };
 // ------------------------------------------------------------------
 

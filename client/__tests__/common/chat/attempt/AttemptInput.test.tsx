@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import AttemptInput from '@/components/common/chat/attempt/AttemptInput';
+import AttemptInput, { AttemptInputProps } from '@/components/common/chat/attempt/AttemptInput';
 
 
 
@@ -24,7 +24,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { AttemptInputProps } from '@/components/common/chat/attempt/AttemptInput';
+
 const mockProps: AttemptInputProps = {
   onToggleSketch: vi.fn(),
 };

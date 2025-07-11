@@ -43,7 +43,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 // Custom Components
-import { ScenarioPicker, type Model } from "./ScenarioPicker";
+import { ScenarioPicker } from "./ScenarioPicker";
 import { ScenarioSlider } from "./ScenarioSlider";
 
 // Types and API functions
@@ -54,6 +54,7 @@ import {
   Scenario as ScenarioType,
   Simulation,
 } from "@/types";
+import { Model } from "@/utils/scenario";
 import { newScenario } from "@/utils/api/scenarios/new-scenario";
 import { logError } from "@/utils/logger";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
@@ -64,7 +65,7 @@ import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 
-interface ScenarioProps {
+export interface ScenarioProps {
   scenarioId?: string;
   mode?: "create" | "edit";
 }

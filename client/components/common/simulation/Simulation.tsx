@@ -38,7 +38,7 @@ import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulatio
 import { GripVertical, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-interface SimulationProps {
+export interface SimulationProps {
   simulationId?: string;
 }
 

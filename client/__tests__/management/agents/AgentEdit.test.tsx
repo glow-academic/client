@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import AgentEdit from '@/components/management/agents/AgentEdit';
+import AgentEdit, { AgentEditProps } from '@/components/management/agents/AgentEdit';
 
 
 
@@ -23,7 +23,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { AgentEditProps } from '@/components/management/agents/AgentEdit';
+
 const mockProps: AgentEditProps = {
   agentId: 'test-agentId',
 };

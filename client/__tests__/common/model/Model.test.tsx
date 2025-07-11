@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import Model from '@/components/common/model/Model';
+import Model, { ModelProps } from '@/components/common/model/Model';
 
 
 
@@ -26,7 +26,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { ModelProps } from '@/components/common/model/Model';
+
 const mockProps: ModelProps = {
   // modelId: 'test-modelId', /* optional */
 };
@@ -133,7 +133,7 @@ describe('Model', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: ModelProps
  * - Has props: true
  * - Props interface: ModelProps
  * - Client component: true

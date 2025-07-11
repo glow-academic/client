@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import Markdown from '@/components/common/chat/Markdown';
+import Markdown, { MarkdownProps } from '@/components/common/chat/Markdown';
 
 
 
@@ -23,7 +23,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { MarkdownProps } from '@/components/common/chat/Markdown';
+
 const mockProps: MarkdownProps = {
   children: 'test-children',
 };

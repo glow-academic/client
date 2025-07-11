@@ -1,10 +1,10 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import { ScenarioPicker, ModelType, Model } from '@/components/common/scenario/ScenarioPicker';
+import { ScenarioPicker, ScenarioPickerProps } from '@/components/common/scenario/ScenarioPicker';
 
 
 
@@ -24,23 +24,19 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { ScenarioPickerProps } from '@/components/common/scenario/ScenarioPicker';
+
 const mockProps: ScenarioPickerProps = {
   types: [],
   models: [],
   // label: 'test-label', /* optional */
   // placeholder: 'test-placeholder', /* optional */
   // description: 'test-description', /* optional */
-  // onSelect: vi.fn(), /* optional */
-  // selectedModel: /* TODO <Model | undefined> */ undefined!, /* optional */
+  // selectedModel: null, /* optional */
   // selectedModels: [], /* optional */
   // multiSelect: false, /* optional */
-  // onMultiSelect: [], /* optional */
   // hideSelectedChips: false, /* optional */
-  // children: <div>test-children</div>, /* optional */
   // open: false, /* optional */
   // defaultOpen: false, /* optional */
-  // onOpenChange: vi.fn(), /* optional */
   // modal: false, /* optional */
 };
 // ------------------------------------------------------------------
@@ -118,7 +114,7 @@ describe('ScenarioPicker', () => {
  * 
  * Features detected:
  * - Default export: false
- * - Named exports: ScenarioPicker, ModelType, Model
+ * - Named exports: ScenarioPicker, ModelType, Model, ScenarioPickerProps
  * - Has props: true
  * - Props interface: ScenarioPickerProps
  * - Client component: true

@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import AverageScore from '@/components/common/analytics/header/AverageScore';
+import AverageScore, { AverageScoreProps } from '@/components/common/analytics/header/AverageScore';
 
 
 
@@ -29,11 +29,9 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { AverageScoreProps } from '@/components/common/analytics/header/AverageScore';
+
 const mockProps: AverageScoreProps = {
-  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
   // timeRange: /* TODO <TimeRange> */ undefined!, /* optional */
-  // title: 'test-title', /* optional */
   // showDialog: false, /* optional */
 };
 // ------------------------------------------------------------------

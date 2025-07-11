@@ -1,10 +1,10 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import ClassForm from '@/components/common/class/ClassForm';
+import ClassForm, { ClassFormProps } from '@/components/common/class/ClassForm';
 
 
 
@@ -26,12 +26,11 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { ClassFormProps } from '@/components/common/class/ClassForm';
+
 const mockProps: ClassFormProps = {
   mode: 'create',
   // classId: 'test-classId', /* optional */
   // initialData: 'fall', /* optional */
-  // onSuccess: vi.fn(), /* optional */
 };
 // ------------------------------------------------------------------
 

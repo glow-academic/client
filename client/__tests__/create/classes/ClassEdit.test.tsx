@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import ClassEdit from '@/components/create/classes/ClassEdit';
+import ClassEdit, { ClassEditProps } from '@/components/create/classes/ClassEdit';
 
 
 
@@ -24,7 +24,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { ClassEditProps } from '@/components/create/classes/ClassEdit';
+
 const mockProps: ClassEditProps = {
   classId: 'test-classId',
 };

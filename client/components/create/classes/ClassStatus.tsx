@@ -42,9 +42,9 @@ interface ProcessingStatus {
   syllabusName?: string;
 }
 
-type ClassStatusProps = {
+export interface ClassStatusProps {
   classId: string;
-};
+}
 
 export default function ClassStatus({ classId }: ClassStatusProps) {
   const [processingStatus, setProcessingStatus] = useState<ProcessingStatus>({

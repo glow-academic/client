@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import AttemptMessages from '@/components/common/chat/attempt/AttemptMessages';
+import AttemptMessages, { AttemptMessagesProps } from '@/components/common/chat/attempt/AttemptMessages';
 
 
 
@@ -25,7 +25,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { AttemptMessagesProps } from '@/components/common/chat/attempt/AttemptMessages';
+
 const mockProps: AttemptMessagesProps = {
   // chatId: 'test-chatId', /* optional */
 };

@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import TableRubric from '@/components/common/rubric/TableRubric';
+import TableRubric, { TableRubricProps } from '@/components/common/rubric/TableRubric';
 
 
 
@@ -27,7 +27,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { TableRubricProps } from '@/components/common/rubric/TableRubric';
+
 const mockProps: TableRubricProps = {
   rubricId: 'test-rubricId',
   // simulationChatId: 'test-simulationChatId', /* optional */
@@ -110,7 +110,7 @@ describe('TableRubric', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: TableRubricProps
  * - Has props: true
  * - Props interface: TableRubricProps
  * - Client component: true

@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import Simulation from '@/components/common/simulation/Simulation';
+import Simulation, { SimulationProps } from '@/components/common/simulation/Simulation';
 
 
 
@@ -28,7 +28,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { SimulationProps } from '@/components/common/simulation/Simulation';
+
 const mockProps: SimulationProps = {
   // simulationId: 'test-simulationId', /* optional */
 };
@@ -135,7 +135,7 @@ describe('Simulation', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: SimulationProps
  * - Has props: true
  * - Props interface: SimulationProps
  * - Client component: true

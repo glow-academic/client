@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Shuffle } from "lucide-react";
 import { useEffect, useState } from "react";
 
-interface ChatStarterPromptsProps {
+export interface ChatStarterPromptsProps {
   onPromptClick: (prompt: string) => void;
   variant?: "expanded" | "minimized";
 }

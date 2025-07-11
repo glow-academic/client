@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 101
-- **Tests Created**: 1
+- **Total Components**: 100
+- **Tests Created**: 100
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 100
+- **Tests Skipped** (already implemented): 0
 
 ## Component Coverage
 
@@ -17,7 +17,6 @@
 | ReportsDataTable | analytics/report/ReportsDataTable.tsx | ReportsDataTable.test.tsx | ✅ Implemented |
 | ReportsDataTableToolbar | analytics/report/ReportsDataTableToolbar.tsx | ReportsDataTableToolbar.test.tsx | ✅ Implemented |
 | Agent | common/agent/Agent.tsx | Agent.test.tsx | ✅ Implemented |
-| Registry | common/analytics/Registry.tsx | Registry.test.tsx | ✅ Implemented |
 | CohortCompletion | common/analytics/footer/CohortCompletion.tsx | CohortCompletion.test.tsx | ✅ Implemented |
 | ScenarioData | common/analytics/footer/ScenarioData.tsx | ScenarioData.test.tsx | ✅ Implemented |
 | SimulationPerformance | common/analytics/footer/SimulationPerformance.tsx | SimulationPerformance.test.tsx | ✅ Implemented |
@@ -128,7 +127,6 @@ __tests__/
 │   ├── agent/
 │   │   ├── Agent.test.tsx
 │   ├── analytics/
-│   │   ├── Registry.test.tsx
 │   │   ├── footer/
 │   │   │   ├── CohortCompletion.test.tsx
 │   │   │   ├── ScenarioData.test.tsx

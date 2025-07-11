@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import ClassStatus from '@/components/create/classes/ClassStatus';
+import ClassStatus, { ClassStatusProps } from '@/components/create/classes/ClassStatus';
 
 
 
@@ -28,7 +28,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { ClassStatusProps } from '@/components/create/classes/ClassStatus';
+
 const mockProps: ClassStatusProps = {
   classId: 'test-classId',
 };
@@ -125,7 +125,7 @@ describe('ClassStatus', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: ClassStatusProps
  * - Has props: true
  * - Props interface: ClassStatusProps
  * - Client component: true

@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import TrainingSessions from '@/components/common/analytics/header/TrainingSessions';
+import TrainingSessions, { TrainingSessionsProps } from '@/components/common/analytics/header/TrainingSessions';
 
 
 
@@ -26,11 +26,9 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { TrainingSessionsProps } from '@/components/common/analytics/header/TrainingSessions';
+
 const mockProps: TrainingSessionsProps = {
-  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
   // timeRange: /* TODO <TimeRange> */ undefined!, /* optional */
-  // title: 'test-title', /* optional */
   // showDialog: false, /* optional */
 };
 // ------------------------------------------------------------------

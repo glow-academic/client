@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import NeedSupport from '@/components/common/analytics/header/NeedSupport';
+import NeedSupport, { NeedSupportProps } from '@/components/common/analytics/header/NeedSupport';
 
 
 
@@ -29,11 +29,9 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { NeedSupportProps } from '@/components/common/analytics/header/NeedSupport';
+
 const mockProps: NeedSupportProps = {
-  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
   // timeRange: /* TODO <TimeRange> */ undefined!, /* optional */
-  // title: 'test-title', /* optional */
   // showDialog: false, /* optional */
 };
 // ------------------------------------------------------------------

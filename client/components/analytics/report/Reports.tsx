@@ -26,15 +26,6 @@ import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-stan
 import { ReportsDataTable } from "./ReportsDataTable";
 import { useReportColumns, TAPerformanceData } from "@/hooks/use-report-columns";
 
-export interface ReportOptions {
-  includeStudentTypeChart: boolean;
-  includePerformanceChart: boolean;
-  includeRadarChart: boolean;
-  includeTimeChart: boolean;
-  includeDetailedScores: boolean;
-  includeFeedback: boolean;
-}
-
 export default function Reports() {
   const router = useRouter();
 

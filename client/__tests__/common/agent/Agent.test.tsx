@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import Agent from '@/components/common/agent/Agent';
+import Agent, { AgentProps } from '@/components/common/agent/Agent';
 
 
 
@@ -26,7 +26,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { AgentProps } from '@/components/common/agent/Agent';
+
 const mockProps: AgentProps = {
   // agentId: 'test-agentId', /* optional */
   // mode: 'create', /* optional */

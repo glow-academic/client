@@ -65,7 +65,11 @@ type FormData = {
   role?: string;
 };
 
-export default function StaffEdit({ profileId }: { profileId: string }) {
+export interface StaffEditProps {
+  profileId: string;
+}
+
+export default function StaffEdit({ profileId }: StaffEditProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const [formData, setFormData] = useState<FormData>({});

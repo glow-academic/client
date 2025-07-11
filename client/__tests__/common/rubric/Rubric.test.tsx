@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import Rubric from '@/components/common/rubric/Rubric';
+import Rubric, { RubricProps } from '@/components/common/rubric/Rubric';
 
 
 
@@ -29,7 +29,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { RubricProps } from '@/components/common/rubric/Rubric';
+
 const mockProps: RubricProps = {
   // rubricId: 'test-rubricId', /* optional */
   // mode: 'create', /* optional */
@@ -138,7 +138,7 @@ describe('Rubric', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: RubricProps
  * - Has props: true
  * - Props interface: RubricProps
  * - Client component: true

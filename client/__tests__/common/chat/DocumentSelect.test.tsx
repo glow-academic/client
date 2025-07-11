@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import DocumentSelect from '@/components/common/chat/DocumentSelect';
+import DocumentSelect, { DocumentSelectProps } from '@/components/common/chat/DocumentSelect';
 
 
 
@@ -24,10 +24,10 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { DocumentSelectProps } from '@/components/common/chat/DocumentSelect';
+
 const mockProps: DocumentSelectProps = {
   documents: [],
-  selectedDocumentId: 'test-selectedDocumentId',
+  selectedDocumentId: null,
   onDocumentSelect: vi.fn(),
   // placeholder: 'test-placeholder', /* optional */
 };

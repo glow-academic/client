@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import CohortEdit from '@/components/create/cohorts/CohortEdit';
+import CohortEdit, { CohortEditProps } from '@/components/create/cohorts/CohortEdit';
 
 
 
@@ -21,13 +21,21 @@ const DEFAULT_OVERRIDES = {
 /* ------------------------------------------------------------------ */
 
 
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+
+const mockProps: CohortEditProps = {
+  cohortId: 'test-cohortId',
+};
+// ------------------------------------------------------------------
+
 
 describe('CohortEdit', () => {
 
   describe('basic render smoke-test', () => {
     it.skip('renders without crashing (replace skip when implemented)', async () => {
       renderWithMocks(
-        <CohortEdit  />,
+        <CohortEdit {...mockProps} />,
         DEFAULT_OVERRIDES
       );
       /* TODO: add reasonable assertion */
@@ -36,7 +44,12 @@ describe('CohortEdit', () => {
       ).toBeTruthy();
     });
 
-    
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: CohortEditProps
+      
+      // TODO add props assertions
+    });
 
     it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -60,7 +73,11 @@ describe('CohortEdit', () => {
 
     });
 
-    
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
+    });
   });
 });
 
@@ -70,9 +87,9 @@ describe('CohortEdit', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Named exports: CohortEditProps
+ * - Has props: true
+ * - Props interface: CohortEditProps
  * - Client component: true
  * - Uses hooks: None
  * - Uses router: false
@@ -87,7 +104,7 @@ describe('CohortEdit', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<CohortEdit />);
+ * render(<CohortEdit {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

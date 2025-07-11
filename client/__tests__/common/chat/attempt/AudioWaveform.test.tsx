@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import AudioWaveform from '@/components/common/chat/attempt/AudioWaveform';
+import AudioWaveform, { AudioWaveformProps } from '@/components/common/chat/attempt/AudioWaveform';
 
 
 
@@ -23,11 +23,11 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { AudioWaveformProps } from '@/components/common/chat/attempt/AudioWaveform';
+
 const mockProps: AudioWaveformProps = {
   isRecording: false,
   isTall: false,
-  stream: /* TODO <MediaStream | null> */ undefined!,
+  stream: null,
 };
 // ------------------------------------------------------------------
 

@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import ScenarioEdit from '@/components/create/scenarios/ScenarioEdit';
+import ScenarioEdit, { ScenarioEditProps } from '@/components/create/scenarios/ScenarioEdit';
 
 
 
@@ -21,13 +21,21 @@ const DEFAULT_OVERRIDES = {
 /* ------------------------------------------------------------------ */
 
 
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+
+const mockProps: ScenarioEditProps = {
+  scenarioId: 'test-scenarioId',
+};
+// ------------------------------------------------------------------
+
 
 describe('ScenarioEdit', () => {
 
   describe('basic render smoke-test', () => {
     it.skip('renders without crashing (replace skip when implemented)', async () => {
       renderWithMocks(
-        <ScenarioEdit  />,
+        <ScenarioEdit {...mockProps} />,
         DEFAULT_OVERRIDES
       );
       /* TODO: add reasonable assertion */
@@ -36,7 +44,12 @@ describe('ScenarioEdit', () => {
       ).toBeTruthy();
     });
 
-    
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: ScenarioEditProps
+      
+      // TODO add props assertions
+    });
 
     it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -60,7 +73,11 @@ describe('ScenarioEdit', () => {
 
     });
 
-    
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
+    });
   });
 });
 
@@ -70,9 +87,9 @@ describe('ScenarioEdit', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Named exports: ScenarioEditProps
+ * - Has props: true
+ * - Props interface: ScenarioEditProps
  * - Client component: true
  * - Uses hooks: None
  * - Uses router: false
@@ -87,7 +104,7 @@ describe('ScenarioEdit', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<ScenarioEdit />);
+ * render(<ScenarioEdit {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import ChatStarterPrompts from '@/components/common/home/ChatStarterPrompts';
+import ChatStarterPrompts, { ChatStarterPromptsProps } from '@/components/common/home/ChatStarterPrompts';
 
 
 
@@ -24,7 +24,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { ChatStarterPromptsProps } from '@/components/common/home/ChatStarterPrompts';
+
 const mockProps: ChatStarterPromptsProps = {
   onPromptClick: vi.fn(),
   // variant: 'expanded', /* optional */
@@ -104,7 +104,7 @@ describe('ChatStarterPrompts', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: ChatStarterPromptsProps
  * - Has props: true
  * - Props interface: ChatStarterPromptsProps
  * - Client component: true

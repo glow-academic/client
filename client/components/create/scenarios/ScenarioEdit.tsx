@@ -7,6 +7,10 @@
 "use client";
 import Scenario from "@/components/common/scenario/Scenario";
 
-export default function ScenarioEdit({ scenarioId }: { scenarioId: string }) {
+export interface ScenarioEditProps {
+  scenarioId: string;
+}
+
+export default function ScenarioEdit({ scenarioId }: ScenarioEditProps) {
   return <Scenario scenarioId={scenarioId} mode="edit" />;
 }

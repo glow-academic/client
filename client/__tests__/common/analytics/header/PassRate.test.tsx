@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import PassRate from '@/components/common/analytics/header/PassRate';
+import PassRate, { PassRateProps } from '@/components/common/analytics/header/PassRate';
 
 
 
@@ -27,11 +27,9 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { PassRateProps } from '@/components/common/analytics/header/PassRate';
+
 const mockProps: PassRateProps = {
-  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
   // timeRange: /* TODO <TimeRange> */ undefined!, /* optional */
-  // title: 'test-title', /* optional */
   // showDialog: false, /* optional */
 };
 // ------------------------------------------------------------------

@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import FooterPreview from '@/components/common/dashboard/FooterPreview';
+import FooterPreview, { FooterPreviewProps } from '@/components/common/dashboard/FooterPreview';
 
 
 
@@ -24,7 +24,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { FooterPreviewProps } from '@/components/common/dashboard/FooterPreview';
+
 const mockProps: FooterPreviewProps = {
   components: [],
   allComponents: {},
@@ -32,8 +32,7 @@ const mockProps: FooterPreviewProps = {
   autoScroll: false,
   footerSplit: 0,
   onRemove: vi.fn(),
-  // onUpdateLayout: vi.fn(), /* optional */
-  onResizeEnd: [],
+  onResizeEnd: vi.fn(),
 };
 // ------------------------------------------------------------------
 

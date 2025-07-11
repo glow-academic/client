@@ -33,19 +33,9 @@ import {
 } from "@/components/ui/popover";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
 import { cn } from "@/lib/utils";
+import { Model, ModelType } from "@/utils/scenario";
 
-// Type definitions
-export type ModelType = "Agents" | "Documents" | "Classes" | "Seniority";
-
-export interface Model {
-  id: string;
-  name: string;
-  description: string;
-  type: ModelType;
-  strengths?: string;
-}
-
-interface ScenarioPickerProps extends PopoverProps {
+export interface ScenarioPickerProps extends PopoverProps {
   types: readonly ModelType[];
   models: Model[];
   label?: string;

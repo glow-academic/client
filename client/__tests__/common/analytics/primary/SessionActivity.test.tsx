@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import SessionActivity from '@/components/common/analytics/primary/SessionActivity';
+import SessionActivity, { SessionActivityProps } from '@/components/common/analytics/primary/SessionActivity';
 
 
 
@@ -26,12 +26,10 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { SessionActivityProps } from '@/components/common/analytics/primary/SessionActivity';
+
 const mockProps: SessionActivityProps = {
-  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
   // defaultTimeRange: /* TODO <TimeRange> */ undefined!, /* optional */
   // chartType: /* TODO <"bar"> */ undefined!, /* optional */
-  // title: 'test-title', /* optional */
   // showTimeSelector: false, /* optional */
 };
 // ------------------------------------------------------------------

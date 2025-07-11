@@ -1,12 +1,10 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
-import userEvent from '@testing-library/user-event';
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import Reports from '@/components/analytics/report/Reports';
-
-
+import Reports from "@/components/analytics/report/Reports";
 
 /* ------------------------------------------------------------------ *
  * Auto-detected data fns used by this component
@@ -34,89 +32,66 @@ const DEFAULT_OVERRIDES = {
 };
 /* ------------------------------------------------------------------ */
 
-
-
-describe('Reports', () => {
-
-  describe('basic render smoke-test', () => {
-    it.skip('renders without crashing (replace skip when implemented)', async () => {
-      renderWithMocks(
-        <Reports  />,
-        DEFAULT_OVERRIDES
-      );
+describe("Reports", () => {
+  describe("basic render smoke-test", () => {
+    it.skip("renders without crashing (replace skip when implemented)", async () => {
+      renderWithMocks(<Reports />, DEFAULT_OVERRIDES);
       /* TODO: add reasonable assertion */
       expect(
-        await screen.findByRole('document', {}, { timeout: 2000 })
+        await screen.findByRole("document", {}, { timeout: 2000 })
       ).toBeTruthy();
     });
 
-    
-
-    it.skip('should have correct accessibility attributes', () => {
+    it.skip("should have correct accessibility attributes", () => {
       // TODO: Test accessibility features
-      
       // TODO add accessibility assertions
-
     });
   });
 
-  describe('User Interactions', () => {
-    
-
-    
-
-    it.skip('should handle user events', async () => {
+  describe("User Interactions", () => {
+    it.skip("should handle user events", async () => {
       const user = userEvent.setup();
       void user;
       // TODO: interaction assertions
-
     });
   });
 
-  describe('API Integration', () => {
-    it.skip('should handle API calls', async () => {
+  describe("API Integration", () => {
+    it.skip("should handle API calls", async () => {
       // TODO: Test API integration
-      
       // TODO: API integration assertions
     });
 
-    it.skip('should handle loading states', () => {
+    it.skip("should handle loading states", () => {
       // TODO: Test loading states
-      
       // TODO: loading states assertions
     });
 
-    it.skip('should handle error states', () => {
+    it.skip("should handle error states", () => {
       // TODO: Test error handling
-      
       // TODO: error handling assertions
     });
   });
 
-  describe('Navigation', () => {
-    it.skip('should handle navigation', () => {
+  describe("Navigation", () => {
+    it.skip("should handle navigation", () => {
       // TODO: Test navigation behavior
-      
       // TODO: navigation assertions
     });
   });
 
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
+  describe("Edge Cases", () => {
+    it.skip("should handle edge cases gracefully", () => {
       // TODO: Test edge cases and error scenarios
-      
       // TODO: edge-case assertions
-
     });
-
-    
   });
 });
 
 /*
  * Component Analysis for Reports:
  * Path: analytics/report/Reports.tsx
- * 
+ *
  * Features detected:
  * - Default export: true
  * - Named exports: ReportOptions
@@ -130,20 +105,20 @@ describe('Reports', () => {
  * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
- * 
+ *
  * TODO: Implement the failing tests above with actual test logic
- * 
+ *
  * Example implementations:
- * 
+ *
  * Basic rendering:
  * render(<Reports />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
+ *
  * Props testing:
  * const props = { ... };
  * render(<Reports {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
+ *
  * User interaction:
  * const button = screen.getByRole('button');
  * await user.click(button);
