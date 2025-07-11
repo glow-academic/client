@@ -1,374 +1,590 @@
-import { vi } from 'vitest';
-import * as mockSchema from '@/mocks/schema';
+// Centralized mock module for all query functions
+// This file is imported once in test setup and contains all vi.mock() calls for queries
 
-// Generated automatically by generate-mocks.js
+import { vi } from "vitest";
 
-// ACCOUNTS QUERIES
-vi.mock('@/utils/queries/accounts/get-account', () => ({
-  getAccount: vi.fn(() => mockSchema.accounts?.[0] || null),
-}));
-vi.mock('@/utils/queries/accounts/get-all-accounts', () => ({
-  getAllAccounts: vi.fn(() => mockSchema.accounts || []),
+// Mock all query modules with vi.mock() calls
+vi.mock("@/utils/queries/accounts/get-account-by-id", () => ({
+  getAccountById: vi.fn(),
 }));
 
-// AGENTS QUERIES
-vi.mock('@/utils/queries/agents/get-agent', () => ({
-  getAgent: vi.fn(() => mockSchema.agents?.[0] || null),
-}));
-vi.mock('@/utils/queries/agents/get-agents-by-model', () => ({
-  getAgentsByModel: vi.fn(() => mockSchema.agents || []),
-}));
-vi.mock('@/utils/queries/agents/get-agents-by-models', () => ({
-  getAgentsByModels: vi.fn(() => mockSchema.agents || []),
-}));
-vi.mock('@/utils/queries/agents/get-all-agents', () => ({
-  getAllAgents: vi.fn(() => mockSchema.agents || []),
+vi.mock("@/utils/queries/accounts/get-accounts", () => ({
+  getAccounts: vi.fn(),
 }));
 
-// APP_LOGS QUERIES
-vi.mock('@/utils/queries/app_logs/get-all-app-logs', () => ({
-  getAllAppLogs: vi.fn(() => mockSchema.appLogs || []),
-}));
-vi.mock('@/utils/queries/app_logs/get-app-log', () => ({
-  getAppLog: vi.fn(() => mockSchema.appLogs?.[0] || null),
+vi.mock("@/utils/queries/agents/get-agent-by-id", () => ({
+  getAgentById: vi.fn(),
 }));
 
-// ASSISTANT_CHATS QUERIES
-vi.mock('@/utils/queries/assistant_chats/get-all-assistant-chats', () => ({
-  getAllAssistantChats: vi.fn(() => mockSchema.assistantChats || []),
-}));
-vi.mock('@/utils/queries/assistant_chats/get-assistant-chat', () => ({
-  getAssistantChat: vi.fn(() => mockSchema.assistantChats?.[0] || null),
-}));
-vi.mock('@/utils/queries/assistant_chats/get-assistant-chats-by-profile', () => ({
-  getAssistantChatsByProfile: vi.fn(() => mockSchema.assistantChats || []),
-}));
-vi.mock('@/utils/queries/assistant_chats/get-assistant-chats-by-profiles', () => ({
-  getAssistantChatsByProfiles: vi.fn(() => mockSchema.assistantChats || []),
+vi.mock("@/utils/queries/agents/get-agents", () => ({
+  getAgents: vi.fn(),
 }));
 
-// ASSISTANT_MESSAGES QUERIES
-vi.mock('@/utils/queries/assistant_messages/get-all-assistant-messages', () => ({
-  getAllAssistantMessages: vi.fn(() => mockSchema.assistantMessages || []),
-}));
-vi.mock('@/utils/queries/assistant_messages/get-assistant-message', () => ({
-  getAssistantMessage: vi.fn(() => mockSchema.assistantMessages?.[0] || null),
-}));
-vi.mock('@/utils/queries/assistant_messages/get-assistant-messages-by-chat', () => ({
-  getAssistantMessagesByChat: vi.fn(() => mockSchema.assistantMessages || []),
-}));
-vi.mock('@/utils/queries/assistant_messages/get-assistant-messages-by-chats', () => ({
-  getAssistantMessagesByChats: vi.fn(() => mockSchema.assistantMessages || []),
+vi.mock("@/utils/queries/agents/get-agents-by-profile-id", () => ({
+  getAgentsByProfileId: vi.fn(),
 }));
 
-// ASSISTANT_TOOL_CALLS QUERIES
-vi.mock('@/utils/queries/assistant_tool_calls/get-all-assistant-tool-calls', () => ({
-  getAllAssistantToolCalls: vi.fn(() => mockSchema.assistantToolCalls || []),
-}));
-vi.mock('@/utils/queries/assistant_tool_calls/get-assistant-tool-call', () => ({
-  getAssistantToolCall: vi.fn(() => mockSchema.assistantToolCalls?.[0] || null),
-}));
-vi.mock('@/utils/queries/assistant_tool_calls/get-assistant-tool-calls-by-chat', () => ({
-  getAssistantToolCallsByChat: vi.fn(() => mockSchema.assistantToolCalls || []),
-}));
-vi.mock('@/utils/queries/assistant_tool_calls/get-assistant-tool-calls-by-chats', () => ({
-  getAssistantToolCallsByChats: vi.fn(() => mockSchema.assistantToolCalls || []),
+vi.mock("@/utils/queries/agents/get-agents-by-scenario-id", () => ({
+  getAgentsByScenarioId: vi.fn(),
 }));
 
-// CLASSES QUERIES
-vi.mock('@/utils/queries/classes/get-all-classes', () => ({
-  getAllClasses: vi.fn(() => mockSchema.classes || []),
-}));
-vi.mock('@/utils/queries/classes/get-class', () => ({
-  getClass: vi.fn(() => mockSchema.classes?.[0] || null),
+vi.mock("@/utils/queries/agents/get-agents-by-simulation-id", () => ({
+  getAgentsBySimulationId: vi.fn(),
 }));
 
-// COHORTS QUERIES
-vi.mock('@/utils/queries/cohorts/get-all-cohorts', () => ({
-  getAllCohorts: vi.fn(() => mockSchema.cohorts || []),
-}));
-vi.mock('@/utils/queries/cohorts/get-cohort', () => ({
-  getCohort: vi.fn(() => mockSchema.cohorts?.[0] || null),
+vi.mock("@/utils/queries/agents/get-agents-by-user-id", () => ({
+  getAgentsByUserId: vi.fn(),
 }));
 
-// COMPONENTS QUERIES
-vi.mock('@/utils/queries/components/get-all-components', () => ({
-  getAllComponents: vi.fn(() => mockSchema.components || []),
-}));
-vi.mock('@/utils/queries/components/get-component', () => ({
-  getComponent: vi.fn(() => mockSchema.components?.[0] || null),
+vi.mock("@/utils/queries/agents/get-agents-with-profiles", () => ({
+  getAgentsWithProfiles: vi.fn(),
 }));
 
-// DASHBOARDS QUERIES
-vi.mock('@/utils/queries/dashboards/get-all-dashboards', () => ({
-  getAllDashboards: vi.fn(() => mockSchema.dashboards || []),
-}));
-vi.mock('@/utils/queries/dashboards/get-dashboard', () => ({
-  getDashboard: vi.fn(() => mockSchema.dashboards?.[0] || null),
-}));
-vi.mock('@/utils/queries/dashboards/get-dashboards-by-profile', () => ({
-  getDashboardsByProfile: vi.fn(() => mockSchema.dashboards || []),
-}));
-vi.mock('@/utils/queries/dashboards/get-dashboards-by-profiles', () => ({
-  getDashboardsByProfiles: vi.fn(() => mockSchema.dashboards || []),
+vi.mock("@/utils/queries/agents/get-agents-with-scenarios", () => ({
+  getAgentsWithScenarios: vi.fn(),
 }));
 
-// DOCUMENTS QUERIES
-vi.mock('@/utils/queries/documents/get-all-documents', () => ({
-  getAllDocuments: vi.fn(() => mockSchema.documents || []),
-}));
-vi.mock('@/utils/queries/documents/get-document', () => ({
-  getDocument: vi.fn(() => mockSchema.documents?.[0] || null),
-}));
-vi.mock('@/utils/queries/documents/get-documents-by-class', () => ({
-  getDocumentsByClass: vi.fn(() => mockSchema.documents || []),
+vi.mock("@/utils/queries/app_feedback/get-app-feedback", () => ({
+  getAppFeedback: vi.fn(),
 }));
 
-// EVENTS QUERIES
-vi.mock('@/utils/queries/events/get-all-events', () => ({
-  getAllEvents: vi.fn(() => mockSchema.events || []),
-}));
-vi.mock('@/utils/queries/events/get-event', () => ({
-  getEvent: vi.fn(() => mockSchema.events?.[0] || null),
-}));
-vi.mock('@/utils/queries/events/get-events-by-schedule', () => ({
-  getEventsBySchedule: vi.fn(() => mockSchema.events || []),
-}));
-vi.mock('@/utils/queries/events/get-events-by-schedules', () => ({
-  getEventsBySchedules: vi.fn(() => mockSchema.events || []),
+vi.mock("@/utils/queries/app_feedback/get-app-feedback-by-id", () => ({
+  getAppFeedbackById: vi.fn(),
 }));
 
-// MODELS QUERIES
-vi.mock('@/utils/queries/models/get-all-models', () => ({
-  getAllModels: vi.fn(() => mockSchema.models || []),
-}));
-vi.mock('@/utils/queries/models/get-model', () => ({
-  getModel: vi.fn(() => mockSchema.models?.[0] || null),
+vi.mock("@/utils/queries/app_feedback/get-app-feedback-by-profile-id", () => ({
+  getAppFeedbackByProfileId: vi.fn(),
 }));
 
-// PROFILES QUERIES
-vi.mock('@/utils/queries/profiles/get-all-profiles', () => ({
-  getAllProfiles: vi.fn(() => mockSchema.profiles || []),
-}));
-vi.mock('@/utils/queries/profiles/get-profile', () => ({
-  getProfile: vi.fn(() => mockSchema.profiles?.[0] || null),
-}));
-vi.mock('@/utils/queries/profiles/get-profiles-by-user', () => ({
-  getProfilesByUser: vi.fn(() => mockSchema.profiles || []),
-}));
-vi.mock('@/utils/queries/profiles/get-profiles-by-users', () => ({
-  getProfilesByUsers: vi.fn(() => mockSchema.profiles || []),
+vi.mock("@/utils/queries/app_feedback/get-app-feedback-by-user-id", () => ({
+  getAppFeedbackByUserId: vi.fn(),
 }));
 
-// PROVIDERS QUERIES
-vi.mock('@/utils/queries/providers/get-all-providers', () => ({
-  getAllProviders: vi.fn(() => mockSchema.providers || []),
-}));
-vi.mock('@/utils/queries/providers/get-provider', () => ({
-  getProvider: vi.fn(() => mockSchema.providers?.[0] || null),
+vi.mock("@/utils/queries/app_logs/get-app-logs", () => ({
+  getAppLogs: vi.fn(),
 }));
 
-// RUBRICS QUERIES
-vi.mock('@/utils/queries/rubrics/get-all-rubrics', () => ({
-  getAllRubrics: vi.fn(() => mockSchema.rubrics || []),
-}));
-vi.mock('@/utils/queries/rubrics/get-rubric', () => ({
-  getRubric: vi.fn(() => mockSchema.rubrics?.[0] || null),
+vi.mock("@/utils/queries/app_logs/get-app-logs-by-profile-id", () => ({
+  getAppLogsByProfileId: vi.fn(),
 }));
 
-// SCENARIOS QUERIES
-vi.mock('@/utils/queries/scenarios/get-all-scenarios', () => ({
-  getAllScenarios: vi.fn(() => mockSchema.scenarios || []),
-}));
-vi.mock('@/utils/queries/scenarios/get-scenario', () => ({
-  getScenario: vi.fn(() => mockSchema.scenarios?.[0] || null),
-}));
-vi.mock('@/utils/queries/scenarios/get-scenarios-by-agent', () => ({
-  getScenariosByAgent: vi.fn(() => mockSchema.scenarios || []),
-}));
-vi.mock('@/utils/queries/scenarios/get-scenarios-by-agents', () => ({
-  getScenariosByAgents: vi.fn(() => mockSchema.scenarios || []),
-}));
-vi.mock('@/utils/queries/scenarios/get-scenarios-by-class', () => ({
-  getScenariosByClass: vi.fn(() => mockSchema.scenarios || []),
+vi.mock("@/utils/queries/assistant_chats/get-assistant-chat-by-id", () => ({
+  getAssistantChatById: vi.fn(),
 }));
 
-// SCHEDULES QUERIES
-vi.mock('@/utils/queries/schedules/get-all-schedules', () => ({
-  getAllSchedules: vi.fn(() => mockSchema.schedules || []),
-}));
-vi.mock('@/utils/queries/schedules/get-schedule', () => ({
-  getSchedule: vi.fn(() => mockSchema.schedules?.[0] || null),
-}));
-vi.mock('@/utils/queries/schedules/get-schedules-by-class', () => ({
-  getSchedulesByClass: vi.fn(() => mockSchema.schedules || []),
+vi.mock("@/utils/queries/assistant_chats/get-assistant-chats", () => ({
+  getAssistantChats: vi.fn(),
 }));
 
-// SESSIONS QUERIES
-vi.mock('@/utils/queries/sessions/get-all-sessions', () => ({
-  getAllSessions: vi.fn(() => mockSchema.sessions || []),
-}));
-vi.mock('@/utils/queries/sessions/get-session', () => ({
-  getSession: vi.fn(() => mockSchema.sessions?.[0] || null),
+vi.mock(
+  "@/utils/queries/assistant_chats/get-assistant-chats-by-profile-id",
+  () => ({
+    getAssistantChatsByProfileId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/assistant_chats/get-assistant-chats-by-user-id",
+  () => ({
+    getAssistantChatsByUserId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/assistant_messages/get-assistant-message-by-id",
+  () => ({
+    getAssistantMessageById: vi.fn(),
+  })
+);
+
+vi.mock("@/utils/queries/assistant_messages/get-assistant-messages", () => ({
+  getAssistantMessages: vi.fn(),
 }));
 
-// SIMULATION_ATTEMPTS QUERIES
-vi.mock('@/utils/queries/simulation_attempts/get-all-simulation-attempts', () => ({
-  getAllSimulationAttempts: vi.fn(() => mockSchema.simulationAttempts || []),
-}));
-vi.mock('@/utils/queries/simulation_attempts/get-simulation-attempt', () => ({
-  getSimulationAttempt: vi.fn(() => mockSchema.simulationAttempts?.[0] || null),
-}));
-vi.mock('@/utils/queries/simulation_attempts/get-simulation-attempts-by-profile', () => ({
-  getSimulationAttemptsByProfile: vi.fn(() => mockSchema.simulationAttempts || []),
-}));
-vi.mock('@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles', () => ({
-  getSimulationAttemptsByProfiles: vi.fn(() => mockSchema.simulationAttempts || []),
-}));
-vi.mock('@/utils/queries/simulation_attempts/get-simulation-attempts-by-simulation', () => ({
-  getSimulationAttemptsBySimulation: vi.fn(() => mockSchema.simulationAttempts || []),
-}));
-vi.mock('@/utils/queries/simulation_attempts/get-simulation-attempts-by-simulations', () => ({
-  getSimulationAttemptsBySimulations: vi.fn(() => mockSchema.simulationAttempts || []),
+vi.mock(
+  "@/utils/queries/assistant_messages/get-assistant-messages-by-assistant-chat-id",
+  () => ({
+    getAssistantMessagesByAssistantChatId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/assistant_messages/get-assistant-messages-by-profile-id",
+  () => ({
+    getAssistantMessagesByProfileId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/assistant_tool_calls/get-assistant-tool-call-by-id",
+  () => ({
+    getAssistantToolCallById: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/assistant_tool_calls/get-assistant-tool-calls",
+  () => ({
+    getAssistantToolCalls: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/assistant_tool_calls/get-assistant-tool-calls-by-assistant-message-id",
+  () => ({
+    getAssistantToolCallsByAssistantMessageId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/assistant_tool_calls/get-assistant-tool-calls-by-profile-id",
+  () => ({
+    getAssistantToolCallsByProfileId: vi.fn(),
+  })
+);
+
+vi.mock("@/utils/queries/classes/get-class-by-id", () => ({
+  getClassById: vi.fn(),
 }));
 
-// SIMULATION_CHAT_FEEDBACKS QUERIES
-vi.mock('@/utils/queries/simulation_chat_feedbacks/get-all-simulation-chat-feedbacks', () => ({
-  getAllSimulationChatFeedbacks: vi.fn(() => mockSchema.simulationChatFeedbacks || []),
-}));
-vi.mock('@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedback', () => ({
-  getSimulationChatFeedback: vi.fn(() => mockSchema.simulationChatFeedbacks?.[0] || null),
-}));
-vi.mock('@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrade', () => ({
-  getSimulationChatFeedbacksBySimulationchatgrade: vi.fn(() => mockSchema.simulationChatFeedbacks || []),
-}));
-vi.mock('@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades', () => ({
-  getSimulationChatFeedbacksBySimulationchatgrades: vi.fn(() => mockSchema.simulationChatFeedbacks || []),
-}));
-vi.mock('@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-standard', () => ({
-  getSimulationChatFeedbacksByStandard: vi.fn(() => mockSchema.simulationChatFeedbacks || []),
-}));
-vi.mock('@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-standards', () => ({
-  getSimulationChatFeedbacksByStandards: vi.fn(() => mockSchema.simulationChatFeedbacks || []),
+vi.mock("@/utils/queries/classes/get-classes", () => ({
+  getClasses: vi.fn(),
 }));
 
-// SIMULATION_CHAT_GRADES QUERIES
-vi.mock('@/utils/queries/simulation_chat_grades/get-all-simulation-chat-grades', () => ({
-  getAllSimulationChatGrades: vi.fn(() => mockSchema.simulationChatGrades || []),
-}));
-vi.mock('@/utils/queries/simulation_chat_grades/get-simulation-chat-grade', () => ({
-  getSimulationChatGrade: vi.fn(() => mockSchema.simulationChatGrades?.[0] || null),
-}));
-vi.mock('@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-rubric', () => ({
-  getSimulationChatGradesByRubric: vi.fn(() => mockSchema.simulationChatGrades || []),
-}));
-vi.mock('@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-rubrics', () => ({
-  getSimulationChatGradesByRubrics: vi.fn(() => mockSchema.simulationChatGrades || []),
-}));
-vi.mock('@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchat', () => ({
-  getSimulationChatGradesBySimulationchat: vi.fn(() => mockSchema.simulationChatGrades || []),
-}));
-vi.mock('@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats', () => ({
-  getSimulationChatGradesBySimulationchats: vi.fn(() => mockSchema.simulationChatGrades || []),
+vi.mock("@/utils/queries/cohorts/get-cohort-by-id", () => ({
+  getCohortById: vi.fn(),
 }));
 
-// SIMULATION_CHATS QUERIES
-vi.mock('@/utils/queries/simulation_chats/get-all-simulation-chats', () => ({
-  getAllSimulationChats: vi.fn(() => mockSchema.simulationChats || []),
-}));
-vi.mock('@/utils/queries/simulation_chats/get-simulation-chat', () => ({
-  getSimulationChat: vi.fn(() => mockSchema.simulationChats?.[0] || null),
-}));
-vi.mock('@/utils/queries/simulation_chats/get-simulation-chats-by-attempt', () => ({
-  getSimulationChatsByAttempt: vi.fn(() => mockSchema.simulationChats || []),
-}));
-vi.mock('@/utils/queries/simulation_chats/get-simulation-chats-by-attempts', () => ({
-  getSimulationChatsByAttempts: vi.fn(() => mockSchema.simulationChats || []),
-}));
-vi.mock('@/utils/queries/simulation_chats/get-simulation-chats-by-scenario', () => ({
-  getSimulationChatsByScenario: vi.fn(() => mockSchema.simulationChats || []),
-}));
-vi.mock('@/utils/queries/simulation_chats/get-simulation-chats-by-scenarios', () => ({
-  getSimulationChatsByScenarios: vi.fn(() => mockSchema.simulationChats || []),
+vi.mock("@/utils/queries/cohorts/get-cohorts", () => ({
+  getCohorts: vi.fn(),
 }));
 
-// SIMULATION_MESSAGES QUERIES
-vi.mock('@/utils/queries/simulation_messages/get-all-simulation-messages', () => ({
-  getAllSimulationMessages: vi.fn(() => mockSchema.simulationMessages || []),
-}));
-vi.mock('@/utils/queries/simulation_messages/get-simulation-message', () => ({
-  getSimulationMessage: vi.fn(() => mockSchema.simulationMessages?.[0] || null),
-}));
-vi.mock('@/utils/queries/simulation_messages/get-simulation-messages-by-chat', () => ({
-  getSimulationMessagesByChat: vi.fn(() => mockSchema.simulationMessages || []),
-}));
-vi.mock('@/utils/queries/simulation_messages/get-simulation-messages-by-chats', () => ({
-  getSimulationMessagesByChats: vi.fn(() => mockSchema.simulationMessages || []),
+vi.mock("@/utils/queries/components/get-component-by-id", () => ({
+  getComponentById: vi.fn(),
 }));
 
-// SIMULATIONS QUERIES
-vi.mock('@/utils/queries/simulations/get-all-simulations', () => ({
-  getAllSimulations: vi.fn(() => mockSchema.simulations || []),
-}));
-vi.mock('@/utils/queries/simulations/get-simulation', () => ({
-  getSimulation: vi.fn(() => mockSchema.simulations?.[0] || null),
-}));
-vi.mock('@/utils/queries/simulations/get-simulations-by-rubric', () => ({
-  getSimulationsByRubric: vi.fn(() => mockSchema.simulations || []),
-}));
-vi.mock('@/utils/queries/simulations/get-simulations-by-rubrics', () => ({
-  getSimulationsByRubrics: vi.fn(() => mockSchema.simulations || []),
+vi.mock("@/utils/queries/components/get-components", () => ({
+  getComponents: vi.fn(),
 }));
 
-// STANDARD_GROUPS QUERIES
-vi.mock('@/utils/queries/standard_groups/get-all-standard-groups', () => ({
-  getAllStandardGroups: vi.fn(() => mockSchema.standardGroups || []),
-}));
-vi.mock('@/utils/queries/standard_groups/get-standard-group', () => ({
-  getStandardGroup: vi.fn(() => mockSchema.standardGroups?.[0] || null),
-}));
-vi.mock('@/utils/queries/standard_groups/get-standard-groups-by-rubric', () => ({
-  getStandardGroupsByRubric: vi.fn(() => mockSchema.standardGroups || []),
-}));
-vi.mock('@/utils/queries/standard_groups/get-standard-groups-by-rubrics', () => ({
-  getStandardGroupsByRubrics: vi.fn(() => mockSchema.standardGroups || []),
+vi.mock("@/utils/queries/dashboards/get-dashboard-by-id", () => ({
+  getDashboardById: vi.fn(),
 }));
 
-// STANDARDS QUERIES
-vi.mock('@/utils/queries/standards/get-all-standards', () => ({
-  getAllStandards: vi.fn(() => mockSchema.standards || []),
-}));
-vi.mock('@/utils/queries/standards/get-standard', () => ({
-  getStandard: vi.fn(() => mockSchema.standards?.[0] || null),
-}));
-vi.mock('@/utils/queries/standards/get-standards-by-standardgroup', () => ({
-  getStandardsByStandardgroup: vi.fn(() => mockSchema.standards || []),
-}));
-vi.mock('@/utils/queries/standards/get-standards-by-standardgroups', () => ({
-  getStandardsByStandardgroups: vi.fn(() => mockSchema.standards || []),
+vi.mock("@/utils/queries/dashboards/get-dashboards", () => ({
+  getDashboards: vi.fn(),
 }));
 
-// TOPICS QUERIES
-vi.mock('@/utils/queries/topics/get-all-topics', () => ({
-  getAllTopics: vi.fn(() => mockSchema.topics || []),
-}));
-vi.mock('@/utils/queries/topics/get-topic', () => ({
-  getTopic: vi.fn(() => mockSchema.topics?.[0] || null),
-}));
-vi.mock('@/utils/queries/topics/get-topics-by-class', () => ({
-  getTopicsByClass: vi.fn(() => mockSchema.topics || []),
+vi.mock("@/utils/queries/dashboards/get-dashboards-by-profile-id", () => ({
+  getDashboardsByProfileId: vi.fn(),
 }));
 
-// USERS QUERIES
-vi.mock('@/utils/queries/users/get-all-users', () => ({
-  getAllUsers: vi.fn(() => mockSchema.users || []),
-}));
-vi.mock('@/utils/queries/users/get-user', () => ({
-  getUser: vi.fn(() => mockSchema.users?.[0] || null),
+vi.mock("@/utils/queries/dashboards/get-dashboards-by-user-id", () => ({
+  getDashboardsByUserId: vi.fn(),
 }));
 
-// VERIFICATION_TOKEN QUERIES
-vi.mock('@/utils/queries/verification_token/get-all-verification-token', () => ({
-  getAllVerificationToken: vi.fn(() => mockSchema.verificationToken || []),
+vi.mock("@/utils/queries/documents/get-document-by-id", () => ({
+  getDocumentById: vi.fn(),
 }));
 
+vi.mock("@/utils/queries/documents/get-documents", () => ({
+  getDocuments: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/documents/get-documents-by-profile-id", () => ({
+  getDocumentsByProfileId: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/events/get-event-by-id", () => ({
+  getEventById: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/events/get-events", () => ({
+  getEvents: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/events/get-events-by-profile-id", () => ({
+  getEventsByProfileId: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/events/get-events-by-user-id", () => ({
+  getEventsByUserId: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/models/get-model-by-id", () => ({
+  getModelById: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/models/get-models", () => ({
+  getModels: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/profiles/get-profile-by-alias", () => ({
+  getProfileByAlias: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/profiles/get-profile-by-id", () => ({
+  getProfileById: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/profiles/get-profile-by-user-id", () => ({
+  getProfileByUserId: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/profiles/get-profiles", () => ({
+  getProfiles: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/profiles/get-profiles-by-role", () => ({
+  getProfilesByRole: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/providers/get-provider-by-id", () => ({
+  getProviderById: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/providers/get-providers", () => ({
+  getProviders: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/rubrics/get-rubric-by-id", () => ({
+  getRubricById: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/rubrics/get-rubrics", () => ({
+  getRubrics: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/scenarios/get-scenario-by-id", () => ({
+  getScenarioById: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/scenarios/get-scenarios", () => ({
+  getScenarios: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/scenarios/get-scenarios-by-profile-id", () => ({
+  getScenariosByProfileId: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/scenarios/get-scenarios-by-user-id", () => ({
+  getScenariosByUserId: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/scenarios/get-scenarios-with-profiles", () => ({
+  getScenariosWithProfiles: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/schedules/get-schedule-by-id", () => ({
+  getScheduleById: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/schedules/get-schedules", () => ({
+  getSchedules: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/schedules/get-schedules-by-profile-id", () => ({
+  getSchedulesByProfileId: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/sessions/get-session-by-id", () => ({
+  getSessionById: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/sessions/get-sessions", () => ({
+  getSessions: vi.fn(),
+}));
+
+vi.mock(
+  "@/utils/queries/simulation_attempts/get-simulation-attempt-by-id",
+  () => ({
+    getSimulationAttemptById: vi.fn(),
+  })
+);
+
+vi.mock("@/utils/queries/simulation_attempts/get-simulation-attempts", () => ({
+  getSimulationAttempts: vi.fn(),
+}));
+
+vi.mock(
+  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profile-id",
+  () => ({
+    getSimulationAttemptsByProfileId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-simulation-id",
+  () => ({
+    getSimulationAttemptsBySimulationId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-user-id",
+  () => ({
+    getSimulationAttemptsByUserId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_attempts/get-simulation-attempts-with-profiles",
+  () => ({
+    getSimulationAttemptsWithProfiles: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedback-by-id",
+  () => ({
+    getSimulationChatFeedbackById: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks",
+  () => ({
+    getSimulationChatFeedbacks: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-profile-id",
+  () => ({
+    getSimulationChatFeedbacksByProfileId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulation-chat-id",
+  () => ({
+    getSimulationChatFeedbacksBySimulationChatId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulation-id",
+  () => ({
+    getSimulationChatFeedbacksBySimulationId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-user-id",
+  () => ({
+    getSimulationChatFeedbacksByUserId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grade-by-id",
+  () => ({
+    getSimulationChatGradeById: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades",
+  () => ({
+    getSimulationChatGrades: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-profile-id",
+  () => ({
+    getSimulationChatGradesByProfileId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulation-chat-id",
+  () => ({
+    getSimulationChatGradesBySimulationChatId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulation-id",
+  () => ({
+    getSimulationChatGradesBySimulationId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-user-id",
+  () => ({
+    getSimulationChatGradesByUserId: vi.fn(),
+  })
+);
+
+vi.mock("@/utils/queries/simulation_chats/get-simulation-chat-by-id", () => ({
+  getSimulationChatById: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/simulation_chats/get-simulation-chats", () => ({
+  getSimulationChats: vi.fn(),
+}));
+
+vi.mock(
+  "@/utils/queries/simulation_chats/get-simulation-chats-by-profile-id",
+  () => ({
+    getSimulationChatsByProfileId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_chats/get-simulation-chats-by-simulation-id",
+  () => ({
+    getSimulationChatsBySimulationId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_chats/get-simulation-chats-by-user-id",
+  () => ({
+    getSimulationChatsByUserId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_chats/get-simulation-chats-with-profiles",
+  () => ({
+    getSimulationChatsWithProfiles: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_messages/get-simulation-message-by-id",
+  () => ({
+    getSimulationMessageById: vi.fn(),
+  })
+);
+
+vi.mock("@/utils/queries/simulation_messages/get-simulation-messages", () => ({
+  getSimulationMessages: vi.fn(),
+}));
+
+vi.mock(
+  "@/utils/queries/simulation_messages/get-simulation-messages-by-profile-id",
+  () => ({
+    getSimulationMessagesByProfileId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_messages/get-simulation-messages-by-simulation-chat-id",
+  () => ({
+    getSimulationMessagesBySimulationChatId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_sketches/get-simulation-sketch-by-id",
+  () => ({
+    getSimulationSketchById: vi.fn(),
+  })
+);
+
+vi.mock("@/utils/queries/simulation_sketches/get-simulation-sketches", () => ({
+  getSimulationSketches: vi.fn(),
+}));
+
+vi.mock(
+  "@/utils/queries/simulation_sketches/get-simulation-sketches-by-profile-id",
+  () => ({
+    getSimulationSketchesByProfileId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_sketches/get-simulation-sketches-by-simulation-id",
+  () => ({
+    getSimulationSketchesBySimulationId: vi.fn(),
+  })
+);
+
+vi.mock("@/utils/queries/simulations/get-simulation-by-id", () => ({
+  getSimulationById: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/simulations/get-simulations", () => ({
+  getSimulations: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/simulations/get-simulations-by-profile-id", () => ({
+  getSimulationsByProfileId: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/simulations/get-simulations-by-user-id", () => ({
+  getSimulationsByUserId: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/standard_groups/get-standard-group-by-id", () => ({
+  getStandardGroupById: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/standard_groups/get-standard-groups", () => ({
+  getStandardGroups: vi.fn(),
+}));
+
+vi.mock(
+  "@/utils/queries/standard_groups/get-standard-groups-by-profile-id",
+  () => ({
+    getStandardGroupsByProfileId: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/standard_groups/get-standard-groups-by-user-id",
+  () => ({
+    getStandardGroupsByUserId: vi.fn(),
+  })
+);
+
+vi.mock("@/utils/queries/standards/get-standard-by-id", () => ({
+  getStandardById: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/standards/get-standards", () => ({
+  getStandards: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/standards/get-standards-by-profile-id", () => ({
+  getStandardsByProfileId: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/standards/get-standards-by-user-id", () => ({
+  getStandardsByUserId: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/topics/get-topic-by-id", () => ({
+  getTopicById: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/topics/get-topics", () => ({
+  getTopics: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/topics/get-topics-by-profile-id", () => ({
+  getTopicsByProfileId: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/users/get-user-by-id", () => ({
+  getUserById: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/users/get-users", () => ({
+  getUsers: vi.fn(),
+}));
+
+vi.mock(
+  "@/utils/queries/verification_token/get-verification-token-by-identifier",
+  () => ({
+    getVerificationTokenByIdentifier: vi.fn(),
+  })
+);
+
+// Note: We don't export the actual functions since they're mocked
+// Tests can import the mocked functions directly from their original modules
+// The vi.mock() calls above ensure they get the mocked versions

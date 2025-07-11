@@ -14,7 +14,10 @@
     "lint": "next lint --dir app --dir components --dir utils --dir __tests__ --dir hooks --dir lib --dir contexts",
     "lint:fix": "next lint --fix --dir app --dir components --dir utils --dir __tests__ --dir hooks --dir lib --dir contexts",
     "format": "prettier --write .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:components": "vitest run __tests__"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.9.1",

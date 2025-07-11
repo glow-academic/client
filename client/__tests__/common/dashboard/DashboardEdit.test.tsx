@@ -1,0 +1,153 @@
+import { render } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactNode } from 'react';
+
+// --- auto-generated mocks --------------------------------------------
+import '@/mocks/mutations';
+import '@/mocks/queries';
+import '@/mocks/auth';
+// ---------------------------------------------------------------------
+
+import DashboardEdit from '@/components/common/dashboard/DashboardEdit';
+
+// Mock only WHEN the component calls fetch directly, not when it uses our query helpers
+
+
+describe('DashboardEdit', () => {
+  let queryClient: QueryClient;
+  
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+  });
+
+  const renderWithProviders = (ui: React.ReactElement, options = {}) => {
+    const AllProviders = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    );
+
+    return render(ui, { wrapper: AllProviders, ...options });
+  };
+  
+
+  describe('Rendering', () => {
+    it('should render without crashing', () => {
+      // TODO: Implement basic rendering test for DashboardEdit
+      renderWithProviders(<DashboardEdit />);
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for DashboardEdit
+    });
+
+    
+
+    it('should have correct accessibility attributes', () => {
+      // TODO: Test accessibility features
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for DashboardEdit
+    });
+  });
+
+  describe('User Interactions', () => {
+    
+
+    it('should handle state changes', async () => {
+      // TODO: Test state management
+      const _user = userEvent.setup();
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: State management test for DashboardEdit
+    });
+
+    it('should handle user events', async () => {
+      // TODO: Test click, hover, focus events
+      const _user = userEvent.setup();
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: User events test for DashboardEdit
+    });
+  });
+
+  describe('API Integration', () => {
+    it('should handle API calls', async () => {
+      // TODO: Test API integration
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: API integration test for DashboardEdit
+    });
+
+    it('should handle loading states', () => {
+      // TODO: Test loading states
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Loading states test for DashboardEdit
+    });
+
+    it('should handle error states', () => {
+      // TODO: Test error handling
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Error handling test for DashboardEdit
+    });
+  });
+
+  
+
+  describe('Edge Cases', () => {
+    it('should handle edge cases gracefully', () => {
+      // TODO: Test edge cases and error scenarios
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Edge cases test for DashboardEdit
+    });
+
+    
+  });
+});
+
+/*
+ * Component Analysis for DashboardEdit:
+ * Path: common/dashboard/DashboardEdit.tsx
+ * 
+ * Features detected:
+ * - Default export: true
+ * - Named exports: None
+ * - Has props: false
+ * - Props interface: None detected
+ * - Client component: true
+ * - Uses hooks: used, user, useQuery, useQueryClient, useSession, useCallback, useEffect, useMemo, useState, uselSection, userId, userProfile, usedComponentIds
+ * - Uses router: false
+ * - Has API calls: true
+ * - Has form handling: false
+ * - Uses state: true
+ * - Uses effects: true
+ * - Uses context: false
+ * 
+ * TODO: Implement the failing tests above with actual test logic
+ * 
+ * Example implementations:
+ * 
+ * Basic rendering:
+ * render(<DashboardEdit />);
+ * expect(screen.getByRole('...')).toBeInTheDocument();
+ * 
+ * Props testing:
+ * const props = { ... };
+ * render(<DashboardEdit {...props} />);
+ * expect(screen.getByText(props.someText)).toBeInTheDocument();
+ * 
+ * User interaction:
+ * const button = screen.getByRole('button');
+ * await user.click(button);
+ * expect(mockFunction).toHaveBeenCalled();
+ */

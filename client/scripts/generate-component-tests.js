@@ -63,6 +63,36 @@ function scanComponentFiles(dir, relativePath = "") {
 }
 
 /**
+ * Decide if an import must be mocked and what its mock module id is.
+ * Throw if we hit something we don't know how to handle.
+ */
+function mapImportToMock(specifier) {
+  // 1️⃣ queries
+  const q = specifier.match(/^@\/utils\/queries\/(.+)$/);
+  if (q) return "@/mocks/queries";
+
+  // 2️⃣ mutations
+  const m = specifier.match(/^@\/utils\/mutations\/(.+)$/);
+  if (m) return "@/mocks/mutations";
+
+  // 3️⃣ next.js navigation
+  if (specifier === "next/navigation" || specifier === "next/link")
+    return "@/mocks/navigation";
+
+  // 4️⃣ next-auth
+  if (specifier === "next-auth/react") return "@/mocks/auth";
+
+  // 5️⃣ auth helpers
+  if (specifier.match(/^@\/utils\/auth\/(.+)$/)) return "@/mocks/auth";
+
+  // 6️⃣ contexts
+  if (specifier.match(/^@\/contexts\/(.+)$/)) return "@/mocks/auth";
+
+  // 7️⃣ everything else: leave real module in place
+  return null;
+}
+
+/**
  * Analyze component file to extract props, exports, and hooks
  */
 function analyzeComponent(componentPath) {
@@ -84,6 +114,7 @@ function analyzeComponent(componentPath) {
       usesEffect: /useEffect/.test(content),
       usesContext: /useContext/.test(content),
       hasApiCalls: /fetch\(|axios\.|useSWR|useQuery/.test(content),
+      hasDirectFetch: /[^\/]fetch\(/.test(content),
       hasFormHandling: /onSubmit|useForm|formData/.test(content),
     };
 
@@ -163,7 +194,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';`;
     template += `
 import userEvent from '@testing-library/user-event';`;
   }
-  // Note: We don't import useRouter here since we're mocking it, not using it directly
 
   if (analysis.hasApiCalls) {
     template += `
@@ -176,32 +206,42 @@ import { ReactNode } from 'react';`;
 import { ReactNode } from 'react';`;
   }
 
+  // --- auto-generated mocks --------------------------------------------
+  const autoMockLines = [];
+  const seen = new Set();
+
+  analysis.imports.forEach((imp) => {
+    const mockId = mapImportToMock(imp);
+    if (!mockId) return; // real import, leave it
+    if (seen.has(mockId)) return; // already added
+    seen.add(mockId);
+    autoMockLines.push(`import '${mockId}';`);
+  });
+
+  // If we saw an import we couldn't classify, fail generator so you fix it
+  const unknown = analysis.imports.filter((imp) => {
+    try {
+      return mapImportToMock(imp) === undefined;
+    } catch {
+      return true; // treat errors as unknown
+    }
+  });
+  if (unknown.length) {
+    throw new Error(
+      `🚨 Unmapped import(s) in ${componentPath}: ${unknown.join(", ")}`
+    );
+  }
+
   template += `
+
+// --- auto-generated mocks --------------------------------------------
+${autoMockLines.join("\n")}
+// ---------------------------------------------------------------------
+
 import ${analysis.hasDefaultExport ? componentName : `{ ${analysis.namedExports.join(", ")} }`} from '${importPath}';
 
-// Mock external dependencies
-${
-  analysis.usesRouter
-    ? `vi.mock('next/navigation', () => ({
-  useRouter: vi.fn(() => ({
-    push: vi.fn(),
-    back: vi.fn(),
-    forward: vi.fn(),
-    refresh: vi.fn(),
-    replace: vi.fn(),
-  })),
-  usePathname: vi.fn(() => '/'),
-  useSearchParams: vi.fn(() => new URLSearchParams()),
-}));`
-    : ""
-}
-
-${
-  analysis.hasApiCalls
-    ? `// Mock API calls
-global.fetch = vi.fn();`
-    : ""
-}
+// Mock only WHEN the component calls fetch directly, not when it uses our query helpers
+${analysis.hasDirectFetch ? "global.fetch = vi.fn();" : ""}
 
 describe('${componentName}', () => {
   ${
@@ -481,6 +521,49 @@ function generateTestFiles(components) {
 }
 
 /**
+ * Clean up test files for components that no longer exist
+ */
+function cleanupOrphanedTests(components) {
+  const existingComponentPaths = new Set(
+    components.map((c) => c.componentPath.replace(/\\/g, "/"))
+  );
+
+  let cleanedUp = 0;
+
+  function scanTestDirectory(dir, relativePath = "") {
+    if (!fs.existsSync(dir)) return;
+
+    const items = fs.readdirSync(dir);
+
+    for (const item of items) {
+      const fullPath = path.join(dir, item);
+      const stat = fs.statSync(fullPath);
+
+      if (stat.isDirectory()) {
+        scanTestDirectory(fullPath, path.join(relativePath, item));
+      } else if (item.endsWith(".test.tsx")) {
+        const componentName = item.replace(".test.tsx", "");
+        const expectedComponentPath = path.join(
+          relativePath,
+          `${componentName}.tsx`
+        );
+
+        if (!existingComponentPaths.has(expectedComponentPath)) {
+          console.log(
+            `🗑️  Removing orphaned test: ${path.join(relativePath, item)}`
+          );
+          fs.unlinkSync(fullPath);
+          cleanedUp++;
+        }
+      }
+    }
+  }
+
+  scanTestDirectory(TESTS_DIR);
+  return cleanedUp;
+}
+
+/**
  * Generate coverage report
  */
 function generateCoverageReport(components, stats) {
@@ -648,6 +731,9 @@ function main() {
     console.log(`  - ${comp.componentPath}`);
   });
 
+  console.log("\n🗑️  Cleaning up orphaned tests...");
+  const cleanedUp = cleanupOrphanedTests(components);
+
   console.log("\n📁 Generating test files...");
   const stats = generateTestFiles(components);
 
@@ -655,8 +741,9 @@ function main() {
   console.log(`  ✨ Created: ${stats.created} files`);
   console.log(`  🔄 Updated: ${stats.updated} files`);
   console.log(`  ⏭️  Skipped: ${stats.skipped} files`);
+  console.log(`  🗑️  Cleaned up: ${cleanedUp} orphaned tests`);
 
-  generateCoverageReport(components, stats);
+  generateCoverageReport(components, { ...stats, cleanedUp });
 
   console.log("\n✅ Component test generation complete!");
   console.log(

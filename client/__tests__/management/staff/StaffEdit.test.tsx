@@ -1,0 +1,167 @@
+import { render } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactNode } from 'react';
+
+// --- auto-generated mocks --------------------------------------------
+import '@/mocks/mutations';
+import '@/mocks/queries';
+import '@/mocks/auth';
+import '@/mocks/navigation';
+// ---------------------------------------------------------------------
+
+import StaffEdit from '@/components/management/staff/StaffEdit';
+
+// Mock only WHEN the component calls fetch directly, not when it uses our query helpers
+
+
+describe('StaffEdit', () => {
+  let queryClient: QueryClient;
+  
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+  });
+
+  const renderWithProviders = (ui: React.ReactElement, options = {}) => {
+    const AllProviders = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    );
+
+    return render(ui, { wrapper: AllProviders, ...options });
+  };
+  
+
+  describe('Rendering', () => {
+    it('should render without crashing', () => {
+      // TODO: Implement basic rendering test for StaffEdit
+      renderWithProviders(<StaffEdit />);
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for StaffEdit
+    });
+
+    
+
+    it('should have correct accessibility attributes', () => {
+      // TODO: Test accessibility features
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for StaffEdit
+    });
+  });
+
+  describe('User Interactions', () => {
+    it('should handle form submissions', async () => {
+      // TODO: Test form handling
+      const _user = userEvent.setup();
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Form handling test for StaffEdit
+    });
+
+    it('should handle state changes', async () => {
+      // TODO: Test state management
+      const _user = userEvent.setup();
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: State management test for StaffEdit
+    });
+
+    it('should handle user events', async () => {
+      // TODO: Test click, hover, focus events
+      const _user = userEvent.setup();
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: User events test for StaffEdit
+    });
+  });
+
+  describe('API Integration', () => {
+    it('should handle API calls', async () => {
+      // TODO: Test API integration
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: API integration test for StaffEdit
+    });
+
+    it('should handle loading states', () => {
+      // TODO: Test loading states
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Loading states test for StaffEdit
+    });
+
+    it('should handle error states', () => {
+      // TODO: Test error handling
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Error handling test for StaffEdit
+    });
+  });
+
+  describe('Navigation', () => {
+    it('should handle navigation', () => {
+      // TODO: Test navigation behavior
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Navigation test for StaffEdit
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('should handle edge cases gracefully', () => {
+      // TODO: Test edge cases and error scenarios
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Edge cases test for StaffEdit
+    });
+
+    
+  });
+});
+
+/*
+ * Component Analysis for StaffEdit:
+ * Path: management/staff/StaffEdit.tsx
+ * 
+ * Features detected:
+ * - Default export: true
+ * - Named exports: None
+ * - Has props: false
+ * - Props interface: None detected
+ * - Client component: true
+ * - Uses hooks: user, useQuery, useQueryClient, useSession, useRouter, useEffect, useState, userId
+ * - Uses router: true
+ * - Has API calls: true
+ * - Has form handling: true
+ * - Uses state: true
+ * - Uses effects: true
+ * - Uses context: false
+ * 
+ * TODO: Implement the failing tests above with actual test logic
+ * 
+ * Example implementations:
+ * 
+ * Basic rendering:
+ * render(<StaffEdit />);
+ * expect(screen.getByRole('...')).toBeInTheDocument();
+ * 
+ * Props testing:
+ * const props = { ... };
+ * render(<StaffEdit {...props} />);
+ * expect(screen.getByText(props.someText)).toBeInTheDocument();
+ * 
+ * User interaction:
+ * const button = screen.getByRole('button');
+ * await user.click(button);
+ * expect(mockFunction).toHaveBeenCalled();
+ */

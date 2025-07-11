@@ -1,24 +1,29 @@
+// Global test setup - run once per test session
+// This file imports all centralized mock modules to ensure vi.mock() calls are hoisted
+
 import "@testing-library/jest-dom";
-import { vi } from "vitest";
+
+// Import all centralized mock modules
+import "@/mocks/auth"; // Next-auth and auth helper mocks
+import "@/mocks/mutations"; // All mutation function mocks
+import "@/mocks/navigation"; // Next.js navigation mocks
+import "@/mocks/queries"; // All query function mocks
+
+// Additional global test setup
 import React from "react";
+import { vi } from "vitest";
 
-// Mock Next.js router
-vi.mock("next/navigation", () => ({
-  useRouter: vi.fn(() => ({
-    push: vi.fn(),
-    back: vi.fn(),
-    forward: vi.fn(),
-    refresh: vi.fn(),
-    replace: vi.fn(),
-  })),
-  usePathname: vi.fn(() => "/"),
-  useSearchParams: vi.fn(() => new URLSearchParams()),
-}));
-
-// Mock Next.js image
+// Mock Next.js image component
 vi.mock("next/image", () => ({
-  default: ({ src, alt, ...props }: { src: string; alt: string; [key: string]: unknown }) => {
-     
+  default: ({
+    src,
+    alt,
+    ...props
+  }: {
+    src: string;
+    alt: string;
+    [key: string]: unknown;
+  }) => {
     return React.createElement("img", { src, alt, ...props });
   },
 }));
@@ -37,8 +42,8 @@ Object.defineProperty(window, "matchMedia", {
     matches: false,
     media: query,
     onchange: null,
-    addListener: vi.fn(), // deprecated
-    removeListener: vi.fn(), // deprecated
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
