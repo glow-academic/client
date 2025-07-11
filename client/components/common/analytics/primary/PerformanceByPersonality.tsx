@@ -50,7 +50,7 @@ type ColorTheme =
 type TimeRange = "7d" | "14d" | "30d" | "60d" | "90d";
 type ChartType = "bar";
 
-interface PerformanceByPersonalityProps {
+export interface PerformanceByPersonalityProps {
   color?: ColorTheme;
   defaultTimeRange?: TimeRange;
   chartType?: ChartType;

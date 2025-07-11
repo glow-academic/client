@@ -63,7 +63,7 @@ interface WordTiming {
   end: number;
 }
 
-interface AttemptMessagesProps {
+export interface AttemptMessagesProps {
   chatId?: string;
 }
 

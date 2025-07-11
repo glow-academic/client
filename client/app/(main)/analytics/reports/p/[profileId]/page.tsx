@@ -7,16 +7,16 @@
 
 import { use } from "react";
 
-import type { Metadata, ResolvingMetadata } from "next";
+import Report from "@/components/analytics/report/Report";
 import { getProfile } from "@/utils/queries/profiles/get-profile";
-import Report from "@/components/analytics/Report";
+import type { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ profileId: string }> },
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   // read route params
-  const { profileId } = await params
+  const { profileId } = await params;
 
   const profile = await getProfile(profileId);
 

@@ -41,7 +41,7 @@ type ColorTheme =
   | "indigo";
 type TimeRange = "7d" | "30d" | "90d";
 
-interface TrainingSessionsProps {
+export interface TrainingSessionsProps {
   color?: ColorTheme;
   timeRange?: TimeRange;
   title?: string;

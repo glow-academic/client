@@ -58,7 +58,7 @@ const getRoleInfo = (role: ProfileRole) => {
   return roleInfo[role] || roleInfo.ta;
 };
 
-interface ProfileProps {
+export interface ProfileProps {
   className?: string;
 }
 

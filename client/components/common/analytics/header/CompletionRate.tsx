@@ -41,7 +41,7 @@ type ColorTheme =
   | "indigo";
 type TimeRange = "7d" | "30d" | "90d";
 
-interface CompletionRateProps {
+export interface CompletionRateProps {
   color?: ColorTheme;
   timeRange?: TimeRange;
   title?: string;

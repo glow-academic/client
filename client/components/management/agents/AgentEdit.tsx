@@ -7,6 +7,10 @@
 "use client";
 import Agent from "@/components/common/agent/Agent";
 
-export default function AgentEdit({ agentId }: { agentId: string }) {
+export interface AgentEditProps {
+  agentId: string;
+}
+
+export default function AgentEdit({ agentId }: AgentEditProps) {
   return <Agent agentId={agentId} mode="edit" />;
 }

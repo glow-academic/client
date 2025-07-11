@@ -49,7 +49,7 @@ const radialChartConfig = {
   },
 } satisfies ChartConfig;
 
-interface CohortCompletionProps {
+export interface CohortCompletionProps {
   className?: string;
 }
 

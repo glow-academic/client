@@ -44,7 +44,7 @@ type ColorTheme =
   | "indigo";
 type TimeRange = "7d" | "30d" | "90d";
 
-interface AverageScoreProps {
+export interface AverageScoreProps {
   color?: ColorTheme;
   timeRange?: TimeRange;
   title?: string;

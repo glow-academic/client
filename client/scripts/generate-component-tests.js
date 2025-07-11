@@ -229,15 +229,23 @@ function generateTestTemplate(component, analysis) {
    * ────────────────────────────────────────────────────────── */
   const needsUserEvent =
     analysis.usesState || analysis.hasFormHandling || analysis.usesRouter;
+  const needsVi = analysis.hasDirectFetch; // only true if we call vi.fn()
 
   let template = `import { screen } from '@testing-library/react';
-import { describe, it, expect${needsUserEvent ? ", vi" : ""} } from 'vitest';
+import { describe, it, expect${needsVi ? ", vi" : ""} } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';`;
 
   if (needsUserEvent) {
     template += `
 import userEvent from '@testing-library/user-event';`;
   }
+
+  /* helper to silence "declared but never read" while the test is .skip() */
+  const touch = (v) => (needsUserEvent ? `void ${v};` : "");
+
+  const mockPropLines = analysis.hasProps
+    ? buildMockProps(analysis.content, analysis.propsInterface)
+    : [];
 
   template += `
 
@@ -266,11 +274,28 @@ ${mutationNames.map((m) => `    ${m}: /* TODO */ {},`).join("\n") || "    //"}
 };
 /* ------------------------------------------------------------------ */
 
+${
+  analysis.hasProps
+    ? `
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+import type { ${analysis.propsInterface} } from '${importPath}';
+const mockProps: ${analysis.propsInterface} = {
+${mockPropLines.join("\n")}
+};
+// ------------------------------------------------------------------
+`
+    : ""
+}
+
 describe('${componentName}', () => {
 
   describe('basic render smoke-test', () => {
     it.skip('renders without crashing (replace skip when implemented)', async () => {
-      renderWithMocks(<${componentName} />, DEFAULT_OVERRIDES);
+      renderWithMocks(
+        <${componentName} ${analysis.hasProps ? "{...mockProps}" : ""} />,
+        DEFAULT_OVERRIDES
+      );
       /* TODO: add reasonable assertion */
       expect(
         await screen.findByRole('document', {}, { timeout: 2000 })
@@ -302,9 +327,8 @@ describe('${componentName}', () => {
     ${
       analysis.hasFormHandling
         ? `it.skip('should handle form submissions', async () => {
-      // TODO: Test form handling
-      const _user = userEvent.setup();
-      
+      const user = userEvent.setup();
+      ${touch("user")}
       // TODO: form handling assertions
     });`
         : ""
@@ -313,18 +337,16 @@ describe('${componentName}', () => {
     ${
       analysis.usesState
         ? `it.skip('should handle state changes', async () => {
-      // TODO: Test state management
-      const _user = userEvent.setup();
-      
+      const user = userEvent.setup();
+      ${touch("user")}
       // TODO: state management assertions
     });`
         : ""
     }
 
     it.skip('should handle user events', async () => {
-      // TODO: Test click, hover, focus events
-      const _user = userEvent.setup();
-      
+      const user = userEvent.setup();
+      ${touch("user")}
       // TODO: interaction assertions
 
     });
@@ -735,6 +757,33 @@ function main() {
 // Run if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   main();
+}
+
+/**
+ * Build mock props object from interface definition
+ */
+function buildMockProps(content, iface) {
+  const block = content.match(
+    new RegExp(`interface\\s+${iface}\\s*\\{([\\s\\S]*?)\\}`)
+  );
+  if (!block) return [];
+  return block[1]
+    .split("\n")
+    .map((ln) => ln.trim())
+    .filter(Boolean)
+    .map((ln) => {
+      const [rawName, type] = ln
+        .replace(/;$/, "")
+        .split(":")
+        .map((s) => s.trim());
+      const name = rawName?.replace(/\?$/, ""); // Remove optional marker
+      if (!name) return "";
+      if (type?.startsWith("string")) return `  ${name}: 'test-${name}',`;
+      if (type?.startsWith("number")) return `  ${name}: 0,`;
+      if (type?.startsWith("boolean")) return `  ${name}: false,`;
+      if (/=>|Function/.test(type || "")) return `  ${name}: vi.fn(),`;
+      return `  ${name}: /* TODO <${type}> */ undefined!,`;
+    });
 }
 
 export { generateCoverageReport, generateTestFiles, scanComponentFiles };

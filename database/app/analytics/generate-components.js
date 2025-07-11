@@ -14,7 +14,8 @@ const ANALYTICS_DIR = path.join(
   __dirname,
   "../../../client/components/common/analytics"
 );
-const REGISTRY_PATH = path.join(ANALYTICS_DIR, "Registry.tsx");
+const REGISTRY_DIR = path.join(__dirname, "../../../client/lib");
+const REGISTRY_PATH = path.join(REGISTRY_DIR, "registry.tsx");
 const OUTPUT_SQL = path.join(__dirname, "init.sql");
 
 // Utility functions

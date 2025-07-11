@@ -5,7 +5,7 @@
  * 06/20/2025
  */
 
-import registry from "@/components/common/analytics/Registry";
+import registry from "@/lib/registry";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,7 +49,7 @@ const camelToTitleCase = (str: string): string => {
     .trim();
 };
 
-interface DraggableComponentProps {
+export interface DraggableComponentProps {
   component: {
     id: string;
     name: string;

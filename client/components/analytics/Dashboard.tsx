@@ -7,7 +7,7 @@
  */
 "use client";
 
-import registry from "@/components/common/analytics/Registry";
+import registry from "@/lib/registry";
 import { logError } from "@/utils/logger";
 import { getAllComponents } from "@/utils/queries/components/get-all-components";
 import { getAllDashboards } from "@/utils/queries/dashboards/get-all-dashboards";

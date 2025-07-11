@@ -41,7 +41,7 @@ interface FormData {
   ttsModelId?: string;
 }
 
-interface AgentProps {
+export interface AgentProps {
   agentId?: string;
   mode?: "create" | "edit";
 }

@@ -61,7 +61,7 @@ interface FormErrors {
   description?: string;
 }
 
-interface ClassFormProps {
+export interface ClassFormProps {
   mode: "create" | "edit";
   classId?: string;
   initialData?: Partial<Class>;

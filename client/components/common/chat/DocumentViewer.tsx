@@ -20,7 +20,7 @@ import { Download, FileText } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
-interface DocumentViewerProps {
+export interface DocumentViewerProps {
   document?: Document;
   bare?: boolean;
   classId?: string;

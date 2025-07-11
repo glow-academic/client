@@ -8,7 +8,7 @@
 import { useEffect, useState } from "react";
 import DraggableComponent from "./DraggableComponent";
 
-interface CarouselSectionProps {
+export interface CarouselSectionProps {
   components: string[];
   allComponents: {
     [key: string]: {

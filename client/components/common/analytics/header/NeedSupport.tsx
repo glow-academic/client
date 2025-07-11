@@ -44,7 +44,7 @@ type ColorTheme =
   | "indigo";
 type TimeRange = "7d" | "30d" | "90d";
 
-interface NeedSupportProps {
+export interface NeedSupportProps {
   color?: ColorTheme;
   timeRange?: TimeRange;
   title?: string;

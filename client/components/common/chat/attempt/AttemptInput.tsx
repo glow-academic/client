@@ -30,11 +30,13 @@ import { useWebSocket } from "@/contexts/websocket-context";
 import { logError } from "@/utils/logger";
 import AudioWaveform from "./AudioWaveform";
 
+export interface AttemptInputProps {
+  onToggleSketch: (isExpanding: boolean) => void;
+}
+
 export default function AttemptInput({
   onToggleSketch,
-}: {
-  onToggleSketch: (isExpanding: boolean) => void;
-}) {
+}: AttemptInputProps) {
   const simulationContext = useSimulation();
   const { isConnected, isWebRTCConnected, canUseWebRTC } = useWebSocket();
 

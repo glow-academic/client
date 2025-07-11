@@ -25,7 +25,7 @@ import MarkdownImage from "./MarkdownImage";
 // Removed IconChevronRight
 // Removed Image from 'next/image' unless MarkdownImage specifically needs it and handles it
 
-interface MarkdownProps {
+export interface MarkdownProps {
   children: string;
 }
 
