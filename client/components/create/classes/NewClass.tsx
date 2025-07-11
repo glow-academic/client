@@ -323,8 +323,8 @@ export default function NewClass() {
                   <div className="space-y-2">
                     <h3 className="text-xl font-semibold">Create Manually</h3>
                     <p className="text-muted-foreground">
-                      Set up your class first and add documents later. Perfect
-                      if you want to organize everything step by step.
+                      Set up your class by filling out a form. Perfect if you
+                      want to organize everything step by step.
                     </p>
                   </div>
                 </CardContent>
