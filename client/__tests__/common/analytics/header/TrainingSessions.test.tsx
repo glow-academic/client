@@ -28,10 +28,10 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { TrainingSessionsProps } from '@/components/common/analytics/header/TrainingSessions';
 const mockProps: TrainingSessionsProps = {
-  // color: /* TODO <ColorTheme> */ undefined!,  /* optional */
-  // timeRange: /* TODO <TimeRange> */ undefined!,  /* optional */
-  // title: 'test-title',  /* optional */
-  // showDialog: false,  /* optional */
+  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
+  // timeRange: /* TODO <TimeRange> */ undefined!, /* optional */
+  // title: 'test-title', /* optional */
+  // showDialog: false, /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -126,11 +126,11 @@ describe('TrainingSessions', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: TrainingSessionsProps
  * - Has props: true
  * - Props interface: TrainingSessionsProps
  * - Client component: true
- * - Uses hooks: used, useQuery, useMemo, useState
+ * - Uses hooks: useQuery, useMemo, useState
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

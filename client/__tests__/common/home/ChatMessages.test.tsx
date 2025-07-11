@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
@@ -26,7 +26,7 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { ChatMessagesProps } from '@/components/common/home/ChatMessages';
 const mockProps: ChatMessagesProps = {
-  // onPromptClick: /* TODO <(prompt> */ undefined!,  /* optional */
+  // onPromptClick: vi.fn(), /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -110,7 +110,7 @@ describe('ChatMessages', () => {
  * - Has props: true
  * - Props interface: ChatMessagesProps
  * - Client component: true
- * - Uses hooks: useAssistant, useRole, useQuery, useCallback, useEffect, useRef, user
+ * - Uses hooks: useAssistant, useRole, useQuery, useCallback, useEffect, useRef
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

@@ -30,7 +30,7 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { SimulationProps } from '@/components/common/simulation/Simulation';
 const mockProps: SimulationProps = {
-  // simulationId: 'test-simulationId',  /* optional */
+  // simulationId: 'test-simulationId', /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -139,7 +139,7 @@ describe('Simulation', () => {
  * - Has props: true
  * - Props interface: SimulationProps
  * - Client component: true
- * - Uses hooks: useQuery, useQueryClient, useEffect, useState, useRouter, users
+ * - Uses hooks: useQuery, useQueryClient, useEffect, useState, useRouter
  * - Uses router: true
  * - Has API calls: true
  * - Has form handling: true

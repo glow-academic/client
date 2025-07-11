@@ -30,11 +30,11 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { TrainingInsightsProps } from '@/components/common/analytics/secondary/TrainingInsights';
 const mockProps: TrainingInsightsProps = {
-  // className: 'test-className',  /* optional */
-  // color: /* TODO <ColorTheme> */ undefined!,  /* optional */
-  // maxItems: 0,  /* optional */
-  // title: 'test-title',  /* optional */
-  // layout: /* TODO <Layout> */ undefined!,  /* optional */
+  // className: 'test-className', /* optional */
+  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
+  // maxItems: 0, /* optional */
+  // title: 'test-title', /* optional */
+  // layout: /* TODO <Layout> */ undefined!, /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -114,11 +114,11 @@ describe('TrainingInsights', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: TrainingInsightsProps
  * - Has props: true
  * - Props interface: TrainingInsightsProps
  * - Client component: true
- * - Uses hooks: used, useQuery, useMemo
+ * - Uses hooks: useQuery, useMemo
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

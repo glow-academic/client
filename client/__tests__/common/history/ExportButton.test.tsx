@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import { columnMap, ExportButton, prepareExport } from '@/components/common/history/ExportButton';
+import { ExportButton, ExportButtonProps } from '@/components/common/history/ExportButton';
 
 
 
@@ -22,13 +22,23 @@ const DEFAULT_OVERRIDES = {
 /* ------------------------------------------------------------------ */
 
 
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+import type { ExportButtonProps } from '@/components/common/history/ExportButton';
+const mockProps: ExportButtonProps = {
+  table: {} as unknown as Table<any>,
+  profileOptions: [],
+  classOptions: [],
+};
+// ------------------------------------------------------------------
+
 
 describe('ExportButton', () => {
 
   describe('basic render smoke-test', () => {
     it.skip('renders without crashing (replace skip when implemented)', async () => {
       renderWithMocks(
-        <ExportButton  />,
+        <ExportButton {...mockProps} />,
         DEFAULT_OVERRIDES
       );
       /* TODO: add reasonable assertion */
@@ -37,7 +47,12 @@ describe('ExportButton', () => {
       ).toBeTruthy();
     });
 
-    
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: ExportButtonProps
+      
+      // TODO add props assertions
+    });
 
     it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -76,7 +91,11 @@ describe('ExportButton', () => {
 
     });
 
-    
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
+    });
   });
 });
 
@@ -86,11 +105,11 @@ describe('ExportButton', () => {
  * 
  * Features detected:
  * - Default export: false
- * - Named exports: columnMap, ExportButton, prepareExport
- * - Has props: false
- * - Props interface: None detected
+ * - Named exports: ExportButton, ExportButtonProps
+ * - Has props: true
+ * - Props interface: ExportButtonProps
  * - Client component: true
- * - Uses hooks: useState, username, userId, user
+ * - Uses hooks: useState, username, userId
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false
@@ -103,7 +122,7 @@ describe('ExportButton', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<ExportButton />);
+ * render(<ExportButton {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

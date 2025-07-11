@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import { Profile } from '@/components/profile/Profile';
+import { Profile, ProfileProps } from '@/components/profile/Profile';
 
 
 
@@ -26,7 +26,7 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { ProfileProps } from '@/components/profile/Profile';
 const mockProps: ProfileProps = {
-  // className: 'test-className',  /* optional */
+  // className: 'test-className', /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -106,11 +106,11 @@ describe('Profile', () => {
  * 
  * Features detected:
  * - Default export: false
- * - Named exports: Profile
+ * - Named exports: Profile, ProfileProps
  * - Has props: true
  * - Props interface: ProfileProps
  * - Client component: true
- * - Uses hooks: useQuery, user, useSession, userId
+ * - Uses hooks: useQuery, useSession, userId, user
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

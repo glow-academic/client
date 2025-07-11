@@ -31,11 +31,11 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { ClassPerformanceProps } from '@/components/common/analytics/secondary/ClassPerformance';
 const mockProps: ClassPerformanceProps = {
-  // className: 'test-className',  /* optional */
-  // color: /* TODO <ColorTheme> */ undefined!,  /* optional */
-  // maxItems: 0,  /* optional */
-  // title: 'test-title',  /* optional */
-  // layout: /* TODO <Layout> */ undefined!,  /* optional */
+  // className: 'test-className', /* optional */
+  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
+  // maxItems: 0, /* optional */
+  // title: 'test-title', /* optional */
+  // layout: /* TODO <Layout> */ undefined!, /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -115,7 +115,7 @@ describe('ClassPerformance', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: ClassPerformanceProps
  * - Has props: true
  * - Props interface: ClassPerformanceProps
  * - Client component: true

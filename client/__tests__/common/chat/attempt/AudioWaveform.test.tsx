@@ -27,7 +27,7 @@ import type { AudioWaveformProps } from '@/components/common/chat/attempt/AudioW
 const mockProps: AudioWaveformProps = {
   isRecording: false,
   isTall: false,
-  stream: /* TODO <MediaStream | null; // Stream to visualize> */ undefined!,
+  stream: /* TODO <MediaStream | null> */ undefined!,
 };
 // ------------------------------------------------------------------
 
@@ -89,11 +89,11 @@ describe('AudioWaveform', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: AudioWaveformProps
  * - Has props: true
  * - Props interface: AudioWaveformProps
  * - Client component: false
- * - Uses hooks: uses, useEffect, useRef
+ * - Uses hooks: useEffect, useRef
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false

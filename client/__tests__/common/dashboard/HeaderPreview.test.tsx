@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
@@ -27,6 +27,13 @@ const DEFAULT_OVERRIDES = {
 import type { HeaderPreviewProps } from '@/components/common/dashboard/HeaderPreview';
 const mockProps: HeaderPreviewProps = {
   components: [],
+  allComponents: {},
+  headerComponents: 0,
+  showIndicators: false,
+  autoScroll: false,
+  onRemove: vi.fn(),
+  // onUpdateLayout: vi.fn(), /* optional */
+  onReorder: vi.fn(),
 };
 // ------------------------------------------------------------------
 
@@ -107,7 +114,7 @@ describe('HeaderPreview', () => {
  * - Has props: true
  * - Props interface: HeaderPreviewProps
  * - Client component: false
- * - Uses hooks: used, useEffect, useMemo, useState, usel
+ * - Uses hooks: useEffect, useMemo, useState
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false

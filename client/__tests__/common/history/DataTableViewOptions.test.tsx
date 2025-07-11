@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import { DataTableViewOptions } from '@/components/common/history/DataTableViewOptions';
+import { DataTableViewOptions, DataTableViewOptionsProps } from '@/components/common/history/DataTableViewOptions';
 
 
 
@@ -21,13 +21,22 @@ const DEFAULT_OVERRIDES = {
 /* ------------------------------------------------------------------ */
 
 
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+import type { DataTableViewOptionsProps } from '@/components/common/history/DataTableViewOptions';
+const mockProps: DataTableViewOptionsProps = {
+  table: {} as unknown as Table<any>,
+  // isAdmin: false, /* optional */
+};
+// ------------------------------------------------------------------
+
 
 describe('DataTableViewOptions', () => {
 
   describe('basic render smoke-test', () => {
     it.skip('renders without crashing (replace skip when implemented)', async () => {
       renderWithMocks(
-        <DataTableViewOptions  />,
+        <DataTableViewOptions {...mockProps} />,
         DEFAULT_OVERRIDES
       );
       /* TODO: add reasonable assertion */
@@ -36,7 +45,12 @@ describe('DataTableViewOptions', () => {
       ).toBeTruthy();
     });
 
-    
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: DataTableViewOptionsProps
+      
+      // TODO add props assertions
+    });
 
     it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -60,7 +74,11 @@ describe('DataTableViewOptions', () => {
 
     });
 
-    
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
+    });
   });
 });
 
@@ -70,9 +88,9 @@ describe('DataTableViewOptions', () => {
  * 
  * Features detected:
  * - Default export: false
- * - Named exports: DataTableViewOptions
- * - Has props: false
- * - Props interface: None detected
+ * - Named exports: DataTableViewOptions, DataTableViewOptionsProps
+ * - Has props: true
+ * - Props interface: DataTableViewOptionsProps
  * - Client component: true
  * - Uses hooks: userId, username
  * - Uses router: false
@@ -87,7 +105,7 @@ describe('DataTableViewOptions', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<DataTableViewOptions />);
+ * render(<DataTableViewOptions {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

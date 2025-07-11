@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import { DataTableRowActions } from '@/components/common/history/DataTableRowActions';
+import { DataTableRowActions, DataTableRowActionsProps } from '@/components/common/history/DataTableRowActions';
 
 
 
@@ -87,7 +87,7 @@ describe('DataTableRowActions', () => {
  * 
  * Features detected:
  * - Default export: false
- * - Named exports: DataTableRowActions
+ * - Named exports: DataTableRowActions, DataTableRowActionsProps
  * - Has props: true
  * - Props interface: DataTableRowActionsProps
  * - Client component: true

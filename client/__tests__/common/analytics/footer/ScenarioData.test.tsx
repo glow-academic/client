@@ -30,7 +30,7 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { ScenarioDataProps } from '@/components/common/analytics/footer/ScenarioData';
 const mockProps: ScenarioDataProps = {
-  // className: 'test-className',  /* optional */
+  // className: 'test-className', /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -110,11 +110,11 @@ describe('ScenarioData', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: ScenarioDataProps
  * - Has props: true
  * - Props interface: ScenarioDataProps
  * - Client component: true
- * - Uses hooks: used, useQuery, useMemo
+ * - Uses hooks: useQuery, useMemo
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

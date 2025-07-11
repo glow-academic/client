@@ -33,11 +33,11 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { PerformanceByPersonalityProps } from '@/components/common/analytics/primary/PerformanceByPersonality';
 const mockProps: PerformanceByPersonalityProps = {
-  // color: /* TODO <ColorTheme> */ undefined!,  /* optional */
-  // defaultTimeRange: /* TODO <TimeRange> */ undefined!,  /* optional */
-  // chartType: /* TODO <ChartType> */ undefined!,  /* optional */
-  // title: 'test-title',  /* optional */
-  // showTimeSelector: false,  /* optional */
+  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
+  // defaultTimeRange: /* TODO <TimeRange> */ undefined!, /* optional */
+  // chartType: /* TODO <"bar"> */ undefined!, /* optional */
+  // title: 'test-title', /* optional */
+  // showTimeSelector: false, /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -132,11 +132,11 @@ describe('PerformanceByPersonality', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: PerformanceByPersonalityProps
  * - Has props: true
  * - Props interface: PerformanceByPersonalityProps
  * - Client component: true
- * - Uses hooks: used, useQuery, useMemo, useState
+ * - Uses hooks: useQuery, useMemo, useState
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

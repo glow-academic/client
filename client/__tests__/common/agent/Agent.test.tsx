@@ -28,8 +28,8 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { AgentProps } from '@/components/common/agent/Agent';
 const mockProps: AgentProps = {
-  // agentId: 'test-agentId',  /* optional */
-  // mode: /* TODO <"create" | "edit"> */ undefined!,  /* optional */
+  // agentId: 'test-agentId', /* optional */
+  // mode: 'create', /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -134,7 +134,7 @@ describe('Agent', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: AgentProps
  * - Has props: true
  * - Props interface: AgentProps
  * - Client component: true

@@ -7,6 +7,10 @@
 "use client";
 import Rubric from "@/components/common/rubric/Rubric";
 
-export default function RubricEdit({ rubricId }: { rubricId: string }) {
+export interface RubricEditProps {
+  rubricId: string;
+}
+
+export default function RubricEdit({ rubricId }: RubricEditProps) {
   return <Rubric rubricId={rubricId} mode="edit" showAdvancedFeatures={true} />;
 }

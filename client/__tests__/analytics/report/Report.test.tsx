@@ -113,7 +113,7 @@ describe('Report', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: ReportProps
  * - Has props: true
  * - Props interface: ReportProps
  * - Client component: true

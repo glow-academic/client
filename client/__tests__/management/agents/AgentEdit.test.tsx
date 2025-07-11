@@ -87,7 +87,7 @@ describe('AgentEdit', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: AgentEditProps
  * - Has props: true
  * - Props interface: AgentEditProps
  * - Client component: true

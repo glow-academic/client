@@ -28,11 +28,11 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { SessionActivityProps } from '@/components/common/analytics/primary/SessionActivity';
 const mockProps: SessionActivityProps = {
-  // color: /* TODO <ColorTheme> */ undefined!,  /* optional */
-  // defaultTimeRange: /* TODO <TimeRange> */ undefined!,  /* optional */
-  // chartType: /* TODO <ChartType> */ undefined!,  /* optional */
-  // title: 'test-title',  /* optional */
-  // showTimeSelector: false,  /* optional */
+  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
+  // defaultTimeRange: /* TODO <TimeRange> */ undefined!, /* optional */
+  // chartType: /* TODO <"bar"> */ undefined!, /* optional */
+  // title: 'test-title', /* optional */
+  // showTimeSelector: false, /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -127,11 +127,11 @@ describe('SessionActivity', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: SessionActivityProps
  * - Has props: true
  * - Props interface: SessionActivityProps
  * - Client component: true
- * - Uses hooks: used, useQuery, useMemo, useState
+ * - Uses hooks: useQuery, useMemo, useState
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

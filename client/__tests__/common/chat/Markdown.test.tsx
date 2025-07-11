@@ -61,25 +61,7 @@ describe('Markdown', () => {
 
   
 
-  describe('API Integration', () => {
-    it.skip('should handle API calls', async () => {
-      // TODO: Test API integration
-      
-      // TODO: API integration assertions
-    });
-
-    it.skip('should handle loading states', () => {
-      // TODO: Test loading states
-      
-      // TODO: loading states assertions
-    });
-
-    it.skip('should handle error states', () => {
-      // TODO: Test error handling
-      
-      // TODO: error handling assertions
-    });
-  });
+  
 
   
 
@@ -105,13 +87,13 @@ describe('Markdown', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: MarkdownProps
  * - Has props: true
  * - Props interface: MarkdownProps
  * - Client component: false
- * - Uses hooks: used, useEvent, useQuery, user
+ * - Uses hooks: None
  * - Uses router: false
- * - Has API calls: true
+ * - Has API calls: false
  * - Has form handling: false
  * - Uses state: false
  * - Uses effects: false

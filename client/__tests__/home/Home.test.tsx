@@ -126,7 +126,7 @@ describe('Home', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: useQuery, useRouter, useCallback, useEffect, useMemo, useState, useRole, useWebSocket, user, useSession, useEvent, useRef, uselIndex, userId, users, userCohorts, userCohortIds, usel, usels
+ * - Uses hooks: useQuery, useRouter, useCallback, useEffect, useMemo, useState, useRole, useWebSocket, useSession, useRef, userId, user, userCohorts, userCohortIds
  * - Uses router: true
  * - Has API calls: true
  * - Has form handling: false

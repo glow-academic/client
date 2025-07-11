@@ -29,7 +29,7 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { CohortCompletionProps } from '@/components/common/analytics/footer/CohortCompletion';
 const mockProps: CohortCompletionProps = {
-  // className: 'test-className',  /* optional */
+  // className: 'test-className', /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -124,11 +124,11 @@ describe('CohortCompletion', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: CohortCompletionProps
  * - Has props: true
  * - Props interface: CohortCompletionProps
  * - Client component: true
- * - Uses hooks: used, useQuery, useMemo, useState
+ * - Uses hooks: useQuery, useMemo, useState
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

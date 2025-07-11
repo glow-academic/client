@@ -1,9 +1,10 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
+import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import { DataTableColumnHeader, DataTableColumnHeaderProps } from '@/components/common/history/DataTableColumnHeader';
+import { UnifiedSidebar, UnifiedSidebarProps } from '@/components/common/layout/UnifiedSidebar';
 
 
 
@@ -12,7 +13,7 @@ import { DataTableColumnHeader, DataTableColumnHeaderProps } from '@/components/
  * (feel free to delete ones you don't need in a specific test) */
 const DEFAULT_OVERRIDES = {
   queries: {
-    // 
+    getProfilesByUser: /* TODO */ [],
   },
   mutations: {
     //
@@ -23,10 +24,12 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { DataTableColumnHeaderProps } from '@/components/common/history/DataTableColumnHeader';
-const mockProps: DataTableColumnHeaderProps = {
-  column: /* TODO <Column<TData, TValue>> */ undefined!,
-  title: 'test-title',
+import type { UnifiedSidebarProps } from '@/components/common/layout/UnifiedSidebar';
+const mockProps: UnifiedSidebarProps = {
+  activeSection: 'test-activeSection',
+  // onSectionChange: vi.fn(), /* optional */
+  // ref: /* TODO <Ref<HTMLDivElement> | undefined> */ undefined!, /* optional */
+  // key: /* TODO <Key | null | undefined> */ undefined!, /* optional */
   // defaultChecked: false, /* optional */
   // defaultValue: [], /* optional */
   // suppressContentEditableWarning: false, /* optional */
@@ -39,7 +42,7 @@ const mockProps: DataTableColumnHeaderProps = {
   // contextMenu: 'test-contextMenu', /* optional */
   // dir: 'test-dir', /* optional */
   // draggable: /* TODO <Booleanish | undefined> */ undefined!, /* optional */
-  // enterKeyHint: 'enter', /* optional */
+  // enterKeyHint: 'search', /* optional */
   // hidden: false, /* optional */
   // id: 'test-id', /* optional */
   // lang: 'test-lang', /* optional */
@@ -48,6 +51,7 @@ const mockProps: DataTableColumnHeaderProps = {
   // spellCheck: /* TODO <Booleanish | undefined> */ undefined!, /* optional */
   // style: /* TODO <CSSProperties | undefined> */ undefined!, /* optional */
   // tabIndex: 0, /* optional */
+  // title: 'test-title', /* optional */
   // translate: 'yes', /* optional */
   // radioGroup: 'test-radioGroup', /* optional */
   // role: /* TODO <AriaRole | undefined> */ undefined!, /* optional */
@@ -77,7 +81,7 @@ const mockProps: DataTableColumnHeaderProps = {
   // popoverTargetAction: 'toggle', /* optional */
   // popoverTarget: 'test-popoverTarget', /* optional */
   // inert: false, /* optional */
-  // inputMode: 'none', /* optional */
+  // inputMode: 'search', /* optional */
   // is: 'test-is', /* optional */
   // exportparts: 'test-exportparts', /* optional */
   // part: 'test-part', /* optional */
@@ -93,17 +97,17 @@ const mockProps: DataTableColumnHeaderProps = {
   // aria-colindextext: 'test-aria-colindextext', /* optional */
   // aria-colspan: 0, /* optional */
   // aria-controls: 'test-aria-controls', /* optional */
-  // aria-current: 'true', /* optional */
+  // aria-current: 'time', /* optional */
   // aria-describedby: 'test-aria-describedby', /* optional */
   // aria-description: 'test-aria-description', /* optional */
   // aria-details: 'test-aria-details', /* optional */
   // aria-disabled: /* TODO <Booleanish | undefined> */ undefined!, /* optional */
-  // aria-dropeffect: 'none', /* optional */
+  // aria-dropeffect: 'link', /* optional */
   // aria-errormessage: 'test-aria-errormessage', /* optional */
   // aria-expanded: /* TODO <Booleanish | undefined> */ undefined!, /* optional */
   // aria-flowto: 'test-aria-flowto', /* optional */
   // aria-grabbed: /* TODO <Booleanish | undefined> */ undefined!, /* optional */
-  // aria-haspopup: 'true', /* optional */
+  // aria-haspopup: 'dialog', /* optional */
   // aria-hidden: /* TODO <Booleanish | undefined> */ undefined!, /* optional */
   // aria-invalid: 'true', /* optional */
   // aria-keyshortcuts: 'test-aria-keyshortcuts', /* optional */
@@ -304,16 +308,19 @@ const mockProps: DataTableColumnHeaderProps = {
   // onTransitionRunCapture: /* TODO <TransitionEventHandler<HTMLDivElement> | undefined> */ undefined!, /* optional */
   // onTransitionStart: /* TODO <TransitionEventHandler<HTMLDivElement> | undefined> */ undefined!, /* optional */
   // onTransitionStartCapture: /* TODO <TransitionEventHandler<HTMLDivElement> | undefined> */ undefined!, /* optional */
+  // side: 'left', /* optional */
+  // variant: 'sidebar', /* optional */
+  // collapsible: 'none', /* optional */
 };
 // ------------------------------------------------------------------
 
 
-describe('DataTableColumnHeader', () => {
+describe('UnifiedSidebar', () => {
 
   describe('basic render smoke-test', () => {
     it.skip('renders without crashing (replace skip when implemented)', async () => {
       renderWithMocks(
-        <DataTableColumnHeader {...mockProps} />,
+        <UnifiedSidebar {...mockProps} />,
         DEFAULT_OVERRIDES
       );
       /* TODO: add reasonable assertion */
@@ -324,7 +331,7 @@ describe('DataTableColumnHeader', () => {
 
     it.skip('should render with props', () => {
       // TODO: Test component with various props
-      // Props interface: DataTableColumnHeaderProps
+      // Props interface: UnifiedSidebarProps
       
       // TODO add props assertions
     });
@@ -337,11 +344,50 @@ describe('DataTableColumnHeader', () => {
     });
   });
 
-  
+  describe('User Interactions', () => {
+    
 
-  
+    it.skip('should handle state changes', async () => {
+      const user = userEvent.setup();
+      void user;
+      // TODO: state management assertions
+    });
 
-  
+    it.skip('should handle user events', async () => {
+      const user = userEvent.setup();
+      void user;
+      // TODO: interaction assertions
+
+    });
+  });
+
+  describe('API Integration', () => {
+    it.skip('should handle API calls', async () => {
+      // TODO: Test API integration
+      
+      // TODO: API integration assertions
+    });
+
+    it.skip('should handle loading states', () => {
+      // TODO: Test loading states
+      
+      // TODO: loading states assertions
+    });
+
+    it.skip('should handle error states', () => {
+      // TODO: Test error handling
+      
+      // TODO: error handling assertions
+    });
+  });
+
+  describe('Navigation', () => {
+    it.skip('should handle navigation', () => {
+      // TODO: Test navigation behavior
+      
+      // TODO: navigation assertions
+    });
+  });
 
   describe('Edge Cases', () => {
     it.skip('should handle edge cases gracefully', () => {
@@ -360,20 +406,20 @@ describe('DataTableColumnHeader', () => {
 });
 
 /*
- * Component Analysis for DataTableColumnHeader:
- * Path: common/history/DataTableColumnHeader.tsx
+ * Component Analysis for UnifiedSidebar:
+ * Path: common/layout/UnifiedSidebar.tsx
  * 
  * Features detected:
  * - Default export: false
- * - Named exports: DataTableColumnHeader, DataTableColumnHeaderProps
+ * - Named exports: UnifiedSidebar, UnifiedSidebarProps
  * - Has props: true
- * - Props interface: DataTableColumnHeaderProps
+ * - Props interface: UnifiedSidebarProps
  * - Client component: false
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
+ * - Uses hooks: useRole, useQuery, useQueryClient, useSession, useRouter, userIndex, useState, userId, user, useMemo
+ * - Uses router: true
+ * - Has API calls: true
  * - Has form handling: false
- * - Uses state: false
+ * - Uses state: true
  * - Uses effects: false
  * - Uses context: false
  * 
@@ -382,12 +428,12 @@ describe('DataTableColumnHeader', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<DataTableColumnHeader {...mockProps} />);
+ * render(<UnifiedSidebar {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<DataTableColumnHeader {...props} />);
+ * render(<UnifiedSidebar {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

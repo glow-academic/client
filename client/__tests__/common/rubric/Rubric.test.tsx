@@ -31,9 +31,9 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { RubricProps } from '@/components/common/rubric/Rubric';
 const mockProps: RubricProps = {
-  // rubricId: 'test-rubricId',  /* optional */
-  // mode: /* TODO <"create" | "edit"> */ undefined!,  /* optional */
-  // showAdvancedFeatures: false,  /* optional */
+  // rubricId: 'test-rubricId', /* optional */
+  // mode: 'create', /* optional */
+  // showAdvancedFeatures: false, /* optional */
 };
 // ------------------------------------------------------------------
 

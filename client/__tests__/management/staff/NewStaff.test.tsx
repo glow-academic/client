@@ -119,7 +119,7 @@ describe('NewStaff', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: useQuery, useRouter, user, useSession, useState, userId, useMemo, users, username, used, userCount
+ * - Uses hooks: useQuery, useRouter, useSession, useState, userId, user, useMemo, users, userCount
  * - Uses router: true
  * - Has API calls: true
  * - Has form handling: true

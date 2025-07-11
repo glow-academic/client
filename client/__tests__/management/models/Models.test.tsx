@@ -115,7 +115,7 @@ describe('Models', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: useQuery, useQueryClient, useRouter, useState, user
+ * - Uses hooks: useQuery, useQueryClient, useRouter, useState
  * - Uses router: true
  * - Has API calls: true
  * - Has form handling: false

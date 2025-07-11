@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DraggableComponent from "./DraggableComponent";
 
-interface HeaderPreviewProps {
+export interface HeaderPreviewProps {
   components: string[];
   allComponents: {
     [key: string]: {

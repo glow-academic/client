@@ -30,7 +30,7 @@ const DEFAULT_OVERRIDES = {
 import type { TableRubricProps } from '@/components/common/rubric/TableRubric';
 const mockProps: TableRubricProps = {
   rubricId: 'test-rubricId',
-  // simulationChatId: 'test-simulationChatId',  /* optional */
+  // simulationChatId: 'test-simulationChatId', /* optional */
 };
 // ------------------------------------------------------------------
 

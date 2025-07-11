@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import { ReportsDataTableToolbar } from '@/components/analytics/report/ReportsDataTableToolbar';
+import { ReportsDataTableToolbar, } from '@/components/analytics/report/ReportsDataTableToolbar';
 
 
 
@@ -24,8 +24,17 @@ const DEFAULT_OVERRIDES = {
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
 import type { ReportsDataTableToolbarProps } from '@/components/analytics/report/ReportsDataTableToolbar';
+import { Table } from '@tanstack/react-table';
+import { TAPerformanceData } from '@/hooks/use-report-columns';
 const mockProps: ReportsDataTableToolbarProps = {
-  table: {} as unknown as Table<any>,
+  table: {} as unknown as Table<TAPerformanceData>,
+  performanceOptions: [],
+  classOptions: [],
+  cohortOptions: [],
+  agentOptions: [],
+  scenarioOptions: [],
+  simulationOptions: [],
+  // showExport: false, /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -87,7 +96,7 @@ describe('ReportsDataTableToolbar', () => {
  * 
  * Features detected:
  * - Default export: false
- * - Named exports: ReportsDataTableToolbar
+ * - Named exports: ReportsDataTableToolbar, ReportsDataTableToolbarProps
  * - Has props: true
  * - Props interface: ReportsDataTableToolbarProps
  * - Client component: true

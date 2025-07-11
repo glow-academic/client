@@ -32,11 +32,11 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { SkillBreakdownProps } from '@/components/common/analytics/secondary/SkillBreakdown';
 const mockProps: SkillBreakdownProps = {
-  // className: 'test-className',  /* optional */
-  // color: /* TODO <ColorTheme> */ undefined!,  /* optional */
-  // maxItems: 0,  /* optional */
-  // title: 'test-title',  /* optional */
-  // layout: /* TODO <Layout> */ undefined!,  /* optional */
+  // className: 'test-className', /* optional */
+  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
+  // maxItems: 0, /* optional */
+  // title: 'test-title', /* optional */
+  // layout: /* TODO <Layout> */ undefined!, /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -116,11 +116,11 @@ describe('SkillBreakdown', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: SkillBreakdownProps
  * - Has props: true
  * - Props interface: SkillBreakdownProps
  * - Client component: true
- * - Uses hooks: used, useQuery, useMemo
+ * - Uses hooks: useQuery, useMemo
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

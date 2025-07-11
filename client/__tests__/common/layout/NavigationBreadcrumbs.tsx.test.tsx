@@ -1,10 +1,10 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import report-problem from '@/components/common/layout/report-problem';
+import { NavigationBreadcrumbs, NavigationBreadcrumbsProps } from '@/components/common/layout/NavigationBreadcrumbs.tsx';
 
 
 
@@ -13,10 +13,10 @@ import report-problem from '@/components/common/layout/report-problem';
  * (feel free to delete ones you don't need in a specific test) */
 const DEFAULT_OVERRIDES = {
   queries: {
-    getProfilesByUser: /* TODO */ [],
+    // 
   },
   mutations: {
-    createAppFeedback: /* TODO */ {},
+    //
   },
 };
 /* ------------------------------------------------------------------ */
@@ -24,19 +24,20 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { ReportProblemProps } from '@/components/common/layout/report-problem';
-const mockProps: ReportProblemProps = {
-  // children: /* TODO <React.ReactNode> */ undefined!,  /* optional */
+import type { NavigationBreadcrumbsProps } from '@/components/common/layout/NavigationBreadcrumbs.tsx';
+const mockProps: NavigationBreadcrumbsProps = {
+  breadcrumbs: [],
+  // onSectionChange: vi.fn(), /* optional */
 };
 // ------------------------------------------------------------------
 
 
-describe('report-problem', () => {
+describe('NavigationBreadcrumbs.tsx', () => {
 
   describe('basic render smoke-test', () => {
     it.skip('renders without crashing (replace skip when implemented)', async () => {
       renderWithMocks(
-        <report-problem {...mockProps} />,
+        <NavigationBreadcrumbs.tsx {...mockProps} />,
         DEFAULT_OVERRIDES
       );
       /* TODO: add reasonable assertion */
@@ -47,7 +48,7 @@ describe('report-problem', () => {
 
     it.skip('should render with props', () => {
       // TODO: Test component with various props
-      // Props interface: ReportProblemProps
+      // Props interface: NavigationBreadcrumbsProps
       
       // TODO add props assertions
     });
@@ -61,17 +62,9 @@ describe('report-problem', () => {
   });
 
   describe('User Interactions', () => {
-    it.skip('should handle form submissions', async () => {
-      const user = userEvent.setup();
-      void user;
-      // TODO: form handling assertions
-    });
+    
 
-    it.skip('should handle state changes', async () => {
-      const user = userEvent.setup();
-      void user;
-      // TODO: state management assertions
-    });
+    
 
     it.skip('should handle user events', async () => {
       const user = userEvent.setup();
@@ -81,27 +74,15 @@ describe('report-problem', () => {
     });
   });
 
-  describe('API Integration', () => {
-    it.skip('should handle API calls', async () => {
-      // TODO: Test API integration
-      
-      // TODO: API integration assertions
-    });
+  
 
-    it.skip('should handle loading states', () => {
-      // TODO: Test loading states
+  describe('Navigation', () => {
+    it.skip('should handle navigation', () => {
+      // TODO: Test navigation behavior
       
-      // TODO: loading states assertions
-    });
-
-    it.skip('should handle error states', () => {
-      // TODO: Test error handling
-      
-      // TODO: error handling assertions
+      // TODO: navigation assertions
     });
   });
-
-  
 
   describe('Edge Cases', () => {
     it.skip('should handle edge cases gracefully', () => {
@@ -120,20 +101,20 @@ describe('report-problem', () => {
 });
 
 /*
- * Component Analysis for report-problem:
- * Path: common/layout/report-problem.tsx
+ * Component Analysis for NavigationBreadcrumbs.tsx:
+ * Path: common/layout/NavigationBreadcrumbs.tsx.tsx
  * 
  * Features detected:
- * - Default export: true
- * - Named exports: None
+ * - Default export: false
+ * - Named exports: NavigationBreadcrumbs, NavigationBreadcrumbsProps
  * - Has props: true
- * - Props interface: ReportProblemProps
- * - Client component: true
- * - Uses hooks: user, useMutation, useQuery, useQueryClient, useSession, useState, userId
- * - Uses router: false
- * - Has API calls: true
- * - Has form handling: true
- * - Uses state: true
+ * - Props interface: NavigationBreadcrumbsProps
+ * - Client component: false
+ * - Uses hooks: useRouter
+ * - Uses router: true
+ * - Has API calls: false
+ * - Has form handling: false
+ * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
  * 
@@ -142,12 +123,12 @@ describe('report-problem', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<report-problem {...mockProps} />);
+ * render(<NavigationBreadcrumbs.tsx {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<report-problem {...props} />);
+ * render(<NavigationBreadcrumbs.tsx {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

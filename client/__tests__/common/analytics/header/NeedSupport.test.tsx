@@ -31,10 +31,10 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { NeedSupportProps } from '@/components/common/analytics/header/NeedSupport';
 const mockProps: NeedSupportProps = {
-  // color: /* TODO <ColorTheme> */ undefined!,  /* optional */
-  // timeRange: /* TODO <TimeRange> */ undefined!,  /* optional */
-  // title: 'test-title',  /* optional */
-  // showDialog: false,  /* optional */
+  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
+  // timeRange: /* TODO <TimeRange> */ undefined!, /* optional */
+  // title: 'test-title', /* optional */
+  // showDialog: false, /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -129,11 +129,11 @@ describe('NeedSupport', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: NeedSupportProps
  * - Has props: true
  * - Props interface: NeedSupportProps
  * - Client component: true
- * - Uses hooks: used, useQuery, useMemo, useState
+ * - Uses hooks: useQuery, useMemo, useState
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

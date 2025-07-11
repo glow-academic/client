@@ -31,8 +31,8 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { ScenarioProps } from '@/components/common/scenario/Scenario';
 const mockProps: ScenarioProps = {
-  // scenarioId: 'test-scenarioId',  /* optional */
-  // mode: /* TODO <"create" | "edit"> */ undefined!,  /* optional */
+  // scenarioId: 'test-scenarioId', /* optional */
+  // mode: 'create', /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -141,7 +141,7 @@ describe('Scenario', () => {
  * - Has props: true
  * - Props interface: ScenarioProps
  * - Client component: true
- * - Uses hooks: useQuery, useQueryClient, useRouter, useEffect, useMemo, useState, user, used
+ * - Uses hooks: useQuery, useQueryClient, useRouter, useEffect, useMemo, useState
  * - Uses router: true
  * - Has API calls: true
  * - Has form handling: true

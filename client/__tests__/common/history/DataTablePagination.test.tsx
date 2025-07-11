@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import { DataTablePagination } from '@/components/common/history/DataTablePagination';
+import { DataTablePagination, DataTablePaginationProps } from '@/components/common/history/DataTablePagination';
 
 
 
@@ -21,13 +21,21 @@ const DEFAULT_OVERRIDES = {
 /* ------------------------------------------------------------------ */
 
 
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+import type { DataTablePaginationProps } from '@/components/common/history/DataTablePagination';
+const mockProps: DataTablePaginationProps = {
+  table: {} as unknown as Table<any>,
+};
+// ------------------------------------------------------------------
+
 
 describe('DataTablePagination', () => {
 
   describe('basic render smoke-test', () => {
     it.skip('renders without crashing (replace skip when implemented)', async () => {
       renderWithMocks(
-        <DataTablePagination  />,
+        <DataTablePagination {...mockProps} />,
         DEFAULT_OVERRIDES
       );
       /* TODO: add reasonable assertion */
@@ -36,7 +44,12 @@ describe('DataTablePagination', () => {
       ).toBeTruthy();
     });
 
-    
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: DataTablePaginationProps
+      
+      // TODO add props assertions
+    });
 
     it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -60,7 +73,11 @@ describe('DataTablePagination', () => {
 
     });
 
-    
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
+    });
   });
 });
 
@@ -70,9 +87,9 @@ describe('DataTablePagination', () => {
  * 
  * Features detected:
  * - Default export: false
- * - Named exports: DataTablePagination
- * - Has props: false
- * - Props interface: None detected
+ * - Named exports: DataTablePagination, DataTablePaginationProps
+ * - Has props: true
+ * - Props interface: DataTablePaginationProps
  * - Client component: false
  * - Uses hooks: None
  * - Uses router: false
@@ -87,7 +104,7 @@ describe('DataTablePagination', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<DataTablePagination />);
+ * render(<DataTablePagination {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

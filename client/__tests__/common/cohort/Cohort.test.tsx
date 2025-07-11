@@ -28,7 +28,7 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { CohortProps } from '@/components/common/cohort/Cohort';
 const mockProps: CohortProps = {
-  // cohortId: 'test-cohortId',  /* optional */
+  // cohortId: 'test-cohortId', /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -133,7 +133,7 @@ describe('Cohort', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: CohortProps
  * - Has props: true
  * - Props interface: CohortProps
  * - Client component: true

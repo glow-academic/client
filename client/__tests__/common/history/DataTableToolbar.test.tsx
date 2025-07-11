@@ -1,9 +1,9 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import { DataTableToolbar } from '@/components/common/history/DataTableToolbar';
+import { DataTableToolbar, DataTableToolbarProps } from '@/components/common/history/DataTableToolbar';
 
 
 
@@ -21,13 +21,29 @@ const DEFAULT_OVERRIDES = {
 /* ------------------------------------------------------------------ */
 
 
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+import type { DataTableToolbarProps } from '@/components/common/history/DataTableToolbar';
+const mockProps: DataTableToolbarProps = {
+  table: {} as unknown as Table<any>,
+  profileOptions: [],
+  classOptions: [],
+  scoreRangeOptions: [],
+  // isAdmin: false, /* optional */
+  // dateRange: new Date(), /* optional */
+  // setDateRange: vi.fn(), /* optional */
+  // showExport: false, /* optional */
+  // showAll: false, /* optional */
+};
+// ------------------------------------------------------------------
+
 
 describe('DataTableToolbar', () => {
 
   describe('basic render smoke-test', () => {
     it.skip('renders without crashing (replace skip when implemented)', async () => {
       renderWithMocks(
-        <DataTableToolbar  />,
+        <DataTableToolbar {...mockProps} />,
         DEFAULT_OVERRIDES
       );
       /* TODO: add reasonable assertion */
@@ -36,7 +52,12 @@ describe('DataTableToolbar', () => {
       ).toBeTruthy();
     });
 
-    
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: DataTableToolbarProps
+      
+      // TODO add props assertions
+    });
 
     it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -60,7 +81,11 @@ describe('DataTableToolbar', () => {
 
     });
 
-    
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
+    });
   });
 });
 
@@ -70,9 +95,9 @@ describe('DataTableToolbar', () => {
  * 
  * Features detected:
  * - Default export: false
- * - Named exports: DataTableToolbar
- * - Has props: false
- * - Props interface: None detected
+ * - Named exports: DataTableToolbar, DataTableToolbarProps
+ * - Has props: true
+ * - Props interface: DataTableToolbarProps
  * - Client component: true
  * - Uses hooks: None
  * - Uses router: false
@@ -87,7 +112,7 @@ describe('DataTableToolbar', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<DataTableToolbar />);
+ * render(<DataTableToolbar {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

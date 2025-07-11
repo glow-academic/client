@@ -26,13 +26,21 @@ const DEFAULT_OVERRIDES = {
 /* ------------------------------------------------------------------ */
 
 
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+import type { ClassStatusProps } from '@/components/create/classes/ClassStatus';
+const mockProps: ClassStatusProps = {
+  classId: 'test-classId',
+};
+// ------------------------------------------------------------------
+
 
 describe('ClassStatus', () => {
 
   describe('basic render smoke-test', () => {
     it.skip('renders without crashing (replace skip when implemented)', async () => {
       renderWithMocks(
-        <ClassStatus  />,
+        <ClassStatus {...mockProps} />,
         DEFAULT_OVERRIDES
       );
       /* TODO: add reasonable assertion */
@@ -41,7 +49,12 @@ describe('ClassStatus', () => {
       ).toBeTruthy();
     });
 
-    
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: ClassStatusProps
+      
+      // TODO add props assertions
+    });
 
     it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -98,7 +111,11 @@ describe('ClassStatus', () => {
 
     });
 
-    
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
+    });
   });
 });
 
@@ -109,8 +126,8 @@ describe('ClassStatus', () => {
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Has props: true
+ * - Props interface: ClassStatusProps
  * - Client component: true
  * - Uses hooks: useState, useEffect, useQuery
  * - Uses router: false
@@ -125,7 +142,7 @@ describe('ClassStatus', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<ClassStatus />);
+ * render(<ClassStatus {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

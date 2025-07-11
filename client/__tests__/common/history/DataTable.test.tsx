@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import { DataTable } from '@/components/common/history/DataTable';
+import { DataTable, DataTableProps } from '@/components/common/history/DataTable';
 
 
 
@@ -22,13 +22,27 @@ const DEFAULT_OVERRIDES = {
 /* ------------------------------------------------------------------ */
 
 
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+import type { DataTableProps } from '@/components/common/history/DataTable';
+const mockProps: DataTableProps = {
+  columns: [],
+  data: [],
+  profileOptions: [],
+  classOptions: [],
+  scoreRangeOptions: [],
+  // showExport: false, /* optional */
+  // showAll: false, /* optional */
+};
+// ------------------------------------------------------------------
+
 
 describe('DataTable', () => {
 
   describe('basic render smoke-test', () => {
     it.skip('renders without crashing (replace skip when implemented)', async () => {
       renderWithMocks(
-        <DataTable  />,
+        <DataTable {...mockProps} />,
         DEFAULT_OVERRIDES
       );
       /* TODO: add reasonable assertion */
@@ -37,7 +51,12 @@ describe('DataTable', () => {
       ).toBeTruthy();
     });
 
-    
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: DataTableProps
+      
+      // TODO add props assertions
+    });
 
     it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -76,7 +95,11 @@ describe('DataTable', () => {
 
     });
 
-    
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
+    });
   });
 });
 
@@ -86,11 +109,11 @@ describe('DataTable', () => {
  * 
  * Features detected:
  * - Default export: false
- * - Named exports: DataTable
- * - Has props: false
- * - Props interface: None detected
+ * - Named exports: DataTable, DataTableProps
+ * - Has props: true
+ * - Props interface: DataTableProps
  * - Client component: true
- * - Uses hooks: useReactTable, useState, user, useEffect
+ * - Uses hooks: useReactTable, useState, useEffect
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false
@@ -103,7 +126,7 @@ describe('DataTable', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<DataTable />);
+ * render(<DataTable {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

@@ -26,9 +26,9 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { DocumentViewerProps } from '@/components/common/chat/DocumentViewer';
 const mockProps: DocumentViewerProps = {
-  // document: /* TODO <Document> */ undefined!,  /* optional */
-  // bare: false,  /* optional */
-  // classId: 'test-classId',  /* optional */
+  // document: 'homework', /* optional */
+  // bare: false, /* optional */
+  // classId: 'test-classId', /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -123,7 +123,7 @@ describe('DocumentViewer', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: DocumentViewerProps
  * - Has props: true
  * - Props interface: DocumentViewerProps
  * - Client component: true

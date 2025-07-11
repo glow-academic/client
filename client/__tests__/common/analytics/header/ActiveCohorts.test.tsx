@@ -26,10 +26,10 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { ActiveCohortsProps } from '@/components/common/analytics/header/ActiveCohorts';
 const mockProps: ActiveCohortsProps = {
-  // color: /* TODO <ColorTheme> */ undefined!,  /* optional */
-  // timeRange: /* TODO <TimeRange> */ undefined!,  /* optional */
-  // title: 'test-title',  /* optional */
-  // showDialog: false,  /* optional */
+  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
+  // timeRange: /* TODO <TimeRange> */ undefined!, /* optional */
+  // title: 'test-title', /* optional */
+  // showDialog: false, /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -124,11 +124,11 @@ describe('ActiveCohorts', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: ActiveCohortsProps
  * - Has props: true
  * - Props interface: ActiveCohortsProps
  * - Client component: true
- * - Uses hooks: used, useQuery, useMemo, useState
+ * - Uses hooks: useQuery, useMemo, useState
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

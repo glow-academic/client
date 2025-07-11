@@ -26,20 +26,20 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { ScenarioSliderProps } from '@/components/common/scenario/ScenarioSlider';
 const mockProps: ScenarioSliderProps = {
-  // leftContent: /* TODO <React.ReactNode> */ undefined!,  /* optional */
-  // rightContent: /* TODO <React.ReactNode> */ undefined!,  /* optional */
-  defaultValue: {},
-  // label: 'test-label',  /* optional */
-  // description: 'test-description',  /* optional */
-  // min: 0,  /* optional */
-  // max: 0,  /* optional */
-  // step: 0,  /* optional */
-  // onValueChange: /* TODO <(value> */ undefined!,  /* optional */
-  // value: [],  /* optional */
-  // disabled: false,  /* optional */
-  // showReset: false,  /* optional */
-  // onReset: vi.fn(),  /* optional */
-  // inlineTitle: false,  /* optional */
+  // leftContent: <div>test-leftContent</div>, /* optional */
+  // rightContent: <div>test-rightContent</div>, /* optional */
+  defaultValue: [],
+  // label: 'test-label', /* optional */
+  // description: 'test-description', /* optional */
+  // min: 0, /* optional */
+  // max: 0, /* optional */
+  // step: 0, /* optional */
+  // onValueChange: [], /* optional */
+  // value: [], /* optional */
+  // disabled: false, /* optional */
+  // showReset: false, /* optional */
+  // onReset: vi.fn(), /* optional */
+  // inlineTitle: false, /* optional */
 };
 // ------------------------------------------------------------------
 

@@ -69,9 +69,9 @@
 | ChatMessages | common/home/ChatMessages.tsx | ChatMessages.test.tsx | ✅ Implemented |
 | ChatStarterPrompts | common/home/ChatStarterPrompts.tsx | ChatStarterPrompts.test.tsx | ✅ Implemented |
 | ChatWidget | common/home/ChatWidget.tsx | ChatWidget.test.tsx | ✅ Implemented |
-| navigation-breadcrumbs | common/layout/navigation-breadcrumbs.tsx | navigation-breadcrumbs.test.tsx | ✅ Implemented |
-| report-problem | common/layout/report-problem.tsx | report-problem.test.tsx | ✅ Implemented |
-| unified-sidebar | common/layout/unified-sidebar.tsx | unified-sidebar.test.tsx | ✅ Implemented |
+| NavigationBreadcrumbs.tsx | common/layout/NavigationBreadcrumbs.tsx.tsx | NavigationBreadcrumbs.tsx.test.tsx | ✅ Implemented |
+| ReportProblem | common/layout/ReportProblem.tsx | ReportProblem.test.tsx | ✅ Implemented |
+| UnifiedSidebar | common/layout/UnifiedSidebar.tsx | UnifiedSidebar.test.tsx | ✅ Implemented |
 | Login | common/login/Login.tsx | Login.test.tsx | ✅ Implemented |
 | Model | common/model/Model.tsx | Model.test.tsx | ✅ Implemented |
 | Rubric | common/rubric/Rubric.tsx | Rubric.test.tsx | ✅ Implemented |
@@ -192,9 +192,9 @@ __tests__/
 │   │   ├── ChatStarterPrompts.test.tsx
 │   │   ├── ChatWidget.test.tsx
 │   ├── layout/
-│   │   ├── navigation-breadcrumbs.test.tsx
-│   │   ├── report-problem.test.tsx
-│   │   ├── unified-sidebar.test.tsx
+│   │   ├── NavigationBreadcrumbs.tsx.test.tsx
+│   │   ├── ReportProblem.test.tsx
+│   │   ├── UnifiedSidebar.test.tsx
 │   ├── login/
 │   │   ├── Login.test.tsx
 │   ├── model/

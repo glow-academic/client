@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { createBreadcrumbSectionChangeHandler } from "@/utils/navigation-utils";
 
-interface NavigationBreadcrumbsProps {
+export interface NavigationBreadcrumbsProps {
   breadcrumbs: Array<{ title: string; section?: string }>;
   onSectionChange?: (section: string) => void;
 }

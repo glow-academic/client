@@ -114,7 +114,7 @@ describe('Classes', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: useMutation, useQuery, useQueryClient, useState, useRouter, usel
+ * - Uses hooks: useMutation, useQuery, useQueryClient, useState, useRouter
  * - Uses router: true
  * - Has API calls: true
  * - Has form handling: false

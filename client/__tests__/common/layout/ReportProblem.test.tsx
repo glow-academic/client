@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import { UnifiedSidebar } from '@/components/common/layout/unified-sidebar';
+import ReportProblem from '@/components/common/layout/ReportProblem';
 
 
 
@@ -16,19 +16,27 @@ const DEFAULT_OVERRIDES = {
     getProfilesByUser: /* TODO */ [],
   },
   mutations: {
-    //
+    createAppFeedback: /* TODO */ {},
   },
 };
 /* ------------------------------------------------------------------ */
 
 
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+import type { ReportProblemProps } from '@/components/common/layout/ReportProblem';
+const mockProps: ReportProblemProps = {
+  // children: <div>test-children</div>, /* optional */
+};
+// ------------------------------------------------------------------
 
-describe('unified-sidebar', () => {
+
+describe('ReportProblem', () => {
 
   describe('basic render smoke-test', () => {
     it.skip('renders without crashing (replace skip when implemented)', async () => {
       renderWithMocks(
-        <unified-sidebar  />,
+        <ReportProblem {...mockProps} />,
         DEFAULT_OVERRIDES
       );
       /* TODO: add reasonable assertion */
@@ -37,7 +45,12 @@ describe('unified-sidebar', () => {
       ).toBeTruthy();
     });
 
-    
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: ReportProblemProps
+      
+      // TODO add props assertions
+    });
 
     it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -48,7 +61,11 @@ describe('unified-sidebar', () => {
   });
 
   describe('User Interactions', () => {
-    
+    it.skip('should handle form submissions', async () => {
+      const user = userEvent.setup();
+      void user;
+      // TODO: form handling assertions
+    });
 
     it.skip('should handle state changes', async () => {
       const user = userEvent.setup();
@@ -84,13 +101,7 @@ describe('unified-sidebar', () => {
     });
   });
 
-  describe('Navigation', () => {
-    it.skip('should handle navigation', () => {
-      // TODO: Test navigation behavior
-      
-      // TODO: navigation assertions
-    });
-  });
+  
 
   describe('Edge Cases', () => {
     it.skip('should handle edge cases gracefully', () => {
@@ -100,24 +111,28 @@ describe('unified-sidebar', () => {
 
     });
 
-    
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
+    });
   });
 });
 
 /*
- * Component Analysis for unified-sidebar:
- * Path: common/layout/unified-sidebar.tsx
+ * Component Analysis for ReportProblem:
+ * Path: common/layout/ReportProblem.tsx
  * 
  * Features detected:
- * - Default export: false
- * - Named exports: UnifiedSidebar
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: useRole, user, useQuery, useQueryClient, useSession, useRouter, userIndex, useState, userId, useMemo, users
- * - Uses router: true
+ * - Default export: true
+ * - Named exports: ReportProblemProps
+ * - Has props: true
+ * - Props interface: ReportProblemProps
+ * - Client component: true
+ * - Uses hooks: useMutation, useQuery, useQueryClient, useSession, useState, userId, user
+ * - Uses router: false
  * - Has API calls: true
- * - Has form handling: false
+ * - Has form handling: true
  * - Uses state: true
  * - Uses effects: false
  * - Uses context: false
@@ -127,12 +142,12 @@ describe('unified-sidebar', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<unified-sidebar />);
+ * render(<ReportProblem {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<unified-sidebar {...props} />);
+ * render(<ReportProblem {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

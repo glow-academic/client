@@ -114,7 +114,7 @@ describe('Login', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: user, useQuery, useSession, useRouter, useEffect, useState, userId
+ * - Uses hooks: useQuery, useSession, useRouter, useEffect, useState, userId, user
  * - Uses router: true
  * - Has API calls: true
  * - Has form handling: false

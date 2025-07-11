@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
@@ -28,10 +28,10 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { ClassFormProps } from '@/components/common/class/ClassForm';
 const mockProps: ClassFormProps = {
-  mode: /* TODO <"create" | "edit"> */ undefined!,
-  // classId: 'test-classId',  /* optional */
-  // initialData: /* TODO <Partial<Class>> */ undefined!,  /* optional */
-  // onSuccess: /* TODO <(classId> */ undefined!,  /* optional */
+  mode: 'create',
+  // classId: 'test-classId', /* optional */
+  // initialData: 'fall', /* optional */
+  // onSuccess: vi.fn(), /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -136,11 +136,11 @@ describe('ClassForm', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: ClassFormProps
  * - Has props: true
  * - Props interface: ClassFormProps
  * - Client component: true
- * - Uses hooks: useQuery, useQueryClient, useRouter, useCallback, useRef, useState, useEffect, uses
+ * - Uses hooks: useQuery, useQueryClient, useRouter, useCallback, useRef, useState, useEffect
  * - Uses router: true
  * - Has API calls: true
  * - Has form handling: true

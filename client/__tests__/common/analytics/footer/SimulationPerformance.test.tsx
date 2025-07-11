@@ -30,12 +30,12 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { SimulationPerformanceProps } from '@/components/common/analytics/footer/SimulationPerformance';
 const mockProps: SimulationPerformanceProps = {
-  // className: 'test-className',  /* optional */
-  // color: /* TODO <ColorTheme> */ undefined!,  /* optional */
-  // defaultSelection: 'test-defaultSelection',  /* optional */
-  // chartType: /* TODO <ChartType> */ undefined!,  /* optional */
-  // title: 'test-title',  /* optional */
-  // showSelector: false,  /* optional */
+  // className: 'test-className', /* optional */
+  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
+  // defaultSelection: 'test-defaultSelection', /* optional */
+  // chartType: /* TODO <"bar"> */ undefined!, /* optional */
+  // title: 'test-title', /* optional */
+  // showSelector: false, /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -130,11 +130,11 @@ describe('SimulationPerformance', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: SimulationPerformanceProps
  * - Has props: true
  * - Props interface: SimulationPerformanceProps
  * - Client component: true
- * - Uses hooks: used, useQuery, useMemo, useState
+ * - Uses hooks: useQuery, useMemo, useState
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

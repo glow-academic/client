@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import { DataTableFacetedFilter } from '@/components/common/history/DataTableFacetedFilter';
+import { DataTableFacetedFilter, DataTableFacetedFilterProps } from '@/components/common/history/DataTableFacetedFilter';
 
 
 
@@ -21,13 +21,23 @@ const DEFAULT_OVERRIDES = {
 /* ------------------------------------------------------------------ */
 
 
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+import type { DataTableFacetedFilterProps } from '@/components/common/history/DataTableFacetedFilter';
+const mockProps: DataTableFacetedFilterProps = {
+  // column: /* TODO <Column<TData, TValue>> */ undefined!, /* optional */
+  // title: 'test-title', /* optional */
+  options: [],
+};
+// ------------------------------------------------------------------
+
 
 describe('DataTableFacetedFilter', () => {
 
   describe('basic render smoke-test', () => {
     it.skip('renders without crashing (replace skip when implemented)', async () => {
       renderWithMocks(
-        <DataTableFacetedFilter  />,
+        <DataTableFacetedFilter {...mockProps} />,
         DEFAULT_OVERRIDES
       );
       /* TODO: add reasonable assertion */
@@ -36,7 +46,12 @@ describe('DataTableFacetedFilter', () => {
       ).toBeTruthy();
     });
 
-    
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: DataTableFacetedFilterProps
+      
+      // TODO add props assertions
+    });
 
     it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -60,7 +75,11 @@ describe('DataTableFacetedFilter', () => {
 
     });
 
-    
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
+    });
   });
 });
 
@@ -70,9 +89,9 @@ describe('DataTableFacetedFilter', () => {
  * 
  * Features detected:
  * - Default export: false
- * - Named exports: DataTableFacetedFilter
- * - Has props: false
- * - Props interface: None detected
+ * - Named exports: DataTableFacetedFilter, DataTableFacetedFilterProps
+ * - Has props: true
+ * - Props interface: DataTableFacetedFilterProps
  * - Client component: false
  * - Uses hooks: None
  * - Uses router: false
@@ -87,7 +106,7 @@ describe('DataTableFacetedFilter', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<DataTableFacetedFilter />);
+ * render(<DataTableFacetedFilter {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

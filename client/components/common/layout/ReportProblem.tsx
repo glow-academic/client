@@ -42,7 +42,7 @@ interface FormErrors {
   message?: string;
 }
 
-interface ReportProblemProps {
+export interface ReportProblemProps {
   children?: React.ReactNode;
 }
 

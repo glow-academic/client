@@ -123,7 +123,7 @@ describe('ClassEdit', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: ClassEditProps
  * - Has props: true
  * - Props interface: ClassEditProps
  * - Client component: true

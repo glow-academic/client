@@ -30,7 +30,7 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { SkillGrowthProps } from '@/components/common/analytics/footer/SkillGrowth';
 const mockProps: SkillGrowthProps = {
-  // className: 'test-className',  /* optional */
+  // className: 'test-className', /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -125,11 +125,11 @@ describe('SkillGrowth', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: SkillGrowthProps
  * - Has props: true
  * - Props interface: SkillGrowthProps
  * - Client component: true
- * - Uses hooks: used, useQuery, useMemo, useState
+ * - Uses hooks: useQuery, useMemo, useState
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

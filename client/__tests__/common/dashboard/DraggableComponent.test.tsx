@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
@@ -26,7 +26,15 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { DraggableComponentProps } from '@/components/common/dashboard/DraggableComponent';
 const mockProps: DraggableComponentProps = {
-
+  component: {},
+  // isInSidebar: false, /* optional */
+  // isManagementView: false, /* optional */
+  // hideRemoveButton: false, /* optional */
+  // onRemove: vi.fn(), /* optional */
+  // section: 'test-section', /* optional */
+  // index: 0, /* optional */
+  // onReorder: vi.fn(), /* optional */
+  // onUpdateLayout: vi.fn(), /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -103,11 +111,11 @@ describe('DraggableComponent', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: DraggableComponentProps
  * - Has props: true
  * - Props interface: DraggableComponentProps
  * - Client component: false
- * - Uses hooks: used, useCallback, useRef, useState
+ * - Uses hooks: useCallback, useRef, useState
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false

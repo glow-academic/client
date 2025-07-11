@@ -1,10 +1,10 @@
 /**
- * unified-sidebar.tsx
+ * UnifiedSidebar.tsx
  * Used to display the sidebar for the application
  * @AshokSaravanan222 & @siladiea
  * 05/20/2025
  */
-import ReportProblem from "@/components/common/layout/report-problem";
+import ReportProblem from "@/components/common/layout/ReportProblem";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Collapsible,
@@ -61,7 +61,8 @@ import { toast } from "sonner";
 
 type ProfileRole = "admin" | "instructional" | "instructor" | "ta";
 
-interface UnifiedSidebarProps extends React.ComponentProps<typeof Sidebar> {
+export interface UnifiedSidebarProps
+  extends React.ComponentProps<typeof Sidebar> {
   activeSection: string;
   onSectionChange?: (section: string) => void;
 }

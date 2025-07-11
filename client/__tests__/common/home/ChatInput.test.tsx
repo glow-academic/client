@@ -26,8 +26,8 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { ChatInputProps } from '@/components/common/home/ChatInput';
 const mockProps: ChatInputProps = {
-  // promptToSet: 'test-promptToSet',  /* optional */
-  // onPromptSet: vi.fn(),  /* optional */
+  // promptToSet: 'test-promptToSet', /* optional */
+  // onPromptSet: vi.fn(), /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -112,7 +112,7 @@ describe('ChatInput', () => {
  * - Has props: true
  * - Props interface: ChatInputProps
  * - Client component: true
- * - Uses hooks: user, useAssistant, useRole, useEffect, useState
+ * - Uses hooks: useAssistant, useRole, useEffect, useState
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: true

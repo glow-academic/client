@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
@@ -27,6 +27,13 @@ const DEFAULT_OVERRIDES = {
 import type { FooterPreviewProps } from '@/components/common/dashboard/FooterPreview';
 const mockProps: FooterPreviewProps = {
   components: [],
+  allComponents: {},
+  showIndicators: false,
+  autoScroll: false,
+  footerSplit: 0,
+  onRemove: vi.fn(),
+  // onUpdateLayout: vi.fn(), /* optional */
+  onResizeEnd: [],
 };
 // ------------------------------------------------------------------
 
@@ -103,11 +110,11 @@ describe('FooterPreview', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: FooterPreviewProps
  * - Has props: true
  * - Props interface: FooterPreviewProps
  * - Client component: false
- * - Uses hooks: used, useEffect, useState
+ * - Uses hooks: useEffect, useState
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false

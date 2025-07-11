@@ -90,7 +90,7 @@ describe('SettingsDialog', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: false
- * - Uses hooks: used, useEffect, useState
+ * - Uses hooks: useEffect, useState
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false

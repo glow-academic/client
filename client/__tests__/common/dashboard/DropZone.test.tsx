@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
@@ -29,6 +29,11 @@ const mockProps: DropZoneProps = {
   section: 'test-section',
   title: 'test-title',
   components: [],
+  allComponents: {},
+  onDrop: vi.fn(),
+  onRemove: vi.fn(),
+  // onUpdateLayout: vi.fn(), /* optional */
+  // className: 'test-className', /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -105,11 +110,11 @@ describe('DropZone', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: DropZoneProps
  * - Has props: true
  * - Props interface: DropZoneProps
  * - Client component: false
- * - Uses hooks: used, useCallback, useState
+ * - Uses hooks: useCallback, useState
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false

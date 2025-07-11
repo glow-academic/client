@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
@@ -28,8 +28,8 @@ import type { DocumentSelectProps } from '@/components/common/chat/DocumentSelec
 const mockProps: DocumentSelectProps = {
   documents: [],
   selectedDocumentId: 'test-selectedDocumentId',
-  onDocumentSelect: /* TODO <(documentId> */ undefined!,
-  // placeholder: 'test-placeholder',  /* optional */
+  onDocumentSelect: vi.fn(),
+  // placeholder: 'test-placeholder', /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -106,7 +106,7 @@ describe('DocumentSelect', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: DocumentSelectProps
  * - Has props: true
  * - Props interface: DocumentSelectProps
  * - Client component: true

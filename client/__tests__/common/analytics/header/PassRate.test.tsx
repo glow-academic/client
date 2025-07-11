@@ -29,10 +29,10 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { PassRateProps } from '@/components/common/analytics/header/PassRate';
 const mockProps: PassRateProps = {
-  // color: /* TODO <ColorTheme> */ undefined!,  /* optional */
-  // timeRange: /* TODO <TimeRange> */ undefined!,  /* optional */
-  // title: 'test-title',  /* optional */
-  // showDialog: false,  /* optional */
+  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
+  // timeRange: /* TODO <TimeRange> */ undefined!, /* optional */
+  // title: 'test-title', /* optional */
+  // showDialog: false, /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -127,11 +127,11 @@ describe('PassRate', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: PassRateProps
  * - Has props: true
  * - Props interface: PassRateProps
  * - Client component: true
- * - Uses hooks: used, useQuery, useMemo, useState
+ * - Uses hooks: useQuery, useMemo, useState
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

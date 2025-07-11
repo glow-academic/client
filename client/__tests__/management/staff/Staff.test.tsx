@@ -115,7 +115,7 @@ describe('Staff', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: useQuery, useRouter, useState, users, useMemo
+ * - Uses hooks: useQuery, useRouter, useState, useMemo
  * - Uses router: true
  * - Has API calls: true
  * - Has form handling: false

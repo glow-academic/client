@@ -26,7 +26,7 @@ const DEFAULT_OVERRIDES = {
 import type { SimulationHistoryProps } from '@/components/common/history/SimulationHistory';
 const mockProps: SimulationHistoryProps = {
   showAll: false,
-  // showExport: false,  /* optional */
+  // showExport: false, /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -88,7 +88,7 @@ describe('SimulationHistory', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: SimulationHistoryProps
  * - Has props: true
  * - Props interface: SimulationHistoryProps
  * - Client component: false

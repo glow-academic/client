@@ -31,11 +31,11 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { PerformanceTrendsProps } from '@/components/common/analytics/primary/PerformanceTrends';
 const mockProps: PerformanceTrendsProps = {
-  // color: /* TODO <ColorTheme> */ undefined!,  /* optional */
-  // defaultTimeRange: /* TODO <TimeRange> */ undefined!,  /* optional */
-  // chartType: /* TODO <ChartType> */ undefined!,  /* optional */
-  // title: 'test-title',  /* optional */
-  // showTimeSelector: false,  /* optional */
+  // color: /* TODO <ColorTheme> */ undefined!, /* optional */
+  // defaultTimeRange: /* TODO <TimeRange> */ undefined!, /* optional */
+  // chartType: /* TODO <ChartType> */ undefined!, /* optional */
+  // title: 'test-title', /* optional */
+  // showTimeSelector: false, /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -130,11 +130,11 @@ describe('PerformanceTrends', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: PerformanceTrendsProps
  * - Has props: true
  * - Props interface: PerformanceTrendsProps
  * - Client component: true
- * - Uses hooks: used, useQuery, useMemo, useState
+ * - Uses hooks: useQuery, useMemo, useState
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

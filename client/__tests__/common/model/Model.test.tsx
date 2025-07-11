@@ -28,7 +28,7 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { ModelProps } from '@/components/common/model/Model';
 const mockProps: ModelProps = {
-  // modelId: 'test-modelId',  /* optional */
+  // modelId: 'test-modelId', /* optional */
 };
 // ------------------------------------------------------------------
 

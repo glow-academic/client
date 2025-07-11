@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
@@ -27,6 +27,12 @@ const DEFAULT_OVERRIDES = {
 import type { CarouselSectionProps } from '@/components/common/dashboard/CarouselSection';
 const mockProps: CarouselSectionProps = {
   components: [],
+  allComponents: {},
+  showIndicators: false,
+  autoScroll: false,
+  onRemove: vi.fn(),
+  // onUpdateLayout: vi.fn(), /* optional */
+  // interval: 0, /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -103,11 +109,11 @@ describe('CarouselSection', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: CarouselSectionProps
  * - Has props: true
  * - Props interface: CarouselSectionProps
  * - Client component: false
- * - Uses hooks: uselSection, used, usel, useEffect, useState, uselSectionProps
+ * - Uses hooks: useEffect, useState
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false

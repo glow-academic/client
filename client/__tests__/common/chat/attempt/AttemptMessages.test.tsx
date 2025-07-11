@@ -27,7 +27,7 @@ const DEFAULT_OVERRIDES = {
 // Minimal props factory – edit values as needed
 import type { AttemptMessagesProps } from '@/components/common/chat/attempt/AttemptMessages';
 const mockProps: AttemptMessagesProps = {
-  // chatId: 'test-chatId',  /* optional */
+  // chatId: 'test-chatId', /* optional */
 };
 // ------------------------------------------------------------------
 
@@ -122,11 +122,11 @@ describe('AttemptMessages', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: AttemptMessagesProps
  * - Has props: true
  * - Props interface: AttemptMessagesProps
  * - Client component: true
- * - Uses hooks: user, useQuery, useQueryClient, useEffect, useMemo, useRef, useState, useSimulation, useWebSocket, used, useAudio
+ * - Uses hooks: useQuery, useQueryClient, useEffect, useMemo, useRef, useState, useSimulation, useWebSocket
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false
