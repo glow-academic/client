@@ -2,6 +2,7 @@
 
 import fs from "fs";
 import path from "path";
+import { Project, SyntaxKind, TypeFormatFlags } from "ts-morph";
 import { fileURLToPath } from "url";
 
 // Get __dirname equivalent in ES modules
@@ -12,6 +13,12 @@ const __dirname = path.dirname(__filename);
 const COMPONENTS_DIR = path.join(__dirname, "../components");
 const TESTS_DIR = path.join(__dirname, "../__tests__");
 const EXCLUDED_DIRS = ["ui"]; // External UI components to skip
+
+// Initialize TypeScript project for AST parsing
+const project = new Project({
+  tsConfigFilePath: path.resolve(__dirname, "../tsconfig.json"),
+  skipAddingFilesFromTsConfig: true,
+});
 
 /**
  * Recursively scan directory for .tsx files
@@ -62,64 +69,81 @@ function scanComponentFiles(dir, relativePath = "") {
   return components;
 }
 /**
- * Analyze component file to extract props, exports, and hooks
+ * Analyze component file using TypeScript AST to extract props, exports, and hooks
  */
 function analyzeComponent(componentPath) {
   try {
     const content = fs.readFileSync(componentPath, "utf8");
 
+    // Add or reuse cached source file
+    const source =
+      project.addSourceFileAtPathIfExists(componentPath) ??
+      project.createSourceFile(componentPath, content, { overwrite: true });
+
+    const exports = source.getExportedDeclarations();
+    const hasDefaultExport = exports.has("default");
+
+    // Find "SomethingProps" interface OR type alias
+    const propsDecl =
+      source.getInterfaces().find((i) => /Props$/.test(i.getName() ?? "")) ??
+      source.getTypeAliases().find((a) => /Props$/.test(a.getName() ?? ""));
+
+    const propsInterface = propsDecl?.getName() ?? null;
+
+    // Extract imports
+    const imports = source
+      .getImportDeclarations()
+      .map((i) => i.getModuleSpecifierValue());
+
+    // Extract named exports (excluding default)
+    const namedExports = Array.from(exports.keys()).filter(
+      (n) => n !== "default"
+    );
+
+    // Check for various hooks and patterns using AST
+    const identifiers = source.getDescendantsOfKind(SyntaxKind.Identifier);
+    const identifierTexts = identifiers.map((id) => id.getText());
+
+    const uses = {
+      useRouter: identifierTexts.some((text) =>
+        ["useRouter", "usePathname", "useSearchParams"].includes(text)
+      ),
+      useState: identifierTexts.includes("useState"),
+      useEffect: identifierTexts.includes("useEffect"),
+      useContext: identifierTexts.includes("useContext"),
+      useQuery: identifierTexts.includes("useQuery"),
+      useSWR: identifierTexts.includes("useSWR"),
+      fetch: identifierTexts.includes("fetch"),
+      axios: identifierTexts.includes("axios"),
+      useForm: identifierTexts.includes("useForm"),
+      onSubmit: identifierTexts.includes("onSubmit"),
+      formData: identifierTexts.includes("formData"),
+    };
+
+    // Extract all hooks used
+    const usesHooks = identifierTexts
+      .filter((text) => text.startsWith("use") && text.length > 3)
+      .filter((hook, index, arr) => arr.indexOf(hook) === index); // unique
+
     const analysis = {
-      content, // Store content for import analysis
-      hasDefaultExport: /export default/.test(content),
-      namedExports: [],
-      hasProps: false,
-      propsInterface: null,
-      usesHooks: [],
-      imports: [],
+      content, // Store content for backward compatibility
+      hasDefaultExport,
+      namedExports,
+      hasProps: !!propsInterface,
+      propsInterface,
+      usesHooks,
+      imports,
       isClientComponent:
         content.includes("'use client'") || content.includes('"use client"'),
       hasAsyncComponents: /async\s+function|async\s+\w+\s*=/.test(content),
-      usesRouter: /useRouter|usePathname|useSearchParams/.test(content),
-      usesState: /useState/.test(content),
-      usesEffect: /useEffect/.test(content),
-      usesContext: /useContext/.test(content),
-      hasApiCalls: /fetch\(|axios\.|useSWR|useQuery/.test(content),
-      hasDirectFetch: /[^\/]fetch\(/.test(content),
-      hasFormHandling: /onSubmit|useForm|formData/.test(content),
+      usesRouter: uses.useRouter,
+      usesState: uses.useState,
+      usesEffect: uses.useEffect,
+      usesContext: uses.useContext,
+      hasApiCalls: uses.useQuery || uses.useSWR || uses.fetch || uses.axios,
+      hasDirectFetch: uses.fetch,
+      hasFormHandling: uses.useForm || uses.onSubmit || uses.formData,
     };
-
-    // Extract named exports
-    const namedExportMatches = content.matchAll(
-      /export\s+(?:const|function|class)\s+(\w+)/g
-    );
-    for (const match of namedExportMatches) {
-      analysis.namedExports.push(match[1]);
-    }
-
-    // Extract props interface
-    const propsInterfaceMatch = content.match(
-      /interface\s+(\w*Props)\s*\{([^}]+)\}/
-    );
-    if (propsInterfaceMatch) {
-      analysis.hasProps = true;
-      analysis.propsInterface = propsInterfaceMatch[1];
-    }
-
-    // Extract hooks usage
-    const hookMatches = content.matchAll(/use(\w+)/g);
-    for (const match of hookMatches) {
-      if (!analysis.usesHooks.includes(match[0])) {
-        analysis.usesHooks.push(match[0]);
-      }
-    }
-
-    // Extract imports
-    const importMatches = content.matchAll(
-      /import\s+.*?from\s+['"]([^'"]+)['"]/g
-    );
-    for (const match of importMatches) {
-      analysis.imports.push(match[1]);
-    }
 
     return analysis;
   } catch (error) {
@@ -128,6 +152,7 @@ function analyzeComponent(componentPath) {
       error.message
     );
     return {
+      content: "",
       hasDefaultExport: true,
       namedExports: [],
       hasProps: false,
@@ -141,6 +166,7 @@ function analyzeComponent(componentPath) {
       usesEffect: false,
       usesContext: false,
       hasApiCalls: false,
+      hasDirectFetch: false,
       hasFormHandling: false,
     };
   }
@@ -730,84 +756,118 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 /**
- * VERY–rough heuristic to turn an `interface FooProps { … }`
- * into a compile-time-correct placeholder object.
- *
- * ✅  string            → 'test-foo'
- * ✅  number            → 0
- * ✅  boolean           → false
- * ✅  string[] | …[]    → []
- * ✅  Array<Foo>        → []
- * ✅  Record / {[k:…]}  → {}
- * ✅  Table<AnyThing>   → {} as unknown as Table<any>
- * ✅  optional props    → commented-out line (dev re-adds if required)
+ * Generate mock props using TypeScript AST to get accurate type information
+ * This replaces the regex-based approach with proper type resolution
  */
-function buildMockProps(source, ifaceName) {
-  const iface = source.match(
-    new RegExp(`interface\\s+${ifaceName}\\s*\\{([\\s\\S]*?)\\}`, "m")
-  );
-  if (!iface) return [];
+function buildMockProps(sourceText, ifaceName) {
+  if (!ifaceName) return [];
 
-  // Parse the interface content more carefully
-  const content = iface[1];
+  try {
+    // Create a temporary source file for analysis
+    const source = project.createSourceFile("temp.tsx", sourceText, {
+      overwrite: true,
+    });
 
-  // Simple approach: split by property declarations (look for patterns like "propName:")
-  const propRegex = /(\w+\??):\s*([^;]+)/g;
-  const props = [];
-  let match;
+    // Find the interface or type alias
+    const iface =
+      source.getInterface(ifaceName) ?? source.getTypeAlias(ifaceName);
 
-  while ((match = propRegex.exec(content)) !== null) {
-    const [, propName, propType] = match;
-    props.push(`${propName}: ${propType.trim()}`);
-  }
+    if (!iface) {
+      console.warn(`⚠️  Could not find interface/type ${ifaceName}`);
+      return [];
+    }
 
-  return props
-    .map((ln) => {
-      // chop trailing semicolon & split "foo?: type"
-      const [rawKey, rawType = "any"] = ln.replace(/;$/, "").split(":");
-      if (!rawKey) return "";
+    // Get the type and its properties
+    const type = iface.getType();
+    const props = type.getProperties();
 
-      // Skip index signatures like [key: string]: ...
-      if (rawKey.trim().startsWith("[") && rawKey.includes(":")) {
-        return "";
+    const mockProps = props.map((sym) => {
+      const name = sym.getName();
+      const isOptional = sym.isOptional();
+
+      // Get the type text with proper formatting
+      const typeText = sym
+        .getTypeAtLocation(iface)
+        .getText(undefined, TypeFormatFlags.UseAliasDefinedOutsideCurrentScope);
+
+      const line = (value) =>
+        isOptional
+          ? `  // ${name}: ${value}, /* optional */`
+          : `  ${name}: ${value},`;
+
+      // Handle different types based on the resolved type text
+      // Check for arrays first (more specific)
+      if (typeText.includes("[]") || typeText.includes("Array<")) {
+        return line("[]");
       }
 
-      const key = rawKey.replace(/\?$/, ""); // "foo?" → "foo"
-      const isOptional = rawKey.endsWith("?");
-      const baseType = rawType.trim();
+      // Check for functions (more specific)
+      if (typeText.includes("=>") || typeText.includes("Function")) {
+        return line("vi.fn()");
+      }
 
-      /** helpers ---------------------------------------------------- */
-      const asLine = (v) =>
-        isOptional ? `  // ${key}: ${v},  /* optional */` : `  ${key}: ${v},`;
+      // Handle union types with string literals
+      if (typeText.includes("|") && typeText.includes('"')) {
+        const firstStringLiteral = typeText.match(/"([^"]+)"/);
+        if (firstStringLiteral) {
+          return line(`'${firstStringLiteral[1]}'`);
+        }
+      }
 
+      // Handle ReactNode
       if (
-        /^\w+\[\]$/.test(baseType) ||
-        /^Array<.*>$/.test(baseType) ||
-        /.*\[\]$/.test(baseType) ||
-        /^\{.*\}\[\]$/.test(baseType)
+        typeText.includes("React.ReactNode") ||
+        typeText.includes("ReactNode")
       ) {
-        return asLine("[]");
+        return line(`<div>test-${name}</div>`);
       }
 
-      if (/^string\b/.test(baseType)) return asLine(`'test-${key}'`);
-      if (/^number\b/.test(baseType)) return asLine("0");
-      if (/^boolean\b/.test(baseType)) return asLine("false");
+      // Handle Record and object types
+      if (typeText.includes("Record<") || typeText.includes("{ [")) {
+        return line("{}");
+      }
 
-      // TanStack Table<T>                 → {} as unknown as Table<any>
-      if (/^Table<.*>$/.test(baseType))
-        return asLine("{} as unknown as Table<any>");
+      // Handle complex object types (like { id: number; name: string; tags: string[]; })
+      if (typeText.startsWith("{") && typeText.endsWith("}")) {
+        return line("{}");
+      }
 
-      // index-signature maps & Records    → {}
-      if (/^\{[^}]*\}$/.test(baseType) || /^Record<.*>$/.test(baseType))
-        return asLine("{}");
+      // Handle Table types
+      if (typeText.includes("Table<")) {
+        return line("{} as unknown as Table<any>");
+      }
 
-      // functions & callbacks             → vi.fn()
-      if (/=>|Function/.test(baseType)) return asLine("vi.fn()");
+      // Handle Date
+      if (typeText.includes("Date")) {
+        return line("new Date()");
+      }
 
-      // fallback                          → /* TODO <Type> */ undefined!
-      return asLine(`/* TODO <${baseType}> */ undefined!`);
-    })
-    .filter(Boolean);
+      // Handle primitive types (check these last)
+      if (typeText === "string" || typeText.startsWith("string")) {
+        return line(`'test-${name}'`);
+      }
+      if (typeText === "number" || typeText.startsWith("number")) {
+        return line("0");
+      }
+      if (typeText === "boolean" || typeText.startsWith("boolean")) {
+        return line("false");
+      }
+
+      // Fallback for complex types
+      return line(`/* TODO <${typeText}> */ undefined!`);
+    });
+
+    // Clean up the temporary file
+    source.delete();
+
+    return mockProps;
+  } catch (error) {
+    console.error(
+      `❌ Error building mock props for ${ifaceName}:`,
+      error.message
+    );
+    return [];
+  }
 }
 
 export { generateCoverageReport, generateTestFiles, scanComponentFiles };
