@@ -24,7 +24,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { ReportsDataTableProps } from '@/components/analytics/report/ReportsDataTable';
+
 const mockProps: ReportsDataTableProps = {
   columns: [],
   data: [],

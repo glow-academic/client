@@ -250,7 +250,7 @@ import userEvent from '@testing-library/user-event';`;
 // ——————————————————————————————————————————
 import ${
     analysis.hasDefaultExport
-      ? componentName
+      ? `${componentName}${analysis.namedExports.length > 0 ? `, { ${analysis.namedExports.join(", ")} }` : ""}`
       : `{ ${analysis.namedExports.join(", ")} }`
   } from '${importPath}';
 
@@ -277,7 +277,12 @@ ${
     ? `
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { ${analysis.propsInterface} } from '${importPath}';
+${
+  analysis.propsInterface &&
+  !analysis.namedExports.includes(analysis.propsInterface)
+    ? `import type { ${analysis.propsInterface} } from '${importPath}';`
+    : ""
+}
 const mockProps: ${analysis.propsInterface} = {
 ${mockPropLines.join("\n")}
 };
@@ -796,14 +801,30 @@ function buildMockProps(sourceText, ifaceName) {
           : `  ${name}: ${value},`;
 
       // Handle different types based on the resolved type text
-      // Check for arrays first (more specific)
-      if (typeText.includes("[]") || typeText.includes("Array<")) {
-        return line("[]");
+      // Check for functions first (most specific) - check if it starts with a function pattern
+      if (
+        typeText.includes("=>") ||
+        typeText.includes("Function") ||
+        typeText.startsWith("(") ||
+        /^\([^)]*\)\s*=>/.test(typeText) ||
+        // Check for common function prop patterns
+        ((name.includes("callback") ||
+          name.includes("handler") ||
+          name.includes("on") ||
+          name.includes("update") ||
+          name.includes("set")) &&
+          typeText.includes("("))
+      ) {
+        return line("vi.fn()");
       }
 
-      // Check for functions (more specific)
-      if (typeText.includes("=>") || typeText.includes("Function")) {
-        return line("vi.fn()");
+      // Check for arrays (but not if it's part of a nested type)
+      if (
+        (typeText.includes("[]") || typeText.includes("Array<")) &&
+        !typeText.includes("Partial<") &&
+        !typeText.includes("Pick<")
+      ) {
+        return line("[]");
       }
 
       // Handle union types with string literals
@@ -840,6 +861,21 @@ function buildMockProps(sourceText, ifaceName) {
       // Handle Date
       if (typeText.includes("Date")) {
         return line("new Date()");
+      }
+
+      // Handle null/undefined unions (like "Partial<Dashboard> | null")
+      if (typeText.includes("| null") || typeText.includes("| undefined")) {
+        return line("null");
+      }
+
+      // Handle Partial types
+      if (typeText.includes("Partial<")) {
+        return line("{}");
+      }
+
+      // Handle Pick types
+      if (typeText.includes("Pick<")) {
+        return line("{}");
       }
 
       // Handle primitive types (check these last)

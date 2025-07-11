@@ -1,10 +1,10 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import SettingsDialog from '@/components/common/dashboard/SettingsDialog';
+import SettingsDialog, { SettingsDialogProps } from '@/components/common/dashboard/SettingsDialog';
 
 
 
@@ -22,13 +22,22 @@ const DEFAULT_OVERRIDES = {
 /* ------------------------------------------------------------------ */
 
 
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+
+const mockProps: SettingsDialogProps = {
+  dashboardConfig: null,
+  updateSettings: vi.fn(),
+};
+// ------------------------------------------------------------------
+
 
 describe('SettingsDialog', () => {
 
   describe('basic render smoke-test', () => {
     it.skip('renders without crashing (replace skip when implemented)', async () => {
       renderWithMocks(
-        <SettingsDialog  />,
+        <SettingsDialog {...mockProps} />,
         DEFAULT_OVERRIDES
       );
       /* TODO: add reasonable assertion */
@@ -37,7 +46,12 @@ describe('SettingsDialog', () => {
       ).toBeTruthy();
     });
 
-    
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: SettingsDialogProps
+      
+      // TODO add props assertions
+    });
 
     it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -76,7 +90,11 @@ describe('SettingsDialog', () => {
 
     });
 
-    
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
+    });
   });
 });
 
@@ -86,9 +104,9 @@ describe('SettingsDialog', () => {
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Named exports: SettingsDialogProps
+ * - Has props: true
+ * - Props interface: SettingsDialogProps
  * - Client component: false
  * - Uses hooks: useEffect, useState
  * - Uses router: false
@@ -103,7 +121,7 @@ describe('SettingsDialog', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<SettingsDialog />);
+ * render(<SettingsDialog {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
