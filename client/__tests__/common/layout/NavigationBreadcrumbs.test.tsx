@@ -4,7 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import { NavigationBreadcrumbs, NavigationBreadcrumbsProps } from '@/components/common/layout/NavigationBreadcrumbs.tsx';
+import { NavigationBreadcrumbs, NavigationBreadcrumbsProps } from '@/components/common/layout/NavigationBreadcrumbs';
 
 
 
@@ -31,12 +31,12 @@ const mockProps: NavigationBreadcrumbsProps = {
 // ------------------------------------------------------------------
 
 
-describe('NavigationBreadcrumbs.tsx', () => {
+describe('NavigationBreadcrumbs', () => {
 
   describe('basic render smoke-test', () => {
     it.skip('renders without crashing (replace skip when implemented)', async () => {
       renderWithMocks(
-        <NavigationBreadcrumbs.tsx {...mockProps} />,
+        <NavigationBreadcrumbs {...mockProps} />,
         DEFAULT_OVERRIDES
       );
       /* TODO: add reasonable assertion */
@@ -100,8 +100,8 @@ describe('NavigationBreadcrumbs.tsx', () => {
 });
 
 /*
- * Component Analysis for NavigationBreadcrumbs.tsx:
- * Path: common/layout/NavigationBreadcrumbs.tsx.tsx
+ * Component Analysis for NavigationBreadcrumbs:
+ * Path: common/layout/NavigationBreadcrumbs.tsx
  * 
  * Features detected:
  * - Default export: false
@@ -122,12 +122,12 @@ describe('NavigationBreadcrumbs.tsx', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<NavigationBreadcrumbs.tsx {...mockProps} />);
+ * render(<NavigationBreadcrumbs {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<NavigationBreadcrumbs.tsx {...props} />);
+ * render(<NavigationBreadcrumbs {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

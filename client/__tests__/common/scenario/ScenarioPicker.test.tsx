@@ -114,7 +114,7 @@ describe('ScenarioPicker', () => {
  * 
  * Features detected:
  * - Default export: false
- * - Named exports: ScenarioPicker, ModelType, Model, ScenarioPickerProps
+ * - Named exports: ScenarioPicker, ScenarioPickerProps
  * - Has props: true
  * - Props interface: ScenarioPickerProps
  * - Client component: true

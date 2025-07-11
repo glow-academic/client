@@ -4,6 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
 import { DataTableViewOptions, DataTableViewOptionsProps } from '@/components/common/history/DataTableViewOptions';
+import { Table } from '@tanstack/react-table';
 
 
 

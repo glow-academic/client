@@ -4,6 +4,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
 import { DataTableColumnHeader, DataTableColumnHeaderProps } from '@/components/common/history/DataTableColumnHeader';
+import { Column } from '@tanstack/react-table';
 
 
 

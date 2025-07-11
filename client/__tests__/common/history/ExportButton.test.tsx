@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
 import { ExportButton, ExportButtonProps } from '@/components/common/history/ExportButton';
+import { Table } from '@tanstack/react-table';
 
 
 

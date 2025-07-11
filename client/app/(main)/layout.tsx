@@ -19,7 +19,7 @@ import React, { useMemo } from "react";
 import ChatDialog from "@/components/common/home/ChatDialog";
 import ChatFab from "@/components/common/home/ChatFab";
 import ChatWidget from "@/components/common/home/ChatWidget";
-import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs.tsx";
+import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import { AssistantProvider } from "@/contexts/assistant-context";
 import { useRole } from "@/contexts/role-context";
