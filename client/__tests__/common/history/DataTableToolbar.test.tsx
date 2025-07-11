@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
@@ -23,13 +23,12 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { DataTableToolbarProps } from '@/components/common/history/DataTableToolbar';
-const mockProps: DataTableToolbarProps = {
-  table: {} as unknown as Table<any>,
+
+const mockProps: DataTableToolbarProps<unknown> = {
+  table: {} as unknown as Table<unknown>,
   profileOptions: [],
   classOptions: [],
   scoreRangeOptions: [],
-  // isAdmin: false, /* optional */
   // dateRange: new Date(), /* optional */
   // setDateRange: vi.fn(), /* optional */
   // showExport: false, /* optional */

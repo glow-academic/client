@@ -24,9 +24,9 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { ExportButtonProps } from '@/components/common/history/ExportButton';
-const mockProps: ExportButtonProps = {
-  table: {} as unknown as Table<any>,
+
+const mockProps: ExportButtonProps<unknown> = {
+  table: {} as unknown as Table<unknown>,
   profileOptions: [],
   classOptions: [],
 };

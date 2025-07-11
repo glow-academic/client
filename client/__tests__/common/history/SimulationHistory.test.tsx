@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import SimulationHistory from '@/components/common/history/SimulationHistory';
+import SimulationHistory, { SimulationHistoryProps } from '@/components/common/history/SimulationHistory';
 
 
 
@@ -23,7 +23,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { SimulationHistoryProps } from '@/components/common/history/SimulationHistory';
+
 const mockProps: SimulationHistoryProps = {
   showAll: false,
   // showExport: false, /* optional */

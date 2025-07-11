@@ -233,6 +233,12 @@ function generateTestTemplate(component, analysis) {
     analysis.hasDirectFetch || // we stub fetch
     (analysis.hasProps && mockPropLines.some((l) => l.includes("vi.fn"))); // props
 
+  const needsTanstackTable =
+    analysis.hasProps &&
+    mockPropLines.some(
+      (l) => l.includes("Table<any>") || l.includes("Column<any, any>")
+    );
+
   let template = `import { screen } from '@testing-library/react';
 import { describe, it, expect${needsVi ? ", vi" : ""} } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';`;
@@ -240,6 +246,11 @@ import { renderWithMocks } from '@/test/renderWithMocks';`;
   if (needsUserEvent) {
     template += `
 import userEvent from '@testing-library/user-event';`;
+  }
+
+  if (needsTanstackTable) {
+    template += `
+import { Table, Column } from '@tanstack/react-table';`;
   }
 
   /* helper to silence "declared but never read" while the test is .skip() */
@@ -283,7 +294,25 @@ ${
     ? `import type { ${analysis.propsInterface} } from '${importPath}';`
     : ""
 }
-const mockProps: ${analysis.propsInterface} = {
+const mockProps: ${analysis.propsInterface}${
+        analysis.propsInterface &&
+        analysis.propsInterface.includes("DataTableProps")
+          ? "<unknown, unknown>"
+          : analysis.propsInterface &&
+              analysis.propsInterface.includes("DataTableColumnHeaderProps")
+            ? "<unknown, unknown>"
+            : analysis.propsInterface &&
+                analysis.propsInterface.includes("DataTableFacetedFilterProps")
+              ? "<unknown, unknown>"
+              : analysis.propsInterface &&
+                  (analysis.propsInterface.includes("DataTableToolbarProps") ||
+                    analysis.propsInterface.includes(
+                      "DataTableViewOptionsProps"
+                    ) ||
+                    analysis.propsInterface.includes("ExportButtonProps"))
+                ? "<unknown>"
+                : ""
+      } = {
 ${mockPropLines.join("\n")}
 };
 // ------------------------------------------------------------------
@@ -790,6 +819,99 @@ function buildMockProps(sourceText, ifaceName) {
       const name = sym.getName();
       const isOptional = sym.isOptional();
 
+      // Skip common React HTML attributes that are not component-specific
+      const reactAttributes = [
+        "className",
+        "style",
+        "id",
+        "key",
+        "ref",
+        "children",
+        "onClick",
+        "onSubmit",
+        "onChange",
+        "onFocus",
+        "onBlur",
+        "onKeyDown",
+        "onKeyUp",
+        "onMouseDown",
+        "onMouseUp",
+        "onMouseEnter",
+        "onMouseLeave",
+        "tabIndex",
+        "aria-",
+        "data-",
+        "role",
+        "title",
+        "lang",
+        "dir",
+        "hidden",
+        "draggable",
+        "contentEditable",
+        "spellCheck",
+        "autoFocus",
+        "autoComplete",
+        "autoCorrect",
+        "autoCapitalize",
+        "autoSave",
+        "enterKeyHint",
+        "inputMode",
+        "nonce",
+        "slot",
+        "translate",
+        "suppressContentEditableWarning",
+        "suppressHydrationWarning",
+        "defaultChecked",
+        "defaultValue",
+        "accessKey",
+        "contextMenu",
+        "radioGroup",
+        "about",
+        "content",
+        "datatype",
+        "inlist",
+        "prefix",
+        "property",
+        "rel",
+        "resource",
+        "rev",
+        "typeof",
+        "vocab",
+        "color",
+        "itemProp",
+        "itemScope",
+        "itemType",
+        "itemID",
+        "itemRef",
+        "results",
+        "security",
+        "unselectable",
+        "popover",
+        "popoverTargetAction",
+        "popoverTarget",
+        "inert",
+        "is",
+        "exportparts",
+        "part",
+        "dangerouslySetInnerHTML",
+      ];
+
+      // Skip if it's a common React attribute and optional
+      if (
+        isOptional &&
+        reactAttributes.some(
+          (attr) =>
+            name.startsWith(attr) ||
+            name.includes("aria-") ||
+            name.includes("data-") ||
+            (name.startsWith("on") &&
+              name.length > 2 &&
+              name[2] === name[2].toUpperCase())
+        )
+      ) {
+        return null;
+      }
+
       // Get the type text with proper formatting
       const typeText = sym
         .getTypeAtLocation(iface)
@@ -853,9 +975,14 @@ function buildMockProps(sourceText, ifaceName) {
         return line("{}");
       }
 
-      // Handle Table types
+      // Handle Table types from @tanstack/react-table
       if (typeText.includes("Table<")) {
-        return line("{} as unknown as Table<any>");
+        return line("{} as unknown as Table<unknown>");
+      }
+
+      // Handle Column types from @tanstack/react-table
+      if (typeText.includes("Column<")) {
+        return line("{} as unknown as Column<unknown, unknown>");
       }
 
       // Handle Date
@@ -896,7 +1023,7 @@ function buildMockProps(sourceText, ifaceName) {
     // Clean up the temporary file
     source.delete();
 
-    return mockProps;
+    return mockProps.filter(Boolean);
   } catch (error) {
     console.error(
       `❌ Error building mock props for ${ifaceName}:`,

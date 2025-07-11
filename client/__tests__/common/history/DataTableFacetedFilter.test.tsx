@@ -23,10 +23,9 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { DataTableFacetedFilterProps } from '@/components/common/history/DataTableFacetedFilter';
-const mockProps: DataTableFacetedFilterProps = {
-  // column: /* TODO <Column<TData, TValue>> */ undefined!, /* optional */
-  // title: 'test-title', /* optional */
+
+const mockProps: DataTableFacetedFilterProps<unknown, unknown> = {
+  // column: {} as unknown as Column<unknown, unknown>, /* optional */
   options: [],
 };
 // ------------------------------------------------------------------

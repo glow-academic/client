@@ -23,10 +23,9 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { DataTableViewOptionsProps } from '@/components/common/history/DataTableViewOptions';
-const mockProps: DataTableViewOptionsProps = {
-  table: {} as unknown as Table<any>,
-  // isAdmin: false, /* optional */
+
+const mockProps: DataTableViewOptionsProps<unknown> = {
+  table: {} as unknown as Table<unknown>,
 };
 // ------------------------------------------------------------------
 

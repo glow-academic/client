@@ -24,8 +24,8 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { DataTableProps } from '@/components/common/history/DataTable';
-const mockProps: DataTableProps = {
+
+const mockProps: DataTableProps<unknown, unknown> = {
   columns: [],
   data: [],
   profileOptions: [],

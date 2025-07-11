@@ -23,7 +23,7 @@ const DEFAULT_OVERRIDES = {
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { DataTableRowActionsProps } from '@/components/common/history/DataTableRowActions';
+
 const mockProps: DataTableRowActionsProps = {
   id: 'test-id',
 };
