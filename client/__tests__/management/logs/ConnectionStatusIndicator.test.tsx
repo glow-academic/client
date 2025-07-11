@@ -5,35 +5,17 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 // ——————————————————————————————————————————
 import ConnectionStatusIndicator from '@/components/management/logs/ConnectionStatusIndicator';
 
-
-
-/* ------------------------------------------------------------------ *
- * Auto-detected data fns used by this component
- * (feel free to delete ones you don't need in a specific test) */
-const DEFAULT_OVERRIDES = {
-  queries: {
-    // 
-  },
-  mutations: {
-    //
-  },
-};
-/* ------------------------------------------------------------------ */
-
-
-
 describe('ConnectionStatusIndicator', () => {
+  
 
   describe('basic render smoke-test', () => {
-    it.skip('renders without crashing (replace skip when implemented)', async () => {
-      renderWithMocks(
-        <ConnectionStatusIndicator  />,
-        DEFAULT_OVERRIDES
-      );
-      /* TODO: add reasonable assertion */
-      expect(
-        await screen.findByRole('document', {}, { timeout: 2000 })
-      ).toBeTruthy();
+    it('renders without crashing', async () => {
+      
+      renderWithMocks(<ConnectionStatusIndicator  />);
+      
+      // TODO: Add meaningful assertions based on your component
+      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     

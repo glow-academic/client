@@ -95,6 +95,21 @@ function analyzeComponent(componentPath) {
       .getImportDeclarations()
       .map((i) => i.getModuleSpecifierValue());
 
+    // ✨ NEW: Add logic to find API function names using TypeScript AST
+    const queryNames = new Set();
+    const mutationNames = new Set();
+
+    source.getImportDeclarations().forEach((impDecl) => {
+      const moduleSpecifier = impDecl.getModuleSpecifierValue();
+      const namedImports = impDecl.getNamedImports();
+
+      if (moduleSpecifier.startsWith("@/utils/queries")) {
+        namedImports.forEach((ni) => queryNames.add(ni.getName()));
+      } else if (moduleSpecifier.startsWith("@/utils/mutations")) {
+        namedImports.forEach((ni) => mutationNames.add(ni.getName()));
+      }
+    });
+
     // Extract named exports (excluding default)
     const namedExports = Array.from(exports.keys()).filter(
       (n) => n !== "default"
@@ -133,6 +148,8 @@ function analyzeComponent(componentPath) {
       propsInterface,
       usesHooks,
       imports,
+      queryNames: Array.from(queryNames), // Add this
+      mutationNames: Array.from(mutationNames), // Add this
       isClientComponent:
         content.includes("'use client'") || content.includes('"use client"'),
       hasAsyncComponents: /async\s+function|async\s+\w+\s*=/.test(content),
@@ -159,6 +176,8 @@ function analyzeComponent(componentPath) {
       propsInterface: null,
       usesHooks: [],
       imports: [],
+      queryNames: [],
+      mutationNames: [],
       isClientComponent: false,
       hasAsyncComponents: false,
       usesRouter: false,
@@ -178,46 +197,9 @@ function analyzeComponent(componentPath) {
  */
 function generateTestTemplate(component, analysis) {
   const { componentName, componentPath } = component;
+  const { queryNames, mutationNames } = analysis; // Get the function names from analysis
   const importPath =
     `@/components/${componentPath.replace(/\\/g, "/")}`.replace(".tsx", "");
-
-  /* ──────────────────────────────────────────────────────────
-   * 1.  Gather every query / mutation fn name we can detect
-   *     so that we pre-fill the overrides object for devs.
-   * ────────────────────────────────────────────────────────── */
-  const queryNames = [];
-  const mutationNames = [];
-
-  analysis.imports.forEach((imp) => {
-    if (imp.startsWith("@/utils/queries/")) {
-      // heuristically use the *named import* token(s) if present
-      const m = analysis.content?.match(
-        new RegExp(
-          `import\\s+\\{([^}]+)\\}\\s+from\\s+['"]${imp.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}['"]`
-        )
-      );
-      if (m) {
-        m[1]
-          .split(",")
-          .map((s) => s.trim())
-          .forEach((n) => queryNames.push(n));
-      }
-    }
-
-    if (imp.startsWith("@/utils/mutations/")) {
-      const m = analysis.content?.match(
-        new RegExp(
-          `import\\s+\\{([^}]+)\\}\\s+from\\s+['"]${imp.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}['"]`
-        )
-      );
-      if (m) {
-        m[1]
-          .split(",")
-          .map((s) => s.trim())
-          .forEach((n) => mutationNames.push(n));
-      }
-    }
-  });
 
   /* ──────────────────────────────────────────────────────────
    * 2.  Build the test file
@@ -246,8 +228,15 @@ function generateTestTemplate(component, analysis) {
     wantsTable ||
     wantsColumn;
 
+  // Determine if we need vi for mocking
+  const needsViForMocking =
+    queryNames.length > 0 ||
+    mutationNames.length > 0 ||
+    analysis.hasDirectFetch ||
+    needsVi;
+
   let template = `import { screen } from '@testing-library/react';
-import { describe, it, expect${needsVi ? ", vi" : ""} } from 'vitest';
+import { describe, it, expect${needsViForMocking ? ", vi, afterEach" : ""} } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';`;
 
   if (needsUserEvent) {
@@ -283,59 +272,84 @@ import ${
       : `{ ${analysis.namedExports.join(", ")} }`
   } from '${importPath}';
 
-${analysis.hasDirectFetch ? "global.fetch = vi.fn();" : ""}
+${analysis.hasDirectFetch ? "global.fetch = vi.fn();" : ""}`;
 
-/* ------------------------------------------------------------------ *
- * Auto-detected data fns used by this component
- * (feel free to delete ones you don't need in a specific test) */
-const DEFAULT_OVERRIDES = {
-  queries: {
-${
-  queryNames.map((q) => `    ${q}: /* TODO */ [],`).join("\n") ||
-  "    // " /* keep object non-empty for prettier */
-}
-  },
-  mutations: {
-${mutationNames.map((m) => `    ${m}: /* TODO */ {},`).join("\n") || "    //"}
-  },
-};
-/* ------------------------------------------------------------------ */
+  // ✨ Import existing mock infrastructure instead of creating custom mocks
+  const hasMocks = queryNames.length > 0 || mutationNames.length > 0;
 
-${
-  analysis.hasProps
-    ? `
-// ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
-${
-  analysis.propsInterface &&
-  !analysis.namedExports.includes(analysis.propsInterface)
-    ? `import type { ${analysis.propsInterface} } from '${importPath}';`
-    : ""
-}
+  if (hasMocks) {
+    template += `
+
+// ✨ Import comprehensive mock data from our centralized mock system
+import '@/mocks/queries';
+import '@/mocks/mutations';
+import '@/mocks/api';
+`;
+
+    `;
+
+  // Add props section if needed
+  if (analysis.hasProps) {
+    template += `;
+    // ------------------------------------------------------------------
+    // Minimal props factory – edit values as needed`;
+
+    if (
+      analysis.propsInterface &&
+      !analysis.namedExports.includes(analysis.propsInterface)
+    ) {
+      template += `
+import type { ${analysis.propsInterface} } from '${importPath}';`;
+    }
+
+    template += `
 const mockProps: ${analysis.propsInterface}${
-        propsGenericInfo.isGeneric
-          ? `<${"unknown, ".repeat(propsGenericInfo.paramCount).slice(0, -2)}>`
-          : ""
-      } = {
+      propsGenericInfo.isGeneric
+        ? `<${"unknown, ".repeat(propsGenericInfo.paramCount).slice(0, -2)}>`
+        : ""
+    } = {
 ${mockPropLines.join("\n")}
 };
 // ------------------------------------------------------------------
-`
-    : ""
-}
 
-describe('${componentName}', () => {
+`;
+  }
+
+  template += `describe('${componentName}', () => {
+  ${
+    hasMocks
+      ? `
+  /* ------------------------------------------------------------------ *
+   * 💡 Mock Data Usage Guide:
+   * 
+   * All API functions are automatically mocked via imports above.
+   * Use mockSchema.* for realistic test data:
+   * 
+   * Examples:
+   * - mockSchema.users[0] - First user object
+   * - mockSchema.classes - Array of class objects  
+   * - mockSchema.profiles - Array of profile objects
+   * 
+   * To override specific mocks in individual tests:
+   * - vi.mocked(queryFunction).mockResolvedValue(customData)
+   * - vi.mocked(mutationFunction).mockResolvedValue(customResponse)
+   * ------------------------------------------------------------------ */
+  
+  // ✨ Reset mocks after each test
+  afterEach(() => {
+    vi.clearAllMocks();
+  });`
+      : ""
+  }
 
   describe('basic render smoke-test', () => {
-    it.skip('renders without crashing (replace skip when implemented)', async () => {
-      renderWithMocks(
-        <${componentName} ${analysis.hasProps ? "{...mockProps}" : ""} />,
-        DEFAULT_OVERRIDES
-      );
-      /* TODO: add reasonable assertion */
-      expect(
-        await screen.findByRole('document', {}, { timeout: 2000 })
-      ).toBeTruthy();
+    it('renders without crashing', async () => {
+      ${hasMocks ? "// ✨ All mocks are automatically set up via imports above" : ""}
+      renderWithMocks(<${componentName} ${analysis.hasProps ? "{...mockProps}" : ""} />);
+      
+      // TODO: Add meaningful assertions based on your component
+      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     ${
@@ -366,6 +380,7 @@ describe('${componentName}', () => {
       const user = userEvent.setup();
       ${touch("user")}
       // TODO: form handling assertions
+      // Mock data is available from @/mocks/schema for realistic testing
     });`
         : ""
     }
@@ -376,6 +391,7 @@ describe('${componentName}', () => {
       const user = userEvent.setup();
       ${touch("user")}
       // TODO: state management assertions
+      // Mock data is available from @/mocks/schema for realistic testing
     });`
         : ""
     }
@@ -393,22 +409,25 @@ describe('${componentName}', () => {
   ${
     analysis.hasApiCalls
       ? `describe('API Integration', () => {
-    it.skip('should handle API calls', async () => {
-      // TODO: Test API integration
+    it.skip('should handle and display an API error state', async () => {
+      // Arrange: Override the default success mock with an error for this test.${
+        queryNames.length > 0
+          ? `
+      // Example: vi.mocked(${queryNames[0]}).mockRejectedValue(new Error('API Error'));`
+          : ""
+      }
+
+      renderWithMocks(<${componentName} ${analysis.hasProps ? "{...mockProps}" : ""} />);
       
-      // TODO: API integration assertions
+      // Assert: Check that your component shows an error message.
+      // TODO: Add specific error state assertions
     });
 
     it.skip('should handle loading states', () => {
       // TODO: Test loading states
+      // Mock data is automatically loaded from @/mocks/schema
       
       // TODO: loading states assertions
-    });
-
-    it.skip('should handle error states', () => {
-      // TODO: Test error handling
-      
-      // TODO: error handling assertions
     });
   });`
       : ""

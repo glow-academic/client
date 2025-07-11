@@ -3,45 +3,19 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import RubricEdit, { RubricEditProps } from '@/components/management/rubrics/RubricEdit';
-
-
-
-/* ------------------------------------------------------------------ *
- * Auto-detected data fns used by this component
- * (feel free to delete ones you don't need in a specific test) */
-const DEFAULT_OVERRIDES = {
-  queries: {
-    // 
-  },
-  mutations: {
-    //
-  },
-};
-/* ------------------------------------------------------------------ */
-
-
-// ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
-
-const mockProps: RubricEditProps = {
-  rubricId: 'test-rubricId',
-};
-// ------------------------------------------------------------------
-
+import RubricEdit from '@/components/management/rubrics/RubricEdit';
 
 describe('RubricEdit', () => {
+  
 
   describe('basic render smoke-test', () => {
-    it.skip('renders without crashing (replace skip when implemented)', async () => {
-      renderWithMocks(
-        <RubricEdit {...mockProps} />,
-        DEFAULT_OVERRIDES
-      );
-      /* TODO: add reasonable assertion */
-      expect(
-        await screen.findByRole('document', {}, { timeout: 2000 })
-      ).toBeTruthy();
+    it('renders without crashing', async () => {
+      
+      renderWithMocks(<RubricEdit {...mockProps} />);
+      
+      // TODO: Add meaningful assertions based on your component
+      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     it.skip('should render with props', () => {

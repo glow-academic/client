@@ -6,35 +6,17 @@ import userEvent from '@testing-library/user-event';
 // ——————————————————————————————————————————
 import Logs from '@/components/management/logs/Logs';
 
-
-
-/* ------------------------------------------------------------------ *
- * Auto-detected data fns used by this component
- * (feel free to delete ones you don't need in a specific test) */
-const DEFAULT_OVERRIDES = {
-  queries: {
-    // 
-  },
-  mutations: {
-    //
-  },
-};
-/* ------------------------------------------------------------------ */
-
-
-
 describe('Logs', () => {
+  
 
   describe('basic render smoke-test', () => {
-    it.skip('renders without crashing (replace skip when implemented)', async () => {
-      renderWithMocks(
-        <Logs  />,
-        DEFAULT_OVERRIDES
-      );
-      /* TODO: add reasonable assertion */
-      expect(
-        await screen.findByRole('document', {}, { timeout: 2000 })
-      ).toBeTruthy();
+    it('renders without crashing', async () => {
+      
+      renderWithMocks(<Logs  />);
+      
+      // TODO: Add meaningful assertions based on your component
+      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     
@@ -54,6 +36,7 @@ describe('Logs', () => {
       const user = userEvent.setup();
       void user;
       // TODO: state management assertions
+      // Mock data is available from @/mocks/schema for realistic testing
     });
 
     it.skip('should handle user events', async () => {
@@ -65,22 +48,20 @@ describe('Logs', () => {
   });
 
   describe('API Integration', () => {
-    it.skip('should handle API calls', async () => {
-      // TODO: Test API integration
+    it.skip('should handle and display an API error state', async () => {
+      // Arrange: Override the default success mock with an error for this test.
+
+      renderWithMocks(<Logs  />);
       
-      // TODO: API integration assertions
+      // Assert: Check that your component shows an error message.
+      // TODO: Add specific error state assertions
     });
 
     it.skip('should handle loading states', () => {
       // TODO: Test loading states
+      // Mock data is automatically loaded from @/mocks/schema
       
       // TODO: loading states assertions
-    });
-
-    it.skip('should handle error states', () => {
-      // TODO: Test error handling
-      
-      // TODO: error handling assertions
     });
   });
 

@@ -3,46 +3,19 @@ import { describe, it, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import SimulationHistory, { SimulationHistoryProps } from '@/components/common/history/SimulationHistory';
-
-
-
-/* ------------------------------------------------------------------ *
- * Auto-detected data fns used by this component
- * (feel free to delete ones you don't need in a specific test) */
-const DEFAULT_OVERRIDES = {
-  queries: {
-    // 
-  },
-  mutations: {
-    //
-  },
-};
-/* ------------------------------------------------------------------ */
-
-
-// ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
-
-const mockProps: SimulationHistoryProps = {
-  showAll: false,
-  // showExport: false, /* optional */
-};
-// ------------------------------------------------------------------
-
+import SimulationHistory from '@/components/common/history/SimulationHistory';
 
 describe('SimulationHistory', () => {
+  
 
   describe('basic render smoke-test', () => {
-    it.skip('renders without crashing (replace skip when implemented)', async () => {
-      renderWithMocks(
-        <SimulationHistory {...mockProps} />,
-        DEFAULT_OVERRIDES
-      );
-      /* TODO: add reasonable assertion */
-      expect(
-        await screen.findByRole('document', {}, { timeout: 2000 })
-      ).toBeTruthy();
+    it('renders without crashing', async () => {
+      
+      renderWithMocks(<SimulationHistory {...mockProps} />);
+      
+      // TODO: Add meaningful assertions based on your component
+      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     it.skip('should render with props', () => {

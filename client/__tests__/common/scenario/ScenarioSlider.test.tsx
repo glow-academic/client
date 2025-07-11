@@ -4,56 +4,19 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import { ScenarioSlider, ScenarioSliderProps } from '@/components/common/scenario/ScenarioSlider';
-
-
-
-/* ------------------------------------------------------------------ *
- * Auto-detected data fns used by this component
- * (feel free to delete ones you don't need in a specific test) */
-const DEFAULT_OVERRIDES = {
-  queries: {
-    // 
-  },
-  mutations: {
-    //
-  },
-};
-/* ------------------------------------------------------------------ */
-
-
-// ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
-
-const mockProps: ScenarioSliderProps = {
-  // leftContent: <div>test-leftContent</div>, /* optional */
-  // rightContent: <div>test-rightContent</div>, /* optional */
-  defaultValue: [],
-  // label: 'test-label', /* optional */
-  // description: 'test-description', /* optional */
-  // min: 0, /* optional */
-  // max: 0, /* optional */
-  // step: 0, /* optional */
-  // value: [], /* optional */
-  // disabled: false, /* optional */
-  // showReset: false, /* optional */
-  // inlineTitle: false, /* optional */
-};
-// ------------------------------------------------------------------
-
+import { ScenarioSlider } from '@/components/common/scenario/ScenarioSlider';
 
 describe('ScenarioSlider', () => {
+  
 
   describe('basic render smoke-test', () => {
-    it.skip('renders without crashing (replace skip when implemented)', async () => {
-      renderWithMocks(
-        <ScenarioSlider {...mockProps} />,
-        DEFAULT_OVERRIDES
-      );
-      /* TODO: add reasonable assertion */
-      expect(
-        await screen.findByRole('document', {}, { timeout: 2000 })
-      ).toBeTruthy();
+    it('renders without crashing', async () => {
+      
+      renderWithMocks(<ScenarioSlider {...mockProps} />);
+      
+      // TODO: Add meaningful assertions based on your component
+      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     it.skip('should render with props', () => {
@@ -78,6 +41,7 @@ describe('ScenarioSlider', () => {
       const user = userEvent.setup();
       void user;
       // TODO: state management assertions
+      // Mock data is available from @/mocks/schema for realistic testing
     });
 
     it.skip('should handle user events', async () => {

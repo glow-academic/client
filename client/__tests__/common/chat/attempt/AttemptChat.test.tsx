@@ -6,35 +6,17 @@ import userEvent from '@testing-library/user-event';
 // ——————————————————————————————————————————
 import AttemptChat from '@/components/common/chat/attempt/AttemptChat';
 
-
-
-/* ------------------------------------------------------------------ *
- * Auto-detected data fns used by this component
- * (feel free to delete ones you don't need in a specific test) */
-const DEFAULT_OVERRIDES = {
-  queries: {
-    // 
-  },
-  mutations: {
-    //
-  },
-};
-/* ------------------------------------------------------------------ */
-
-
-
 describe('AttemptChat', () => {
+  
 
   describe('basic render smoke-test', () => {
-    it.skip('renders without crashing (replace skip when implemented)', async () => {
-      renderWithMocks(
-        <AttemptChat  />,
-        DEFAULT_OVERRIDES
-      );
-      /* TODO: add reasonable assertion */
-      expect(
-        await screen.findByRole('document', {}, { timeout: 2000 })
-      ).toBeTruthy();
+    it('renders without crashing', async () => {
+      
+      renderWithMocks(<AttemptChat  />);
+      
+      // TODO: Add meaningful assertions based on your component
+      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      expect(screen.getByRole('main')).toBeInTheDocument();
     });
 
     
@@ -54,6 +36,7 @@ describe('AttemptChat', () => {
       const user = userEvent.setup();
       void user;
       // TODO: state management assertions
+      // Mock data is available from @/mocks/schema for realistic testing
     });
 
     it.skip('should handle user events', async () => {
