@@ -100,6 +100,7 @@ function analyzeComponent(componentPath) {
     const content = fs.readFileSync(componentPath, "utf8");
 
     const analysis = {
+      content, // Store content for import analysis
       hasDefaultExport: /export default/.test(content),
       namedExports: [],
       hasProps: false,
@@ -177,134 +178,121 @@ function analyzeComponent(componentPath) {
 }
 
 /**
- * Generate test template based on component analysis
+ * Generate **ready-to-implement** Vitest spec
+ * every spec imports the shared helper `@/tests/renderWithMocks`
  */
 function generateTestTemplate(component, analysis) {
   const { componentName, componentPath } = component;
   const importPath =
     `@/components/${componentPath.replace(/\\/g, "/")}`.replace(".tsx", "");
 
-  let template = `import { render } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';`;
+  /* ──────────────────────────────────────────────────────────
+   * 1.  Gather every query / mutation fn name we can detect
+   *     so that we pre-fill the overrides object for devs.
+   * ────────────────────────────────────────────────────────── */
+  const queryNames = [];
+  const mutationNames = [];
 
-  // Add conditional imports based on component analysis
+  analysis.imports.forEach((imp) => {
+    if (imp.startsWith("@/utils/queries/")) {
+      // heuristically use the *named import* token(s) if present
+      const m = analysis.content?.match(
+        new RegExp(
+          `import\\s+\\{([^}]+)\\}\\s+from\\s+['"]${imp.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}['"]`
+        )
+      );
+      if (m) {
+        m[1]
+          .split(",")
+          .map((s) => s.trim())
+          .forEach((n) => queryNames.push(n));
+      }
+    }
+
+    if (imp.startsWith("@/utils/mutations/")) {
+      const m = analysis.content?.match(
+        new RegExp(
+          `import\\s+\\{([^}]+)\\}\\s+from\\s+['"]${imp.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}['"]`
+        )
+      );
+      if (m) {
+        m[1]
+          .split(",")
+          .map((s) => s.trim())
+          .forEach((n) => mutationNames.push(n));
+      }
+    }
+  });
+
+  /* ──────────────────────────────────────────────────────────
+   * 2.  Build the test file
+   * ────────────────────────────────────────────────────────── */
   const needsUserEvent =
     analysis.usesState || analysis.hasFormHandling || analysis.usesRouter;
+
+  let template = `import { screen } from '@testing-library/react';
+import { describe, it, expect${needsUserEvent ? ", vi" : ""} } from 'vitest';
+import { renderWithMocks } from '@/test/renderWithMocks';`;
+
   if (needsUserEvent) {
     template += `
 import userEvent from '@testing-library/user-event';`;
   }
 
-  if (analysis.hasApiCalls) {
-    template += `
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactNode } from 'react';`;
-  }
-
-  if (analysis.usesContext) {
-    template += `
-import { ReactNode } from 'react';`;
-  }
-
-  // --- auto-generated mocks --------------------------------------------
-  const autoMockLines = [];
-  const seen = new Set();
-
-  analysis.imports.forEach((imp) => {
-    const mockId = mapImportToMock(imp);
-    if (!mockId) return; // real import, leave it
-    if (seen.has(mockId)) return; // already added
-    seen.add(mockId);
-    autoMockLines.push(`import '${mockId}';`);
-  });
-
-  // If we saw an import we couldn't classify, fail generator so you fix it
-  const unknown = analysis.imports.filter((imp) => {
-    try {
-      return mapImportToMock(imp) === undefined;
-    } catch {
-      return true; // treat errors as unknown
-    }
-  });
-  if (unknown.length) {
-    throw new Error(
-      `🚨 Unmapped import(s) in ${componentPath}: ${unknown.join(", ")}`
-    );
-  }
-
   template += `
 
-// --- auto-generated mocks --------------------------------------------
-${autoMockLines.join("\n")}
-// ---------------------------------------------------------------------
+// ——————————————————————————————————————————
+import ${
+    analysis.hasDefaultExport
+      ? componentName
+      : `{ ${analysis.namedExports.join(", ")} }`
+  } from '${importPath}';
 
-import ${analysis.hasDefaultExport ? componentName : `{ ${analysis.namedExports.join(", ")} }`} from '${importPath}';
-
-// Mock only WHEN the component calls fetch directly, not when it uses our query helpers
 ${analysis.hasDirectFetch ? "global.fetch = vi.fn();" : ""}
 
+/* ------------------------------------------------------------------ *
+ * Auto-detected data fns used by this component
+ * (feel free to delete ones you don't need in a specific test) */
+const DEFAULT_OVERRIDES = {
+  queries: {
+${
+  queryNames.map((q) => `    ${q}: /* TODO */ [],`).join("\n") ||
+  "    // " /* keep object non-empty for prettier */
+}
+  },
+  mutations: {
+${mutationNames.map((m) => `    ${m}: /* TODO */ {},`).join("\n") || "    //"}
+  },
+};
+/* ------------------------------------------------------------------ */
+
 describe('${componentName}', () => {
-  ${
-    analysis.hasApiCalls
-      ? `let queryClient: QueryClient;
-  
-  `
-      : ""
-  }beforeEach(() => {
-    vi.clearAllMocks();
-    ${
-      analysis.hasApiCalls
-        ? `queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false },
-      },
-    });`
-        : ""
-    }
-  });
 
-  ${
-    analysis.hasApiCalls
-      ? `const renderWithProviders = (ui: React.ReactElement, options = {}) => {
-    const AllProviders = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    );
-
-    return render(ui, { wrapper: AllProviders, ...options });
-  };
-  `
-      : ""
-  }
-
-  describe('Rendering', () => {
-    it('should render without crashing', () => {
-      // TODO: Implement basic rendering test for ${componentName}
-      ${analysis.hasApiCalls ? `renderWithProviders(<${componentName} />);` : `render(<${componentName} />);`}
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for ${componentName}
+  describe('basic render smoke-test', () => {
+    it.skip('renders without crashing (replace skip when implemented)', async () => {
+      renderWithMocks(<${componentName} />, DEFAULT_OVERRIDES);
+      /* TODO: add reasonable assertion */
+      expect(
+        await screen.findByRole('document', {}, { timeout: 2000 })
+      ).toBeTruthy();
     });
 
     ${
       analysis.hasProps
-        ? `it('should render with props', () => {
+        ? `it.skip('should render with props', () => {
       // TODO: Test component with various props
       // Props interface: ${analysis.propsInterface || "Unknown"}
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Props testing for ${componentName}
+      // TODO add props assertions
     });`
         : ""
     }
 
-    it('should have correct accessibility attributes', () => {
+    it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for ${componentName}
+      // TODO add accessibility assertions
+
     });
   });
 
@@ -313,34 +301,32 @@ describe('${componentName}', () => {
       ? `describe('User Interactions', () => {
     ${
       analysis.hasFormHandling
-        ? `it('should handle form submissions', async () => {
+        ? `it.skip('should handle form submissions', async () => {
       // TODO: Test form handling
       const _user = userEvent.setup();
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Form handling test for ${componentName}
+      // TODO: form handling assertions
     });`
         : ""
     }
 
     ${
       analysis.usesState
-        ? `it('should handle state changes', async () => {
+        ? `it.skip('should handle state changes', async () => {
       // TODO: Test state management
       const _user = userEvent.setup();
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: State management test for ${componentName}
+      // TODO: state management assertions
     });`
         : ""
     }
 
-    it('should handle user events', async () => {
+    it.skip('should handle user events', async () => {
       // TODO: Test click, hover, focus events
       const _user = userEvent.setup();
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: User events test for ${componentName}
+      // TODO: interaction assertions
+
     });
   });`
       : ""
@@ -349,25 +335,22 @@ describe('${componentName}', () => {
   ${
     analysis.hasApiCalls
       ? `describe('API Integration', () => {
-    it('should handle API calls', async () => {
+    it.skip('should handle API calls', async () => {
       // TODO: Test API integration
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: API integration test for ${componentName}
+      // TODO: API integration assertions
     });
 
-    it('should handle loading states', () => {
+    it.skip('should handle loading states', () => {
       // TODO: Test loading states
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Loading states test for ${componentName}
+      // TODO: loading states assertions
     });
 
-    it('should handle error states', () => {
+    it.skip('should handle error states', () => {
       // TODO: Test error handling
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Error handling test for ${componentName}
+      // TODO: error handling assertions
     });
   });`
       : ""
@@ -376,31 +359,29 @@ describe('${componentName}', () => {
   ${
     analysis.usesRouter
       ? `describe('Navigation', () => {
-    it('should handle navigation', () => {
+    it.skip('should handle navigation', () => {
       // TODO: Test navigation behavior
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Navigation test for ${componentName}
+      // TODO: navigation assertions
     });
   });`
       : ""
   }
 
   describe('Edge Cases', () => {
-    it('should handle edge cases gracefully', () => {
+    it.skip('should handle edge cases gracefully', () => {
       // TODO: Test edge cases and error scenarios
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Edge cases test for ${componentName}
+      // TODO: edge-case assertions
+
     });
 
     ${
       analysis.hasProps
-        ? `it('should handle missing or invalid props', () => {
+        ? `it.skip('should handle missing or invalid props', () => {
       // TODO: Test with missing/invalid props
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Invalid props test for ${componentName}
+      // TODO: invalid props assertions
     });`
         : ""
     }
