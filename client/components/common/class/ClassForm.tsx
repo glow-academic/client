@@ -1,7 +1,13 @@
 "use client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import React, { useCallback, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import * as tus from "tus-js-client";
 
@@ -52,6 +58,8 @@ import {
   Upload,
   UploadCloud,
 } from "lucide-react";
+import { getClass } from "@/utils/queries/classes/get-class";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface FormErrors {
   name?: string;
@@ -59,24 +67,44 @@ interface FormErrors {
   year?: string;
   term?: string;
   description?: string;
+  documentIds?: string[];
+}
+
+interface FormData {
+  id?: string;
+  name?: string;
+  classCode?: string;
+  year?: number;
+  term?: string;
+  description?: string;
+  documentIds?: string[];
 }
 
 export interface ClassFormProps {
-  mode: "create" | "edit";
   classId?: string;
-  initialData?: Partial<Class>;
   onSuccess?: (classId: string) => void;
 }
 
-export default function ClassForm({
-  mode,
-  classId,
-  initialData,
-  onSuccess,
-}: ClassFormProps) {
+export default function ClassForm({ classId, onSuccess }: ClassFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const editMode = !!classId;
+
+  const initialFormData: FormData = useMemo(
+    () => ({
+      name: "",
+      classCode: "",
+      year: new Date().getFullYear(),
+      term: "fall",
+      description: "",
+      documentIds: [],
+    }),
+    []
+  );
+
+  const [formData, setFormData] = useState<FormData>();
 
   // Document management state
   const [searchQuery, setSearchQuery] = useState("");
@@ -99,6 +127,19 @@ export default function ClassForm({
   // Course processing state
   const [showCourseProcessDialog, setShowCourseProcessDialog] = useState(false);
   const [isProcessingCourse, setIsProcessingCourse] = useState(false);
+
+  const { data: classData, isLoading: isLoadingClass } = useQuery({
+    queryKey: ["class", classId],
+    queryFn: () => getClass(classId!),
+    enabled: editMode,
+  });
+
+  // Fetch documents for this class
+  const { data: documents = [], isLoading: isLoadingDocuments } = useQuery({
+    queryKey: ["documents", classId],
+    queryFn: () => getDocumentsByClass([classId!]),
+    enabled: editMode,
+  });
 
   // Handle course processing
   const handleCourseProcessing = async () => {
@@ -156,65 +197,44 @@ export default function ClassForm({
     }
   };
 
-  const [formData, setFormData] = useState<Partial<Class>>({
-    id: initialData?.id || "",
-    name: initialData?.name || "",
-    classCode: initialData?.classCode || "",
-    year: initialData?.year || new Date().getFullYear(),
-    term: initialData?.term || "fall",
-    description: initialData?.description || "",
-  });
-
   const [errors, setErrors] = useState<FormErrors>({});
-
-  // Fetch documents for this class
-  const { data: documents = [], isLoading: documentsLoading } = useQuery({
-    queryKey: ["documents", classId],
-    queryFn: () => getDocumentsByClass([classId!]),
-    enabled: classId !== undefined && classId !== null,
-  });
-
   // Update form data when initial data changes
-  React.useEffect(() => {
-    if (initialData) {
+  const isLoading = isLoadingClass || isLoadingDocuments;
+
+  useEffect(() => {
+    if (classData && editMode) {
       setFormData({
-        name: initialData.name || "",
-        classCode: initialData.classCode || "",
-        year: initialData.year || new Date().getFullYear(),
-        term: initialData.term || "fall",
-        description: initialData.description || "",
+        name: classData.name,
+        classCode: classData.classCode,
+        year: classData.year,
+        term: classData.term,
+        description: classData.description,
       });
+    } else if (!editMode) {
+      setFormData(initialFormData);
     }
-  }, [initialData]);
-
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!formData.name?.trim()) {
-      newErrors.name = "Class name is required";
-    }
-
-    if (!formData.classCode?.trim()) {
-      newErrors.classCode = "Class code is required";
-    }
-
-    if (formData.year && (formData.year < 2020 || formData.year > 2030)) {
-      newErrors.year = "Year must be between 2020 and 2030";
-    }
-
-    if (!formData.description?.trim()) {
-      newErrors.description = "Description is required";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  }, [classData, editMode, initialFormData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      toast.error("Please fill in all required fields");
+    if (!formData?.name?.trim()) {
+      setErrors({ ...errors, name: "Class name is required" });
+      return;
+    }
+
+    if (!formData?.classCode?.trim()) {
+      setErrors({ ...errors, classCode: "Class code is required" });
+      return;
+    }
+
+    if (formData.year && (formData.year < 2020 || formData.year > 2030)) {
+      setErrors({ ...errors, year: "Year must be between 2020 and 2030" });
+      return;
+    }
+
+    if (!formData.description?.trim()) {
+      setErrors({ ...errors, description: "Description is required" });
       return;
     }
 
@@ -223,7 +243,7 @@ export default function ClassForm({
     try {
       let result;
 
-      if (mode === "create") {
+      if (!editMode) {
         result = await createClass(formData as Class);
 
         queryClient.invalidateQueries({ queryKey: ["classes"] });
@@ -248,9 +268,9 @@ export default function ClassForm({
       }
     } catch (error) {
       toast.error(
-        `Failed to ${mode} class: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${editMode ? "edit" : "create"} class: ${error instanceof Error ? error.message : "Unknown error"}`
       );
-      logError(`Error ${mode}ing class:`, error);
+      logError(`Error ${editMode ? "editing" : "creating"} class:`, error);
     } finally {
       setIsSubmitting(false);
     }
@@ -261,7 +281,7 @@ export default function ClassForm({
     async (files: FileList) => {
       if (!files || files.length === 0) return;
       if (!classId) {
-        if (mode === "create") {
+        if (!editMode) {
           toast.error(
             "Please create the class first before uploading documents"
           );
@@ -397,7 +417,7 @@ export default function ClassForm({
         setIsUploading(false);
       }
     },
-    [classId, queryClient, mode]
+    [classId, queryClient, editMode]
   );
 
   // Drag and drop handlers
@@ -548,15 +568,19 @@ export default function ClassForm({
           {/* Class Name */}
           <div className="space-y-2">
             <Label htmlFor="name">Class Name *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, name: e.target.value }))
-              }
-              placeholder="e.g., Introduction to Computer Science"
-              className={errors.name ? "border-red-500" : ""}
-            />
+            {formData?.name !== undefined && !isLoading ? (
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                }
+                placeholder="e.g., Introduction to Computer Science"
+                className={errors.name ? "border-red-500" : ""}
+              />
+            ) : (
+              <Skeleton className="h-10 w-full" />
+            )}
             {errors.name && (
               <p className="text-sm text-red-500">{errors.name}</p>
             )}
@@ -565,15 +589,22 @@ export default function ClassForm({
           {/* Class Code */}
           <div className="space-y-2">
             <Label htmlFor="classCode">Class Code *</Label>
-            <Input
-              id="classCode"
-              value={formData.classCode}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, classCode: e.target.value }))
-              }
-              placeholder="e.g., CS101"
-              className={errors.classCode ? "border-red-500" : ""}
-            />
+            {formData?.classCode !== undefined && !isLoading ? (
+              <Input
+                id="classCode"
+                value={formData.classCode}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    classCode: e.target.value,
+                  }))
+                }
+                placeholder="e.g., CS101"
+                className={errors.classCode ? "border-red-500" : ""}
+              />
+            ) : (
+              <Skeleton className="h-10 w-full" />
+            )}
             {errors.classCode && (
               <p className="text-sm text-red-500">{errors.classCode}</p>
             )}
@@ -583,20 +614,25 @@ export default function ClassForm({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="year">Year *</Label>
-              <Input
-                id="year"
-                type="number"
-                value={formData.year}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    year: parseInt(e.target.value) || new Date().getFullYear(),
-                  }))
-                }
-                min="2020"
-                max="2030"
-                className={errors.year ? "border-red-500" : ""}
-              />
+              {formData?.year !== undefined && !isLoading ? (
+                <Input
+                  id="year"
+                  type="number"
+                  value={formData.year}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      year:
+                        parseInt(e.target.value) || new Date().getFullYear(),
+                    }))
+                  }
+                  min="2020"
+                  max="2030"
+                  className={errors.year ? "border-red-500" : ""}
+                />
+              ) : (
+                <Skeleton className="h-10 w-full" />
+              )}
               {errors.year && (
                 <p className="text-sm text-red-500">{errors.year}</p>
               )}
@@ -604,21 +640,27 @@ export default function ClassForm({
 
             <div className="space-y-2">
               <Label htmlFor="term">Term *</Label>
-              <Select
-                value={formData.term || ""}
-                onValueChange={(value: "fall" | "spring" | "summer") =>
-                  setFormData((prev) => ({ ...prev, term: value }))
-                }
-              >
-                <SelectTrigger className={errors.term ? "border-red-500" : ""}>
-                  <SelectValue placeholder="Select term" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="fall">Fall</SelectItem>
-                  <SelectItem value="spring">Spring</SelectItem>
-                  <SelectItem value="summer">Summer</SelectItem>
-                </SelectContent>
-              </Select>
+              {formData?.term !== undefined && !isLoading ? (
+                <Select
+                  value={formData.term || ""}
+                  onValueChange={(value: "fall" | "spring" | "summer") =>
+                    setFormData((prev) => ({ ...prev, term: value }))
+                  }
+                >
+                  <SelectTrigger
+                    className={errors.term ? "border-red-500" : ""}
+                  >
+                    <SelectValue placeholder="Select term" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fall">Fall</SelectItem>
+                    <SelectItem value="spring">Spring</SelectItem>
+                    <SelectItem value="summer">Summer</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Skeleton className="h-10 w-full" />
+              )}
               {errors.term && (
                 <p className="text-sm text-red-500">{errors.term}</p>
               )}
@@ -628,120 +670,128 @@ export default function ClassForm({
           {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description || ""}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  description: e.target.value,
-                }))
-              }
-              placeholder="Describe the class objectives, topics covered, and any other relevant information..."
-              rows={4}
-              className={errors.description ? "border-red-500" : ""}
-            />
+            {formData?.description !== undefined && !isLoading ? (
+              <Textarea
+                id="description"
+                value={formData.description || ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+                placeholder="Describe the class objectives, topics covered, and any other relevant information..."
+                rows={4}
+                className={errors.description ? "border-red-500" : ""}
+              />
+            ) : (
+              <Skeleton className="h-20 w-full" />
+            )}
             {errors.description && (
               <p className="text-sm text-red-500">{errors.description}</p>
             )}
           </div>
 
           {/* Documents Section - Only show in edit mode */}
-          {mode === "edit" && (
+          {editMode && (
             <div className="space-y-4">
               <Label>Documents</Label>
 
               {/* Controls Bar */}
-              <div className="flex items-center justify-between gap-4">
-                {/* Left side - Search and Filters */}
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search documents..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8 h-9 w-64"
-                    />
+              {formData?.documentIds !== undefined && !isLoading ? (
+                <div className="flex items-center justify-between gap-4">
+                  {/* Left side - Search and Filters */}
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search documents..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-8 h-9 w-64"
+                      />
+                    </div>
+
+                    <Select value={typeFilter} onValueChange={setTypeFilter}>
+                      <SelectTrigger className="w-40 h-9">
+                        <SelectValue placeholder="Filter by type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="homework">📝 Homework</SelectItem>
+                        <SelectItem value="project">🚀 Project</SelectItem>
+                        <SelectItem value="quiz">❓ Quiz</SelectItem>
+                        <SelectItem value="midterm">📊 Midterm</SelectItem>
+                        <SelectItem value="lab">🧪 Lab</SelectItem>
+                        <SelectItem value="lecture">📚 Lecture</SelectItem>
+                        <SelectItem value="syllabus">📋 Syllabus</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger className="w-40 h-9">
-                      <SelectValue placeholder="Filter by type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="homework">📝 Homework</SelectItem>
-                      <SelectItem value="project">🚀 Project</SelectItem>
-                      <SelectItem value="quiz">❓ Quiz</SelectItem>
-                      <SelectItem value="midterm">📊 Midterm</SelectItem>
-                      <SelectItem value="lab">🧪 Lab</SelectItem>
-                      <SelectItem value="lecture">📚 Lecture</SelectItem>
-                      <SelectItem value="syllabus">📋 Syllabus</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Right side - View Toggle */}
-                <div className="flex items-center gap-4">
-                  <div className="flex border rounded-md">
-                    <Button
-                      type="button"
-                      variant={viewMode === "grid" ? "default" : "ghost"}
-                      size="sm"
-                      onClick={() => setViewMode("grid")}
-                      className="rounded-r-none"
-                    >
-                      <Grid3X3 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={viewMode === "list" ? "default" : "ghost"}
-                      size="sm"
-                      onClick={() => setViewMode("list")}
-                      className="rounded-l-none border-l"
-                    >
-                      <List className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      onChange={handleFileInputChange}
-                      disabled={isUploading}
-                      accept="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/zip"
-                      className="hidden"
-                    />
-                    <Button
-                      type="button"
-                      variant="default"
-                      onClick={handleClick}
-                      disabled={isUploading}
-                      className="flex items-center gap-2"
-                    >
-                      <Upload className="h-4 w-4" />
-                      {isUploading ? "Uploading..." : "Upload"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowCourseProcessDialog(true)}
-                      className="flex items-center gap-2"
-                      title="Process Course Information"
-                      disabled={isProcessingCourse}
-                    >
-                      {isProcessingCourse ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Brain className="h-4 w-4" />
-                      )}
-                    </Button>
+                  {/* Right side - View Toggle */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex border rounded-md">
+                      <Button
+                        type="button"
+                        variant={viewMode === "grid" ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode("grid")}
+                        className="rounded-r-none"
+                      >
+                        <Grid3X3 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={viewMode === "list" ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode("list")}
+                        className="rounded-l-none border-l"
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        onChange={handleFileInputChange}
+                        disabled={isUploading}
+                        accept="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/zip"
+                        className="hidden"
+                      />
+                      <Button
+                        type="button"
+                        variant="default"
+                        onClick={handleClick}
+                        disabled={isUploading}
+                        className="flex items-center gap-2"
+                      >
+                        <Upload className="h-4 w-4" />
+                        {isUploading ? "Uploading..." : "Upload"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowCourseProcessDialog(true)}
+                        className="flex items-center gap-2"
+                        title="Process Course Information"
+                        disabled={isProcessingCourse}
+                      >
+                        {isProcessingCourse ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Brain className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <Skeleton className="h-10 w-full" />
+              )}
 
               {/* Documents Display Area */}
               <div
@@ -750,7 +800,7 @@ export default function ClassForm({
                   documents.length === 0 ? "border-2 border-dashed" : ""
                 )}
               >
-                {documentsLoading ? (
+                {isLoadingDocuments ? (
                   <div className="p-6">
                     <div
                       className={
@@ -964,10 +1014,10 @@ export default function ClassForm({
             <div className="flex-1 flex justify-end">
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting
-                  ? mode === "create"
-                    ? "Creating..."
-                    : "Updating..."
-                  : mode === "create"
+                  ? editMode
+                    ? "Updating..."
+                    : "Creating..."
+                  : editMode
                     ? "Create Class"
                     : "Update Class"}
               </Button>
