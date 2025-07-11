@@ -5,9 +5,10 @@ import "@testing-library/jest-dom";
 
 // Import all centralized mock modules
 import "@/mocks/auth"; // Next-auth and auth helper mocks
-import "@/mocks/mutations"; // All mutation function mocks
+import "@/mocks/queries";    // ✨ Your AUTO-GENERATED query mocks
+import "@/mocks/mutations";  // ✨ Your AUTO-GENERATED mutation mocks
+import "@/mocks/api"; // For server calls
 import "@/mocks/navigation"; // Next.js navigation mocks
-import "@/mocks/queries"; // All query function mocks
 
 // Additional global test setup
 import React from "react";

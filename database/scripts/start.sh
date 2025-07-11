@@ -267,7 +267,7 @@ generate_and_copy_files() {
   fi
   
   # Generate queries and mutations
-  if node scripts/generate-queries-mutations.js; then
+  if node scripts/generate-queries-mutations.js --with-mocks; then
     echo "✅ Queries and mutations generated"
   else
     echo "❌ Failed to generate queries and mutations"

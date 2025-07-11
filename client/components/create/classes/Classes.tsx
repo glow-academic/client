@@ -17,24 +17,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {} from "@/components/ui/select";
 import { logError } from "@/utils/logger";
 import { deleteClass } from "@/utils/mutations/classes/delete-class";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import {
-  Calendar,
-  Edit,
-  Trash2,
-} from "lucide-react";
+import { Calendar, Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -58,7 +48,7 @@ export default function ClassesGeneralPage() {
   });
 
   // Fetch all data for aggregated view
-  const { data: classes = [], isLoading: isLoadingClasses } = useQuery({
+  const { data: classes = [] } = useQuery({
     queryKey: ["classes"],
     queryFn: () => getAllClasses(),
   });
@@ -66,7 +56,6 @@ export default function ClassesGeneralPage() {
   const handleEditClass = (classId: string) => {
     router.push(`/create/classes/c/${classId}`);
   };
-
 
   // Helper functions
   const handleDeleteClass = (classId: string) => {
@@ -93,20 +82,6 @@ export default function ClassesGeneralPage() {
     }
   };
 
-  // Loading state
-  if (
-    isLoadingClasses
-  ) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading class analytics...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Class Cards Carousel */}
@@ -124,7 +99,13 @@ export default function ClassesGeneralPage() {
                     </Badge>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => handleEditClass(classItem.id)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEditClass(classItem.id)}
+                  role="button"
+                  aria-label={`Edit ${classItem.name}`}
+                >
                   <Edit className="h-4 w-4" />
                 </Button>
                 <Button
@@ -132,6 +113,8 @@ export default function ClassesGeneralPage() {
                   size="sm"
                   onClick={() => handleDeleteClass(classItem.id)}
                   className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                  role="button"
+                  aria-label={`Delete ${classItem.name}`}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
