@@ -776,7 +776,10 @@ export default function ClassForm({ classId, onSuccess }: ClassFormProps) {
             </div>
 
             {/* Documents Display Area */}
-            <div
+            {isLoading ? (
+              <Skeleton className="h-[200px] rounded-lg" />
+            ) : (
+              <div
               className={cn(
                 "min-h-[200px] rounded-lg",
                 filteredDocuments.length === 0 ? "border-2 border-dashed" : ""
@@ -981,8 +984,9 @@ export default function ClassForm({ classId, onSuccess }: ClassFormProps) {
                     </div>
                   )}
                 </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}
