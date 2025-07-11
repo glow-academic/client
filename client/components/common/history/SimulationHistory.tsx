@@ -5,10 +5,10 @@
  * 06/07/2025
  */
 
-import { useColumns } from "./columns";
-import { DataTable } from "./data-table";
+import { useHistoryColumns } from "@/hooks/use-history-columns";
+import { DataTable } from "./DataTable";
 
-type SimulationHistoryProps = {
+export interface SimulationHistoryProps {
   showAll: boolean;
   showExport?: boolean;
 };
@@ -18,7 +18,7 @@ export default function SimulationHistory({
   showExport = true,
 }: SimulationHistoryProps) {
   const { columns, data, profileOptions, classOptions, scoreRangeOptions } =
-    useColumns({
+    useHistoryColumns({
       showAll,
       showExport,
     });

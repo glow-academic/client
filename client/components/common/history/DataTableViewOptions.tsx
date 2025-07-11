@@ -39,7 +39,7 @@ const columnMap = {
   isStruggling: "Status",
 };
 
-interface DataTableViewOptionsProps<TData> {
+export interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
   isAdmin?: boolean;
 }

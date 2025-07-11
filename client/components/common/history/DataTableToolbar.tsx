@@ -4,15 +4,15 @@ import { Table } from "@tanstack/react-table";
 import { X } from "lucide-react";
 import { DateRange } from "react-day-picker";
 
-import { DataTableViewOptions } from "@/components/common/history/data-table-view-options";
-import { ExportButton } from "@/components/common/history/export-button";
+import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
+import { ExportButton } from "@/components/common/history/ExportButton";
 import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { Input } from "@/components/ui/input";
 
-import { DataTableFacetedFilter } from "@/components/common/history/data-table-faceted-filter";
+import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 
-interface DataTableToolbarProps<TData> {
+export interface DataTableToolbarProps<TData> {
   table: Table<TData>;
   profileOptions: { value: string; label: string }[];
   classOptions: { value: string; label: string }[];

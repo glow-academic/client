@@ -1,5 +1,5 @@
 "use client";
-import { DataTableColumnHeader } from "@/components/common/history/data-table-column-header";
+import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";

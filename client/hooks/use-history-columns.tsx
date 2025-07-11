@@ -1,6 +1,7 @@
 "use client";
-import { DataTableColumnHeader } from "@/components/common/history/data-table-column-header";
-import { DataTableRowActions } from "@/components/common/history/data-table-row-actions";
+import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
+import { DataTableRowActions } from "@/components/common/history/DataTableRowActions";
+import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Agent,
@@ -28,7 +29,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Column, ColumnDef, Row, Table } from "@tanstack/react-table";
 import { useSession } from "next-auth/react";
 import { useMemo } from "react";
-import { Badge } from "../../ui/badge";
 
 // Enhanced types for the data table
 interface EnhancedAttempt extends SimulationAttempt {
@@ -40,7 +40,7 @@ interface EnhancedAttempt extends SimulationAttempt {
 }
 
 // Component to use the columns with data from queries
-export function useColumns({
+export function useHistoryColumns({
   showAll = false,
   showExport = true,
 }: {

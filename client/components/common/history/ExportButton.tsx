@@ -106,7 +106,7 @@ const getStatusLabel = (chat: ExportableData, statusValue?: string): string => {
 // Maximum rows to export without confirmation
 const MAX_ROWS_WITHOUT_CONFIRM = 100;
 
-interface ExportButtonProps<TData> {
+export interface ExportButtonProps<TData> {
   table: Table<TData>;
   profileOptions: { value: string; label: string }[];
   classOptions: { value: string; label: string }[];

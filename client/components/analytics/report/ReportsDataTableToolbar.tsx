@@ -3,9 +3,9 @@
 import { Table } from "@tanstack/react-table";
 import { X } from "lucide-react";
 
-import { DataTableFacetedFilter } from "@/components/common/history/data-table-faceted-filter";
-import { DataTableViewOptions } from "@/components/common/history/data-table-view-options";
-import { ExportButton } from "@/components/common/history/export-button";
+import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
+import { ExportButton } from "@/components/common/history/ExportButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TAPerformanceData } from "@/hooks/use-report-columns";
