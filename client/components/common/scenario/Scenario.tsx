@@ -356,43 +356,9 @@ export default function Scenario({
     setIsSubmitting(true);
 
     try {
-      let finalDescription = formData.description?.trim() || "";
-      let finalName = formData.name?.trim() || "";
-
-      // If description is blank, auto-generate content
-      if (!finalDescription) {
-        try {
-          const result = await newScenario({
-            agentId: formData.agentId || null,
-            classId: formData.classId || null,
-            documentIds: formData.documents || [],
-            seniority: formData.seniority || null,
-            crowdedness: formData.crowdedness || null,
-            intensity: formData.intensity || null,
-            location: formData.location || null,
-            tod: formData.tod || null,
-            urgency: formData.urgency || null,
-          });
-
-          if (result.success && result.description) {
-            finalDescription = result.description;
-            finalName = result.title || finalName;
-            toast.success("Scenario content generated automatically!");
-          } else {
-            throw new Error("Failed to generate scenario content");
-          }
-        } catch (genError) {
-          logError("Error auto-generating scenario content:", genError);
-          toast.error(
-            "Failed to generate scenario content. Please add a description manually."
-          );
-          return;
-        }
-      }
-
       const payload = {
-        name: finalName,
-        description: finalDescription,
+        name: formData.name?.trim() || "",
+        description: formData.description?.trim() || "",
         agentId: formData.agentId,
         classId: formData.classId,
         documents: formData.documents,
@@ -923,23 +889,23 @@ export default function Scenario({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {formData.description && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleGenerateScenario}
-                  disabled={isSubmitting || isGeneratingScenario}
-                >
-                  {isGeneratingScenario ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Regenerating...
-                    </>
-                  ) : (
-                    "Regenerate"
-                  )}
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleGenerateScenario}
+                disabled={isSubmitting || isGeneratingScenario}
+              >
+                {isGeneratingScenario ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {formData.description ? "Regenerating..." : "Generating..."}
+                  </>
+                ) : formData.description ? (
+                  "Regenerate"
+                ) : (
+                  "Generate"
+                )}
+              </Button>
               {getStepStatus("content") === "completed" && (
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
               )}
@@ -959,9 +925,9 @@ export default function Scenario({
               />
               <div className="flex items-start gap-2 p-3 rounded-md bg-blue-50 border border-blue-200">
                 <div className="text-blue-600 text-sm">
-                  <strong>💡 Tip:</strong> Leave this blank and we'll
-                  automatically generate a realistic scenario description based
-                  on your selections above when you save.
+                  <strong>💡 Tip:</strong> You can save the scenario with a
+                  blank description and use the "Generate" button above to
+                  create content later, or write your own custom description.
                 </div>
               </div>
             </div>
