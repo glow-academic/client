@@ -1,10 +1,8 @@
 # server/scripts/generate_models.py
-
 import os
 import re
 import subprocess
 import sys
-
 
 def generate_sqlmodel_from_sql():
     """Generate SQLModel classes from SQL schema using sqlacodegen"""
@@ -45,14 +43,17 @@ def generate_sqlmodel_from_sql():
         
         import_section = "\n".join(import_lines)
         
-        # Isolate class definitions from the generated code
-        class_definitions = generated_code.split('from __future__ import annotations')[1]
+        lines = generated_code.split('\n')
+        class_start_idx = 0
+        for i, line in enumerate(lines):
+            if 'SQLModel' in line and line.strip().startswith('class '):
+                class_start_idx = i
+                break
+        
+        class_definitions = '\n'.join(lines[class_start_idx:])
 
-        # Add custom _Base class
-        base_class = '\n\nclass _Base(SQLModel):\n    """Shared config so Pydantic will accept SQLAlchemy types."""\n    model_config = {"arbitrary_types_allowed": True}\n'
-        class_definitions = base_class + class_definitions.lstrip()
-
-        # Update all models to inherit from _Base
+        base_class = '\nclass _Base(SQLModel):\n    """Shared config so Pydantic will accept SQLAlchemy types."""\n    model_config = {"arbitrary_types_allowed": True}\n'
+        class_definitions = base_class + class_definitions
         class_definitions = re.sub(
             r"class (\w+)\(SQLModel, table=True\):",
             r"class \1(_Base, table=True):",
@@ -61,25 +62,28 @@ def generate_sqlmodel_from_sql():
 
         print("Applying type transformations...")
         
-        # --- Convert all Postgres-specific server_default to portable Python equivalents ---
-        # Each regex finds and replaces the text() construct with a Python equivalent.
+        # --- Convert Postgres-specific defaults to portable Python equivalents ---
         class_definitions = re.sub(r"server_default=text\('gen_random_uuid\(\)'\)", "default_factory=uuid.uuid4", class_definitions)
         class_definitions = re.sub(r"server_default=text\('now\(\)'\)", "default_factory=datetime.utcnow", class_definitions)
         class_definitions = re.sub(r"server_default=text\(\"'{}'::jsonb\"\)", "default_factory=dict", class_definitions)
         class_definitions = re.sub(r"server_default=text\('ARRAY\[\]::uuid\[\]'\)", "default_factory=list", class_definitions)
-        class_definitions = re.sub(r"server_default=text\(\"'(\w+)'::\w+\"\)", r"default='\1'", class_definitions)
+        
+        # CORRECTED REGEX for Enum casting
+        class_definitions = re.sub(r"server_default=text\(\"'([\w\s]+)'::[\w\s]+\"\)", r"default=r'\1'", class_definitions)
+
+        # Move default_factory from Column() to Field()
+        class_definitions = re.sub(
+            r"(sa_column=Column\([^)]*?),\s*(default_factory=[\w\.]+)([^)]*\))",
+            r"\1\3, \2",
+            class_definitions
+        )
+        
+        # Convert simple text defaults to Python equivalents
         class_definitions = re.sub(r"server_default=text\('false'\)", "default=False", class_definitions)
         class_definitions = re.sub(r"server_default=text\('true'\)", "default=True", class_definitions)
         class_definitions = re.sub(r"server_default=text\('([\d\.]+)'\)", r"default=\1", class_definitions)
 
-        # --- Correct type hints and SQLModel Field definitions ---
-        # Move `default` and `default_factory` from Column() to be direct arguments of Field()
-        class_definitions = re.sub(
-            r"(sa_column=Column\([^)]*?),\s*(default(?:_factory)?=[\w\.'()]+)([^)]*\))",
-            r"\1\3, \2",
-            class_definitions
-        )
-        # Correct all type hints
+        # Correct type hints and other formatting
         class_definitions = re.sub(r": uuid\.UUID", r": Mapped[uuid.UUID]", class_definitions)
         class_definitions = re.sub(r": UUID", r": Mapped[uuid.UUID]", class_definitions)
         class_definitions = re.sub(r": Optional\[UUID\]", r": Optional[uuid.UUID]", class_definitions)
@@ -89,7 +93,6 @@ def generate_sqlmodel_from_sql():
         class_definitions = re.sub(r": Optional\[dict\]", r": Optional[Dict[str, Any]]", class_definitions)
         class_definitions = class_definitions.replace("ARRAY(Uuid())", "ARRAY(Uuid(as_uuid=True))")
         class_definitions = class_definitions.replace(", Uuid)", ", Uuid(as_uuid=True))")
-
 
         final_code = import_section + class_definitions
 

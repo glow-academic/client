@@ -8,7 +8,6 @@ from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime,
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
 from sqlalchemy.orm import Mapped
-
 class _Base(SQLModel):
     """Shared config so Pydantic will accept SQLAlchemy types."""
     model_config = {"arbitrary_types_allowed": True}
@@ -55,7 +54,7 @@ class Classes(_Base, table=True):
     name: str = Field(sa_column=Column('name', Text))
     class_code: str = Field(sa_column=Column('class_code', Text))
     year: int = Field(sa_column=Column('year', Integer))
-    term: str = Field(sa_column=Column('term', Enum('fall', 'spring', 'summer', name='class_term'), default='fall'))
+    term: str = Field(sa_column=Column('term', Enum('fall', 'spring', 'summer', name='class_term'), default=r'fall'))
     description: str = Field(sa_column=Column('description', Text))
     default_class: bool = Field(sa_column=Column('default_class', Boolean, default=False))
 
@@ -107,7 +106,7 @@ class Models(_Base, table=True):
     description: str = Field(sa_column=Column('description', Text))
     provider_id: Mapped[uuid.UUID] = Field(sa_column=Column('provider_id', Uuid(as_uuid=True)))
     active: bool = Field(sa_column=Column('active', Boolean, default=True))
-    model_type: str = Field(sa_column=Column('model_type', Enum('ttt', 'tts', 'stt', name='model_type'), default='ttt'))
+    model_type: str = Field(sa_column=Column('model_type', Enum('ttt', 'tts', 'stt', name='model_type'), default=r'ttt'))
 
     agents: List['Agents'] = Relationship(back_populates='model')
 
@@ -218,7 +217,7 @@ class Documents(_Base, table=True):
     file_path: str = Field(sa_column=Column('file_path', Text))
     mime_type: str = Field(sa_column=Column('mime_type', Text))
     class_id: Mapped[uuid.UUID] = Field(sa_column=Column('class_id', Uuid(as_uuid=True)))
-    type: str = Field(sa_column=Column('type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type'), default='homework'))
+    type: str = Field(sa_column=Column('type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type'), default=r'homework'))
     classified: bool = Field(sa_column=Column('classified', Boolean, default=False))
     file_id: Optional[str] = Field(default=None, sa_column=Column('file_id', Text))
 
@@ -239,7 +238,7 @@ class Profiles(_Base, table=True):
     alias: str = Field(sa_column=Column('alias', Text))
     viewed_intro: bool = Field(sa_column=Column('viewed_intro', Boolean, default=False))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    role: str = Field(sa_column=Column('role', Enum('admin', 'instructional', 'instructor', 'ta', name='profile_role'), default='ta'))
+    role: str = Field(sa_column=Column('role', Enum('admin', 'instructional', 'instructor', 'ta', name='profile_role'), default=r'ta'))
     class_ids: List[uuid.UUID] = Field(sa_column=Column('class_ids', ARRAY(Uuid(as_uuid=True)), default_factory=list))
     active: bool = Field(sa_column=Column('active', Boolean, default=False))
     last_active: datetime = Field(sa_column=Column('last_active', DateTime(True), default_factory=datetime.utcnow))
