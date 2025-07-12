@@ -90,24 +90,29 @@ export default function ClassesGeneralPage() {
   const renderContent = () => {
     // 1. Loading State: Show skeleton cards
     if (isLoadingClasses) {
-      return Array.from({ length: 6 }).map((_, index) => (
-        <Card key={index} role="complementary">
-          <CardHeader>
-            <Skeleton className="h-6 w-3/4" />
-            <div className="flex gap-2 mt-2">
-              <Skeleton className="h-5 w-16" />
-              <Skeleton className="h-5 w-24" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-4 w-full mt-2" />
-            <Skeleton className="h-4 w-5/6 mt-1" />
-            <Skeleton className="h-4 w-1/2 mt-3" />
-            <span className="sr-only">loading</span>{" "}
-            {/* This is for the test */}
-          </CardContent>
-        </Card>
-      ));
+      /*  data-testid makes it trivially wait-able from Cypress  */
+      return (
+        <div data-testid="classes-loading" className="contents">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Card key={index} role="complementary">
+              <CardHeader>
+                <Skeleton className="h-6 w-3/4" />
+                <div className="flex gap-2 mt-2">
+                  <Skeleton className="h-5 w-16" />
+                  <Skeleton className="h-5 w-24" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-4 w-full mt-2" />
+                <Skeleton className="h-4 w-5/6 mt-1" />
+                <Skeleton className="h-4 w-1/2 mt-3" />
+                <span className="sr-only">loading</span>{" "}
+                {/* This is for the test */}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      );
     }
 
     // 2. Error State
@@ -137,9 +142,9 @@ export default function ClassesGeneralPage() {
       .map((cls) => (
         <Card
           key={cls.id}
-          className="relative"
           aria-label={cls.name}
           data-testid={`card-${cls.id}`}
+          className="relative"
         >
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">

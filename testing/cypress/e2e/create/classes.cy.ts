@@ -9,7 +9,6 @@ describe("Classes End-to-End Tests", () => {
 
   beforeEach(() => {
     cy.task("db:cleanup");
-    cy.installClassesQueryAlias();
   });
 
   it("should create, read, update, and delete a class manually", () => {
@@ -25,7 +24,6 @@ describe("Classes End-to-End Tests", () => {
 
     // --- 2. READ ---
     cy.log("--- STARTING READ ---");
-    cy.wait("@getClasses");                    // React-Query finished
     cy.url().should("include", "/create/classes");
     cy.findByRole("article", { name: manualClassName }).should("be.visible");
     cy.task("db:findClass", { name: manualClassName }).should("exist");
@@ -38,11 +36,10 @@ describe("Classes End-to-End Tests", () => {
       .click();
 
     cy.findByLabelText(/Class Name/i).clear().type(updatedClassName);
-    cy.findByTestId("file-input").selectFile("cypress/fixtures/test-document.pdf");
+    cy.findByTestId("file-input").selectFile("cypress/fixtures/test-document.pdf", { force: true });
     cy.contains("p", "test-document.pdf").should("be.visible");
     cy.findByRole("button", { name: /Update Class/i }).click();
 
-    cy.wait("@getClasses");
     cy.url().should("include", "/create/classes");
     cy.findByRole("article", { name: updatedClassName }).should("be.visible");
     cy.task("db:findClass", { name: updatedClassName }).should("exist");

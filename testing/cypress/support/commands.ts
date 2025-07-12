@@ -13,7 +13,6 @@ declare global {
       ): Chainable<void>;
       loginAsAdmin(): Chainable<void>;
       loginAsGuest(): Chainable<void>;
-      installClassesQueryAlias(): Chainable<void>;
     }
   }
 }
@@ -63,10 +62,6 @@ Cypress.Commands.add("loginAsGuest", () => {
   cy.get('[data-testid="guest-login-button"]').click();
   cy.url().should("include", "/home");
   cy.window().its("localStorage.guestMode").should("eq", "true");
-});
-
-Cypress.Commands.add("installClassesQueryAlias", () => {
-  cy.intercept("GET", "/api/classes").as("getClasses");
 });
 
 export {};
