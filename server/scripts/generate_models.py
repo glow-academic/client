@@ -30,7 +30,7 @@ def generate_sqlmodel_from_sql():
 
         import_lines = [
             "import uuid",
-            "from datetime import datetime",
+            "from datetime import datetime, timezone",
             "from typing import Any, Dict, List, Optional",
             "",
             "from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime,",
@@ -61,27 +61,42 @@ def generate_sqlmodel_from_sql():
         )
 
         print("Applying type transformations...")
-        
-        # --- Convert Postgres-specific defaults to portable Python equivalents ---
-        class_definitions = re.sub(r"server_default=text\('gen_random_uuid\(\)'\)", "default_factory=uuid.uuid4", class_definitions)
-        class_definitions = re.sub(r"server_default=text\('now\(\)'\)", "default_factory=datetime.utcnow", class_definitions)
-        class_definitions = re.sub(r"server_default=text\(\"'{}'::jsonb\"\)", "default_factory=dict", class_definitions)
-        class_definitions = re.sub(r"server_default=text\('ARRAY\[\]::uuid\[\]'\)", "default_factory=list", class_definitions)
-        
-        # CORRECTED REGEX for Enum casting
-        class_definitions = re.sub(r"server_default=text\(\"'([\w\s]+)'::[\w\s]+\"\)", r"default=r'\1'", class_definitions)
 
-        # Move default_factory from Column() to Field()
-        class_definitions = re.sub(
-            r"(sa_column=Column\([^)]*?),\s*(default_factory=[\w\.]+)([^)]*\))",
-            r"\1\3, \2",
-            class_definitions
-        )
+        # ❌ REMOVE ALL the old re.sub and loop logic for default values.
+        # ✅ REPLACE it with this new, cleaner block.
+
+        # --- Convert Postgres-specific defaults to portable Python equivalents ---
+        # This new method directly transforms the sqlacodegen output to the final, correct format.
         
-        # Convert simple text defaults to Python equivalents
+        # Handle datetime defaults like now()
+        class_definitions = re.sub(
+            r"sa_column=Column\((.*?), server_default=text\('now\(\)'\)(.*?)\)",
+            r"default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(\1\2)",
+            class_definitions,
+        )
+        # Handle UUID defaults like gen_random_uuid()
+        class_definitions = re.sub(
+            r"sa_column=Column\((.*?), server_default=text\('gen_random_uuid\(\)'\)(.*?)\)",
+            r"default_factory=uuid.uuid4, sa_column=Column(\1\2)",
+            class_definitions,
+        )
+        # Handle JSONB defaults
+        class_definitions = re.sub(
+            r"sa_column=Column\((.*?), server_default=text\(\"'{}'::jsonb\"\)(.*?)\)",
+            r"default_factory=dict, sa_column=Column(\1\2)",
+            class_definitions,
+        )
+        # Handle array defaults
+        class_definitions = re.sub(
+            r"sa_column=Column\((.*?), server_default=text\('ARRAY\[\]::uuid\[\]'\)(.*?)\)",
+            r"default_factory=list, sa_column=Column(\1\2)",
+            class_definitions,
+        )
+        # Handle simple boolean/number/enum text defaults
         class_definitions = re.sub(r"server_default=text\('false'\)", "default=False", class_definitions)
         class_definitions = re.sub(r"server_default=text\('true'\)", "default=True", class_definitions)
         class_definitions = re.sub(r"server_default=text\('([\d\.]+)'\)", r"default=\1", class_definitions)
+        class_definitions = re.sub(r"server_default=text\(\"'([\w\s]+)'::[\w\s]+\"\)", r"default=r'\1'", class_definitions)
 
         # Correct type hints and other formatting
         class_definitions = re.sub(r": uuid\.UUID", r": Mapped[uuid.UUID]", class_definitions)

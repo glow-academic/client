@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime,
@@ -40,7 +40,7 @@ class AppLogs(_Base, table=True):
     level: str = Field(sa_column=Column('level', Text))
     message: Optional[str] = Field(default=None, sa_column=Column('message', Text))
     context: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('context', JSONB))
-    created_at: Optional[datetime] = Field(default=None, sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
+    created_at: Optional[datetime] = Field(default=None, default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
 
 
 class Classes(_Base, table=True):
@@ -48,9 +48,9 @@ class Classes(_Base, table=True):
         PrimaryKeyConstraint('id', name='classes_pkey'),
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     class_code: str = Field(sa_column=Column('class_code', Text))
     year: int = Field(sa_column=Column('year', Integer))
@@ -69,12 +69,12 @@ class Cohorts(_Base, table=True):
         PrimaryKeyConstraint('id', name='cohorts_pkey'),
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     title: str = Field(sa_column=Column('title', Text))
     active: bool = Field(sa_column=Column('active', Boolean, default=True))
-    profile_ids: List[uuid.UUID] = Field(sa_column=Column('profile_ids', ARRAY(Uuid(as_uuid=True)), default_factory=list))
+    profile_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('profile_ids', ARRAY(Uuid(as_uuid=True))))
     description: Optional[str] = Field(default=None, sa_column=Column('description', Text))
 
 
@@ -83,13 +83,13 @@ class Components(_Base, table=True):
         PrimaryKeyConstraint('id', name='components_pkey'),
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     file_name: str = Field(sa_column=Column('file_name', Text))
-    layout: Dict[str, Any] = Field(sa_column=Column('layout', JSONB), default_factory=dict)
+    layout: Dict[str, Any] = Field(default_factory=dict, sa_column=Column('layout', JSONB))
     stat: bool = Field(sa_column=Column('stat', Boolean, default=False))
     default_component: bool = Field(sa_column=Column('default_component', Boolean, default=False))
 
@@ -99,9 +99,9 @@ class Models(_Base, table=True):
         PrimaryKeyConstraint('id', name='models_pkey'),
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     provider_id: Mapped[uuid.UUID] = Field(sa_column=Column('provider_id', Uuid(as_uuid=True)))
@@ -116,9 +116,9 @@ class Providers(_Base, table=True):
         PrimaryKeyConstraint('id', name='providers_pkey'),
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     api_key: str = Field(sa_column=Column('api_key', Text))
@@ -129,9 +129,9 @@ class Rubrics(_Base, table=True):
         PrimaryKeyConstraint('id', name='rubrics_pkey'),
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     points: int = Field(sa_column=Column('points', Integer))
@@ -185,9 +185,9 @@ class Agents(_Base, table=True):
         PrimaryKeyConstraint('id', name='agents_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     system_prompt: str = Field(sa_column=Column('system_prompt', Text))
@@ -210,9 +210,9 @@ class Documents(_Base, table=True):
         PrimaryKeyConstraint('id', name='documents_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     file_path: str = Field(sa_column=Column('file_path', Text))
     mime_type: str = Field(sa_column=Column('mime_type', Text))
@@ -230,18 +230,18 @@ class Profiles(_Base, table=True):
         PrimaryKeyConstraint('id', name='profiles_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
-    last_login: datetime = Field(sa_column=Column('last_login', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
+    last_login: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('last_login', DateTime(True)))
     first_name: str = Field(sa_column=Column('first_name', Text))
     last_name: str = Field(sa_column=Column('last_name', Text))
     alias: str = Field(sa_column=Column('alias', Text))
     viewed_intro: bool = Field(sa_column=Column('viewed_intro', Boolean, default=False))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     role: str = Field(sa_column=Column('role', Enum('admin', 'instructional', 'instructor', 'ta', name='profile_role'), default=r'ta'))
-    class_ids: List[uuid.UUID] = Field(sa_column=Column('class_ids', ARRAY(Uuid(as_uuid=True)), default_factory=list))
+    class_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('class_ids', ARRAY(Uuid(as_uuid=True))))
     active: bool = Field(sa_column=Column('active', Boolean, default=False))
-    last_active: datetime = Field(sa_column=Column('last_active', DateTime(True), default_factory=datetime.utcnow))
+    last_active: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('last_active', DateTime(True)))
     user_id: Optional[int] = Field(default=None, sa_column=Column('user_id', Integer))
 
     user: Optional['Users'] = Relationship(back_populates='profiles')
@@ -257,9 +257,9 @@ class Schedules(_Base, table=True):
         PrimaryKeyConstraint('id', name='schedules_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     class_id: Mapped[uuid.UUID] = Field(sa_column=Column('class_id', Uuid(as_uuid=True)))
@@ -274,13 +274,13 @@ class Simulations(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulations_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     title: str = Field(sa_column=Column('title', Text))
     active: bool = Field(sa_column=Column('active', Boolean, default=True))
-    scenario_ids: List[uuid.UUID] = Field(sa_column=Column('scenario_ids', ARRAY(Uuid(as_uuid=True)), default_factory=list))
-    cohort_ids: List[uuid.UUID] = Field(sa_column=Column('cohort_ids', ARRAY(Uuid(as_uuid=True)), default_factory=list))
+    scenario_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('scenario_ids', ARRAY(Uuid(as_uuid=True))))
+    cohort_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('cohort_ids', ARRAY(Uuid(as_uuid=True))))
     rubric_id: Mapped[uuid.UUID] = Field(sa_column=Column('rubric_id', Uuid(as_uuid=True)))
     default_simulation: bool = Field(sa_column=Column('default_simulation', Boolean, default=False))
     time_limit: Optional[int] = Field(default=None, sa_column=Column('time_limit', Integer))
@@ -296,8 +296,8 @@ class StandardGroups(_Base, table=True):
         PrimaryKeyConstraint('id', name='standard_groups_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     short_name: str = Field(sa_column=Column('short_name', Text))
     description: str = Field(sa_column=Column('description', Text))
@@ -315,9 +315,9 @@ class Topics(_Base, table=True):
         PrimaryKeyConstraint('id', name='topics_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     prerequisite: bool = Field(sa_column=Column('prerequisite', Boolean, default=False))
@@ -335,7 +335,7 @@ class AppFeedback(_Base, table=True):
 
     id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
     type: str = Field(sa_column=Column('type', Enum('feature', 'bug', 'question', 'other', name='feedback_type')))
-    created_at: Optional[datetime] = Field(default=None, sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
+    created_at: Optional[datetime] = Field(default=None, default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     profile_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('profile_id', Uuid(as_uuid=True)))
     message: Optional[str] = Field(default=None, sa_column=Column('message', Text))
 
@@ -349,9 +349,9 @@ class AssistantChats(_Base, table=True):
         PrimaryKeyConstraint('id', name='assistant_chats_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     title: str = Field(sa_column=Column('title', Text))
     profile_id: Mapped[uuid.UUID] = Field(sa_column=Column('profile_id', Uuid(as_uuid=True)))
     trace_id: Optional[str] = Field(default=None, sa_column=Column('trace_id', Text))
@@ -367,13 +367,13 @@ class Dashboards(_Base, table=True):
         PrimaryKeyConstraint('id', name='dashboards_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
-    header_component_ids: List[uuid.UUID] = Field(sa_column=Column('header_component_ids', ARRAY(Uuid(as_uuid=True)), default_factory=list))
-    primary_component_ids: List[uuid.UUID] = Field(sa_column=Column('primary_component_ids', ARRAY(Uuid(as_uuid=True)), default_factory=list))
-    secondary_component_ids: List[uuid.UUID] = Field(sa_column=Column('secondary_component_ids', ARRAY(Uuid(as_uuid=True)), default_factory=list))
-    footer_component_ids: List[uuid.UUID] = Field(sa_column=Column('footer_component_ids', ARRAY(Uuid(as_uuid=True)), default_factory=list))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
+    header_component_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('header_component_ids', ARRAY(Uuid(as_uuid=True))))
+    primary_component_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('primary_component_ids', ARRAY(Uuid(as_uuid=True))))
+    secondary_component_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('secondary_component_ids', ARRAY(Uuid(as_uuid=True))))
+    footer_component_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('footer_component_ids', ARRAY(Uuid(as_uuid=True))))
     auto_scroll: bool = Field(sa_column=Column('auto_scroll', Boolean, default=False))
     show_indicators: bool = Field(sa_column=Column('show_indicators', Boolean, default=True))
     header_components: int = Field(sa_column=Column('header_components', Integer, default=3))
@@ -390,9 +390,9 @@ class Events(_Base, table=True):
         PrimaryKeyConstraint('id', name='events_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     time: datetime = Field(sa_column=Column('time', DateTime(True)))
@@ -409,9 +409,9 @@ class Scenarios(_Base, table=True):
         PrimaryKeyConstraint('id', name='scenarios_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     default_scenario: bool = Field(sa_column=Column('default_scenario', Boolean, default=False))
@@ -439,8 +439,8 @@ class SimulationAttempts(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulation_attempts_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     simulation_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_id', Uuid(as_uuid=True)))
     profile_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('profile_id', Uuid(as_uuid=True)))
 
@@ -455,8 +455,8 @@ class Standards(_Base, table=True):
         PrimaryKeyConstraint('id', name='standards_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     points: int = Field(sa_column=Column('points', Integer))
@@ -473,9 +473,9 @@ class AssistantMessages(_Base, table=True):
         PrimaryKeyConstraint('id', name='assistant_messages_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid(as_uuid=True)))
     role: str = Field(sa_column=Column('role', Enum('user', 'assistant', name='assistant_message_type')))
     content: str = Field(sa_column=Column('content', Text))
@@ -492,9 +492,9 @@ class AssistantToolCalls(_Base, table=True):
         PrimaryKeyConstraint('id', name='assistant_tool_calls_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid(as_uuid=True)))
     tool_name: str = Field(sa_column=Column('tool_name', Text))
     tool_type: str = Field(sa_column=Column('tool_type', Enum('create', 'read', 'update', 'delete', name='assistant_tool_type')))
@@ -514,9 +514,9 @@ class SimulationChats(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulation_chats_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     title: str = Field(sa_column=Column('title', Text))
     scenario_id: Mapped[uuid.UUID] = Field(sa_column=Column('scenario_id', Uuid(as_uuid=True)))
     attempt_id: Mapped[uuid.UUID] = Field(sa_column=Column('attempt_id', Uuid(as_uuid=True)))
@@ -539,8 +539,8 @@ class SimulationChatGrades(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulation_chat_grades_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     passed: bool = Field(sa_column=Column('passed', Boolean))
     score: int = Field(sa_column=Column('score', Integer))
     time_taken: int = Field(sa_column=Column('time_taken', Integer))
@@ -559,9 +559,9 @@ class SimulationMessages(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulation_messages_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid(as_uuid=True)))
     content: str = Field(sa_column=Column('content', Text))
     audio: bool = Field(sa_column=Column('audio', Boolean, default=False))
@@ -579,9 +579,9 @@ class SimulationSketches(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulation_sketches_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid(as_uuid=True)))
     file_path: str = Field(sa_column=Column('file_path', Text))
 
@@ -596,8 +596,8 @@ class SimulationChatFeedbacks(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulation_chat_feedbacks_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True), default_factory=uuid.uuid4)
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), default_factory=datetime.utcnow))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     standard_id: Mapped[uuid.UUID] = Field(sa_column=Column('standard_id', Uuid(as_uuid=True)))
     simulation_chat_grade_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_chat_grade_id', Uuid(as_uuid=True)))
     total: int = Field(sa_column=Column('total', Integer))
