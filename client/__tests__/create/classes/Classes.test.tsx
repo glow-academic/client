@@ -12,15 +12,11 @@ import * as mockSchema from '@/mocks/schema';
 import '@/mocks/queries';
 import '@/mocks/mutations';
 import '@/mocks/api';
+import '@/mocks/navigation';
 
 // ✨ Import the functions you'll need to override or verify
 import { getAllClasses } from '@/utils/queries/classes/get-all-classes';
 import { deleteClass } from '@/utils/mutations/classes/delete-class';
-
-// Mock the next/navigation module to use our spy
-vi.mock('next/navigation', () => ({
-  useRouter: () => routerMock,
-}));
 
 describe('Classes', () => {
   

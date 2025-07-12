@@ -40,3 +40,15 @@ vi.mock("next/link", () => ({
     return React.createElement("a", { href, ...props }, children);
   },
 }));
+
+// ADD THIS: Centralize the sonner mock here
+vi.mock("sonner", () => ({
+  toast: {
+    success: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+    error: vi.fn(),
+    loading: vi.fn(),
+    dismiss: vi.fn(),
+  },
+}));

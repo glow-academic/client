@@ -94,10 +94,9 @@ interface FormData {
 
 export interface ClassFormProps {
   classId?: string;
-  onSuccess?: (classId: string) => void;
 }
 
-export default function ClassForm({ classId, onSuccess }: ClassFormProps) {
+export default function ClassForm({ classId }: ClassFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -247,23 +246,25 @@ export default function ClassForm({ classId, onSuccess }: ClassFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const validationErrors: FormErrors = {};
     if (!formData?.name?.trim()) {
-      setErrors({ ...errors, name: "Class name is required" });
-      return;
+      validationErrors.name = "Class name is required";
     }
 
     if (!formData?.classCode?.trim()) {
-      setErrors({ ...errors, classCode: "Class code is required" });
-      return;
+      validationErrors.classCode = "Class code is required";
     }
 
-    if (formData.year && (formData.year < 2020 || formData.year > 2030)) {
-      setErrors({ ...errors, year: "Year must be between 2020 and 2030" });
-      return;
+    if (formData?.year && (formData.year < 2020 || formData.year > 2030)) {
+      validationErrors.year = "Year must be between 2020 and 2030";
     }
 
-    if (!formData.description?.trim()) {
-      setErrors({ ...errors, description: "Description is required" });
+    if (!formData?.description?.trim()) {
+      validationErrors.description = "Description is required";
+    }
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
 
@@ -368,11 +369,7 @@ export default function ClassForm({ classId, onSuccess }: ClassFormProps) {
       queryClient.invalidateQueries({ queryKey: ["class", finalClassId] });
       queryClient.invalidateQueries({ queryKey: ["documents", finalClassId] });
 
-      if (onSuccess) {
-        onSuccess(finalClassId);
-      } else if (!editMode) {
-        router.push(`/classes/c/${finalClassId}`);
-      }
+      router.push(`/create/classes`);
     } catch (error) {
       toast.dismiss(toastId);
       toast.error(
@@ -738,6 +735,7 @@ export default function ClassForm({ classId, onSuccess }: ClassFormProps) {
                   <input
                     ref={fileInputRef}
                     type="file"
+                    data-testid="file-input"
                     multiple
                     onChange={handleFileInputChange}
                     disabled={isSubmitting}
@@ -780,210 +778,216 @@ export default function ClassForm({ classId, onSuccess }: ClassFormProps) {
               <Skeleton className="h-[200px] rounded-lg" />
             ) : (
               <div
-              className={cn(
-                "min-h-[200px] rounded-lg",
-                filteredDocuments.length === 0 ? "border-2 border-dashed" : ""
-              )}
-            >
-              {filteredDocuments.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <UploadCloud className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium text-muted-foreground mb-2">
-                    {editedDocuments.length === 0
-                      ? "No documents yet"
-                      : "No documents match your filters"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {editedDocuments.length === 0
-                      ? "Drag and drop files here or click Upload to get started"
-                      : "Try adjusting your search or filters"}
-                  </p>
-                </div>
-              ) : (
-                <div className="p-4">
-                  {viewMode === "grid" ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                      {filteredDocuments.map((doc) => {
-                        const isNewDoc = "isNew" in doc && doc.isNew;
-                        return (
-                          <div
-                            key={doc.id}
-                            className={cn(
-                              "group relative border rounded-lg hover:shadow-md transition-all",
-                              isNewDoc && "border-blue-300 bg-blue-50/50"
-                            )}
-                          >
-                            {/* Type selector in top left */}
-                            <div className="absolute top-2 left-2 z-10">
-                              <Select
-                                value={doc.type}
-                                onValueChange={(value) =>
-                                  handleDocumentTypeChange(doc.id, value)
-                                }
-                              >
-                                <SelectTrigger
-                                  className="text-xs bg-white/90 backdrop-blur-sm border-0 shadow-sm justify-center"
-                                  size="sm"
-                                >
-                                  <span className="text-sm">
-                                    {getDocumentTypeIcon(doc.type)}
-                                  </span>
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="homework">
-                                    📝 Homework
-                                  </SelectItem>
-                                  <SelectItem value="project">
-                                    🚀 Project
-                                  </SelectItem>
-                                  <SelectItem value="quiz">❓ Quiz</SelectItem>
-                                  <SelectItem value="midterm">
-                                    📊 Midterm
-                                  </SelectItem>
-                                  <SelectItem value="lab">🧪 Lab</SelectItem>
-                                  <SelectItem value="lecture">
-                                    📚 Lecture
-                                  </SelectItem>
-                                  <SelectItem value="syllabus">
-                                    📋 Syllabus
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            {/* Action buttons in top right */}
-                            <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-7 w-7 p-0 bg-white/90 backdrop-blur-sm"
-                                onClick={() => viewDocument(doc)}
-                              >
-                                <Eye className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-7 w-7 p-0 text-destructive hover:text-destructive bg-white/90 backdrop-blur-sm"
-                                onClick={() => {
-                                  setDocumentToDelete(doc);
-                                  setShowDeleteDialog(true);
-                                }}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-
-                            {/* Image area */}
-                            <div className="aspect-square bg-muted rounded-lg flex items-center justify-center relative">
-                              {getDocumentIcon(doc.name)}
-                              {isNewDoc && (
-                                <div className="absolute top-1 right-1 bg-blue-500 text-white text-xs px-1 py-0.5 rounded text-[10px]">
-                                  NEW
-                                </div>
+                className={cn(
+                  "min-h-[200px] rounded-lg",
+                  filteredDocuments.length === 0 ? "border-2 border-dashed" : ""
+                )}
+              >
+                {filteredDocuments.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <UploadCloud className="h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-lg font-medium text-muted-foreground mb-2">
+                      {editedDocuments.length === 0
+                        ? "No documents yet"
+                        : "No documents match your filters"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {editedDocuments.length === 0
+                        ? "Drag and drop files here or click Upload to get started"
+                        : "Try adjusting your search or filters"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-4">
+                    {viewMode === "grid" ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        {filteredDocuments.map((doc) => {
+                          const isNewDoc = "isNew" in doc && doc.isNew;
+                          return (
+                            <div
+                              key={doc.id}
+                              className={cn(
+                                "group relative border rounded-lg hover:shadow-md transition-all",
+                                isNewDoc && "border-blue-300 bg-blue-50/50"
                               )}
-
-                              {/* Title in bottom right of image */}
-                              <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded max-w-[calc(100%-1rem)] truncate">
-                                {doc.name}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {filteredDocuments.map((doc) => {
-                        const isNewDoc = "isNew" in doc && doc.isNew;
-                        return (
-                          <div
-                            key={doc.id}
-                            className={cn(
-                              "flex items-center gap-4 p-3 border rounded-lg hover:shadow-sm transition-all",
-                              isNewDoc && "border-blue-300 bg-blue-50/50"
-                            )}
-                          >
-                            <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
-                              {getDocumentIcon(doc.name)}
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p
-                                  className="font-medium truncate"
-                                  title={doc.name}
+                            >
+                              {/* Type selector in top left */}
+                              <div className="absolute top-2 left-2 z-10">
+                                <Select
+                                  value={doc.type}
+                                  onValueChange={(value) =>
+                                    handleDocumentTypeChange(doc.id, value)
+                                  }
                                 >
-                                  {doc.name}
-                                </p>
+                                  <SelectTrigger
+                                    className="text-xs bg-white/90 backdrop-blur-sm border-0 shadow-sm justify-center"
+                                    size="sm"
+                                  >
+                                    <span className="text-sm">
+                                      {getDocumentTypeIcon(doc.type)}
+                                    </span>
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="homework">
+                                      📝 Homework
+                                    </SelectItem>
+                                    <SelectItem value="project">
+                                      🚀 Project
+                                    </SelectItem>
+                                    <SelectItem value="quiz">
+                                      ❓ Quiz
+                                    </SelectItem>
+                                    <SelectItem value="midterm">
+                                      📊 Midterm
+                                    </SelectItem>
+                                    <SelectItem value="lab">🧪 Lab</SelectItem>
+                                    <SelectItem value="lecture">
+                                      📚 Lecture
+                                    </SelectItem>
+                                    <SelectItem value="syllabus">
+                                      📋 Syllabus
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              {/* Action buttons in top right */}
+                              <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 w-7 p-0 bg-white/90 backdrop-blur-sm"
+                                  onClick={() => viewDocument(doc)}
+                                >
+                                  <Eye className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 w-7 p-0 text-destructive hover:text-destructive bg-white/90 backdrop-blur-sm"
+                                  data-testid={`delete-doc-${doc.id}`}
+                                  onClick={() => {
+                                    setDocumentToDelete(doc);
+                                    setShowDeleteDialog(true);
+                                  }}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+
+                              {/* Image area */}
+                              <div className="aspect-square bg-muted rounded-lg flex items-center justify-center relative">
+                                {getDocumentIcon(doc.name)}
                                 {isNewDoc && (
-                                  <span className="bg-blue-500 text-white text-xs px-1 py-0.5 rounded">
+                                  <div className="absolute top-1 right-1 bg-blue-500 text-white text-xs px-1 py-0.5 rounded text-[10px]">
                                     NEW
-                                  </span>
+                                  </div>
                                 )}
+
+                                {/* Title in bottom right of image */}
+                                <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded max-w-[calc(100%-1rem)] truncate">
+                                  {doc.name}
+                                </div>
                               </div>
                             </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {filteredDocuments.map((doc) => {
+                          const isNewDoc = "isNew" in doc && doc.isNew;
+                          return (
+                            <div
+                              key={doc.id}
+                              className={cn(
+                                "flex items-center gap-4 p-3 border rounded-lg hover:shadow-sm transition-all",
+                                isNewDoc && "border-blue-300 bg-blue-50/50"
+                              )}
+                            >
+                              <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
+                                {getDocumentIcon(doc.name)}
+                              </div>
 
-                            <div className="flex items-center gap-2">
-                              <Select
-                                value={doc.type}
-                                onValueChange={(value) =>
-                                  handleDocumentTypeChange(doc.id, value)
-                                }
-                              >
-                                <SelectTrigger className="w-40 h-8">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="homework">
-                                    📝 Homework
-                                  </SelectItem>
-                                  <SelectItem value="project">
-                                    🚀 Project
-                                  </SelectItem>
-                                  <SelectItem value="quiz">❓ Quiz</SelectItem>
-                                  <SelectItem value="midterm">
-                                    📊 Midterm
-                                  </SelectItem>
-                                  <SelectItem value="lab">🧪 Lab</SelectItem>
-                                  <SelectItem value="lecture">
-                                    📚 Lecture
-                                  </SelectItem>
-                                  <SelectItem value="syllabus">
-                                    📋 Syllabus
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p
+                                    className="font-medium truncate"
+                                    title={doc.name}
+                                  >
+                                    {doc.name}
+                                  </p>
+                                  {isNewDoc && (
+                                    <span className="bg-blue-500 text-white text-xs px-1 py-0.5 rounded">
+                                      NEW
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
 
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => viewDocument(doc)}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => {
-                                  setDocumentToDelete(doc);
-                                  setShowDeleteDialog(true);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              <div className="flex items-center gap-2">
+                                <Select
+                                  value={doc.type}
+                                  onValueChange={(value) =>
+                                    handleDocumentTypeChange(doc.id, value)
+                                  }
+                                >
+                                  <SelectTrigger className="w-40 h-8">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="homework">
+                                      📝 Homework
+                                    </SelectItem>
+                                    <SelectItem value="project">
+                                      🚀 Project
+                                    </SelectItem>
+                                    <SelectItem value="quiz">
+                                      ❓ Quiz
+                                    </SelectItem>
+                                    <SelectItem value="midterm">
+                                      📊 Midterm
+                                    </SelectItem>
+                                    <SelectItem value="lab">🧪 Lab</SelectItem>
+                                    <SelectItem value="lecture">
+                                      📚 Lecture
+                                    </SelectItem>
+                                    <SelectItem value="syllabus">
+                                      📋 Syllabus
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => viewDocument(doc)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-destructive hover:text-destructive"
+                                  data-testid={`delete-doc-${doc.id}`}
+                                  onClick={() => {
+                                    setDocumentToDelete(doc);
+                                    setShowDeleteDialog(true);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}

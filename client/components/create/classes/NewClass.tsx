@@ -335,11 +335,7 @@ export default function NewClass() {
 
         {/* Manual Creation Form */}
         {creationMode === "manual" && (
-          <ClassForm
-            onSuccess={(classId) => {
-              router.push(`/create/classes/c/${classId}/edit`);
-            }}
-          />
+          <ClassForm />
         )}
 
         {/* Processing Complete State */}
