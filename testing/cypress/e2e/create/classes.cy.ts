@@ -9,10 +9,7 @@ describe("Classes End-to-End Tests", () => {
 
   beforeEach(() => {
     cy.task("db:cleanup");
-    cy.intercept("POST", "/api/documents/course", {
-      statusCode: 200,
-      body: { status: "success", message: "Course information processed successfully!" },
-    }).as("processCourse");
+    cy.installClassesQueryAlias();
   });
 
   it("should create, read, update, and delete a class manually", () => {
@@ -28,50 +25,47 @@ describe("Classes End-to-End Tests", () => {
 
     // --- 2. READ ---
     cy.log("--- STARTING READ ---");
+    cy.wait("@getClasses");                    // React-Query finished
     cy.url().should("include", "/create/classes");
-
-    // ✅ FIX: Directly find the article containing the unique class name.
-    // This command retries until the element is found, solving the race condition
-    // and verifying the correct card is present in a single step.
-    cy.contains("article", manualClassName, { timeout: 10000 }).should("be.visible");
+    cy.findByRole("article", { name: manualClassName }).should("be.visible");
     cy.task("db:findClass", { name: manualClassName }).should("exist");
 
     // --- 3. UPDATE (and upload a single document) ---
     cy.log("--- STARTING UPDATE & SINGLE FILE UPLOAD ---");
 
-    // ✅ REFACTOR: A much cleaner way to interact with a specific card.
-    cy.contains("article", manualClassName).within(() => {
-      cy.findByRole("button", { name: `Edit ${manualClassName}` }).click();
-    });
+    cy.findByRole("article", { name: manualClassName })
+      .findByTestId(/^edit-/)
+      .click();
 
     cy.findByLabelText(/Class Name/i).clear().type(updatedClassName);
     cy.findByTestId("file-input").selectFile("cypress/fixtures/test-document.pdf");
     cy.contains("p", "test-document.pdf").should("be.visible");
     cy.findByRole("button", { name: /Update Class/i }).click();
 
+    cy.wait("@getClasses");
     cy.url().should("include", "/create/classes");
-    cy.contains("article", updatedClassName).should("be.visible");
+    cy.findByRole("article", { name: updatedClassName }).should("be.visible");
     cy.task("db:findClass", { name: updatedClassName }).should("exist");
 
     // --- 4. AI PROCESSING ---
     cy.log("--- STARTING AI PROCESSING TEST ---");
-    cy.contains("article", updatedClassName).within(() => {
-      cy.findByRole("button", { name: `Edit ${updatedClassName}` }).click();
-    });
+    cy.findByRole("article", { name: updatedClassName })
+      .findByTestId(/^edit-/)
+      .click();
 
     cy.findByRole("button", { name: /Process Course/i }).click();
     cy.findByRole("dialog").within(() => {
       cy.findByRole("button", { name: "Process Course" }).click();
     });
-    cy.wait("@processCourse");
-    cy.contains("Course information processed successfully!").should("be.visible");
+    cy.contains("Course information processed successfully!", { timeout: 30000 })
+      .should("be.visible");        // no mock, waits for the real toast
 
     // --- 5. DELETE ---
     cy.log("--- STARTING DELETE ---");
     cy.visit("/create/classes");
-    cy.contains("article", updatedClassName).within(() => {
-      cy.findByRole("button", { name: `Delete ${updatedClassName}` }).click();
-    });
+    cy.findByRole("article", { name: updatedClassName })
+      .findByTestId(/^delete-/)
+      .click();
 
     cy.findByRole("alertdialog").within(() => {
       cy.findByRole("button", { name: "Delete" }).click();
@@ -83,6 +77,8 @@ describe("Classes End-to-End Tests", () => {
 
   // --- Test 2: ZIP Upload Workflow ---
   it("should create a new class by uploading a ZIP file", () => {
+    /* unchanged except you can delete the intercept wait
+       because we want the real ZIP upload now */
     cy.visit("/create/classes/new");
     cy.get('input[type="file"]').first().selectFile(
       {

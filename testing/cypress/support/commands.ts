@@ -3,9 +3,17 @@
 declare global {
   namespace Cypress {
     interface Chainable {
-      mockSession(user?: Partial<{ id: string; name: string; email: string; role: string }>): Chainable<void>;
+      mockSession(
+        user?: Partial<{
+          id: string;
+          name: string;
+          email: string;
+          role: string;
+        }>
+      ): Chainable<void>;
       loginAsAdmin(): Chainable<void>;
       loginAsGuest(): Chainable<void>;
+      installClassesQueryAlias(): Chainable<void>;
     }
   }
 }
@@ -24,7 +32,10 @@ Cypress.Commands.add("mockSession", (user = {}) => {
   cy.intercept("GET", "/api/auth/session", {
     statusCode: 200,
     headers: { "cache-control": "no-store" },
-    body: { user: { ...defaults, ...user }, expires: "2099-12-31T23:59:59.999Z" },
+    body: {
+      user: { ...defaults, ...user },
+      expires: "2099-12-31T23:59:59.999Z",
+    },
   }).as("session");
 });
 
@@ -52,6 +63,10 @@ Cypress.Commands.add("loginAsGuest", () => {
   cy.get('[data-testid="guest-login-button"]').click();
   cy.url().should("include", "/home");
   cy.window().its("localStorage.guestMode").should("eq", "true");
+});
+
+Cypress.Commands.add("installClassesQueryAlias", () => {
+  cy.intercept("GET", "/api/classes").as("getClasses");
 });
 
 export {};
