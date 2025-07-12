@@ -22,15 +22,6 @@ import "@/mocks/mutations";
 import "@/mocks/api";
 import "@/mocks/navigation";
 
-vi.mock("tus-js-client", () => ({
-  Upload: vi.fn().mockImplementation((_file, opts) => ({
-    start: () => {
-      queueMicrotask(() => opts?.onSuccess?.());
-    },
-    abort: vi.fn(),
-  })),
-}));
-
 vi.mock("next/navigation", () => ({
   useRouter: () => routerMock,
 }));

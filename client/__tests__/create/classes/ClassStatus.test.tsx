@@ -13,6 +13,11 @@ import { getEventsBySchedules } from "@/utils/queries/events/get-events-by-sched
 import { getSchedulesByClass } from "@/utils/queries/schedules/get-schedules-by-class";
 import { getTopicsByClass } from "@/utils/queries/topics/get-topics-by-class";
 
+import '@/mocks/queries';
+import '@/mocks/mutations';
+import '@/mocks/api';
+import '@/mocks/navigation';
+
 const mockProps: ClassStatusProps = {
   classId: mockSchema.classes[0]!.id,
 };

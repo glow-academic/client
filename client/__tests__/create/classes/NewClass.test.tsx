@@ -1,131 +1,146 @@
-import { describe, it, vi, afterEach } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
-import userEvent from '@testing-library/user-event';
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { toast } from "sonner";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// ——————————————————————————————————————————
-import NewClass from '@/components/create/classes/NewClass';
+import NewClass from "@/components/create/classes/NewClass";
+import { routerMock } from "@/mocks/navigation";
+import * as mockSchema from "@/mocks/schema";
+import { renderWithMocks } from "@/test/renderWithMocks";
+import {
+  finalizeDocumentUpload,
+  FinalizeDocumentUploadResponse,
+} from "@/utils/api/documents/finalize-document-upload";
+import { createClass } from "@/utils/mutations/classes/create-class";
 
+import "@/mocks/api";
+import "@/mocks/mutations";
+import "@/mocks/navigation";
+import "@/mocks/queries";
 
+// --- Mocks Setup ---
+vi.mock("@/components/common/class/ClassForm", () => ({
+  default: () => <div data-testid="class-form-mock" />,
+}));
 
-// ✨ Import comprehensive mock data from our centralized mock system
-import '@/mocks/queries';
-import '@/mocks/mutations';
-import '@/mocks/api';
-describe('NewClass', () => {
-  
-  /* ------------------------------------------------------------------ *
-   * 💡 Mock Data Usage Guide:
-   * 
-   * All API functions are automatically mocked via imports above.
-   * Use mockSchema.* for realistic test data:
-   * 
-   * Examples:
-   * - mockSchema.users[0] - First user object
-   * - mockSchema.classes - Array of class objects  
-   * - mockSchema.profiles - Array of profile objects
-   * 
-   * To override specific mocks in individual tests:
-   * - vi.mocked(queryFunction).mockResolvedValue(customData)
-   * - vi.mocked(mutationFunction).mockResolvedValue(customResponse)
-   * ------------------------------------------------------------------ */
-  
-  // ✨ Reset mocks after each test
+describe("NewClass", () => {
+  const user = userEvent.setup();
+
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<NewClass  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+  // ——————————————————————————————————————————
+  //    Initial Rendering and Mode Selection
+  // ——————————————————————————————————————————
+  describe("Initial Rendering and Mode Selection", () => {
+    it("renders the initial selection cards", () => {
+      renderWithMocks(<NewClass />);
+      expect(
+        screen.getByRole("heading", { name: /Upload from ZIP/i })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: /Create Manually/i })
+      ).toBeInTheDocument();
     });
 
-    
+    it("switches to manual creation mode when the manual card is clicked", async () => {
+      renderWithMocks(<NewClass />);
+      const manualCard = screen
+        .getByText(/Create Manually/i)
+        .closest("div.cursor-pointer")!;
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
+      await user.click(manualCard);
 
-    });
-  });
-
-  describe('User Interactions', () => {
-    
-
-    it.skip('should handle state changes', async () => {
-      const user = userEvent.setup();
-      void user;
-      // TODO: state management assertions
-      // Mock data is available from @/mocks/schema for realistic testing
-    });
-
-    it.skip('should handle user events', async () => {
-      const user = userEvent.setup();
-      void user;
-      // TODO: interaction assertions
-
+      // Assert the ClassForm component is now rendered
+      expect(screen.getByTestId("class-form-mock")).toBeInTheDocument();
+      // Assert the initial selection cards are gone
+      expect(
+        screen.queryByRole("heading", { name: /Upload from ZIP/i })
+      ).not.toBeInTheDocument();
     });
   });
 
-  
+  // ——————————————————————————————————————————
+  //    ZIP Upload Flow
+  // ——————————————————————————————————————————
+  describe("ZIP Upload Flow", () => {
+    beforeEach(() => {
+      // Mock successful API responses for the happy path
+      vi.mocked(createClass).mockResolvedValue({
+        ...mockSchema.classes[0],
+        id: "new-zip-class-id",
+        term: "fall" as "fall" | "spring" | "summer",
+        name: "CS101-Fall2025",
+        classCode: "CS101",
+        year: 2025,
+        description: "A great new class.",
+        defaultClass: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      vi.mocked(finalizeDocumentUpload).mockResolvedValue({
+        success: true,
+      } as FinalizeDocumentUploadResponse);
+    });
 
-  describe('Navigation', () => {
-    it.skip('should handle navigation', () => {
-      // TODO: Test navigation behavior
-      
-      // TODO: navigation assertions
+    it("handles a successful ZIP upload and navigates to the status page", async () => {
+      renderWithMocks(<NewClass />);
+
+      await user.upload(
+        screen.getByLabelText(/Upload from ZIP/i, {
+          selector: 'input[type="file"]',
+        }),
+        new File(["zip"], "CS101.zip", { type: "application/zip" })
+      );
+
+      // happy-path assertions
+      await waitFor(() => {
+        expect(createClass).toHaveBeenCalled();
+        expect(screen.getByTestId("processing-message")).toHaveTextContent(
+          "Processing complete! Redirecting..."
+        );
+      });
+
+      // the redirect happens after 1 s → just wait for it
+      await waitFor(() =>
+        expect(routerMock.push).toHaveBeenCalledWith(
+          "/create/classes/new/c/new-zip-class-id"
+        )
+      );
     });
   });
 
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
+  // ——————————————————————————————————————————
+  //    API Error Handling
+  // ——————————————————————————————————————————
+  describe("API and Error Handling", () => {
+    it("handles an error if creating the temporary class fails", async () => {
+      // Arrange: Mock a failure from the createClass API
+      vi.mocked(createClass).mockRejectedValue(new Error("Database error"));
+      renderWithMocks(<NewClass />);
 
+      const zipFile = new File(["zip"], "fail.zip", {
+        type: "application/zip",
+      });
+      const fileInput = screen.getByLabelText(/Upload from ZIP/i, {
+        selector: 'input[type="file"]',
+      });
+
+      // Act
+      await user.upload(fileInput, zipFile);
+
+      // Assert
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          "Failed to upload ZIP: Database error"
+        );
+      });
+
+      // The UI should reset, showing the selection cards again
+      expect(
+        screen.getByRole("heading", { name: /Upload from ZIP/i })
+      ).toBeInTheDocument();
     });
-
-    
   });
 });
-
-/*
- * Component Analysis for NewClass:
- * Path: create/classes/NewClass.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: useRouter, useRef, useState
- * - Uses router: true
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: true
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<NewClass />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<NewClass {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

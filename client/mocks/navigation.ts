@@ -52,3 +52,21 @@ vi.mock("sonner", () => ({
     dismiss: vi.fn(),
   },
 }));
+
+// A functional mock for the tus-js-client uploader
+vi.mock("tus-js-client", () => ({
+  Upload: vi.fn().mockImplementation((_file, opts) => ({
+    start: () => {
+      queueMicrotask(() => opts?.onSuccess?.());
+    },
+    abort: vi.fn(),
+  })),
+}));
+
+// Mock the entire logger module
+vi.mock("@/utils/logger", () => ({
+  logInfo: vi.fn(),
+  logError: vi.fn(),
+  logWarn: vi.fn(),
+  logDebug: vi.fn(),
+}));
