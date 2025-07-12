@@ -10,7 +10,11 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+from agents import Runner
 from fastapi.testclient import TestClient
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.types import JSON, ARRAY
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
@@ -40,7 +44,23 @@ class FakeRunnerStream:
             data=ResponseTextDeltaEvent(delta=self.text)
         )
 
+# Add this block to handle JSONB in SQLite
+@compiles(JSONB, "sqlite")
+def compile_jsonb_sqlite(type_, compiler, **kw):
+    """
+    Tells SQLAlchemy to treat JSONB columns as generic JSON
+    when creating tables in a SQLite database.
+    """
+    return "JSON"
 
+# Add this NEW block for the ARRAY type
+@compiles(ARRAY, "sqlite")
+def compile_array_sqlite(type_, compiler, **kw):
+    """
+    Tells SQLAlchemy to treat ARRAY columns as JSON
+    when creating tables in a SQLite database.
+    """
+    return "JSON"
 
 @pytest.fixture(scope="session")
 def test_engine():
@@ -97,8 +117,9 @@ def patch_runner(mocker):
     an instance of FakeRunnerStream.
     """
     fake_stream = FakeRunnerStream("mock-reply")       # customise per test if you like
-    mock = mocker.patch(
-        "app.utils.runner.Runner.run_streamed",      # <-- adjust import path!
+    mock = mocker.patch.object(
+        Runner,
+        "run_streamed",
         return_value=fake_stream
     )
     return mock  # let tests assert call args if they need
