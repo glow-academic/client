@@ -8,17 +8,14 @@ import sys
 
 def generate_sqlmodel_from_sql():
     """Generate SQLModel classes from SQL schema using sqlacodegen"""
-    # Get the Python executable from the virtual environment
     python_executable = sys.executable
-
-    # Get database connection parameters
-    db_user = os.getenv("DB_USER")
-    db_password = os.getenv("DB_PASSWORD")
-    db_name = os.getenv("DB_NAME")
-    db_port = os.getenv("DB_PORT")
-    db_host = os.getenv("DB_HOST")
-
-    # Construct the database URL
+    db_user, db_password, db_name, db_port, db_host = (
+        os.getenv("DB_USER"),
+        os.getenv("DB_PASSWORD"),
+        os.getenv("DB_NAME"),
+        os.getenv("DB_PORT"),
+        os.getenv("DB_HOST"),
+    )
     db_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 
     if not all([db_user, db_password, db_name, db_host, db_port]):
@@ -27,14 +24,12 @@ def generate_sqlmodel_from_sql():
 
     print(f"Using database URL: {db_url}")
 
-    # Run sqlacodegen directly as a command-line tool
     cmd = [python_executable, "-m", "sqlacodegen", "--generator=sqlmodels", db_url]
 
     try:
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
         generated_code = result.stdout
 
-        # Add necessary imports at the top
         import_lines = [
             "import uuid",
             "from datetime import datetime",
@@ -50,92 +45,52 @@ def generate_sqlmodel_from_sql():
         
         import_section = "\n".join(import_lines)
         
-        # Find where imports end and classes begin
-        lines = generated_code.split('\n')
-        class_start_idx = 0
-        for i, line in enumerate(lines):
-            if line.strip().startswith('class ') and 'SQLModel' in line:
-                class_start_idx = i
-                break
-        
-        class_definitions = '\n'.join(lines[class_start_idx:])
+        # Isolate class definitions from the generated code
+        class_definitions = generated_code.split('from __future__ import annotations')[1]
 
-        # Add the _Base class
+        # Add custom _Base class
         base_class = '\n\nclass _Base(SQLModel):\n    """Shared config so Pydantic will accept SQLAlchemy types."""\n    model_config = {"arbitrary_types_allowed": True}\n'
+        class_definitions = base_class + class_definitions.lstrip()
 
-        model_pattern = r"class (\w+)\(SQLModel, table=True\):"
-        model_classes = re.findall(model_pattern, class_definitions)
-
-        first_class_match = re.search(model_pattern, class_definitions)
-        if first_class_match:
-            insert_pos = first_class_match.start()
-            class_definitions = (
-                class_definitions[:insert_pos] + base_class + class_definitions[insert_pos:]
-            )
-
-        for model_class in model_classes:
-            class_definitions = class_definitions.replace(
-                f"class {model_class}(SQLModel, table=True):",
-                f"class {model_class}(_Base, table=True):",
-            )
-
-        inheritance_pattern = r"class (\w+)\((\w+), table=True\):"
-        for match in re.finditer(inheritance_pattern, class_definitions):
-            child_class, parent_class = match.groups()
-            if parent_class not in ["_Base", "SQLModel"]:
-                class_definitions = class_definitions.replace(
-                    f"class {child_class}({parent_class}, table=True):",
-                    f"class {child_class}(_Base, table=True):",
-                )
-                print(f"Fixed inheritance: {child_class} now uses composition instead of inheriting from {parent_class}")
+        # Update all models to inherit from _Base
+        class_definitions = re.sub(
+            r"class (\w+)\(SQLModel, table=True\):",
+            r"class \1(_Base, table=True):",
+            class_definitions
+        )
 
         print("Applying type transformations...")
         
-        # --- NEW: Convert server_default from Postgres-specific to portable Python defaults ---
-        # 1. gen_random_uuid() -> uuid.uuid4
+        # --- Convert all Postgres-specific server_default to portable Python equivalents ---
+        # Each regex finds and replaces the text() construct with a Python equivalent.
         class_definitions = re.sub(r"server_default=text\('gen_random_uuid\(\)'\)", "default_factory=uuid.uuid4", class_definitions)
-        # 2. now() -> datetime.utcnow
         class_definitions = re.sub(r"server_default=text\('now\(\)'\)", "default_factory=datetime.utcnow", class_definitions)
-        # 3. 'value'::type -> 'value' (for Enums)
-        class_definitions = re.sub(r"server_default=text\(\"'(\w+)'::\w+\"\)", r"server_default='\1'", class_definitions)
-        # 4. '{}'::jsonb -> dict
         class_definitions = re.sub(r"server_default=text\(\"'{}'::jsonb\"\)", "default_factory=dict", class_definitions)
-        # 5. ARRAY[]::uuid[] -> list
         class_definitions = re.sub(r"server_default=text\('ARRAY\[\]::uuid\[\]'\)", "default_factory=list", class_definitions)
-        # --- END NEW RULES ---
+        class_definitions = re.sub(r"server_default=text\(\"'(\w+)'::\w+\"\)", r"default='\1'", class_definitions)
+        class_definitions = re.sub(r"server_default=text\('false'\)", "default=False", class_definitions)
+        class_definitions = re.sub(r"server_default=text\('true'\)", "default=True", class_definitions)
+        class_definitions = re.sub(r"server_default=text\('([\d\.]+)'\)", r"default=\1", class_definitions)
 
-        # Existing transformations
-        class_definitions = re.sub(r"(\w+): uuid\.UUID = Field\(", r"\1: Mapped[uuid.UUID] = Field(", class_definitions)
-        class_definitions = re.sub(r"(\w+): UUID = Field\(", r"\1: Mapped[uuid.UUID] = Field(", class_definitions)
-        class_definitions = re.sub(r"(\w+): Optional\[UUID\] = Field\(default=None, sa_column=Column\('(\w+)', Uuid\)\)", r"\1: Optional[uuid.UUID] = Field(default=None, sa_column=Column('\2', Uuid(as_uuid=True)))", class_definitions)
-        class_definitions = re.sub(r"(\w+): list = Field\(sa_column=Column\('(\w+)', ARRAY\(Uuid\(\)\)\)\)", r"\1: List[uuid.UUID] = Field(sa_column=Column('\2', ARRAY(Uuid(as_uuid=True))))", class_definitions)
-        class_definitions = re.sub(r"(\w+): list = Field\(sa_column=Column\('(\w+)', ARRAY\(Uuid\(as_uuid=True\)\), server_default=text\('([^']+)'\)\)\)", r"\1: List[uuid.UUID] = Field(sa_column=Column('\2', ARRAY(Uuid(as_uuid=True)), server_default=text('\3')))", class_definitions)
-        class_definitions = re.sub(r"(\w+): list = Field\(sa_column=Column\('(\w+)', ARRAY\(Uuid\(\)\), server_default=text\('([^']+)'\)\)\)", r"\1: List[uuid.UUID] = Field(sa_column=Column('\2', ARRAY(Uuid(as_uuid=True)), server_default=text('\3')))", class_definitions)
-        class_definitions = re.sub(r"(\w+): Optional\[list\] = Field\(default=None, sa_column=Column\('(\w+)', ARRAY\(Uuid\(\)\)\)\)", r"\1: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('\2', ARRAY(Uuid(as_uuid=True))))", class_definitions)
-        class_definitions = re.sub(r"(\w+): dict = Field\(sa_column=Column\('(\w+)', JSONB", r"\1: Dict[str, Any] = Field(sa_column=Column('\2', JSONB", class_definitions)
-        class_definitions = re.sub(r"(\w+): Optional\[dict\] = Field\(default=None, sa_column=Column\('(\w+)', JSONB\)\)", r"\1: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('\2', JSONB))", class_definitions)
-        class_definitions = re.sub(r"ARRAY\(Uuid\(\)\)", r"ARRAY(Uuid(as_uuid=True))", class_definitions)
-        class_definitions = re.sub(r"Column\('(\w+)', Uuid\)", r"Column('\1', Uuid(as_uuid=True))", class_definitions)
+        # --- Correct type hints and SQLModel Field definitions ---
+        # Move `default` and `default_factory` from Column() to be direct arguments of Field()
+        class_definitions = re.sub(
+            r"(sa_column=Column\([^)]*?),\s*(default(?:_factory)?=[\w\.'()]+)([^)]*\))",
+            r"\1\3, \2",
+            class_definitions
+        )
+        # Correct all type hints
+        class_definitions = re.sub(r": uuid\.UUID", r": Mapped[uuid.UUID]", class_definitions)
+        class_definitions = re.sub(r": UUID", r": Mapped[uuid.UUID]", class_definitions)
+        class_definitions = re.sub(r": Optional\[UUID\]", r": Optional[uuid.UUID]", class_definitions)
+        class_definitions = re.sub(r": list", r": List[uuid.UUID]", class_definitions)
+        class_definitions = re.sub(r": Optional\[list\]", r": Optional[List[uuid.UUID]]", class_definitions)
+        class_definitions = re.sub(r": dict", r": Dict[str, Any]", class_definitions)
+        class_definitions = re.sub(r": Optional\[dict\]", r": Optional[Dict[str, Any]]", class_definitions)
+        class_definitions = class_definitions.replace("ARRAY(Uuid())", "ARRAY(Uuid(as_uuid=True))")
+        class_definitions = class_definitions.replace(", Uuid)", ", Uuid(as_uuid=True))")
 
-        # Clean up duplicate relationships
-        lines = class_definitions.split('\n')
-        cleaned_lines = []
-        seen_relationships = {}
-        current_class = None
-        for line in lines:
-            if line.strip().startswith('class ') and '(_Base, table=True):' in line:
-                current_class = line.split('class ')[1].split('(')[0]
-                seen_relationships[current_class] = set()
-                cleaned_lines.append(line)
-            elif current_class and ': ' in line and 'Relationship(' in line:
-                rel_name = line.split(':')[0].strip()
-                if rel_name not in seen_relationships[current_class]:
-                    seen_relationships[current_class].add(rel_name)
-                    cleaned_lines.append(line)
-            else:
-                cleaned_lines.append(line)
-        
-        class_definitions = '\n'.join(cleaned_lines)
+
         final_code = import_section + class_definitions
 
         output_path = "app/models.py"
@@ -145,13 +100,8 @@ def generate_sqlmodel_from_sql():
 
         print(f"SQLModel classes generated successfully and saved to {output_path}!")
         print("Applied transformations:")
-        print("- Made server_default expressions database-agnostic") # New summary line
-        print("- UUID → Mapped[uuid.UUID] with Uuid(as_uuid=True)")
-        print("- Optional[UUID] → Optional[uuid.UUID]")
-        print("- list → List[uuid.UUID] for UUID arrays")
-        print("- dict → Dict[str, Any]")
-        print("- Removed duplicate relationships")
-        print("- Fixed parentheses in ARRAY field definitions")
+        print("- Made default values database-agnostic")
+        print("- Corrected type hints and Field definitions")
         
     except subprocess.CalledProcessError as e:
         print(f"Error generating SQLModel classes: {e}")
