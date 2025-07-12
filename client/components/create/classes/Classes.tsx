@@ -103,7 +103,8 @@ export default function ClassesGeneralPage() {
             <Skeleton className="h-4 w-full mt-2" />
             <Skeleton className="h-4 w-5/6 mt-1" />
             <Skeleton className="h-4 w-1/2 mt-3" />
-            <span className="sr-only">loading</span> {/* This is for the test */}
+            <span className="sr-only">loading</span>{" "}
+            {/* This is for the test */}
           </CardContent>
         </Card>
       ));
@@ -128,49 +129,61 @@ export default function ClassesGeneralPage() {
     }
 
     // 4. Success State: Show the actual class cards
-    return classes?.map((classItem) => (
-      <Card key={classItem.id} className="relative">
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <CardTitle className="text-lg">{classItem.name}</CardTitle>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline">{classItem.classCode}</Badge>
-                <Badge variant="secondary">
-                  {formatClassTerm(classItem.term)} {classItem.year}
-                </Badge>
+    return classes
+      ?.sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      )
+      .map((cls) => (
+        <Card
+          key={cls.id}
+          className="relative"
+          aria-label={cls.name}
+          data-testid={`card-${cls.id}`}
+        >
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <CardTitle className="text-lg">{cls.name}</CardTitle>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge variant="outline">{cls.classCode}</Badge>
+                  <Badge variant="secondary">
+                    {formatClassTerm(cls.term)} {cls.year}
+                  </Badge>
+                </div>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                data-testid={`edit-${cls.id}`}
+                onClick={() => handleEditClass(cls.id)}
+                aria-label={`Edit ${cls.name}`}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                data-testid={`delete-${cls.id}`}
+                onClick={() => handleDeleteClass(cls.id)}
+                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                aria-label={`Delete ${cls.name}`}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleEditClass(classItem.id)}
-              aria-label={`Edit ${classItem.name}`}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleDeleteClass(classItem.id)}
-              className="text-red-500 hover:text-red-700 hover:bg-red-50"
-              aria-label={`Delete ${classItem.name}`}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {classItem.description}
-          </p>
-          <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
-            <Calendar className="h-3 w-3" />
-            Created {format(new Date(classItem.createdAt), "MMM dd, yyyy")}
-          </div>
-        </CardContent>
-      </Card>
-    ));
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {cls.description}
+            </p>
+            <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
+              <Calendar className="h-3 w-3" />
+              Created {format(new Date(cls.createdAt), "MMM dd, yyyy")}
+            </div>
+          </CardContent>
+        </Card>
+      ));
   };
 
   return (

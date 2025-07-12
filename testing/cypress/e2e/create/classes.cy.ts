@@ -1,59 +1,103 @@
 /// <reference types="cypress" />
 
 describe("Classes End-to-End Tests", () => {
+  // --- Test Variables ---
+  const baseClassName = `Intro to Testing - ${Date.now()}`;
+  const manualClassName = `${baseClassName} (Manual)`;
+  const zipClassName = `${baseClassName} (ZIP)`;
+  const updatedClassName = `${manualClassName} (Updated)`;
+
   beforeEach(() => {
-    // Clear storage and setup for each test
-    cy.clearAllStorage();
-    cy.setupApiMocks();
-
-    // Login as guest for testing
-    cy.loginAsGuest();
+    cy.task("db:cleanup");
+    cy.intercept("POST", "/api/documents/course", {
+      statusCode: 200,
+      body: { status: "success", message: "Course information processed successfully!" },
+    }).as("processCourse");
   });
 
-  describe("CRUD Operations", () => {
-    it("should create classes records (ZIP upload or manual creation)", () => {
-      // TODO: Test class creation via ZIP upload or manual entry
-      // Navigate to management/classes page
-      // Test both ZIP upload and manual creation flows
+  it("should create, read, update, and delete a class manually", () => {
+    // --- 1. CREATE ---
+    cy.log("--- STARTING MANUAL CREATE ---");
+    cy.visit("/create/classes/new");
+    cy.contains("h3", "Create Manually").click();
 
-      throw new Error("IMPLEMENT: classes creation test");
+    cy.findByLabelText(/Class Name/i).type(manualClassName);
+    cy.findByLabelText(/Class Code/i).type("MAN101");
+    cy.findByLabelText(/Description/i).type("A test class created by Cypress.");
+    cy.findByRole("button", { name: /Create Class/i }).click();
+
+    // --- 2. READ ---
+    cy.log("--- STARTING READ ---");
+    cy.url().should("include", "/create/classes");
+
+    // ✅ FIX: Directly find the article containing the unique class name.
+    // This command retries until the element is found, solving the race condition
+    // and verifying the correct card is present in a single step.
+    cy.contains("article", manualClassName, { timeout: 10000 }).should("be.visible");
+    cy.task("db:findClass", { name: manualClassName }).should("exist");
+
+    // --- 3. UPDATE (and upload a single document) ---
+    cy.log("--- STARTING UPDATE & SINGLE FILE UPLOAD ---");
+
+    // ✅ REFACTOR: A much cleaner way to interact with a specific card.
+    cy.contains("article", manualClassName).within(() => {
+      cy.findByRole("button", { name: `Edit ${manualClassName}` }).click();
     });
 
-    it("should read classes records (instructor and management views)", () => {
-      // TODO: Test reading classes from both instructor/classes and management/classes
-      // Verify data appears correctly in both views
+    cy.findByLabelText(/Class Name/i).clear().type(updatedClassName);
+    cy.findByTestId("file-input").selectFile("cypress/fixtures/test-document.pdf");
+    cy.contains("p", "test-document.pdf").should("be.visible");
+    cy.findByRole("button", { name: /Update Class/i }).click();
 
-      throw new Error("IMPLEMENT: classes read test");
+    cy.url().should("include", "/create/classes");
+    cy.contains("article", updatedClassName).should("be.visible");
+    cy.task("db:findClass", { name: updatedClassName }).should("exist");
+
+    // --- 4. AI PROCESSING ---
+    cy.log("--- STARTING AI PROCESSING TEST ---");
+    cy.contains("article", updatedClassName).within(() => {
+      cy.findByRole("button", { name: `Edit ${updatedClassName}` }).click();
     });
 
-    it("should update classes records (instructor page)", () => {
-      // TODO: Test updating class information from instructor view
-      // Verify changes are reflected in database
+    cy.findByRole("button", { name: /Process Course/i }).click();
+    cy.findByRole("dialog").within(() => {
+      cy.findByRole("button", { name: "Process Course" }).click();
+    });
+    cy.wait("@processCourse");
+    cy.contains("Course information processed successfully!").should("be.visible");
 
-      throw new Error("IMPLEMENT: classes update test");
+    // --- 5. DELETE ---
+    cy.log("--- STARTING DELETE ---");
+    cy.visit("/create/classes");
+    cy.contains("article", updatedClassName).within(() => {
+      cy.findByRole("button", { name: `Delete ${updatedClassName}` }).click();
     });
 
-    it("should delete classes records (management page)", () => {
-      // TODO: Test class deletion from management page
-      // Verify removal from database
-
-      throw new Error("IMPLEMENT: classes delete test");
+    cy.findByRole("alertdialog").within(() => {
+      cy.findByRole("button", { name: "Delete" }).click();
     });
+
+    cy.contains("article", updatedClassName).should("not.exist");
+    cy.task("db:findClass", { name: updatedClassName }).should("not.exist");
   });
 
-  describe("Error Handling", () => {
-    it("should handle validation errors when creating classes", () => {
-      // TODO: Test validation error scenarios
-      // Invalid ZIP files, missing required fields, etc.
+  // --- Test 2: ZIP Upload Workflow ---
+  it("should create a new class by uploading a ZIP file", () => {
+    cy.visit("/create/classes/new");
+    cy.get('input[type="file"]').first().selectFile(
+      {
+        contents: "cypress/fixtures/test-archive.zip",
+        fileName: `${zipClassName}.zip`,
+        mimeType: "application/zip",
+      },
+      { force: true }
+    );
+    
+    cy.url({ timeout: 20000 }).should("include", "/create/classes/new/c/");
+    cy.contains("Processing complete!").should("be.visible");
 
-      throw new Error("IMPLEMENT: classes validation error test");
-    });
-
-    it("should handle constraint violations gracefully", () => {
-      // TODO: Test constraint violation scenarios
-      // Duplicate class names, invalid data, etc.
-
-      throw new Error("IMPLEMENT: classes constraint violation test");
-    });
+    cy.visit("/create/classes");
+    cy.contains("article", zipClassName, { timeout: 10000 }).should("be.visible");
+    cy.task("db:findClass", { name: zipClassName }).should("exist");
   });
 });

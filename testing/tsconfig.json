@@ -1,10 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2020",
-    "lib": [
-      "es2020",
-      "dom"
-    ],
+    "lib": ["es2020", "dom"],
     "allowJs": true,
     "strict": false,
     "forceConsistentCasingInFileNames": true,
@@ -17,19 +14,14 @@
     "jsx": "preserve",
     "incremental": true,
     "baseUrl": ".",
-    "types": [
-      "cypress",
-      "node"
-    ],
     "skipLibCheck": true
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    "cypress/**/*",
-    "cypress.config.ts"
+    "**/*.tsx"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "cypress"
   ]
 }
