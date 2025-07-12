@@ -158,7 +158,7 @@ async def upload_document(
             name=file.filename,
             file_path=file_path,
             mime_type=file.content_type,
-            class_id=class_id,
+            class_id=uuid.UUID(class_id),
         )
 
         session.add(document)
@@ -594,7 +594,7 @@ async def finalize_upload(
                                 name=filename,
                                 file_path=final_file_path,
                                 mime_type=mime_type,
-                                class_id=class_id,
+                                class_id=uuid.UUID(class_id),
                             )
 
                             session.add(document)
@@ -762,7 +762,7 @@ async def finalize_upload(
             name=filename,
             file_path=final_file_path,
             mime_type=metadata.get("filetype", "application/octet-stream"),
-            class_id=class_id,
+            class_id=uuid.UUID(class_id),
         )
 
         session.add(document)

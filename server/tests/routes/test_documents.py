@@ -137,7 +137,7 @@ class TestGet_Document:
         class_id = uuid4()
         # This class needs to exist for the document to be created
         test_session.add(Classes(id=class_id, name="Test Class"))
-        test_session.add(Documents(id=str(doc_id), name="test.pdf", file_path=f"{doc_id}.pdf", mime_type="application/pdf", class_id=class_id))
+        test_session.add(Documents(id=doc_id, name="test.pdf", file_path=f"{doc_id}.pdf", mime_type="application/pdf", class_id=class_id))
         test_session.commit()
         
         mocker.patch("os.path.exists", return_value=True)
@@ -235,8 +235,6 @@ class TestTus_Patch:
             f.write("length:1000\noffset:0")
         with open(os.path.join(upload_dir, "file"), "wb") as f:
             pass # create empty file
-
-        mock_open = mocker.patch("builtins.open", mocker.mock_open())
         
         headers = {
             "Tus-Resumable": "1.0.0",
@@ -299,7 +297,7 @@ class TestDelete_Document:
         doc_id = uuid4()
         class_id = uuid4()
         test_session.add(Classes(id=class_id, name="Test Class"))
-        test_session.add(Documents(id=str(doc_id), name="test.pdf", file_path=f"{doc_id}.pdf", class_id=class_id))
+        test_session.add(Documents(id=doc_id, name="test.pdf", file_path=f"{doc_id}.pdf", class_id=class_id))
         test_session.commit()
 
         mocker.patch("os.path.exists", return_value=True)
@@ -315,7 +313,7 @@ class TestDelete_Document:
         # Verify DB and file system calls
         mock_os_remove.assert_called_once()
         # Verify the item is gone from the DB
-        deleted_doc = test_session.get(Documents, str(doc_id))
+        deleted_doc = test_session.get(Documents, doc_id)
         assert deleted_doc is None
 
     def test_delete_document_not_found(self, client):
