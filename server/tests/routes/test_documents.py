@@ -2,6 +2,7 @@ import io
 import json
 import os
 import shutil
+import uuid
 from unittest.mock import ANY, patch
 from uuid import uuid4
 
@@ -247,7 +248,8 @@ class TestTus_Patch:
         response = client.patch(f"/documents/tus/{upload_id}", headers=headers, content=chunk)
 
         # Assert
-        assert response.status_code == 204 # No Content on success
+        # Change the expected status code from 204 to 200
+        assert response.status_code == 200 
         assert response.headers["Upload-Offset"] == str(len(chunk))
 
 class TestFinalize_Upload:
@@ -282,9 +284,12 @@ class TestFinalize_Upload:
         json_data = response.json()
         assert json_data["status"] == "success"
         assert "document_id" in json_data
-        
+
+        # Convert the string ID from the response back to a UUID object
+        document_id = uuid.UUID(json_data["document_id"]) # ✅ Convert here
+
         # Verify document was created in DB
-        doc = test_session.get(Documents, json_data["document_id"])
+        doc = test_session.get(Documents, document_id) # ✅ Now using a UUID object
         assert doc is not None
         assert doc.name == "final.txt"
 

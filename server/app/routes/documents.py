@@ -120,7 +120,7 @@ async def course_processing(
 @router.post("/upload")
 async def upload_document(
     files: list[UploadFile] = File(...),
-    class_id: str = Form(...),
+    class_id: uuid.UUID = Form(...),
     session: Session = Depends(get_session),
 ) -> JSONResponse:
     """
@@ -136,7 +136,7 @@ async def upload_document(
 
     for file in files:
         # Generate a unique ID for the document
-        document_id = str(uuid.uuid4())
+        document_id = uuid.uuid4()
 
         # Get file extension from filename
         _, ext = os.path.splitext(file.filename or "")
@@ -158,13 +158,13 @@ async def upload_document(
             name=file.filename,
             file_path=file_path,
             mime_type=file.content_type,
-            class_id=uuid.UUID(class_id),
+            class_id=class_id,
         )
 
         session.add(document)
         uploaded_documents.append(
             {
-                "document_id": document_id,
+                "document_id": str(document_id),
                 "name": file.filename,
                 "mime_type": file.content_type,
             }
@@ -186,7 +186,7 @@ async def upload_document(
 # Get document by ID
 @router.get("/id/{document_id}")
 async def get_document(
-    document_id: str,
+    document_id: uuid.UUID,
     session: Session = Depends(get_session),
 ) -> FileResponse:
     """
@@ -254,10 +254,10 @@ async def tus_creation(request: Request) -> Response:
                 metadata[k] = base64.b64decode(v).decode("utf-8")
 
     # Generate upload ID
-    upload_id = str(uuid.uuid4())
+    upload_id = uuid.uuid4()
 
     # Create upload directory
-    upload_dir = os.path.join(TUS_UPLOADS_DIR, upload_id)
+    upload_dir = os.path.join(TUS_UPLOADS_DIR, str(upload_id))
     os.makedirs(upload_dir, exist_ok=True)
 
     # Save metadata
@@ -441,7 +441,7 @@ async def finalize_upload(
                     status_code=404,
                     content={
                         "status": "error",
-                        "message": f"Upload with fileId {file_id} not found",
+                        "message": f"Upload with fileId {str(file_id)} not found",
                     },
                 )
 
@@ -524,7 +524,7 @@ async def finalize_upload(
                     status_code=404,
                     content={
                         "status": "error",
-                        "message": f"Upload with fileId {file_id} not found",
+                        "message": f"Upload with fileId {str(file_id)} not found",
                     },
                 )
 
@@ -566,7 +566,7 @@ async def finalize_upload(
                             extracted_file_path = os.path.join(root, filename)
 
                             # Generate document ID
-                            document_id = str(uuid.uuid4())
+                            document_id = uuid.uuid4()
 
                             # Get file extension
                             _, ext = os.path.splitext(filename)
@@ -715,7 +715,7 @@ async def finalize_upload(
                 status_code=404,
                 content={
                     "status": "error",
-                    "message": f"Upload with fileId {file_id} not found",
+                    "message": f"Upload with fileId {str(file_id)} not found",
                 },
             )
 
@@ -747,7 +747,7 @@ async def finalize_upload(
             ext = mimetypes.guess_extension(mime_type) or ".bin"
 
         # Generate document ID
-        document_id = str(uuid.uuid4())
+        document_id = uuid.uuid4()
 
         # Create final file path
         final_file_path = f"{document_id}{ext}"
@@ -782,7 +782,7 @@ async def finalize_upload(
             content={
                 "status": "success",
                 "message": "Document uploaded successfully",
-                "document_id": document_id,
+                "document_id": str(document_id),
             },
         )
 
@@ -800,7 +800,7 @@ async def finalize_upload(
 
 @router.delete("/id/{document_id}")
 async def delete_document(
-    document_id: str,
+    document_id: uuid.UUID,
     session: Session = Depends(get_session),
 ) -> JSONResponse:
     """
