@@ -40,7 +40,7 @@ class AppLogs(_Base, table=True):
     level: str = Field(sa_column=Column('level', Text))
     message: Optional[str] = Field(default=None, sa_column=Column('message', Text))
     context: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('context', JSONB))
-    created_at: Optional[datetime] = Field(default=None, default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
 
 
 class Classes(_Base, table=True):
@@ -335,7 +335,7 @@ class AppFeedback(_Base, table=True):
 
     id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
     type: str = Field(sa_column=Column('type', Enum('feature', 'bug', 'question', 'other', name='feedback_type')))
-    created_at: Optional[datetime] = Field(default=None, default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     profile_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('profile_id', Uuid(as_uuid=True)))
     message: Optional[str] = Field(default=None, sa_column=Column('message', Text))
 
