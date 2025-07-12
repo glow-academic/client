@@ -37,8 +37,6 @@ describe('Classes', () => {
       expect(await screen.findByText('General Chemistry')).toBeInTheDocument();
       expect(screen.getByText('CHEM101')).toBeInTheDocument();
     });
-
-    it.todo('should have correct accessibility attributes');
   });
 
   // ——————————————————————————————————————————
@@ -72,8 +70,6 @@ describe('Classes', () => {
         expect(screen.queryByRole('alertdialog')).toBeNull();
       });
     });
-
-    it.todo('should handle state changes');
   });
 
   // ——————————————————————————————————————————
