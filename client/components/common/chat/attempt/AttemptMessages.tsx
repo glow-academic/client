@@ -20,15 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  ArrowDown,
-  AudioWaveform,
-  Captions,
-  Loader2,
-  Pause,
-  Pencil, // Edit icon
-  Play,
-} from "lucide-react";
+import { ArrowDown, Pencil } from "lucide-react";
 // --- MODIFICATION END ---
 
 // UI Components
@@ -47,373 +39,20 @@ import {
 import Markdown from "@/components/common/chat/Markdown";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useSimulation } from "@/contexts/simulation-context";
-import { useWebSocket } from "@/contexts/websocket-context";
 import { SimulationMessage } from "@/types";
 import { deleteAudio } from "@/utils/api/audio/delete-audio";
-import { logError, logInfo } from "@/utils/logger";
+import { logError } from "@/utils/logger";
 import { deleteSimulationMessage } from "@/utils/mutations/simulation_messages/delete-simulation-message";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
 import { getSimulationSketchesByChat } from "@/utils/queries/simulation_sketches/get-simulation-sketches-by-chat";
-import Image from "next/image";
-
-// Word timing interface
-interface WordTiming {
-  word: string;
-  start: number;
-  end: number;
-}
 
 export interface AttemptMessagesProps {
   chatId?: string;
 }
 
-// Component for audio with synchronized captions
-function CaptionedAudio({
-  message,
-  timings,
-  onPlayPause,
-  isPlaying,
-  isLoading,
-}: {
-  message: SimulationMessage;
-  timings: WordTiming[];
-  onPlayPause: () => void;
-  isPlaying: boolean;
-  isLoading: boolean;
-}) {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [activeWordIndices, setActiveWordIndices] = useState<number[]>([]);
-
-  // keep `activeWordIndices` in sync with playback position
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || timings.length === 0) return;
-
-    const handler = () => {
-      const currentTime = audio.currentTime;
-
-      // Find all words that should be highlighted at the current time
-      const activeIndices: number[] = [];
-
-      timings.forEach((timing, index) => {
-        // Check if current time falls within this word's timing window
-        // Add a small buffer (50ms) to make highlighting more visible
-        const bufferTime = 0.05;
-        if (
-          currentTime >= timing.start - bufferTime &&
-          currentTime <= timing.end + bufferTime
-        ) {
-          activeIndices.push(index);
-        }
-      });
-
-      // Only update if the active indices have changed
-      if (JSON.stringify(activeIndices) !== JSON.stringify(activeWordIndices)) {
-        setActiveWordIndices(activeIndices);
-
-        // Log for debugging
-        if (activeIndices.length > 0) {
-          const activeWords = activeIndices
-            .map((i) => timings[i]?.word)
-            .join(" ");
-          logInfo(
-            `Highlighting words at ${currentTime.toFixed(2)}s: "${activeWords}"`
-          );
-        }
-      }
-    };
-
-    // Update more frequently for smoother highlighting
-    audio.addEventListener("timeupdate", handler);
-
-    // Also check on play/pause for immediate feedback
-    audio.addEventListener("play", handler);
-    audio.addEventListener("pause", handler);
-    audio.addEventListener("seeked", handler);
-
-    return () => {
-      audio.removeEventListener("timeupdate", handler);
-      audio.removeEventListener("play", handler);
-      audio.removeEventListener("pause", handler);
-      audio.removeEventListener("seeked", handler);
-    };
-  }, [timings, activeWordIndices]);
-
-  // Sync audio element with external play/pause state
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    if (isPlaying && audio.paused) {
-      audio.play().catch((error) => {
-        logError("Error playing audio:", error);
-      });
-    } else if (!isPlaying && !audio.paused) {
-      audio.pause();
-    }
-  }, [isPlaying]);
-
-  // Handle audio events
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const handlePlay = () => {
-      logInfo("Audio playback started - word highlighting enabled");
-    };
-
-    const handlePause = () => {
-      setActiveWordIndices([]); // Clear highlighting when paused
-      logInfo("Audio paused - word highlighting cleared");
-    };
-
-    const handleEnded = () => {
-      setActiveWordIndices([]); // Clear highlighting when ended
-      logInfo("Audio ended - word highlighting cleared");
-    };
-
-    const handleLoadedMetadata = () => {
-      logInfo(
-        `Audio loaded: duration=${audio.duration?.toFixed(2)}s, timings=${timings.length} words`
-      );
-
-      // Validate that timings don't exceed audio duration
-      if (timings.length > 0 && audio.duration) {
-        const maxTimingEnd = Math.max(...timings.map((t) => t.end));
-        if (maxTimingEnd > audio.duration) {
-          logError(
-            `Word timings extend beyond audio duration: ${maxTimingEnd}s > ${audio.duration}s`
-          );
-        }
-      }
-    };
-
-    audio.addEventListener("play", handlePlay);
-    audio.addEventListener("pause", handlePause);
-    audio.addEventListener("ended", handleEnded);
-    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
-
-    return () => {
-      audio.removeEventListener("play", handlePlay);
-      audio.removeEventListener("pause", handlePause);
-      audio.removeEventListener("ended", handleEnded);
-      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
-    };
-  }, [timings]);
-
-  return (
-    <div className="bg-muted rounded-lg p-3 relative">
-      {/* Content with word highlighting */}
-      <div className="pr-10">
-        {timings.length > 0 ? (
-          <p className="whitespace-pre-wrap leading-relaxed">
-            {message.content.split(/\s+/).map((word, i) => {
-              const isActive = activeWordIndices.includes(i);
-              const timing = timings[i];
-
-              return (
-                <span
-                  key={i}
-                  className={`${
-                    isActive
-                      ? "bg-yellow-200 dark:bg-yellow-800 rounded px-1"
-                      : ""
-                  } transition-colors duration-150`}
-                  title={
-                    timing
-                      ? `${timing.start.toFixed(2)}s - ${timing.end.toFixed(2)}s`
-                      : undefined
-                  }
-                >
-                  {word + " "}
-                </span>
-              );
-            })}
-          </p>
-        ) : (
-          <Markdown>{message.content}</Markdown>
-        )}
-      </div>
-
-      {/* Play button */}
-      <div className="absolute bottom-2 right-2">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground"
-              onClick={onPlayPause}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : isPlaying ? (
-                <Pause className="h-4 w-4" />
-              ) : (
-                <Play className="h-4 w-4" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Play Audio</p>
-          </TooltipContent>
-        </Tooltip>
-      </div>
-    </div>
-  );
-}
-
-// A leaner, single-responsibility component for streaming captions
-function StreamingCaptions({
-  timings,
-  isStreaming,
-}: {
-  timings: WordTiming[];
-  isStreaming: boolean;
-}) {
-  const { persistentAudioElement } = useWebSocket();
-  const [visibleWords, setVisibleWords] = useState<string[]>([]);
-  const messageAudioStartTimeRef = useRef<number | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
-
-  // 🧠 DERIVE CONTENT FROM TIMINGS:
-  // Reconstruct the full sentence and word array directly from the timings prop.
-  // This removes the need for `message.content`.
-  const allWords = useMemo(() => {
-    if (!timings || timings.length === 0) {
-      return [];
-    }
-    return timings.map((t) => t.word);
-  }, [timings]);
-
-  // This effect now resets state whenever a new set of timings arrives.
-  useEffect(() => {
-    setVisibleWords([]);
-    messageAudioStartTimeRef.current = null;
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-  }, [timings]); // Dependency is now just on the timings array itself.
-
-  // The main animation and synchronization effect (logic is the same)
-  useEffect(() => {
-    if (!isStreaming || !persistentAudioElement || timings.length === 0) {
-      if (!isStreaming) {
-        // When streaming ends, ensure the full text is displayed.
-        setVisibleWords(allWords);
-      }
-      return;
-    }
-
-    const updateVisibleWords = () => {
-      if (messageAudioStartTimeRef.current === null) {
-        messageAudioStartTimeRef.current = persistentAudioElement.currentTime;
-        logInfo(
-          `Captured audio start time: ${messageAudioStartTimeRef.current?.toFixed(2)}s`
-        );
-      }
-      const messageRelativeTime =
-        persistentAudioElement.currentTime -
-        (messageAudioStartTimeRef.current || 0);
-
-      const newVisibleWords: string[] = [];
-      for (let i = 0; i < timings.length; i++) {
-        const timing = timings[i];
-        if (timing && messageRelativeTime >= timing.start) {
-          newVisibleWords.push(allWords[i] || "");
-        } else {
-          break;
-        }
-      }
-
-      setVisibleWords(newVisibleWords);
-
-      if (newVisibleWords.length < allWords.length) {
-        animationFrameRef.current = requestAnimationFrame(updateVisibleWords);
-      } else {
-        setVisibleWords(allWords); // Final consistency check
-      }
-    };
-
-    animationFrameRef.current = requestAnimationFrame(updateVisibleWords);
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-    };
-  }, [isStreaming, persistentAudioElement, timings, allWords]);
-
-  // The render logic is now much simpler.
-  return (
-    <div className="text-lg leading-relaxed">
-      {timings.length === 0 ? (
-        <div className="flex items-center text-muted-foreground">
-          <span className="mr-2">Syncing audio...</span>
-          <LoadingDots />
-        </div>
-      ) : (
-        <>
-          <Markdown>{visibleWords.join(" ")}</Markdown>
-          {isStreaming && visibleWords.length < allWords.length && (
-            <span className="inline-block w-2 h-5 bg-primary animate-pulse ml-1" />
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
-// Component for displaying sketches
-function SketchDisplay({ sketchId }: { sketchId: string }) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-
-  const handleImageLoad = () => {
-    setIsLoading(false);
-  };
-
-  const handleImageError = () => {
-    setIsLoading(false);
-    setHasError(true);
-  };
-
-  return (
-    <div className="bg-muted rounded-lg p-3 max-w-[400px]">
-      <div className="relative">
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted rounded">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        )}
-        {hasError ? (
-          <div className="flex items-center justify-center p-8 text-muted-foreground">
-            <span className="text-sm">Failed to load sketch</span>
-          </div>
-        ) : (
-          <Image
-            src={`/api/download/sketch/${sketchId}`}
-            alt="User sketch"
-            width={400}
-            height={300}
-            className="rounded max-w-full h-auto"
-            onLoad={handleImageLoad}
-            onError={handleImageError}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
   const simulationContext = useSimulation();
-
-  // Check if dev mode is enabled
-  const isDevMode = process.env["NEXT_PUBLIC_DEV_MODE"] === "true";
 
   // --- MODIFICATION START: State for editing functionality ---
   const queryClient = useQueryClient();
@@ -424,20 +63,9 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   // --- MODIFICATION END ---
 
-  // Word timing state
-  const [timingsByMsg, setTimingsByMsg] = useState<
-    Record<string, WordTiming[]>
-  >({});
-
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [captionsEnabled, setCaptionsEnabled] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const [audioState, setAudioState] = useState<{
-    playingId: string | null;
-    isLoading: boolean;
-  }>({ playingId: null, isLoading: false });
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const targetChatId = chatId || simulationContext?.currentChat?.id;
 
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
@@ -452,130 +80,6 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
     queryFn: () => getSimulationSketchesByChat(targetChatId!),
     enabled: !!targetChatId,
   });
-
-  // Listen for word timing events
-  useEffect(() => {
-    function handleTimings(
-      e: CustomEvent<{
-        message_id: string;
-        chat_id: string;
-        timings: WordTiming[];
-      }>
-    ) {
-      const { message_id, timings } = e.detail;
-      logInfo(
-        `Received word timings for message: ${message_id} with ${timings?.length || 0} words`
-      );
-
-      // Enhanced logging for debugging
-      if (timings && timings.length > 0) {
-        const totalDuration = Math.max(...timings.map((t) => t.end));
-        const avgWordDuration =
-          timings.reduce((sum, t) => sum + (t.end - t.start), 0) /
-          timings.length;
-
-        logInfo(
-          `Word timing stats: total_duration=${totalDuration.toFixed(2)}s, avg_word_duration=${avgWordDuration.toFixed(3)}s`
-        );
-
-        // Log first few and last few words for debugging
-        const debugWords = [
-          ...timings.slice(0, 3),
-          ...(timings.length > 6 ? [{ word: "...", start: 0, end: 0 }] : []),
-          ...timings.slice(-3),
-        ];
-
-        logInfo(
-          `Word timings preview: ${JSON.stringify(
-            debugWords.map((t) =>
-              t.word === "..."
-                ? "..."
-                : `${t.word}(${t.start.toFixed(2)}-${t.end.toFixed(2)}s)`
-            )
-          )}`
-        );
-      }
-
-      setTimingsByMsg((prev) => ({ ...prev, [message_id]: timings }));
-    }
-
-    window.addEventListener(
-      "simulationWordTimings",
-      handleTimings as EventListener
-    );
-
-    return () =>
-      window.removeEventListener(
-        "simulationWordTimings",
-        handleTimings as EventListener
-      );
-  }, []);
-
-  // ✅ ADD THIS: A new variable that ONLY finds an in-progress message.
-  const streamingMessage = useMemo(
-    () =>
-      messages.find(
-        (msg: SimulationMessage) => msg.type === "response" && !msg.completed
-      ),
-    [messages]
-  );
-
-  // Track audio playback state for visual feedback
-  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-
-  // Get the WebSocket context to access the persistent audio element
-  const { persistentAudioElement } = useWebSocket();
-
-  // Monitor the persistent audio element for play/pause events
-  useEffect(() => {
-    if (!persistentAudioElement) return;
-
-    const handlePlay = () => {
-      setIsAudioPlaying(true);
-      logInfo("Persistent audio started playing - activating visual feedback");
-    };
-
-    const handlePause = () => {
-      setIsAudioPlaying(false);
-      logInfo("Persistent audio paused - deactivating visual feedback");
-    };
-
-    const handleEnded = () => {
-      setIsAudioPlaying(false);
-      logInfo("Persistent audio ended - deactivating visual feedback");
-    };
-
-    persistentAudioElement.addEventListener("play", handlePlay);
-    persistentAudioElement.addEventListener("pause", handlePause);
-    persistentAudioElement.addEventListener("ended", handleEnded);
-
-    // Check initial state
-    if (!persistentAudioElement.paused) {
-      setIsAudioPlaying(true);
-    }
-
-    return () => {
-      persistentAudioElement.removeEventListener("play", handlePlay);
-      persistentAudioElement.removeEventListener("pause", handlePause);
-      persistentAudioElement.removeEventListener("ended", handleEnded);
-    };
-  }, [persistentAudioElement]);
-
-  // Check if we have word timings for the current streaming message
-  const hasWordTimings = useMemo(() => {
-    if (!streamingMessage) return false;
-    const timings = timingsByMsg[streamingMessage.id];
-    return timings && timings.length > 0;
-  }, [streamingMessage, timingsByMsg]);
-
-  // Determine if we should show the active (pink) background
-  const isAssistantActive = useMemo(() => {
-    // Show pink background when:
-    // 1. There's a streaming message (assistant is generating text), OR
-    // 2. Audio is actively playing (assistant is speaking), OR
-    // 3. We have word timings ready for a streaming message (about to play audio)
-    return !!streamingMessage || isAudioPlaying || hasWordTimings;
-  }, [streamingMessage, isAudioPlaying, hasWordTimings]);
 
   const starterPrompts = useMemo(() => {
     const basePrompts = [
@@ -598,11 +102,6 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
 
   const handleStarterPromptClick = (prompt: string) =>
     simulationContext?.sendMessage(prompt);
-  const handleAudioModeToggle = () => {
-    const newAudioMode = !simulationContext?.assistantAudioEnabled;
-    simulationContext?.setAssistantAudioEnabled(newAudioMode);
-    if (newAudioMode) simulationContext?.testAndEnableAudio();
-  };
 
   const scrollToBottom = () => {
     const scrollArea = scrollAreaRef.current;
@@ -615,37 +114,6 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
       setTimeout(() => setShowScrollButton(false), 300);
     }
   };
-
-  const handlePlayPauseAudio = async (message: SimulationMessage) => {
-    if (audioState.isLoading) return;
-    if (audioState.playingId === message.id && audioRef.current) {
-      audioRef.current.pause();
-      return;
-    }
-    if (audioRef.current) audioRef.current.pause();
-    setAudioState({ playingId: message.id, isLoading: true });
-    try {
-      const audioUrl = `/api/download/audio/${message.id}`;
-      const newAudio = new Audio(audioUrl);
-      audioRef.current = newAudio;
-      newAudio.oncanplaythrough = () => newAudio.play();
-      newAudio.onplay = () =>
-        setAudioState({ playingId: message.id, isLoading: false });
-      newAudio.onpause = newAudio.onended = () => {
-        setAudioState({ playingId: null, isLoading: false });
-        audioRef.current = null;
-      };
-      newAudio.onerror = (e) => {
-        logError("Error playing audio:", e);
-        setAudioState({ playingId: null, isLoading: false });
-        audioRef.current = null;
-      };
-    } catch (error) {
-      logError("Failed to set up audio:", error);
-      setAudioState({ playingId: null, isLoading: false });
-    }
-  };
-
   // --- MODIFICATION START: Handlers for editing messages ---
   const handleEditClick = (message: SimulationMessage) => {
     setEditingMessage(message);
@@ -729,14 +197,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
     return () => viewport.removeEventListener("scroll", handleScrollEvent);
   }, [messages.length, messages]);
 
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, []);
+
 
   if (messagesLoading) {
     return (
@@ -758,272 +219,171 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
   return (
     <div className="flex-1 flex flex-col p-0 min-h-0 relative">
       <TooltipProvider>
-        {isDevMode && (
-          <div className="absolute top-4 left-4 z-10">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={
-                    simulationContext?.assistantAudioEnabled
-                      ? "default"
-                      : "outline"
-                  }
-                  size="sm"
-                  onClick={handleAudioModeToggle}
-                  className="p-2"
-                >
-                  <AudioWaveform className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Toggle Audio Mode</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        )}
-
-        {simulationContext?.assistantAudioEnabled && (
-          <div className="absolute top-4 right-4 z-10">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={captionsEnabled ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setCaptionsEnabled(!captionsEnabled)}
-                  className="p-2"
-                >
-                  <Captions className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Toggle Captions</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        )}
-
-        {simulationContext?.assistantAudioEnabled ? (
-          <div className="flex-1 flex flex-col items-center justify-center min-h-0 p-8">
-            <div className="relative mb-8">
-              <div
-                className={`w-[300px] h-[300px] rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 ${
-                  isAssistantActive ? "animate-pulse" : ""
-                }`}
-                style={{
-                  background: isAssistantActive
-                    ? "linear-gradient(135deg, #60a5fa, #a855f7, #ec4899)"
-                    : "linear-gradient(135deg, #94a3b8, #64748b, #475569)",
-                }}
-              />
-            </div>
-
-            {captionsEnabled && streamingMessage && (
-              <div className="w-full max-w-4xl">
-                <ScrollArea className="h-32 w-full border rounded-lg p-4 bg-background/80 backdrop-blur-sm">
-                  {/* The component call is now simpler and more robust */}
-                  <StreamingCaptions
-                    timings={timingsByMsg[streamingMessage.id] || []}
-                    isStreaming={true}
-                  />
-                </ScrollArea>
-              </div>
-            )}
-          </div>
-        ) : (
-          <>
-            <ScrollArea className="flex-1 px-4 min-h-0" ref={scrollAreaRef}>
-              <div className="space-y-4 py-4">
-                {messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full min-h-[400px] space-y-6">
-                    <div className="text-center space-y-2">
-                      <p className="text-sm text-muted-foreground">
-                        Choose a prompt below or type your own message
-                      </p>
-                    </div>
-                    <div className="flex flex-col gap-3 w-full max-w-md">
-                      {starterPrompts.map((prompt, index) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          className="h-auto p-4 text-left justify-start whitespace-normal"
-                          onClick={() => handleStarterPromptClick(prompt)}
-                          disabled={
-                            simulationContext?.currentChat?.completed ||
-                            simulationContext?.isSendingMessage ||
-                            (simulationContext?.simulation?.timeLimit
-                              ? !simulationContext?.isActive
-                              : false)
-                          }
-                        >
-                          <span className="text-sm">{prompt}</span>
-                        </Button>
-                      ))}
-                    </div>
+        <>
+          <ScrollArea className="flex-1 px-4 min-h-0" ref={scrollAreaRef}>
+            <div className="space-y-4 py-4">
+              {messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full min-h-[400px] space-y-6">
+                  <div className="text-center space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Choose a prompt below or type your own message
+                    </p>
                   </div>
-                ) : (
-                  // Create a combined timeline of messages and sketches
-                  [
-                    ...messages,
-                    ...sketches.map((sketch) => ({
-                      ...sketch,
-                      type: "sketch" as const,
-                      createdAt: sketch.createdAt,
-                    })),
-                  ]
-                    .sort(
-                      (a, b) =>
-                        new Date(a.createdAt).getTime() -
-                        new Date(b.createdAt).getTime()
-                    )
-                    .map((item) => (
-                      <div key={item.id} className="space-y-3">
-                        {item.type === "query" && (
-                          <div className="flex justify-end mb-3">
-                            <div className="max-w-[80%]">
-                              {/* --- MODIFICATION START: Conditional rendering for edit mode --- */}
-                              {editingMessage?.id === item.id ? (
-                                <div className="bg-primary/90 text-primary-foreground rounded-lg p-3 w-full">
-                                  <Textarea
-                                    value={editText}
-                                    onChange={(e) =>
-                                      setEditText(e.target.value)
-                                    }
-                                    className="bg-primary/10 text-primary-foreground border-primary-foreground/50 focus:ring-primary-foreground"
-                                    autoFocus
-                                    onFocus={(e) => e.currentTarget.select()}
-                                  />
-                                  <div className="flex justify-end gap-2 mt-2">
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={handleCancelEdit}
-                                    >
-                                      Cancel
-                                    </Button>
-                                    <Button size="sm" onClick={handleSaveEdit}>
-                                      Send
-                                    </Button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="bg-primary text-primary-foreground rounded-lg p-3">
-                                  {/* Edit button floated right, visible only on the LAST message */}
-                                  {(item as SimulationMessage).audio &&
-                                    !simulationContext?.isSendingMessage && (
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <Button
-                                            size="icon"
-                                            variant="ghost"
-                                            className="float-right ml-2 mb-1 h-7 w-7 hover:bg-primary-foreground/20"
-                                            onClick={() =>
-                                              handleEditClick(
-                                                item as SimulationMessage
-                                              )
-                                            }
-                                          >
-                                            <Pencil className="h-4 w-4" />
-                                          </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                          <p>Edit Transcript</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    )}
-                                  <Markdown>
-                                    {(item as SimulationMessage).content}
-                                  </Markdown>
-                                </div>
-                              )}
-                              {/* --- MODIFICATION END --- */}
-                            </div>
-                          </div>
-                        )}
-
-                        {item.type === "sketch" && (
-                          <div className="flex justify-end mb-3">
-                            <div className="max-w-[80%]">
-                              <SketchDisplay sketchId={item.id} />
-                            </div>
-                          </div>
-                        )}
-
-                        {item.type === "response" && (
-                          <div className="flex justify-start mb-3">
-                            <div className="max-w-[80%]">
-                              {/* Show loading state for empty/incomplete messages, otherwise show content */}
-                              {!(item as SimulationMessage).completed &&
-                              (item as SimulationMessage).content === "" ? (
-                                <div className="bg-muted rounded-lg p-3">
-                                  <div className="flex items-center">
-                                    <span className="text-gray-500 mr-2">
-                                      Analyzing
-                                    </span>
-                                    <LoadingDots />
-                                  </div>
-                                </div>
-                              ) : (item as SimulationMessage).completed &&
-                                (item as SimulationMessage).content === "" ? (
-                                // Show "No response" for completed messages with empty content
-                                <div className="bg-muted rounded-lg p-3">
-                                  <span className="text-gray-500 italic">
-                                    No response
-                                  </span>
-                                </div>
-                              ) : (item as SimulationMessage).audio &&
-                                !simulationContext?.assistantAudioEnabled ? (
-                                // Show individual message audio controls only when audio mode is OFF
-                                // to prevent duplicate audio with WebRTC persistent stream
-                                <CaptionedAudio
-                                  message={item as SimulationMessage}
-                                  timings={timingsByMsg[item.id] || []}
-                                  onPlayPause={() =>
-                                    handlePlayPauseAudio(
-                                      item as SimulationMessage
-                                    )
-                                  }
-                                  isPlaying={audioState.playingId === item.id}
-                                  isLoading={
-                                    audioState.isLoading &&
-                                    audioState.playingId === item.id
-                                  }
+                  <div className="flex flex-col gap-3 w-full max-w-md">
+                    {starterPrompts.map((prompt, index) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        className="h-auto p-4 text-left justify-start whitespace-normal"
+                        onClick={() => handleStarterPromptClick(prompt)}
+                        disabled={
+                          simulationContext?.currentChat?.completed ||
+                          simulationContext?.isSendingMessage ||
+                          (simulationContext?.simulation?.timeLimit
+                            ? !simulationContext?.isActive
+                            : false)
+                        }
+                      >
+                        <span className="text-sm">{prompt}</span>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                // Create a combined timeline of messages and sketches
+                [
+                  ...messages,
+                  ...sketches.map((sketch) => ({
+                    ...sketch,
+                    type: "sketch" as const,
+                    createdAt: sketch.createdAt,
+                  })),
+                ]
+                  .sort(
+                    (a, b) =>
+                      new Date(a.createdAt).getTime() -
+                      new Date(b.createdAt).getTime()
+                  )
+                  .map((item) => (
+                    <div key={item.id} className="space-y-3">
+                      {item.type === "query" && (
+                        <div className="flex justify-end mb-3">
+                          <div className="max-w-[80%]">
+                            {/* --- MODIFICATION START: Conditional rendering for edit mode --- */}
+                            {editingMessage?.id === item.id ? (
+                              <div className="bg-primary/90 text-primary-foreground rounded-lg p-3 w-full">
+                                <Textarea
+                                  value={editText}
+                                  onChange={(e) => setEditText(e.target.value)}
+                                  className="bg-primary/10 text-primary-foreground border-primary-foreground/50 focus:ring-primary-foreground"
+                                  autoFocus
+                                  onFocus={(e) => e.currentTarget.select()}
                                 />
-                              ) : (
-                                <div className="bg-muted rounded-lg p-3 relative">
-                                  <Markdown>
-                                    {(item as SimulationMessage).content}
-                                  </Markdown>
+                                <div className="flex justify-end gap-2 mt-2">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={handleCancelEdit}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button size="sm" onClick={handleSaveEdit}>
+                                    Send
+                                  </Button>
                                 </div>
-                              )}
-                            </div>
+                              </div>
+                            ) : (
+                              <div className="bg-primary text-primary-foreground rounded-lg p-3">
+                                {/* Edit button floated right, visible only on the LAST message */}
+                                {(item as SimulationMessage).audio &&
+                                  !simulationContext?.isSendingMessage && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="float-right ml-2 mb-1 h-7 w-7 hover:bg-primary-foreground/20"
+                                          onClick={() =>
+                                            handleEditClick(
+                                              item as SimulationMessage
+                                            )
+                                          }
+                                        >
+                                          <Pencil className="h-4 w-4" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Edit Transcript</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                <Markdown>
+                                  {(item as SimulationMessage).content}
+                                </Markdown>
+                              </div>
+                            )}
+                            {/* --- MODIFICATION END --- */}
                           </div>
-                        )}
-                      </div>
-                    ))
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollArea>
+                        </div>
+                      )}
 
-            <div
-              className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20 transition-all duration-300 ease-in-out ${
-                showScrollButton
-                  ? "opacity-100 translate-y-0 pointer-events-auto"
-                  : "opacity-0 translate-y-2 pointer-events-none"
-              }`}
-            >
-              <Button
-                variant="default"
-                size="sm"
-                onClick={scrollToBottom}
-                className="rounded-full h-10 w-10 p-0 shadow-lg bg-primary hover:bg-primary/90 border-2 border-background"
-                data-testid="scroll-to-bottom-button"
-              >
-                <ArrowDown className="h-4 w-4" />
-              </Button>
+                      {item.type === "response" && (
+                        <div className="flex justify-start mb-3">
+                          <div className="max-w-[80%]">
+                            {/* Show loading state for empty/incomplete messages, otherwise show content */}
+                            {!(item as SimulationMessage).completed &&
+                            (item as SimulationMessage).content === "" ? (
+                              <div className="bg-muted rounded-lg p-3">
+                                <div className="flex items-center">
+                                  <span className="text-gray-500 mr-2">
+                                    Analyzing
+                                  </span>
+                                  <LoadingDots />
+                                </div>
+                              </div>
+                            ) : (item as SimulationMessage).completed &&
+                              (item as SimulationMessage).content === "" ? (
+                              // Show "No response" for completed messages with empty content
+                              <div className="bg-muted rounded-lg p-3">
+                                <span className="text-gray-500 italic">
+                                  No response
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="bg-muted rounded-lg p-3 relative">
+                              <Markdown>
+                                {(item as SimulationMessage).content}
+                              </Markdown>
+                            </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))
+              )}
+              <div ref={messagesEndRef} />
             </div>
-          </>
-        )}
+          </ScrollArea>
+
+          <div
+            className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20 transition-all duration-300 ease-in-out ${
+              showScrollButton
+                ? "opacity-100 translate-y-0 pointer-events-auto"
+                : "opacity-0 translate-y-2 pointer-events-none"
+            }`}
+          >
+            <Button
+              variant="default"
+              size="sm"
+              onClick={scrollToBottom}
+              className="rounded-full h-10 w-10 p-0 shadow-lg bg-primary hover:bg-primary/90 border-2 border-background"
+              data-testid="scroll-to-bottom-button"
+            >
+              <ArrowDown className="h-4 w-4" />
+            </Button>
+          </div>
+        </>
       </TooltipProvider>
 
       {/* --- MODIFICATION START: Alert Dialog for Edit Confirmation --- */}

@@ -3,15 +3,23 @@ import json
 import logging
 import random
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 from agents.items import TResponseInputItem
-from app.models import (Agents, AssistantMessages, AssistantToolCalls,
-                        Scenarios, SimulationChats, SimulationMessages,
-                        SimulationSketches)
-from openai.types.responses import (EasyInputMessageParam,
-                                    ResponseFunctionToolCallParam,
-                                    ResponseInputImageParam)
+from app.models import (
+    Agents,
+    AssistantMessages,
+    AssistantToolCalls,
+    Scenarios,
+    SimulationChats,
+    SimulationMessages,
+    SimulationSketches,
+)
+from openai.types.responses import (
+    EasyInputMessageParam,
+    ResponseFunctionToolCallParam,
+    ResponseInputImageParam,
+)
 from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
@@ -41,10 +49,16 @@ def get_simulation_conversation_history(
     for item in items:
         if isinstance(item, SimulationMessages):
             if item.type == "query":
-                user_message_item: TResponseInputItem = {"role": "user", "content": item.content}
+                user_message_item: TResponseInputItem = {
+                    "role": "user",
+                    "content": item.content,
+                }
                 conversation_history.append(user_message_item)
             if item.type == "response":
-                assistant_message_item: TResponseInputItem = {"role": "assistant", "content": item.content}
+                assistant_message_item: TResponseInputItem = {
+                    "role": "assistant",
+                    "content": item.content,
+                }
                 conversation_history.append(assistant_message_item)
         elif isinstance(item, SimulationSketches):
             # ge the file path from the item
@@ -59,19 +73,22 @@ def get_simulation_conversation_history(
 
             # encode the file content to base64
             file_content = base64.b64encode(file_content)
-            
+
             # get the file content
             user_sketch_item: EasyInputMessageParam = EasyInputMessageParam(
                 role="user",
-                content=[ResponseInputImageParam(
-                    detail="low",
-                    type="input_image",
-                    image_url=f"data:image/png;base64,{file_content.decode('utf-8')}"
-                )]
+                content=[
+                    ResponseInputImageParam(
+                        detail="low",
+                        type="input_image",
+                        image_url=f"data:image/png;base64,{file_content.decode('utf-8')}",
+                    )
+                ],
             )
             conversation_history.append(user_sketch_item)
 
     return conversation_history
+
 
 def get_assistant_conversation_history(
     messages: List[AssistantMessages],
@@ -86,71 +103,84 @@ def get_assistant_conversation_history(
         tool_calls: List of AssistantToolCalls objects from the database
 
     Returns:
-        List of message objects formatted for OpenAI API consumption, 
+        List of message objects formatted for OpenAI API consumption,
         chronologically ordered
     """
     # Create a list of all conversation items with their timestamps
     conversation_items: List[Dict[str, Any]] = []
-    
+
     # Add messages to the list
     for message in messages:
         if message.role == "user" and message.content:
             user_item: TResponseInputItem = {"role": "user", "content": message.content}
-            conversation_items.append({
-                "timestamp": message.created_at,
-                "type": "message",
-                "item": user_item
-            })
+            conversation_items.append(
+                {"timestamp": message.created_at, "type": "message", "item": user_item}
+            )
         elif message.role == "assistant" and message.content:
-            assistant_item: TResponseInputItem = {"role": "assistant", "content": message.content}
-            conversation_items.append({
-                "timestamp": message.created_at,
-                "type": "message", 
-                "item": assistant_item
-            })
-    
+            assistant_item: TResponseInputItem = {
+                "role": "assistant",
+                "content": message.content,
+            }
+            conversation_items.append(
+                {
+                    "timestamp": message.created_at,
+                    "type": "message",
+                    "item": assistant_item,
+                }
+            )
+
     # Add tool calls to the list
     for tool_call in tool_calls:
         # Add the tool call itself
         logger.info(f"Tool call arguments: {tool_call.tool_arguments}")
         tool_call_item: ResponseFunctionToolCallParam = {
-            "arguments": str(tool_call.tool_arguments) if tool_call.tool_arguments else json.dumps({}),
+            "arguments": str(tool_call.tool_arguments)
+            if tool_call.tool_arguments
+            else json.dumps({}),
             "call_id": "call_" + str(tool_call.id),
             "name": tool_call.tool_name,
             "type": "function_call",
             "id": str(tool_call.id),
             "status": "completed",
         }
-        conversation_items.append({
-            "timestamp": tool_call.created_at,
-            "type": "tool_call",
-            "item": tool_call_item
-        })
-        
+        conversation_items.append(
+            {
+                "timestamp": tool_call.created_at,
+                "type": "tool_call",
+                "item": tool_call_item,
+            }
+        )
+
         # Add the tool call output immediately after the tool call
         logger.info(f"Tool call result: {tool_call.tool_result}")
         tool_call_output_item: TResponseInputItem = {
             "call_id": "call_" + str(tool_call.id),
-            "output": str(tool_call.tool_result) if tool_call.tool_result else json.dumps({}),
+            "output": str(tool_call.tool_result)
+            if tool_call.tool_result
+            else json.dumps({}),
             "type": "function_call_output",
             "id": str(tool_call.id),
             "status": "completed",
         }
-        conversation_items.append({
-            "timestamp": tool_call.created_at,
-            "type": "tool_output",
-            "item": tool_call_output_item
-        })
-    
+        conversation_items.append(
+            {
+                "timestamp": tool_call.created_at,
+                "type": "tool_output",
+                "item": tool_call_output_item,
+            }
+        )
+
     # Sort all items by timestamp
     conversation_items.sort(key=lambda x: x["timestamp"] or datetime.min)
-    
+
     # Extract the conversation history in chronological order
     conversation_history: list[TResponseInputItem] = []
     for item in conversation_items:
         conversation_history.append(item["item"])
 
-    logger.info(f"Chronologically ordered conversation history with {len(conversation_history)} items")
+    logger.info(
+        f"Chronologically ordered conversation history with {len(conversation_history)} items"
+    )
 
     return conversation_history
 
@@ -177,10 +207,9 @@ def generate_natural_opening(agent: Agents) -> str:
     Generate a natural conversation opening based on the scenario and agent type.
     """
     openings = [
-        f"Hi, how are you doing today?",
-        f"Hey, how's it going?",
-        f"Hello, how are you?",
+        "Hi, how are you doing today?",
+        "Hey, how's it going?",
+        "Hello, how are you?",
     ]
 
     return random.choice(openings)
-

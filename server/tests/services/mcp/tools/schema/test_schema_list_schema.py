@@ -1,11 +1,12 @@
 """
 Tests for app.services.mcp.tools.schema.list_schema
 """
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock
 from sqlmodel import Session
-from uuid import uuid4
 from app.services.mcp.tools.schema.list_schema import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +15,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `list_schema`")
 class TestList_Schema:
@@ -28,4 +30,3 @@ class TestList_Schema:
         """Test list_schema error handling."""
         # TODO: Implement error test for list_schema
         assert False, "IMPLEMENT: Error test for list_schema"
-

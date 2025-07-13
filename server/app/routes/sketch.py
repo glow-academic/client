@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+
 # Get sketch for message by ID
 @router.get("/id/{sketch_id}")
 async def get_sketch(
@@ -28,7 +29,7 @@ async def get_sketch(
 
     if not result:
         raise HTTPException(status_code=404, detail="Message not found")
-    
+
     if not result.file_path:
         raise HTTPException(status_code=404, detail="Sketch file not found")
 

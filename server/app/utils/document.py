@@ -6,7 +6,9 @@ from app.models import Documents
 from sqlmodel import Session, select
 
 
-def get_document_info(document_ids: List[uuid.UUID], session: Session) -> TResponseInputItem:
+def get_document_info(
+    document_ids: List[uuid.UUID], session: Session
+) -> TResponseInputItem:
     """
     Get the document information for a given document ids.
     """
@@ -28,4 +30,3 @@ def get_document_info(document_ids: List[uuid.UUID], session: Session) -> TRespo
         "role": "user",
         "content": f"The following is the document information: {document_info_string}",
     }
-    

@@ -23,7 +23,6 @@ class Classify(BaseModel):
     syllabi: list[str] = []
 
 
-
 async def run_classify_agent(
     class_id: uuid.UUID, test: bool = False, session: Session = Depends(get_session)
 ) -> dict[str, Any]:
@@ -79,9 +78,11 @@ async def run_classify_agent(
     model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
     if not model:
         raise ValueError(f"Model with ID {agent.model_id} not found")
-    
+
     # getting the provider from the model's provider_id
-    provider = session.exec(select(Providers).where(Providers.id == model.provider_id)).one()
+    provider = session.exec(
+        select(Providers).where(Providers.id == model.provider_id)
+    ).one()
     if not provider:
         raise ValueError(f"Provider with ID {model.provider_id} not found")
 
@@ -95,7 +96,6 @@ async def run_classify_agent(
         reasoning=agent.reasoning,
         output_type=Classify,
     )
-
 
     try:
         with trace(f"{class_data.name} Document Classification"):
@@ -111,7 +111,9 @@ async def run_classify_agent(
                     syllabi=[],
                 )
             else:
-                result = await Runner.run(classify_agent.agent(), input=formatted_documents)
+                result = await Runner.run(
+                    classify_agent.agent(), input=formatted_documents
+                )
                 classification = result.final_output_as(Classify)
 
         # Update the type of all the mapped documents

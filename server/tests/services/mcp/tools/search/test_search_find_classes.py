@@ -1,11 +1,12 @@
 """
 Tests for app.services.mcp.tools.search.find_classes
 """
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock
 from sqlmodel import Session
-from uuid import uuid4
 from app.services.mcp.tools.search.find_classes import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +15,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `find_classes`")
 class TestFind_Classes:
@@ -28,4 +30,3 @@ class TestFind_Classes:
         """Test find_classes error handling."""
         # TODO: Implement error test for find_classes
         assert False, "IMPLEMENT: Error test for find_classes"
-

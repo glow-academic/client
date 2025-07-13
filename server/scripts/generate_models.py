@@ -4,6 +4,7 @@ import re
 import subprocess
 import sys
 
+
 def generate_sqlmodel_from_sql():
     """Generate SQLModel classes from SQL schema using sqlacodegen"""
     python_executable = sys.executable
@@ -40,51 +41,79 @@ def generate_sqlmodel_from_sql():
             "from sqlmodel import Field, Relationship, SQLModel",
             "from sqlalchemy.orm import Mapped",
         ]
-        
+
         import_section = "\n".join(import_lines)
-        
-        lines = generated_code.split('\n')
+
+        lines = generated_code.split("\n")
         class_start_idx = 0
         for i, line in enumerate(lines):
-            if 'SQLModel' in line and line.strip().startswith('class '):
+            if "SQLModel" in line and line.strip().startswith("class "):
                 class_start_idx = i
                 break
-        
-        class_definitions = '\n'.join(lines[class_start_idx:])
+
+        class_definitions = "\n".join(lines[class_start_idx:])
 
         base_class = '\nclass _Base(SQLModel):\n    """Shared config so Pydantic will accept SQLAlchemy types."""\n    model_config = {"arbitrary_types_allowed": True}\n'
         class_definitions = base_class + class_definitions
         class_definitions = re.sub(
             r"class (\w+)\(SQLModel, table=True\):",
             r"class \1(_Base, table=True):",
-            class_definitions
+            class_definitions,
         )
 
         print("Applying type transformations...")
 
         # --- Convert Postgres-specific defaults to portable Python equivalents ---
-        class_definitions = re.sub(r"server_default=text\('gen_random_uuid\(\)'\)", "default_factory=uuid.uuid4", class_definitions)
-        class_definitions = re.sub(r"server_default=text\('now\(\)'\)", "default_factory=datetime.utcnow", class_definitions)
-        class_definitions = re.sub(r"server_default=text\(\"'{}'::jsonb\"\)", "default_factory=dict", class_definitions)
-        class_definitions = re.sub(r"server_default=text\('ARRAY\[\]::uuid\[\]'\)", "default_factory=list", class_definitions)
-        class_definitions = re.sub(r"server_default=text\(\"'([\w\s]+)'::[\w\s]+\"\)", r"default=r'\1'", class_definitions)
-        class_definitions = re.sub(r"server_default=text\('false'\)", "default=False", class_definitions)
-        class_definitions = re.sub(r"server_default=text\('true'\)", "default=True", class_definitions)
-        class_definitions = re.sub(r"server_default=text\('([\d\.]+)'\)", r"default=\1", class_definitions)
+        class_definitions = re.sub(
+            r"server_default=text\('gen_random_uuid\(\)'\)",
+            "default_factory=uuid.uuid4",
+            class_definitions,
+        )
+        class_definitions = re.sub(
+            r"server_default=text\('now\(\)'\)",
+            "default_factory=datetime.utcnow",
+            class_definitions,
+        )
+        class_definitions = re.sub(
+            r"server_default=text\(\"'{}'::jsonb\"\)",
+            "default_factory=dict",
+            class_definitions,
+        )
+        class_definitions = re.sub(
+            r"server_default=text\('ARRAY\[\]::uuid\[\]'\)",
+            "default_factory=list",
+            class_definitions,
+        )
+        class_definitions = re.sub(
+            r"server_default=text\(\"'([\w\s]+)'::[\w\s]+\"\)",
+            r"default=r'\1'",
+            class_definitions,
+        )
+        class_definitions = re.sub(
+            r"server_default=text\('false'\)", "default=False", class_definitions
+        )
+        class_definitions = re.sub(
+            r"server_default=text\('true'\)", "default=True", class_definitions
+        )
+        class_definitions = re.sub(
+            r"server_default=text\('([\d\.]+)'\)", r"default=\1", class_definitions
+        )
 
         # ✅ FINAL VERSION: Robustly move default_factory and handle defaults
         processed_lines = []
-        for line in class_definitions.split('\n'):
+        for line in class_definitions.split("\n"):
             factory_match = re.search(r"default_factory=([\w\.]+)", line)
-            
+
             # Check if a line has a default_factory that needs to be moved
             if factory_match and "sa_column=Column" in line:
-                factory_string = factory_match.group(0) # e.g., "default_factory=uuid.uuid4"
-                
+                factory_string = factory_match.group(
+                    0
+                )  # e.g., "default_factory=uuid.uuid4"
+
                 # 1. Remove the original default_factory from the Column definition
                 cleaned_line = line.replace(f", {factory_string}", "")
                 cleaned_line = cleaned_line.replace(factory_string, "")
-                
+
                 # 2. Check if the Field already has a 'default=None'
                 if "default=None" in cleaned_line:
                     # If it does, replace 'default=None' with the factory
@@ -92,7 +121,9 @@ def generate_sqlmodel_from_sql():
                 else:
                     # Otherwise, add the factory to the Field call
                     # This correctly handles cases like the id field
-                    final_line = re.sub(r"sa_column=", f"{factory_string}, sa_column=", cleaned_line, 1)
+                    final_line = re.sub(
+                        r"sa_column=", f"{factory_string}, sa_column=", cleaned_line, 1
+                    )
 
                 processed_lines.append(final_line)
             else:
@@ -102,19 +133,33 @@ def generate_sqlmodel_from_sql():
         class_definitions = "\n".join(processed_lines)
 
         # Correct type hints and other formatting
-        class_definitions = re.sub(r": uuid\.UUID", r": Mapped[uuid.UUID]", class_definitions)
+        class_definitions = re.sub(
+            r": uuid\.UUID", r": Mapped[uuid.UUID]", class_definitions
+        )
         class_definitions = re.sub(r": UUID", r": Mapped[uuid.UUID]", class_definitions)
-        class_definitions = re.sub(r": Optional\[UUID\]", r": Optional[uuid.UUID]", class_definitions)
+        class_definitions = re.sub(
+            r": Optional\[UUID\]", r": Optional[uuid.UUID]", class_definitions
+        )
         class_definitions = re.sub(r": list", r": List[uuid.UUID]", class_definitions)
-        class_definitions = re.sub(r": Optional\[list\]", r": Optional[List[uuid.UUID]]", class_definitions)
+        class_definitions = re.sub(
+            r": Optional\[list\]", r": Optional[List[uuid.UUID]]", class_definitions
+        )
         class_definitions = re.sub(r": dict", r": Dict[str, Any]", class_definitions)
-        class_definitions = re.sub(r": Optional\[dict\]", r": Optional[Dict[str, Any]]", class_definitions)
-        class_definitions = class_definitions.replace("ARRAY(Uuid())", "ARRAY(Uuid(as_uuid=True))")
-        class_definitions = class_definitions.replace(", Uuid)", ", Uuid(as_uuid=True))")
+        class_definitions = re.sub(
+            r": Optional\[dict\]", r": Optional[Dict[str, Any]]", class_definitions
+        )
+        class_definitions = class_definitions.replace(
+            "ARRAY(Uuid())", "ARRAY(Uuid(as_uuid=True))"
+        )
+        class_definitions = class_definitions.replace(
+            ", Uuid)", ", Uuid(as_uuid=True))"
+        )
 
         final_code = import_section + class_definitions
 
-        final_code = final_code.replace("datetime.utcnow", "lambda: datetime.now(timezone.utc)")
+        final_code = final_code.replace(
+            "datetime.utcnow", "lambda: datetime.now(timezone.utc)"
+        )
 
         output_path = "app/models.py"
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -125,11 +170,12 @@ def generate_sqlmodel_from_sql():
         print("Applied transformations:")
         print("- Made default values database-agnostic")
         print("- Corrected type hints and Field definitions")
-        
+
     except subprocess.CalledProcessError as e:
         print(f"Error generating SQLModel classes: {e}")
         print(f"Error output: {e.stderr}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     generate_sqlmodel_from_sql()

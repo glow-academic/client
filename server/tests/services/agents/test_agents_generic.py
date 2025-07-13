@@ -1,11 +1,12 @@
 """
 Tests for app.services.agents.generic
 """
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock
 from sqlmodel import Session
-from uuid import uuid4
 from app.services.agents.generic import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +15,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `run_generic_agent`")
 class TestRun_Generic_Agent:
@@ -32,6 +34,7 @@ class TestRun_Generic_Agent:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `agent`")
 class TestAgent:
     """Tests for agent function."""
@@ -45,4 +48,3 @@ class TestAgent:
         """Test agent error handling."""
         # TODO: Implement error test for agent
         assert False, "IMPLEMENT: Error test for agent"
-

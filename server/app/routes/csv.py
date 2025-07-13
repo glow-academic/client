@@ -4,14 +4,14 @@ import os
 
 from app.db import get_session
 from app.extensions import CSV_FOLDER
-from app.models import SimulationMessages
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
-from sqlmodel import Session, select
+from fastapi.responses import FileResponse
+from sqlmodel import Session
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
 
 # Get CSV for token
 @router.get("/token/{token}")
@@ -30,6 +30,4 @@ async def get_csv(
         raise HTTPException(status_code=404, detail="CSV file not found")
 
     # Return the file as a response
-    return FileResponse(
-        path=file_path, filename=token, media_type="text/csv"
-    )
+    return FileResponse(path=file_path, filename=token, media_type="text/csv")

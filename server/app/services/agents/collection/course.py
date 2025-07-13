@@ -9,8 +9,16 @@ import PyPDF2
 from agents import Runner, trace
 from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
-from app.models import (Agents, Classes, Documents, Events, Models, Providers,
-                        Schedules, Topics)
+from app.models import (
+    Agents,
+    Classes,
+    Documents,
+    Events,
+    Models,
+    Providers,
+    Schedules,
+    Topics,
+)
 from app.services.agents.generic import GenericAgent
 from fastapi import Depends
 from pydantic import BaseModel
@@ -194,9 +202,11 @@ async def run_course_agent(
     model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
     if not model:
         raise ValueError(f"Model with ID {agent.model_id} not found")
-    
+
     # getting the provider from the model's provider_id
-    provider = session.exec(select(Providers).where(Providers.id == model.provider_id)).one()
+    provider = session.exec(
+        select(Providers).where(Providers.id == model.provider_id)
+    ).one()
     if not provider:
         raise ValueError(f"Provider with ID {model.provider_id} not found")
 
@@ -215,21 +225,34 @@ async def run_course_agent(
         with trace(f"{class_data.name} ZIP File Analysis"):
             if test:
                 course = Course(
-                    name=class_data.name, # echo the class name
-                    code=class_data.class_code, # echo the class code
-                    desc=class_data.description, # echo the class description
-                    year=class_data.year, # echo the class year
-                    term=class_data.term, # echo the class term
-                    topics=["Test Topic 1", "Test Topic 2"], # echo the class topics
-                    prereqs=["Test Prereq 1", "Test Prereq 2"], # echo the class prerequisites
+                    name=class_data.name,  # echo the class name
+                    code=class_data.class_code,  # echo the class code
+                    desc=class_data.description,  # echo the class description
+                    year=class_data.year,  # echo the class year
+                    term=class_data.term,  # echo the class term
+                    topics=["Test Topic 1", "Test Topic 2"],  # echo the class topics
+                    prereqs=[
+                        "Test Prereq 1",
+                        "Test Prereq 2",
+                    ],  # echo the class prerequisites
                     schedules=[
-                        Schedule(name="Test Schedule 1", description="Test Schedule Description", events=["Test Event 1", "Test Event 2"]),
-                        Schedule(name="Test Schedule 2", description="Test Schedule Description", events=["Test Event 3", "Test Event 4"]),
+                        Schedule(
+                            name="Test Schedule 1",
+                            description="Test Schedule Description",
+                            events=["Test Event 1", "Test Event 2"],
+                        ),
+                        Schedule(
+                            name="Test Schedule 2",
+                            description="Test Schedule Description",
+                            events=["Test Event 3", "Test Event 4"],
+                        ),
                     ],
                     debug_info="Test Debug Info",
                 )
             else:
-                result = await Runner.run(course_agent.agent(), input=formatted_documents)
+                result = await Runner.run(
+                    course_agent.agent(), input=formatted_documents
+                )
                 course = result.final_output_as(Course)
 
         # Log debug info if available
@@ -261,7 +284,9 @@ async def run_course_agent(
                 updates_made.append(f"term: {class_data.term}")
             else:
                 class_data.term = "fall"
-                updates_made.append(f"term: {class_data.term} (invalid term, defaulting to fall)")
+                updates_made.append(
+                    f"term: {class_data.term} (invalid term, defaulting to fall)"
+                )
 
         # Handle topics - delete existing and create new ones
         if course.topics:

@@ -24,9 +24,11 @@ def init_db() -> None:
     # Skip schema creation if running in Docker environment
     # Docker initialization already creates the schema from SQL files
     if os.getenv("DOCKER_ENV"):
-        print("🐳 Running in Docker - skipping SQLModel schema creation (using SQL files instead)")
+        print(
+            "🐳 Running in Docker - skipping SQLModel schema creation (using SQL files instead)"
+        )
         return
-    
+
     print("🔧 Creating database schema via SQLModel...")
     SQLModel.metadata.create_all(engine)
 

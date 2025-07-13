@@ -1,5 +1,5 @@
 # find_classes.py
-# 
+#
 # @AshokSaravanan222 & @siladiea
 # 07/07/2025
 
@@ -17,32 +17,36 @@ def find_classes(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     🔎 Find classes by name/code
     ----------------------------
     Fuzzy class code/name search.
-    
+
     Input
       • query – Class code or name to search for
       • limit – Max results (default: 10)
-    
+
     Returns
       [ { "id": "…", "class_code": "…", "name": "…", … }, … ]
-    
+
     Quick-start
       ask:  "Search for 'BIOL-1102'"
       call: find_classes("BIOL-1102")
-    
+
     See also 👉 class_overview() for detailed class data.
     """
     session = next(get_session())
     try:
         search_pattern = f"%{query.lower()}%"
-        stmt = select(Classes).where(
-            or_(
-                func.lower(Classes.class_code).like(search_pattern),
-                func.lower(Classes.name).like(search_pattern)
+        stmt = (
+            select(Classes)
+            .where(
+                or_(
+                    func.lower(Classes.class_code).like(search_pattern),
+                    func.lower(Classes.name).like(search_pattern),
+                )
             )
-        ).limit(limit)
-        
+            .limit(limit)
+        )
+
         classes = session.exec(stmt).all()
-        
+
         results = [
             {
                 "id": str(cls.id),
@@ -50,13 +54,13 @@ def find_classes(query: str, limit: int = 10) -> List[Dict[str, Any]]:
                 "name": cls.name,
                 "year": cls.year,
                 "term": cls.term,
-                "description": cls.description
+                "description": cls.description,
             }
             for cls in classes
         ]
-        
+
         return results
-        
+
     except SQLAlchemyError as e:
         return [{"error": f"Database error: {str(e)}"}]
     finally:

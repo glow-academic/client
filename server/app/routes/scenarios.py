@@ -44,9 +44,7 @@ async def new_scenario(
 
         # Filter out empty document IDs
         if document_ids:
-            document_ids = [
-                doc_id for doc_id in document_ids if doc_id
-            ]
+            document_ids = [doc_id for doc_id in document_ids if doc_id]
             if not document_ids:
                 document_ids = None
 
@@ -61,18 +59,19 @@ async def new_scenario(
             location=location,
             tod=tod,
             urgency=urgency,
-            group_id=None, # no group id for scenarios
+            group_id=None,  # no group id for scenarios
             session=session,
         )
 
         return JSONResponse(
             status_code=200,
             content={
-            "success": True,
-            "message": "Scenario generated successfully",
-            "title": title,
-            "description": description,
-        })
+                "success": True,
+                "message": "Scenario generated successfully",
+                "title": title,
+                "description": description,
+            },
+        )
 
     except HTTPException:
         # Re-raise HTTP exceptions as-is

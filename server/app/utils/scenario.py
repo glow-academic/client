@@ -53,13 +53,13 @@ def get_location_info(location: str) -> TResponseInputItem:
     """
     Get the location information for a given location.
     """
-    
+
     location_descriptions = {
         "haas": "HAAS basement - a quiet, focused study environment in the lower level of the HAAS building",
         "lawson": "Lawson Commons - an open, collaborative space in the Lawson building with high foot traffic",
-        "dsai": "DS/AI basement - a specialized tech-focused lab environment in the basement of the Data Science/AI building"
+        "dsai": "DS/AI basement - a specialized tech-focused lab environment in the basement of the Data Science/AI building",
     }
-    
+
     location_description = location_descriptions.get(location, f"Location: {location}")
 
     return {
@@ -72,7 +72,7 @@ def get_time_of_day_info(time_of_day: str) -> TResponseInputItem:
     """
     Get the time of day information for a given time.
     """
-    
+
     time_descriptions = {
         "9AM": "9:00 AM - early morning session, students may be tired but focused",
         "10AM": "10:00 AM - mid-morning session, good energy levels",
@@ -82,9 +82,9 @@ def get_time_of_day_info(time_of_day: str) -> TResponseInputItem:
         "2PM": "2:00 PM - mid-afternoon session, good focus time",
         "3PM": "3:00 PM - late afternoon session, sustained energy needed",
         "4PM": "4:00 PM - evening session, students may be tired from the day",
-        "5PM": "5:00 PM - end of day session, students eager to finish"
+        "5PM": "5:00 PM - end of day session, students eager to finish",
     }
-    
+
     time_description = time_descriptions.get(time_of_day, f"Time: {time_of_day}")
 
     return {
@@ -97,13 +97,13 @@ def get_urgency_info(urgency: str) -> TResponseInputItem:
     """
     Get the urgency information for a given urgency level.
     """
-    
+
     urgency_descriptions = {
         "hour": "The assignment is due in a few hours - this is a high-stress situation requiring immediate help",
         "day": "The assignment is due tomorrow - moderate stress, student is planning ahead",
-        "days": "The assignment is due in a couple of days - low stress, plenty of time to work through problems"
+        "days": "The assignment is due in a couple of days - low stress, plenty of time to work through problems",
     }
-    
+
     urgency_description = urgency_descriptions.get(urgency, f"Urgency: {urgency}")
 
     return {

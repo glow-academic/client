@@ -1,8 +1,7 @@
 import uuid
-from typing import AsyncGenerator, Literal
+from typing import AsyncGenerator
 
-from agents import (Agent, ModelSettings, OpenAIChatCompletionsModel, Runner,
-                    trace)
+from agents import Agent, ModelSettings, Runner, trace
 from agents.extensions.models.litellm_model import LitellmModel
 from agents.items import TResponseInputItem
 from agents.mcp.server import MCPServer
@@ -34,14 +33,16 @@ async def run_generic_agent(
     agent = session.exec(select(Agents).where(Agents.id == agent_id)).one()
     if not agent:
         raise ValueError(f"Agent with ID {agent_id} not found")
-    
+
     # getting the model from the agent's model_id
     model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
     if not model:
         raise ValueError(f"Model with ID {agent.model_id} not found")
-    
+
     # getting the provider from the model's provider_id
-    provider = session.exec(select(Providers).where(Providers.id == model.provider_id)).one()
+    provider = session.exec(
+        select(Providers).where(Providers.id == model.provider_id)
+    ).one()
     if not provider:
         raise ValueError(f"Provider with ID {model.provider_id} not found")
 
@@ -66,7 +67,6 @@ async def run_generic_agent(
             if isinstance(event.data, ResponseTextDeltaEvent):
                 chunk = event.data.delta
                 yield chunk
-
 
 
 class GenericAgent:
@@ -99,10 +99,9 @@ class GenericAgent:
         else:
             self.reasoning = Reasoning(effort=None)
 
-
         # decrypt the api key
         self.api_key = decrypt_api_key(api_key)
-    
+
     def agent(self) -> Agent:
         return Agent(
             name=f"{self.agent_name} Agent",

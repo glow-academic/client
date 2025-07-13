@@ -1,11 +1,12 @@
 """
 Tests for app.services.agents.voice.voice_simulation
 """
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock
 from sqlmodel import Session
-from uuid import uuid4
 from app.services.agents.voice.voice_simulation import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +15,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `model_name`")
 class TestModel_Name:
@@ -31,6 +33,7 @@ class TestModel_Name:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `transcribe`")
 class TestTranscribe:
@@ -49,6 +52,7 @@ class TestTranscribe:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `create_session`")
 class TestCreate_Session:
     """Tests for create_session function."""
@@ -65,6 +69,7 @@ class TestCreate_Session:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `model_name`")
 class TestModel_Name:
@@ -83,22 +88,6 @@ class TestModel_Name:
 
 import pytest
 
-@pytest.mark.skip(reason="TODO: implement tests for `run`")
-class TestRun:
-    """Tests for run function."""
-
-    def test_run_success(self):
-        """Test successful run execution."""
-        # TODO: Implement test for run
-        assert False, "IMPLEMENT: Test for run"
-
-    def test_run_error(self):
-        """Test run error handling."""
-        # TODO: Implement error test for run
-        assert False, "IMPLEMENT: Error test for run"
-
-
-import pytest
 
 @pytest.mark.skip(reason="TODO: implement tests for `run`")
 class TestRun:
@@ -116,6 +105,25 @@ class TestRun:
 
 
 import pytest
+
+
+@pytest.mark.skip(reason="TODO: implement tests for `run`")
+class TestRun:
+    """Tests for run function."""
+
+    def test_run_success(self):
+        """Test successful run execution."""
+        # TODO: Implement test for run
+        assert False, "IMPLEMENT: Test for run"
+
+    def test_run_error(self):
+        """Test run error handling."""
+        # TODO: Implement error test for run
+        assert False, "IMPLEMENT: Error test for run"
+
+
+import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_pipeline`")
 class TestGet_Pipeline:
@@ -134,6 +142,7 @@ class TestGet_Pipeline:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `process_and_stream`")
 class TestProcess_And_Stream:
     """Tests for process_and_stream function."""
@@ -151,6 +160,7 @@ class TestProcess_And_Stream:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `push_tokens`")
 class TestPush_Tokens:
     """Tests for push_tokens function."""
@@ -164,4 +174,3 @@ class TestPush_Tokens:
         """Test push_tokens error handling."""
         # TODO: Implement error test for push_tokens
         assert False, "IMPLEMENT: Error test for push_tokens"
-

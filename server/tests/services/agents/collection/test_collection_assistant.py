@@ -1,11 +1,12 @@
 """
 Tests for app.services.agents.collection.assistant
 """
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock
 from sqlmodel import Session
-from uuid import uuid4
 from app.services.agents.collection.assistant import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +15,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `run_assistant_agent`")
 class TestRun_Assistant_Agent:
@@ -32,6 +34,7 @@ class TestRun_Assistant_Agent:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `cancel_assistant_run`")
 class TestCancel_Assistant_Run:
     """Tests for cancel_assistant_run function."""
@@ -45,4 +48,3 @@ class TestCancel_Assistant_Run:
         """Test cancel_assistant_run error handling."""
         # TODO: Implement error test for cancel_assistant_run
         assert False, "IMPLEMENT: Error test for cancel_assistant_run"
-

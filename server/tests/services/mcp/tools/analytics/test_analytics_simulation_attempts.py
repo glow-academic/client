@@ -1,11 +1,12 @@
 """
 Tests for app.services.mcp.tools.analytics.simulation_attempts
 """
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock
 from sqlmodel import Session
-from uuid import uuid4
 from app.services.mcp.tools.analytics.simulation_attempts import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +15,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `simulation_attempts`")
 class TestSimulation_Attempts:
@@ -28,4 +30,3 @@ class TestSimulation_Attempts:
         """Test simulation_attempts error handling."""
         # TODO: Implement error test for simulation_attempts
         assert False, "IMPLEMENT: Error test for simulation_attempts"
-

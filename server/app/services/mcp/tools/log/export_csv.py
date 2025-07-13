@@ -1,11 +1,10 @@
 # export_csv.py
-# 
+#
 # @AshokSaravanan222 & @siladiea
 # 07/07/2025
 
 import csv
 import io
-import tempfile
 import uuid
 
 from app.db import engine
@@ -20,17 +19,17 @@ def export_csv(sql: str) -> str:
     🔎 Export query results as CSV download
     ---------------------------------------
     Same guard-rails as query_data but returns a downloadable CSV link.
-    
+
     Input
       • sql – SELECT statement only
-    
+
     Returns
       Download link for CSV file
-    
+
     Quick-start
       ask:  "Export roster for Cohort C"
       call: export_csv("SELECT first_name, last_name FROM profiles WHERE ...")
-    
+
     Security: Only SELECT allowed, 1000-row limit.
     """
     lowered = sql.lstrip().lower()

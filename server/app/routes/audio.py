@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+
 # Get audio for message by ID
 @router.get("/id/{message_id}")
 async def get_audio(
@@ -28,7 +29,7 @@ async def get_audio(
 
     if not result:
         raise HTTPException(status_code=404, detail="Message not found")
-    
+
     if not result.audio or not result.file_path:
         raise HTTPException(status_code=404, detail="Audio file not found")
 

@@ -1,25 +1,29 @@
 """
 Tests for app.routes.audio
 """
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from sqlmodel import Session
-from uuid import uuid4
-from app.routes.audio import router
+
 
 @pytest.fixture
 def client():
     """Create a test client for the FastAPI app."""
     from app.main import app
+
     return TestClient(app)
+
 
 @pytest.fixture
 def mock_session():
     """Create a mock database session."""
     return MagicMock(spec=Session)
 
+
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_audio`")
 class TestGet_Audio:
@@ -35,7 +39,9 @@ class TestGet_Audio:
         # TODO: Implement error test for get_audio
         assert False, "IMPLEMENT: Error test for get_audio"
 
+
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `delete_audio`")
 class TestDelete_Audio:
@@ -50,4 +56,3 @@ class TestDelete_Audio:
         """Test delete_audio error handling."""
         # TODO: Implement error test for delete_audio
         assert False, "IMPLEMENT: Error test for delete_audio"
-

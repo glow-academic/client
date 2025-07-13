@@ -1,25 +1,29 @@
 """
 Tests for app.routes.sketch
 """
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from sqlmodel import Session
-from uuid import uuid4
-from app.routes.sketch import router
+
 
 @pytest.fixture
 def client():
     """Create a test client for the FastAPI app."""
     from app.main import app
+
     return TestClient(app)
+
 
 @pytest.fixture
 def mock_session():
     """Create a mock database session."""
     return MagicMock(spec=Session)
 
+
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_sketch`")
 class TestGet_Sketch:
@@ -35,7 +39,9 @@ class TestGet_Sketch:
         # TODO: Implement error test for get_sketch
         assert False, "IMPLEMENT: Error test for get_sketch"
 
+
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `delete_sketch`")
 class TestDelete_Sketch:
@@ -50,4 +56,3 @@ class TestDelete_Sketch:
         """Test delete_sketch error handling."""
         # TODO: Implement error test for delete_sketch
         assert False, "IMPLEMENT: Error test for delete_sketch"
-

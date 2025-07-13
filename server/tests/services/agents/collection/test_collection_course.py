@@ -1,11 +1,12 @@
 """
 Tests for app.services.agents.collection.course
 """
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock
 from sqlmodel import Session
-from uuid import uuid4
 from app.services.agents.collection.course import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +15,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `extract_text_from_file`")
 class TestExtract_Text_From_File:
@@ -32,6 +34,7 @@ class TestExtract_Text_From_File:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `run_course_agent`")
 class TestRun_Course_Agent:
     """Tests for run_course_agent function."""
@@ -45,4 +48,3 @@ class TestRun_Course_Agent:
         """Test run_course_agent error handling."""
         # TODO: Implement error test for run_course_agent
         assert False, "IMPLEMENT: Error test for run_course_agent"
-

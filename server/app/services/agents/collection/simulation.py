@@ -1,18 +1,25 @@
 import os
 import uuid
-from typing import Any, AsyncGenerator, Dict, Optional
+from typing import AsyncGenerator
 
 import PyPDF2
 from agents import Runner, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
-from app.models import (Agents, Documents, Models, Providers, Scenarios,
-                        SimulationAttempts, SimulationChats,
-                        SimulationMessages, SimulationSketches)
+from app.models import (
+    Agents,
+    Documents,
+    Models,
+    Providers,
+    Scenarios,
+    SimulationAttempts,
+    SimulationChats,
+    SimulationMessages,
+    SimulationSketches,
+)
 from app.services.agents.generic import GenericAgent
-from app.utils.chat import (get_chat_scenario,
-                            get_simulation_conversation_history)
+from app.utils.chat import get_chat_scenario, get_simulation_conversation_history
 from app.utils.classes import get_class_info
 from fastapi import Depends
 from openai.types.responses import ResponseTextDeltaEvent
@@ -43,12 +50,10 @@ async def run_simulation_agent(
     simulation_chat = session.exec(
         select(SimulationChats).where(SimulationChats.id == chat_id)
     ).one_or_none()
-    
+
     if simulation_chat:
         # Handle simulation chat
-        async for token in _handle_simulation_chat(
-            simulation_chat, session
-        ):
+        async for token in _handle_simulation_chat(simulation_chat, session):
             yield token
     else:
         raise ValueError(f"Chat not found with ID: {chat_id}")
@@ -57,14 +62,15 @@ async def run_simulation_agent(
 def cancel_simulation_run(chat_id: uuid.UUID) -> bool:
     """
     Cancel an active simulation run using unified tracking.
-    
+
     Args:
         chat_id: The ID of the chat session to cancel
-        
+
     Returns:
         bool: True if the run was found and cancelled, False otherwise
     """
     from app.main import cancel_active_run
+
     return cancel_active_run(str(chat_id))
 
 
@@ -86,30 +92,32 @@ async def _handle_simulation_chat(
     ).one()
     if not scenario:
         raise ValueError(f"Scenario not found for chat {chat.id}")
-    
+
     if not scenario.agent_id:
         raise ValueError(f"Scenario {scenario.id} has no agent_id")
-    
+
     if not scenario.class_id:
         raise ValueError(f"Scenario {scenario.id} has no class_id")
 
     agent = session.exec(select(Agents).where(Agents.id == scenario.agent_id)).one()
     if not agent:
         raise ValueError(f"Agent not found for scenario {scenario.id}")
-    
+
     input_items: list[TResponseInputItem] = []
     if scenario.documents:
         # get the documents for the scenario
-        documents = session.exec(select(Documents).where(Documents.id.in_(scenario.documents))).all()
+        documents = session.exec(
+            select(Documents).where(Documents.id.in_(scenario.documents))
+        ).all()
         if not documents:
             raise ValueError(f"Documents not found for scenario {scenario.id}")
         for document in documents:
             file_path = document.file_path
             full_path = os.path.join(UPLOAD_FOLDER, file_path)
-            
+
             # Determine file type and read content accordingly
             content = ""
-            if file_path.lower().endswith('.pdf'):
+            if file_path.lower().endswith(".pdf"):
                 # Handle PDF files
                 try:
                     with open(full_path, "rb") as file:
@@ -129,18 +137,18 @@ async def _handle_simulation_chat(
                         with open(full_path, "r", encoding="latin-1") as file:
                             content = file.read()
                     except Exception as e:
-                        raise ValueError(f"Error reading text file {file_path}: {str(e)}")
+                        raise ValueError(
+                            f"Error reading text file {file_path}: {str(e)}"
+                        )
                 except Exception as e:
                     raise ValueError(f"Error reading file {file_path}: {str(e)}")
-            
+
             if content.strip():  # Only add non-empty content
                 input_items.append({"role": "user", "content": content})
 
-    
     # Get all the messages for the chat_id, order by created_at
     messages = session.exec(
-        select(SimulationMessages)
-        .where(SimulationMessages.chat_id == chat.id)
+        select(SimulationMessages).where(SimulationMessages.chat_id == chat.id)
     ).all()
 
     # sort messages by created_at
@@ -149,8 +157,7 @@ async def _handle_simulation_chat(
 
     # get the sketches for the chat
     sketches = session.exec(
-        select(SimulationSketches)
-        .where(SimulationSketches.chat_id == chat.id)
+        select(SimulationSketches).where(SimulationSketches.chat_id == chat.id)
     ).all()
 
     # sort sketches by created_at
@@ -171,12 +178,14 @@ async def _handle_simulation_chat(
     model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
     if not model:
         raise ValueError(f"Model with ID {agent.model_id} not found")
-    
+
     # getting the provider from the model's provider_id
-    provider = session.exec(select(Providers).where(Providers.id == model.provider_id)).one()
+    provider = session.exec(
+        select(Providers).where(Providers.id == model.provider_id)
+    ).one()
     if not provider:
         raise ValueError(f"Provider with ID {model.provider_id} not found")
-    
+
     agent_instance = GenericAgent(
         agent_name=agent.name,
         system_prompt=agent.system_prompt,
@@ -195,6 +204,7 @@ async def _handle_simulation_chat(
 
     # Store the result in active runs for potential cancellation using unified tracking
     from app.main import store_active_run
+
     chat_id_str = str(chat.id)
     store_active_run(chat_id_str, result)
 
@@ -216,6 +226,6 @@ async def _handle_simulation_chat(
     finally:
         # Clean up the active run using unified tracking
         from app.main import active_runs
+
         if chat_id_str in active_runs:
             del active_runs[chat_id_str]
-

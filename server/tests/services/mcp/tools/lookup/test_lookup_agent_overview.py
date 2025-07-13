@@ -1,11 +1,12 @@
 """
 Tests for app.services.mcp.tools.lookup.agent_overview
 """
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock
 from sqlmodel import Session
-from uuid import uuid4
 from app.services.mcp.tools.lookup.agent_overview import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +15,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `agent_overview`")
 class TestAgent_Overview:
@@ -28,4 +30,3 @@ class TestAgent_Overview:
         """Test agent_overview error handling."""
         # TODO: Implement error test for agent_overview
         assert False, "IMPLEMENT: Error test for agent_overview"
-

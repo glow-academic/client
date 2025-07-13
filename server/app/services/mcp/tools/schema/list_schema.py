@@ -1,8 +1,7 @@
 # list_schema.py
-# 
+#
 # @AshokSaravanan222 & @siladiea
 # 07/07/2025
-
 
 
 from app.db import engine
@@ -14,7 +13,7 @@ def list_schema() -> str:
     🔎 Database schema overview
     ---------------------------
     Lists all tables and columns in the public schema.
-    
+
     Quick-start
       ask:  "What tables are in the DB?"
       call: list_schema()

@@ -5,24 +5,33 @@ import uuid
 from typing import AsyncGenerator
 
 from agents import Runner, trace
-from agents.items import (ReasoningItem, ToolCallItem, ToolCallOutputItem,
-                          TResponseInputItem)
+from agents.items import (
+    ReasoningItem,
+    ToolCallItem,
+    ToolCallOutputItem,
+    TResponseInputItem,
+)
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
 from app.db import get_session
-from app.models import (Agents, AssistantChats, AssistantMessages,
-                        AssistantToolCalls, Models, Profiles, Providers)
+from app.models import (
+    Agents,
+    AssistantChats,
+    AssistantMessages,
+    AssistantToolCalls,
+    Models,
+    Providers,
+)
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_assistant_conversation_history
 from dotenv import load_dotenv
 from fastapi import Depends
-from openai.types.responses import (ResponseFunctionToolCall,
-                                    ResponseTextDeltaEvent)
-from sqlalchemy import desc
+from openai.types.responses import ResponseFunctionToolCall, ResponseTextDeltaEvent
 from sqlmodel import Session, select
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
+
 
 async def run_assistant_agent(
     chat_id: uuid.UUID,
@@ -47,21 +56,19 @@ async def run_assistant_agent(
     assistant_chat = session.exec(
         select(AssistantChats).where(AssistantChats.id == chat_id)
     ).one_or_none()
-    
+
     if assistant_chat:
         # Use internal server URL for MCP server connection
         # In Docker, the server is accessible at http://localhost:8000
         # This avoids Traefik routing issues and uses internal networking
         base_url = os.getenv("INTERNAL_API_BASE")
         mcp_server_url = f"{base_url}/domain/mcp/"
-        
-        async with (
-            MCPServerStreamableHttp(
-                name="MCP Server",
-                params={"url": mcp_server_url},
-                cache_tools_list=True,
-            ) as domain_server
-        ):
+
+        async with MCPServerStreamableHttp(
+            name="MCP Server",
+            params={"url": mcp_server_url},
+            cache_tools_list=True,
+        ) as domain_server:
             mcp_servers = [domain_server]
             async for token in _handle_assistant_chat(
                 assistant_chat, mcp_servers, session
@@ -74,14 +81,15 @@ async def run_assistant_agent(
 def cancel_assistant_run(chat_id: uuid.UUID) -> bool:
     """
     Cancel an active assistant run using unified tracking.
-    
+
     Args:
         chat_id: The ID of the chat session to cancel
-        
+
     Returns:
         bool: True if the run was found and cancelled, False otherwise
     """
     from app.main import cancel_active_run
+
     return cancel_active_run(str(chat_id))
 
 
@@ -98,15 +106,16 @@ async def _handle_assistant_chat(
     input_items: list[TResponseInputItem] = []
 
     # add the user profile to the input items
-    input_items.append({
-        "role": "user",
-        "content": f"The following is the user's profile ID: {chat.profile_id}. However, they may ask questions about other profiles, so you should be able to answer questions about other profiles as well."
-    })
+    input_items.append(
+        {
+            "role": "user",
+            "content": f"The following is the user's profile ID: {chat.profile_id}. However, they may ask questions about other profiles, so you should be able to answer questions about other profiles as well.",
+        }
+    )
 
     # Get all the messages for the chat_id, including the new one, order by created_at
     messages = session.exec(
-        select(AssistantMessages)
-        .where(AssistantMessages.chat_id == chat.id)
+        select(AssistantMessages).where(AssistantMessages.chat_id == chat.id)
     ).all()
 
     # sort messages by created_at
@@ -115,8 +124,7 @@ async def _handle_assistant_chat(
 
     # get all the tool calls for the chat_id
     tool_calls = session.exec(
-        select(AssistantToolCalls)
-        .where(AssistantToolCalls.chat_id == chat.id)
+        select(AssistantToolCalls).where(AssistantToolCalls.chat_id == chat.id)
     ).all()
 
     # sort tool calls by created_at
@@ -131,9 +139,11 @@ async def _handle_assistant_chat(
     model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
     if not model:
         raise ValueError(f"Model with ID {agent.model_id} not found")
-    
+
     # getting the provider from the model's provider_id
-    provider = session.exec(select(Providers).where(Providers.id == model.provider_id)).one()
+    provider = session.exec(
+        select(Providers).where(Providers.id == model.provider_id)
+    ).one()
     if not provider:
         raise ValueError(f"Provider with ID {model.provider_id} not found")
 
@@ -149,19 +159,17 @@ async def _handle_assistant_chat(
     )
 
     with trace(chat.title, trace_id=chat.trace_id):
-        result = Runner.run_streamed(
-            agent_instance.agent(),
-            input=input_items
-        )
+        result = Runner.run_streamed(agent_instance.agent(), input=input_items)
 
     # Store the result in active runs for potential cancellation using unified tracking
     from app.main import store_active_run
+
     chat_id_str = str(chat.id)
     store_active_run(chat_id_str, result)
-    
+
     # Track active tool calls to match with their results
     active_tool_calls = {}
-    
+
     try:
         # Process streaming events
         async for event in result.stream_events():
@@ -176,46 +184,52 @@ async def _handle_assistant_chat(
                         name = tool_call.name
                         arguments = tool_call.arguments
                         tool_call_id = str(uuid.uuid4())  # Always generate our own UUID
-                        
+
                         # Store the tool call for later matching with results
                         active_tool_calls[tool_call_id] = {
-                            'name': name,
-                            'arguments': arguments
+                            "name": name,
+                            "arguments": arguments,
                         }
-                        
+
                         # Yield structured tool call data
                         tool_call_data = {
-                            'id': tool_call_id,
-                            'name': name,
-                            'arguments': arguments
+                            "id": tool_call_id,
+                            "name": name,
+                            "arguments": arguments,
                         }
                         tool_call_token = f"<tool_call_start>{json.dumps(tool_call_data)}</tool_call_start>"
                         yield tool_call_token
-                        
-                elif event.name == "tool_output" and isinstance(event.item, ToolCallOutputItem):
+
+                elif event.name == "tool_output" and isinstance(
+                    event.item, ToolCallOutputItem
+                ):
                     output = event.item.output
-                    
+
                     # Try to match this output with a tool call
                     # Since we don't have a direct ID mapping, we'll use the most recent tool call
                     if active_tool_calls:
                         # Get the most recent tool call (assuming FIFO processing)
                         tool_call_id = list(active_tool_calls.keys())[-1]
                         tool_call_info = active_tool_calls[tool_call_id]
-                        
+
                         # Yield structured tool result data
                         tool_result_data = {
-                            'id': tool_call_id,
-                            'name': tool_call_info['name'],
-                            'result': output
+                            "id": tool_call_id,
+                            "name": tool_call_info["name"],
+                            "result": output,
                         }
                         tool_result_token = f"<tool_call_result>{json.dumps(tool_result_data)}</tool_call_result>"
                         yield tool_result_token
-                        
+
                         # Remove the processed tool call
                         del active_tool_calls[tool_call_id]
                     else:
-                        logger.warning("Received tool output but no active tool calls to match")
-                elif event.name == "reasoning_item_created" and isinstance(event.item, ReasoningItem):
+                        logger.warning(
+                            "Received tool output but no active tool calls to match"
+                        )
+                elif event.name == "reasoning_item_created" and isinstance(
+                    event.item, ReasoningItem
+                ):
                     logger.info(f"Reasoning item created: {event.item}")
                     pass
                 else:
@@ -234,6 +248,6 @@ async def _handle_assistant_chat(
     finally:
         # Clean up the active run using unified tracking
         from app.main import active_runs
+
         if chat_id_str in active_runs:
             del active_runs[chat_id_str]
-

@@ -68,9 +68,9 @@ def process_csv_file(file_path: str, session: Session) -> Dict[str, Any]:
                         continue
 
                     # Check if user already exists
-                    existing_user = (
-                        session.exec(select(Profiles).where(Profiles.alias == username)).first()
-                    )
+                    existing_user = session.exec(
+                        select(Profiles).where(Profiles.alias == username)
+                    ).first()
                     if existing_user:
                         users_skipped.append(
                             {"username": username, "reason": "User already exists"}
@@ -84,7 +84,7 @@ def process_csv_file(file_path: str, session: Session) -> Dict[str, Any]:
                         alias=username,
                         role="ta",
                         viewed_intro=False,
-                        class_ids=[]
+                        class_ids=[],
                     )
 
                     session.add(new_user)

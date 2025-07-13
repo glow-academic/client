@@ -10,14 +10,20 @@ from app.services.agents.generic import GenericAgent
 from app.utils.agents import get_agent_info
 from app.utils.classes import get_class_info
 from app.utils.document import get_document_info
-from app.utils.scenario import (get_crowdedness_info, get_intensity_info,
-                                get_location_info, get_seniority_info,
-                                get_time_of_day_info, get_urgency_info)
+from app.utils.scenario import (
+    get_crowdedness_info,
+    get_intensity_info,
+    get_location_info,
+    get_seniority_info,
+    get_time_of_day_info,
+    get_urgency_info,
+)
 from fastapi import Depends
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
+
 
 class Scenario(BaseModel):
     title: str  # title
@@ -114,17 +120,19 @@ async def run_scenario_agent(
     agent = session.exec(select(Agents).where(Agents.name == "Scenario")).one()
     if not agent:
         raise ValueError("Scenario agent not found")
-    
+
     # getting the model from the agent's model_id
     model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
     if not model:
         raise ValueError(f"Model with ID {agent.model_id} not found")
-    
+
     # getting the provider from the model's provider_id
-    provider = session.exec(select(Providers).where(Providers.id == model.provider_id)).one()
+    provider = session.exec(
+        select(Providers).where(Providers.id == model.provider_id)
+    ).one()
     if not provider:
         raise ValueError(f"Provider with ID {model.provider_id} not found")
-    
+
     scenario_agent = GenericAgent(
         agent_name=agent.name,
         system_prompt=agent.system_prompt,
@@ -135,7 +143,6 @@ async def run_scenario_agent(
         reasoning=agent.reasoning,
         output_type=Scenario,
     )
-
 
     agent_instance = scenario_agent.agent()
 
@@ -156,7 +163,7 @@ async def run_scenario_agent(
     # generate a trace id for the scenario
     trace_id = gen_trace_id()
 
-    with trace("Scenario Agent", group_id=str(group_id), trace_id=trace_id) :
+    with trace("Scenario Agent", group_id=str(group_id), trace_id=trace_id):
         result = await Runner.run(agent_instance, input=clean_input_items)
 
     # call the agents sdk to come up with a scenario description

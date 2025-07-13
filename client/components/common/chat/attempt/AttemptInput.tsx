@@ -15,7 +15,7 @@ import { CardFooter } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 
 // Icons
-import { Mic, MicOff, Pencil, Send, Square, Trash2, Undo2 } from "lucide-react";
+import { Send, Square, Trash2, Undo2 } from "lucide-react";
 
 // Tooltip
 import {
@@ -28,20 +28,10 @@ import {
 import { useSimulation } from "@/contexts/simulation-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { logError } from "@/utils/logger";
-import AudioWaveform from "./AudioWaveform";
 
-export interface AttemptInputProps {
-  onToggleSketch: (isExpanding: boolean) => void;
-}
-
-export default function AttemptInput({
-  onToggleSketch,
-}: AttemptInputProps) {
+export default function AttemptInput() {
   const simulationContext = useSimulation();
-  const { isConnected, isWebRTCConnected, canUseWebRTC } = useWebSocket();
-
-  // Check if dev mode is enabled
-  const isDevMode = process.env["NEXT_PUBLIC_DEV_MODE"] === "true";
+  const { isConnected } = useWebSocket();
 
   const [newMessage, setNewMessage] = useState("");
   const [isTall, setIsTall] = useState(false);
@@ -51,21 +41,12 @@ export default function AttemptInput({
   const sketchCanvasRef = useRef<ReactSketchCanvasRef>(null);
 
   // Connection state for send button
-  const isConnectionReady = isConnected && (isWebRTCConnected || !canUseWebRTC);
   const hasTextMessage = newMessage.trim().length > 0;
   const hasSketchContent = isTall; // We'll assume if sketch mode is open, there might be content
 
   const getConnectionTooltip = () => {
-    if (canUseWebRTC) {
-      if (!isConnected && !isWebRTCConnected) {
-        return "Initializing (0/2)";
-      } else if (isConnected && !isWebRTCConnected) {
-        return "Initializing (1/2)";
-      }
-    } else {
-      if (!isConnected) {
-        return "Initializing (0/1)";
-      }
+    if (!isConnected) {
+      return "Initializing (0/1)";
     }
     if (simulationContext?.isSendingMessage) {
       return "Stop sending";
@@ -103,7 +84,7 @@ export default function AttemptInput({
       (!messageToSend && !sketchData) ||
       !simulationContext?.currentChat ||
       simulationContext?.isSendingMessage ||
-      !isConnectionReady
+      !isConnected
     )
       return;
 
@@ -117,8 +98,6 @@ export default function AttemptInput({
     simulationContext?.sendMessage(messageToSend, sketchData);
   };
   const handleStopMessage = () => simulationContext?.stopMessage();
-  const handleStartRecording = () => simulationContext?.startRecording();
-  const handleStopRecording = () => simulationContext?.stopRecording();
   const handleUndo = () => sketchCanvasRef.current?.undo();
   const handleClear = () => sketchCanvasRef.current?.clearCanvas();
 
@@ -229,82 +208,26 @@ export default function AttemptInput({
 
         {/* --- Persistent Bottom Bar --- */}
         <div className="w-full flex items-center gap-2 shrink-0">
-          {isDevMode && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant={isTall ? "default" : "outline"}
-                  onClick={() => onToggleSketch(!isTall)}
-                  className="min-h-[40px] h-[40px] px-3"
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{isTall ? "Close Sketch" : "Open Sketch"}</p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-
           <div className="flex-1">
-            {simulationContext?.isRecording ? (
-              <AudioWaveform
-                isRecording={false}
-                isTall={false}
-                stream={simulationContext.userAudioStream}
-              />
-            ) : (
-              <Textarea
-                ref={textareaRef}
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Type your message..."
-                disabled={!simulationContext?.isActive}
-                className="w-full text-md resize-none overflow-hidden h-10 min-h-10"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) handleSendMessage(e);
-                }}
-              />
-            )}
+            <Textarea
+              ref={textareaRef}
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Type your message..."
+              disabled={!simulationContext?.isActive}
+              className="w-full text-md resize-none overflow-hidden h-10 min-h-10"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) handleSendMessage(e);
+              }}
+            />
           </div>
 
           <div className="flex gap-2">
             <AnimatePresence mode="popLayout">
-              {isDevMode &&
-                !hasTextMessage &&
-                !simulationContext?.isRecording && (
-                  <motion.div
-                    layout
-                    key="mic-btn-short"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.5 }}
-                  >
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleStartRecording}
-                          className="min-h-[40px] h-[40px] px-3"
-                        >
-                          <Mic className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Start audio</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </motion.div>
-                )}
               {/* Send Button - Always show in dev mode, conditionally in non-dev mode */}
-              {(
-                simulationContext?.isSendingMessage ||
-                !isDevMode ||
-                (isDevMode && (hasTextMessage || hasSketchContent))
-              ) &&
-                !simulationContext?.isRecording && (
+              {simulationContext?.isSendingMessage ||
+                hasTextMessage ||
+                hasSketchContent && (
                   <motion.div
                     layout
                     key="send-btn-short"
@@ -325,8 +248,8 @@ export default function AttemptInput({
                           disabled={
                             simulationContext?.isSendingMessage
                               ? false
-                              : (!isConnectionReady ||
-                                (!hasTextMessage && !hasSketchContent))
+                              : !isConnected ||
+                                (!hasTextMessage && !hasSketchContent)
                           }
                           onClick={
                             simulationContext?.isSendingMessage
@@ -349,24 +272,6 @@ export default function AttemptInput({
                     </Tooltip>
                   </motion.div>
                 )}
-              {isDevMode && simulationContext?.isRecording && (
-                <motion.div
-                  layout
-                  key="stop-btn-short"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.5 }}
-                >
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={handleStopRecording}
-                    className="min-h-[40px] h-[40px] px-3"
-                  >
-                    <MicOff className="h-4 w-4" />
-                  </Button>
-                </motion.div>
-              )}
             </AnimatePresence>
           </div>
         </div>

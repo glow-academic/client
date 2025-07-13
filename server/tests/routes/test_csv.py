@@ -1,25 +1,29 @@
 """
 Tests for app.routes.csv
 """
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from sqlmodel import Session
-from uuid import uuid4
-from app.routes.csv import router
+
 
 @pytest.fixture
 def client():
     """Create a test client for the FastAPI app."""
     from app.main import app
+
     return TestClient(app)
+
 
 @pytest.fixture
 def mock_session():
     """Create a mock database session."""
     return MagicMock(spec=Session)
 
+
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_csv`")
 class TestGet_Csv:
@@ -34,4 +38,3 @@ class TestGet_Csv:
         """Test get_csv error handling."""
         # TODO: Implement error test for get_csv
         assert False, "IMPLEMENT: Error test for get_csv"
-

@@ -5,7 +5,6 @@ WebSocket handlers for assistant chat functionality
 Supports real-time message streaming and tool call handling
 """
 
-import asyncio
 import json
 import logging
 import uuid
@@ -16,12 +15,13 @@ import socketio  # type: ignore
 from agents import gen_trace_id
 from app.db import get_session
 from app.models import AssistantChats, AssistantMessages, AssistantToolCalls
-from app.services.agents.collection.assistant import (cancel_assistant_run,
-                                                      run_assistant_agent)
+from app.services.agents.collection.assistant import (
+    cancel_assistant_run,
+    run_assistant_agent,
+)
 from app.services.agents.collection.title import run_title_agent
 from app.utils.audio import Modalities
-from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 # Suppress Pydantic serialization warnings from OpenAI SDK
 warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 def get_sio_instance() -> socketio.AsyncServer:
     """Get the Socket.IO server instance from main.py"""
     from app.main import get_socketio_instance
+
     return get_socketio_instance()
 
 
@@ -43,10 +44,10 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
     """
     try:
         logger.info(f"Received start_assistant request from {sid} with data: {data}")
-        
-        chat_id = data.get('chat_id')
-        initial_message = data.get('initial_message')
-        
+
+        chat_id = data.get("chat_id")
+        initial_message = data.get("initial_message")
+
         if not chat_id or not initial_message:
             logger.error(f"Missing chat_id or initial_message in request from {sid}")
             await emit_assistant_error(sid, "Missing chat_id or initial_message")
@@ -56,7 +57,7 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
 
         # Create a new session for this operation
         db_session = next(get_session())
-        
+
         try:
             # Generate a trace id for the chat and refresh the chat
             trace_id = gen_trace_id()
@@ -64,7 +65,7 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
             if not chat:
                 await emit_assistant_error(sid, "Chat not found")
                 return
-            
+
             chat.trace_id = trace_id
             db_session.add(chat)
             db_session.commit()
@@ -77,21 +78,28 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
             logger.info(f"Client {sid} joined assistant room {assistant_room}")
 
             # Update the title with the title agent
-            chat_title = await run_title_agent(uuid.UUID(chat_id), initial_message, db_session)
+            chat_title = await run_title_agent(
+                uuid.UUID(chat_id), initial_message, db_session
+            )
             logger.info(f"Chat title: {chat_title}")
 
             # Emit title update to connected clients
-            await sio_instance.emit('title_updated', {
-                'chat_id': str(chat_id),
-                'title': chat_title
-            }, room=assistant_room)
+            await sio_instance.emit(
+                "title_updated",
+                {"chat_id": str(chat_id), "title": chat_title},
+                room=assistant_room,
+            )
 
             # Emit success response
-            await sio_instance.emit('assistant_started', {
-                'success': True,
-                'message': 'Assistant started successfully',
-                'chat_id': str(chat_id),
-            }, room=sid)
+            await sio_instance.emit(
+                "assistant_started",
+                {
+                    "success": True,
+                    "message": "Assistant started successfully",
+                    "chat_id": str(chat_id),
+                },
+                room=sid,
+            )
 
             logger.info(f"Assistant started successfully for {sid}: chat={chat_id}")
         finally:
@@ -108,44 +116,52 @@ async def handle_stop_assistant(sid: str, data: Dict[str, Any]) -> None:
     Replaces /assistants/stop endpoint
     """
     try:
-        chat_id = data.get('chat_id')
-        
+        chat_id = data.get("chat_id")
+
         if not chat_id:
             await emit_assistant_error(sid, "Missing chat_id")
             return
 
         # Create a new session for this operation
         db_session = next(get_session())
-        
+
         try:
             # Verify the chat exists
             chat = db_session.get(AssistantChats, uuid.UUID(chat_id))
             if not chat:
                 await emit_assistant_error(sid, "Chat not found")
                 return
-            
+
             # Attempt to cancel the assistant run
             success = cancel_assistant_run(uuid.UUID(chat_id))
-            
+
             sio_instance = get_sio_instance()
-            
+
             if success:
                 logger.info(f"Successfully cancelled assistant run for chat {chat_id}")
-                
+
                 # Emit stop signal via WebSocket
-                await sio_instance.emit('assistant_stopped', {
-                    'chat_id': chat_id,
-                    'success': True,
-                    'message': 'Assistant stopped successfully'
-                }, room=f"assistant_{chat_id}")
-                
+                await sio_instance.emit(
+                    "assistant_stopped",
+                    {
+                        "chat_id": chat_id,
+                        "success": True,
+                        "message": "Assistant stopped successfully",
+                    },
+                    room=f"assistant_{chat_id}",
+                )
+
             else:
                 logger.warning(f"No active assistant run found for chat {chat_id}")
-                await sio_instance.emit('assistant_stopped', {
-                    'chat_id': chat_id,
-                    'success': False,
-                    'message': 'No active assistant run found'
-                }, room=f"assistant_{chat_id}")
+                await sio_instance.emit(
+                    "assistant_stopped",
+                    {
+                        "chat_id": chat_id,
+                        "success": False,
+                        "message": "No active assistant run found",
+                    },
+                    room=f"assistant_{chat_id}",
+                )
 
         finally:
             db_session.close()
@@ -156,62 +172,69 @@ async def handle_stop_assistant(sid: str, data: Dict[str, Any]) -> None:
 
 
 async def process_assistant_message_websocket(
-    chat_id: uuid.UUID, 
-    message: str, 
+    chat_id: uuid.UUID,
+    message: str,
     audio_mode: Modalities = Modalities.TEXT_TEXT,
     audio_data: Optional[bytes] = None,
-    session: Optional[Session] = None
+    session: Optional[Session] = None,
 ) -> None:
     """
     Process an assistant message and stream the response via WebSocket
     Supports both text and audio messages (audio support to be implemented)
     """
-    
+
     # Create a new session for this async operation
     from app.db import get_session
+
     db_session = next(get_session())
-    
+
     try:
-        
         # 1. Add the user message to the chat
         user_message = AssistantMessages(
-            chat_id=chat_id,
-            role="user",
-            content=message,
-            completed=True
+            chat_id=chat_id, role="user", content=message, completed=True
         )
         db_session.add(user_message)
         db_session.commit()
         db_session.refresh(user_message)
-        
+
         # 2. Emit user message to connected clients
         sio_instance = get_sio_instance()
-        await sio_instance.emit('assistant_new_message', {
-            'message_id': str(user_message.id),
-            'chat_id': str(chat_id),
-            'role': 'user',
-            'content': message,
-            'completed': True,
-            'created_at': user_message.created_at.isoformat()
-        }, room=f"assistant_{chat_id}")
-        
+        await sio_instance.emit(
+            "assistant_new_message",
+            {
+                "message_id": str(user_message.id),
+                "chat_id": str(chat_id),
+                "role": "user",
+                "content": message,
+                "completed": True,
+                "created_at": user_message.created_at.isoformat(),
+            },
+            room=f"assistant_{chat_id}",
+        )
+
         logger.info(f"Processing assistant message for chat {chat_id}")
 
         # 3. Stream the assistant response
         accumulated_content = ""
         cancelled = False
         active_tool_calls = {}  # Track tool calls by ID
-        current_message = None  # Track current message for splitting - create only when needed
-        
+        current_message = (
+            None  # Track current message for splitting - create only when needed
+        )
+
         try:
             async for token in run_assistant_agent(chat_id, db_session):
                 try:
-                    logger.info(f"Received token: '{token}' (type: {type(token)}, length: {len(token) if isinstance(token, str) else 'N/A'})")
-                    
+                    logger.info(
+                        f"Received token: '{token}' (type: {type(token)}, length: {len(token) if isinstance(token, str) else 'N/A'})"
+                    )
+
                     # Check if this is a tool call token
-                    if token.startswith('<tool_call_start>') and token.endswith('</tool_call_start>'):
+                    if token.startswith("<tool_call_start>") and token.endswith(
+                        "</tool_call_start>"
+                    ):
                         logger.info(f"Received tool call start token: {token}")
-                        
+
                         # If we have accumulated content, complete the current message and create a new one
                         if accumulated_content.strip() and current_message:
                             # Complete current message
@@ -219,211 +242,279 @@ async def process_assistant_message_websocket(
                             current_message.completed = True
                             db_session.add(current_message)
                             db_session.commit()
-                            
+
                             # Emit completion for current message
-                            await sio_instance.emit('message_complete', {
-                                'message_id': str(current_message.id),
-                                'chat_id': str(chat_id),
-                                'final_content': accumulated_content
-                            }, room=f"assistant_{chat_id}")
-                            
+                            await sio_instance.emit(
+                                "message_complete",
+                                {
+                                    "message_id": str(current_message.id),
+                                    "chat_id": str(chat_id),
+                                    "final_content": accumulated_content,
+                                },
+                                room=f"assistant_{chat_id}",
+                            )
+
                             # Reset accumulated content
                             accumulated_content = ""
                             current_message = None
-                        
+
                         # Don't create a message just for tool calls - they can exist independently
                         # Only create messages when we have actual content
-                        
+
                         # Extract tool call data
-                        tool_call_json = token.replace('<tool_call_start>', '').replace('</tool_call_start>', '')
+                        tool_call_json = token.replace("<tool_call_start>", "").replace(
+                            "</tool_call_start>", ""
+                        )
                         try:
                             tool_call_data = json.loads(tool_call_json)
-                            
+
                             # Determine tool type based on tool name
-                            tool_name = tool_call_data.get('name', 'unknown')
-                            tool_type = 'read'  # Default to read
-                            
+                            tool_name = tool_call_data.get("name", "unknown")
+                            tool_type = "read"  # Default to read
+
                             # Map tool names to types based on their operation
-                            if any(keyword in tool_name.lower() for keyword in ['create', 'add', 'insert', 'new']):
-                                tool_type = 'create'
-                            elif any(keyword in tool_name.lower() for keyword in ['update', 'edit', 'modify', 'change']):
-                                tool_type = 'update'
-                            elif any(keyword in tool_name.lower() for keyword in ['delete', 'remove', 'drop']):
-                                tool_type = 'delete'
+                            if any(
+                                keyword in tool_name.lower()
+                                for keyword in ["create", "add", "insert", "new"]
+                            ):
+                                tool_type = "create"
+                            elif any(
+                                keyword in tool_name.lower()
+                                for keyword in ["update", "edit", "modify", "change"]
+                            ):
+                                tool_type = "update"
+                            elif any(
+                                keyword in tool_name.lower()
+                                for keyword in ["delete", "remove", "drop"]
+                            ):
+                                tool_type = "delete"
                             # Otherwise defaults to 'read' for find, get, list, etc.
-                            
+
                             # Save tool call to database (without associating to a message)
                             tool_call = AssistantToolCalls(
                                 chat_id=chat_id,
                                 tool_name=tool_name,
                                 tool_type=tool_type,
-                                tool_arguments=tool_call_data.get('arguments', {}),
+                                tool_arguments=tool_call_data.get("arguments", {}),
                                 tool_result={},  # Will be updated when result comes in
-                                completed=False  # Mark as incomplete initially
+                                completed=False,  # Mark as incomplete initially
                             )
-                            
+
                             try:
                                 db_session.add(tool_call)
                                 db_session.commit()
                                 db_session.refresh(tool_call)
-                                logger.info(f"Successfully created tool call record: {tool_call.id}")
+                                logger.info(
+                                    f"Successfully created tool call record: {tool_call.id}"
+                                )
                             except Exception as db_error:
-                                logger.error(f"Failed to create tool call record: {db_error}")
+                                logger.error(
+                                    f"Failed to create tool call record: {db_error}"
+                                )
                                 db_session.rollback()
                                 continue
-                            
+
                             # Store the tool call for later result matching
-                            tool_call_id = tool_call_data.get('id')
+                            tool_call_id = tool_call_data.get("id")
                             if tool_call_id:
                                 active_tool_calls[tool_call_id] = tool_call
-                            
+
                             # Emit tool call created event (frontend will refetch tool calls)
-                            await sio_instance.emit('tool_call_created', {
-                                'tool_call_id': str(tool_call.id),
-                                'chat_id': str(chat_id),
-                                'tool_name': tool_name,
-                                'tool_type': tool_type
-                            }, room=f"assistant_{chat_id}")
-                            
+                            await sio_instance.emit(
+                                "tool_call_created",
+                                {
+                                    "tool_call_id": str(tool_call.id),
+                                    "chat_id": str(chat_id),
+                                    "tool_name": tool_name,
+                                    "tool_type": tool_type,
+                                },
+                                room=f"assistant_{chat_id}",
+                            )
+
                         except json.JSONDecodeError:
-                            logger.error(f"Failed to parse tool call JSON: {tool_call_json}")
-                        
-                    elif token.startswith('<tool_call_result>') and token.endswith('</tool_call_result>'):
+                            logger.error(
+                                f"Failed to parse tool call JSON: {tool_call_json}"
+                            )
+
+                    elif token.startswith("<tool_call_result>") and token.endswith(
+                        "</tool_call_result>"
+                    ):
                         logger.info(f"Received tool call result token: {token}")
                         # Extract tool call result data
-                        tool_result_json = token.replace('<tool_call_result>', '').replace('</tool_call_result>', '')
+                        tool_result_json = token.replace(
+                            "<tool_call_result>", ""
+                        ).replace("</tool_call_result>", "")
                         try:
                             tool_result_data = json.loads(tool_result_json)
-                            tool_call_id = tool_result_data.get('id')
-                            
+                            tool_call_id = tool_result_data.get("id")
+
                             # Update the corresponding tool call record with the result
                             tool_call_record = None
                             if tool_call_id and tool_call_id in active_tool_calls:
                                 tool_call_record = active_tool_calls[tool_call_id]
-                                tool_call_record.tool_result = tool_result_data.get('result', {})
+                                tool_call_record.tool_result = tool_result_data.get(
+                                    "result", {}
+                                )
                                 tool_call_record.completed = True
-                                
+
                                 try:
                                     db_session.add(tool_call_record)
                                     db_session.commit()
-                                    logger.info(f"Successfully updated tool call record {tool_call_record.id} with result")
+                                    logger.info(
+                                        f"Successfully updated tool call record {tool_call_record.id} with result"
+                                    )
                                 except Exception as db_error:
-                                    logger.error(f"Failed to update tool call record: {db_error}")
+                                    logger.error(
+                                        f"Failed to update tool call record: {db_error}"
+                                    )
                                     db_session.rollback()
-                                
+
                                 # Remove from active tracking
                                 del active_tool_calls[tool_call_id]
-                            
+
                             # Emit tool call completed event (frontend will refetch tool calls)
-                            await sio_instance.emit('tool_call_completed', {
-                                'tool_call_id': str(tool_call_record.id) if tool_call_record else None,
-                                'chat_id': str(chat_id),
-                                'tool_name': tool_result_data.get('name')
-                            }, room=f"assistant_{chat_id}")
-                            
+                            await sio_instance.emit(
+                                "tool_call_completed",
+                                {
+                                    "tool_call_id": str(tool_call_record.id)
+                                    if tool_call_record
+                                    else None,
+                                    "chat_id": str(chat_id),
+                                    "tool_name": tool_result_data.get("name"),
+                                },
+                                room=f"assistant_{chat_id}",
+                            )
+
                         except json.JSONDecodeError:
-                            logger.error(f"Failed to parse tool result JSON: {tool_result_json}")
-                        
+                            logger.error(
+                                f"Failed to parse tool result JSON: {tool_result_json}"
+                            )
+
                     else:
                         # Regular content token
                         accumulated_content += token
-                        
+
                         # Create assistant message if we don't have one yet
                         if not current_message:
                             current_message = AssistantMessages(
                                 chat_id=chat_id,
                                 role="assistant",
                                 content="",
-                                completed=False
+                                completed=False,
                             )
                             db_session.add(current_message)
                             db_session.commit()
                             db_session.refresh(current_message)
-                            
+
                             # Emit new placeholder message
-                            await sio_instance.emit('assistant_new_message', {
-                                'message_id': str(current_message.id),
-                                'chat_id': str(chat_id),
-                                'role': 'assistant',
-                                'content': '',
-                                'completed': False,
-                                'created_at': current_message.created_at.isoformat()
-                            }, room=f"assistant_{chat_id}")
-                        
+                            await sio_instance.emit(
+                                "assistant_new_message",
+                                {
+                                    "message_id": str(current_message.id),
+                                    "chat_id": str(chat_id),
+                                    "role": "assistant",
+                                    "content": "",
+                                    "completed": False,
+                                    "created_at": current_message.created_at.isoformat(),
+                                },
+                                room=f"assistant_{chat_id}",
+                            )
+
                         # Update the database with accumulated content
                         current_message.content = accumulated_content
                         db_session.add(current_message)
                         db_session.commit()
-                        
+
                         # Emit token update to connected clients
-                        await sio_instance.emit('assistant_message_token', {
-                            'message_id': str(current_message.id),
-                            'chat_id': str(chat_id),
-                            'token': token,
-                            'accumulated_content': accumulated_content
-                        }, room=f"assistant_{chat_id}")
-                
+                        await sio_instance.emit(
+                            "assistant_message_token",
+                            {
+                                "message_id": str(current_message.id),
+                                "chat_id": str(chat_id),
+                                "token": token,
+                                "accumulated_content": accumulated_content,
+                            },
+                            room=f"assistant_{chat_id}",
+                        )
+
                 except Exception as token_error:
                     # Handle errors at the individual token level
                     if "unhandled item type or structure" in str(token_error).lower():
-                        logger.debug(f"Skipping token due to unhandled item type (likely reasoning event): {str(token_error)}")
+                        logger.debug(
+                            f"Skipping token due to unhandled item type (likely reasoning event): {str(token_error)}"
+                        )
                         continue
                     else:
                         # Re-raise other token-level errors
                         raise token_error
-                        
+
         except Exception as e:
             if "cancelled" in str(e).lower() or "canceled" in str(e).lower():
                 # Handle cancellation gracefully
                 cancelled = True
                 logger.info(f"Assistant run for chat {chat_id} was cancelled")
-                
+
                 # Emit cancellation signal (if we have a message)
                 if current_message:
-                    await sio_instance.emit('assistant_message_cancelled', {
-                        'message_id': str(current_message.id),
-                        'chat_id': str(chat_id),
-                        'final_content': accumulated_content
-                    }, room=f"assistant_{chat_id}")
+                    await sio_instance.emit(
+                        "assistant_message_cancelled",
+                        {
+                            "message_id": str(current_message.id),
+                            "chat_id": str(chat_id),
+                            "final_content": accumulated_content,
+                        },
+                        room=f"assistant_{chat_id}",
+                    )
             elif "unhandled item type or structure" in str(e).lower():
                 # Handle reasoning/summary events from o1 models gracefully
-                logger.warning(f"Encountered unhandled item type (likely reasoning event) for chat {chat_id}: {str(e)}")
+                logger.warning(
+                    f"Encountered unhandled item type (likely reasoning event) for chat {chat_id}: {str(e)}"
+                )
                 # Continue processing - this is not a fatal error
                 # The assistant can still function without processing reasoning events
                 pass
             else:
                 # Re-raise other exceptions
                 raise e
-        
+
         # 6. Mark current message as completed (if we have one)
         if current_message:
             current_message.completed = True
             db_session.add(current_message)
             db_session.commit()
-            
+
             # 7. Emit completion signal (only if not cancelled)
             if not cancelled:
-                await sio_instance.emit('assistant_message_complete', {
-                    'message_id': str(current_message.id),
-                    'chat_id': str(chat_id),
-                    'final_content': accumulated_content
-                }, room=f"assistant_{chat_id}")
+                await sio_instance.emit(
+                    "assistant_message_complete",
+                    {
+                        "message_id": str(current_message.id),
+                        "chat_id": str(chat_id),
+                        "final_content": accumulated_content,
+                    },
+                    room=f"assistant_{chat_id}",
+                )
             else:
                 # For cancelled messages, still emit completion but with cancellation flag
-                await sio_instance.emit('assistant_message_complete', {
-                    'message_id': str(current_message.id),
-                    'chat_id': str(chat_id),
-                    'final_content': accumulated_content,
-                    'cancelled': True
-                }, room=f"assistant_{chat_id}")
-        
+                await sio_instance.emit(
+                    "assistant_message_complete",
+                    {
+                        "message_id": str(current_message.id),
+                        "chat_id": str(chat_id),
+                        "final_content": accumulated_content,
+                        "cancelled": True,
+                    },
+                    room=f"assistant_{chat_id}",
+                )
+
     except Exception as e:
         logger.error(f"Error in process_assistant_message_websocket: {str(e)}")
         sio_instance = get_sio_instance()
-        await sio_instance.emit('assistant_error', {
-            'chat_id': str(chat_id),
-            'error': str(e)
-        }, room=f"assistant_{chat_id}")
+        await sio_instance.emit(
+            "assistant_error",
+            {"chat_id": str(chat_id), "error": str(e)},
+            room=f"assistant_{chat_id}",
+        )
     finally:
         db_session.close()
 
@@ -431,27 +522,28 @@ async def process_assistant_message_websocket(
 async def emit_assistant_error(sid: str, message: str) -> None:
     """Helper function to emit assistant error messages to a specific client"""
     sio_instance = get_sio_instance()
-    await sio_instance.emit('assistant_error', {
-        'success': False,
-        'message': message
-    }, room=sid)
+    await sio_instance.emit(
+        "assistant_error", {"success": False, "message": message}, room=sid
+    )
     logger.error(f"Emitted assistant error to {sid}: {message}")
 
 
 def register_assistant_events(sio: socketio.AsyncServer) -> None:
     """Register all assistant WebSocket event handlers"""
-    
+
     logger.info("Starting registration of assistant WebSocket event handlers")
-    
+
     @sio.event  # type: ignore
     async def start_assistant(sid: str, data: Dict[str, Any]) -> None:
         """Start a new assistant chat"""
-        logger.info(f"start_assistant event triggered for sid={sid} with data keys: {list(data.keys())}")
+        logger.info(
+            f"start_assistant event triggered for sid={sid} with data keys: {list(data.keys())}"
+        )
         await handle_start_assistant(sid, data)
-    
+
     @sio.event  # type: ignore
     async def stop_assistant(sid: str, data: Dict[str, Any]) -> None:
         """Stop an active assistant"""
         await handle_stop_assistant(sid, data)
-    
+
     logger.info("Successfully registered assistant WebSocket event handlers")

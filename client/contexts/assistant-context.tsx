@@ -78,13 +78,11 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
   // Use the global WebSocket context
   const {
     isConnected,
-    isWebRTCConnected,
     joinRoom,
     leaveRoom,
     emitStartAssistant,
     emitSendAssistantMessage,
     emitStopAssistant,
-    sendWebRTCMessage,
   } = useWebSocket();
 
   const userId = useSession().data?.user?.id;
@@ -304,19 +302,12 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
           emitStartAssistant({ chat_id: chatId, initial_message: message });
         }
         // 2️⃣ For subsequent messages, deliver the text via the best transport:
-        if (isWebRTCConnected) {
-          logInfo("Sending subsequent message via WebRTC", {
-            chatId,
-            messageLength: message.length,
-          });
-          sendWebRTCMessage(chatId, message); // tokenised path
-        } else {
-          logInfo("Sending subsequent message via WebSocket", {
-            chatId,
-            messageLength: message.length,
-          });
-          emitSendAssistantMessage({ chat_id: chatId, message }); // fallback
-        }
+
+        logInfo("Sending subsequent message via WebSocket", {
+          chatId,
+          messageLength: message.length,
+        });
+        emitSendAssistantMessage({ chat_id: chatId, message }); // fallback
 
         logInfo("Message sent via WebSocket", {
           chatId,
@@ -341,8 +332,6 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       createChatMutation,
       emitStartAssistant,
       emitSendAssistantMessage,
-      isWebRTCConnected,
-      sendWebRTCMessage,
     ]
   );
 

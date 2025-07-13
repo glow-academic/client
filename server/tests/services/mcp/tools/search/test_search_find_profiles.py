@@ -1,11 +1,12 @@
 """
 Tests for app.services.mcp.tools.search.find_profiles
 """
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock
 from sqlmodel import Session
-from uuid import uuid4
 from app.services.mcp.tools.search.find_profiles import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +15,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `find_profiles`")
 class TestFind_Profiles:
@@ -28,4 +30,3 @@ class TestFind_Profiles:
         """Test find_profiles error handling."""
         # TODO: Implement error test for find_profiles
         assert False, "IMPLEMENT: Error test for find_profiles"
-

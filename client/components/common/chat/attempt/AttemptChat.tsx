@@ -1,6 +1,6 @@
 /**
  * AttemptChat.tsx
- * Used to display the attempt chat. Will wrap the AttemptInput and AttemptMessages components, creating the unified look. This page will add the header, and timer, as well as toggle the TableRubric in the correct mode. The simulation-context.tsx will be the one that wraps this with the necessary functions to call webRTC and websocket events.
+ * Used to display the attempt chat. Will wrap the AttemptInput and AttemptMessages components, creating the unified look. This page will add the header, and timer, as well as toggle the TableRubric in the correct mode. The simulation-context.tsx will be the one that wraps this with the necessary functions to call websocket events.
  * @AshokSaravanan222 & @siladiea
  * 06/27/2025
  */
@@ -64,24 +64,8 @@ export default function AttemptChat() {
     null
   );
 
-  const isDevMode = process.env["NEXT_PUBLIC_DEV_MODE"] === "true";
-
   // Create a ref for the panel group
   const inputPanelGroupRef = useRef<ImperativePanelGroupHandle>(null);
-
-  // Define the handler function to change the layout
-  const handleToggleInputSize = (isExpanding: boolean) => {
-    const panelGroup = inputPanelGroupRef.current;
-    if (panelGroup) {
-      // Numbers correspond to the percentages of the panels in the group.
-      // [Upper Panel, Lower Panel]
-      if (isExpanding) {
-        panelGroup.setLayout([60, 40]); // Expands input to its 40% max size
-      } else {
-        panelGroup.setLayout([90, 10]); // Collapses input to its 10% min size
-      }
-    }
-  };
 
   // Get selected chat for rubric display
   const selectedChat = useMemo(() => {
@@ -595,10 +579,10 @@ export default function AttemptChat() {
                   </div>
                 </ResizablePanel>
 
-                <ResizableHandle disabled={!isDevMode} />
+                <ResizableHandle disabled />
                 {/* Input Area */}
                 <ResizablePanel defaultSize={12} minSize={12} maxSize={40}>
-                  <AttemptInput onToggleSketch={handleToggleInputSize} />
+                  <AttemptInput />
                 </ResizablePanel>
               </ResizablePanelGroup>
             </TooltipProvider>

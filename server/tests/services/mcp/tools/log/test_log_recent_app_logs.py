@@ -1,11 +1,12 @@
 """
 Tests for app.services.mcp.tools.log.recent_app_logs
 """
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock
 from sqlmodel import Session
-from uuid import uuid4
 from app.services.mcp.tools.log.recent_app_logs import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +15,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `recent_app_logs`")
 class TestRecent_App_Logs:
@@ -28,4 +30,3 @@ class TestRecent_App_Logs:
         """Test recent_app_logs error handling."""
         # TODO: Implement error test for recent_app_logs
         assert False, "IMPLEMENT: Error test for recent_app_logs"
-

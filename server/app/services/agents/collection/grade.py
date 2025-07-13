@@ -6,10 +6,21 @@ from typing import Any, List
 
 from agents import Runner, trace
 from app.db import get_session
-from app.models import (Agents, Models, Providers, Rubrics, SimulationAttempts,
-                        SimulationChatFeedbacks, SimulationChatGrades,
-                        SimulationChats, SimulationMessages, Simulations,
-                        SimulationSketches, StandardGroups, Standards)
+from app.models import (
+    Agents,
+    Models,
+    Providers,
+    Rubrics,
+    SimulationAttempts,
+    SimulationChatFeedbacks,
+    SimulationChatGrades,
+    SimulationChats,
+    SimulationMessages,
+    Simulations,
+    SimulationSketches,
+    StandardGroups,
+    Standards,
+)
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_simulation_conversation_history
 from app.utils.rubric import get_dynamic_rubric
@@ -72,7 +83,7 @@ def create_dynamic_rubric_model(
     fields["passed"] = (bool, Field(description="Whether the evaluation passed"))
     fields["summary"] = (str, Field(description="Overall evaluation summary"))
 
-    return create_model("DynamicRubricGrade", **fields) # type: ignore
+    return create_model("DynamicRubricGrade", **fields)  # type: ignore
 
 
 async def run_grade_agent(
@@ -89,12 +100,11 @@ async def run_grade_agent(
         A string of the simulation_chat_grade id.
     """
     try:
-
         # find agent with name of "Grade"
         agent = session.exec(select(Agents).where(Agents.name == "Grade")).one()
         if not agent:
             raise ValueError("Grade agent not found")
-        
+
         # get the chat from the simulation_chat_id
         chat = session.exec(
             select(SimulationChats).where(SimulationChats.id == simulation_chat_id)
@@ -102,8 +112,9 @@ async def run_grade_agent(
 
         # get all the messages for the chat_id, order by created_at
         messages = session.exec(
-            select(SimulationMessages)
-            .where(SimulationMessages.chat_id == simulation_chat_id)
+            select(SimulationMessages).where(
+                SimulationMessages.chat_id == simulation_chat_id
+            )
         ).all()
 
         messages = list(messages)
@@ -111,14 +122,15 @@ async def run_grade_agent(
 
         # get the sketches for the chat
         sketches = session.exec(
-            select(SimulationSketches)
-            .where(SimulationSketches.chat_id == simulation_chat_id)
+            select(SimulationSketches).where(
+                SimulationSketches.chat_id == simulation_chat_id
+            )
         ).all()
 
         # sort sketches by created_at
         sketches = list(sketches)
         sketches = sorted(sketches, key=lambda x: x.created_at)
-        
+
         # prepare conversation history from chat_id
         conversation_history = get_simulation_conversation_history(messages, sketches)
 
@@ -161,7 +173,9 @@ async def run_grade_agent(
         )
 
         # Build dynamic rubric using utility function
-        rubric_input = get_dynamic_rubric(rubric, list(standard_groups), list(standards))
+        rubric_input = get_dynamic_rubric(
+            rubric, list(standard_groups), list(standards)
+        )
 
         # Create dynamic Pydantic model for the rubric
         DynamicRubric = create_dynamic_rubric_model(list(standard_groups))
@@ -177,9 +191,11 @@ async def run_grade_agent(
         model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
         if not model:
             raise ValueError(f"Model with ID {agent.model_id} not found")
-        
+
         # getting the provider from the model's provider_id
-        provider = session.exec(select(Providers).where(Providers.id == model.provider_id)).one()
+        provider = session.exec(
+            select(Providers).where(Providers.id == model.provider_id)
+        ).one()
         if not provider:
             raise ValueError(f"Provider with ID {model.provider_id} not found")
 

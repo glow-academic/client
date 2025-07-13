@@ -1,5 +1,5 @@
 # query_data.py
-# 
+#
 # @AshokSaravanan222 & @siladiea
 # 07/07/2025
 
@@ -13,17 +13,17 @@ def query_data(sql: str) -> str:
     🔎 Custom SQL queries (read-only)
     ---------------------------------
     Run SELECT/EXPLAIN queries with 200-row limit.
-    
+
     Input
       • sql – SELECT or EXPLAIN statement only
-    
+
     Returns
       Raw query results as text
-    
+
     Quick-start
       ask:  "Run this SQL: SELECT * FROM profiles LIMIT 5"
       call: query_data("SELECT first_name, last_name FROM profiles LIMIT 5")
-    
+
     Security: Only SELECT and EXPLAIN allowed.
     """
     lowered = sql.lstrip().lower()

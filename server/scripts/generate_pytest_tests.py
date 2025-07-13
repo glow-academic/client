@@ -8,6 +8,7 @@ import ast
 from pathlib import Path
 from typing import List
 
+
 # (analyze_route_file and analyze_service_file functions remain the same)
 def analyze_route_file(file_path: str) -> List[str]:
     """Extract route function names from a Python file."""
@@ -41,6 +42,7 @@ def analyze_route_file(file_path: str) -> List[str]:
         print(f"Error analyzing {file_path}: {e}")
         return []
 
+
 def analyze_service_file(file_path: str) -> List[str]:
     """Extract function names from a service file."""
     try:
@@ -57,6 +59,7 @@ def analyze_service_file(file_path: str) -> List[str]:
         print(f"Error analyzing {file_path}: {e}")
         return []
 
+
 def analyze_test_file(file_path: str) -> List[str]:
     """Extract test class names from an existing test file."""
     if not Path(file_path).exists():
@@ -65,13 +68,17 @@ def analyze_test_file(file_path: str) -> List[str]:
         with open(file_path, "r") as f:
             content = f.read()
         tree = ast.parse(content)
-        classes = [node.name for node in ast.walk(tree) if isinstance(node, ast.ClassDef)]
+        classes = [
+            node.name for node in ast.walk(tree) if isinstance(node, ast.ClassDef)
+        ]
         return classes
     except Exception as e:
         print(f"Error analyzing existing test file {file_path}: {e}")
         return []
 
+
 # --- Test Generation for Individual Functions ---
+
 
 def generate_single_route_test_class(func_name: str) -> str:
     """Generates the test class skeleton for a single route function."""
@@ -92,6 +99,7 @@ class Test{func_name.title()}:
         # TODO: Implement error test for {func_name}
         assert False, "IMPLEMENT: Error test for {func_name}"
 '''
+
 
 def generate_single_service_test_class(func_name: str) -> str:
     """Generates the test class skeleton for a single service function."""
@@ -114,7 +122,9 @@ class Test{func_name.title()}:
         assert False, "IMPLEMENT: Error test for {func_name}"
 '''
 
+
 # --- Full File Generation (for new files) ---
+
 
 def generate_route_test(module_name: str, functions: List[str]) -> str:
     """Generate test content for a brand new route module."""
@@ -143,6 +153,7 @@ def mock_session():
         test_content += generate_single_route_test_class(func_name)
     return test_content + "\n"
 
+
 def generate_service_test(module_path: str, functions: List[str]) -> str:
     """Generate test content for a brand new service module."""
     import_path = module_path.replace("/", ".")
@@ -164,10 +175,11 @@ def mock_session():
         test_content += generate_single_service_test_class(func_name)
     return test_content + "\n"
 
+
 # (generate_conftest remains the same)
 def generate_conftest():
     """Generate conftest.py for pytest configuration."""
-    return f'''"""
+    return '''"""
 Pytest configuration and shared fixtures.
 """
 import pytest
@@ -182,7 +194,7 @@ from app.db import get_session
 
 @pytest.fixture(scope="session")
 def test_engine():
-    engine = create_engine("sqlite:///:memory:", connect_args={{"check_same_thread": False}}, poolclass=StaticPool)
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     SQLModel.metadata.create_all(engine)
     return engine
 
@@ -215,7 +227,9 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "unit: mark test as unit test")
 '''
 
+
 # --- Main Function with Updated Logic ---
+
 
 def main():
     """Main function to generate/update tests and remove orphans."""
@@ -242,7 +256,7 @@ def main():
             test_file = tests_dir / "routes" / f"test_{py_file.stem}.py"
             expected_test_files.add(test_file.resolve())
             print(f"  📄 Syncing tests for {py_file.name}...")
-            
+
             source_functions = analyze_route_file(str(py_file))
             if not source_functions:
                 continue
@@ -255,17 +269,21 @@ def main():
             else:
                 existing_classes = analyze_test_file(str(test_file))
                 missing_functions = [
-                    f for f in source_functions if f"Test{f.title()}" not in existing_classes
+                    f
+                    for f in source_functions
+                    if f"Test{f.title()}" not in existing_classes
                 ]
                 if missing_functions:
                     content_to_append = ""
                     for func_name in missing_functions:
                         content_to_append += generate_single_route_test_class(func_name)
-                    
+
                     with test_file.open("a") as f:
                         f.write(content_to_append + "\n")
                     stats["updated"] += 1
-                    print(f"    🔄 Appended {len(missing_functions)} missing test class(es) to {test_file}")
+                    print(
+                        f"    🔄 Appended {len(missing_functions)} missing test class(es) to {test_file}"
+                    )
                 else:
                     print("    ✅ All tests are present.")
             stats["routes"] += 1
@@ -277,14 +295,18 @@ def main():
         for py_file in services_dir.rglob("*.py"):
             if py_file.name.startswith("__"):
                 continue
-            
+
             rel_path = py_file.relative_to(services_dir)
             test_dir = tests_dir / "services" / rel_path.parent
             # Make the test filename unique to avoid import conflicts
-            test_filename = f"test_{rel_path.parent.name.lower()}_{rel_path.stem}.py" if rel_path.parent.name else f"test_{rel_path.stem}.py"
+            test_filename = (
+                f"test_{rel_path.parent.name.lower()}_{rel_path.stem}.py"
+                if rel_path.parent.name
+                else f"test_{rel_path.stem}.py"
+            )
             test_file = test_dir / test_filename
             expected_test_files.add(test_file.resolve())
-            
+
             print(f"  📄 Syncing tests for {rel_path}...")
             source_functions = analyze_service_file(str(py_file))
             if not source_functions:
@@ -293,24 +315,32 @@ def main():
             test_dir.mkdir(parents=True, exist_ok=True)
             if not test_file.exists():
                 module_path = str(rel_path.with_suffix("")).replace("/", ".")
-                test_content = generate_service_test(f"services.{module_path}", source_functions)
+                test_content = generate_service_test(
+                    f"services.{module_path}", source_functions
+                )
                 test_file.write_text(test_content)
                 stats["created"] += 1
                 print(f"    ✨ Created new test file: {test_file}")
             else:
                 existing_classes = analyze_test_file(str(test_file))
                 missing_functions = [
-                    f for f in source_functions if f"Test{f.title()}" not in existing_classes
+                    f
+                    for f in source_functions
+                    if f"Test{f.title()}" not in existing_classes
                 ]
                 if missing_functions:
                     content_to_append = ""
                     for func_name in missing_functions:
-                        content_to_append += generate_single_service_test_class(func_name)
+                        content_to_append += generate_single_service_test_class(
+                            func_name
+                        )
 
                     with test_file.open("a") as f:
                         f.write(content_to_append + "\n")
                     stats["updated"] += 1
-                    print(f"    🔄 Appended {len(missing_functions)} missing test class(es) to {test_file}")
+                    print(
+                        f"    🔄 Appended {len(missing_functions)} missing test class(es) to {test_file}"
+                    )
                 else:
                     print("    ✅ All tests are present.")
             stats["services"] += 1
@@ -325,7 +355,9 @@ def main():
                     try:
                         test_file.unlink()
                         stats["deleted"] += 1
-                        print(f"  🔥 Deleted orphan: {test_file.relative_to(tests_dir)}")
+                        print(
+                            f"  🔥 Deleted orphan: {test_file.relative_to(tests_dir)}"
+                        )
                     except OSError as e:
                         print(f"  ❌ Error deleting {test_file}: {e}")
 
@@ -338,8 +370,11 @@ def main():
     # --- Summary ---
     print("\n📊 Summary:")
     print(f"  Processed: {stats['routes']} routes, {stats['services']} services")
-    print(f"  ✨ Created: {stats['created']} | 🔄 Updated: {stats['updated']} | 🔥 Deleted: {stats['deleted']}")
+    print(
+        f"  ✨ Created: {stats['created']} | 🔄 Updated: {stats['updated']} | 🔥 Deleted: {stats['deleted']}"
+    )
     print("\n✅ Pytest test generation complete!")
+
 
 if __name__ == "__main__":
     main()

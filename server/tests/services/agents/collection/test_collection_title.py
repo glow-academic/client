@@ -1,11 +1,12 @@
 """
 Tests for app.services.agents.collection.title
 """
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock
 from sqlmodel import Session
-from uuid import uuid4
 from app.services.agents.collection.title import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +15,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `run_title_agent`")
 class TestRun_Title_Agent:
@@ -28,4 +30,3 @@ class TestRun_Title_Agent:
         """Test run_title_agent error handling."""
         # TODO: Implement error test for run_title_agent
         assert False, "IMPLEMENT: Error test for run_title_agent"
-

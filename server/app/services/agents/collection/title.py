@@ -20,9 +20,11 @@ async def run_title_agent(
     agent = session.exec(select(Agents).where(Agents.name == "Title")).one()
     if not agent:
         raise ValueError("Title agent not found")
-    
+
     # find chat with id
-    chat = session.exec(select(AssistantChats).where(AssistantChats.id == chat_id)).one()
+    chat = session.exec(
+        select(AssistantChats).where(AssistantChats.id == chat_id)
+    ).one()
     if not chat:
         raise ValueError("Chat not found")
 
@@ -30,12 +32,14 @@ async def run_title_agent(
     model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
     if not model:
         raise ValueError(f"Model with ID {agent.model_id} not found")
-    
+
     # getting the provider from the model's provider_id
-    provider = session.exec(select(Providers).where(Providers.id == model.provider_id)).one()
+    provider = session.exec(
+        select(Providers).where(Providers.id == model.provider_id)
+    ).one()
     if not provider:
         raise ValueError(f"Provider with ID {model.provider_id} not found")
-    
+
     agent_instance = GenericAgent(
         agent_name=agent.name,
         system_prompt=agent.system_prompt,

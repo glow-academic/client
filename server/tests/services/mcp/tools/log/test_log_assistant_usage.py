@@ -1,11 +1,12 @@
 """
 Tests for app.services.mcp.tools.log.assistant_usage
 """
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock
 from sqlmodel import Session
-from uuid import uuid4
 from app.services.mcp.tools.log.assistant_usage import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +15,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `assistant_usage`")
 class TestAssistant_Usage:
@@ -28,4 +30,3 @@ class TestAssistant_Usage:
         """Test assistant_usage error handling."""
         # TODO: Implement error test for assistant_usage
         assert False, "IMPLEMENT: Error test for assistant_usage"
-

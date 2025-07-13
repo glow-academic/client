@@ -1,11 +1,12 @@
 """
 Tests for app.services.agents.collection.grade
 """
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock
 from sqlmodel import Session
-from uuid import uuid4
 from app.services.agents.collection.grade import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +15,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `create_safe_field_name`")
 class TestCreate_Safe_Field_Name:
@@ -32,6 +34,7 @@ class TestCreate_Safe_Field_Name:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `create_dynamic_rubric_model`")
 class TestCreate_Dynamic_Rubric_Model:
     """Tests for create_dynamic_rubric_model function."""
@@ -49,6 +52,7 @@ class TestCreate_Dynamic_Rubric_Model:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `run_grade_agent`")
 class TestRun_Grade_Agent:
     """Tests for run_grade_agent function."""
@@ -62,4 +66,3 @@ class TestRun_Grade_Agent:
         """Test run_grade_agent error handling."""
         # TODO: Implement error test for run_grade_agent
         assert False, "IMPLEMENT: Error test for run_grade_agent"
-
