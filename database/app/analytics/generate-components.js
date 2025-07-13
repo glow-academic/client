@@ -281,7 +281,7 @@ function scanComponents(dir, basePath = "") {
         uuid: generateDeterministicUUID(relativePath),
         titleCase: toTitleCase(componentName),
         camelCase: toCamelCase(componentName),
-        importPath: `./${relativePath.replace(/\\/g, "/").replace(".tsx", "")}`,
+        importPath: `@/components/common/analytics/${relativePath.replace(/\\/g, "/").replace(".tsx", "")}`,
       });
     }
   }
