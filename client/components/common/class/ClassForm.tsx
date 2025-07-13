@@ -183,7 +183,9 @@ export default function ClassForm({ classId }: ClassFormProps) {
 
       const toastId = toast.loading("Processing course information...");
 
-      const result = await processCourse(classId);
+      const isCypress =
+      typeof window !== "undefined" && "Cypress" in window;
+      const result = await processCourse(classId, isCypress);
 
       if (!result.success) {
         throw new Error(
@@ -194,8 +196,6 @@ export default function ClassForm({ classId }: ClassFormProps) {
       toast.dismiss(toastId);
 
       if (result.status === "success") {
-        toast.success("Course information processed successfully!");
-
         // Show details of what was updated
         if (result.updates_made && result.updates_made.length > 0) {
           toast.info(`Updated: ${result.updates_made.join(", ")}`);
@@ -211,6 +211,8 @@ export default function ClassForm({ classId }: ClassFormProps) {
             debug_info: result.debug_info,
           });
         }
+
+        toast.success("Course information processed successfully!");
       } else {
         throw new Error(result.message || "Course processing failed");
       }
@@ -312,11 +314,17 @@ export default function ClassForm({ classId }: ClassFormProps) {
             },
             onSuccess: async () => {
               try {
+                const isCypress =
+                  typeof window !== "undefined" && "Cypress" in window;
                 await finalizeDocumentUpload(
                   fileId,
                   finalClassId!,
                   doc.file.type === "application/zip",
-                  true
+                  true,
+                  undefined,
+                  undefined,
+                  undefined,
+                  isCypress
                 );
                 resolve();
               } catch (error) {

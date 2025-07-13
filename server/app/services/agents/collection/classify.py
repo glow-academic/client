@@ -25,7 +25,7 @@ class Classify(BaseModel):
 
 
 async def run_classify_agent(
-    class_id: uuid.UUID, session: Session = Depends(get_session)
+    class_id: uuid.UUID, test: bool = False, session: Session = Depends(get_session)
 ) -> dict[str, Any]:
     """
     This function is used to run the classify agent.
@@ -33,6 +33,7 @@ async def run_classify_agent(
 
     Args:
         class_id: The ID of the class
+        test: Whether to run the agent in test mode
 
     Returns:
         A dictionary containing classification results and statistics.
@@ -98,8 +99,20 @@ async def run_classify_agent(
 
     try:
         with trace(f"{class_data.name} Document Classification"):
-            result = await Runner.run(classify_agent.agent(), input=formatted_documents)
-            classification = result.final_output_as(Classify)
+            if test:
+                # mark all documents as homeworks
+                classification = Classify(
+                    homeworks=[str(i) for i in range(1, len(documents) + 1)],
+                    projects=[],
+                    quizzes=[],
+                    midterms=[],
+                    labs=[],
+                    lectures=[],
+                    syllabi=[],
+                )
+            else:
+                result = await Runner.run(classify_agent.agent(), input=formatted_documents)
+                classification = result.final_output_as(Classify)
 
         # Update the type of all the mapped documents
         classified_count = 0

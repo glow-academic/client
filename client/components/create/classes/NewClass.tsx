@@ -138,13 +138,18 @@ export default function NewClass() {
                 autoClassify: true,
                 autoCourseProcess: true,
               };
+              const isCypress =
+              typeof window !== "undefined" && "Cypress" in window;
 
               const response = await finalizeDocumentUpload(
                 finalizePayload.fileId,
                 tempClassId,
                 true,
                 true,
-                true
+                true,
+                undefined,
+                undefined,
+                isCypress
               );
 
               if (!response.success) {
@@ -309,6 +314,7 @@ export default function NewClass() {
 
                   <input
                     id="zip-upload"
+                    data-testid="file-input"
                     ref={fileInputRef}
                     type="file"
                     accept=".zip"

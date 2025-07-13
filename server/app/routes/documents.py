@@ -31,6 +31,7 @@ router = APIRouter()
 @router.post("/classify")
 async def classify_documents(
     class_id: uuid.UUID,
+    test: bool = False,
     session: Session = Depends(get_session),
 ) -> JSONResponse:
     """
@@ -38,7 +39,7 @@ async def classify_documents(
     """
     try:
         # Run the classification agent
-        result = await run_classify_agent(class_id, session)
+        result = await run_classify_agent(class_id, test, session)
 
         if result["success"]:
             return JSONResponse(
@@ -74,14 +75,14 @@ async def classify_documents(
 
 @router.post("/course")
 async def course_processing(
-    class_id: uuid.UUID, session: Session = Depends(get_session)
+    class_id: uuid.UUID, test: bool = False, session: Session = Depends(get_session)
 ) -> JSONResponse:
     """
     Process a course using the course agent to extract course information
     """
     try:
         # Run the course agent
-        result = await run_course_agent(class_id, session)
+        result = await run_course_agent(class_id, test, session)
 
         if result["success"]:
             return JSONResponse(
@@ -416,6 +417,7 @@ async def finalize_upload(
         profile = body.get("profile")
         class_id = body.get("classId")
         is_csv = body.get("csv", False)
+        test = body.get("test", False)
 
         if not file_id:
             return JSONResponse(
@@ -600,7 +602,7 @@ async def finalize_upload(
                             session.add(document)
                             extracted_documents.append(
                                 {
-                                    "id": document_id,
+                                    "id": str(document_id),
                                     "name": filename,
                                     "mime_type": mime_type,
                                 }
@@ -633,7 +635,7 @@ async def finalize_upload(
                             run_classify_agent
 
                         classification_result = await run_classify_agent(
-                            class_id, session
+                            class_id, test, session
                         )
                         logger.info(
                             f"Auto-classification completed: {classification_result}"
@@ -647,7 +649,7 @@ async def finalize_upload(
                         ):
                             try:
                                 course_result = await run_course_agent(
-                                    class_id, session
+                                    class_id, test, session
                                 )
                                 logger.info(
                                     f"Auto-course processing completed: {course_result}"

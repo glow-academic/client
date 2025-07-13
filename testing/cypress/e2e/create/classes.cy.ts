@@ -4,7 +4,7 @@ describe("Classes End-to-End Tests", () => {
   // --- Test Variables ---
   const baseClassName = `Intro to Testing - ${Date.now()}`;
   const manualClassName = `${baseClassName} (Manual)`;
-  const zipClassName = `${baseClassName} (ZIP)`;
+  const zipClassName = `test-archive`;
   const updatedClassName = `${manualClassName} (Updated)`;
 
   beforeEach(() => {
@@ -24,7 +24,10 @@ describe("Classes End-to-End Tests", () => {
 
     // --- 2. READ ---
     cy.log("--- STARTING READ ---");
-    cy.url().should("include", "/create/classes");
+    cy.location("pathname", { timeout: 20_000 }).should(
+      "match",
+      /\/create\/classes(\/)?$/
+    );
     cy.findByRole("article", { name: manualClassName }).should("be.visible");
     cy.task("db:findClass", { name: manualClassName }).should("exist");
 
@@ -35,12 +38,20 @@ describe("Classes End-to-End Tests", () => {
       .findByTestId(/^edit-/)
       .click();
 
-    cy.findByLabelText(/Class Name/i).clear().type(updatedClassName);
-    cy.findByTestId("file-input").selectFile("cypress/fixtures/test-document.pdf", { force: true });
+    cy.findByLabelText(/Class Name/i)
+      .clear()
+      .type(updatedClassName);
+    cy.findByTestId("file-input").selectFile(
+      "cypress/fixtures/test-document.pdf",
+      { force: true }
+    );
     cy.contains("p", "test-document.pdf").should("be.visible");
     cy.findByRole("button", { name: /Update Class/i }).click();
 
-    cy.url().should("include", "/create/classes");
+    cy.location("pathname", { timeout: 20_000 }).should(
+      "match",
+      /\/create\/classes(\/)?$/
+    );
     cy.findByRole("article", { name: updatedClassName }).should("be.visible");
     cy.task("db:findClass", { name: updatedClassName }).should("exist");
 
@@ -54,8 +65,9 @@ describe("Classes End-to-End Tests", () => {
     cy.findByRole("dialog").within(() => {
       cy.findByRole("button", { name: "Process Course" }).click();
     });
-    cy.contains("Course information processed successfully!", { timeout: 30000 })
-      .should("be.visible");        // no mock, waits for the real toast
+    cy.contains("Course information processed successfully!").should(
+      "be.visible"
+    );
 
     // --- 5. DELETE ---
     cy.log("--- STARTING DELETE ---");
@@ -77,20 +89,33 @@ describe("Classes End-to-End Tests", () => {
     /* unchanged except you can delete the intercept wait
        because we want the real ZIP upload now */
     cy.visit("/create/classes/new");
-    cy.get('input[type="file"]').first().selectFile(
-      {
-        contents: "cypress/fixtures/test-archive.zip",
-        fileName: `${zipClassName}.zip`,
-        mimeType: "application/zip",
-      },
+    cy.findByTestId("file-input").selectFile(
+      `cypress/fixtures/${zipClassName}.zip`,
       { force: true }
     );
-    
-    cy.url({ timeout: 20000 }).should("include", "/create/classes/new/c/");
+
+    cy.location("pathname").should(
+      "match",
+      /\/create\/classes\/new\/c\/[^/]+$/ // uuid present
+    );
     cy.contains("Processing complete!").should("be.visible");
 
     cy.visit("/create/classes");
-    cy.contains("article", zipClassName, { timeout: 10000 }).should("be.visible");
+    cy.findByRole("article", { name: zipClassName }).should("be.visible");
     cy.task("db:findClass", { name: zipClassName }).should("exist");
+
+    // --- 2. DELETE ---
+    cy.log("--- STARTING DELETE ---");
+    cy.visit("/create/classes");
+    cy.findByRole("article", { name: zipClassName })
+      .findByTestId(/^delete-/)
+      .click();
+
+    cy.findByRole("alertdialog").within(() => {
+      cy.findByRole("button", { name: "Delete" }).click();
+    });
+
+    cy.contains("article", zipClassName).should("not.exist");
+    cy.task("db:findClass", { name: zipClassName }).should("not.exist");
   });
 });

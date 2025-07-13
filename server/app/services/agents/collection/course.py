@@ -123,7 +123,7 @@ def extract_text_from_file(file_path: str, mime_type: str) -> str:
 
 
 async def run_course_agent(
-    class_id: uuid.UUID, session: Session = Depends(get_session)
+    class_id: uuid.UUID, test: bool = False, session: Session = Depends(get_session)
 ) -> dict[str, Any]:
     """
     This function is used to run the course agent.
@@ -131,7 +131,7 @@ async def run_course_agent(
 
     Args:
         class_id: The ID of the class
-
+        test: Whether to run the agent in test mode
     Returns:
         A dictionary containing course results and statistics.
     """
@@ -213,8 +213,24 @@ async def run_course_agent(
 
     try:
         with trace(f"{class_data.name} ZIP File Analysis"):
-            result = await Runner.run(course_agent.agent(), input=formatted_documents)
-            course = result.final_output_as(Course)
+            if test:
+                course = Course(
+                    name=class_data.name, # echo the class name
+                    code=class_data.class_code, # echo the class code
+                    desc=class_data.description, # echo the class description
+                    year=class_data.year, # echo the class year
+                    term=class_data.term, # echo the class term
+                    topics=["Test Topic 1", "Test Topic 2"], # echo the class topics
+                    prereqs=["Test Prereq 1", "Test Prereq 2"], # echo the class prerequisites
+                    schedules=[
+                        Schedule(name="Test Schedule 1", description="Test Schedule Description", events=["Test Event 1", "Test Event 2"]),
+                        Schedule(name="Test Schedule 2", description="Test Schedule Description", events=["Test Event 3", "Test Event 4"]),
+                    ],
+                    debug_info="Test Debug Info",
+                )
+            else:
+                result = await Runner.run(course_agent.agent(), input=formatted_documents)
+                course = result.final_output_as(Course)
 
         # Log debug info if available
         if course.debug_info:
@@ -240,8 +256,12 @@ async def run_course_agent(
             updates_made.append(f"year: {course.year}")
 
         if course.term and course.term != class_data.term:
-            class_data.term = course.term
-            updates_made.append(f"term: {course.term}")
+            if course.term.lower() in ["spring", "summer", "fall"]:
+                class_data.term = course.term
+                updates_made.append(f"term: {class_data.term}")
+            else:
+                class_data.term = "fall"
+                updates_made.append(f"term: {class_data.term} (invalid term, defaulting to fall)")
 
         # Handle topics - delete existing and create new ones
         if course.topics:

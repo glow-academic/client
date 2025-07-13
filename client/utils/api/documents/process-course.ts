@@ -23,11 +23,12 @@ export interface ProcessCourseResponse {
 }
 
 export async function processCourse(
-  classId: string
+  classId: string,
+  test: boolean = false
 ): Promise<ProcessCourseResponse> {
   try {
     const response = await fetch(
-      `${getApiBase()}/documents/course?class_id=${classId}`,
+      `${getApiBase()}/documents/course?class_id=${classId}&test=${test}`,
       {
         method: "POST",
       }
