@@ -9,7 +9,7 @@ import json
 import logging
 import uuid
 import warnings
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import socketio  # type: ignore
 from agents import gen_trace_id
@@ -20,8 +20,6 @@ from app.services.agents.collection.assistant import (
     run_assistant_agent,
 )
 from app.services.agents.collection.title import run_title_agent
-from app.utils.audio import Modalities
-from sqlmodel import Session
 
 # Suppress Pydantic serialization warnings from OpenAI SDK
 warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
@@ -174,9 +172,6 @@ async def handle_stop_assistant(sid: str, data: Dict[str, Any]) -> None:
 async def process_assistant_message_websocket(
     chat_id: uuid.UUID,
     message: str,
-    audio_mode: Modalities = Modalities.TEXT_TEXT,
-    audio_data: Optional[bytes] = None,
-    session: Optional[Session] = None,
 ) -> None:
     """
     Process an assistant message and stream the response via WebSocket

@@ -15,7 +15,6 @@ from app.routes.audio import router as audio_router
 from app.routes.documents import router as documents_router
 from app.routes.scenarios import router as scenarios_router
 from app.routes.sketch import router as sketch_router
-from app.utils.audio import Modalities
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -204,11 +203,7 @@ async def send_assistant_message(sid: str, data: Dict[str, Any]) -> None:
         from app.web.assistants import process_assistant_message_websocket
 
         await process_assistant_message_websocket(
-            chat_id=uuid.UUID(chat_id),
-            message=message,
-            audio_mode=Modalities.TEXT_TEXT,
-            audio_data=None,
-            session=None,
+            chat_id=uuid.UUID(chat_id), message=message
         )
 
         logger.info(f"Completed processing send_assistant_message for {chat_id}")
