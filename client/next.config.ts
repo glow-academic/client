@@ -1,45 +1,24 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  // Enable standalone output for optimized Docker builds
-  output: "standalone",
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  basePath: process.env['NEXT_PUBLIC_BASE_PATH'] || '',  // "/beta" in beta
+  output:   'standalone',
   devIndicators: false,
-  // Disable trailing slash redirects to fix Socket.IO proxy
   trailingSlash: false,
   skipTrailingSlashRedirect: true,
-  eslint: {
-    // Fail the build on ESLint errors
-    ignoreDuringBuilds: false,
-  },
-  typescript: {
-    // Fail the build on TypeScript errors - this ensures Next.js respects TS errors
-    ignoreBuildErrors: false,
-    // Run full type checking during build (slower but more comprehensive)
-    tsconfigPath: "./tsconfig.json",
-  },
-  // Enable strict mode for better error catching
-  reactStrictMode: false, // Temporarily disabled to fix WebSocket connection issues
 
-  // Fix pg-related issues - updated for Next.js 15+
-  serverExternalPackages: ["pg", "@auth/pg-adapter"],
+  eslint:     { ignoreDuringBuilds: false },
+  typescript: { ignoreBuildErrors: false, tsconfigPath: './tsconfig.json' },
+
+  reactStrictMode: false,
+  serverExternalPackages: ['pg', '@auth/pg-adapter'],
 
   webpack: (config, { isServer, webpack }) => {
     if (!isServer) {
-      // Ignore pg-native on client-side builds
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        "pg-native": false,
-        "cloudflare:sockets": false,
-      };
+      config.resolve.fallback = { ...config.resolve.fallback, 'pg-native': false, 'cloudflare:sockets': false };
     }
-
-    // Ignore optional dependencies that cause build issues
     config.plugins.push(
-      new webpack.IgnorePlugin({
-        resourceRegExp: /^pg-native$|^cloudflare:sockets$/,
-      })
+      new webpack.IgnorePlugin({ resourceRegExp: /^pg-native$|^cloudflare:sockets$/ })
     );
-
     return config;
   },
 };

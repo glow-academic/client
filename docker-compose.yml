@@ -20,15 +20,10 @@ services:
   # WebRTC Service
   # --------------------
   webrtc:
-    container_name: glow-webrtc
+    container_name: ${CONTAINER_PREFIX}-webrtc
     build: ./web
     profiles: ["webrtc"]          # <─── this hides the entire service
     env_file: .env
-    environment:
-      - TURN_REALM=${TURN_REALM}
-      - TURN_USERNAME=${TURN_USERNAME}
-      - TURN_PASSWORD=${TURN_PASSWORD}
-      - TURN_PUBLIC_IP=${TURN_PUBLIC_IP}
     ports:
       - "443:443"
     networks:
@@ -39,7 +34,7 @@ services:
   # Database Service
   # --------------------
   database:
-    container_name: glow-database
+    container_name: ${CONTAINER_PREFIX}-database
     build:
       context: ./database
       dockerfile: Dockerfile
@@ -48,18 +43,11 @@ services:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
-      - CLEAN_DB=${CLEAN_DB:-true}
       - HISTORY_DIR=/database/history
-      # Required for model generation script
-      - SECRET_KEY=${SECRET_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./client/components:/client/components  # Mount client components with write access for analytics generation
       - history-data:/database/history 
-    ports:
-      - "${DB_PORT}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
@@ -72,7 +60,7 @@ services:
   # Model Service (for Whisper + Kokoro)
   # --------------------
   model:
-    container_name: glow-model
+    container_name: ${CONTAINER_PREFIX}-model
     build: ./server/model
     env_file: .env
     profiles: ["webrtc"] 
@@ -120,9 +108,8 @@ services:
       dockerfile: Dockerfile
     env_file: .env
     environment:
-      - DB_HOST=database
+      - DB_PORT=5432
       - DOCKER_ENV=1
-      - REDIS_URL=redis://redis:6379/0   # ← used by app.main (see diff below)
     volumes:
       - uploads:/app/uploads   # Docker volume for uploads
       - audio-data:/app/audio
@@ -153,7 +140,7 @@ services:
   # Next.js Client
   # --------------------
   client:
-    container_name: glow-client
+    container_name: ${CONTAINER_PREFIX}-client
     build:
       context: ./client
       dockerfile: Dockerfile
@@ -161,15 +148,16 @@ services:
         DB_USER: ${DB_USER}
         DB_PASSWORD: ${DB_PASSWORD}
         DB_NAME: ${DB_NAME}
-        DB_PORT: ${DB_PORT}
-        DB_HOST: database
+        DB_PORT: 5432 # since we are running internally
+        DB_HOST: ${DB_HOST}
         AUTH_URL: ${AUTH_URL}
         AUTH_SECRET: ${AUTH_SECRET}
         AUTH_MICROSOFT_ENTRA_ID_ID: ${AUTH_MICROSOFT_ENTRA_ID_ID}
         AUTH_MICROSOFT_ENTRA_ID_SECRET: ${AUTH_MICROSOFT_ENTRA_ID_SECRET}
+        NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH}
     env_file: .env
     environment:
-      - DB_HOST=database
+      - DB_PORT=5432
       - HOSTNAME=0.0.0.0
       - PORT=3000
     healthcheck:
@@ -191,7 +179,7 @@ services:
   # E2E Testing Service
   # --------------------
   testing:
-    container_name: glow-testing
+    container_name: ${CONTAINER_PREFIX}-testing
     build:
       context: ./database
       dockerfile: Dockerfile.cypress
@@ -200,11 +188,7 @@ services:
       - CYPRESS_baseUrl=http://client:3000
       - CYPRESS_apiUrl=http://server:8000
       # Database connection for Cypress tasks
-      - DB_HOST=database
       - DB_PORT=5432
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
       # CI environment for headless mode
       - CI=1
     depends_on:
@@ -235,19 +219,29 @@ services:
   # --------------------
   nginx:
     image: nginx:1.25
-    container_name: glow-nginx
+    container_name: ${CONTAINER_PREFIX}-nginx
+    env_file: .env
     volumes:
-      - ./web/nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      client:
-        condition: service_healthy
-      server:
-        condition: service_healthy
+      - ./web/nginx.conf.template:/etc/nginx/nginx.conf.template:ro
+    # 1) run envsubst, 2) start nginx
+    entrypoint:
+      - sh
+      - -c
+      - |
+        # only replace ${APP_PREFIX} in the template:
+        envsubst '${APP_PREFIX}' \
+          < /etc/nginx/nginx.conf.template \
+          > /etc/nginx/nginx.conf
+
+        exec nginx -g 'daemon off;'
     ports:
       - "${CLIENT_PORT:-3000}:80"
+    depends_on:
+      - client
+      - server
     networks:
-      - internal        # to reach client+server
-      - public_net      # to be reachable from outside
+      - internal
+      - public_net
 
 volumes:
   pgdata:
