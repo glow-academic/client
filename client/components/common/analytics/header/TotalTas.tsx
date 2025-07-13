@@ -39,7 +39,7 @@ type ColorTheme =
   | "indigo";
 type TimeRange = "7d" | "30d" | "90d";
 
-interface TotalTasProps {
+export interface TotalTasProps {
   color?: ColorTheme;
   timeRange?: TimeRange;
   title?: string;

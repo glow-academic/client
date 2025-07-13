@@ -48,7 +48,7 @@ type ColorTheme =
 type TimeRange = "7d" | "30d" | "90d";
 type ChartType = "area" | "line";
 
-interface PerformanceTrendsProps {
+export interface PerformanceTrendsProps {
   color?: ColorTheme;
   defaultTimeRange?: TimeRange;
   chartType?: ChartType;

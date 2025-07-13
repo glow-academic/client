@@ -39,7 +39,7 @@ from app.services.agents.collection.grade import run_grade_agent
 from app.services.agents.collection.scenario import run_scenario_agent
 from app.services.agents.collection.simulation import (cancel_simulation_run,
                                                        run_simulation_agent)
-from app.services.agents.voice.simulation import SimulationPipeline
+from app.services.agents.voice.voice_simulation import SimulationPipeline
 from app.utils.audio import (FRAME_MS, TARGET_SR, Modalities, VadDetector,
                              resample_and_chunk_audio)
 from app.utils.scenario import randomly_fill_scenario_attributes

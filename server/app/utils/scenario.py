@@ -233,4 +233,5 @@ async def randomly_fill_scenario_attributes(
         location=scenario_location,
         tod=scenario_tod,
         urgency=scenario_urgency,
+        generated=True,
     )

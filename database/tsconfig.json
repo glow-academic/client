@@ -14,13 +14,12 @@
     "jsx": "preserve",
     "incremental": true,
     "baseUrl": ".",
-    "types": ["cypress", "node"],
+    "types": ["node"],
     "skipLibCheck": true
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    "cypress/**/*"
+    "**/*.tsx"
   ],
   "exclude": [
     "node_modules"

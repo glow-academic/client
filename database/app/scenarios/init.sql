@@ -25,7 +25,8 @@ CREATE TABLE scenarios (
   tod time_of_day NULL,
   urgency urgency_type NULL,
   documents UUID[]       NULL,
-  default_scenario BOOLEAN     NOT NULL DEFAULT FALSE
+  default_scenario BOOLEAN     NOT NULL DEFAULT FALSE,
+  generated BOOLEAN     NOT NULL DEFAULT FALSE -- if true, the scenario was generated realtime
 );
 
 -- ============================================================================

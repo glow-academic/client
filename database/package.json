@@ -13,9 +13,6 @@
     "tables": "bash scripts/sql-helpers.sh tables",
     "users": "bash scripts/sql-helpers.sh users",
     "counts": "bash scripts/sql-helpers.sh counts",
-    "test": "yarn test:cypress",
-    "test:cypress": "cypress run --headless",
-    "test:cypress:open": "cypress open",
     "drizzle:migrate": "npx drizzle-kit migrate",
     "drizzle:generate": "npx drizzle-kit generate",
     "drizzle:studio": "npx drizzle-kit studio",
@@ -32,7 +29,6 @@
   "devDependencies": {
     "@types/node": "^20.19.0",
     "@types/pg": "^8.15.4",
-    "cypress": "^13.6.0",
     "typescript": "^5.8.3"
   }
 }

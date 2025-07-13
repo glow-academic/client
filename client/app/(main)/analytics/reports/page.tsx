@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
-import Reports from "@/components/analytics/Reports";
+import Reports from "@/components/analytics/report/Reports";
 
 import type { Metadata } from "next";
 

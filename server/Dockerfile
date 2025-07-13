@@ -43,12 +43,11 @@ COPY --from=deps /install /usr/local
 # # Download the SpaCy model needed by Kokoro
 # RUN python -m spacy download en_core_web_sm
 
-# Run unit tests as part of the build process (COMMENTED OUT FOR NOW)
-# Uncomment the lines below when you want to enable testing in the build
-# COPY requirements.txt .
-# COPY tests/ tests/
-# RUN echo "🧪 Running server unit tests..." && \
-#     python -m pytest tests/ -v --tb=short
+# Run unit tests as part of the build process
+COPY requirements.txt .
+COPY tests/ tests/
+RUN echo "🧪 Running server unit tests..." && \
+    python -m pytest tests/ -v --tb=short
 
 # Copy application source last (better layer cache)
 COPY . .

@@ -38,7 +38,7 @@ import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { GripVertical, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-interface CohortProps {
+export interface CohortProps {
   cohortId?: string;
 }
 

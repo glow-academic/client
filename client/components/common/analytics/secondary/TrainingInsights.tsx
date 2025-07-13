@@ -36,7 +36,7 @@ type ColorTheme =
   | "indigo";
 type Layout = "vertical" | "horizontal";
 
-interface TrainingInsightsProps {
+export interface TrainingInsightsProps {
   className?: string;
   color?: ColorTheme;
   maxItems?: number;

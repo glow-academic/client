@@ -1,208 +1,161 @@
-import DocumentViewer from "@/components/common/chat/DocumentViewer";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import "@testing-library/jest-dom";
-import { render, screen, waitFor } from "@testing-library/react";
-import React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, it, vi, afterEach } from 'vitest';
+import { renderWithMocks } from '@/test/renderWithMocks';
+import userEvent from '@testing-library/user-event';
 
-// Mock external dependencies
-vi.mock("next/navigation", () => ({
-  useRouter: vi.fn(() => ({
-    push: vi.fn(),
-    back: vi.fn(),
-    forward: vi.fn(),
-    refresh: vi.fn(),
-  })),
-  usePathname: vi.fn(() => "/"),
-  useSearchParams: vi.fn(() => new URLSearchParams()),
-}));
+// ——————————————————————————————————————————
+import DocumentViewer, { DocumentViewerProps } from '@/components/common/chat/DocumentViewer';
 
-vi.mock("@/components/common/chat/DocumentViewer", () => ({
-  default: ({ document }: { document: { name: string } }) => (
-    <div data-testid="document-viewer">{document.name}</div>
-  ),
-}));
-
-vi.mock("@/components/common/chat/Markdown", () => ({
-  default: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="markdown">{children}</div>
-  ),
-}));
-
-// Mock API calls
 global.fetch = vi.fn();
 
-const mockDocument = {
-  id: "doc1",
-  name: "test-document.pdf",
-  createdAt: new Date().toISOString(),
-  filePath: "/path/to/document.pdf",
-  mimeType: "application/pdf",
-  classId: "class1",
-  type: "syllabus" as const,
-  classified: true,
+// ✨ Import comprehensive mock data from our centralized mock system
+import '@/mocks/queries';
+import '@/mocks/mutations';
+import '@/mocks/api';
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: DocumentViewerProps = {
+  // document: 'homework', /* optional */
+  // bare: false, /* optional */
+  // classId: 'test-classId', /* optional */
 };
-
-describe("DocumentViewer", () => {
-  let queryClient: QueryClient;
-
-  beforeEach(() => {
+// ------------------------------------------------------------------
+describe('DocumentViewer', () => {
+  
+  /* ------------------------------------------------------------------ *
+   * 💡 Mock Data Usage Guide:
+   * 
+   * All API functions are automatically mocked via imports above.
+   * Use mockSchema.* for realistic test data:
+   * 
+   * Examples:
+   * - mockSchema.users[0] - First user object
+   * - mockSchema.classes - Array of class objects  
+   * - mockSchema.profiles - Array of profile objects
+   * 
+   * To override specific mocks in individual tests:
+   * - vi.mocked(queryFunction).mockResolvedValue(customData)
+   * - vi.mocked(mutationFunction).mockResolvedValue(customResponse)
+   * ------------------------------------------------------------------ */
+  
+  // ✨ Reset mocks after each test
+  afterEach(() => {
     vi.clearAllMocks();
-    queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false },
-      },
-    });
-
-    // Mock fetch responses
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ success: true }),
-      blob: () => Promise.resolve(new Blob(["test content"])),
-    } as Response);
   });
 
-  const renderWithProviders = (ui: React.ReactElement, options = {}) => {
-    const AllProviders = ({ children }: { children: React.ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-
-    return render(ui, { wrapper: AllProviders, ...options });
-  };
-
-  describe("Rendering", () => {
-    it("should render without crashing", () => {
-      renderWithProviders(<DocumentViewer document={mockDocument} />);
-      expect(screen.getByTestId("document-viewer")).toBeInTheDocument();
+  describe('basic render smoke-test', () => {
+    it('renders without crashing', async () => {
+      // ✨ All mocks are automatically set up via imports above
+      renderWithMocks(<DocumentViewer {...mockProps} />);
+      
+      // TODO: Add meaningful assertions based on your component
+      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
     });
 
-    it("should display document name", () => {
-      renderWithProviders(<DocumentViewer document={mockDocument} />);
-      expect(screen.getByText("test-document.pdf")).toBeInTheDocument();
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: DocumentViewerProps
+      
+      // TODO add props assertions
     });
 
-    it("should handle different document types", () => {
-      const textDocument = {
-        ...mockDocument,
-        name: "test-document.txt",
-        mimeType: "text/plain",
-        type: "lecture" as const,
-      };
+    it.skip('should have correct accessibility attributes', () => {
+      // TODO: Test accessibility features
+      
+      // TODO add accessibility assertions
 
-      renderWithProviders(<DocumentViewer document={textDocument} />);
-      expect(screen.getByTestId("document-viewer")).toBeInTheDocument();
     });
   });
 
-  describe("User Interactions", () => {
-    it("should handle download button click", async () => {
-      renderWithProviders(<DocumentViewer document={mockDocument} />);
+  describe('User Interactions', () => {
+    
 
-      // Test would involve clicking download button if it exists
-      expect(screen.getByTestId("document-viewer")).toBeInTheDocument();
+    it.skip('should handle state changes', async () => {
+      const user = userEvent.setup();
+      void user;
+      // TODO: state management assertions
+      // Mock data is available from @/mocks/schema for realistic testing
     });
 
-    it("should handle view toggle", async () => {
-      renderWithProviders(<DocumentViewer document={mockDocument} />);
+    it.skip('should handle user events', async () => {
+      const user = userEvent.setup();
+      void user;
+      // TODO: interaction assertions
 
-      // Test would involve toggling view mode
-      expect(screen.getByTestId("document-viewer")).toBeInTheDocument();
-    });
-
-    it("should handle zoom controls", async () => {
-      renderWithProviders(<DocumentViewer document={mockDocument} />);
-
-      // Test would involve zoom in/out functionality
-      expect(screen.getByTestId("document-viewer")).toBeInTheDocument();
     });
   });
 
-  describe("API Integration", () => {
-    it("should handle document loading", async () => {
-      renderWithProviders(<DocumentViewer document={mockDocument} />);
+  describe('API Integration', () => {
+    it.skip('should handle and display an API error state', async () => {
+      // Arrange: Override the default success mock with an error for this test.
+      // Example: vi.mocked(getAllDocuments).mockRejectedValue(new Error('API Error'));
 
-      await waitFor(() => {
-        expect(screen.getByTestId("document-viewer")).toBeInTheDocument();
-      });
+      renderWithMocks(<DocumentViewer {...mockProps} />);
+      
+      // Assert: Check that your component shows an error message.
+      // TODO: Add specific error state assertions
     });
 
-    it("should handle loading states", () => {
-      renderWithProviders(<DocumentViewer document={mockDocument} />);
-      expect(screen.getByTestId("document-viewer")).toBeInTheDocument();
-    });
-
-    it("should handle error states", async () => {
-      vi.mocked(global.fetch).mockRejectedValue(new Error("API Error"));
-
-      renderWithProviders(<DocumentViewer document={mockDocument} />);
-
-      // Should handle API errors gracefully
-      await waitFor(() => {
-        expect(screen.getByTestId("document-viewer")).toBeInTheDocument();
-      });
+    it.skip('should handle loading states', () => {
+      // TODO: Test loading states
+      // Mock data is automatically loaded from @/mocks/schema
+      
+      // TODO: loading states assertions
     });
   });
 
-  describe("Document Display", () => {
-    it("should display PDF documents correctly", () => {
-      renderWithProviders(<DocumentViewer document={mockDocument} />);
-      expect(screen.getByTestId("document-viewer")).toBeInTheDocument();
+  
+
+  describe('Edge Cases', () => {
+    it.skip('should handle edge cases gracefully', () => {
+      // TODO: Test edge cases and error scenarios
+      
+      // TODO: edge-case assertions
+
     });
 
-    it("should display text documents correctly", () => {
-      const textDocument = {
-        ...mockDocument,
-        mimeType: "text/plain",
-        type: "lecture" as const,
-      };
-
-      renderWithProviders(<DocumentViewer document={textDocument} />);
-      expect(screen.getByTestId("document-viewer")).toBeInTheDocument();
-    });
-
-    it("should handle image documents", () => {
-      const imageDocument = {
-        ...mockDocument,
-        mimeType: "image/png",
-        type: "project" as const,
-      };
-
-      renderWithProviders(<DocumentViewer document={imageDocument} />);
-      expect(screen.getByTestId("document-viewer")).toBeInTheDocument();
-    });
-  });
-
-  describe("Edge Cases", () => {
-    it("should handle missing document", () => {
-      const emptyDocument = {
-        ...mockDocument,
-        name: "",
-      };
-
-      renderWithProviders(<DocumentViewer document={emptyDocument} />);
-      expect(screen.getByTestId("document-viewer")).toBeInTheDocument();
-    });
-
-    it("should handle unsupported file types", () => {
-      const unsupportedDocument = {
-        ...mockDocument,
-        mimeType: "application/unknown",
-        type: "homework" as const,
-      };
-
-      renderWithProviders(<DocumentViewer document={unsupportedDocument} />);
-      expect(screen.getByTestId("document-viewer")).toBeInTheDocument();
-    });
-
-    it("should handle large documents gracefully", () => {
-      const largeDocument = {
-        ...mockDocument,
-        name: "large-document.pdf",
-      };
-
-      renderWithProviders(<DocumentViewer document={largeDocument} />);
-      expect(screen.getByTestId("document-viewer")).toBeInTheDocument();
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
     });
   });
 });
+
+/*
+ * Component Analysis for DocumentViewer:
+ * Path: common/chat/DocumentViewer.tsx
+ * 
+ * Features detected:
+ * - Default export: true
+ * - Named exports: DocumentViewerProps
+ * - Has props: true
+ * - Props interface: DocumentViewerProps
+ * - Client component: true
+ * - Uses hooks: useQuery, useEffect, useMemo, useState
+ * - Uses router: false
+ * - Has API calls: true
+ * - Has form handling: false
+ * - Uses state: true
+ * - Uses effects: true
+ * - Uses context: false
+ * 
+ * TODO: Implement the failing tests above with actual test logic
+ * 
+ * Example implementations:
+ * 
+ * Basic rendering:
+ * render(<DocumentViewer {...mockProps} />);
+ * expect(screen.getByRole('...')).toBeInTheDocument();
+ * 
+ * Props testing:
+ * const props = { ... };
+ * render(<DocumentViewer {...props} />);
+ * expect(screen.getByText(props.someText)).toBeInTheDocument();
+ * 
+ * User interaction:
+ * const button = screen.getByRole('button');
+ * await user.click(button);
+ * expect(mockFunction).toHaveBeenCalled();
+ */

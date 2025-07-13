@@ -44,7 +44,7 @@ const radarChartConfig = {
   },
 } satisfies ChartConfig;
 
-interface SkillGrowthProps {
+export interface SkillGrowthProps {
   className?: string;
 }
 

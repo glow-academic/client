@@ -13,12 +13,12 @@ import * as tus from "tus-js-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Archive, CheckCircle, Loader2, Plus } from "lucide-react";
 import { logError } from "@/utils/logger";
+import { Archive, CheckCircle, Loader2, Plus } from "lucide-react";
 
 import ClassForm from "@/components/common/class/ClassForm";
-import { createClass } from "@/utils/mutations/classes/create-class";
 import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
+import { createClass } from "@/utils/mutations/classes/create-class";
 
 type ProcessingStep =
   | "idle"
@@ -138,13 +138,18 @@ export default function NewClass() {
                 autoClassify: true,
                 autoCourseProcess: true,
               };
+              const isCypress =
+              typeof window !== "undefined" && "Cypress" in window;
 
               const response = await finalizeDocumentUpload(
                 finalizePayload.fileId,
                 tempClassId,
                 true,
                 true,
-                true
+                true,
+                undefined,
+                undefined,
+                isCypress
               );
 
               if (!response.success) {
@@ -169,9 +174,7 @@ export default function NewClass() {
               setProcessingStep("complete");
 
               // Route to the status page
-              setTimeout(() => {
-                router.push(`/create/classes/new/c/${tempClassId}`);
-              }, 1000);
+              router.push(`/create/classes/new/c/${tempClassId}`);
 
               resolve();
             } catch (error) {
@@ -262,7 +265,10 @@ export default function NewClass() {
             <div className="flex items-center gap-3">
               <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                <p
+                  className="text-sm font-medium text-blue-900 dark:text-blue-100"
+                  data-testid="processing-message"
+                >
                   {getProcessingMessage()}
                 </p>
                 <Progress
@@ -301,7 +307,14 @@ export default function NewClass() {
                       We'll automatically extract and classify your documents.
                     </p>
                   </div>
+                  {/* Visually-hidden label gives the input a name */}
+                  <label htmlFor="zip-upload" className="sr-only">
+                    Upload from ZIP
+                  </label>
+
                   <input
+                    id="zip-upload"
+                    data-testid="file-input"
                     ref={fileInputRef}
                     type="file"
                     accept=".zip"
@@ -323,8 +336,8 @@ export default function NewClass() {
                   <div className="space-y-2">
                     <h3 className="text-xl font-semibold">Create Manually</h3>
                     <p className="text-muted-foreground">
-                      Set up your class first and add documents later. Perfect
-                      if you want to organize everything step by step.
+                      Set up your class by filling out a form. Perfect if you
+                      want to organize everything step by step.
                     </p>
                   </div>
                 </CardContent>
@@ -334,14 +347,7 @@ export default function NewClass() {
         )}
 
         {/* Manual Creation Form */}
-        {creationMode === "manual" && (
-          <ClassForm
-            mode="create"
-            onSuccess={(classId) => {
-              router.push(`/create/classes/c/${classId}/edit`);
-            }}
-          />
-        )}
+        {creationMode === "manual" && <ClassForm />}
 
         {/* Processing Complete State */}
         {processingStep === "complete" && (

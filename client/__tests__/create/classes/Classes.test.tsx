@@ -1,160 +1,138 @@
-import ClassesGeneralPage from "@/components/create/classes/Classes";
-import { renderWithProviders } from "@/mocks/utils";
-import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, it, vi, afterEach, expect } from 'vitest';
+import { renderWithMocks } from '@/test/renderWithMocks';
+import userEvent from '@testing-library/user-event';
+import { screen, waitFor, within } from '@testing-library/react';
 
-// Import the auto-generated mocks
-import "@/mocks/mutations";
-import "@/mocks/queries";
+// ——————————————————————————————————————————
+import Classes from '@/components/create/classes/Classes';
+import { routerMock } from '@/mocks/navigation';
+import * as mockSchema from '@/mocks/schema';
 
-describe("Classes", () => {
-  beforeEach(() => {
+// ✨ Import your centralized mock setups
+import '@/mocks/queries';
+import '@/mocks/mutations';
+import '@/mocks/api';
+import '@/mocks/navigation';
+
+// ✨ Import the functions you'll need to override or verify
+import { getAllClasses } from '@/utils/queries/classes/get-all-classes';
+import { deleteClass } from '@/utils/mutations/classes/delete-class';
+
+describe('Classes', () => {
+  
+  afterEach(() => {
     vi.clearAllMocks();
   });
 
-  describe("Basic Rendering", () => {
-    it("should render classes list", async () => {
-      renderWithProviders(<ClassesGeneralPage />);
+  // ——————————————————————————————————————————
+  //    BASIC RENDERING
+  // ——————————————————————————————————————————
+  describe('basic render smoke-test', () => {
+    it('renders class cards with data from the mock schema', async () => {
+      renderWithMocks(<Classes />);
+      
+      expect(await screen.findByText('Algebra I')).toBeInTheDocument();
+      expect(screen.getByText('MATH101')).toBeInTheDocument();
 
-      await waitFor(() => {
-        // Check for any class content to be rendered
-        expect(
-          document.querySelector('[data-slot="card"]')
-        ).toBeInTheDocument();
-      });
-    });
-
-    it("should display class information", async () => {
-      renderWithProviders(<ClassesGeneralPage />);
-
-      await waitFor(() => {
-        // Use getAllByText to handle multiple elements with "Fall 2024"
-        const fallTextElements = screen.getAllByText((_, element) => {
-          return !!(
-            element?.textContent?.includes("Fall") &&
-            element?.textContent?.includes("2024")
-          );
-        });
-        expect(fallTextElements.length).toBeGreaterThan(0);
-      });
+      expect(await screen.findByText('General Chemistry')).toBeInTheDocument();
+      expect(screen.getByText('CHEM101')).toBeInTheDocument();
     });
   });
 
-  describe("User Interactions", () => {
-    it("should handle edit button clicks", async () => {
+  // ——————————————————————————————————————————
+  //    USER INTERACTIONS
+  // ——————————————————————————————————————————
+  describe('User Interactions', () => {
+    it('should open the delete confirmation when the delete button is clicked', async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ClassesGeneralPage />);
+      renderWithMocks(<Classes />);
+      
+      const deleteButton = await screen.findByRole('button', { name: /Delete Algebra I/i });
+      await user.click(deleteButton);
 
-      await waitFor(() => {
-        const editButtons = screen.getAllByRole("button");
-        expect(editButtons.length).toBeGreaterThan(0);
-      });
-
-      // Find the edit button (square pen icon)
-      const editButtons = screen.getAllByRole("button");
-      const editButton = editButtons.find((button) =>
-        button.querySelector('svg[class*="square-pen"]')
-      );
-
-      if (editButton) {
-        await user.click(editButton);
-        // Just verify the button is clickable - navigation is mocked
-      }
+      expect(await screen.findByRole('alertdialog')).toBeInTheDocument();
+      expect(screen.getByText(/Are you sure you want to delete this class?/i)).toBeInTheDocument();
     });
 
-    it("should render delete buttons", async () => {
-      renderWithProviders(<ClassesGeneralPage />);
+    it('should call the delete mutation when deletion is confirmed', async () => {
+      const user = userEvent.setup();
+      renderWithMocks(<Classes />);
+      
+      const deleteButton = await screen.findByRole('button', { name: /Delete Algebra I/i });
+      await user.click(deleteButton);
 
+      const confirmButton = await screen.findByRole('button', { name: "Delete" });
+      await user.click(confirmButton);
+      
+      expect(deleteClass).toHaveBeenCalledWith(mockSchema.classes[0]?.id);
+      
       await waitFor(() => {
-        const deleteButtons = screen.getAllByRole("button");
-        const trashButton = deleteButtons.find((button) =>
-          button.querySelector('svg[class*="trash"]')
-        );
-        expect(trashButton).toBeInTheDocument();
+        expect(screen.queryByRole('alertdialog')).toBeNull();
       });
     });
   });
 
-  describe("Data Display", () => {
-    it("should show class names", async () => {
-      renderWithProviders(<ClassesGeneralPage />);
+  // ——————————————————————————————————————————
+  //    NAVIGATION
+  // ——————————————————————————————————————————
+  describe('Navigation', () => {
+    it('should navigate to the edit page when the edit button is clicked', async () => {
+      const user = userEvent.setup();
+      renderWithMocks(<Classes />);
 
-      await waitFor(() => {
-        // Look for any class title
-        const classTitles = document.querySelectorAll(
-          '[data-slot="card-title"]'
-        );
-        expect(classTitles.length).toBeGreaterThan(0);
-      });
-    });
+      const editButton = await screen.findByRole('button', { name: /Edit General Chemistry/i });
+      await user.click(editButton);
 
-    it("should show class codes", async () => {
-      renderWithProviders(<ClassesGeneralPage />);
-
-      await waitFor(() => {
-        // Look for badge elements that contain class codes
-        const badges = document.querySelectorAll('[data-slot="badge"]');
-        expect(badges.length).toBeGreaterThan(0);
-      });
-    });
-
-    it("should show term and year information", async () => {
-      renderWithProviders(<ClassesGeneralPage />);
-
-      await waitFor(() => {
-        // Check for term information in badges
-        const termBadges = Array.from(
-          document.querySelectorAll('[data-slot="badge"]')
-        ).filter(
-          (badge) =>
-            badge.textContent?.includes("Fall") ||
-            badge.textContent?.includes("Spring")
-        );
-        expect(termBadges.length).toBeGreaterThan(0);
-      });
+      expect(routerMock.push).toHaveBeenCalledWith(`/create/classes/c/${mockSchema.classes[1]?.id}`);
     });
   });
+  
+  // ——————————————————————————————————————————
+  //    API & EDGE CASES
+  // ——————————————————————————————————————————
+  describe('API and Edge Cases', () => {
+    it('should display skeleton components while loading', async () => {
+      // Arrange: Mock the query to be in a perpetual loading state
+      vi.mocked(getAllClasses).mockImplementation(() => new Promise(() => {}));
+      
+      renderWithMocks(<Classes />);
 
-  describe("Empty State", () => {
-    it("should show message when no classes exist", async () => {
-      // Mock empty response
-      vi.doMock("@/utils/queries/classes/get-all-classes", () => ({
-        getAllClasses: vi.fn(() => Promise.resolve([])),
-      }));
+      // Act: Find all the card elements, which now act as skeleton containers
+      const skeletons = await screen.findAllByRole('article'); // The <Card> component has a role of 'article' by default
 
-      renderWithProviders(<ClassesGeneralPage />);
+      // Assert: Check that the correct number of skeletons are rendered
+      expect(skeletons.length).toBe(6);
 
-      await waitFor(() => {
-        // The component should render even with no classes
-        expect(document.body).toBeInTheDocument();
-      });
+      // Optional: Check for skeleton content within one of the cards
+      const firstSkeleton = skeletons[0];
+      expect(within(firstSkeleton as HTMLElement).getByText(/loading/i, { selector: '.sr-only' })).toBeInTheDocument(); // Assuming your <Skeleton> has accessible text
+    });
+
+    it('should handle and display an API error state', async () => {
+      // Arrange: Override the mock to simulate an API failure
+      vi.mocked(getAllClasses).mockRejectedValue(new Error('API Error'));
+
+      renderWithMocks(<Classes />);
+      
+      // Assert: Check that your component shows the specific error message
+      expect(await screen.findByText('Failed to load classes.')).toBeInTheDocument();
+      
+      // Assert that no data is rendered
+      expect(screen.queryByText('Algebra I')).toBeNull();
+    });
+
+    it('should display a "No classes found" message when the list is empty', async () => {
+      // Arrange: Override the mock to return an empty array
+      vi.mocked(getAllClasses).mockResolvedValue([]);
+      
+      renderWithMocks(<Classes />);
+
+      // Assert: Check for the specific "No classes found" message
+      expect(await screen.findByText('No classes found')).toBeInTheDocument();
+
+      // Assert that no class cards are rendered
+      expect(screen.queryByText('Algebra I')).toBeNull();
+      expect(screen.queryByText('General Chemistry')).toBeNull();
     });
   });
 });
-
-/*
- * Component Analysis for Classes:
- * Path: management/classes/Classes.tsx
- *
- * Features detected:
- * - Default export: true (ClassesGeneralPage)
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: useMemo, useQuery
- * - Uses router: false
- * - Has API calls: true
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- *
- * Fixed tests to:
- * - Use proper mock utilities
- * - Handle multiple elements with getAllByText
- * - Test actual component behavior
- * - Use query selectors for consistent elements
- * - Focus on structural testing rather than specific text
- */

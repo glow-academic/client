@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime,
@@ -8,7 +8,6 @@ from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime,
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
 from sqlalchemy.orm import Mapped
-
 class _Base(SQLModel):
     """Shared config so Pydantic will accept SQLAlchemy types."""
     model_config = {"arbitrary_types_allowed": True}
@@ -41,7 +40,7 @@ class AppLogs(_Base, table=True):
     level: str = Field(sa_column=Column('level', Text))
     message: Optional[str] = Field(default=None, sa_column=Column('message', Text))
     context: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('context', JSONB))
-    created_at: Optional[datetime] = Field(default=None, sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
 
 
 class Classes(_Base, table=True):
@@ -49,15 +48,15 @@ class Classes(_Base, table=True):
         PrimaryKeyConstraint('id', name='classes_pkey'),
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     class_code: str = Field(sa_column=Column('class_code', Text))
     year: int = Field(sa_column=Column('year', Integer))
-    term: str = Field(sa_column=Column('term', Enum('fall', 'spring', 'summer', name='class_term'), server_default=text("'fall'::class_term")))
+    term: str = Field(sa_column=Column('term', Enum('fall', 'spring', 'summer', name='class_term'), default=r'fall'))
     description: str = Field(sa_column=Column('description', Text))
-    default_class: bool = Field(sa_column=Column('default_class', Boolean, server_default=text('false')))
+    default_class: bool = Field(sa_column=Column('default_class', Boolean, default=False))
 
     documents: List['Documents'] = Relationship(back_populates='class_')
     schedules: List['Schedules'] = Relationship(back_populates='class_')
@@ -70,12 +69,12 @@ class Cohorts(_Base, table=True):
         PrimaryKeyConstraint('id', name='cohorts_pkey'),
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     title: str = Field(sa_column=Column('title', Text))
-    active: bool = Field(sa_column=Column('active', Boolean, server_default=text('true')))
-    profile_ids: List[uuid.UUID] = Field(sa_column=Column('profile_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
+    active: bool = Field(sa_column=Column('active', Boolean, default=True))
+    profile_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('profile_ids', ARRAY(Uuid(as_uuid=True))))
     description: Optional[str] = Field(default=None, sa_column=Column('description', Text))
 
 
@@ -84,15 +83,15 @@ class Components(_Base, table=True):
         PrimaryKeyConstraint('id', name='components_pkey'),
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     file_name: str = Field(sa_column=Column('file_name', Text))
-    layout: Dict[str, Any] = Field(sa_column=Column('layout', JSONB, server_default=text("'{}'::jsonb")))
-    stat: bool = Field(sa_column=Column('stat', Boolean, server_default=text('false')))
-    default_component: bool = Field(sa_column=Column('default_component', Boolean, server_default=text('false')))
+    layout: Dict[str, Any] = Field(default_factory=dict, sa_column=Column('layout', JSONB))
+    stat: bool = Field(sa_column=Column('stat', Boolean, default=False))
+    default_component: bool = Field(sa_column=Column('default_component', Boolean, default=False))
 
 
 class Models(_Base, table=True):
@@ -100,14 +99,14 @@ class Models(_Base, table=True):
         PrimaryKeyConstraint('id', name='models_pkey'),
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     provider_id: Mapped[uuid.UUID] = Field(sa_column=Column('provider_id', Uuid(as_uuid=True)))
-    active: bool = Field(sa_column=Column('active', Boolean, server_default=text('true')))
-    model_type: str = Field(sa_column=Column('model_type', Enum('ttt', 'tts', 'stt', name='model_type'), server_default=text("'ttt'::model_type")))
+    active: bool = Field(sa_column=Column('active', Boolean, default=True))
+    model_type: str = Field(sa_column=Column('model_type', Enum('ttt', 'tts', 'stt', name='model_type'), default=r'ttt'))
 
     agents: List['Agents'] = Relationship(back_populates='model')
 
@@ -117,9 +116,9 @@ class Providers(_Base, table=True):
         PrimaryKeyConstraint('id', name='providers_pkey'),
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     api_key: str = Field(sa_column=Column('api_key', Text))
@@ -130,14 +129,14 @@ class Rubrics(_Base, table=True):
         PrimaryKeyConstraint('id', name='rubrics_pkey'),
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     points: int = Field(sa_column=Column('points', Integer))
     pass_points: int = Field(sa_column=Column('pass_points', Integer))
-    default_rubric: bool = Field(sa_column=Column('default_rubric', Boolean, server_default=text('false')))
+    default_rubric: bool = Field(sa_column=Column('default_rubric', Boolean, default=False))
 
     simulations: List['Simulations'] = Relationship(back_populates='rubric')
     standard_groups: List['StandardGroups'] = Relationship(back_populates='rubric')
@@ -186,16 +185,16 @@ class Agents(_Base, table=True):
         PrimaryKeyConstraint('id', name='agents_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     system_prompt: str = Field(sa_column=Column('system_prompt', Text))
     temperature: int = Field(sa_column=Column('temperature', Integer))
-    default_agent: bool = Field(sa_column=Column('default_agent', Boolean, server_default=text('false')))
-    voice_agent: bool = Field(sa_column=Column('voice_agent', Boolean, server_default=text('false')))
-    editable: bool = Field(sa_column=Column('editable', Boolean, server_default=text('false')))
+    default_agent: bool = Field(sa_column=Column('default_agent', Boolean, default=False))
+    voice_agent: bool = Field(sa_column=Column('voice_agent', Boolean, default=False))
+    editable: bool = Field(sa_column=Column('editable', Boolean, default=False))
     model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
     stt_model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('stt_model_id', Uuid(as_uuid=True)))
     tts_model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('tts_model_id', Uuid(as_uuid=True)))
@@ -211,15 +210,15 @@ class Documents(_Base, table=True):
         PrimaryKeyConstraint('id', name='documents_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     file_path: str = Field(sa_column=Column('file_path', Text))
     mime_type: str = Field(sa_column=Column('mime_type', Text))
     class_id: Mapped[uuid.UUID] = Field(sa_column=Column('class_id', Uuid(as_uuid=True)))
-    type: str = Field(sa_column=Column('type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type'), server_default=text("'homework'::document_type")))
-    classified: bool = Field(sa_column=Column('classified', Boolean, server_default=text('false')))
+    type: str = Field(sa_column=Column('type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type'), default=r'homework'))
+    classified: bool = Field(sa_column=Column('classified', Boolean, default=False))
     file_id: Optional[str] = Field(default=None, sa_column=Column('file_id', Text))
 
     class_: Optional['Classes'] = Relationship(back_populates='documents')
@@ -231,18 +230,18 @@ class Profiles(_Base, table=True):
         PrimaryKeyConstraint('id', name='profiles_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
-    last_login: datetime = Field(sa_column=Column('last_login', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
+    last_login: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('last_login', DateTime(True)))
     first_name: str = Field(sa_column=Column('first_name', Text))
     last_name: str = Field(sa_column=Column('last_name', Text))
     alias: str = Field(sa_column=Column('alias', Text))
-    viewed_intro: bool = Field(sa_column=Column('viewed_intro', Boolean, server_default=text('false')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    role: str = Field(sa_column=Column('role', Enum('admin', 'instructional', 'instructor', 'ta', name='profile_role'), server_default=text("'ta'::profile_role")))
-    class_ids: List[uuid.UUID] = Field(sa_column=Column('class_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
-    active: bool = Field(sa_column=Column('active', Boolean, server_default=text('false')))
-    last_active: datetime = Field(sa_column=Column('last_active', DateTime(True), server_default=text('now()')))
+    viewed_intro: bool = Field(sa_column=Column('viewed_intro', Boolean, default=False))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    role: str = Field(sa_column=Column('role', Enum('admin', 'instructional', 'instructor', 'ta', name='profile_role'), default=r'ta'))
+    class_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('class_ids', ARRAY(Uuid(as_uuid=True))))
+    active: bool = Field(sa_column=Column('active', Boolean, default=False))
+    last_active: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('last_active', DateTime(True)))
     user_id: Optional[int] = Field(default=None, sa_column=Column('user_id', Integer))
 
     user: Optional['Users'] = Relationship(back_populates='profiles')
@@ -258,9 +257,9 @@ class Schedules(_Base, table=True):
         PrimaryKeyConstraint('id', name='schedules_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     class_id: Mapped[uuid.UUID] = Field(sa_column=Column('class_id', Uuid(as_uuid=True)))
@@ -275,15 +274,15 @@ class Simulations(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulations_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     title: str = Field(sa_column=Column('title', Text))
-    active: bool = Field(sa_column=Column('active', Boolean, server_default=text('true')))
-    scenario_ids: List[uuid.UUID] = Field(sa_column=Column('scenario_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
-    cohort_ids: List[uuid.UUID] = Field(sa_column=Column('cohort_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
+    active: bool = Field(sa_column=Column('active', Boolean, default=True))
+    scenario_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('scenario_ids', ARRAY(Uuid(as_uuid=True))))
+    cohort_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('cohort_ids', ARRAY(Uuid(as_uuid=True))))
     rubric_id: Mapped[uuid.UUID] = Field(sa_column=Column('rubric_id', Uuid(as_uuid=True)))
-    default_simulation: bool = Field(sa_column=Column('default_simulation', Boolean, server_default=text('false')))
+    default_simulation: bool = Field(sa_column=Column('default_simulation', Boolean, default=False))
     time_limit: Optional[int] = Field(default=None, sa_column=Column('time_limit', Integer))
 
     rubric: Optional['Rubrics'] = Relationship(back_populates='simulations')
@@ -297,8 +296,8 @@ class StandardGroups(_Base, table=True):
         PrimaryKeyConstraint('id', name='standard_groups_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     short_name: str = Field(sa_column=Column('short_name', Text))
     description: str = Field(sa_column=Column('description', Text))
@@ -316,12 +315,12 @@ class Topics(_Base, table=True):
         PrimaryKeyConstraint('id', name='topics_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
-    prerequisite: bool = Field(sa_column=Column('prerequisite', Boolean, server_default=text('false')))
+    prerequisite: bool = Field(sa_column=Column('prerequisite', Boolean, default=False))
     class_id: Mapped[uuid.UUID] = Field(sa_column=Column('class_id', Uuid(as_uuid=True)))
 
     class_: Optional['Classes'] = Relationship(back_populates='topics')
@@ -336,7 +335,7 @@ class AppFeedback(_Base, table=True):
 
     id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
     type: str = Field(sa_column=Column('type', Enum('feature', 'bug', 'question', 'other', name='feedback_type')))
-    created_at: Optional[datetime] = Field(default=None, sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     profile_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('profile_id', Uuid(as_uuid=True)))
     message: Optional[str] = Field(default=None, sa_column=Column('message', Text))
 
@@ -350,9 +349,9 @@ class AssistantChats(_Base, table=True):
         PrimaryKeyConstraint('id', name='assistant_chats_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     title: str = Field(sa_column=Column('title', Text))
     profile_id: Mapped[uuid.UUID] = Field(sa_column=Column('profile_id', Uuid(as_uuid=True)))
     trace_id: Optional[str] = Field(default=None, sa_column=Column('trace_id', Text))
@@ -368,18 +367,18 @@ class Dashboards(_Base, table=True):
         PrimaryKeyConstraint('id', name='dashboards_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
-    header_component_ids: List[uuid.UUID] = Field(sa_column=Column('header_component_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
-    primary_component_ids: List[uuid.UUID] = Field(sa_column=Column('primary_component_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
-    secondary_component_ids: List[uuid.UUID] = Field(sa_column=Column('secondary_component_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
-    footer_component_ids: List[uuid.UUID] = Field(sa_column=Column('footer_component_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
-    auto_scroll: bool = Field(sa_column=Column('auto_scroll', Boolean, server_default=text('false')))
-    show_indicators: bool = Field(sa_column=Column('show_indicators', Boolean, server_default=text('true')))
-    header_components: int = Field(sa_column=Column('header_components', Integer, server_default=text('3')))
-    main_split: float = Field(sa_column=Column('main_split', Double(53), server_default=text('0.65')))
-    footer_split: float = Field(sa_column=Column('footer_split', Double(53), server_default=text('0.5')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
+    header_component_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('header_component_ids', ARRAY(Uuid(as_uuid=True))))
+    primary_component_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('primary_component_ids', ARRAY(Uuid(as_uuid=True))))
+    secondary_component_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('secondary_component_ids', ARRAY(Uuid(as_uuid=True))))
+    footer_component_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('footer_component_ids', ARRAY(Uuid(as_uuid=True))))
+    auto_scroll: bool = Field(sa_column=Column('auto_scroll', Boolean, default=False))
+    show_indicators: bool = Field(sa_column=Column('show_indicators', Boolean, default=True))
+    header_components: int = Field(sa_column=Column('header_components', Integer, default=3))
+    main_split: float = Field(sa_column=Column('main_split', Double(53), default=0.65))
+    footer_split: float = Field(sa_column=Column('footer_split', Double(53), default=0.5))
     profile_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('profile_id', Uuid(as_uuid=True)))
 
     profile: Optional['Profiles'] = Relationship(back_populates='dashboards')
@@ -391,9 +390,9 @@ class Events(_Base, table=True):
         PrimaryKeyConstraint('id', name='events_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     time: datetime = Field(sa_column=Column('time', DateTime(True)))
@@ -410,12 +409,13 @@ class Scenarios(_Base, table=True):
         PrimaryKeyConstraint('id', name='scenarios_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
-    default_scenario: bool = Field(sa_column=Column('default_scenario', Boolean, server_default=text('false')))
+    default_scenario: bool = Field(sa_column=Column('default_scenario', Boolean, default=False))
+    generated: bool = Field(sa_column=Column('generated', Boolean, default=False))
     agent_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('agent_id', Uuid(as_uuid=True)))
     class_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('class_id', Uuid(as_uuid=True)))
     crowdedness: Optional[int] = Field(default=None, sa_column=Column('crowdedness', Integer))
@@ -439,8 +439,8 @@ class SimulationAttempts(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulation_attempts_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     simulation_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_id', Uuid(as_uuid=True)))
     profile_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('profile_id', Uuid(as_uuid=True)))
 
@@ -455,8 +455,8 @@ class Standards(_Base, table=True):
         PrimaryKeyConstraint('id', name='standards_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     points: int = Field(sa_column=Column('points', Integer))
@@ -473,13 +473,13 @@ class AssistantMessages(_Base, table=True):
         PrimaryKeyConstraint('id', name='assistant_messages_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid(as_uuid=True)))
     role: str = Field(sa_column=Column('role', Enum('user', 'assistant', name='assistant_message_type')))
     content: str = Field(sa_column=Column('content', Text))
-    completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
+    completed: bool = Field(sa_column=Column('completed', Boolean, default=False))
     completed_at: Optional[datetime] = Field(default=None, sa_column=Column('completed_at', DateTime(True)))
 
     chat: Optional['AssistantChats'] = Relationship(back_populates='assistant_messages')
@@ -492,15 +492,15 @@ class AssistantToolCalls(_Base, table=True):
         PrimaryKeyConstraint('id', name='assistant_tool_calls_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid(as_uuid=True)))
     tool_name: str = Field(sa_column=Column('tool_name', Text))
     tool_type: str = Field(sa_column=Column('tool_type', Enum('create', 'read', 'update', 'delete', name='assistant_tool_type')))
     tool_arguments: Dict[str, Any] = Field(sa_column=Column('tool_arguments', JSONB))
     tool_result: Dict[str, Any] = Field(sa_column=Column('tool_result', JSONB))
-    completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
+    completed: bool = Field(sa_column=Column('completed', Boolean, default=False))
     completed_at: Optional[datetime] = Field(default=None, sa_column=Column('completed_at', DateTime(True)))
 
     chat: Optional['AssistantChats'] = Relationship(back_populates='assistant_tool_calls')
@@ -514,13 +514,13 @@ class SimulationChats(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulation_chats_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     title: str = Field(sa_column=Column('title', Text))
     scenario_id: Mapped[uuid.UUID] = Field(sa_column=Column('scenario_id', Uuid(as_uuid=True)))
     attempt_id: Mapped[uuid.UUID] = Field(sa_column=Column('attempt_id', Uuid(as_uuid=True)))
-    completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
+    completed: bool = Field(sa_column=Column('completed', Boolean, default=False))
     completed_at: Optional[datetime] = Field(default=None, sa_column=Column('completed_at', DateTime(True)))
     trace_id: Optional[str] = Field(default=None, sa_column=Column('trace_id', Text))
 
@@ -539,8 +539,8 @@ class SimulationChatGrades(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulation_chat_grades_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     passed: bool = Field(sa_column=Column('passed', Boolean))
     score: int = Field(sa_column=Column('score', Integer))
     time_taken: int = Field(sa_column=Column('time_taken', Integer))
@@ -559,14 +559,14 @@ class SimulationMessages(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulation_messages_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid(as_uuid=True)))
     content: str = Field(sa_column=Column('content', Text))
-    audio: bool = Field(sa_column=Column('audio', Boolean, server_default=text('false')))
+    audio: bool = Field(sa_column=Column('audio', Boolean, default=False))
     type: str = Field(sa_column=Column('type', Enum('query', 'response', name='simulation_message_type')))
-    completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
+    completed: bool = Field(sa_column=Column('completed', Boolean, default=False))
     file_path: Optional[str] = Field(default=None, sa_column=Column('file_path', Text))
 
     chat: Optional['SimulationChats'] = Relationship(back_populates='simulation_messages')
@@ -579,9 +579,9 @@ class SimulationSketches(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulation_sketches_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid(as_uuid=True)))
     file_path: str = Field(sa_column=Column('file_path', Text))
 
@@ -596,8 +596,8 @@ class SimulationChatFeedbacks(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulation_chat_feedbacks_pkey')
     )
 
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     standard_id: Mapped[uuid.UUID] = Field(sa_column=Column('standard_id', Uuid(as_uuid=True)))
     simulation_chat_grade_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_chat_grade_id', Uuid(as_uuid=True)))
     total: int = Field(sa_column=Column('total', Integer))

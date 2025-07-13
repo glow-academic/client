@@ -48,7 +48,7 @@ type ColorTheme =
   | "indigo";
 type ChartType = "bar";
 
-interface SimulationPerformanceProps {
+export interface SimulationPerformanceProps {
   className?: string;
   color?: ColorTheme;
   defaultSelection?: string;

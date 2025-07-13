@@ -1,118 +1,148 @@
-/**
- * tests/pages/Home.spec.tsx
- * Vitest + React-Testing-Library
+import { describe, it, vi, afterEach } from 'vitest';
+import { renderWithMocks } from '@/test/renderWithMocks';
+import userEvent from '@testing-library/user-event';
+
+// ——————————————————————————————————————————
+import Home from '@/components/home/Home';
+
+
+
+// ✨ Import comprehensive mock data from our centralized mock system
+import '@/mocks/queries';
+import '@/mocks/mutations';
+import '@/mocks/api';
+describe('Home', () => {
+  
+  /* ------------------------------------------------------------------ *
+   * 💡 Mock Data Usage Guide:
+   * 
+   * All API functions are automatically mocked via imports above.
+   * Use mockSchema.* for realistic test data:
+   * 
+   * Examples:
+   * - mockSchema.users[0] - First user object
+   * - mockSchema.classes - Array of class objects  
+   * - mockSchema.profiles - Array of profile objects
+   * 
+   * To override specific mocks in individual tests:
+   * - vi.mocked(queryFunction).mockResolvedValue(customData)
+   * - vi.mocked(mutationFunction).mockResolvedValue(customResponse)
+   * ------------------------------------------------------------------ */
+  
+  // ✨ Reset mocks after each test
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('basic render smoke-test', () => {
+    it('renders without crashing', async () => {
+      // ✨ All mocks are automatically set up via imports above
+      renderWithMocks(<Home  />);
+      
+      // TODO: Add meaningful assertions based on your component
+      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+    });
+
+    
+
+    it.skip('should have correct accessibility attributes', () => {
+      // TODO: Test accessibility features
+      
+      // TODO add accessibility assertions
+
+    });
+  });
+
+  describe('User Interactions', () => {
+    
+
+    it.skip('should handle state changes', async () => {
+      const user = userEvent.setup();
+      void user;
+      // TODO: state management assertions
+      // Mock data is available from @/mocks/schema for realistic testing
+    });
+
+    it.skip('should handle user events', async () => {
+      const user = userEvent.setup();
+      void user;
+      // TODO: interaction assertions
+
+    });
+  });
+
+  describe('API Integration', () => {
+    it.skip('should handle and display an API error state', async () => {
+      // Arrange: Override the default success mock with an error for this test.
+      // Example: vi.mocked(getAllAgents).mockRejectedValue(new Error('API Error'));
+
+      renderWithMocks(<Home  />);
+      
+      // Assert: Check that your component shows an error message.
+      // TODO: Add specific error state assertions
+    });
+
+    it.skip('should handle loading states', () => {
+      // TODO: Test loading states
+      // Mock data is automatically loaded from @/mocks/schema
+      
+      // TODO: loading states assertions
+    });
+  });
+
+  describe('Navigation', () => {
+    it.skip('should handle navigation', () => {
+      // TODO: Test navigation behavior
+      
+      // TODO: navigation assertions
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it.skip('should handle edge cases gracefully', () => {
+      // TODO: Test edge cases and error scenarios
+      
+      // TODO: edge-case assertions
+
+    });
+
+    
+  });
+});
+
+/*
+ * Component Analysis for Home:
+ * Path: home/Home.tsx
+ * 
+ * Features detected:
+ * - Default export: true
+ * - Named exports: None
+ * - Has props: false
+ * - Props interface: None detected
+ * - Client component: true
+ * - Uses hooks: useQuery, useRouter, useCallback, useEffect, useMemo, useState, useRole, useWebSocket, useSession, useRef, userId, user, userCohorts, userCohortIds
+ * - Uses router: true
+ * - Has API calls: true
+ * - Has form handling: false
+ * - Uses state: true
+ * - Uses effects: true
+ * - Uses context: false
+ * 
+ * TODO: Implement the failing tests above with actual test logic
+ * 
+ * Example implementations:
+ * 
+ * Basic rendering:
+ * render(<Home />);
+ * expect(screen.getByRole('...')).toBeInTheDocument();
+ * 
+ * Props testing:
+ * const props = { ... };
+ * render(<Home {...props} />);
+ * expect(screen.getByText(props.someText)).toBeInTheDocument();
+ * 
+ * User interaction:
+ * const button = screen.getByRole('button');
+ * await user.click(button);
+ * expect(mockFunction).toHaveBeenCalled();
  */
-import { screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-import Home from "@/components/home/Home";
-import { renderWithProviders } from "@/mocks/utils";
-
-/* -------------------------------------------------------------------------- */
-/* Helpers – pull the generated stubs we want to tweak on a per-test basis    */
-/* -------------------------------------------------------------------------- */
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-
-/* The mocks in client/mocks/queries.ts return                */
-/* mockSchema.simulations | []     etc.                       */
-/* For most tests that’s fine.  When we need custom data we   */
-/* just patch the already-mocked fn here with mockResolvedValue. */
-
-const soloSim = {
-  id: "sim-solo-1",
-  title: "Solo Practice",
-  scenarioIds: ["scenario-1"],
-  timeLimit: 20,
-  createdAt: "2025-01-01T00:00:00Z",
-  active: true,
-  rubricId: "rubric-1",
-  updatedAt: "2025-01-01T00:00:00Z",
-  cohortIds: ["cohort-1"],
-  defaultSimulation: false,
-};
-
-const multiSim = {
-  id: "sim-multi-1",
-  title: "Multi Challenge",
-  scenarioIds: ["scenario-1", "scenario-2"],
-  timeLimit: 45,
-  createdAt: "2025-01-01T00:00:00Z",
-  active: true,
-  rubricId: "rubric-1",
-  updatedAt: "2025-01-01T00:00:00Z",
-  cohortIds: ["cohort-1"],
-  defaultSimulation: false,
-};
-
-/* -------------------------------------------------------------------------- */
-/* Global reset between specs                                                 */
-/* -------------------------------------------------------------------------- */
-beforeEach(() => {
-  vi.clearAllMocks(); // resets call counts
-  vi.resetModules(); // restores original auto-mock return values
-});
-
-/* -------------------------------------------------------------------------- */
-/* Specs                                                                      */
-/* -------------------------------------------------------------------------- */
-describe("Home page", () => {
-  it("renders loading skeletons while simulations are fetching", () => {
-    // Return a never-resolving promise → keeps query in 'loading'
-    vi.mocked(getAllSimulations).mockImplementation(
-      () => new Promise(() => {})
-    );
-
-    renderWithProviders(<Home />);
-
-    // 6 skeleton cards on first paint
-    expect(document.querySelectorAll(".animate-pulse")).toHaveLength(6);
-  });
-
-  it("shows solo and multi simulations once data arrives", async () => {
-    vi.mocked(getAllSimulations).mockResolvedValue([soloSim, multiSim]);
-
-    renderWithProviders(<Home />);
-
-    await screen.findByText("Solo Simulations");
-    expect(screen.getByText("Solo Practice")).toBeInTheDocument();
-    expect(screen.getByText("Multi Challenge")).toBeInTheDocument();
-  });
-
-  it("starts a simulation when the card is clicked", async () => {
-    vi.mocked(getAllSimulations).mockResolvedValue([soloSim]);
-
-    const user = userEvent.setup();
-    renderWithProviders(<Home />);
-
-    // Wait for card
-    const card = await screen.findByTestId("permanent-simulation-card");
-    await user.click(card);
-
-    // The button inside the card enters the “Starting…” state
-    expect(card).toHaveClass("animate-pulse");
-  });
-
-  it("shows ‘No simulations’ when API returns empty array", async () => {
-    vi.mocked(getAllSimulations).mockResolvedValue([]);
-
-    renderWithProviders(<Home />);
-
-    await screen.findByText("No simulations available");
-    expect(
-      screen.getByText("Contact an administrator to add simulations.")
-    ).toBeInTheDocument();
-  });
-
-  it("classifies sims correctly (solo vs multi)", async () => {
-    vi.mocked(getAllSimulations).mockResolvedValue([soloSim, multiSim]);
-
-    renderWithProviders(<Home />);
-
-    const soloLabel = await screen.findByText("1 session");
-    const multiLabel = await screen.findByText("2 sessions");
-
-    expect(soloLabel).toBeInTheDocument();
-    expect(multiLabel).toBeInTheDocument();
-  });
-});

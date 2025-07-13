@@ -19,7 +19,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 
-interface ScenarioSliderProps {
+export interface ScenarioSliderProps {
   leftContent?: React.ReactNode;
   rightContent?: React.ReactNode;
   defaultValue: SliderProps["defaultValue"];

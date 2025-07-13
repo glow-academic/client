@@ -37,7 +37,7 @@ type ColorTheme =
   | "indigo";
 type Layout = "vertical" | "horizontal";
 
-interface ClassPerformanceProps {
+export interface ClassPerformanceProps {
   className?: string;
   color?: ColorTheme;
   maxItems?: number;

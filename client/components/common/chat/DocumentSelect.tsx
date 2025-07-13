@@ -26,7 +26,7 @@ import { Check, ChevronsUpDown } from "lucide-react";
 
 import { Document } from "@/types";
 
-interface DocumentSelectProps {
+export interface DocumentSelectProps {
   documents: Document[];
   selectedDocumentId: string | null;
   onDocumentSelect: (documentId: string) => void;

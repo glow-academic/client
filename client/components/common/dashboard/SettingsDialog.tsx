@@ -16,24 +16,26 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+export interface SettingsDialogProps {
+  dashboardConfig: Partial<Dashboard> | null;
+  updateSettings: (
+    settings: Partial<
+      Pick<
+        Partial<Dashboard>,
+        | "autoScroll"
+        | "showIndicators"
+        | "headerComponents"
+        | "mainSplit"
+        | "footerSplit"
+      >
+    >
+  ) => void;
+}
+
 export default function SettingsDialog({
     dashboardConfig,
     updateSettings,
-  }: {
-    dashboardConfig: Partial<Dashboard> | null;
-    updateSettings: (
-      settings: Partial<
-        Pick<
-          Partial<Dashboard>,
-          | "autoScroll"
-          | "showIndicators"
-          | "headerComponents"
-          | "mainSplit"
-          | "footerSplit"
-        >
-      >
-    ) => void;
-  }) {
+  }: SettingsDialogProps) {
     const [localSettings, setLocalSettings] = useState({
       autoScroll: dashboardConfig?.autoScroll ?? true,
       showIndicators: dashboardConfig?.showIndicators ?? true,

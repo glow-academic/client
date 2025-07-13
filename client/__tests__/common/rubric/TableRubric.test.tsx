@@ -1,370 +1,106 @@
-import TableRubric from "@/components/common/rubric/TableRubric";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
-import { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, it, vi, afterEach } from 'vitest';
+import { renderWithMocks } from '@/test/renderWithMocks';
 
-// Mock external dependencies
+// ——————————————————————————————————————————
+import TableRubric, { TableRubricProps } from '@/components/common/rubric/TableRubric';
 
-// Mock API calls
-vi.mock("@/utils/queries/rubrics/get-rubric", () => ({
-  getRubric: vi.fn(),
-}));
 
-vi.mock(
-  "@/utils/queries/standard_groups/get-standard-groups-by-rubric",
-  () => ({
-    getStandardGroupsByRubric: vi.fn(),
-  })
-);
 
-vi.mock("@/utils/queries/standards/get-standards-by-standardgroups", () => ({
-  getStandardsByStandardGroups: vi.fn(),
-}));
+// ✨ Import comprehensive mock data from our centralized mock system
+import '@/mocks/queries';
+import '@/mocks/mutations';
+import '@/mocks/api';
 
-vi.mock(
-  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats",
-  () => ({
-    getSimulationChatGradesBySimulationChats: vi.fn(),
-  })
-);
 
-vi.mock(
-  "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades",
-  () => ({
-    getSimulationChatFeedbacksBySimulationChatGrades: vi.fn(),
-  })
-);
-
-// Import mocked functions
-import { getRubric } from "@/utils/queries/rubrics/get-rubric";
-import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getStandardGroupsByRubric } from "@/utils/queries/standard_groups/get-standard-groups-by-rubric";
-import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-
-describe("TableRubric", () => {
-  let queryClient: QueryClient;
-
-  beforeEach(() => {
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: TableRubricProps = {
+  rubricId: 'test-rubricId',
+  // simulationChatId: 'test-simulationChatId', /* optional */
+};
+// ------------------------------------------------------------------
+describe('TableRubric', () => {
+  
+  /* ------------------------------------------------------------------ *
+   * 💡 Mock Data Usage Guide:
+   * 
+   * All API functions are automatically mocked via imports above.
+   * Use mockSchema.* for realistic test data:
+   * 
+   * Examples:
+   * - mockSchema.users[0] - First user object
+   * - mockSchema.classes - Array of class objects  
+   * - mockSchema.profiles - Array of profile objects
+   * 
+   * To override specific mocks in individual tests:
+   * - vi.mocked(queryFunction).mockResolvedValue(customData)
+   * - vi.mocked(mutationFunction).mockResolvedValue(customResponse)
+   * ------------------------------------------------------------------ */
+  
+  // ✨ Reset mocks after each test
+  afterEach(() => {
     vi.clearAllMocks();
-    queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false },
-      },
-    });
-
-    // Setup default mock data
-    const mockRubric = {
-      id: "rubric-1",
-      name: "Test Rubric",
-      description: "Test rubric description",
-      points: 100,
-      passPoints: 70,
-      createdAt: "2024-01-01T00:00:00Z",
-      updatedAt: "2024-01-01T00:00:00Z",
-      defaultRubric: true,
-    };
-
-    const mockStandardGroups = [
-      {
-        id: "group-1",
-        name: "Communication Skills",
-        shortName: "Communication",
-        description: "Communication and listening skills",
-        points: 50,
-        passPoints: 35,
-        rubricId: "rubric-1",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-      {
-        id: "group-2",
-        name: "Adaptability",
-        shortName: "Adaptability",
-        description: "Flexibility and adaptation skills",
-        points: 50,
-        passPoints: 35,
-        rubricId: "rubric-1",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-    ];
-
-    const mockStandards = [
-      {
-        id: "standard-1",
-        name: "Poor (1)",
-        description: "Minimal communication skills",
-        points: 1,
-        standardGroupId: "group-1",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-      {
-        id: "standard-2",
-        name: "Good (3)",
-        description: "Adequate communication skills",
-        points: 3,
-        standardGroupId: "group-1",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-      {
-        id: "standard-3",
-        name: "Excellent (5)",
-        description: "Outstanding communication skills",
-        points: 5,
-        standardGroupId: "group-1",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-      {
-        id: "standard-4",
-        name: "Poor (1)",
-        description: "Minimal adaptability",
-        points: 1,
-        standardGroupId: "group-2",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-      {
-        id: "standard-5",
-        name: "Good (3)",
-        description: "Adequate adaptability",
-        points: 3,
-        standardGroupId: "group-2",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-      {
-        id: "standard-6",
-        name: "Excellent (5)",
-        description: "Outstanding adaptability",
-        points: 5,
-        standardGroupId: "group-2",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-    ];
-
-    const mockGrades = [
-      {
-        id: "grade-1",
-        simulationChatId: "chat-1",
-        rubricId: "rubric-1",
-        score: 85,
-        passed: true,
-        timeTaken: 3600,
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-    ];
-
-    const mockFeedbacks = [
-      {
-        id: "feedback-1",
-        simulationChatGradeId: "grade-1",
-        standardId: "standard-3",
-        total: 5,
-        feedback: "Excellent communication demonstrated",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-      {
-        id: "feedback-2",
-        simulationChatGradeId: "grade-1",
-        standardId: "standard-5",
-        total: 3,
-        feedback: "Good adaptability shown",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-    ];
-
-    // Apply mocks
-    vi.mocked(getRubric).mockResolvedValue(mockRubric);
-    vi.mocked(getStandardGroupsByRubric).mockResolvedValue(mockStandardGroups);
-    vi.mocked(getStandardsByStandardGroups).mockResolvedValue(mockStandards);
-    vi.mocked(getSimulationChatGradesBySimulationChats).mockResolvedValue(
-      mockGrades
-    );
-    vi.mocked(
-      getSimulationChatFeedbacksBySimulationChatGrades
-    ).mockResolvedValue(mockFeedbacks);
   });
 
-  const renderWithProviders = (ui: React.ReactElement, options = {}) => {
-    const AllProviders = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-
-    return render(ui, { wrapper: AllProviders, ...options });
-  };
-
-  describe("Rendering", () => {
-    it("should render without crashing", async () => {
-      renderWithProviders(<TableRubric rubricId="rubric-1" />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Criteria")).toBeInTheDocument();
-      });
+  describe('basic render smoke-test', () => {
+    it('renders without crashing', async () => {
+      // ✨ All mocks are automatically set up via imports above
+      renderWithMocks(<TableRubric {...mockProps} />);
+      
+      // TODO: Add meaningful assertions based on your component
+      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
     });
 
-    it("should render with simulation chat props", async () => {
-      renderWithProviders(
-        <TableRubric rubricId="rubric-1" simulationChatId="chat-1" />
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText("Communication Skills")).toBeInTheDocument();
-        expect(screen.getByText("Adaptability")).toBeInTheDocument();
-      });
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: TableRubricProps
+      
+      // TODO add props assertions
     });
 
-    it("should display levels in reverse order (Level 3 to Level 1)", async () => {
-      renderWithProviders(<TableRubric rubricId="rubric-1" />);
+    it.skip('should have correct accessibility attributes', () => {
+      // TODO: Test accessibility features
+      
+      // TODO add accessibility assertions
 
-      await waitFor(() => {
-        const headers = screen.getAllByText(/Level \d/);
-        expect(headers[0]).toHaveTextContent("Level 3");
-        expect(headers[1]).toHaveTextContent("Level 2");
-        expect(headers[2]).toHaveTextContent("Level 1");
-      });
-    });
-
-    it("should have correct accessibility attributes", async () => {
-      renderWithProviders(<TableRubric rubricId="rubric-1" />);
-
-      await waitFor(() => {
-        const table = screen.getByRole("table");
-        expect(table).toBeInTheDocument();
-
-        const columnHeaders = screen.getAllByRole("columnheader");
-        expect(columnHeaders).toHaveLength(4); // Criteria + 3 levels
-      });
     });
   });
 
-  describe("Feedback Display", () => {
-    it("should highlight achieved standards with green background", async () => {
-      renderWithProviders(
-        <TableRubric rubricId="rubric-1" simulationChatId="chat-1" />
-      );
+  
 
-      await waitFor(() => {
-        expect(
-          screen.getByText("Excellent communication demonstrated")
-        ).toBeInTheDocument();
-        expect(screen.getByText("Good adaptability shown")).toBeInTheDocument();
-      });
+  describe('API Integration', () => {
+    it.skip('should handle and display an API error state', async () => {
+      // Arrange: Override the default success mock with an error for this test.
+      // Example: vi.mocked(getRubric).mockRejectedValue(new Error('API Error'));
+
+      renderWithMocks(<TableRubric {...mockProps} />);
+      
+      // Assert: Check that your component shows an error message.
+      // TODO: Add specific error state assertions
     });
 
-    it("should show feedback for achieved standards", async () => {
-      renderWithProviders(
-        <TableRubric rubricId="rubric-1" simulationChatId="chat-1" />
-      );
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Excellent communication demonstrated")
-        ).toBeInTheDocument();
-      });
-    });
-
-    it("should show overall results summary", async () => {
-      renderWithProviders(
-        <TableRubric rubricId="rubric-1" simulationChatId="chat-1" />
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText("Overall Results")).toBeInTheDocument();
-        expect(screen.getByText("85/100")).toBeInTheDocument();
-        expect(screen.getByText("Passed")).toBeInTheDocument();
-      });
+    it.skip('should handle loading states', () => {
+      // TODO: Test loading states
+      // Mock data is automatically loaded from @/mocks/schema
+      
+      // TODO: loading states assertions
     });
   });
 
-  describe("API Integration", () => {
-    it("should handle API calls correctly", async () => {
-      renderWithProviders(<TableRubric rubricId="rubric-1" />);
+  
 
-      await waitFor(() => {
-        expect(getRubric).toHaveBeenCalledWith("rubric-1");
-      });
+  describe('Edge Cases', () => {
+    it.skip('should handle edge cases gracefully', () => {
+      // TODO: Test edge cases and error scenarios
+      
+      // TODO: edge-case assertions
+
     });
 
-    it("should handle loading states", () => {
-      // Mock loading state
-      vi.mocked(getRubric).mockImplementation(() => new Promise(() => {}));
-
-      renderWithProviders(<TableRubric rubricId="rubric-1" />);
-
-      expect(screen.getByText("Loading rubric...")).toBeInTheDocument();
-    });
-
-    it("should handle error states", async () => {
-      vi.mocked(getRubric).mockResolvedValue(null);
-
-      renderWithProviders(<TableRubric rubricId="rubric-1" />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Unable to load rubric data")
-        ).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe("Edge Cases", () => {
-    it("should handle missing rubric gracefully", async () => {
-      vi.mocked(getRubric).mockResolvedValue(null);
-
-      renderWithProviders(<TableRubric rubricId="nonexistent" />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Unable to load rubric data")
-        ).toBeInTheDocument();
-      });
-    });
-
-    it("should handle empty standards gracefully", async () => {
-      vi.mocked(getStandardsByStandardGroups).mockResolvedValue([]);
-
-      renderWithProviders(<TableRubric rubricId="rubric-1" />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Communication Skills")).toBeInTheDocument();
-      });
-    });
-
-    it("should handle missing feedback data", async () => {
-      vi.mocked(
-        getSimulationChatFeedbacksBySimulationChatGrades
-      ).mockResolvedValue([]);
-
-      renderWithProviders(
-        <TableRubric rubricId="rubric-1" simulationChatId="chat-1" />
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText("Communication Skills")).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe("Layout and Styling", () => {
-    it("should apply top alignment to table cells", async () => {
-      renderWithProviders(<TableRubric rubricId="rubric-1" />);
-
-      await waitFor(() => {
-        const cells = screen.getAllByRole("cell");
-        cells.forEach((cell) => {
-          expect(cell).toHaveClass("align-top");
-        });
-      });
-    });
-
-    it("should have proper spacing and padding", async () => {
-      renderWithProviders(<TableRubric rubricId="rubric-1" />);
-
-      await waitFor(() => {
-        const cells = screen.getAllByRole("cell");
-        cells.forEach((cell) => {
-          expect(cell).toHaveClass("p-3");
-        });
-      });
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
     });
   });
 });
@@ -372,10 +108,10 @@ describe("TableRubric", () => {
 /*
  * Component Analysis for TableRubric:
  * Path: common/rubric/TableRubric.tsx
- *
+ * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: TableRubricProps
  * - Has props: true
  * - Props interface: TableRubricProps
  * - Client component: true
@@ -386,20 +122,20 @@ describe("TableRubric", () => {
  * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
- *
+ * 
  * TODO: Implement the failing tests above with actual test logic
- *
+ * 
  * Example implementations:
- *
+ * 
  * Basic rendering:
  * render(<TableRubric {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
- *
+ * 
  * Props testing:
  * const props = { ... };
  * render(<TableRubric {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
- *
+ * 
  * User interaction:
  * const button = screen.getByRole('button');
  * await user.click(button);

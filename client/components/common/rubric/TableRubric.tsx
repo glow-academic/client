@@ -22,7 +22,7 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { StandardGroup, Standard } from "@/types";
 
-interface TableRubricProps {
+export interface TableRubricProps {
     rubricId: string;
     simulationChatId?: string;
 }

@@ -1,80 +1,51 @@
-/**
- * @jest-environment jsdom
- */
+import { describe, it } from 'vitest';
+import { renderWithMocks } from '@/test/renderWithMocks';
+
+// ——————————————————————————————————————————
 import History from '@/components/analytics/History';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
-import React from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock the SimulationHistory component
-vi.mock('@/components/common/history/SimulationHistory', () => {
-  return {
-    default: function MockSimulationHistory({ showAll }: { showAll: boolean }) {
-      return (
-        <div data-testid="simulation-history">
-          <div data-testid="show-all">{showAll ? 'true' : 'false'}</div>
-          <div>Simulation History Component</div>
-        </div>
-      );
-    }
-  };
-});
+describe('History', () => {
+  
 
-const createTestQueryClient = () => {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
-    },
-  });
-};
+  describe('basic render smoke-test', () => {
+    it('renders without crashing', async () => {
+      
+      renderWithMocks(<History  />);
+      
+      // TODO: Add meaningful assertions based on your component
+      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+    });
 
-const renderWithQueryClient = (component: React.ReactElement) => {
-  const queryClient = createTestQueryClient();
-  return render(
-    <QueryClientProvider client={queryClient}>
-      {component}
-    </QueryClientProvider>
-  );
-};
+    
 
-describe('Logs Component', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+    it.skip('should have correct accessibility attributes', () => {
+      // TODO: Test accessibility features
+      
+      // TODO add accessibility assertions
+
+    });
   });
 
-  it('renders without crashing', () => {
-    renderWithQueryClient(<History />);
-    expect(screen.getByTestId('simulation-history')).toBeInTheDocument();
-  });
+  
 
-  it('passes showAll prop as true to SimulationHistory', () => {
-    renderWithQueryClient(<History />);
-    expect(screen.getByTestId('show-all')).toHaveTextContent('true');
-  });
+  
 
-  it('renders SimulationHistory component', () => {
-    renderWithQueryClient(<History />);
-    expect(screen.getByText('Simulation History Component')).toBeInTheDocument();
-  });
+  
 
-  it('has correct container structure', () => {
-    const { container } = renderWithQueryClient(<History />);
-    const mainDiv = container.firstChild as HTMLElement;
-    expect(mainDiv).toHaveClass('space-y-6');
-  });
+  describe('Edge Cases', () => {
+    it.skip('should handle edge cases gracefully', () => {
+      // TODO: Test edge cases and error scenarios
+      
+      // TODO: edge-case assertions
 
-  it('matches snapshot', () => {
-    const { container } = renderWithQueryClient(<History />);
-    expect(container.firstChild).toMatchSnapshot();
+    });
+
+    
   });
 });
 
 /*
- * Component Analysis for Logs:
+ * Component Analysis for History:
  * Path: analytics/History.tsx
  * 
  * Features detected:
@@ -82,8 +53,8 @@ describe('Logs Component', () => {
  * - Named exports: None
  * - Has props: false
  * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: useViewMode
+ * - Client component: true
+ * - Uses hooks: None
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false

@@ -10,7 +10,7 @@ import { logError } from "@/utils/logger";
 import { useCallback, useState } from "react";
 import DraggableComponent from "./DraggableComponent";
 
-interface DropZoneProps {
+export interface DropZoneProps {
   section: string;
   title: string;
   components: string[];

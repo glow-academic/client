@@ -243,7 +243,8 @@ export const scenarios = pgTable("scenarios", {
 	tod: timeOfDay(),
 	urgency: urgencyType(),
 	documents: uuid().array(),
-	defaultScenario: boolean("default_scenario").default(false).notNull()}, (table) => [
+	defaultScenario: boolean("default_scenario").default(false).notNull(),
+	generated: boolean().default(false).notNull()}, (table) => [
 	foreignKey({
 			columns: [table.agentId],
 			foreignColumns: [agents.id],

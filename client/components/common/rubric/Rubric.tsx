@@ -98,7 +98,7 @@ interface EditingState {
   standards: Record<string, boolean>;
 }
 
-interface RubricProps {
+export interface RubricProps {
   rubricId?: string;
   mode?: "create" | "edit";
   showAdvancedFeatures?: boolean;

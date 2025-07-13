@@ -50,7 +50,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-interface ScenarioDataProps {
+export interface ScenarioDataProps {
   className?: string;
 }
 

@@ -1,508 +1,292 @@
-import ClassForm from "@/components/common/class/ClassForm";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import "@testing-library/jest-dom";
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useRouter } from "next/navigation";
-import React from "react";
-import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 import { toast } from "sonner";
+import * as tus from "tus-js-client";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock next/navigation
-vi.mock("next/navigation", () => ({
-  useRouter: vi.fn(),
-}));
-
-// Mock sonner
-vi.mock("sonner", () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
-}));
-
-// Mock all query and mutation functions
-vi.mock("@/utils/mutations/classes/create-class", () => ({
-  createClass: vi.fn(),
-}));
-
-vi.mock("@/utils/mutations/classes/update-class", () => ({
-  updateClass: vi.fn(),
-}));
-
-vi.mock("@/utils/queries/users/get-all-users", () => ({
-  getAllUsers: vi.fn(),
-}));
-
-vi.mock("@/utils/queries/documents/get-all-documents", () => ({
-  getAllDocuments: vi.fn(),
-}));
-
-// Import mocked functions
+// Import the component and mocks
+import ClassForm from "@/components/common/class/ClassForm";
+import { routerMock } from "@/mocks/navigation";
+import * as mockSchema from "@/mocks/schema";
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { Document } from "@/types";
+import { deleteDocument } from "@/utils/api/documents/delete-document";
 import { createClass } from "@/utils/mutations/classes/create-class";
 import { updateClass } from "@/utils/mutations/classes/update-class";
-import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
-import { getAllUsers } from "@/utils/queries/users/get-all-users";
+import { getClass } from "@/utils/queries/classes/get-class";
+import { getDocumentsByClass } from "@/utils/queries/documents/get-documents-by-class";
 
-// Mock data
-const mockClass = {
-  id: "class-1",
-  name: "CS 101",
-  classCode: "CS101",
-  year: 2024,
-  term: "fall" as const,
-  description: "Introduction to Computer Science",
-  createdAt: new Date().toISOString(),
-};
+// Mock dependencies
+import "@/mocks/queries";
+import "@/mocks/mutations";
+import "@/mocks/api";
+import "@/mocks/navigation";
 
-const mockUsers = [
-  {
-    id: 1,
-    name: "John Doe",
-    email: "john@example.com",
-    emailVerified: new Date().toISOString(),
-    image: "https://example.com/image.jpg",
-  },
-];
+vi.mock("next/navigation", () => ({
+  useRouter: () => routerMock,
+}));
 
-const mockDocuments = [
-  {
-    id: "doc-1",
-    name: "Syllabus.pdf",
-    type: "syllabus" as const,
-    classId: "class-1",
-    createdAt: new Date().toISOString(),
-    filePath: "/path/to/syllabus.pdf",
-    mimeType: "application/pdf",
-    classified: true,
-  },
-];
+// Mock the global URL.createObjectURL function
+const createObjectURL = vi.fn((file) => `blob:${file.name}`);
+global.URL.createObjectURL = createObjectURL;
 
 describe("ClassForm", () => {
-  let queryClient: QueryClient;
-  let mockPush: ReturnType<typeof vi.fn>;
+  const user = userEvent.setup();
 
-  beforeEach(() => {
+  // Reset all mocks after each test
+  afterEach(() => {
     vi.clearAllMocks();
-    queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false },
-      },
-    });
-
-    // Mock router
-    mockPush = vi.fn();
-    vi.mocked(useRouter).mockReturnValue({
-      push: mockPush,
-      back: vi.fn(),
-      forward: vi.fn(),
-      refresh: vi.fn(),
-      replace: vi.fn(),
-      prefetch: vi.fn(),
-    });
-
-    // Mock form functions
-    vi.mocked(createClass).mockResolvedValue(mockClass);
-    vi.mocked(updateClass).mockResolvedValue(mockClass);
-    vi.mocked(getAllUsers).mockResolvedValue(mockUsers);
-    vi.mocked(getAllDocuments).mockResolvedValue(mockDocuments);
   });
 
-  const renderWithProviders = (ui: React.ReactElement, options = {}) => {
-    const AllProviders = ({ children }: { children: React.ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-
-    return render(ui, { wrapper: AllProviders, ...options });
-  };
-
-  describe("Rendering", () => {
-    it("should render without crashing in create mode", () => {
-      renderWithProviders(<ClassForm mode="create" />);
-
-      expect(screen.getByText("Create Class")).toBeInTheDocument();
-      expect(screen.getByLabelText(/class name/i)).toBeInTheDocument();
+  // =================================================================
+  // == CREATE MODE TESTS
+  // =================================================================
+  describe("Create Mode", () => {
+    beforeEach(() => {
+      // Ensure no initial data is fetched for create mode
+      vi.mocked(getClass).mockResolvedValue(null);
+      vi.mocked(getDocumentsByClass).mockResolvedValue([]);
     });
 
-    it("should render without crashing in edit mode", () => {
-      renderWithProviders(
-        <ClassForm mode="edit" classId="class-1" initialData={mockClass} />
+    it("renders with empty fields and a create button", async () => {
+      renderWithMocks(<ClassForm />);
+
+      expect(screen.getByRole("textbox", { name: /Class Name/i })).toHaveValue(
+        ""
       );
-
-      expect(screen.getByText("Edit Class")).toBeInTheDocument();
-      expect(screen.getByDisplayValue("CS 101")).toBeInTheDocument();
-    });
-
-    it("should render with required mode prop", () => {
-      renderWithProviders(<ClassForm mode="create" />);
-
-      expect(
-        screen.getByRole("button", { name: /create class/i })
-      ).toBeInTheDocument();
-    });
-
-    it("should populate form fields with initial data", () => {
-      renderWithProviders(
-        <ClassForm mode="edit" classId="class-1" initialData={mockClass} />
+      expect(screen.getByRole("textbox", { name: /Class Code/i })).toHaveValue(
+        ""
       );
-
-      expect(screen.getByDisplayValue("CS 101")).toBeInTheDocument();
-      expect(screen.getByDisplayValue("CS101")).toBeInTheDocument();
-      expect(screen.getByDisplayValue("2024")).toBeInTheDocument();
       expect(
-        screen.getByDisplayValue("Introduction to Computer Science")
+        await screen.findByRole("button", { name: "Create Class" })
       ).toBeInTheDocument();
+      expect(screen.getByText("No documents yet")).toBeInTheDocument();
     });
 
-    it("should have correct accessibility attributes", () => {
-      renderWithProviders(<ClassForm mode="create" />);
+    it("shows validation errors for required fields on submit", async () => {
+      renderWithMocks(<ClassForm />);
+      const submitButton = screen.getByRole("button", { name: "Create Class" });
 
-      const nameInput = screen.getByLabelText(/class name/i);
-      const codeInput = screen.getByLabelText(/class code/i);
-      const yearInput = screen.getByLabelText(/year/i);
-      const descriptionInput = screen.getByLabelText(/description/i);
+      await user.click(submitButton);
 
-      expect(nameInput).toBeInTheDocument();
-      expect(codeInput).toBeInTheDocument();
-      expect(yearInput).toBeInTheDocument();
-      expect(descriptionInput).toBeInTheDocument();
-    });
-  });
+      // Assert error messages appear
+      expect(await screen.findByText("Class name is required")).toBeVisible();
+      expect(screen.getByText("Class code is required")).toBeVisible();
 
-  describe("User Interactions", () => {
-    it("should handle form field updates", async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<ClassForm mode="create" />);
-
-      const nameInput = screen.getByLabelText(/class name/i);
-      await user.type(nameInput, "New Class Name");
-
-      expect(screen.getByDisplayValue("New Class Name")).toBeInTheDocument();
+      // Assert that the create API was NOT called
+      expect(createClass).not.toHaveBeenCalled();
     });
 
-    it("should handle form submission in create mode", async () => {
-      const user = userEvent.setup();
-      const onSuccess = vi.fn();
+    it("successfully creates a class and uploads a new document", async () => {
+      // Arrange
+      const newClassData = {
+        ...mockSchema.classes[0],
+        id: "new-class-id",
+        name: "New Test Class",
+        classCode: "TEST101",
+        description: "A great new class.",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        year: 2025,
+        term: "fall" as const,
+        defaultClass: false,
+      };
+      vi.mocked(createClass).mockResolvedValue(newClassData);
 
-      renderWithProviders(<ClassForm mode="create" onSuccess={onSuccess} />);
+      renderWithMocks(<ClassForm />);
 
-      // Fill out form
-      await user.type(screen.getByLabelText(/class name/i), "Test Class");
-      await user.type(screen.getByLabelText(/class code/i), "TEST101");
+      // Act: Fill out the form
       await user.type(
-        screen.getByLabelText(/description/i),
-        "Test description"
+        screen.getByRole("textbox", { name: /Class Name/i }),
+        "New Test Class"
+      );
+      await user.type(
+        screen.getByRole("textbox", { name: /Class Code/i }),
+        "TEST101"
+      );
+      await user.type(
+        screen.getByRole("textbox", { name: /Description/i }),
+        "A great new class."
       );
 
-      const submitButton = screen.getByRole("button", {
-        name: /create class/i,
+      // Act: Stage a file for upload
+      const file = new File(["syllabus content"], "syllabus.pdf", {
+        type: "application/pdf",
       });
+      const fileInput = screen.getByTestId("file-input"); // Assuming you add data-testid="file-input" to the hidden input
+      await user.upload(fileInput, file);
+
+      // Assert the staged file appears in the UI
+      expect(await screen.findByText("syllabus.pdf")).toBeVisible();
+      expect(screen.getByText("NEW")).toBeVisible();
+
+      // Act: Submit the form
+      const submitButton = screen.getByRole("button", { name: "Create Class" });
       await user.click(submitButton);
 
+      // Assert: API calls and intermediate toast
       await waitFor(() => {
-        expect(createClass).toHaveBeenCalledWith({
-          name: "Test Class",
-          classCode: "TEST101",
-          year: new Date().getFullYear(),
-          term: "fall",
-          description: "Test description",
-        });
+        expect(createClass).toHaveBeenCalledWith(
+          expect.objectContaining({ name: "New Test Class" })
+        );
+        // Check for the first toast
+        expect(toast.success).toHaveBeenCalledWith(
+          "Class created, now uploading documents..."
+        );
       });
-    });
-
-    it("should handle form submission in edit mode", async () => {
-      const user = userEvent.setup();
-      const onSuccess = vi.fn();
-
-      renderWithProviders(
-        <ClassForm
-          mode="edit"
-          classId="class-1"
-          initialData={mockClass}
-          onSuccess={onSuccess}
-        />
-      );
-
-      // Update a field
-      const nameInput = screen.getByDisplayValue("CS 101");
-      await user.clear(nameInput);
-      await user.type(nameInput, "Updated Computer Science Class");
-
-      const submitButton = screen.getByRole("button", {
-        name: /update class/i,
-      });
-      await user.click(submitButton);
 
       await waitFor(() => {
-        expect(updateClass).toHaveBeenCalledWith("class-1", {
-          name: "Updated Computer Science Class",
-          classCode: "CS101",
-          year: 2024,
-          term: "fall",
-          description: "Introduction to Computer Science",
-        });
+        // 2. TUS Upload is initiated with the new class ID
+        expect(tus.Upload).toHaveBeenCalled();
+        const tusCall = vi.mocked(tus.Upload).mock.calls[0];
+        const tusMetadata = tusCall?.[1]?.metadata as {
+          class: string;
+          filename: string;
+        };
+        expect(tusMetadata?.["class"]).toBe("new-class-id");
+        expect(tusMetadata?.["filename"]).toBe("syllabus.pdf");
       });
-    });
 
-    it("should handle term selection", async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<ClassForm mode="create" />);
-
-      const termSelect = screen.getByRole("combobox");
-      await user.click(termSelect);
-
-      const springOption = screen.getByRole("option", { name: /spring/i });
-      await user.click(springOption);
-
-      expect(screen.getByText("Spring")).toBeInTheDocument();
-    });
-
-    it("should handle cancel button", async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<ClassForm mode="create" />);
-
-      const cancelButton = screen.getByRole("button", { name: /cancel/i });
-      await user.click(cancelButton);
-
-      expect(mockPush).toHaveBeenCalledWith("/classes");
-    });
-  });
-
-  describe("Form Validation", () => {
-    it("should validate required fields", async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<ClassForm mode="create" />);
-
-      const submitButton = screen.getByRole("button", {
-        name: /create class/i,
-      });
-      await user.click(submitButton);
-
+      // Assert: Final success UI feedback
       await waitFor(() => {
-        expect(screen.getByText("Class name is required")).toBeInTheDocument();
-        expect(screen.getByText("Class code is required")).toBeInTheDocument();
-      });
-    });
-
-    it("should validate class code format", async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<ClassForm mode="create" />);
-
-      await user.type(screen.getByLabelText(/class name/i), "Test Class");
-      await user.type(screen.getByLabelText(/class code/i), "invalid code");
-
-      const submitButton = screen.getByRole("button", {
-        name: /create class/i,
-      });
-      await user.click(submitButton);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText(/class code must be alphanumeric/i)
-        ).toBeInTheDocument();
-      });
-    });
-
-    it("should validate year range", async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<ClassForm mode="create" />);
-
-      await user.type(screen.getByLabelText(/class name/i), "Test Class");
-      await user.type(screen.getByLabelText(/class code/i), "TEST101");
-
-      const yearInput = screen.getByLabelText(/year/i);
-      await user.clear(yearInput);
-      await user.type(yearInput, "1900");
-
-      const submitButton = screen.getByRole("button", {
-        name: /create class/i,
-      });
-      await user.click(submitButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/year must be between/i)).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe("Document Management", () => {
-    it("should display documents in edit mode", async () => {
-      renderWithProviders(
-        <ClassForm mode="edit" classId="class-1" initialData={mockClass} />
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText("Syllabus.pdf")).toBeInTheDocument();
-      });
-    });
-
-    it("should handle document search", async () => {
-      const user = userEvent.setup();
-      renderWithProviders(
-        <ClassForm mode="edit" classId="class-1" initialData={mockClass} />
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText("Syllabus.pdf")).toBeInTheDocument();
-      });
-
-      const searchInput = screen.getByPlaceholderText(/search documents/i);
-      await user.type(searchInput, "syllabus");
-
-      // Should filter documents
-      expect(screen.getByText("Syllabus.pdf")).toBeInTheDocument();
-    });
-
-    it("should handle view mode toggle", async () => {
-      const user = userEvent.setup();
-      renderWithProviders(
-        <ClassForm mode="edit" classId="class-1" initialData={mockClass} />
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText("Syllabus.pdf")).toBeInTheDocument();
-      });
-
-      const gridViewButton = screen.getByRole("button", { name: /grid view/i });
-      await user.click(gridViewButton);
-
-      // Should switch to grid view
-      expect(gridViewButton).toHaveAttribute("aria-pressed", "true");
-    });
-  });
-
-  describe("API Integration", () => {
-    it("should handle successful class creation", async () => {
-      const user = userEvent.setup();
-      const onSuccess = vi.fn();
-
-      renderWithProviders(<ClassForm mode="create" onSuccess={onSuccess} />);
-
-      await user.type(screen.getByLabelText(/class name/i), "Test Class");
-      await user.type(screen.getByLabelText(/class code/i), "TEST101");
-
-      const submitButton = screen.getByRole("button", {
-        name: /create class/i,
-      });
-      await user.click(submitButton);
-
-      await waitFor(() => {
+        // Check that the FINAL toast message is also called
         expect(toast.success).toHaveBeenCalledWith(
           "Class created successfully!"
         );
-        expect(onSuccess).toHaveBeenCalledWith("new-class-id");
       });
+
+      expect(routerMock.push).toHaveBeenCalledWith("/create/classes");
+    });
+  });
+
+  // =================================================================
+  // == EDIT MODE TESTS
+  // =================================================================
+  describe("Edit Mode", () => {
+    const classId = mockSchema.classes[0]?.id;
+
+    beforeEach(() => {
+      // Mock the API calls for fetching existing data
+      vi.mocked(getClass).mockResolvedValue({
+        ...mockSchema.classes[0]!,
+        id: classId!,
+        term: "fall" as const,
+        defaultClass: false,
+      });
+      vi.mocked(getDocumentsByClass).mockResolvedValue(
+        mockSchema.documents as Document[]
+      );
     });
 
-    it("should handle API errors", async () => {
-      const user = userEvent.setup();
-      (createClass as Mock).mockRejectedValue(new Error("API Error"));
+    it("renders with pre-filled form data and existing documents", async () => {
+      renderWithMocks(<ClassForm classId={classId!} />);
 
-      renderWithProviders(<ClassForm mode="create" />);
+      // Assert form fields are populated
+      expect(
+        await screen.findByDisplayValue(mockSchema.classes[0]!.name)
+      ).toBeInTheDocument();
+      expect(
+        screen.getByDisplayValue(mockSchema.classes[0]!.classCode)
+      ).toBeInTheDocument();
 
-      await user.type(screen.getByLabelText(/class name/i), "Test Class");
-      await user.type(screen.getByLabelText(/class code/i), "TEST101");
+      // Assert existing documents are displayed
+      for (const doc of mockSchema.documents as Document[]) {
+        expect(await screen.findByText(doc.name)).toBeInTheDocument();
+      }
 
-      const submitButton = screen.getByRole("button", {
-        name: /create class/i,
+      // Assert button text is for updating
+      expect(
+        screen.getByRole("button", { name: "Update Class" })
+      ).toBeInTheDocument();
+    });
+
+    it("stages a document for deletion and removes it on save", async () => {
+      const docToDelete = mockSchema.documents[0]!;
+      vi.mocked(updateClass).mockResolvedValue({
+        ...mockSchema.classes[0]!,
+        name: "Updated Name",
+        classCode: "UPDATED101",
+        year: 2025,
+        term: "fall" as const,
+        description: "Updated description",
+        defaultClass: false,
+      }); // Mock update success
+
+      renderWithMocks(<ClassForm classId={classId!} />);
+
+      await screen.findByText(docToDelete.name);
+
+      // Find the delete button for that specific document
+      const deleteButton = screen.getByTestId(`delete-doc-${docToDelete.id}`);
+
+      // Act: Click delete and confirm in the dialog
+      await user.click(deleteButton);
+      expect(
+        await screen.findByRole("dialog", { name: /Remove Document/i })
+      ).toBeVisible();
+      const confirmRemoveButton = screen.getByRole("button", {
+        name: "Remove",
       });
+      await user.click(confirmRemoveButton);
+
+      // Assert: The document is gone from the UI immediately
+      expect(screen.queryByText(docToDelete.name)).toBeNull();
+      expect(toast.info).toHaveBeenCalledWith(
+        `'${docToDelete.name}' will be deleted on save.`
+      );
+
+      // Act: Save the form
+      const submitButton = screen.getByRole("button", { name: "Update Class" });
       await user.click(submitButton);
 
+      // Assert: The delete API was called
+      await waitFor(() => {
+        expect(deleteDocument).toHaveBeenCalledWith(docToDelete.id);
+      });
+      expect(toast.success).toHaveBeenCalledWith("Class updated successfully!");
+    });
+  });
+
+  // =================================================================
+  // == LOADING & ERROR STATE TESTS
+  // =================================================================
+  describe("API Integration and States", () => {
+    it("displays skeletons while loading initial data in edit mode", () => {
+      // Arrange: Mock a perpetually loading state
+      vi.mocked(getClass).mockImplementation(() => new Promise(() => {}));
+      renderWithMocks(<ClassForm classId="some-id" />);
+
+      // Assert: Skeletons for form fields are visible
+      const skeletons = screen.getAllByTestId("skeleton"); // Add data-testid="skeleton" to your Skeleton components
+      expect(skeletons.length).toBeGreaterThan(3);
+    });
+
+    it("shows an error toast if creating a class fails", async () => {
+      // Arrange: Mock a failure from the create API
+      vi.mocked(createClass).mockRejectedValue(new Error("Network Error 500"));
+      renderWithMocks(<ClassForm />);
+
+      // Act: Fill form and submit
+      await user.type(
+        screen.getByRole("textbox", { name: /Class Name/i }),
+        "Faulty Class"
+      );
+      await user.type(
+        screen.getByRole("textbox", { name: /Class Code/i }),
+        "ERR101"
+      );
+      await user.type(
+        screen.getByRole("textbox", { name: /Description/i }),
+        "A great new class."
+      );
+      await user.click(screen.getByRole("button", { name: "Create Class" }));
+
+      // Assert: An error toast is shown
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
-          "Failed to create class: API Error"
+          "Failed to save class: Network Error 500"
         );
       });
     });
-
-    it("should handle loading states", async () => {
-      const user = userEvent.setup();
-      (createClass as Mock).mockImplementation(() => new Promise(() => {})); // Never resolves
-
-      renderWithProviders(<ClassForm mode="create" />);
-
-      await user.type(screen.getByLabelText(/class name/i), "Test Class");
-      await user.type(screen.getByLabelText(/class code/i), "TEST101");
-
-      const submitButton = screen.getByRole("button", {
-        name: /create class/i,
-      });
-      await user.click(submitButton);
-
-      // Should show loading state
-      expect(
-        screen.getByRole("button", { name: /creating/i })
-      ).toBeInTheDocument();
-    });
-  });
-
-  describe("Edge Cases", () => {
-    it("should handle missing initial data gracefully", () => {
-      renderWithProviders(<ClassForm mode="edit" classId="class-1" />);
-
-      // Should render with empty form
-      expect(screen.getByLabelText(/class name/i)).toHaveValue("");
-    });
-
-    it("should handle empty documents list", async () => {
-      (getAllDocuments as Mock).mockResolvedValue([]);
-
-      renderWithProviders(
-        <ClassForm mode="edit" classId="class-1" initialData={mockClass} />
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText(/no documents found/i)).toBeInTheDocument();
-      });
-    });
-
-    it("should handle network errors gracefully", async () => {
-      (getAllDocuments as Mock).mockRejectedValue(new Error("Network error"));
-
-      renderWithProviders(
-        <ClassForm mode="edit" classId="class-1" initialData={mockClass} />
-      );
-
-      // Should not crash on network error
-      expect(screen.getByText("Edit Class")).toBeInTheDocument();
-    });
   });
 });
-
-/*
- * Component Analysis for ClassForm:
- * Path: common/class/ClassForm.tsx
- *
- * Features detected:
- * - Default export: true
- * - Named exports: None
- * - Has props: true
- * - Props interface: ClassFormProps
- * - Client component: true
- * - Uses hooks: useState, useRef, useCallback, useRouter, useQuery, useQueryClient, useEffect, uses
- * - Uses router: true
- * - Has API calls: true
- * - Has form handling: true
- * - Uses state: true
- * - Uses effects: true
- * - Uses context: false
- *
- * TODO: Implement the failing tests above with actual test logic
- *
- * Example implementations:
- *
- * Basic rendering:
- * render(<ClassForm {...mockProps} />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- *
- * Props testing:
- * const props = { ... };
- * render(<ClassForm {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- *
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

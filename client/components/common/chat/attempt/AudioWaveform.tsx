@@ -9,7 +9,7 @@ import React, { useEffect, useRef } from "react";
 import WaveSurfer from "wavesurfer.js";
 import RecordPlugin from "wavesurfer.js/dist/plugins/record.js";
 
-interface AudioWaveformProps {
+export interface AudioWaveformProps {
   isRecording: boolean;
   isTall: boolean; // Prop to control styling for tall mode
   stream: MediaStream | null; // Stream to visualize

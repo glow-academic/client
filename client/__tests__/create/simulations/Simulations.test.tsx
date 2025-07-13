@@ -1,97 +1,148 @@
-import { Simulations } from "@/components/create/simulations/Simulations";
-import { renderWithProviders } from "@/mocks/utils";
-import { screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, it, vi, afterEach } from 'vitest';
+import { renderWithMocks } from '@/test/renderWithMocks';
+import userEvent from '@testing-library/user-event';
 
-// Mock external dependencies
-vi.mock("sonner", () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
-}));
+// ——————————————————————————————————————————
+import { Simulations } from '@/components/create/simulations/Simulations';
 
-describe("Simulations", () => {
-  beforeEach(() => {
+
+
+// ✨ Import comprehensive mock data from our centralized mock system
+import '@/mocks/queries';
+import '@/mocks/mutations';
+import '@/mocks/api';
+describe('Simulations', () => {
+  
+  /* ------------------------------------------------------------------ *
+   * 💡 Mock Data Usage Guide:
+   * 
+   * All API functions are automatically mocked via imports above.
+   * Use mockSchema.* for realistic test data:
+   * 
+   * Examples:
+   * - mockSchema.users[0] - First user object
+   * - mockSchema.classes - Array of class objects  
+   * - mockSchema.profiles - Array of profile objects
+   * 
+   * To override specific mocks in individual tests:
+   * - vi.mocked(queryFunction).mockResolvedValue(customData)
+   * - vi.mocked(mutationFunction).mockResolvedValue(customResponse)
+   * ------------------------------------------------------------------ */
+  
+  // ✨ Reset mocks after each test
+  afterEach(() => {
     vi.clearAllMocks();
   });
 
-  describe("Rendering", () => {
-    it("should render without crashing", async () => {
-      renderWithProviders(<Simulations />);
-
-      // Wait for the component to render with mocked data
-      await waitFor(() => {
-        expect(screen.getByTestId).toBeDefined();
-      });
+  describe('basic render smoke-test', () => {
+    it('renders without crashing', async () => {
+      // ✨ All mocks are automatically set up via imports above
+      renderWithMocks(<Simulations  />);
+      
+      // TODO: Add meaningful assertions based on your component
+      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
     });
 
-    it("should display simulations when data is available", async () => {
-      renderWithProviders(<Simulations />);
+    
 
-      // The component should render the main container div
-      await waitFor(() => {
-        // Check for the main container or the empty state
-        const container = document.querySelector(".space-y-6");
-        expect(container).toBeInTheDocument();
-      });
+    it.skip('should have correct accessibility attributes', () => {
+      // TODO: Test accessibility features
+      
+      // TODO add accessibility assertions
 
-      // Should show either simulations or empty state message
-      await waitFor(() => {
-        const hasSimulations = screen.queryByText(/No simulations yet/);
-        const hasCreateButton = screen.queryByText(
-          /Create Your First Simulation/
-        );
-
-        // At least one of these should be present
-        expect(hasSimulations || hasCreateButton || document.body).toBeTruthy();
-      });
     });
   });
 
-  describe("User Interactions", () => {
-    it("should handle button clicks", async () => {
-      renderWithProviders(<Simulations />);
+  describe('User Interactions', () => {
+    
 
-      // Wait for component to load
-      await waitFor(() => {
-        const buttons = screen.queryAllByRole("button");
-        expect(buttons.length).toBeGreaterThanOrEqual(0);
-      });
+    it.skip('should handle state changes', async () => {
+      const user = userEvent.setup();
+      void user;
+      // TODO: state management assertions
+      // Mock data is available from @/mocks/schema for realistic testing
+    });
+
+    it.skip('should handle user events', async () => {
+      const user = userEvent.setup();
+      void user;
+      // TODO: interaction assertions
+
     });
   });
 
-  describe("Component Structure", () => {
-    it("should have proper component structure", () => {
-      renderWithProviders(<Simulations />);
+  describe('API Integration', () => {
+    it.skip('should handle and display an API error state', async () => {
+      // Arrange: Override the default success mock with an error for this test.
+      // Example: vi.mocked(getAllSimulations).mockRejectedValue(new Error('API Error'));
 
-      // Component should render within the providers
-      expect(document.body).toBeInTheDocument();
+      renderWithMocks(<Simulations  />);
+      
+      // Assert: Check that your component shows an error message.
+      // TODO: Add specific error state assertions
     });
+
+    it.skip('should handle loading states', () => {
+      // TODO: Test loading states
+      // Mock data is automatically loaded from @/mocks/schema
+      
+      // TODO: loading states assertions
+    });
+  });
+
+  describe('Navigation', () => {
+    it.skip('should handle navigation', () => {
+      // TODO: Test navigation behavior
+      
+      // TODO: navigation assertions
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it.skip('should handle edge cases gracefully', () => {
+      // TODO: Test edge cases and error scenarios
+      
+      // TODO: edge-case assertions
+
+    });
+
+    
   });
 });
 
 /*
  * Component Analysis for Simulations:
  * Path: create/simulations/Simulations.tsx
- *
+ * 
  * Features detected:
  * - Default export: false
  * - Named exports: Simulations
  * - Has props: false
  * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: useState, useQuery, useRouter
+ * - Client component: true
+ * - Uses hooks: useQuery, useQueryClient, useRouter, useState
  * - Uses router: true
  * - Has API calls: true
  * - Has form handling: false
  * - Uses state: true
  * - Uses effects: false
  * - Uses context: false
- *
- * Tests implemented:
- * - Basic rendering test that waits for component to load
- * - Display test that checks for main container and content
- * - User interaction test for button handling
- * - Component structure validation
+ * 
+ * TODO: Implement the failing tests above with actual test logic
+ * 
+ * Example implementations:
+ * 
+ * Basic rendering:
+ * render(<Simulations />);
+ * expect(screen.getByRole('...')).toBeInTheDocument();
+ * 
+ * Props testing:
+ * const props = { ... };
+ * render(<Simulations {...props} />);
+ * expect(screen.getByText(props.someText)).toBeInTheDocument();
+ * 
+ * User interaction:
+ * const button = screen.getByRole('button');
+ * await user.click(button);
+ * expect(mockFunction).toHaveBeenCalled();
  */

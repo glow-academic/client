@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    // --- Basic Options ---
+    "target": "es5",
+    "lib": ["es5", "dom"],
+    "types": ["cypress", "@testing-library/cypress", "node"],
+    "isolatedModules": false,
+
+    // --- Module Resolution ---
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    
+    // --- Strictness ---
+    "strict": false
+  },
+  "include": [
+    // This looks for all .ts files within the current (cypress) directory
+    "**/*.ts"
+  ]
+}

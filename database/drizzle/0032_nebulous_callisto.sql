@@ -1,0 +1,1 @@
+ALTER TABLE "scenarios" ADD COLUMN "generated" boolean DEFAULT false NOT NULL;

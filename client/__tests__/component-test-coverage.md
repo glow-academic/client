@@ -1,82 +1,77 @@
 # Component Test Coverage Report
 
-Generated on: 2025-07-10T18:10:12.469Z
-
 ## Summary
-- **Total Components**: 103
+- **Total Components**: 100
 - **Tests Created**: 0
-- **Tests Updated**: 59
-- **Tests Skipped** (already implemented): 44
+- **Tests Updated**: 0
+- **Tests Skipped** (already implemented): 100
 
 ## Component Coverage
 
 | Component | Path | Test File | Status |
 |-----------|------|-----------|--------|
-| Dashboard | analytics/Dashboard.tsx | Dashboard.test.tsx | ❌ Needs Implementation |
+| Dashboard | analytics/Dashboard.tsx | Dashboard.test.tsx | ✅ Implemented |
 | History | analytics/History.tsx | History.test.tsx | ✅ Implemented |
-| Report | analytics/Report.tsx | Report.test.tsx | ❌ Needs Implementation |
-| Reports | analytics/Reports.tsx | Reports.test.tsx | ✅ Implemented |
-| reports-columns | analytics/reports-columns.tsx | reports-columns.test.tsx | ❌ Needs Implementation |
-| reports-data-table-toolbar | analytics/reports-data-table-toolbar.tsx | reports-data-table-toolbar.test.tsx | ❌ Needs Implementation |
-| reports-data-table | analytics/reports-data-table.tsx | reports-data-table.test.tsx | ❌ Needs Implementation |
+| Report | analytics/report/Report.tsx | Report.test.tsx | ✅ Implemented |
+| Reports | analytics/report/Reports.tsx | Reports.test.tsx | ✅ Implemented |
+| ReportsDataTable | analytics/report/ReportsDataTable.tsx | ReportsDataTable.test.tsx | ✅ Implemented |
+| ReportsDataTableToolbar | analytics/report/ReportsDataTableToolbar.tsx | ReportsDataTableToolbar.test.tsx | ✅ Implemented |
 | Agent | common/agent/Agent.tsx | Agent.test.tsx | ✅ Implemented |
-| Registry | common/analytics/Registry.tsx | Registry.test.tsx | ❌ Needs Implementation |
 | CohortCompletion | common/analytics/footer/CohortCompletion.tsx | CohortCompletion.test.tsx | ✅ Implemented |
-| ScenarioData | common/analytics/footer/ScenarioData.tsx | ScenarioData.test.tsx | ❌ Needs Implementation |
-| SimulationPerformance | common/analytics/footer/SimulationPerformance.tsx | SimulationPerformance.test.tsx | ❌ Needs Implementation |
-| SkillGrowth | common/analytics/footer/SkillGrowth.tsx | SkillGrowth.test.tsx | ❌ Needs Implementation |
-| ActiveCohorts | common/analytics/header/ActiveCohorts.tsx | ActiveCohorts.test.tsx | ❌ Needs Implementation |
-| AverageScore | common/analytics/header/AverageScore.tsx | AverageScore.test.tsx | ❌ Needs Implementation |
-| CompletionRate | common/analytics/header/CompletionRate.tsx | CompletionRate.test.tsx | ❌ Needs Implementation |
-| NeedSupport | common/analytics/header/NeedSupport.tsx | NeedSupport.test.tsx | ❌ Needs Implementation |
-| PassRate | common/analytics/header/PassRate.tsx | PassRate.test.tsx | ❌ Needs Implementation |
-| TotalSessions | common/analytics/header/TotalSessions.tsx | TotalSessions.test.tsx | ❌ Needs Implementation |
-| TotalTas | common/analytics/header/TotalTas.tsx | TotalTas.test.tsx | ❌ Needs Implementation |
-| TrainingHours | common/analytics/header/TrainingHours.tsx | TrainingHours.test.tsx | ❌ Needs Implementation |
-| TrainingSessions | common/analytics/header/TrainingSessions.tsx | TrainingSessions.test.tsx | ❌ Needs Implementation |
-| PerformanceByPersonality | common/analytics/primary/PerformanceByPersonality.tsx | PerformanceByPersonality.test.tsx | ❌ Needs Implementation |
-| PerformanceTrends | common/analytics/primary/PerformanceTrends.tsx | PerformanceTrends.test.tsx | ❌ Needs Implementation |
-| SessionActivity | common/analytics/primary/SessionActivity.tsx | SessionActivity.test.tsx | ❌ Needs Implementation |
-| ClassPerformance | common/analytics/secondary/ClassPerformance.tsx | ClassPerformance.test.tsx | ❌ Needs Implementation |
-| SkillBreakdown | common/analytics/secondary/SkillBreakdown.tsx | SkillBreakdown.test.tsx | ❌ Needs Implementation |
-| TrainingInsights | common/analytics/secondary/TrainingInsights.tsx | TrainingInsights.test.tsx | ❌ Needs Implementation |
-| DocumentSelect | common/chat/DocumentSelect.tsx | DocumentSelect.test.tsx | ❌ Needs Implementation |
+| ScenarioData | common/analytics/footer/ScenarioData.tsx | ScenarioData.test.tsx | ✅ Implemented |
+| SimulationPerformance | common/analytics/footer/SimulationPerformance.tsx | SimulationPerformance.test.tsx | ✅ Implemented |
+| SkillGrowth | common/analytics/footer/SkillGrowth.tsx | SkillGrowth.test.tsx | ✅ Implemented |
+| ActiveCohorts | common/analytics/header/ActiveCohorts.tsx | ActiveCohorts.test.tsx | ✅ Implemented |
+| AverageScore | common/analytics/header/AverageScore.tsx | AverageScore.test.tsx | ✅ Implemented |
+| CompletionRate | common/analytics/header/CompletionRate.tsx | CompletionRate.test.tsx | ✅ Implemented |
+| NeedSupport | common/analytics/header/NeedSupport.tsx | NeedSupport.test.tsx | ✅ Implemented |
+| PassRate | common/analytics/header/PassRate.tsx | PassRate.test.tsx | ✅ Implemented |
+| TotalSessions | common/analytics/header/TotalSessions.tsx | TotalSessions.test.tsx | ✅ Implemented |
+| TotalTas | common/analytics/header/TotalTas.tsx | TotalTas.test.tsx | ✅ Implemented |
+| TrainingHours | common/analytics/header/TrainingHours.tsx | TrainingHours.test.tsx | ✅ Implemented |
+| TrainingSessions | common/analytics/header/TrainingSessions.tsx | TrainingSessions.test.tsx | ✅ Implemented |
+| PerformanceByPersonality | common/analytics/primary/PerformanceByPersonality.tsx | PerformanceByPersonality.test.tsx | ✅ Implemented |
+| PerformanceTrends | common/analytics/primary/PerformanceTrends.tsx | PerformanceTrends.test.tsx | ✅ Implemented |
+| SessionActivity | common/analytics/primary/SessionActivity.tsx | SessionActivity.test.tsx | ✅ Implemented |
+| ClassPerformance | common/analytics/secondary/ClassPerformance.tsx | ClassPerformance.test.tsx | ✅ Implemented |
+| SkillBreakdown | common/analytics/secondary/SkillBreakdown.tsx | SkillBreakdown.test.tsx | ✅ Implemented |
+| TrainingInsights | common/analytics/secondary/TrainingInsights.tsx | TrainingInsights.test.tsx | ✅ Implemented |
+| DocumentSelect | common/chat/DocumentSelect.tsx | DocumentSelect.test.tsx | ✅ Implemented |
 | DocumentViewer | common/chat/DocumentViewer.tsx | DocumentViewer.test.tsx | ✅ Implemented |
 | Markdown | common/chat/Markdown.tsx | Markdown.test.tsx | ✅ Implemented |
 | MarkdownImage | common/chat/MarkdownImage.tsx | MarkdownImage.test.tsx | ✅ Implemented |
-| AttemptChat | common/chat/attempt/AttemptChat.tsx | AttemptChat.test.tsx | ❌ Needs Implementation |
-| AttemptInput | common/chat/attempt/AttemptInput.tsx | AttemptInput.test.tsx | ❌ Needs Implementation |
-| AttemptMessages | common/chat/attempt/AttemptMessages.tsx | AttemptMessages.test.tsx | ❌ Needs Implementation |
-| AudioWaveform | common/chat/attempt/AudioWaveform.tsx | AudioWaveform.test.tsx | ❌ Needs Implementation |
+| AttemptChat | common/chat/attempt/AttemptChat.tsx | AttemptChat.test.tsx | ✅ Implemented |
+| AttemptInput | common/chat/attempt/AttemptInput.tsx | AttemptInput.test.tsx | ✅ Implemented |
+| AttemptMessages | common/chat/attempt/AttemptMessages.tsx | AttemptMessages.test.tsx | ✅ Implemented |
+| AudioWaveform | common/chat/attempt/AudioWaveform.tsx | AudioWaveform.test.tsx | ✅ Implemented |
 | ClassForm | common/class/ClassForm.tsx | ClassForm.test.tsx | ✅ Implemented |
 | Cohort | common/cohort/Cohort.tsx | Cohort.test.tsx | ✅ Implemented |
-| CarouselSection | common/dashboard/CarouselSection.tsx | CarouselSection.test.tsx | ❌ Needs Implementation |
-| DashboardEdit | common/dashboard/DashboardEdit.tsx | DashboardEdit.test.tsx | ❌ Needs Implementation |
-| DraggableComponent | common/dashboard/DraggableComponent.tsx | DraggableComponent.test.tsx | ❌ Needs Implementation |
-| DropZone | common/dashboard/DropZone.tsx | DropZone.test.tsx | ❌ Needs Implementation |
-| FooterPreview | common/dashboard/FooterPreview.tsx | FooterPreview.test.tsx | ❌ Needs Implementation |
-| HeaderPreview | common/dashboard/HeaderPreview.tsx | HeaderPreview.test.tsx | ❌ Needs Implementation |
-| SettingsDialog | common/dashboard/SettingsDialog.tsx | SettingsDialog.test.tsx | ❌ Needs Implementation |
+| CarouselSection | common/dashboard/CarouselSection.tsx | CarouselSection.test.tsx | ✅ Implemented |
+| DashboardEdit | common/dashboard/DashboardEdit.tsx | DashboardEdit.test.tsx | ✅ Implemented |
+| DraggableComponent | common/dashboard/DraggableComponent.tsx | DraggableComponent.test.tsx | ✅ Implemented |
+| DropZone | common/dashboard/DropZone.tsx | DropZone.test.tsx | ✅ Implemented |
+| FooterPreview | common/dashboard/FooterPreview.tsx | FooterPreview.test.tsx | ✅ Implemented |
+| HeaderPreview | common/dashboard/HeaderPreview.tsx | HeaderPreview.test.tsx | ✅ Implemented |
+| SettingsDialog | common/dashboard/SettingsDialog.tsx | SettingsDialog.test.tsx | ✅ Implemented |
+| DataTable | common/history/DataTable.tsx | DataTable.test.tsx | ✅ Implemented |
+| DataTableColumnHeader | common/history/DataTableColumnHeader.tsx | DataTableColumnHeader.test.tsx | ✅ Implemented |
+| DataTableFacetedFilter | common/history/DataTableFacetedFilter.tsx | DataTableFacetedFilter.test.tsx | ✅ Implemented |
+| DataTablePagination | common/history/DataTablePagination.tsx | DataTablePagination.test.tsx | ✅ Implemented |
+| DataTableRowActions | common/history/DataTableRowActions.tsx | DataTableRowActions.test.tsx | ✅ Implemented |
+| DataTableToolbar | common/history/DataTableToolbar.tsx | DataTableToolbar.test.tsx | ✅ Implemented |
+| DataTableViewOptions | common/history/DataTableViewOptions.tsx | DataTableViewOptions.test.tsx | ✅ Implemented |
+| ExportButton | common/history/ExportButton.tsx | ExportButton.test.tsx | ✅ Implemented |
 | SimulationHistory | common/history/SimulationHistory.tsx | SimulationHistory.test.tsx | ✅ Implemented |
-| columns | common/history/columns.tsx | columns.test.tsx | ✅ Implemented |
-| data-table-column-header | common/history/data-table-column-header.tsx | data-table-column-header.test.tsx | ✅ Implemented |
-| data-table-faceted-filter | common/history/data-table-faceted-filter.tsx | data-table-faceted-filter.test.tsx | ✅ Implemented |
-| data-table-pagination | common/history/data-table-pagination.tsx | data-table-pagination.test.tsx | ✅ Implemented |
-| data-table-row-actions | common/history/data-table-row-actions.tsx | data-table-row-actions.test.tsx | ✅ Implemented |
-| data-table-toolbar | common/history/data-table-toolbar.tsx | data-table-toolbar.test.tsx | ✅ Implemented |
-| data-table-view-options | common/history/data-table-view-options.tsx | data-table-view-options.test.tsx | ✅ Implemented |
-| data-table | common/history/data-table.tsx | data-table.test.tsx | ✅ Implemented |
-| export-button | common/history/export-button.tsx | export-button.test.tsx | ✅ Implemented |
-| ChatDialog | common/home/ChatDialog.tsx | ChatDialog.test.tsx | ❌ Needs Implementation |
-| ChatFab | common/home/ChatFab.tsx | ChatFab.test.tsx | ❌ Needs Implementation |
-| ChatInput | common/home/ChatInput.tsx | ChatInput.test.tsx | ❌ Needs Implementation |
-| ChatMessages | common/home/ChatMessages.tsx | ChatMessages.test.tsx | ❌ Needs Implementation |
+| ChatDialog | common/home/ChatDialog.tsx | ChatDialog.test.tsx | ✅ Implemented |
+| ChatFab | common/home/ChatFab.tsx | ChatFab.test.tsx | ✅ Implemented |
+| ChatInput | common/home/ChatInput.tsx | ChatInput.test.tsx | ✅ Implemented |
+| ChatMessages | common/home/ChatMessages.tsx | ChatMessages.test.tsx | ✅ Implemented |
 | ChatStarterPrompts | common/home/ChatStarterPrompts.tsx | ChatStarterPrompts.test.tsx | ✅ Implemented |
-| ChatWidget | common/home/ChatWidget.tsx | ChatWidget.test.tsx | ❌ Needs Implementation |
-| navigation-breadcrumbs | common/layout/navigation-breadcrumbs.tsx | navigation-breadcrumbs.test.tsx | ✅ Implemented |
-| report-problem | common/layout/report-problem.tsx | report-problem.test.tsx | ❌ Needs Implementation |
-| unified-sidebar | common/layout/unified-sidebar.tsx | unified-sidebar.test.tsx | ✅ Implemented |
-| Login | common/login/Login.tsx | Login.test.tsx | ❌ Needs Implementation |
+| ChatWidget | common/home/ChatWidget.tsx | ChatWidget.test.tsx | ✅ Implemented |
+| NavigationBreadcrumbs | common/layout/NavigationBreadcrumbs.tsx | NavigationBreadcrumbs.test.tsx | ✅ Implemented |
+| ReportProblem | common/layout/ReportProblem.tsx | ReportProblem.test.tsx | ✅ Implemented |
+| UnifiedSidebar | common/layout/UnifiedSidebar.tsx | UnifiedSidebar.test.tsx | ✅ Implemented |
+| Login | common/login/Login.tsx | Login.test.tsx | ✅ Implemented |
 | Model | common/model/Model.tsx | Model.test.tsx | ✅ Implemented |
 | Rubric | common/rubric/Rubric.tsx | Rubric.test.tsx | ✅ Implemented |
 | TableRubric | common/rubric/TableRubric.tsx | TableRubric.test.tsx | ✅ Implemented |
@@ -88,9 +83,9 @@ Generated on: 2025-07-10T18:10:12.469Z
 | ClassStatus | create/classes/ClassStatus.tsx | ClassStatus.test.tsx | ✅ Implemented |
 | Classes | create/classes/Classes.tsx | Classes.test.tsx | ✅ Implemented |
 | NewClass | create/classes/NewClass.tsx | NewClass.test.tsx | ✅ Implemented |
-| CohortEdit | create/cohorts/CohortEdit.tsx | CohortEdit.test.tsx | ❌ Needs Implementation |
-| Cohorts | create/cohorts/Cohorts.tsx | Cohorts.test.tsx | ❌ Needs Implementation |
-| NewCohort | create/cohorts/NewCohort.tsx | NewCohort.test.tsx | ❌ Needs Implementation |
+| CohortEdit | create/cohorts/CohortEdit.tsx | CohortEdit.test.tsx | ✅ Implemented |
+| Cohorts | create/cohorts/Cohorts.tsx | Cohorts.test.tsx | ✅ Implemented |
+| NewCohort | create/cohorts/NewCohort.tsx | NewCohort.test.tsx | ✅ Implemented |
 | NewScenario | create/scenarios/NewScenario.tsx | NewScenario.test.tsx | ✅ Implemented |
 | ScenarioEdit | create/scenarios/ScenarioEdit.tsx | ScenarioEdit.test.tsx | ✅ Implemented |
 | Scenarios | create/scenarios/Scenarios.tsx | Scenarios.test.tsx | ✅ Implemented |
@@ -98,19 +93,19 @@ Generated on: 2025-07-10T18:10:12.469Z
 | SimulationEdit | create/simulations/SimulationEdit.tsx | SimulationEdit.test.tsx | ✅ Implemented |
 | Simulations | create/simulations/Simulations.tsx | Simulations.test.tsx | ✅ Implemented |
 | Home | home/Home.tsx | Home.test.tsx | ✅ Implemented |
-| AgentEdit | management/agents/AgentEdit.tsx | AgentEdit.test.tsx | ❌ Needs Implementation |
-| Agents | management/agents/Agents.tsx | Agents.test.tsx | ❌ Needs Implementation |
-| NewAgent | management/agents/NewAgent.tsx | NewAgent.test.tsx | ❌ Needs Implementation |
-| ActivityStatus | management/logs/ActivityStatus.tsx | ActivityStatus.test.tsx | ❌ Needs Implementation |
-| ConnectionStatusIndicator | management/logs/ConnectionStatusIndicator.tsx | ConnectionStatusIndicator.test.tsx | ❌ Needs Implementation |
-| Feedback | management/logs/Feedback.tsx | Feedback.test.tsx | ❌ Needs Implementation |
-| Logs | management/logs/Logs.tsx | Logs.test.tsx | ❌ Needs Implementation |
-| ModelEdit | management/models/ModelEdit.tsx | ModelEdit.test.tsx | ❌ Needs Implementation |
-| Models | management/models/Models.tsx | Models.test.tsx | ❌ Needs Implementation |
-| NewModel | management/models/NewModel.tsx | NewModel.test.tsx | ❌ Needs Implementation |
-| NewRubric | management/rubrics/NewRubric.tsx | NewRubric.test.tsx | ❌ Needs Implementation |
-| RubricEdit | management/rubrics/RubricEdit.tsx | RubricEdit.test.tsx | ❌ Needs Implementation |
-| Rubrics | management/rubrics/Rubrics.tsx | Rubrics.test.tsx | ❌ Needs Implementation |
+| AgentEdit | management/agents/AgentEdit.tsx | AgentEdit.test.tsx | ✅ Implemented |
+| Agents | management/agents/Agents.tsx | Agents.test.tsx | ✅ Implemented |
+| NewAgent | management/agents/NewAgent.tsx | NewAgent.test.tsx | ✅ Implemented |
+| ActivityStatus | management/logs/ActivityStatus.tsx | ActivityStatus.test.tsx | ✅ Implemented |
+| ConnectionStatusIndicator | management/logs/ConnectionStatusIndicator.tsx | ConnectionStatusIndicator.test.tsx | ✅ Implemented |
+| Feedback | management/logs/Feedback.tsx | Feedback.test.tsx | ✅ Implemented |
+| Logs | management/logs/Logs.tsx | Logs.test.tsx | ✅ Implemented |
+| ModelEdit | management/models/ModelEdit.tsx | ModelEdit.test.tsx | ✅ Implemented |
+| Models | management/models/Models.tsx | Models.test.tsx | ✅ Implemented |
+| NewModel | management/models/NewModel.tsx | NewModel.test.tsx | ✅ Implemented |
+| NewRubric | management/rubrics/NewRubric.tsx | NewRubric.test.tsx | ✅ Implemented |
+| RubricEdit | management/rubrics/RubricEdit.tsx | RubricEdit.test.tsx | ✅ Implemented |
+| Rubrics | management/rubrics/Rubrics.tsx | Rubrics.test.tsx | ✅ Implemented |
 | NewStaff | management/staff/NewStaff.tsx | NewStaff.test.tsx | ✅ Implemented |
 | Staff | management/staff/Staff.tsx | Staff.test.tsx | ✅ Implemented |
 | StaffEdit | management/staff/StaffEdit.tsx | StaffEdit.test.tsx | ✅ Implemented |
@@ -123,16 +118,15 @@ __tests__/
 ├── analytics/
 │   ├── Dashboard.test.tsx
 │   ├── History.test.tsx
-│   ├── Report.test.tsx
-│   ├── Reports.test.tsx
-│   ├── reports-columns.test.tsx
-│   ├── reports-data-table-toolbar.test.tsx
-│   ├── reports-data-table.test.tsx
+│   ├── report/
+│   │   ├── Report.test.tsx
+│   │   ├── Reports.test.tsx
+│   │   ├── ReportsDataTable.test.tsx
+│   │   ├── ReportsDataTableToolbar.test.tsx
 ├── common/
 │   ├── agent/
 │   │   ├── Agent.test.tsx
 │   ├── analytics/
-│   │   ├── Registry.test.tsx
 │   │   ├── footer/
 │   │   │   ├── CohortCompletion.test.tsx
 │   │   │   ├── ScenarioData.test.tsx
@@ -179,16 +173,15 @@ __tests__/
 │   │   ├── HeaderPreview.test.tsx
 │   │   ├── SettingsDialog.test.tsx
 │   ├── history/
+│   │   ├── DataTable.test.tsx
+│   │   ├── DataTableColumnHeader.test.tsx
+│   │   ├── DataTableFacetedFilter.test.tsx
+│   │   ├── DataTablePagination.test.tsx
+│   │   ├── DataTableRowActions.test.tsx
+│   │   ├── DataTableToolbar.test.tsx
+│   │   ├── DataTableViewOptions.test.tsx
+│   │   ├── ExportButton.test.tsx
 │   │   ├── SimulationHistory.test.tsx
-│   │   ├── columns.test.tsx
-│   │   ├── data-table-column-header.test.tsx
-│   │   ├── data-table-faceted-filter.test.tsx
-│   │   ├── data-table-pagination.test.tsx
-│   │   ├── data-table-row-actions.test.tsx
-│   │   ├── data-table-toolbar.test.tsx
-│   │   ├── data-table-view-options.test.tsx
-│   │   ├── data-table.test.tsx
-│   │   ├── export-button.test.tsx
 │   ├── home/
 │   │   ├── ChatDialog.test.tsx
 │   │   ├── ChatFab.test.tsx
@@ -197,9 +190,9 @@ __tests__/
 │   │   ├── ChatStarterPrompts.test.tsx
 │   │   ├── ChatWidget.test.tsx
 │   ├── layout/
-│   │   ├── navigation-breadcrumbs.test.tsx
-│   │   ├── report-problem.test.tsx
-│   │   ├── unified-sidebar.test.tsx
+│   │   ├── NavigationBreadcrumbs.test.tsx
+│   │   ├── ReportProblem.test.tsx
+│   │   ├── UnifiedSidebar.test.tsx
 │   ├── login/
 │   │   ├── Login.test.tsx
 │   ├── model/

@@ -43,7 +43,7 @@ type ColorTheme =
 type TimeRange = "1h" | "12h" | "24h" | "1d" | "3d" | "7d" | "14d" | "30d";
 type ChartType = "bar";
 
-interface SessionActivityProps {
+export interface SessionActivityProps {
   color?: ColorTheme;
   defaultTimeRange?: TimeRange;
   chartType?: ChartType;

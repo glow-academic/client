@@ -13,7 +13,7 @@ import {
 import { useEffect, useState } from "react";
 import DraggableComponent from "./DraggableComponent";
 
-interface FooterPreviewProps {
+export interface FooterPreviewProps {
   components: string[];
   allComponents: {
     [key: string]: {

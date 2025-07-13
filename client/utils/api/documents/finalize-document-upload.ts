@@ -64,7 +64,8 @@ export async function finalizeDocumentUpload(
   autoClassify?: boolean,
   autoCourseProcess?: boolean,
   csv?: boolean,
-  profile?: string
+  profile?: string,
+  test?: boolean,
 ): Promise<FinalizeDocumentUploadResponse> {
   try {
     const payload: FinalizeDocumentUploadParams = {
@@ -75,6 +76,7 @@ export async function finalizeDocumentUpload(
       ...(autoCourseProcess !== undefined && { autoCourseProcess }),
       ...(csv !== undefined && { csv }),
       ...(profile !== undefined && { profile }),
+      ...(test !== undefined && { test }),
     };
 
     const response = await fetch(`${getApiBase()}/documents/tus/finalize`, {

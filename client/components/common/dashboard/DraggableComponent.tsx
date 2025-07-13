@@ -5,7 +5,7 @@
  * 06/20/2025
  */
 
-import registry from "@/components/common/analytics/Registry";
+import registry from "@/lib/registry";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,14 +49,16 @@ const camelToTitleCase = (str: string): string => {
     .trim();
 };
 
-interface DraggableComponentProps {
-  component: {
-    id: string;
-    name: string;
-    fileName: string;
-    stat?: boolean;
-    layout?: Record<string, unknown>;
-  };
+type Component = {
+  id: string;
+  name: string;
+  fileName: string;
+  stat?: boolean;
+  layout?: Record<string, unknown>;
+};
+
+export interface DraggableComponentProps {
+  component: Component;
   isInSidebar?: boolean;
   isManagementView?: boolean;
   hideRemoveButton?: boolean;

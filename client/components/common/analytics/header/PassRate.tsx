@@ -42,7 +42,7 @@ type ColorTheme =
   | "indigo";
 type TimeRange = "7d" | "30d" | "90d";
 
-interface PassRateProps {
+export interface PassRateProps {
   color?: ColorTheme;
   timeRange?: TimeRange;
   title?: string;

@@ -42,9 +42,9 @@ interface ProcessingStatus {
   syllabusName?: string;
 }
 
-type ClassStatusProps = {
+export interface ClassStatusProps {
   classId: string;
-};
+}
 
 export default function ClassStatus({ classId }: ClassStatusProps) {
   const [processingStatus, setProcessingStatus] = useState<ProcessingStatus>({
@@ -233,7 +233,7 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
                 <span>Progress</span>
                 <span>{processingStatus.progress}%</span>
               </div>
-              <Progress value={processingStatus.progress} className="h-2" />
+              <Progress value={processingStatus.progress} className="h-2" aria-valuenow={processingStatus.progress} />
             </div>
 
             {processingStatus.totalDocuments > 0 && (

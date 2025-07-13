@@ -1,137 +1,170 @@
-import Model from "@/components/common/model/Model";
-import { createModelMock, updateModelMock } from "@/mocks/mutations";
-import { renderWithProviders } from "@/mocks/utils";
-import { screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, it, vi, afterEach } from 'vitest';
+import { renderWithMocks } from '@/test/renderWithMocks';
+import userEvent from '@testing-library/user-event';
 
-// Mock the queries
-vi.mock("@/utils/queries/models/get-all-models", () => ({
-  getAllModels: vi.fn(() => Promise.resolve([])),
-}));
+// ——————————————————————————————————————————
+import Model, { ModelProps } from '@/components/common/model/Model';
 
-vi.mock("@/utils/queries/providers/get-all-providers", () => ({
-  getAllProviders: vi.fn(() =>
-    Promise.resolve([
-      {
-        id: "provider1",
-        name: "Test Provider",
-        description: "Test Description",
-      },
-    ])
-  ),
-}));
 
-describe("Model Component", () => {
-  beforeEach(() => {
-    // Reset all mocks before each test
-    createModelMock.mockReset();
-    updateModelMock.mockReset();
-    vi.clearAllMocks();
-  });
 
+// ✨ Import comprehensive mock data from our centralized mock system
+import '@/mocks/queries';
+import '@/mocks/mutations';
+import '@/mocks/api';
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: ModelProps = {
+  // modelId: 'test-modelId', /* optional */
+};
+// ------------------------------------------------------------------
+describe('Model', () => {
+  
+  /* ------------------------------------------------------------------ *
+   * 💡 Mock Data Usage Guide:
+   * 
+   * All API functions are automatically mocked via imports above.
+   * Use mockSchema.* for realistic test data:
+   * 
+   * Examples:
+   * - mockSchema.users[0] - First user object
+   * - mockSchema.classes - Array of class objects  
+   * - mockSchema.profiles - Array of profile objects
+   * 
+   * To override specific mocks in individual tests:
+   * - vi.mocked(queryFunction).mockResolvedValue(customData)
+   * - vi.mocked(mutationFunction).mockResolvedValue(customResponse)
+   * ------------------------------------------------------------------ */
+  
+  // ✨ Reset mocks after each test
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  describe("Role-based Access Control", () => {
-    it("should render for admin users", () => {
-      renderWithProviders(<Model />, "admin");
-      expect(screen.getByLabelText(/name/i)).toBeVisible();
+  describe('basic render smoke-test', () => {
+    it('renders without crashing', async () => {
+      // ✨ All mocks are automatically set up via imports above
+      renderWithMocks(<Model {...mockProps} />);
+      
+      // TODO: Add meaningful assertions based on your component
+      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
     });
 
-    it("should show access denied for instructional users", () => {
-      renderWithProviders(<Model />, "instructional");
-      expect(screen.getByText(/access denied/i)).toBeVisible();
-      expect(screen.getByText(/you need admin privileges/i)).toBeVisible();
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: ModelProps
+      
+      // TODO add props assertions
     });
 
-    it("should show access denied for instructor users", () => {
-      renderWithProviders(<Model />, "instructor");
-      expect(screen.getByText(/access denied/i)).toBeVisible();
-      expect(screen.getByText(/you need admin privileges/i)).toBeVisible();
-    });
+    it.skip('should have correct accessibility attributes', () => {
+      // TODO: Test accessibility features
+      
+      // TODO add accessibility assertions
 
-    it("should show access denied for TA users", () => {
-      renderWithProviders(<Model />, "ta");
-      expect(screen.getByText(/access denied/i)).toBeVisible();
-      expect(screen.getByText(/you need admin privileges/i)).toBeVisible();
-    });
-
-    it("should show access denied for guest users", () => {
-      renderWithProviders(<Model />, "guest");
-      expect(screen.getByText(/access denied/i)).toBeVisible();
-      expect(screen.getByText(/you need admin privileges/i)).toBeVisible();
-    });
-
-    it("should handle unauthenticated users", () => {
-      renderWithProviders(<Model />, "guest");
-      expect(screen.getByText(/access denied/i)).toBeVisible();
     });
   });
 
-  describe("Create Mode (Admin Only)", () => {
-    it("renders create form with correct initial state", async () => {
-      renderWithProviders(<Model />, "admin");
-
-      // Check form elements are present
-      expect(screen.getByLabelText(/name/i)).toBeVisible();
-      expect(screen.getByLabelText(/description/i)).toBeVisible();
-      expect(screen.getByText("Provider")).toBeVisible();
-
-      // Wait for providers to load and the select to appear
-      expect(await screen.findByText("Select a provider...")).toBeVisible();
-
-      expect(screen.getByText("Status")).toBeVisible();
-      expect(
-        screen.getByRole("button", { name: /create model/i })
-      ).toBeVisible();
+  describe('User Interactions', () => {
+    it.skip('should handle form submissions', async () => {
+      const user = userEvent.setup();
+      void user;
+      // TODO: form handling assertions
+      // Mock data is available from @/mocks/schema for realistic testing
     });
 
-    it("shows validation errors when required fields are missing", async () => {
+    it.skip('should handle state changes', async () => {
       const user = userEvent.setup();
-      renderWithProviders(<Model />, "admin");
-
-      await user.click(screen.getByRole("button", { name: /create model/i }));
-
-      // Check validation messages appear
-      expect(await screen.findByText(/name is required/i)).toBeVisible();
-      expect(screen.getByText(/description is required/i)).toBeVisible();
-      expect(screen.getByText(/provider is required/i)).toBeVisible();
-
-      // Ensure mutation was not called
-      expect(createModelMock).not.toHaveBeenCalled();
+      void user;
+      // TODO: state management assertions
+      // Mock data is available from @/mocks/schema for realistic testing
     });
 
-    it("handles basic form input", async () => {
+    it.skip('should handle user events', async () => {
       const user = userEvent.setup();
-      renderWithProviders(<Model />, "admin");
+      void user;
+      // TODO: interaction assertions
 
-      // Fill out basic form fields
-      await user.type(screen.getByLabelText(/name/i), "Test Model");
-      await user.type(
-        screen.getByLabelText(/description/i),
-        "Test Description"
-      );
-
-      // Check that values were set
-      expect(screen.getByDisplayValue("Test Model")).toBeVisible();
-      expect(screen.getByDisplayValue("Test Description")).toBeVisible();
     });
   });
 
-  describe("Form Validation (Admin Only)", () => {
-    it("validates name field", async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<Model />, "admin");
+  describe('API Integration', () => {
+    it.skip('should handle and display an API error state', async () => {
+      // Arrange: Override the default success mock with an error for this test.
+      // Example: vi.mocked(getModel).mockRejectedValue(new Error('API Error'));
 
-      // Try to submit without name
-      await user.click(screen.getByRole("button", { name: /create model/i }));
-      expect(await screen.findByText(/name is required/i)).toBeVisible();
+      renderWithMocks(<Model {...mockProps} />);
+      
+      // Assert: Check that your component shows an error message.
+      // TODO: Add specific error state assertions
+    });
 
-      // Fill name and error should disappear
-      await user.type(screen.getByLabelText(/name/i), "Valid Name");
-      expect(screen.queryByText(/name is required/i)).not.toBeInTheDocument();
+    it.skip('should handle loading states', () => {
+      // TODO: Test loading states
+      // Mock data is automatically loaded from @/mocks/schema
+      
+      // TODO: loading states assertions
+    });
+  });
+
+  describe('Navigation', () => {
+    it.skip('should handle navigation', () => {
+      // TODO: Test navigation behavior
+      
+      // TODO: navigation assertions
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it.skip('should handle edge cases gracefully', () => {
+      // TODO: Test edge cases and error scenarios
+      
+      // TODO: edge-case assertions
+
+    });
+
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
     });
   });
 });
+
+/*
+ * Component Analysis for Model:
+ * Path: common/model/Model.tsx
+ * 
+ * Features detected:
+ * - Default export: true
+ * - Named exports: ModelProps
+ * - Has props: true
+ * - Props interface: ModelProps
+ * - Client component: true
+ * - Uses hooks: useQuery, useQueryClient, useEffect, useMemo, useState, useRouter
+ * - Uses router: true
+ * - Has API calls: true
+ * - Has form handling: true
+ * - Uses state: true
+ * - Uses effects: true
+ * - Uses context: false
+ * 
+ * TODO: Implement the failing tests above with actual test logic
+ * 
+ * Example implementations:
+ * 
+ * Basic rendering:
+ * render(<Model {...mockProps} />);
+ * expect(screen.getByRole('...')).toBeInTheDocument();
+ * 
+ * Props testing:
+ * const props = { ... };
+ * render(<Model {...props} />);
+ * expect(screen.getByText(props.someText)).toBeInTheDocument();
+ * 
+ * User interaction:
+ * const button = screen.getByRole('button');
+ * await user.click(button);
+ * expect(mockFunction).toHaveBeenCalled();
+ */

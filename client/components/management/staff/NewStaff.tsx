@@ -7,7 +7,7 @@
 
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { Download, GraduationCap, Shield, User, X } from "lucide-react";
+import { Download, GraduationCap, Shield, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
 
@@ -33,7 +33,8 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Class as ClassData } from "@/types";
-import { logError, logInfo } from "@/utils/logger";
+import { logError } from "@/utils/logger";
+import { createProfile } from "@/utils/mutations/profiles/create-profile";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useSession } from "next-auth/react";
@@ -45,7 +46,6 @@ interface CSVUser {
   lastName: string;
   alias: string;
   role: ProfileRole;
-  classIds: string[];
 }
 
 const getRoleIcon = (role: string) => {
@@ -102,8 +102,8 @@ export default function NewStaff() {
     role: "" as ProfileRole | "",
     classIds: [] as string[],
   });
-  const [csvFile, setCsvFile] = React.useState<File | null>(null);
   const [csvPreview, setCsvPreview] = React.useState<CSVUser[]>([]);
+  const [selectedClassIds, setSelectedClassIds] = React.useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Get current user's profile to check if they're admin
@@ -165,18 +165,27 @@ export default function NewStaff() {
     handleInputChange("classIds", newClassIds);
   };
 
+  const handleBulkClassToggle = (classId: string) => {
+    const newClassIds = selectedClassIds.includes(classId)
+      ? selectedClassIds.filter((id) => id !== classId)
+      : [...selectedClassIds, classId];
+
+    setSelectedClassIds(newClassIds);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.role) return;
 
     setIsSubmitting(true);
     try {
-      // TODO: Implement API call to create staff member
-      logInfo("Creating staff member:", formData);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
+      await createProfile({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        alias: formData.alias,
+        role: formData.role,
+        classIds: formData.classIds,
+      });
       router.push("/management/staff");
     } catch (error) {
       logError("Error creating staff member:", error);
@@ -188,7 +197,6 @@ export default function NewStaff() {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type === "text/csv") {
-      setCsvFile(file);
       parseCSV(file);
     }
   };
@@ -210,9 +218,6 @@ export default function NewStaff() {
             lastName: values[1] || "",
             alias: values[2] || "",
             role: role,
-            classIds: values[4]
-              ? values[4].split(";").map((id) => id.trim())
-              : [],
           };
         })
         .filter(
@@ -226,11 +231,11 @@ export default function NewStaff() {
   };
 
   const downloadTemplate = () => {
-    const headers = ["firstName", "lastName", "alias", "role", "classIds"];
+    const headers = ["firstName", "lastName", "alias", "role"];
     const examples = [
-      ["Sarah", "Johnson", "sjohnson", "instructional", "class1;class2"],
-      ["Jane", "Smith", "jsmith", "instructor", "class1;class2"],
-      ["John", "Doe", "jdoe", "ta", "class1;class2"],
+      ["Sarah", "Johnson", "sjohnson", "instructional"],
+      ["Jane", "Smith", "jsmith", "instructor"],
+      ["John", "Doe", "jdoe", "ta"],
     ];
 
     const csvContent =
@@ -253,12 +258,17 @@ export default function NewStaff() {
 
     setIsSubmitting(true);
     try {
-      // TODO: Implement API call to bulk create staff members
-      logInfo("Creating staff members from CSV:", { csvPreview });
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
+      await Promise.all(
+        csvPreview.map((user) =>
+          createProfile({
+            firstName: user.firstName,
+            lastName: user.lastName,
+            alias: user.alias,
+            role: user.role,
+            classIds: selectedClassIds,
+          })
+        )
+      );
       router.push("/management/staff");
     } catch (error) {
       logError("Error creating staff members from CSV:", error);
@@ -270,10 +280,16 @@ export default function NewStaff() {
   return (
     <div className="space-y-6 py-4 px-4">
       <Tabs defaultValue="single" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="single">Single User</TabsTrigger>
-          <TabsTrigger value="csv">CSV Import</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="single">Single User</TabsTrigger>
+            <TabsTrigger value="csv">CSV Import</TabsTrigger>
+          </TabsList>
+          <Button variant="outline" onClick={downloadTemplate}>
+            <Download className="h-4 w-4 mr-2" />
+            Download Template
+          </Button>
+        </div>
 
         <TabsContent value="single">
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -349,9 +365,6 @@ export default function NewStaff() {
             {/* Class Assignment Section */}
             <div className="space-y-2">
               <Label>Class Assignments</Label>
-              <p className="text-sm text-muted-foreground">
-                Select which classes this user should have access to.
-              </p>
               <div className="border rounded-md p-4 max-h-60 overflow-y-auto">
                 {allClasses.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
@@ -375,7 +388,7 @@ export default function NewStaff() {
                           htmlFor={`class-${classItem.id}`}
                           className="text-sm font-normal cursor-pointer flex-1"
                         >
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between gap-2">
                             <div>
                               <span className="font-medium">
                                 {classItem.classCode}
@@ -385,7 +398,9 @@ export default function NewStaff() {
                               </span>
                             </div>
                             <Badge variant="outline" className="text-xs">
-                              {classItem.term} {classItem.year}
+                              {classItem.term.charAt(0).toUpperCase() +
+                                classItem.term.slice(1)}{" "}
+                              {classItem.year}
                             </Badge>
                           </div>
                         </Label>
@@ -437,33 +452,9 @@ export default function NewStaff() {
         <TabsContent value="csv">
           <div className="space-y-4">
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={downloadTemplate}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Template
-                </Button>
-              </div>
               <div className="text-sm text-muted-foreground">
                 Include the following columns in the CSV file: firstName,
-                lastName, alias, role, classIds.
-              </div>
-            </div>
-
-            <div className="p-3 bg-muted rounded-md">
-              <p className="text-sm font-medium mb-1">Available Roles:</p>
-              <div className="flex gap-2 flex-wrap">
-                {availableRoles.map((role) => {
-                  const RoleIcon = role.icon;
-                  return (
-                    <Badge
-                      key={role.value}
-                      variant={getRoleBadgeVariant(role.value)}
-                    >
-                      <RoleIcon className="h-3 w-3 mr-1" />
-                      {role.value}
-                    </Badge>
-                  );
-                })}
+                lastName, alias, role.
               </div>
             </div>
 
@@ -476,39 +467,12 @@ export default function NewStaff() {
               />
             </div>
 
-            {csvFile && (
-              <div className="p-3 bg-muted rounded-md">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Selected file:</p>
-                    <p className="text-sm text-muted-foreground">
-                      {csvFile.name}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setCsvFile(null);
-                      setCsvPreview([]);
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-
             {csvPreview.length > 0 && (
               <div className="space-y-4">
                 <div>
                   <h3 className="text-lg font-medium">
                     Preview ({csvPreview.length} users)
                   </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Review the staff members that will be created from your CSV
-                    file.
-                  </p>
                 </div>
 
                 <div className="rounded-md border max-h-96 overflow-auto">
@@ -519,7 +483,6 @@ export default function NewStaff() {
                         <TableHead>Last Name</TableHead>
                         <TableHead>Username</TableHead>
                         <TableHead>Role</TableHead>
-                        <TableHead>Classes</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -538,19 +501,6 @@ export default function NewStaff() {
                                 </Badge>
                               </div>
                             </TableCell>
-                            <TableCell>
-                              <div className="flex gap-1 flex-wrap">
-                                {user.classIds.map((classId, i) => (
-                                  <Badge
-                                    key={i}
-                                    variant="outline"
-                                    className="text-xs"
-                                  >
-                                    {classId}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </TableCell>
                           </TableRow>
                         );
                       })}
@@ -558,12 +508,105 @@ export default function NewStaff() {
                   </Table>
                 </div>
 
+                {/* Role Information Section */}
+                <div className="space-y-2">
+                  <Label>Role Information</Label>
+                  <div className="space-y-2">
+                    {Array.from(
+                      new Set(csvPreview.map((user) => user.role))
+                    ).map((role) => {
+                      const RoleIcon = getRoleIcon(role);
+                      const userCount = csvPreview.filter(
+                        (user) => user.role === role
+                      ).length;
+                      return (
+                        <div key={role} className="p-3 bg-muted rounded-md">
+                          <div className="flex items-center gap-2 mb-2">
+                            <RoleIcon className="h-4 w-4" />
+                            <Badge variant={getRoleBadgeVariant(role)}>
+                              {getRoleDisplayName(role)}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              ({userCount} user{userCount !== 1 ? "s" : ""})
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {role === "admin" &&
+                              "Will have full system access and user management permissions."}
+                            {role === "instructional" &&
+                              "Will have permissions to manage instructors and teaching assistants."}
+                            {role === "instructor" &&
+                              "Will have permissions to manage assigned classes and teaching assistants."}
+                            {role === "ta" &&
+                              "Will have permissions to assist with assigned classes."}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Bulk Class Assignment Section */}
+                <div className="space-y-2">
+                  <Label>Bulk Class Assignment</Label>
+
+                  <div className="border rounded-md p-4 max-h-60 overflow-y-auto">
+                    {allClasses.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        No classes available
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {allClasses.map((classItem: ClassData) => (
+                          <div
+                            key={classItem.id}
+                            className="flex items-center space-x-2"
+                          >
+                            <Checkbox
+                              id={`bulk-class-${classItem.id}`}
+                              checked={selectedClassIds.includes(classItem.id)}
+                              onCheckedChange={() =>
+                                handleBulkClassToggle(classItem.id)
+                              }
+                            />
+                            <Label
+                              htmlFor={`bulk-class-${classItem.id}`}
+                              className="text-sm font-normal cursor-pointer flex-1"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div>
+                                  <span className="font-medium">
+                                    {classItem.classCode}
+                                  </span>
+                                  <span className="text-muted-foreground ml-2">
+                                    {classItem.name}
+                                  </span>
+                                </div>
+                                <Badge variant="outline" className="text-xs">
+                                  {classItem.term.charAt(0).toUpperCase() +
+                                    classItem.term.slice(1)}{" "}
+                                  {classItem.year}
+                                </Badge>
+                              </div>
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedClassIds.length} class
+                    {selectedClassIds.length !== 1 ? "es" : ""} selected for all
+                    users
+                  </p>
+                </div>
+
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="outline"
                     onClick={() => {
-                      setCsvFile(null);
                       setCsvPreview([]);
+                      setSelectedClassIds([]);
                     }}
                   >
                     Cancel

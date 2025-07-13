@@ -3,6 +3,8 @@
 # Check if venv exists
 VENV_EXISTS := $(shell test -d .venv && echo 1 || echo 0)
 
+ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+
 # 1. Ensure the virtual environment exists
 PY311 := $(shell which python3.11 || true)
 
@@ -50,18 +52,18 @@ generate-tests: venv
 
 # Run all tests
 test: sync generate-tests
-	@echo "Running pytest tests..."
-	@uv run pytest tests/ -v
+	@if [ -n "$(ARGS)" ]; then \
+		echo "Running pytest on specific file(s): $(ARGS)"; \
+		uv run pytest $(ARGS) -v; \
+	else \
+		echo "Running all pytest tests..."; \
+		uv run pytest tests/ -v; \
+	fi
 
 # Run tests with coverage
 test-cov: sync generate-tests
 	@echo "Running pytest tests with coverage..."
 	@uv run pytest tests/ --cov=app --cov-report=term-missing --cov-report=html
-
-# Run specific test file
-test-file: sync
-	@echo "Running specific test file: $(FILE)"
-	@uv run pytest $(FILE) -v
 
 # 9. Start FastAPI via Uvicorn
 run-model: sync

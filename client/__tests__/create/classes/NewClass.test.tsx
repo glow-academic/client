@@ -1,238 +1,146 @@
-import NewClass from "@/components/create/classes/NewClass";
-import { renderWithProviders } from "@/mocks/utils";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
+import { toast } from "sonner";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock ClassForm component to avoid PostCSS issues
-vi.mock("@/components/common/class/ClassForm", () => ({
-  default: ({
-    mode,
-    onSuccess,
-  }: {
-    mode: string;
-    onSuccess?: (data: unknown) => void;
-  }) => (
-    <div data-testid="class-form">
-      <div data-testid="form-mode">{mode}</div>
-      <button
-        data-testid="form-submit"
-        onClick={() => onSuccess?.({ id: "test-class-id" })}
-      >
-        Submit Form
-      </button>
-    </div>
-  ),
-}));
+import NewClass from "@/components/create/classes/NewClass";
+import { routerMock } from "@/mocks/navigation";
+import * as mockSchema from "@/mocks/schema";
+import { renderWithMocks } from "@/test/renderWithMocks";
+import {
+  finalizeDocumentUpload,
+  FinalizeDocumentUploadResponse,
+} from "@/utils/api/documents/finalize-document-upload";
+import { createClass } from "@/utils/mutations/classes/create-class";
 
-// Import the auto-generated mocks
+import "@/mocks/api";
 import "@/mocks/mutations";
+import "@/mocks/navigation";
 import "@/mocks/queries";
 
-// Mock external dependencies
-vi.mock("next/navigation", () => ({
-  useRouter: vi.fn(() => ({
-    push: vi.fn(),
-    back: vi.fn(),
-    forward: vi.fn(),
-    refresh: vi.fn(),
-    replace: vi.fn(),
-  })),
-  usePathname: vi.fn(() => "/"),
-  useSearchParams: vi.fn(() => new URLSearchParams()),
+// --- Mocks Setup ---
+vi.mock("@/components/common/class/ClassForm", () => ({
+  default: () => <div data-testid="class-form-mock" />,
 }));
-
-vi.mock("sonner", () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-    loading: vi.fn(),
-    dismiss: vi.fn(),
-  },
-}));
-
-// Mock tus-js-client
-vi.mock("tus-js-client", () => ({
-  Upload: vi.fn().mockImplementation((_, options) => ({
-    start: vi.fn(() => {
-      // Simulate successful upload
-      setTimeout(() => {
-        options.onProgress?.(100, 100);
-        options.onSuccess?.();
-      }, 10);
-    }),
-  })),
-}));
-
-// Mock global fetch
-global.fetch = vi.fn();
 
 describe("NewClass", () => {
-  beforeEach(() => {
+  const user = userEvent.setup();
+
+  afterEach(() => {
     vi.clearAllMocks();
-    (global.fetch as Mock).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ success: true }),
-    });
   });
 
-  describe("Rendering", () => {
-    it("should render without crashing", () => {
-      renderWithProviders(<NewClass />);
-      expect(document.body).toBeInTheDocument();
-    });
-
-    it("should display method selection cards initially", () => {
-      renderWithProviders(<NewClass />);
-
-      expect(screen.getByText("Upload from ZIP")).toBeInTheDocument();
-      expect(screen.getByText("Create Manually")).toBeInTheDocument();
-    });
-
-    it("should show ZIP upload option with description", () => {
-      renderWithProviders(<NewClass />);
-
-      const zipCard = screen.getByText("Upload from ZIP").closest("div");
-      expect(zipCard).toBeInTheDocument();
+  // ——————————————————————————————————————————
+  //    Initial Rendering and Mode Selection
+  // ——————————————————————————————————————————
+  describe("Initial Rendering and Mode Selection", () => {
+    it("renders the initial selection cards", () => {
+      renderWithMocks(<NewClass />);
       expect(
-        screen.getByText(/automatically extract and classify/)
+        screen.getByRole("heading", { name: /Upload from ZIP/i })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: /Create Manually/i })
       ).toBeInTheDocument();
     });
 
-    it("should show manual creation option with description", () => {
-      renderWithProviders(<NewClass />);
+    it("switches to manual creation mode when the manual card is clicked", async () => {
+      renderWithMocks(<NewClass />);
+      const manualCard = screen
+        .getByText(/Create Manually/i)
+        .closest("div.cursor-pointer")!;
 
-      const manualCard = screen.getByText("Create Manually").closest("div");
-      expect(manualCard).toBeInTheDocument();
+      await user.click(manualCard);
+
+      // Assert the ClassForm component is now rendered
+      expect(screen.getByTestId("class-form-mock")).toBeInTheDocument();
+      // Assert the initial selection cards are gone
       expect(
-        screen.getByText(/organize everything step by step/)
+        screen.queryByRole("heading", { name: /Upload from ZIP/i })
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  // ——————————————————————————————————————————
+  //    ZIP Upload Flow
+  // ——————————————————————————————————————————
+  describe("ZIP Upload Flow", () => {
+    beforeEach(() => {
+      // Mock successful API responses for the happy path
+      vi.mocked(createClass).mockResolvedValue({
+        ...mockSchema.classes[0],
+        id: "new-zip-class-id",
+        term: "fall" as "fall" | "spring" | "summer",
+        name: "CS101-Fall2025",
+        classCode: "CS101",
+        year: 2025,
+        description: "A great new class.",
+        defaultClass: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      vi.mocked(finalizeDocumentUpload).mockResolvedValue({
+        success: true,
+      } as FinalizeDocumentUploadResponse);
+    });
+
+    it("handles a successful ZIP upload and navigates to the status page", async () => {
+      renderWithMocks(<NewClass />);
+
+      await user.upload(
+        screen.getByLabelText(/Upload from ZIP/i, {
+          selector: 'input[type="file"]',
+        }),
+        new File(["zip"], "CS101.zip", { type: "application/zip" })
+      );
+
+      // happy-path assertions
+      await waitFor(() => {
+        expect(createClass).toHaveBeenCalled();
+        expect(screen.getByTestId("processing-message")).toHaveTextContent(
+          "Processing complete! Redirecting..."
+        );
+      });
+
+      // the redirect happens after 1 s → just wait for it
+      await waitFor(() =>
+        expect(routerMock.push).toHaveBeenCalledWith(
+          "/create/classes/new/c/new-zip-class-id"
+        )
+      );
+    });
+  });
+
+  // ——————————————————————————————————————————
+  //    API Error Handling
+  // ——————————————————————————————————————————
+  describe("API and Error Handling", () => {
+    it("handles an error if creating the temporary class fails", async () => {
+      // Arrange: Mock a failure from the createClass API
+      vi.mocked(createClass).mockRejectedValue(new Error("Database error"));
+      renderWithMocks(<NewClass />);
+
+      const zipFile = new File(["zip"], "fail.zip", {
+        type: "application/zip",
+      });
+      const fileInput = screen.getByLabelText(/Upload from ZIP/i, {
+        selector: 'input[type="file"]',
+      });
+
+      // Act
+      await user.upload(fileInput, zipFile);
+
+      // Assert
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          "Failed to upload ZIP: Database error"
+        );
+      });
+
+      // The UI should reset, showing the selection cards again
+      expect(
+        screen.getByRole("heading", { name: /Upload from ZIP/i })
       ).toBeInTheDocument();
-    });
-  });
-
-  describe("User Interactions", () => {
-    it("should handle manual creation mode selection", async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<NewClass />);
-
-      const manualCard = screen.getByText("Create Manually").closest("div");
-      if (manualCard) {
-        await user.click(manualCard);
-        // Should change the UI state
-        await waitFor(() => {
-          expect(document.body).toBeInTheDocument();
-        });
-      }
-    });
-
-    it("should handle ZIP upload mode selection", async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<NewClass />);
-
-      const zipCard = screen.getByText("Upload from ZIP").closest("div");
-      if (zipCard) {
-        await user.click(zipCard);
-        // Should trigger file input
-        const fileInput = document.querySelector('input[type="file"]');
-        expect(fileInput).toBeInTheDocument();
-      }
-    });
-  });
-
-  describe("File Handling", () => {
-    it("should have file input for ZIP uploads", () => {
-      renderWithProviders(<NewClass />);
-
-      const fileInput = document.querySelector('input[type="file"]');
-      expect(fileInput).toBeInTheDocument();
-
-      if (fileInput) {
-        expect(fileInput.getAttribute("accept")).toBe(".zip");
-      }
-    });
-
-    it("should handle file selection", async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<NewClass />);
-
-      const fileInput = document.querySelector(
-        'input[type="file"]'
-      ) as HTMLInputElement;
-
-      if (fileInput) {
-        const file = new File(["test content"], "test-class.zip", {
-          type: "application/zip",
-        });
-
-        await user.upload(fileInput, file);
-
-        // Should handle the file upload
-        expect(fileInput.files?.[0]).toBe(file);
-      }
-    });
-  });
-
-  describe("Component Structure", () => {
-    it("should have proper accessibility attributes", () => {
-      renderWithProviders(<NewClass />);
-
-      const zipCard = screen.getByText("Upload from ZIP").closest("div");
-      const manualCard = screen.getByText("Create Manually").closest("div");
-
-      // Cards should be rendered and clickable
-      expect(zipCard).toBeInTheDocument();
-      expect(manualCard).toBeInTheDocument();
-    });
-
-    it("should render all necessary UI elements", () => {
-      renderWithProviders(<NewClass />);
-
-      // Should have both creation method cards
-      expect(screen.getByText("Upload from ZIP")).toBeInTheDocument();
-      expect(screen.getByText("Create Manually")).toBeInTheDocument();
-
-      // Should have file input
-      expect(document.querySelector('input[type="file"]')).toBeInTheDocument();
-    });
-  });
-
-  describe("Edge Cases", () => {
-    it("should handle component unmounting gracefully", () => {
-      const { unmount } = renderWithProviders(<NewClass />);
-      expect(() => unmount()).not.toThrow();
-    });
-
-    it("should handle invalid file types", () => {
-      renderWithProviders(<NewClass />);
-
-      const fileInput = document.querySelector(
-        'input[type="file"]'
-      ) as HTMLInputElement;
-      expect(fileInput?.accept).toBe(".zip");
     });
   });
 });
-
-/*
- * Component Analysis for NewClass:
- * Path: create/classes/NewClass.tsx
- *
- * Features detected:
- * - Default export: true
- * - Client component: true
- * - Uses hooks: useState, useRef, useRouter, useQueryClient
- * - Uses router: true
- * - Has API calls: true
- * - Has form handling: true
- * - Uses state: true
- * - File upload functionality
- * - Two creation modes: ZIP upload and manual
- *
- * Simplified tests to focus on:
- * - Basic rendering and structure
- * - User interactions with creation modes
- * - File input functionality
- * - Component stability and accessibility
- * - Edge case handling
- */

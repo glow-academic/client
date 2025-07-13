@@ -380,20 +380,6 @@ function generateMeaningfulText(tableName, fieldName, index) {
           "Writing Workshop Sim",
         ][index] || `Simulation ${index + 1}`,
     },
-    evals: {
-      name:
-        [
-          "Math Skills Evaluation",
-          "Science Knowledge Test",
-          "Writing Assessment",
-        ][index] || `Evaluation ${index + 1}`,
-      description:
-        [
-          "Comprehensive evaluation of mathematical problem-solving abilities",
-          "Assessment of scientific understanding and application",
-          "Evaluation of writing skills and techniques",
-        ][index] || `Description for evaluation ${index + 1}`,
-    },
     users: {
       name:
         ["Admin User", "Instructional User", "Instructor User", "TA User"][
@@ -471,7 +457,6 @@ function setupForeignKeyRelationships(mockData, tables) {
     classId: "classes",
     cohortId: "cohorts",
     simulationId: "simulations",
-    evalId: "evals",
     profileId: "profiles",
     userId: "users",
     providerId: "providers",
@@ -795,19 +780,6 @@ function determineMockResponse(func) {
   const fields = Object.keys(responseInterface);
   const fieldTypes = Object.values(responseInterface);
 
-  // Eval-specific responses
-  if (fields.includes("eval_run_ids") || fields.includes("total_runs")) {
-    return "mockEvalResponse";
-  }
-
-  if (
-    fields.includes("eval_run_id") ||
-    fields.includes("progress_percentage") ||
-    fields.includes("chat_statuses")
-  ) {
-    return "mockEvalStatusResponse";
-  }
-
   // Simulation-specific responses
   if (
     fields.includes("attempt_id") ||
@@ -877,77 +849,6 @@ function determineMockResponse(func) {
 }
 
 /**
- * Generate mock data for a specific interface
- */
-function generateMockDataForInterface(interfaceFields) {
-  const mockData = {};
-
-  if (!interfaceFields) return mockData;
-
-  Object.entries(interfaceFields).forEach(([fieldName, fieldType]) => {
-    // Generate appropriate mock data based on field type
-    if (fieldType.includes("string")) {
-      if (fieldName.includes("id") || fieldName.includes("Id")) {
-        mockData[fieldName] = `mock-${fieldName.toLowerCase()}-123`;
-      } else if (fieldName === "message") {
-        mockData[fieldName] = "Operation completed successfully";
-      } else if (fieldName === "title") {
-        mockData[fieldName] = "Mock Title";
-      } else if (fieldName === "description") {
-        mockData[fieldName] = "Mock description for testing";
-      } else {
-        mockData[fieldName] = `mock-${fieldName}`;
-      }
-    } else if (fieldType.includes("number")) {
-      if (fieldName.includes("percentage")) {
-        mockData[fieldName] = 75;
-      } else if (fieldName.includes("count") || fieldName.includes("total")) {
-        mockData[fieldName] = 5;
-      } else {
-        mockData[fieldName] = 123;
-      }
-    } else if (fieldType.includes("boolean")) {
-      mockData[fieldName] = fieldName === "success" ? true : false;
-    } else if (fieldType.includes("Array") || fieldType.includes("[]")) {
-      if (fieldName.includes("id") || fieldName.includes("Id")) {
-        mockData[fieldName] = ["mock-id-1", "mock-id-2"];
-      } else if (fieldName === "chat_statuses") {
-        mockData[fieldName] = [
-          { chat_id: "chat-1", status: "completed" },
-          { chat_id: "chat-2", status: "running" },
-        ];
-      } else if (fieldName === "documents") {
-        mockData[fieldName] = [{ id: "doc-123", name: "Test Document" }];
-      } else {
-        mockData[fieldName] = ["mock-item-1", "mock-item-2"];
-      }
-    } else if (fieldType.includes("Response")) {
-      mockData[fieldName] = 'new Response("mock-data")';
-    } else if (fieldType.includes("Headers")) {
-      mockData[fieldName] =
-        'new Headers({ "content-type": "application/pdf" })';
-    } else if (
-      fieldType.includes('"success"') ||
-      fieldType.includes('"error"') ||
-      fieldType.includes('"processing"')
-    ) {
-      if (fieldType.includes('"success"')) {
-        mockData[fieldName] = "success";
-      } else if (fieldType.includes('"processing"')) {
-        mockData[fieldName] = "processing";
-      } else {
-        mockData[fieldName] = "error";
-      }
-    } else {
-      // Default handling for complex types
-      mockData[fieldName] = `mock-${fieldName}`;
-    }
-  });
-
-  return mockData;
-}
-
-/**
  * Generate the api.ts mock file
  */
 function generateApiMockFile(apiInfo) {
@@ -960,13 +861,14 @@ function generateApiMockFile(apiInfo) {
 
   // Generate base mock responses
   content += `// Base mock response data
-const mockSuccessResponse = {
+
+// Success response
+export const mockSuccessResponse = {
   success: true,
   message: "Operation completed successfully",
   status: "success" as const,
 };
 
-// Available for use in specific test scenarios
 export const mockErrorResponse = {
   success: false,
   message: "Operation failed",
@@ -977,25 +879,6 @@ export const mockProcessingResponse = {
   success: true,
   message: "Operation is being processed",
   status: "processing" as const,
-};
-
-// Extended mock responses for specific API types
-const mockEvalResponse = {
-  ...mockSuccessResponse,
-  eval_run_ids: ["eval-run-1", "eval-run-2"],
-  total_runs: 2,
-};
-
-const mockEvalStatusResponse = {
-  ...mockSuccessResponse,
-  eval_run_id: "eval-run-1",
-  total_chats: 10,
-  completed_chats: 5,
-  progress_percentage: 50,
-  chat_statuses: [
-    { chat_id: "chat-1", status: "completed" },
-    { chat_id: "chat-2", status: "running" },
-  ],
 };
 
 const mockSimulationResponse = {
@@ -1088,14 +971,15 @@ const mockReportResponse = {
     "mockSuccessResponse",
     "mockErrorResponse",
     "mockProcessingResponse",
-    "mockEvalResponse",
-    "mockEvalStatusResponse",
     "mockSimulationResponse",
     "mockDocumentResponse",
     "mockAssistantResponse",
     "mockScenarioResponse",
     "mockReportResponse",
   ];
+
+  // Always keep the shared success stub – other mocks spread it
+  usedMockResponses.add("mockSuccessResponse");
 
   allMockResponses.forEach((mockResponse) => {
     if (!usedMockResponses.has(mockResponse)) {

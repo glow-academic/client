@@ -38,7 +38,7 @@ type ColorTheme =
   | "indigo";
 type Layout = "vertical" | "horizontal";
 
-interface SkillBreakdownProps {
+export interface SkillBreakdownProps {
   className?: string;
   color?: ColorTheme;
   maxItems?: number;

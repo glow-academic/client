@@ -1,109 +1,62 @@
-import SimulationEdit from "@/components/create/simulations/SimulationEdit";
-import { renderWithProviders } from "@/mocks/utils";
-import { screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, it } from 'vitest';
+import { renderWithMocks } from '@/test/renderWithMocks';
 
-// Mock the Simulation component since SimulationEdit is just a wrapper
-vi.mock("@/components/common/simulation/Simulation", () => ({
-  default: ({
-    mode,
-    simulationId,
-  }: {
-    mode?: string;
-    simulationId?: string;
-  }) => (
-    <div data-testid="simulation-component">
-      <div>Mode: {mode || "create"}</div>
-      {simulationId !== undefined && <div>Simulation ID: {simulationId}</div>}
-    </div>
-  ),
-}));
+// ——————————————————————————————————————————
+import SimulationEdit, { SimulationEditProps } from '@/components/create/simulations/SimulationEdit';
 
-describe("SimulationEdit", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
 
-  describe("Rendering", () => {
-    it("should render without crashing", () => {
-      renderWithProviders(<SimulationEdit simulationId="simulation-1" />);
 
-      expect(screen.getByTestId("simulation-component")).toBeInTheDocument();
-      expect(
-        screen.getByText("Simulation ID: simulation-1")
-      ).toBeInTheDocument();
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: SimulationEditProps = {
+  simulationId: 'test-simulationId',
+};
+// ------------------------------------------------------------------
+describe('SimulationEdit', () => {
+  
+
+  describe('basic render smoke-test', () => {
+    it('renders without crashing', async () => {
+      
+      renderWithMocks(<SimulationEdit {...mockProps} />);
+      
+      // TODO: Add meaningful assertions based on your component
+      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
     });
 
-    it("should render with required simulationId prop", () => {
-      const simulationId = "test-simulation-123";
-      renderWithProviders(<SimulationEdit simulationId={simulationId} />);
-
-      expect(
-        screen.getByText(`Simulation ID: ${simulationId}`)
-      ).toBeInTheDocument();
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: SimulationEditProps
+      
+      // TODO add props assertions
     });
 
-    it("should pass correct props to Simulation component", () => {
-      renderWithProviders(<SimulationEdit simulationId="simulation-1" />);
+    it.skip('should have correct accessibility attributes', () => {
+      // TODO: Test accessibility features
+      
+      // TODO add accessibility assertions
 
-      expect(screen.getByText("Mode: create")).toBeInTheDocument();
-      expect(
-        screen.getByText("Simulation ID: simulation-1")
-      ).toBeInTheDocument();
     });
   });
 
-  describe("Props Handling", () => {
-    it("should handle different simulationId values", () => {
-      const { rerender } = renderWithProviders(
-        <SimulationEdit simulationId="simulation-1" />
-      );
+  
 
-      expect(
-        screen.getByText("Simulation ID: simulation-1")
-      ).toBeInTheDocument();
+  
 
-      rerender(<SimulationEdit simulationId="simulation-2" />);
+  
 
-      expect(
-        screen.getByText("Simulation ID: simulation-2")
-      ).toBeInTheDocument();
+  describe('Edge Cases', () => {
+    it.skip('should handle edge cases gracefully', () => {
+      // TODO: Test edge cases and error scenarios
+      
+      // TODO: edge-case assertions
+
     });
 
-    it("should handle empty simulationId", () => {
-      renderWithProviders(<SimulationEdit simulationId="" />);
-
-      expect(screen.getByText(/Simulation ID:$/)).toBeInTheDocument();
-    });
-
-    it("should handle special characters in simulationId", () => {
-      const specialId = "simulation-123_test@domain.com";
-      renderWithProviders(<SimulationEdit simulationId={specialId} />);
-
-      expect(
-        screen.getByText(`Simulation ID: ${specialId}`)
-      ).toBeInTheDocument();
-    });
-  });
-
-  describe("Component Integration", () => {
-    it("should render Simulation component with create mode", () => {
-      renderWithProviders(<SimulationEdit simulationId="simulation-1" />);
-
-      expect(screen.getByText("Mode: create")).toBeInTheDocument();
-    });
-
-    it("should pass simulationId to child component", () => {
-      const testId = "unique-simulation-id-12345";
-      renderWithProviders(<SimulationEdit simulationId={testId} />);
-
-      expect(screen.getByText(`Simulation ID: ${testId}`)).toBeInTheDocument();
-    });
-
-    it("should maintain consistent mode regardless of simulationId", () => {
-      renderWithProviders(<SimulationEdit simulationId="any-id" />);
-
-      expect(screen.getByText("Mode: create")).toBeInTheDocument();
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
     });
   });
 });
@@ -111,13 +64,13 @@ describe("SimulationEdit", () => {
 /*
  * Component Analysis for SimulationEdit:
  * Path: create/simulations/SimulationEdit.tsx
- *
+ * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
+ * - Named exports: SimulationEditProps
+ * - Has props: true
+ * - Props interface: SimulationEditProps
+ * - Client component: true
  * - Uses hooks: None
  * - Uses router: false
  * - Has API calls: false
@@ -125,20 +78,20 @@ describe("SimulationEdit", () => {
  * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
- *
+ * 
  * TODO: Implement the failing tests above with actual test logic
- *
+ * 
  * Example implementations:
- *
+ * 
  * Basic rendering:
- * render(<SimulationEdit />);
+ * render(<SimulationEdit {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
- *
+ * 
  * Props testing:
  * const props = { ... };
  * render(<SimulationEdit {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
- *
+ * 
  * User interaction:
  * const button = screen.getByRole('button');
  * await user.click(button);

@@ -8,10 +8,21 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 // UI Components
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,11 +43,18 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 // Custom Components
-import { ScenarioPicker, type Model } from "./ScenarioPicker";
+import { ScenarioPicker } from "./ScenarioPicker";
 import { ScenarioSlider } from "./ScenarioSlider";
 
 // Types and API functions
-import { Agent, Class, Document, Scenario as ScenarioType } from "@/types";
+import {
+  Agent,
+  Class,
+  Document,
+  Scenario as ScenarioType,
+  Simulation,
+} from "@/types";
+import { Model } from "@/utils/scenario";
 import { newScenario } from "@/utils/api/scenarios/new-scenario";
 import { logError } from "@/utils/logger";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
@@ -45,8 +63,9 @@ import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 
-interface ScenarioProps {
+export interface ScenarioProps {
   scenarioId?: string;
   mode?: "create" | "edit";
 }
@@ -88,6 +107,9 @@ export default function Scenario({
     useState<Partial<ScenarioType>>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+  const [originalFormData, setOriginalFormData] =
+    useState<Partial<ScenarioType>>(initialFormData);
 
   // Data fetching
   const { data: documents = [] } = useQuery({
@@ -105,6 +127,12 @@ export default function Scenario({
     queryFn: () => getAllClasses(),
   });
 
+  const { data: simulations = [] } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getAllSimulations(),
+    enabled: isEditMode, // Only fetch when in edit mode
+  });
+
   // Only fetch scenario data if in edit mode
   const { data: scenario, isLoading } = useQuery({
     queryKey: ["scenario", scenarioId],
@@ -115,7 +143,7 @@ export default function Scenario({
   // Load scenario data if editing
   useEffect(() => {
     if (isEditMode && scenario) {
-      setFormData({
+      const scenarioData = {
         classId: scenario.classId,
         documents: scenario.documents || [],
         agentId: scenario.agentId,
@@ -127,9 +155,43 @@ export default function Scenario({
         urgency: scenario.urgency,
         name: scenario.name || "",
         description: scenario.description || "",
-      });
+      };
+      setFormData(scenarioData);
+      setOriginalFormData(scenarioData); // Set original data for comparison
     }
   }, [isEditMode, scenario]);
+
+  // Check if form has changes
+  const hasChanges = useMemo(() => {
+    if (!isEditMode) return false;
+
+    const current = formData;
+    const original = originalFormData;
+
+    return (
+      current.classId !== original.classId ||
+      current.agentId !== original.agentId ||
+      current.seniority !== original.seniority ||
+      current.crowdedness !== original.crowdedness ||
+      current.intensity !== original.intensity ||
+      current.location !== original.location ||
+      current.tod !== original.tod ||
+      current.urgency !== original.urgency ||
+      current.name !== original.name ||
+      current.description !== original.description ||
+      JSON.stringify(current.documents?.sort()) !==
+        JSON.stringify(original.documents?.sort())
+    );
+  }, [formData, originalFormData, isEditMode]);
+
+  // Count simulations using this scenario
+  const affectedSimulations = useMemo(() => {
+    if (!isEditMode || !scenarioId) return [];
+    return simulations.filter(
+      (sim: Simulation) =>
+        sim.scenarioIds && sim.scenarioIds.includes(scenarioId)
+    );
+  }, [simulations, scenarioId, isEditMode]);
 
   // Calculate step status
   const getStepStatus = (stepId: string): StepStatus => {
@@ -161,11 +223,7 @@ export default function Scenario({
             ? "completed"
             : "active";
       case "content":
-        return !formData.agentId
-          ? "pending"
-          : formData.description
-            ? "completed"
-            : "active";
+        return !formData.agentId ? "pending" : "active"; // Always active once agent is selected, user can choose to fill or leave blank
       default:
         return "pending";
     }
@@ -207,8 +265,9 @@ export default function Scenario({
     },
     {
       id: "content",
-      title: "Generate Content",
-      description: "AI will create a realistic scenario description",
+      title: "Scenario Content",
+      description:
+        "Add a custom description or leave blank for auto-generation",
       status: getStepStatus("content"),
     },
   ];
@@ -332,6 +391,19 @@ export default function Scenario({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleUpdateClick = () => {
+    if (isEditMode && affectedSimulations.length > 0) {
+      setShowUpdateDialog(true);
+    } else {
+      handleSubmit();
+    }
+  };
+
+  const handleConfirmUpdate = () => {
+    setShowUpdateDialog(false);
+    handleSubmit();
   };
 
   // Loading state for edit mode
@@ -785,66 +857,99 @@ export default function Scenario({
           </CardContent>
         </Card>
 
-        {/* Step 6: Generated Content - Only show after generation is triggered */}
-        {formData.description && (
-          <Card
-            className={`transition-all ${!isEditMode && getStepStatus("content") === "active" ? "ring-2 ring-primary" : ""}`}
-          >
-            <CardHeader className="flex flex-row items-center space-y-0 pb-4">
-              <div className="flex items-center space-x-3">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    getStepStatus("content") === "completed"
-                      ? "bg-green-500 text-white"
-                      : getStepStatus("content") === "active"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
-                  }`}
-                >
-                  {getStepStatus("content") === "completed" ? (
-                    <Check className="w-4 h-4" />
-                  ) : (
-                    "6"
-                  )}
-                </div>
-                <div className="flex-1">
-                  <CardTitle className="text-lg">
-                    {steps[5]?.title || ""}
-                  </CardTitle>
-                  <CardDescription>
-                    {steps[5]?.description || ""}
-                  </CardDescription>
+        {/* Step 6: Content */}
+        <Card
+          className={`transition-all ${!isEditMode && getStepStatus("content") === "active" ? "ring-2 ring-primary" : ""} ${
+            !isEditMode && getStepStatus("content") === "pending"
+              ? "opacity-50"
+              : ""
+          }`}
+        >
+          <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
+            <div className="flex items-center space-x-3">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  getStepStatus("content") === "completed"
+                    ? "bg-green-500 text-white"
+                    : getStepStatus("content") === "active"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                }`}
+              >
+                {getStepStatus("content") === "completed" ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  "6"
+                )}
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-lg">
+                  {steps[5]?.title || ""}
+                </CardTitle>
+                <CardDescription>{steps[5]?.description || ""}</CardDescription>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleGenerateScenario}
+                disabled={isSubmitting || isGeneratingScenario}
+              >
+                {isGeneratingScenario ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {formData.description ? "Regenerating..." : "Generating..."}
+                  </>
+                ) : formData.description ? (
+                  "Regenerate"
+                ) : (
+                  "Generate"
+                )}
+              </Button>
+              {getStepStatus("content") === "completed" && (
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="description">Scenario Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description || ""}
+                onChange={(e) =>
+                  handleInputChange("description", e.target.value)
+                }
+                placeholder="Enter a custom scenario description or leave blank to auto-generate..."
+                className="min-h-[120px]"
+              />
+              <div className="flex items-start gap-2 p-3 rounded-md bg-blue-50 border border-blue-200">
+                <div className="text-blue-600 text-sm">
+                  <strong>💡 Tip:</strong> You can save the scenario with a
+                  blank description and use the "Generate" button above to
+                  create content later, or write your own custom description.
                 </div>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="description">
-                  Generated Scenario Description
-                </Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    handleInputChange("description", e.target.value)
-                  }
-                  placeholder="Generated scenario description will appear here..."
-                  className="min-h-[120px]"
-                />
-                <p className="text-xs text-muted-foreground">
-                  You can edit the generated description if needed.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end gap-3">
         <Button
-          onClick={formData.description ? handleSubmit : handleGenerateScenario}
+          variant="outline"
+          onClick={() => router.push("/create/scenarios")}
           disabled={isSubmitting || isGeneratingScenario}
+        >
+          Back
+        </Button>
+        <Button
+          onClick={isEditMode ? handleUpdateClick : handleSubmit}
+          disabled={
+            isSubmitting || isGeneratingScenario || (isEditMode && !hasChanges)
+          }
           className="min-w-[120px]"
         >
           {isSubmitting ? (
@@ -852,22 +957,49 @@ export default function Scenario({
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               {isEditMode ? "Updating..." : "Saving..."}
             </>
-          ) : isGeneratingScenario ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Generating...
-            </>
-          ) : formData.description ? (
-            isEditMode ? (
-              "Update Scenario"
-            ) : (
-              "Save Scenario"
-            )
+          ) : isEditMode ? (
+            "Update Scenario"
           ) : (
-            "Create Scenario"
+            "Save Scenario"
           )}
         </Button>
       </div>
+
+      {/* Update Confirmation Dialog */}
+      <AlertDialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Update Scenario</AlertDialogTitle>
+            <AlertDialogDescription>
+              This scenario is currently used by {affectedSimulations.length}{" "}
+              simulation{affectedSimulations.length !== 1 ? "s" : ""}:
+              <ul className="mt-2 list-disc list-inside">
+                {affectedSimulations.map((sim) => (
+                  <li key={sim.id} className="text-sm">
+                    {sim.title}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3 text-sm font-medium">
+                Updating this scenario will affect all of these simulations. Are
+                you sure you want to proceed?
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmUpdate}
+              disabled={isSubmitting}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {isSubmitting ? "Updating..." : "Update"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

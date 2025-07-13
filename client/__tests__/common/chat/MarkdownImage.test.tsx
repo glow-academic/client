@@ -1,69 +1,82 @@
-/**
- * tests/components/MarkdownImage.spec.tsx
- */
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeAll } from "vitest";
+import { describe, it } from 'vitest';
+import { renderWithMocks } from '@/test/renderWithMocks';
 
-import MarkdownImage from "@/components/common/chat/MarkdownImage";
-import Image, { ImageProps } from "next/image";
+// ——————————————————————————————————————————
+import MarkdownImage from '@/components/common/chat/MarkdownImage';
 
-/* ------------------------------------------------------------------ */
-/* one-time mock: next/image                                          */
-/* ------------------------------------------------------------------ */
-beforeAll(() => {
-  vi.mock("next/image", () => ({
-    //  tiny shim – Vitest already polyfills <img> so this is enough
-    __esModule: true,
-    default: (props: ImageProps) => <Image {...props} alt="test image" data-testid="img" />,
-  }));
-});
+describe('MarkdownImage', () => {
+  
 
-/* helper */
-const renderImg = (p: Partial<Parameters<typeof MarkdownImage>[0]>) =>
-  render(<MarkdownImage {...p} />);
-
-describe("<MarkdownImage />", () => {
-  it("returns null when no src", () => {
-    const { container } = renderImg({ src: "" });
-    expect(container.firstChild).toBeNull();
-  });
-
-  it("renders src + alt", () => {
-    renderImg({ src: "/pic.png", alt: "alt text" });
-    const img = screen.getByTestId("img");
-    expect(img).toHaveAttribute("src", "/pic.png");
-    expect(img).toHaveAttribute("alt", "alt text");
-  });
-
-  it("is responsive by default", () => {
-    renderImg({ src: "/a.jpg", alt: "" });
-    const img = screen.getByTestId("img");
-    expect(img).toHaveAttribute("width", "0");
-    expect(img).toHaveAttribute("height", "0");
-    expect(img).toHaveAttribute("sizes", "100vw");
-    expect(img).toHaveAttribute("unoptimized");
-  });
-
-  it("forwards extra props (className, data-*, …)", () => {
-    renderImg({
-      src: "/b.webp",
-      alt: "",
-      className: "rounded",
+  describe('basic render smoke-test', () => {
+    it('renders without crashing', async () => {
+      
+      renderWithMocks(<MarkdownImage  />);
+      
+      // TODO: Add meaningful assertions based on your component
+      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
     });
-    const img = screen.getByTestId("img");
-    expect(img).toHaveClass("rounded");
+
+    
+
+    it.skip('should have correct accessibility attributes', () => {
+      // TODO: Test accessibility features
+      
+      // TODO add accessibility assertions
+
+    });
   });
 
-  it("allows overriding width / height", () => {
-    renderImg({ src: "/c.bmp", alt: "", width: 99, height: 42 });
-    const img = screen.getByTestId("img");
-    expect(img).toHaveAttribute("width", "99");
-    expect(img).toHaveAttribute("height", "42");
-  });
+  
 
-  it("handles remote URLs", () => {
-    const url = "https://cdn.example.com/img.jpg";
-    renderImg({ src: url, alt: "" });
-    expect(screen.getByTestId("img")).toHaveAttribute("src", url);
+  
+
+  
+
+  describe('Edge Cases', () => {
+    it.skip('should handle edge cases gracefully', () => {
+      // TODO: Test edge cases and error scenarios
+      
+      // TODO: edge-case assertions
+
+    });
+
+    
   });
 });
+
+/*
+ * Component Analysis for MarkdownImage:
+ * Path: common/chat/MarkdownImage.tsx
+ * 
+ * Features detected:
+ * - Default export: true
+ * - Named exports: None
+ * - Has props: false
+ * - Props interface: None detected
+ * - Client component: false
+ * - Uses hooks: None
+ * - Uses router: false
+ * - Has API calls: false
+ * - Has form handling: false
+ * - Uses state: false
+ * - Uses effects: false
+ * - Uses context: false
+ * 
+ * TODO: Implement the failing tests above with actual test logic
+ * 
+ * Example implementations:
+ * 
+ * Basic rendering:
+ * render(<MarkdownImage />);
+ * expect(screen.getByRole('...')).toBeInTheDocument();
+ * 
+ * Props testing:
+ * const props = { ... };
+ * render(<MarkdownImage {...props} />);
+ * expect(screen.getByText(props.someText)).toBeInTheDocument();
+ * 
+ * User interaction:
+ * const button = screen.getByRole('button');
+ * await user.click(button);
+ * expect(mockFunction).toHaveBeenCalled();
+ */

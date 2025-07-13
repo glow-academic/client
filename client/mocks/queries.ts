@@ -21,8 +21,34 @@ vi.mock('@/utils/queries/agents/get-agents-by-model', () => ({
 vi.mock('@/utils/queries/agents/get-agents-by-models', () => ({
   getAgentsByModels: vi.fn(() => mockSchema.agents || []),
 }));
+vi.mock('@/utils/queries/agents/get-agents-by-sttmodel', () => ({
+  getAgentsBySttmodel: vi.fn(() => mockSchema.agents || []),
+}));
+vi.mock('@/utils/queries/agents/get-agents-by-sttmodels', () => ({
+  getAgentsBySttmodels: vi.fn(() => mockSchema.agents || []),
+}));
+vi.mock('@/utils/queries/agents/get-agents-by-ttsmodel', () => ({
+  getAgentsByTtsmodel: vi.fn(() => mockSchema.agents || []),
+}));
+vi.mock('@/utils/queries/agents/get-agents-by-ttsmodels', () => ({
+  getAgentsByTtsmodels: vi.fn(() => mockSchema.agents || []),
+}));
 vi.mock('@/utils/queries/agents/get-all-agents', () => ({
   getAllAgents: vi.fn(() => mockSchema.agents || []),
+}));
+
+// APP_FEEDBACK QUERIES
+vi.mock('@/utils/queries/app_feedback/get-all-app-feedback', () => ({
+  getAllAppFeedback: vi.fn(() => mockSchema.appFeedback || []),
+}));
+vi.mock('@/utils/queries/app_feedback/get-app-feedback-by-profile', () => ({
+  getAppFeedbackByProfile: vi.fn(() => mockSchema.appFeedback || []),
+}));
+vi.mock('@/utils/queries/app_feedback/get-app-feedback-by-profiles', () => ({
+  getAppFeedbackByProfiles: vi.fn(() => mockSchema.appFeedback || []),
+}));
+vi.mock('@/utils/queries/app_feedback/get-app-feedback', () => ({
+  getAppFeedback: vi.fn(() => mockSchema.appFeedback?.[0] || null),
 }));
 
 // APP_LOGS QUERIES
@@ -147,6 +173,9 @@ vi.mock('@/utils/queries/models/get-model', () => ({
 }));
 
 // PROFILES QUERIES
+vi.mock('@/utils/queries/profiles/get-active-profiles', () => ({
+  getActiveProfiles: vi.fn(() => mockSchema.profiles?.[0] || null),
+}));
 vi.mock('@/utils/queries/profiles/get-all-profiles', () => ({
   getAllProfiles: vi.fn(() => mockSchema.profiles || []),
 }));
@@ -304,6 +333,20 @@ vi.mock('@/utils/queries/simulation_messages/get-simulation-messages-by-chat', (
 }));
 vi.mock('@/utils/queries/simulation_messages/get-simulation-messages-by-chats', () => ({
   getSimulationMessagesByChats: vi.fn(() => mockSchema.simulationMessages || []),
+}));
+
+// SIMULATION_SKETCHES QUERIES
+vi.mock('@/utils/queries/simulation_sketches/get-all-simulation-sketches', () => ({
+  getAllSimulationSketches: vi.fn(() => mockSchema.simulationSketches || []),
+}));
+vi.mock('@/utils/queries/simulation_sketches/get-simulation-sketch', () => ({
+  getSimulationSketch: vi.fn(() => mockSchema.simulationSketches?.[0] || null),
+}));
+vi.mock('@/utils/queries/simulation_sketches/get-simulation-sketches-by-chat', () => ({
+  getSimulationSketchesByChat: vi.fn(() => mockSchema.simulationSketches || []),
+}));
+vi.mock('@/utils/queries/simulation_sketches/get-simulation-sketches-by-chats', () => ({
+  getSimulationSketchesByChats: vi.fn(() => mockSchema.simulationSketches || []),
 }));
 
 // SIMULATIONS QUERIES

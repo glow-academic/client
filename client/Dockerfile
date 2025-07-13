@@ -55,10 +55,9 @@ ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Run unit tests as part of the build process (COMMENTED OUT FOR NOW)
-# Uncomment the lines below when you want to enable testing in the build
-# RUN echo "🧪 Running unit tests..." && \
-#     yarn test
+# Run unit tests as part of the build process
+RUN echo "🧪 Running unit tests..." && \
+    yarn test
 
 # Build the application with Next.js cache mount for faster rebuilds
 RUN --mount=type=cache,id=nextjs,target=/app/.next/cache \
