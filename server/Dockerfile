@@ -1,75 +1,66 @@
 # syntax=docker/dockerfile:1.7
-# server/Dockerfile - Optimized multi-stage build
-
-#####################################
-# 1️⃣  Build Python wheels once
-#####################################
+############################################
+# 1️⃣  shared deps  (never re-installed if unchanged)
+############################################
 FROM python:3.11-slim AS deps
 WORKDIR /install
 
-# Only what pip needs to compile native modules (if any)
+# build tools + cache APT index between builds
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
     apt-get update && \
     apt-get install -y --no-install-recommends build-essential gcc && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy requirements for dependency installation
 COPY requirements.txt .
-
-# Leverage BuildKit cache so unchanged deps are instant
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip && \
-    pip install --prefer-binary --prefix=/install \
-      -r requirements.txt
+    pip install --prefer-binary --prefix=/install -r requirements.txt
 
-#####################################
-# 2️⃣  Runtime image
-#####################################
+############################################
+# 2️⃣  tester stage  (CI only – never pushed)
+############################################
+FROM python:3.11-slim AS tester
+WORKDIR /src
+
+# re-use the compiled wheels
+COPY --from=deps /install /usr/local
+
+# copy *everything* so pytest can discover the tests
+COPY . .
+
+# install test-only deps
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir pytest pytest-cov
+
+# -q makes pytest quiet unless it fails
+CMD ["pytest", "-q"]
+
+############################################
+# 3️⃣  runtime image  (what you actually deploy)
+############################################
 FROM python:3.11-slim AS runtime
 WORKDIR /app
 
-# Runtime-only
-# Cache APT index & downloaded .debs for faster rebuilds
+# runtime helpers
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
     apt-get update && \
     apt-get install -y --no-install-recommends curl ca-certificates espeak-ng && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy the pre-built Python deps — no `pip install` here
+# bring in the wheels
 COPY --from=deps /install /usr/local
 
-# # Download the SpaCy model needed by Kokoro
-# RUN python -m spacy download en_core_web_sm
+# Copy everything in the app folder (including all code, configs, etc.)
+COPY app/ ./app/
 
-# Run unit tests as part of the build process
-ARG RUN_UNIT_TESTS=0
-COPY requirements.txt .
-
-RUN if [ "$RUN_UNIT_TESTS" = "1" ]; then \
-      echo "🧪 Running PyTest" && python -m pytest -v --tb=short ; \
-    fi
-
-# Copy application source last (better layer cache)
-COPY . .
-
-# Create non-root user
-RUN groupadd --system --gid 1001 appuser && \
-    useradd --system --uid 1001 --gid appuser --create-home appuser
-
-# Create uploads directory and set permissions
-RUN mkdir -p /app/uploads/tus_uploads && \
-    chown -R appuser:appuser /app
+# non-root for prod
+RUN addgroup --system appuser && \
+    adduser  --system --ingroup appuser --home /home/appuser appuser
 USER appuser
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app
-
-# Expose port
+ENV PYTHONUNBUFFERED=1 PYTHONPATH=/app
 EXPOSE 8000
 
-# Start the application
-CMD ["gunicorn", "app.main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", \
-     "-b", "0.0.0.0:8000", "--log-level", "info"]
+CMD ["gunicorn", "app.main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "--log-level", "info"]

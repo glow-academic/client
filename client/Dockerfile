@@ -1,35 +1,37 @@
 # syntax=docker/dockerfile:1.7
-# client/Dockerfile - Optimized multi-stage build
 
-############################################
-# 1️⃣  Dependencies (re-run only if lock-file changes)
-############################################
+############################
+# 1️⃣  deps  – install once
+############################
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Install system dependencies only once
 RUN apk add --no-cache libc6-compat
-
-# Copy package files for dependency installation
 COPY package.json yarn.lock ./
 
-# Re-use Yarn's global cache across builds using BuildKit cache mount
+# cache Yarn’s global folder – survives between builds
 RUN --mount=type=cache,id=yarn,target=/usr/local/share/.cache/yarn \
     yarn install --frozen-lockfile
 
-############################################
-# 2️⃣  Build Stage
-############################################
-FROM node:20-alpine AS builder
+############################
+# 2️⃣  tester  – Vitest only
+############################
+FROM deps AS tester
 WORKDIR /app
-
-# Copy installed dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-
-# Copy source code
 COPY . .
 
-# ——— build-args for environment variables ———
+ENV NODE_ENV=test
+# Vitest exits with non-zero on failure → build fails
+CMD ["yarn", "test"]
+
+############################
+# 3️⃣  builder – Next.js
+############################
+FROM deps AS builder
+WORKDIR /app
+COPY . .
+
+# ---- build-time env ----
 ARG DB_USER
 ARG DB_PASSWORD
 ARG DB_NAME
@@ -40,58 +42,43 @@ ARG AUTH_MICROSOFT_ENTRA_ID_ID
 ARG AUTH_MICROSOFT_ENTRA_ID_SECRET
 ARG NEXT_PUBLIC_BASE_PATH
 
-# Set environment variables for build
-ENV DB_USER=$DB_USER
-ENV DB_PASSWORD=$DB_PASSWORD
-ENV DB_NAME=$DB_NAME
-ENV DB_PORT=$DB_PORT
-ENV DB_HOST=$DB_HOST
-ENV AUTH_SECRET=$AUTH_SECRET
-ENV AUTH_MICROSOFT_ENTRA_ID_ID=$AUTH_MICROSOFT_ENTRA_ID_ID
-ENV AUTH_MICROSOFT_ENTRA_ID_SECRET=$AUTH_MICROSOFT_ENTRA_ID_SECRET
-ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
+ENV \
+  DB_USER=$DB_USER \
+  DB_PASSWORD=$DB_PASSWORD \
+  DB_NAME=$DB_NAME \
+  DB_PORT=$DB_PORT \
+  DB_HOST=$DB_HOST \
+  AUTH_SECRET=$AUTH_SECRET \
+  AUTH_MICROSOFT_ENTRA_ID_ID=$AUTH_MICROSOFT_ENTRA_ID_ID \
+  AUTH_MICROSOFT_ENTRA_ID_SECRET=$AUTH_MICROSOFT_ENTRA_ID_SECRET \
+  NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH \
+  NODE_ENV=production \
+  NEXT_TELEMETRY_DISABLED=1
 
-# Set build environment
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
+# Build with cache for the Next.js compiler
+RUN --mount=type=cache,id=nextjs,target=/app/.next/cache \
+    yarn build
 
-ARG RUN_UNIT_TESTS=0
-ENV NODE_ENV=development
-
-RUN if [ "$RUN_UNIT_TESTS" = "1" ]; then \
-      echo "🧪 Running Vitest" && yarn test ; \
-    fi
-
-# switch to prod bits only **after** tests pass
-ENV NODE_ENV=production
-RUN --mount=type=cache,id=nextjs,target=/app/.next/cache yarn build
-
-############################################
-# 3️⃣  Production Runtime (minimal image)
-############################################
-FROM node:20-alpine AS runner
+############################
+# 4️⃣  runtime – 17 MB 😎
+############################
+FROM node:20-alpine AS runtime
 WORKDIR /app
 
-# Set production environment
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1
 
-# Create non-root user AND install curl in the same layer
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs && \
+# minimal utilities + non-root user
+RUN addgroup -S nodejs && adduser -S nextjs -G nodejs && \
     apk add --no-cache curl
 
-# Copy the minimal "standalone" output from builder
+# copy the standalone server output
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
+COPY --from=builder /app/public         ./public
 
-# Change ownership to non-root user
 RUN chown -R nextjs:nodejs /app
 USER nextjs
 
-# Expose the port
 EXPOSE 3000
-
-# Start the application using the standalone server
 CMD ["node", "server.js"]

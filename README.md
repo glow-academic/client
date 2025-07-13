@@ -53,12 +53,14 @@ cd server && make test          # Backend unit tests
 cd database && yarn test        # Database E2E tests
 ```
 
-## 🐳 Docker (Optional)
+## 🐳 Docker
 
 If you prefer Docker over local development:
 ```bash
-docker compose --profile dev up --build -d    # Development
-docker compose --profile prod up --build -d   # Production
+docker compose --profile test build         # runs Vitest & PyTest
+docker compose build client server          # fast – cache is hot
+docker compose build database               # you can prune cache
+docker compose up -d
 ```
 
 ## 📚 Advanced Usage

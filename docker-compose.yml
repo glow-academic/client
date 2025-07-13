@@ -135,6 +135,15 @@ services:
     networks:
       - internal
       - public_net
+  # --------------------
+  # Unit Testing
+  # --------------------
+  server-unit:
+    build:
+      context: ./server
+      target: tester
+    profiles: ["test"]
+    command: ["true"]
 
   # --------------------
   # Next.js Client
@@ -174,26 +183,14 @@ services:
     networks:
       - internal
       - public_net
-
   # --------------------
   # Unit Testing
   # --------------------
   client-unit:
     build:
       context: ./client
-      target: builder           # stops at the builder stage
-      args:
-        RUN_UNIT_TESTS: "1"
-    profiles: ["test"]
-    # exits immediately – compose will propagate the exit code
-    command: ["true"]
-
-  server-unit:
-    build:
-      context: ./server
-      target: runtime           # or a dedicated “tester” stage if you prefer
-      args:
-        RUN_UNIT_TESTS: "1"
+      dockerfile: Dockerfile
+      target: tester
     profiles: ["test"]
     command: ["true"]
 
@@ -203,13 +200,11 @@ services:
   testing:
     container_name: ${CONTAINER_PREFIX}-testing
     build: ./testing
+    env_file: .env
     environment:
-      # Cypress configuration
       - CYPRESS_baseUrl=http://client:3000
       - CYPRESS_apiUrl=http://server:8000
-      # Database connection for Cypress tasks
       - DB_PORT=5432
-      # CI environment for headless mode
       - CI=1
     depends_on:
       database:
@@ -221,9 +216,7 @@ services:
     networks:
       - internal
     volumes:
-      # Mount test results and screenshots
-      - ./database/cypress/screenshots:/e2e/cypress/screenshots
-      - ./database/cypress/videos:/e2e/cypress/videos
+      - cypress_data:/e2e/cypress/screenshots
     profiles:
       - test
 
@@ -264,4 +257,5 @@ volumes:
   csv-data:
   uploads:
   model_cache:
+  cypress_data:
 

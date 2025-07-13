@@ -1,44 +1,34 @@
 # syntax=docker/dockerfile:1.7
 FROM cypress/browsers:node-22.14.0-chrome-133.0.6943.126-1-ff-135.0.1-edge-133.0.3065.82-1
 
-USER root
-
-# 1) Install lightweight tools in a single layer
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        curl postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
-
-# 2) Create non-root user & cache directories
-RUN adduser --disabled-password --gecos "" cypress
-USER cypress
-
-# Set environment variables
-ENV HOME=/home/cypress \
-    CYPRESS_CACHE_FOLDER=/home/cypress/.cache/Cypress
+# 1. system tools --------------------------------------------------------------
+RUN apt-get update -qq \
+ && apt-get install -y --no-install-recommends curl postgresql-client \
+ && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /e2e
+ENV \
+  CYPRESS_CACHE_FOLDER=/cypress-cache \
+  CYPRESS_launchOptions='{"args":["--no-sandbox","--disable-dev-shm-usage"]}' \
+  NPM_CONFIG_UNSAFE_PERM=true
 
-# Copy package files first for better caching
-COPY package.json yarn.lock* ./
+# 2. JS dependencies -----------------------------------------------------------
+COPY package.json yarn.lock* package-lock.json* ./
 
-# 3) Use BuildKit cache for node modules and Cypress binary
-RUN --mount=type=cache,target=/home/cypress/.cache \
-    if [ -f yarn.lock ]; then \
-        yarn install --frozen-lockfile; \
+RUN if [ -f yarn.lock ]; then \
+      yarn install --frozen-lockfile ; \
+    elif [ -f package-lock.json ]; then \
+      npm ci ; \
     else \
-        npm ci; \
+      npm install ; \
     fi \
- && npx cypress install
+ && npx cypress install          # <── no --unsafe-perm here
 
-# Copy Cypress configuration and tests
+# 3. tests & helper ------------------------------------------------------------
 COPY cypress.config.ts tsconfig.json ./
-COPY cypress/ ./cypress/
+COPY cypress/               ./cypress/
+COPY wait-for-services.sh   /usr/local/bin/
+RUN chmod 755 /usr/local/bin/wait-for-services.sh
 
-# Copy wait-for-services script and set permissions
-USER root
-COPY scripts/wait-for-services.sh ./
-RUN chmod +x wait-for-services.sh && chown cypress:cypress wait-for-services.sh
-USER cypress
-
-# Skip `cypress verify` (it runs at runtime anyway)
-CMD ["npx", "cypress", "run"] 
+ENTRYPOINT ["wait-for-services.sh"]
+CMD ["http://client:3000", "http://server:8000/health"]
