@@ -91,16 +91,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-client_port = os.getenv("CLIENT_PORT", "3000")
+origin = os.getenv("ORIGIN", "http://localhost:3000")
 
 # ---------------------------------------------------------------------------+
 # 2.  CORS etc. remains intact                                               +
 # ---------------------------------------------------------------------------+
 # Allow all origins
-allowed_origins = [
-    f"http://localhost:{client_port}",
-    "https://boilersketch.cs.purdue.edu",
-]
+allowed_origins = [origin]
 
 # Store active chat connections
 active_connections: dict[str, str] = {}
