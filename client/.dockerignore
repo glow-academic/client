@@ -13,9 +13,6 @@ build/
 # Testing
 coverage/
 .nyc_output
-__tests__/
-**/*.test.*
-**/*.spec.*
 cypress/
 cypress.config.*
 

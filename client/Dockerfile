@@ -55,14 +55,16 @@ ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Run unit tests as part of the build process
-RUN echo "🧪 Running unit tests..." && \
-    yarn test
+ARG RUN_UNIT_TESTS=0
+ENV NODE_ENV=development
 
-# Build the application with Next.js cache mount for faster rebuilds
-RUN --mount=type=cache,id=nextjs,target=/app/.next/cache \
-    echo "🏗️  Building Next.js application..." && \
-    yarn build
+RUN if [ "$RUN_UNIT_TESTS" = "1" ]; then \
+      echo "🧪 Running Vitest" && yarn test ; \
+    fi
+
+# switch to prod bits only **after** tests pass
+ENV NODE_ENV=production
+RUN --mount=type=cache,id=nextjs,target=/app/.next/cache yarn build
 
 ############################################
 # 3️⃣  Production Runtime (minimal image)

@@ -176,13 +176,33 @@ services:
       - public_net
 
   # --------------------
+  # Unit Testing
+  # --------------------
+  client-unit:
+    build:
+      context: ./client
+      target: builder           # stops at the builder stage
+      args:
+        RUN_UNIT_TESTS: "1"
+    profiles: ["test"]
+    # exits immediately – compose will propagate the exit code
+    command: ["true"]
+
+  server-unit:
+    build:
+      context: ./server
+      target: runtime           # or a dedicated “tester” stage if you prefer
+      args:
+        RUN_UNIT_TESTS: "1"
+    profiles: ["test"]
+    command: ["true"]
+
+  # --------------------
   # E2E Testing Service
   # --------------------
   testing:
     container_name: ${CONTAINER_PREFIX}-testing
-    build:
-      context: ./testing
-      dockerfile: Dockerfile
+    build: ./testing
     environment:
       # Cypress configuration
       - CYPRESS_baseUrl=http://client:3000
@@ -195,9 +215,9 @@ services:
       database:
         condition: service_healthy
       client:
-        condition: service_started
+        condition: service_healthy
       server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - internal
     volumes:
@@ -206,13 +226,6 @@ services:
       - ./database/cypress/videos:/e2e/cypress/videos
     profiles:
       - test
-    # Use healthcheck to ensure services are ready before running tests
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://client:3000 && curl -f http://server:8000/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
 
   # --------------------
   # Nginx Service

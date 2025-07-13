@@ -44,10 +44,12 @@ COPY --from=deps /install /usr/local
 # RUN python -m spacy download en_core_web_sm
 
 # Run unit tests as part of the build process
+ARG RUN_UNIT_TESTS=0
 COPY requirements.txt .
-COPY tests/ tests/
-RUN echo "🧪 Running server unit tests..." && \
-    python -m pytest tests/ -v --tb=short
+
+RUN if [ "$RUN_UNIT_TESTS" = "1" ]; then \
+      echo "🧪 Running PyTest" && python -m pytest -v --tb=short ; \
+    fi
 
 # Copy application source last (better layer cache)
 COPY . .
