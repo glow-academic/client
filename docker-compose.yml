@@ -6,20 +6,11 @@ networks:
   public_net:               # <-- NEW: normal bridge
     driver: bridge
 
-# ────────────────────────────────
-# reusable snippet
-# ────────────────────────────────
-x-envfile: &with-env
-  env_file:
-    - .env
-    - ".env.${STAGE:-production}"
-
 services:
   # --------------------
   # Redis – pub/sub bus for Socket.IO
   # --------------------
   redis:
-    <<: *with-env
     image: redis:7-alpine
     restart: unless-stopped
     networks:
@@ -29,8 +20,7 @@ services:
   # WebRTC Service
   # --------------------
   webrtc:
-    <<: *with-env
-    container_name: ${CONTAINER_PREFIX}-webrtc
+    container_name: webrtc
     build: ./web
     profiles: ["webrtc"]          # <─── this hides the entire service
     ports:
@@ -43,8 +33,7 @@ services:
   # Database Service
   # --------------------
   database:
-    <<: *with-env
-    container_name: ${CONTAINER_PREFIX}-database
+    container_name: database
     build:
       context: ./database
       dockerfile: Dockerfile
@@ -70,8 +59,7 @@ services:
   # Model Service (for Whisper + Kokoro)
   # --------------------
   model:
-    <<: *with-env
-    container_name: ${CONTAINER_PREFIX}-model
+    container_name: model
     build: ./server/model
     profiles: ["webrtc"] 
     environment:
@@ -93,7 +81,6 @@ services:
   # Volume Init Service
   # --------------------
   volume-init:
-    <<: *with-env
     image: busybox
     volumes:
       - uploads:/app/uploads
@@ -110,11 +97,9 @@ services:
       - internal
 
   # --------------------
-  # API Server
+  # API Server (No contianer name, since redis will clone replicas)
   # --------------------
   server:
-    <<: *with-env
-    # container_name: glow-server
     build:
       context: ./server
       dockerfile: Dockerfile
@@ -151,7 +136,6 @@ services:
   # Unit Testing
   # --------------------
   server-unit:
-    <<: *with-env
     build:
       context: ./server
       target: tester
@@ -162,8 +146,7 @@ services:
   # Next.js Client
   # --------------------
   client:
-    <<: *with-env
-    container_name: ${CONTAINER_PREFIX}-client
+    container_name: client
     build:
       context: ./client
       dockerfile: Dockerfile
@@ -177,7 +160,9 @@ services:
         AUTH_SECRET: ${AUTH_SECRET}
         AUTH_MICROSOFT_ENTRA_ID_ID: ${AUTH_MICROSOFT_ENTRA_ID_ID}
         AUTH_MICROSOFT_ENTRA_ID_SECRET: ${AUTH_MICROSOFT_ENTRA_ID_SECRET}
-        NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH}
+        NEXT_PUBLIC_BASE_PATH: ${APP_PREFIX}
+        NEXT_PUBLIC_CAMPUS: ${NEXT_PUBLIC_CAMPUS}
+        NEXT_PUBLIC_CAMPUS_EMAIL: ${NEXT_PUBLIC_CAMPUS_EMAIL}
     environment:
       - DB_PORT=5432
       - DB_HOST=database
@@ -201,7 +186,6 @@ services:
   # Unit Testing
   # --------------------
   client-unit:
-    <<: *with-env
     build:
       context: ./client
       dockerfile: Dockerfile
@@ -213,8 +197,7 @@ services:
   # E2E Testing Service
   # --------------------
   testing:
-    <<: *with-env
-    container_name: ${CONTAINER_PREFIX}-testing
+    container_name: testing
     build: ./testing
     environment:
       - CYPRESS_baseUrl=http://client:3000
@@ -240,9 +223,8 @@ services:
   # Nginx Service
   # --------------------
   nginx:
-    <<: *with-env
     image: nginx:1.25
-    container_name: ${CONTAINER_PREFIX}-nginx
+    container_name: nginx
     volumes:
       - ./web/nginx.conf.template:/etc/nginx/nginx.conf.template:ro
     # 1) run envsubst, 2) start nginx
@@ -257,7 +239,7 @@ services:
 
         exec nginx -g 'daemon off;'
     ports:
-      - "${CLIENT_PORT:-3000}:80"
+      - "${CLIENT_PORT}:80"
     depends_on:
       - client
       - server
@@ -274,4 +256,3 @@ volumes:
   uploads:
   model_cache:
   cypress_data:
-

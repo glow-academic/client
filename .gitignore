@@ -1,8 +1,5 @@
 .env
-.env.production
 .env.local
-.env.preview
-.env.development
 .cursorignore
 .mypy_cache/
 .pytest_cache/
