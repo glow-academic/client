@@ -47,7 +47,7 @@ class TestClassify_Documents:
         assert response.status_code == 200
         assert response.json()["status"] == "success"
         # Use ANY to match any session object passed to the mock
-        mock_run_agent.assert_called_once_with(class_id, ANY)
+        mock_run_agent.assert_called_once_with(class_id, False, ANY)
 
     @patch("app.routes.documents.run_classify_agent")
     def test_classify_documents_agent_error(self, mock_run_agent, client):
@@ -78,7 +78,7 @@ class TestCourse_Processing:
 
         assert response.status_code == 200
         assert response.json()["status"] == "success"
-        mock_run_agent.assert_called_once_with(class_id, ANY)
+        mock_run_agent.assert_called_once_with(class_id, False, ANY)
 
     @patch("app.routes.documents.run_course_agent")
     def test_course_processing_error(self, mock_run_agent, client, test_session):

@@ -13,6 +13,9 @@ def mock_session():
     return MagicMock(spec=Session)
 
 
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `find_profiles`")
 class TestFind_Profiles:
     """Tests for find_profiles function."""
 

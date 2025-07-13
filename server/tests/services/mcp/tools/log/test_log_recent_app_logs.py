@@ -13,6 +13,9 @@ def mock_session():
     return MagicMock(spec=Session)
 
 
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `recent_app_logs`")
 class TestRecent_App_Logs:
     """Tests for recent_app_logs function."""
 

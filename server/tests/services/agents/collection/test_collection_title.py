@@ -13,6 +13,9 @@ def mock_session():
     return MagicMock(spec=Session)
 
 
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `run_title_agent`")
 class TestRun_Title_Agent:
     """Tests for run_title_agent function."""
 

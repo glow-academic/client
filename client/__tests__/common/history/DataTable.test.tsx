@@ -6,7 +6,10 @@ import type {  } from '@tanstack/react-table';
 // ——————————————————————————————————————————
 import { DataTable, DataTableProps } from '@/components/common/history/DataTable';
 
-
+import "@/mocks/queries";
+import "@/mocks/mutations";
+import "@/mocks/api";
+import "@/mocks/navigation";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

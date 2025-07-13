@@ -4,17 +4,16 @@ import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
 import DraggableComponent, { DraggableComponentProps } from '@/components/common/dashboard/DraggableComponent';
+import { getMockDashboardComponent } from '@/mocks/navigation';
 
 
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
 const mockProps: DraggableComponentProps = {
-  component: /* TODO <Component> */ undefined!,
-  // hideRemoveButton: false, /* optional */
-  // section: 'test-section', /* optional */
-  // index: 0, /* optional */
-};
+  component: getMockDashboardComponent(),
+  hideRemoveButton: true,     // <- convenient so we don't need to stub onRemove
+};  
 // ------------------------------------------------------------------
 describe('DraggableComponent', () => {
   

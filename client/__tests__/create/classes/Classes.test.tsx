@@ -98,7 +98,7 @@ describe('Classes', () => {
       renderWithMocks(<Classes />);
 
       // Act: Find all the card elements, which now act as skeleton containers
-      const skeletons = await screen.findAllByRole('complementary'); // The <Card> component has a role of 'complementary' by default
+      const skeletons = await screen.findAllByRole('article'); // The <Card> component has a role of 'article' by default
 
       // Assert: Check that the correct number of skeletons are rendered
       expect(skeletons.length).toBe(6);

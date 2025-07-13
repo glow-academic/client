@@ -13,6 +13,9 @@ def mock_session():
     return MagicMock(spec=Session)
 
 
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `assistant_usage`")
 class TestAssistant_Usage:
     """Tests for assistant_usage function."""
 

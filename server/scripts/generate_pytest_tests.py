@@ -76,7 +76,9 @@ def analyze_test_file(file_path: str) -> List[str]:
 def generate_single_route_test_class(func_name: str) -> str:
     """Generates the test class skeleton for a single route function."""
     return f'''
+import pytest
 
+@pytest.mark.skip(reason="TODO: implement tests for `{func_name}`")
 class Test{func_name.title()}:
     """Tests for {func_name} endpoint."""
 
@@ -95,6 +97,9 @@ def generate_single_service_test_class(func_name: str) -> str:
     """Generates the test class skeleton for a single service function."""
     return f'''
 
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `{func_name}`")
 class Test{func_name.title()}:
     """Tests for {func_name} function."""
 

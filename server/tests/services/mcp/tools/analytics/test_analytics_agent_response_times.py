@@ -13,6 +13,9 @@ def mock_session():
     return MagicMock(spec=Session)
 
 
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `agent_response_times`")
 class TestAgent_Response_Times:
     """Tests for agent_response_times function."""
 

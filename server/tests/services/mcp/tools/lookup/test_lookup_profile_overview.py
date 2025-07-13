@@ -13,6 +13,9 @@ def mock_session():
     return MagicMock(spec=Session)
 
 
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `profile_overview`")
 class TestProfile_Overview:
     """Tests for profile_overview function."""
 

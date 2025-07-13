@@ -1,5 +1,9 @@
 // helpers/testing/renderWithMocks.tsx
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  SidebarProvider,
+} from "@/components/ui/sidebar";
+import { AssistantProvider } from "@/contexts/assistant-context";
 import { render } from "@testing-library/react";
 
 // This helper's only job is to provide the QueryClient.
@@ -14,6 +18,10 @@ export function renderWithMocks(ui: React.ReactElement) {
   });
 
   return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <AssistantProvider>
+        <SidebarProvider>{ui}</SidebarProvider>
+      </AssistantProvider>
+    </QueryClientProvider>
   );
 }

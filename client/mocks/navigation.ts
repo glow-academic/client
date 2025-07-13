@@ -3,6 +3,7 @@
 
 import React from "react";
 import { vi } from "vitest";
+import type { Column, Table, Row, RowModel, TableState } from "@tanstack/react-table";
 
 // Export router mock for direct access in tests
 // This object will be the single source of truth for router functions.
@@ -70,3 +71,70 @@ vi.mock("@/utils/logger", () => ({
   logWarn: vi.fn(),
   logDebug: vi.fn(),
 }));
+
+/* ───────────────────────── MOCK COLUMN ────────────────────────── */
+export function getMockColumn<TData, TValue>(
+  opts: Partial<Column<TData, TValue>> = {},
+): Column<TData, TValue> {
+  const base: Partial<Column<TData, TValue>> = {
+    id: "mock",
+    accessorFn: () => undefined as unknown as TValue,
+    // Sort / visibility helpers
+    getCanSort: () => false,
+    getIsSorted: () => false,
+    toggleSorting: vi.fn(),
+    toggleVisibility: vi.fn(),
+    getCanHide: () => true,
+    getIsVisible: () => true,
+    // Faceting / filtering helpers
+    getFacetedUniqueValues: () => new Map(),
+    getFilterValue: () => undefined,
+    setFilterValue: vi.fn(),
+    ...opts,               // allow per-test overrides
+  };
+
+  return base as Column<TData, TValue>;
+}
+
+/* ───────────────────────── MOCK TABLE ─────────────────────────── */
+export function getMockTable<TData>(
+  opts: Partial<Table<TData>> = {},
+): Table<TData> {
+  const emptyRows = { rows: [] as Row<TData>[] };
+
+  const base: Partial<Table<TData>> = {
+    /* Selection & filtering */
+    getFilteredSelectedRowModel: () => emptyRows as unknown as RowModel<TData>,
+    getFilteredRowModel: () => emptyRows as unknown as RowModel<TData>,
+    /* Pagination */
+    getState: () => ({
+      pagination: { pageSize: 10, pageIndex: 0 },
+      columnFilters: [],
+      rowSelection: {},
+    }) as unknown as TableState,
+    setPageSize: vi.fn(),
+    setPageIndex: vi.fn(),
+    previousPage: vi.fn(),
+    nextPage: vi.fn(),
+    getPageCount: () => 1,
+    getCanPreviousPage: () => false,
+    getCanNextPage: () => false,
+    /* Columns */
+    getAllColumns: () => [],
+    getColumn: () => undefined,
+    ...opts,               // allow per-test overrides
+  };
+
+  return base as Table<TData>;
+}
+
+export function getMockDashboardComponent(overrides = {}) {
+  return {
+    id: "mock-id",
+    name: "Mock Chart",
+    fileName: "MockChart",
+    stat: false,
+    layout: {},           // anything → avoids the crash
+    ...overrides,
+  };
+}

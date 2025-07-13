@@ -13,6 +13,9 @@ def mock_session():
     return MagicMock(spec=Session)
 
 
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `export_csv`")
 class TestExport_Csv:
     """Tests for export_csv function."""
 

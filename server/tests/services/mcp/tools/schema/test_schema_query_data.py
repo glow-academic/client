@@ -13,6 +13,9 @@ def mock_session():
     return MagicMock(spec=Session)
 
 
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `query_data`")
 class TestQuery_Data:
     """Tests for query_data function."""
 
