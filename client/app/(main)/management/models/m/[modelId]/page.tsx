@@ -26,7 +26,7 @@ export async function generateMetadata(
     title: `${model?.name || "Model"}`,
     description:
       model?.description ||
-      "Manage individual AI models in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+      `Manage individual AI models in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
   };
 }
 

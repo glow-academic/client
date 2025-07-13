@@ -20,7 +20,7 @@ export async function generateMetadata(
 
   return {
     title: `${simulation?.title || "Simulation"}`,
-    description: `${simulation?.title || "Simulation"} in GLOW (Graduate Learning Orientation Workshop) at Purdue University.`,
+    description: `${simulation?.title || "Simulation"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
   };
 }
 

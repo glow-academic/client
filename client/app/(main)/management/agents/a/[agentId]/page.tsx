@@ -8,9 +8,8 @@
 import AgentEdit from "@/components/management/agents/AgentEdit";
 import { use } from "react";
 
-import type { Metadata, ResolvingMetadata } from "next";
 import { getAgent } from "@/utils/queries/agents/get-agent";
-
+import type { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ agentId: string }> },
@@ -20,11 +19,9 @@ export async function generateMetadata(
   const agent = await getAgent(agentId);
   return {
     title: `${agent?.name || "Agent"} Agent`,
-    description: `${agent?.name + " " + agent?.description || "Agent"} in GLOW (Graduate Learning Orientation Workshop) at Purdue University.`,
+    description: `${agent?.name + " " + agent?.description || "Agent"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
   };
 }
-
-
 
 export default function AgentEditPage({
   params,

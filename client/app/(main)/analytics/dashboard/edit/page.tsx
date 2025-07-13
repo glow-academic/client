@@ -12,7 +12,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Dashboard Edit",
-  description: "Dashboard edit in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+  description: `Dashboard edit in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
 
 export default function DashboardEditPage() {

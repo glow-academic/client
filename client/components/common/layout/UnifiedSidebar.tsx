@@ -544,7 +544,7 @@ export function UnifiedSidebar({
                     <span className="truncate text-xs">
                       {effectiveRole === "guest" || !profile
                         ? "Not logged in"
-                        : `${profile?.alias}@purdue.edu`}
+                        : `${profile?.alias}@${process.env["NEXT_PUBLIC_EMAIL_DOMAIN"]}`}
                     </span>
                   </div>
                   <ChevronRight className="ml-auto size-4" />
@@ -576,7 +576,7 @@ export function UnifiedSidebar({
                       <span className="truncate text-xs">
                         {effectiveRole === "guest" || !profile
                           ? "Not logged in"
-                          : `${profile?.alias}@purdue.edu`}
+                          : `${profile?.alias}@${process.env["NEXT_PUBLIC_EMAIL_DOMAIN"]}`}
                       </span>
                     </div>
                   </div>

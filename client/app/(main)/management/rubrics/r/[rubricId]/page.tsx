@@ -5,12 +5,11 @@
  * 06/09/2025
  */
 
-import { use } from "react";
 import RubricEdit from "@/components/management/rubrics/RubricEdit";
+import { use } from "react";
 
-import type { Metadata, ResolvingMetadata } from "next";
 import { getRubric } from "@/utils/queries/rubrics/get-rubric";
-
+import type { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ rubricId: string }> },
@@ -21,11 +20,9 @@ export async function generateMetadata(
 
   return {
     title: `${rubric?.name || "Rubric"}`,
-    description: `${rubric?.name + " " + rubric?.description || "Rubric"} in GLOW (Graduate Learning Orientation Workshop) at Purdue University.`,
+    description: `${rubric?.name + " " + rubric?.description || "Rubric"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
   };
 }
-
-
 
 export default function EditRubricPage({
   params,

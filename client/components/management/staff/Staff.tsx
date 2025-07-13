@@ -344,7 +344,7 @@ export default function Staff() {
                       </div>
                     </TableCell>
                     <TableCell className="text-sm">
-                      {profile.alias}@purdue.edu
+                      {profile.alias}@{process.env["NEXT_PUBLIC_EMAIL_DOMAIN"]}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       <div className="flex flex-wrap gap-1 max-w-[200px]">

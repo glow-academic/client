@@ -331,7 +331,7 @@ export default function NewStaff() {
                   required
                 />
                 <p className="text-sm text-muted-foreground">
-                  Will be used as {formData.alias}@purdue.edu
+                  Will be used as {formData.alias}@{process.env["NEXT_PUBLIC_EMAIL_DOMAIN"]}
                 </p>
               </div>
               <div className="space-y-2">

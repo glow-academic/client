@@ -142,7 +142,7 @@ export function Profile({ className }: ProfileProps) {
               </CardTitle>
               <CardDescription className="flex items-center gap-2 mt-1">
                 <Mail className="h-4 w-4" />
-                {profile.alias}@purdue.edu
+                {profile.alias}@{process.env["NEXT_PUBLIC_EMAIL_DOMAIN"]}
               </CardDescription>
             </div>
             <Badge variant={roleInfo.color}>{roleInfo.label}</Badge>

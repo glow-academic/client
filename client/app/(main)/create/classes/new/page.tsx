@@ -10,7 +10,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "New Class",
-  description: "New class creation page for the classes section in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+  description: `New class creation page for the classes section in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
 
 export default function NewClassPage() {

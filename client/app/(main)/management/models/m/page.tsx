@@ -12,7 +12,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Models",
   description:
-    "Manage individual AI models in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+    `Manage individual AI models in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
 
 export default function ModelEditPage() {

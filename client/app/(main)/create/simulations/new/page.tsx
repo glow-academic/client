@@ -11,7 +11,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "New Simulation",
-  description: "New simulation creation page using the unified playground in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+  description: `New simulation creation page using the unified playground in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
 
 export default function NewSimulationPage() {

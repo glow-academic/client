@@ -9,7 +9,7 @@ import Login from "@/components/common/login/Login";
 
 export const metadata: Metadata = {
   title: "Login | GLOW",
-  description: "Login to GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+  description: `Login to GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}`,
 };
 
 export default function LoginPage() {

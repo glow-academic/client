@@ -21,7 +21,7 @@ export async function generateMetadata(
   if (!attemptData) {
     return {
       title: `Attempt ${attemptId.substring(0, 8)}...`,
-      description: `Attempt ${attemptId.substring(0, 8)}... in GLOW (Graduate Learning Orientation Workshop) at Purdue University.`,
+      description: `Attempt ${attemptId.substring(0, 8)}... in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
     };
   }
   // get simulation for attempt
@@ -29,17 +29,16 @@ export async function generateMetadata(
   // Attempts don't have a title, so we'll use a generic name with timestamp
   return {
     title: `${attemptSimulation?.title || "Attempt"}`,
-    description: `${attemptSimulation?.title || "Attempt"} in GLOW (Graduate Learning Orientation Workshop) at Purdue University.`,
+    description: `${attemptSimulation?.title || "Attempt"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
   };
 }
 
-export default function AttemptPage({
-}: {
+export default function AttemptPage({}: {
   params: Promise<{ attemptId: string }>;
 }) {
   return (
     <div className="space-y-6">
-        <AttemptChat />
+      <AttemptChat />
     </div>
   );
 }

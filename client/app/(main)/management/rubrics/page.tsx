@@ -11,7 +11,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Rubrics",
-  description: "Rubrics in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+  description: `Rubrics in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
 
 export default function RubricsPage() {

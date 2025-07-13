@@ -491,7 +491,7 @@ export default function Report({ profileId }: ReportProps) {
                 {profile.firstName} {profile.lastName}
               </h1>
               <p className="text-muted-foreground">
-                {profile.alias}@purdue.edu
+                {profile.alias}@{process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
               </p>
             </div>
             <Badge variant={getRoleBadgeVariant(profile.role)}>

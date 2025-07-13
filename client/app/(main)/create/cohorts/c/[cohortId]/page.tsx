@@ -22,7 +22,7 @@ export async function generateMetadata(
 
   return {
     title: `${cohort?.title || "Cohort"}`,
-    description: `${cohort?.title + " " + cohort?.description || "Cohort"} in GLOW (Graduate Learning Orientation Workshop) at Purdue University.`,
+    description: `${cohort?.title + " " + cohort?.description || "Cohort"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
   };
 }
 

@@ -10,7 +10,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Profile",
-  description: "View your profile in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+  description: `View your profile in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
 
 export default function ProfilePage() {

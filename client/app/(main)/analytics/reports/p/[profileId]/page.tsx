@@ -22,7 +22,7 @@ export async function generateMetadata(
 
   return {
     title: `${profile?.firstName} ${profile?.lastName}`,
-    description: `Reports for individual staff in GLOW (Graduate Learning Orientation Workshop) at Purdue University.`,
+    description: `Reports for individual staff in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
   };
 }
 
