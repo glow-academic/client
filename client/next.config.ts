@@ -1,24 +1,42 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  basePath: process.env['NEXT_PUBLIC_BASE_PATH'] || '',  // "/beta" in beta
-  output:   'standalone',
+// next.config.ts
+import type { NextConfig } from "next";
+import type { WebpackConfigContext } from "next/dist/server/config-shared";
+import type { Configuration as WebpackConfig } from "webpack";
+
+const nextConfig: NextConfig = {
+  basePath: process.env["NEXT_PUBLIC_BASE_PATH"] || "",
+  output: "standalone",
   devIndicators: false,
   trailingSlash: false,
   skipTrailingSlashRedirect: true,
 
-  eslint:     { ignoreDuringBuilds: false },
-  typescript: { ignoreBuildErrors: false, tsconfigPath: './tsconfig.json' },
+  eslint: { ignoreDuringBuilds: false },
+  typescript: { ignoreBuildErrors: false, tsconfigPath: "./tsconfig.json" },
 
   reactStrictMode: false,
-  serverExternalPackages: ['pg', '@auth/pg-adapter'],
+  serverExternalPackages: ["pg", "@auth/pg-adapter"],
 
-  webpack: (config, { isServer, webpack }) => {
+  webpack: (
+    config: WebpackConfig,
+    { isServer, webpack }: WebpackConfigContext
+  ): WebpackConfig => {
     if (!isServer) {
-      config.resolve.fallback = { ...config.resolve.fallback, 'pg-native': false, 'cloudflare:sockets': false };
+      config.resolve = {
+        ...config.resolve,
+        fallback: {
+          ...config.resolve?.fallback,
+          "pg-native": false,
+          "cloudflare:sockets": false,
+        },
+      };
     }
-    config.plugins.push(
-      new webpack.IgnorePlugin({ resourceRegExp: /^pg-native$|^cloudflare:sockets$/ })
+
+    config.plugins?.push(
+      new webpack.IgnorePlugin({
+        resourceRegExp: /^pg-native$|^cloudflare:sockets$/,
+      })
     );
+
     return config;
   },
 };
