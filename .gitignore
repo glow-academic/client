@@ -1,5 +1,4 @@
 .env
-.env.local
 .cursorignore
 .mypy_cache/
 .pytest_cache/
