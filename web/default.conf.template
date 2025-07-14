@@ -27,7 +27,6 @@ server {
   listen 80;
 
   # This location block is specifically for Socket.IO WebSocket traffic.
-  # It is processed first because it's more specific than the general "/" block below.
   location /${APP_PREFIX}/socket.io/ {
       proxy_next_upstream  error timeout http_502 http_503 http_504;
       proxy_next_upstream_tries 3;
@@ -35,33 +34,33 @@ server {
       proxy_http_version 1.1;
       proxy_set_header   Upgrade           $http_upgrade;
       proxy_set_header   Connection        $connection_upgrade;
-      proxy_set_header   Host              $http_host;
-      proxy_set_header   X-Forwarded-Host  $http_host;
-      proxy_set_header   X-Forwarded-Port  $server_port;
-      proxy_set_header   X-Real-IP         $remote_addr;
+      proxy_set_header   Host              $host;
       proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
       proxy_set_header   X-Forwarded-Proto $scheme;
   }
 
-  # This single, primary location block handles ALL other requests for the Next.js app.
-  # Consolidating here prevents location priority conflicts and unwanted redirects.
-  location / {
-    # This 'if' block checks if the request is for an unprefixed API route.
-    # If it is, it adds the APP_PREFIX before proxying to Next.js.
-    # This is what allows your client-side `fetch('/api/...')` calls to work.
-    if ($request_uri ~* "^/api/") {
-        rewrite ^/api/(.*)$ /${APP_PREFIX}/api/$1 break;
-    }
+  # This block catches unprefixed API calls and rewrites them.
+  # Using `last` tells Nginx to process the new URL against the location blocks again.
+  location /api/ {
+    rewrite ^/api/(.*)$ /${APP_PREFIX}/api/$1 last;
+  }
 
-    # Proxy all other requests to the Next.js container.
+  # This single, primary location block handles ALL other requests for the Next.js app.
+  location / {
     proxy_pass         http://next_client;
     proxy_http_version 1.1;
-    proxy_set_header   Host              $http_host;
-    proxy_set_header   X-Forwarded-Host  $http_host;
-    proxy_set_header   X-Forwarded-Port  $server_port;
+    proxy_set_header   Upgrade           $http_upgrade;
+    proxy_set_header   Connection        "upgrade";
+    proxy_set_header   Host              $host;
     proxy_set_header   X-Real-IP         $remote_addr;
     proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
     proxy_set_header   X-Forwarded-Proto $scheme;
+
+    # --- THE FINAL FIX IS HERE ---
+    # Use $http_host to ensure the port number is included, satisfying Next.js's security check.
+    proxy_set_header   X-Forwarded-Host  $http_host;
+
+    proxy_set_header   X-Forwarded-Port  $server_port;
     proxy_read_timeout  600s;
     proxy_send_timeout  600s;
   }
