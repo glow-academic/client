@@ -3,7 +3,7 @@ networks:
   internal:
     driver: bridge
     internal: true
-  public_net:               # <-- NEW: normal bridge
+  public_net:
     driver: bridge
 
 services:
