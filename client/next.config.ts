@@ -10,7 +10,6 @@ const nextConfig: NextConfig = {
   output: "standalone",
   devIndicators: false,
   trailingSlash: false,
-  skipTrailingSlashRedirect: true,
   eslint: { ignoreDuringBuilds: false },
   typescript: { ignoreBuildErrors: false, tsconfigPath: "./tsconfig.json" },
 
