@@ -205,12 +205,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./web/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
-    command: >
-      /bin/sh -c "
-        envsubst '$$prefix' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf &&
-        nginx -g 'daemon off;'
-      "
+      - ./web/default.conf.template:/etc/nginx/templates/default.conf.template:ro
     ports:
       - "${CLIENT_PORT}:80"
     depends_on:
