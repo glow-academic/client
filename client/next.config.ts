@@ -3,7 +3,10 @@ import type { NextConfig } from "next";
 import type { WebpackConfigContext } from "next/dist/server/config-shared";
 import type { Configuration as WebpackConfig } from "webpack";
 
-const nextConfig: NextConfig = {
+const appPrefix = process.env["APP_PREFIX"] ? `/${process.env["APP_PREFIX"]}` : "";
+
+module.exports = {
+  basePath: appPrefix,
   output: "standalone",
   devIndicators: false,
   trailingSlash: false,
@@ -35,6 +38,4 @@ const nextConfig: NextConfig = {
 
     return config;
   },
-};
-
-export default nextConfig;
+} as NextConfig;

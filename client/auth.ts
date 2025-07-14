@@ -1,7 +1,7 @@
 // auth.ts
 import { logError, logInfo } from "@/utils/logger";
 import PostgresAdapter from "@auth/pg-adapter";
-import NextAuth from "next-auth";
+import NextAuth from 'next-auth'
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { Pool } from "pg";
 import { getProfileByAlias } from "./utils/auth/get-profile-by-alias";
@@ -10,6 +10,7 @@ import { createProfile } from "./utils/mutations/profiles/create-profile";
 import { updateProfile } from "./utils/mutations/profiles/update-profile";
 import { getProfilesByUser } from "./utils/queries/profiles/get-profiles-by-user";
 
+const appPrefix = process.env["APP_PREFIX"] ? `/${process.env["APP_PREFIX"]}` : "";
 const clientId = process.env["AUTH_MICROSOFT_ENTRA_ID_ID"] || "";
 const clientSecret = process.env["AUTH_MICROSOFT_ENTRA_ID_SECRET"] || "";
 const secret = process.env["AUTH_SECRET"] || "";
@@ -22,6 +23,7 @@ const pool = new Pool({
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  basePath: `${appPrefix}/api/auth`,
   adapter: PostgresAdapter(pool),
   providers: [
     MicrosoftEntraID({

@@ -215,9 +215,11 @@ export default function Login() {
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedRole");
 
-      let redirectTo = "/home";
+      const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] ? `/${process.env["NEXT_PUBLIC_APP_PREFIX"]}` : "";
+
+      let redirectTo = `${appPrefix}/home`;
       if (profile?.role !== "ta") {
-        redirectTo = "/analytics";
+        redirectTo = `${appPrefix}/analytics`;
       }
 
       await signIn("microsoft-entra-id", { redirectTo: redirectTo });

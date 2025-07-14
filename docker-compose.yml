@@ -133,6 +133,8 @@ services:
         NEXT_PUBLIC_CAMPUS: ${NEXT_PUBLIC_CAMPUS}
         NEXT_PUBLIC_CAMPUS_EMAIL: ${NEXT_PUBLIC_CAMPUS_EMAIL}
         INTERNAL_API_BASE: http://server:8000
+        APP_PREFIX: ${APP_PREFIX}
+        NEXT_PUBLIC_APP_PREFIX: ${APP_PREFIX}
     env_file:
       - .env
     environment:
@@ -141,6 +143,8 @@ services:
       - HOSTNAME=0.0.0.0
       - PORT=3000
       - INTERNAL_API_BASE=http://server:8000
+      - APP_PREFIX=${APP_PREFIX}
+      - NEXT_PUBLIC_APP_PREFIX=${APP_PREFIX}
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/api/health"]
       interval: 10s
