@@ -126,7 +126,6 @@ services:
         DB_NAME: ${DB_NAME}
         DB_PORT: 5432 # since we are running internally
         DB_HOST: database
-        AUTH_URL: ${AUTH_URL}
         AUTH_SECRET: ${AUTH_SECRET}
         AUTH_MICROSOFT_ENTRA_ID_ID: ${AUTH_MICROSOFT_ENTRA_ID_ID}
         AUTH_MICROSOFT_ENTRA_ID_SECRET: ${AUTH_MICROSOFT_ENTRA_ID_SECRET}
