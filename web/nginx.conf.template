@@ -31,11 +31,26 @@ http {
   server {
     listen 80;
 
+    # Set a variable to the prefix. It will be empty if not set.
+    set $prefix "${APP_PREFIX}";
+
+    # 1) First, handle the case where a prefix is used.
+    # This location captures the prefix and everything after it.
+    # The 'rewrite' directive then strips the prefix and processes the request again.
+    location ~ ^/${prefix}/(.*)$ {
+      # Rewrite the URL to remove the prefix and process it in a later location block.
+      # The $1 captures everything after the prefix.
+      # Example: /my-app/api/health -> /api/health
+      rewrite ^/${prefix}/(.*)$ /$1 break;
+    }
+
     # 1) First match everything under /api/ → Next.js
-    location ^~ ${APP_PREFIX}/api/ {
+    location ^~ /api/ {
       proxy_pass         http://next_client$request_uri;
       proxy_http_version 1.1;
-      proxy_set_header   Host              $host;
+      proxy_set_header   Host              $http_host;
+      proxy_set_header   X-Forwarded-Host  $http_host;
+      proxy_set_header   X-Forwarded-Port  $server_port;
       proxy_set_header   X-Real-IP         $remote_addr;
       proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
       proxy_set_header   X-Forwarded-Proto $scheme;
@@ -44,14 +59,16 @@ http {
     }
 
     # 2) WebSocket (socket.io) traffic → your API socket server
-    location ${APP_PREFIX}/socket.io/ {
+    location /socket.io/ {
       proxy_next_upstream  error timeout http_502 http_503 http_504;
       proxy_next_upstream_tries 3;
       proxy_pass         http://api_socketio;
       proxy_http_version 1.1;
       proxy_set_header   Upgrade           $http_upgrade;
       proxy_set_header   Connection        $connection_upgrade;
-      proxy_set_header   Host              $host;
+      proxy_set_header   Host              $http_host;
+      proxy_set_header   X-Forwarded-Host  $http_host;
+      proxy_set_header   X-Forwarded-Port  $server_port;
       proxy_set_header   X-Real-IP         $remote_addr;
       proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
       proxy_set_header   X-Forwarded-Proto $scheme;
@@ -63,10 +80,12 @@ http {
     }
 
     # 3) everything else → Next.js “client”
-    location ${APP_PREFIX}/ {
+    location / {
       proxy_pass         http://next_client;
       proxy_http_version 1.1;
-      proxy_set_header   Host              $host;
+      proxy_set_header   Host              $http_host;
+      proxy_set_header   X-Forwarded-Host  $http_host;
+      proxy_set_header   X-Forwarded-Port  $server_port;
       proxy_set_header   X-Real-IP         $remote_addr;
       proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
       proxy_set_header   X-Forwarded-Proto $scheme;
@@ -76,7 +95,9 @@ http {
       # strip nothing – just hand the request to Next.js
       proxy_pass http://next_client;
       proxy_http_version 1.1;
-      proxy_set_header Host              $host;
+      proxy_set_header   Host              $http_host;
+      proxy_set_header   X-Forwarded-Host  $http_host;
+      proxy_set_header   X-Forwarded-Port  $server_port;
       proxy_set_header X-Real-IP         $remote_addr;
       proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
       proxy_set_header X-Forwarded-Proto $scheme;

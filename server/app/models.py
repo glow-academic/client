@@ -94,6 +94,16 @@ class Components(_Base, table=True):
     default_component: bool = Field(sa_column=Column('default_component', Boolean, default=False))
 
 
+class Migrations(_Base, table=True):
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='migrations_pkey'),
+    )
+
+    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
+    hash: str = Field(sa_column=Column('hash', Text))
+    created_at: Optional[int] = Field(default=None, sa_column=Column('created_at', BigInteger))
+
+
 class Models(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='models_pkey'),
@@ -106,7 +116,6 @@ class Models(_Base, table=True):
     description: str = Field(sa_column=Column('description', Text))
     provider_id: Mapped[uuid.UUID] = Field(sa_column=Column('provider_id', Uuid(as_uuid=True)))
     active: bool = Field(sa_column=Column('active', Boolean, default=True))
-    model_type: str = Field(sa_column=Column('model_type', Enum('ttt', 'tts', 'stt', name='model_type'), default=r'ttt'))
 
     agents: List['Agents'] = Relationship(back_populates='model')
 
@@ -193,11 +202,8 @@ class Agents(_Base, table=True):
     system_prompt: str = Field(sa_column=Column('system_prompt', Text))
     temperature: int = Field(sa_column=Column('temperature', Integer))
     default_agent: bool = Field(sa_column=Column('default_agent', Boolean, default=False))
-    voice_agent: bool = Field(sa_column=Column('voice_agent', Boolean, default=False))
     editable: bool = Field(sa_column=Column('editable', Boolean, default=False))
     model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
-    stt_model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('stt_model_id', Uuid(as_uuid=True)))
-    tts_model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('tts_model_id', Uuid(as_uuid=True)))
     reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('low', 'medium', 'high', name='reasoning_effort')))
 
     model: Optional['Models'] = Relationship(back_populates='agents')

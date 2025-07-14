@@ -56,9 +56,13 @@ COPY --from=deps /install /usr/local
 COPY app/ ./app/
 
 # non-root for prod
-RUN addgroup --system appuser && \
-    adduser  --system --ingroup appuser --home /home/appuser appuser
-USER appuser
+ARG APP_UID=1001
+ARG APP_GID=1001   # pick any unused id ≥ 1000
+
+# create group & user with those ids
+RUN addgroup --system --gid $APP_GID appuser && \
+    adduser  --system --uid $APP_UID --gid $APP_GID \
+             --home /home/appuser appuser
 
 ENV PYTHONUNBUFFERED=1 PYTHONPATH=/app
 EXPOSE 8000

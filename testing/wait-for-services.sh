@@ -1,5 +1,3 @@
-# testing/wait-for-services.sh  (commit this at repo-root)
-
 #!/usr/bin/env bash
 set -euo pipefail
 

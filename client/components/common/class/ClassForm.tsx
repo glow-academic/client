@@ -60,6 +60,7 @@ import {
   Upload,
   UploadCloud,
 } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
 
 // A new type to represent a document that is either saved or new
 type EditableDocument =
@@ -298,7 +299,7 @@ export default function ClassForm({ classId }: ClassFormProps) {
       // Create upload promises for new files
       const uploadPromises = newFileUploads.map((doc) => {
         return new Promise<void>((resolve, reject) => {
-          const fileId = crypto.randomUUID();
+          const fileId = uuidv4();
           const upload = new tus.Upload(doc.file, {
             endpoint: `/api/upload`,
             retryDelays: [0, 3000, 5000],
@@ -396,7 +397,7 @@ export default function ClassForm({ classId }: ClassFormProps) {
     // Create temporary document objects for each new file
     const newDocs: EditableDocument[] = Array.from(files).map((file) => ({
       isNew: true,
-      id: crypto.randomUUID(), // Unique client-side ID
+      id: uuidv4(),
       name: file.name,
       file: file,
       type: "lecture", // A sensible default

@@ -27,6 +27,7 @@ RUN if [ -f yarn.lock ]; then \
 # 3. tests & helper ------------------------------------------------------------
 COPY cypress.config.ts tsconfig.json ./
 COPY cypress/               ./cypress/
+COPY drizzle/               ./drizzle/
 COPY wait-for-services.sh   /usr/local/bin/
 RUN chmod 755 /usr/local/bin/wait-for-services.sh
 

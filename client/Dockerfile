@@ -74,6 +74,7 @@ WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1
 
+
 # minimal utilities + non-root user
 RUN addgroup -S nodejs && adduser -S nextjs -G nodejs && \
     apk add --no-cache curl

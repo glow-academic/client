@@ -19,6 +19,7 @@ import { Archive, CheckCircle, Loader2, Plus } from "lucide-react";
 import ClassForm from "@/components/common/class/ClassForm";
 import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
 import { createClass } from "@/utils/mutations/classes/create-class";
+import { v4 as uuidv4 } from "uuid";
 
 type ProcessingStep =
   | "idle"
@@ -70,7 +71,7 @@ export default function NewClass() {
 
       // Create file upload status
       const fileUploadStatus: FileUploadStatus = {
-        id: crypto.randomUUID(),
+        id: uuidv4(),
         name: file.name,
         progress: 0,
         status: "uploading",
