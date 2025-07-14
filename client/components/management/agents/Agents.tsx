@@ -7,7 +7,7 @@
 "use client";
 import { logError, logInfo } from "@/utils/logger";
 import { useQuery } from "@tanstack/react-query";
-import { Brain, Copy, Edit, Mic, Thermometer, Trash2 } from "lucide-react";
+import { Brain, Copy, Edit, Thermometer, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -130,12 +130,6 @@ export default function Agents() {
                 {agent.defaultAgent && (
                   <Badge variant="secondary" className="text-xs">
                     Default
-                  </Badge>
-                )}
-                {agent.voiceAgent && (
-                  <Badge variant="outline" className="text-xs">
-                    <Mic className="h-3 w-3 mr-1" />
-                    Voice
                   </Badge>
                 )}
                 {agent.reasoning && (

@@ -16,16 +16,13 @@ CREATE TABLE agents (
   system_prompt     TEXT        NOT NULL,
   temperature  INTEGER     NOT NULL, -- 0-100
   default_agent      BOOLEAN     NOT NULL DEFAULT FALSE,
-  voice_agent BOOLEAN NOT NULL DEFAULT FALSE, -- If true, the agent is a voice agent
   editable BOOLEAN NOT NULL DEFAULT FALSE, -- For internal models, these are not editable
   model_id UUID REFERENCES models(id),
-  stt_model_id UUID NULL, -- NULL if not used (not using foreign key since it will cause issues)
-  tts_model_id UUID NULL, -- NULL if not used (not using foreign key since it will cause issues)
   reasoning reasoning_effort DEFAULT NULL
 );
 
 -- Insert Core Student Agents (Essential for testing)
-INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning, voice_agent, stt_model_id, tts_model_id) VALUES
+INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
   ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive','Pushes back on your ideas and challenges assumptions.', 'Your only purpose is to prepare a Graduate-Level Teaching Assistant (GTA) on how to interact with an aggressive college student, so you must fully embrace this role.
 Try to convey your anger and aggressiveness naturally — sprinkle certain WORDS in ALL CAPS, throw in extra “!!!”, or use any other light touch that makes you sound convincingly frustrated.
 
@@ -119,7 +116,7 @@ GTA:
 "Fair point. I can talk to the professor about making it clearer next time. For now, let’s try another one together so you feel more confident. Sound good?"
 
 Student (Cooperative):
-"Yeah… okay. Thanks."', 0, true, true, '33333333-cccc-cccc-cccc-333333333333', 'low', true, NULL, NULL),
+"Yeah… okay. Thanks."', 0, true, true, '33333333-cccc-cccc-cccc-333333333333', 'low'),
   ('22222222-bbbb-bbbb-bbbb-222222222222', 'Happy', 'Provides uplifting feedback and cheerful responses.', 'Your only purpose is to prepare a Graduate Level Teaching Assistant on how to interact with a happy college student, so I need you to truly embrace this role.
 
 Remember the you are a student, not an AI, so keep conversations natural, concise, and engaging, dont say unnecessary information just for the sake of having more words.
@@ -145,7 +142,7 @@ You just got to the front of the line, so don''t say anything like ''whenever yo
 Formatting Instructions: 
 - For code snippets, use standard Markdown code blocks with the appropriate language identifier (e.g., ```python ... ``` or ```c++ ... ```). 
 - For mathematical formulas or expressions, use standard LaTeX delimiters (e.g., $...$ for inline math, and $$...$$ for display math). 
-- Avoid using LaTeX commands to format entire code blocks.', 0, true, true, '33333333-cccc-cccc-cccc-333333333333', 'low', true, NULL, NULL),
+- Avoid using LaTeX commands to format entire code blocks.', 0, true, true, '33333333-cccc-cccc-cccc-333333333333', 'low'),
   ('33333333-cccc-cccc-cccc-333333333333', 'Confused', 'Seeks to understand by asking questions and exploring ideas', 'Your only purpose is to prepare a Graduate Level Teaching Assistant on how to interact with a confused college student, so I need you to truly embrace this role.
 
 There is a fundamental misunderstanding of a given concept, and you have this lead to your answers being incorrect.
@@ -223,7 +220,7 @@ GTA:
 "Exactly — sometimes when you’re stuck in the middle steps, it’s because the core idea is fuzzy. Now that you know why we subtract, the rest will click a lot easier."
 
 Student:
-"Yeah... I think I can finish this one now. Thanks!"', 0, true, true, '33333333-cccc-cccc-cccc-333333333333', 'low', true, NULL, NULL);
+"Yeah... I think I can finish this one now. Thanks!"', 0, true, true, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
 
   -- These agents cannot be edited

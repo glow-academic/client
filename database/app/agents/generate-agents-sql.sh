@@ -32,19 +32,16 @@ CREATE TABLE agents (
   system_prompt     TEXT        NOT NULL,
   temperature  INTEGER     NOT NULL, -- 0-100
   default_agent      BOOLEAN     NOT NULL DEFAULT FALSE,
-  voice_agent BOOLEAN NOT NULL DEFAULT FALSE, -- If true, the agent is a voice agent
   editable BOOLEAN NOT NULL DEFAULT FALSE, -- For internal models, these are not editable
   model_id UUID REFERENCES models(id),
-  stt_model_id UUID NULL, -- NULL if not used (not using foreign key since it will cause issues)
-  tts_model_id UUID NULL, -- NULL if not used (not using foreign key since it will cause issues)
   reasoning reasoning_effort DEFAULT NULL
 );
 
 -- Insert Core Student Agents (Essential for testing)
-INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning, voice_agent, stt_model_id, tts_model_id) VALUES
-  ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive','Pushes back on your ideas and challenges assumptions.', '$AGGRESSIVE_PROMPT', 0, true, true, '33333333-cccc-cccc-cccc-333333333333', 'low', true, NULL, NULL),
-  ('22222222-bbbb-bbbb-bbbb-222222222222', 'Happy', 'Provides uplifting feedback and cheerful responses.', '$HAPPY_PROMPT', 0, true, true, '33333333-cccc-cccc-cccc-333333333333', 'low', true, NULL, NULL),
-  ('33333333-cccc-cccc-cccc-333333333333', 'Confused', 'Seeks to understand by asking questions and exploring ideas', '$CONFUSED_PROMPT', 0, true, true, '33333333-cccc-cccc-cccc-333333333333', 'low', true, NULL, NULL);
+INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
+  ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive','Pushes back on your ideas and challenges assumptions.', '$AGGRESSIVE_PROMPT', 0, true, true, '33333333-cccc-cccc-cccc-333333333333', 'low'),
+  ('22222222-bbbb-bbbb-bbbb-222222222222', 'Happy', 'Provides uplifting feedback and cheerful responses.', '$HAPPY_PROMPT', 0, true, true, '33333333-cccc-cccc-cccc-333333333333', 'low'),
+  ('33333333-cccc-cccc-cccc-333333333333', 'Confused', 'Seeks to understand by asking questions and exploring ideas', '$CONFUSED_PROMPT', 0, true, true, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
 
   -- These agents cannot be edited

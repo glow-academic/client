@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { createAgent } from "@/utils/mutations/agents/create-agent";
 import { updateAgent } from "@/utils/mutations/agents/update-agent";
@@ -36,9 +35,6 @@ interface FormData {
   systemPrompt?: string;
   temperature?: number;
   modelId?: string;
-  voiceAgent?: boolean;
-  sttModelId?: string;
-  ttsModelId?: string;
 }
 
 export interface AgentProps {
@@ -61,9 +57,6 @@ export default function Agent({
       systemPrompt: "",
       temperature: 0.0,
       modelId: "",
-      voiceAgent: false,
-      sttModelId: "default",
-      ttsModelId: "default",
     }),
     []
   );
@@ -92,9 +85,6 @@ export default function Agent({
         systemPrompt: agent.systemPrompt,
         temperature: agent.temperature,
         modelId: agent.modelId || "",
-        voiceAgent: agent.voiceAgent,
-        sttModelId: agent.sttModelId || "default",
-        ttsModelId: agent.ttsModelId || "default",
       });
     } else if (!isEditMode) {
       setFormData(initialFormData);
@@ -135,11 +125,6 @@ export default function Agent({
           systemPrompt: formData.systemPrompt,
           temperature: Number(formData.temperature),
           modelId: formData.modelId,
-          voiceAgent: formData.voiceAgent,
-          sttModelId:
-            formData.sttModelId === "default" ? null : formData.sttModelId,
-          ttsModelId:
-            formData.ttsModelId === "default" ? null : formData.ttsModelId,
           updatedAt: new Date().toISOString(),
         });
         queryClient.invalidateQueries({ queryKey: ["agents"] });
@@ -152,11 +137,6 @@ export default function Agent({
           systemPrompt: formData.systemPrompt,
           temperature: Number(formData.temperature),
           modelId: formData.modelId,
-          voiceAgent: formData.voiceAgent,
-          sttModelId:
-            formData.sttModelId === "default" ? null : formData.sttModelId,
-          ttsModelId:
-            formData.ttsModelId === "default" ? null : formData.ttsModelId,
         });
         queryClient.invalidateQueries({ queryKey: ["agents"] });
         queryClient.invalidateQueries({ queryKey: ["agent", newAgent?.id] });
@@ -215,39 +195,8 @@ export default function Agent({
             )}
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              {formData?.voiceAgent !== undefined && !isLoading ? (
-                <>
-                  <Switch
-                    id="voiceAgent"
-                    checked={formData?.voiceAgent}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        voiceAgent: checked,
-                        // Reset voice model selections when disabling voice
-                        ...(checked
-                          ? {}
-                          : { sttModelId: "default", ttsModelId: "default" }),
-                      }))
-                    }
-                  />
-                  <Label htmlFor="voiceAgent">
-                    {formData.voiceAgent ? "Voice Mode" : "Standard Mode"}
-                  </Label>
-                </>
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
-            </div>
-          </div>
-
-          <div
-            className={`grid gap-4 ${formData?.voiceAgent ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1"}`}
-          >
-            {formData?.voiceAgent !== undefined &&
-            formData?.modelId !== undefined &&
+          <div className={`grid gap-4 grid-cols-1`}>
+            {formData?.modelId !== undefined &&
             !isLoading ? (
               <>
                 <div className="space-y-2">
@@ -268,7 +217,7 @@ export default function Agent({
                     <SelectContent>
                       {models
                         ?.filter(
-                          (model) => model.active && model.modelType === "ttt"
+                          (model) => model.active
                         )
                         ?.map((model) => (
                           <SelectItem key={model.id} value={model.id}>
@@ -278,78 +227,6 @@ export default function Agent({
                     </SelectContent>
                   </Select>
                 </div>
-                {formData.voiceAgent && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="sttModelId">Speech-to-Text Model</Label>
-                      {formData?.sttModelId !== undefined &&
-                      !isModelsLoading ? (
-                        <Select
-                          value={formData?.sttModelId}
-                          onValueChange={(value) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              sttModelId: value,
-                            }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select STT model" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="default">Default</SelectItem>
-                            {models
-                              ?.filter(
-                                (model) =>
-                                  model.active && model.modelType === "stt"
-                              )
-                              ?.map((model) => (
-                                <SelectItem key={model.id} value={model.id}>
-                                  {model.name}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Skeleton className="h-10 w-full" />
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="ttsModelId">Text-to-Speech Model</Label>
-                      {formData?.ttsModelId !== undefined && !isModelsLoading ? (
-                        <Select
-                          value={formData?.ttsModelId}
-                          onValueChange={(value) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              ttsModelId: value,
-                            }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select TTS model" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="default">Default</SelectItem>
-                            {models
-                              ?.filter(
-                                (model) =>
-                                  model.active && model.modelType === "tts"
-                              )
-                              ?.map((model) => (
-                                <SelectItem key={model.id} value={model.id}>
-                                  {model.name}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Skeleton className="h-10 w-full" />
-                      )}
-                    </div>
-                  </>
-                )}
               </>
             ) : (
               <Skeleton className="h-10 w-full" />

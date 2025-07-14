@@ -239,6 +239,20 @@
       "when": 1752451272540,
       "tag": "0033_fat_multiple_man",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1752454981396,
+      "tag": "0034_nostalgic_lightspeed",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1752455141497,
+      "tag": "0035_soft_madame_hydra",
+      "breakpoints": true
     }
   ]
 }

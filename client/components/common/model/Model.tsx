@@ -24,18 +24,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 
 import { cn } from "@/lib/utils";
-import { Model as ModelType } from "@/types";
-import { modelType } from "@/utils/drizzle/schema";
 import { createModel } from "@/utils/mutations/models/create-model";
 import { updateModel } from "@/utils/mutations/models/update-model";
 import { getModel } from "@/utils/queries/models/get-model";
 import { getAllProviders } from "@/utils/queries/providers/get-all-providers";
 import { useRouter } from "next/navigation";
+import { Model as ModelType } from "@/types";
 interface FormErrors {
   name?: string;
   description?: string;
   providerId?: string;
-  modelType?: string;
 }
 
 interface FormData {
@@ -43,7 +41,6 @@ interface FormData {
   description?: string;
   providerId?: string;
   active?: string;
-  modelType?: string;
 }
 
 export interface ModelProps {
@@ -63,7 +60,6 @@ export default function Model({ modelId }: ModelProps) {
       description: "",
       providerId: "",
       active: "true",
-      modelType: "ttt",
     }),
     []
   );
@@ -94,7 +90,6 @@ export default function Model({ modelId }: ModelProps) {
         description: modelToEdit.description,
         providerId: modelToEdit.providerId,
         active: modelToEdit.active ? "true" : "false",
-        modelType: modelToEdit.modelType,
       });
     } else if (!isEditMode) {
       // We are in CREATE mode, so reset the form to its initial state
@@ -104,7 +99,7 @@ export default function Model({ modelId }: ModelProps) {
 
   const handleInputChange = (
     field: keyof ModelType,
-    value: string | boolean | ModelType["modelType"] | undefined
+    value: string | boolean | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -138,11 +133,6 @@ export default function Model({ modelId }: ModelProps) {
       return;
     }
 
-    if (!formData.modelType) {
-      setErrors((prev) => ({ ...prev, modelType: "Model type is required" }));
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -152,7 +142,6 @@ export default function Model({ modelId }: ModelProps) {
           name: formData.name,
           description: formData.description,
           providerId: formData.providerId,
-          modelType: formData.modelType as ModelType["modelType"],
           active: formData.active === "true" ? true : false,
           updatedAt: new Date().toISOString(),
         });
@@ -162,7 +151,6 @@ export default function Model({ modelId }: ModelProps) {
           description: formData.description,
           providerId: formData.providerId,
           active: formData.active === "true" ? true : false,
-          modelType: formData.modelType as ModelType["modelType"],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
@@ -261,45 +249,7 @@ export default function Model({ modelId }: ModelProps) {
             <p className="text-sm text-destructive">{errors.providerId}</p>
           )}
         </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="modelType">Model type</Label>
-          {formData.modelType !== undefined && !isLoading ? (
-            <Select
-              key={formData.modelType}
-              value={formData.modelType}
-              onValueChange={(v) =>
-                handleInputChange("modelType", v as ModelType["modelType"])
-              }
-            >
-              <SelectTrigger
-                className={cn(errors.modelType && "border-destructive")}
-              >
-                <SelectValue placeholder={"Select model type…"} />
-              </SelectTrigger>
-
-              <SelectContent>
-                {Object.values(modelType.enumValues).map((o) => (
-                  <SelectItem key={o} value={o}>
-                    {o === "ttt"
-                      ? "Text-to-Text (TTT)"
-                      : o === "stt"
-                        ? "Speech-to-Text (STT)"
-                        : o === "tts"
-                          ? "Text-to-Speech (TTS)"
-                          : o}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <Skeleton className="h-10 w-full" />
-          )}
-          {errors.modelType && (
-            <p className="text-sm text-destructive">{errors.modelType}</p>
-          )}
-        </div>
-
+        
         <div className="space-y-2">
           <Label htmlFor="active">Status</Label>
           {formData.active !== undefined && !isLoading ? (
