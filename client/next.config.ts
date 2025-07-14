@@ -3,12 +3,8 @@ import type { NextConfig } from "next";
 import type { WebpackConfigContext } from "next/dist/server/config-shared";
 import type { Configuration as WebpackConfig } from "webpack";
 
-const PREFIX = process.env["APP_PREFIX"]?.trim() || "";   // "" or "beta"
-const basePath = PREFIX ? `/${PREFIX.replace(/^\/+|\/+$/g, "")}` : "";
-
 const nextConfig: NextConfig = {
-  basePath,
-  assetPrefix: basePath,
+  basePath: `${process.env["APP_PREFIX"] || ""}`,
   output: "standalone",
   devIndicators: false,
   trailingSlash: false,
