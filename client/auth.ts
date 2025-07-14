@@ -1,3 +1,4 @@
+// auth.ts
 import { logError, logInfo } from "@/utils/logger";
 import PostgresAdapter from "@auth/pg-adapter";
 import NextAuth from "next-auth";
@@ -9,7 +10,6 @@ import { createProfile } from "./utils/mutations/profiles/create-profile";
 import { updateProfile } from "./utils/mutations/profiles/update-profile";
 import { getProfilesByUser } from "./utils/queries/profiles/get-profiles-by-user";
 
-const PREFIX = process.env["NEXT_PUBLIC_APP_PREFIX"]?.trim() ?? ""; // "beta" or ""
 const clientId = process.env["AUTH_MICROSOFT_ENTRA_ID_ID"] || "";
 const clientSecret = process.env["AUTH_MICROSOFT_ENTRA_ID_SECRET"] || "";
 const secret = process.env["AUTH_SECRET"] || "";
@@ -30,7 +30,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   secret: secret,
-  basePath: `${PREFIX ? `/${PREFIX}/api/auth` : "/api/auth"}`,
   trustHost: true,
   events: {
     async createUser({ user }) {

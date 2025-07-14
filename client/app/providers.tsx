@@ -13,8 +13,6 @@ import { SessionProvider, useSession } from "next-auth/react";
 import { useState } from "react";
 import { Toaster } from "sonner";
 
-const PREFIX = process.env["NEXT_PUBLIC_APP_PREFIX"]?.trim() ?? ""; // "beta" or ""
-
 // Wrapper component to provide role context with user data and WebSocket connection
 const RoleAndWebSocketProviderWrapper = ({
   children,
@@ -40,7 +38,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => getQueryClient());
 
   return (
-    <SessionProvider basePath={`${PREFIX ? `/${PREFIX}/api/auth` : "/api/auth"}`}>
+    <SessionProvider>
       <QueryClientProvider client={queryClient}>
           <RoleAndWebSocketProviderWrapper>
             {children}
