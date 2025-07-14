@@ -27,9 +27,8 @@ server {
   listen 80;
 
   # This location block is specifically for Socket.IO WebSocket traffic.
+  # It is processed first because it's a more specific match.
   location /${APP_PREFIX}/socket.io/ {
-      proxy_next_upstream  error timeout http_502 http_503 http_504;
-      proxy_next_upstream_tries 3;
       proxy_pass         http://api_socketio;
       proxy_http_version 1.1;
       proxy_set_header   Upgrade           $http_upgrade;
@@ -39,14 +38,17 @@ server {
       proxy_set_header   X-Forwarded-Proto $scheme;
   }
 
-  # This block catches unprefixed API calls and rewrites them.
-  # Using `last` tells Nginx to process the new URL against the location blocks again.
-  location /api/ {
-    rewrite ^/api/(.*)$ /${APP_PREFIX}/api/$1 last;
-  }
-
-  # This single, primary location block handles ALL other requests for the Next.js app.
+  # This single, primary location block handles ALL requests.
+  # It uses a regular expression to conditionally handle the API path rewrite.
   location / {
+    # If the request path starts with /api/ but **not** /beta/api/,
+    # internally rewrite it to /beta/api/…
+    # The '?$args' appends the original query-string.
+    # The 'last' flag will run the new URI through the location tree again,
+    # so it is ultimately served by the same block.
+    rewrite ^/api/(.*)$ /${APP_PREFIX}/api/$1?$args last;
+    # Proxy ALL requests to the Next.js container.
+    # Nginx will use the rewritten URI from the line above if it was triggered.
     proxy_pass         http://next_client;
     proxy_http_version 1.1;
     proxy_set_header   Upgrade           $http_upgrade;
@@ -55,11 +57,7 @@ server {
     proxy_set_header   X-Real-IP         $remote_addr;
     proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
     proxy_set_header   X-Forwarded-Proto $scheme;
-
-    # --- THE FINAL FIX IS HERE ---
-    # Use $http_host to ensure the port number is included, satisfying Next.js's security check.
     proxy_set_header   X-Forwarded-Host  $http_host;
-
     proxy_set_header   X-Forwarded-Port  $server_port;
     proxy_read_timeout  600s;
     proxy_send_timeout  600s;

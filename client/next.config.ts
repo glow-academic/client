@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 import type { WebpackConfigContext } from "next/dist/server/config-shared";
 import type { Configuration as WebpackConfig } from "webpack";
 
-const PREFIX = process.env["APP_PREFIX"]?.trim() ?? ""; // "beta" or ""
+const PREFIX = process.env["NEXT_PUBLIC_APP_PREFIX"]?.trim() ?? ""; // "beta" or ""
 
 const nextConfig: NextConfig = {
   basePath: PREFIX ? `/${PREFIX}` : "",
