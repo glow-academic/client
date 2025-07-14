@@ -7,19 +7,12 @@ from agents import Runner, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
-from app.models import (
-    Agents,
-    Documents,
-    Models,
-    Providers,
-    Scenarios,
-    SimulationAttempts,
-    SimulationChats,
-    SimulationMessages,
-    SimulationSketches,
-)
+from app.models import (Agents, Documents, Models, Providers, Scenarios,
+                        SimulationAttempts, SimulationChats,
+                        SimulationMessages)
 from app.services.agents.generic import GenericAgent
-from app.utils.chat import get_chat_scenario, get_simulation_conversation_history
+from app.utils.chat import (get_chat_scenario,
+                            get_simulation_conversation_history)
 from app.utils.classes import get_class_info
 from fastapi import Depends
 from openai.types.responses import ResponseTextDeltaEvent
@@ -155,17 +148,8 @@ async def _handle_simulation_chat(
     messages = list(messages)
     messages = sorted(messages, key=lambda x: x.created_at)
 
-    # get the sketches for the chat
-    sketches = session.exec(
-        select(SimulationSketches).where(SimulationSketches.chat_id == chat.id)
-    ).all()
-
-    # sort sketches by created_at
-    sketches = list(sketches)
-    sketches = sorted(sketches, key=lambda x: x.created_at)
-
     # Prepare conversation history from chat_id
-    conversation_history = get_simulation_conversation_history(messages, sketches)
+    conversation_history = get_simulation_conversation_history(messages)
     chat_scenario = get_chat_scenario(chat, session)
     class_info = get_class_info(scenario.class_id, session)
 

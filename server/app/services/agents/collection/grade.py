@@ -6,21 +6,10 @@ from typing import Any, List
 
 from agents import Runner, trace
 from app.db import get_session
-from app.models import (
-    Agents,
-    Models,
-    Providers,
-    Rubrics,
-    SimulationAttempts,
-    SimulationChatFeedbacks,
-    SimulationChatGrades,
-    SimulationChats,
-    SimulationMessages,
-    Simulations,
-    SimulationSketches,
-    StandardGroups,
-    Standards,
-)
+from app.models import (Agents, Models, Providers, Rubrics, SimulationAttempts,
+                        SimulationChatFeedbacks, SimulationChatGrades,
+                        SimulationChats, SimulationMessages, Simulations,
+                        StandardGroups, Standards)
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_simulation_conversation_history
 from app.utils.rubric import get_dynamic_rubric
@@ -120,19 +109,8 @@ async def run_grade_agent(
         messages = list(messages)
         messages = sorted(messages, key=lambda x: x.created_at)
 
-        # get the sketches for the chat
-        sketches = session.exec(
-            select(SimulationSketches).where(
-                SimulationSketches.chat_id == simulation_chat_id
-            )
-        ).all()
-
-        # sort sketches by created_at
-        sketches = list(sketches)
-        sketches = sorted(sketches, key=lambda x: x.created_at)
-
         # prepare conversation history from chat_id
-        conversation_history = get_simulation_conversation_history(messages, sketches)
+        conversation_history = get_simulation_conversation_history(messages)
 
         # Get the simulation attempt to find the simulation
         attempt = session.exec(

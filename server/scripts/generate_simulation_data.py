@@ -221,14 +221,14 @@ for sim_id, quota in zip(SIMULATIONS, SIM_QUOTA):
             msg_id = str(uuid.uuid4())
             message_rows.append(
                 f"({q(msg_id)}, {q(base_ts)}, {q(base_ts)}, {q(chat_id)}, "
-                f"{q(random.choice(QUESTION_BANK))}, false, NULL, 'query', false)"
+                f"{q(random.choice(QUESTION_BANK))}, 'query', false)"
             )
             # response
             msg_id = str(uuid.uuid4())
             resp_ts = rand_ts(prog + j / pairs * 0.01 + 0.001, jitter=0.02)
             message_rows.append(
                 f"({q(msg_id)}, {q(resp_ts)}, {q(resp_ts)}, {q(chat_id)}, "
-                f"{q(random.choice(ANSWER_BANK))}, false, NULL, 'response', false)"
+                f"{q(random.choice(ANSWER_BANK))}, 'response', false)"
             )
 
         # ---------- simulation_chat_grades -------
@@ -270,8 +270,7 @@ sql = "".join(
         ),
         build(
             "simulation_messages",
-            "id, created_at, updated_at, chat_id, content, audio, file_path, "
-            "type, completed",
+            "id, created_at, updated_at, chat_id, content, type, completed",
             message_rows,
         ),
         build(

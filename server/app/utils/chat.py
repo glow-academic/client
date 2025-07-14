@@ -1,4 +1,4 @@
-import base64
+
 import json
 import logging
 import random
@@ -6,20 +6,9 @@ from datetime import datetime
 from typing import Any, Dict, List
 
 from agents.items import TResponseInputItem
-from app.models import (
-    Agents,
-    AssistantMessages,
-    AssistantToolCalls,
-    Scenarios,
-    SimulationChats,
-    SimulationMessages,
-    SimulationSketches,
-)
-from openai.types.responses import (
-    EasyInputMessageParam,
-    ResponseFunctionToolCallParam,
-    ResponseInputImageParam,
-)
+from app.models import (Agents, AssistantMessages, AssistantToolCalls,
+                        Scenarios, SimulationChats, SimulationMessages)
+from openai.types.responses import ResponseFunctionToolCallParam
 from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
@@ -27,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 def get_simulation_conversation_history(
     messages: List[SimulationMessages],
-    sketches: List[SimulationSketches],
 ) -> list[TResponseInputItem]:
     """
     Get the conversation history for a given list of messages.
@@ -41,7 +29,7 @@ def get_simulation_conversation_history(
     conversation_history: list[TResponseInputItem] = []
 
     # make a list of all items
-    items = messages + sketches
+    items = messages
 
     # sort items by created_at
     items = sorted(items, key=lambda x: x.created_at)
@@ -60,32 +48,6 @@ def get_simulation_conversation_history(
                     "content": item.content,
                 }
                 conversation_history.append(assistant_message_item)
-        elif isinstance(item, SimulationSketches):
-            # ge the file path from the item
-            file_path = item.file_path
-            if not file_path or file_path == "":
-                logger.warning(f"Sketch {item.id} has no file path")
-                continue
-
-            # get the file content
-            with open(file_path, "rb") as file:
-                file_content = file.read()
-
-            # encode the file content to base64
-            file_content = base64.b64encode(file_content)
-
-            # get the file content
-            user_sketch_item: EasyInputMessageParam = EasyInputMessageParam(
-                role="user",
-                content=[
-                    ResponseInputImageParam(
-                        detail="low",
-                        type="input_image",
-                        image_url=f"data:image/png;base64,{file_content.decode('utf-8')}",
-                    )
-                ],
-            )
-            conversation_history.append(user_sketch_item)
 
     return conversation_history
 

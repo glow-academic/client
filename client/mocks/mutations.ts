@@ -372,21 +372,6 @@ vi.mock('@/utils/mutations/simulation_messages/delete-simulation-messages', () =
 vi.mock('@/utils/mutations/simulation_messages/update-simulation-message', () => ({ updateSimulationMessage: updateSimulationMessageMock }));
 vi.mock('@/utils/mutations/simulation_messages/update-simulation-messages', () => ({ updateSimulationMessages: updateSimulationMessagesMock }));
 
-// SIMULATION_SKETCHES MUTATIONS
-export const createSimulationSketchMock = vi.fn(() => mockSchema.simulationSketches?.[0] || {});
-export const createSimulationSketchesMock = vi.fn(() => mockSchema.simulationSketches || []);
-export const deleteSimulationSketchMock = vi.fn(() => mockSchema.simulationSketches?.[0] || {});
-export const deleteSimulationSketchesMock = vi.fn(() => mockSchema.simulationSketches || []);
-export const updateSimulationSketchMock = vi.fn(() => mockSchema.simulationSketches?.[0] || {});
-export const updateSimulationSketchesMock = vi.fn(() => mockSchema.simulationSketches || []);
-
-vi.mock('@/utils/mutations/simulation_sketches/create-simulation-sketch', () => ({ createSimulationSketch: createSimulationSketchMock }));
-vi.mock('@/utils/mutations/simulation_sketches/create-simulation-sketches', () => ({ createSimulationSketches: createSimulationSketchesMock }));
-vi.mock('@/utils/mutations/simulation_sketches/delete-simulation-sketch', () => ({ deleteSimulationSketch: deleteSimulationSketchMock }));
-vi.mock('@/utils/mutations/simulation_sketches/delete-simulation-sketches', () => ({ deleteSimulationSketches: deleteSimulationSketchesMock }));
-vi.mock('@/utils/mutations/simulation_sketches/update-simulation-sketch', () => ({ updateSimulationSketch: updateSimulationSketchMock }));
-vi.mock('@/utils/mutations/simulation_sketches/update-simulation-sketches', () => ({ updateSimulationSketches: updateSimulationSketchesMock }));
-
 // SIMULATIONS MUTATIONS
 export const createSimulationMock = vi.fn(() => mockSchema.simulations?.[0] || {});
 export const createSimulationsMock = vi.fn(() => mockSchema.simulations || []);

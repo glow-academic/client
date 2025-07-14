@@ -758,7 +758,6 @@ export function SimulationProvider({
                       ...msg,
                       content: event.detail.finalContent,
                       completed: true,
-                      audio: event.detail.audio,
                     }
                   : msg
               );

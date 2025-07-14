@@ -11,10 +11,8 @@ from typing import Any, Dict
 
 import socketio  # type: ignore
 from app.db import init_db
-from app.routes.audio import router as audio_router
 from app.routes.documents import router as documents_router
 from app.routes.scenarios import router as scenarios_router
-from app.routes.sketch import router as sketch_router
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -124,7 +122,6 @@ sio = socketio.AsyncServer(
 )
 
 from app.web.assistants import register_assistant_events
-
 # Import and register WebSocket events after sio is created to avoid circular imports
 from app.web.simulations import register_simulation_events
 
@@ -408,9 +405,7 @@ fastapi_app.add_middleware(
 # Include routers
 fastapi_app.include_router(documents_router, prefix="/documents")
 fastapi_app.include_router(scenarios_router, prefix="/scenarios")
-fastapi_app.include_router(audio_router, prefix="/audio")
-fastapi_app.include_router(sketch_router, prefix="/sketch")
-# Note: Removed rtc_router as we're migrating to WebSocket-based signaling
+
 
 # mounting the mcp servers - ensure trailing slashes for proper routing
 from app.services.mcp.server import server

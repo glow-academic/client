@@ -565,7 +565,6 @@ async def process_simulation_message_websocket(
                     "message_id": str(assistant_message.id),
                     "chat_id": str(chat_id),
                     "final_content": accumulated_content,
-                    "audio": assistant_message.audio,
                 },
                 room=f"simulation_{chat_id}",
             )

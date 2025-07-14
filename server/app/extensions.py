@@ -15,15 +15,5 @@ UPLOAD_FOLDER.mkdir(
     parents=True, exist_ok=True
 )  # saving each document as uploads/document_id.ext
 
-AUDIO_FOLDER = BASE_FOLDER / "audio"
-AUDIO_FOLDER.mkdir(
-    parents=True, exist_ok=True
-)  # saving each audio file as audio/message_id.ext
-
-SKETCH_FOLDER = BASE_FOLDER / "sketches"
-SKETCH_FOLDER.mkdir(
-    parents=True, exist_ok=True
-)  # saving each sketch as sketches/message_id.ext
-
 CSV_FOLDER = BASE_FOLDER / "csv"
 CSV_FOLDER.mkdir(parents=True, exist_ok=True)  # saving each csv as csv/token.ext

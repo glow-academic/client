@@ -232,6 +232,13 @@
       "when": 1752187285891,
       "tag": "0032_nebulous_callisto",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1752451272540,
+      "tag": "0033_fat_multiple_man",
+      "breakpoints": true
     }
   ]
 }

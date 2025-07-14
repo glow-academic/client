@@ -47,9 +47,6 @@ const mockReportResponse = {
 
 
 
-// AUDIO API MOCKS
-export const deleteAudioMock = vi.fn(() => Promise.resolve(mockErrorResponse));
-
 // CSV API MOCKS
 export const downloadCsvMock = vi.fn(() => Promise.resolve(mockErrorResponse));
 
@@ -62,28 +59,21 @@ export const processCourseMock = vi.fn(() => Promise.resolve(mockProcessingRespo
 export const newScenarioMock = vi.fn(() => Promise.resolve(mockScenarioResponse));
 export const testScenarioMock = vi.fn(() => Promise.resolve(mockReportResponse));
 
-// SKETCH API MOCKS
-export const deleteSketchMock = vi.fn(() => Promise.resolve(mockErrorResponse));
-
-vi.mock('@/utils/api/audio/delete-audio', () => ({ deleteAudio: deleteAudioMock }));
 vi.mock('@/utils/api/csv/download-csv', () => ({ downloadCsv: downloadCsvMock }));
 vi.mock('@/utils/api/documents/delete-document', () => ({ deleteDocument: deleteDocumentMock }));
 vi.mock('@/utils/api/documents/finalize-document-upload', () => ({ finalizeDocumentUpload: finalizeDocumentUploadMock }));
 vi.mock('@/utils/api/documents/process-course', () => ({ processCourse: processCourseMock }));
 vi.mock('@/utils/api/scenarios/new-scenario', () => ({ newScenario: newScenarioMock }));
 vi.mock('@/utils/api/scenarios/test-scenario', () => ({ testScenario: testScenarioMock }));
-vi.mock('@/utils/api/sketch/delete-sketch', () => ({ deleteSketch: deleteSketchMock }));
 
 // Utility functions for testing
 export const resetAllApiMocks = () => {
-  deleteAudioMock.mockClear();
   downloadCsvMock.mockClear();
   deleteDocumentMock.mockClear();
   finalizeDocumentUploadMock.mockClear();
   processCourseMock.mockClear();
   newScenarioMock.mockClear();
   testScenarioMock.mockClear();
-  deleteSketchMock.mockClear();
 };
 
 export const setApiMockResponse = (mockFn: ReturnType<typeof vi.fn>, response: unknown) => {
@@ -96,12 +86,10 @@ export const setApiMockError = (mockFn: ReturnType<typeof vi.fn>, error: unknown
 
 // Export all mocks for easy access
 export const apiMocks = {
-  deleteAudio: deleteAudioMock,
   downloadCsv: downloadCsvMock,
   deleteDocument: deleteDocumentMock,
   finalizeDocumentUpload: finalizeDocumentUploadMock,
   processCourse: processCourseMock,
   newScenario: newScenarioMock,
   testScenario: testScenarioMock,
-  deleteSketch: deleteSketchMock,
 };

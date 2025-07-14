@@ -414,7 +414,6 @@ export function WebSocketProvider({
                 messageId: data.message_id,
                 chatId: data.chat_id,
                 finalContent: data.final_content,
-                audio: data.audio,
               },
             })
           );
@@ -422,9 +421,6 @@ export function WebSocketProvider({
           setTimeout(() => {
             queryClient.invalidateQueries({
               queryKey: ["simulationMessages", data.chat_id],
-            });
-            queryClient.invalidateQueries({
-              queryKey: ["simulationSketches", data.chat_id],
             });
           }, 0);
         }
@@ -471,9 +467,6 @@ export function WebSocketProvider({
           setTimeout(() => {
             queryClient.invalidateQueries({
               queryKey: ["simulationMessages", data.chat_id],
-            });
-            queryClient.invalidateQueries({
-              queryKey: ["simulationSketches", data.chat_id],
             });
           }, 0);
         }

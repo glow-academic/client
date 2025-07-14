@@ -50,13 +50,11 @@ services:
     image: busybox
     volumes:
       - uploads:/app/uploads
-      - audio-data:/app/audio
-      - sketch-data:/app/sketch
       - csv-data:/app/csv
     command: >
       sh -c "
         mkdir -p /app/uploads/tus_uploads &&
-        chmod -R 755 /app/uploads /app/audio /app/sketch /app/csv &&
+        chmod -R 755 /app/uploads /app/csv &&
         echo 'Volume permissions initialized'
       "
     networks:
@@ -75,8 +73,6 @@ services:
       - DOCKER_ENV=1
     volumes:
       - uploads:/app/uploads   # Docker volume for uploads
-      - audio-data:/app/audio
-      - sketch-data:/app/sketch
       - csv-data:/app/csv
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -217,8 +213,6 @@ services:
 
 volumes:
   pgdata:
-  audio-data:
-  sketch-data:
   history-data:
   csv-data:
   uploads:
