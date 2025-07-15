@@ -20,7 +20,6 @@ services:
   # Database Service
   # --------------------
   database:
-    container_name: database
     build:
       context: ./database
       dockerfile: Dockerfile
@@ -117,7 +116,6 @@ services:
   # Next.js Client
   # --------------------
   client:
-    container_name: client
     build:
       context: ./client
       dockerfile: Dockerfile
@@ -174,7 +172,6 @@ services:
   # E2E Testing Service
   # --------------------
   testing:
-    container_name: testing
     build: ./testing
     env_file:
       - .env
@@ -204,7 +201,6 @@ services:
   # --------------------
   nginx:
     image: nginx:1.25
-    container_name: nginx
     env_file:
       - .env
     volumes:
