@@ -1130,7 +1130,7 @@ export default function Home() {
           {/* Header with navigation */}
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {type === "default" ? "Default Simulations" : "My Cohorts"}
+              {type === "default" ? "Default Simulations" : "My Cohort Assignments"}
             </h2>
             {totalPages > 1 && (
               <div className="flex items-center space-x-2">
