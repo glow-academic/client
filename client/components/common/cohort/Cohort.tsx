@@ -22,12 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -39,7 +34,6 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-import { useRole } from "@/contexts/role-context";
 import { Class, Cohort as CohortType, Profile, Simulation } from "@/types";
 import { createCohort } from "@/utils/mutations/cohorts/create-cohort";
 import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
@@ -62,9 +56,6 @@ interface FormErrors {
 export default function Cohort({ cohortId }: CohortProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
-
-  // Role-based access control
-  const { effectiveRole } = useRole();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingCohortId, setEditingCohortId] = useState<string | null>(null);
@@ -174,22 +165,6 @@ export default function Cohort({ cohortId }: CohortProps) {
         return fullName.includes(search) || alias.includes(search);
       });
   }, [profiles, formData.profileIds, searchTerm]);
-
-  // Role-based access control - check after all hooks
-  if (effectiveRole !== "admin") {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle className="text-destructive">Access Denied</CardTitle>
-            <CardDescription>
-              You need admin privileges to access cohort management.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
 
   const handleInputChange = (
     field: keyof Partial<CohortType>,
