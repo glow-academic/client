@@ -182,11 +182,11 @@ export default function ClassPerformance({
       return [];
 
     // Create a map of class ID to class data
-    const classMap = new Map<string, any>();
+    const classMap = new Map<string, ClassMetric>();
     classes.forEach((cls) => {
       classMap.set(cls.id, {
         ...cls,
-        totalScore: 0,
+        className: cls.name,
         totalGrades: 0,
         avgScore: 0,
         students: [] as StudentData[],
@@ -228,10 +228,9 @@ export default function ClassPerformance({
       const scorePercent = Math.round((grade.score / rubricTotalPoints) * 100);
 
       // Update the class metrics
-      classData.totalScore += scorePercent;
       classData.totalGrades += 1;
       classData.avgScore = Math.round(
-        classData.totalScore / classData.totalGrades
+        classData.scoreDistribution.reduce((sum: number, item: ScoreDistribution) => sum + item.score, 0) / classData.totalGrades
       );
 
       // Add to score distribution
@@ -279,11 +278,11 @@ export default function ClassPerformance({
     });
 
     // Calculate additional metrics for each class
-    Array.from(classMap.values()).forEach((classData: any) => {
+    Array.from(classMap.values()).forEach((classData: ClassMetric) => {
       if (classData.scoreDistribution.length > 0) {
         // Calculate pass rate
         classData.passRate = Math.round(
-          (classData.scoreDistribution.filter((s: any) => s.passed).length /
+          (classData.scoreDistribution.filter((s: ScoreDistribution) => s.passed).length /
             classData.scoreDistribution.length) *
             100
         );
@@ -291,17 +290,17 @@ export default function ClassPerformance({
         // Calculate average time
         classData.avgTime = Math.round(
           classData.scoreDistribution.reduce(
-            (sum: number, item: any) => sum + item.timeTaken,
+            (sum: number, item: ScoreDistribution) => sum + item.timeTaken,
             0
           ) / classData.scoreDistribution.length
         );
 
         // Sort students by average score
-        classData.students.sort((a: any, b: any) => b.avgScore - a.avgScore);
+        classData.students.sort((a: StudentData, b: StudentData) => b.avgScore - a.avgScore);
 
         // Sort recent activity by date
         classData.recentActivity.sort(
-          (a: any, b: any) =>
+          (a: RecentActivity, b: RecentActivity) =>
             new Date(b.date).getTime() - new Date(a.date).getTime()
         );
       }
@@ -309,10 +308,10 @@ export default function ClassPerformance({
 
     // Convert to array and filter out classes with no data
     return Array.from(classMap.values())
-      .filter((cls: any) => cls.totalGrades > 0)
-      .map((cls: any) => ({
-        classCode: cls.classCode || cls.name || "Unknown",
-        className: cls.name || cls.classCode || "Unknown",
+      .filter((cls: ClassMetric) => cls.totalGrades > 0)
+      .map((cls: ClassMetric) => ({
+        classCode: cls.classCode || cls.className || "Unknown",
+        className: cls.className || cls.classCode || "Unknown",
         avgScore: cls.avgScore,
         totalGrades: cls.totalGrades,
         students: cls.students,
@@ -447,35 +446,35 @@ export default function ClassPerformance({
                         {
                           range: "90-100%",
                           count: classData.scoreDistribution.filter(
-                            (s: any) => s.score >= 90
+                            (s: ScoreDistribution) => s.score >= 90
                           ).length,
                           color: "bg-green-500",
                         },
                         {
                           range: "80-89%",
                           count: classData.scoreDistribution.filter(
-                            (s: any) => s.score >= 80 && s.score < 90
+                            (s: ScoreDistribution) => s.score >= 80 && s.score < 90
                           ).length,
                           color: "bg-blue-500",
                         },
                         {
                           range: "70-79%",
                           count: classData.scoreDistribution.filter(
-                            (s: any) => s.score >= 70 && s.score < 80
+                            (s: ScoreDistribution) => s.score >= 70 && s.score < 80
                           ).length,
                           color: "bg-yellow-500",
                         },
                         {
                           range: "60-69%",
                           count: classData.scoreDistribution.filter(
-                            (s: any) => s.score >= 60 && s.score < 70
+                            (s: ScoreDistribution) => s.score >= 60 && s.score < 70
                           ).length,
                           color: "bg-orange-500",
                         },
                         {
                           range: "Below 60%",
                           count: classData.scoreDistribution.filter(
-                            (s: any) => s.score < 60
+                            (s: ScoreDistribution) => s.score < 60
                           ).length,
                           color: "bg-red-500",
                         },
@@ -516,7 +515,7 @@ export default function ClassPerformance({
                       Student Performance
                     </h4>
                     <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {classData.students.map((student: any) => (
+                      {classData.students.map((student: StudentData) => (
                         <div
                           key={student.id}
                           className="flex items-center justify-between p-3 bg-muted rounded-lg"
@@ -567,7 +566,7 @@ export default function ClassPerformance({
                       <div className="space-y-2 max-h-40 overflow-y-auto">
                         {classData.recentActivity
                           .slice(0, 10)
-                          .map((activity: any, index: number) => (
+                          .map((activity: RecentActivity, index: number) => (
                             <div
                               key={index}
                               className="flex items-center justify-between text-sm"
@@ -623,13 +622,13 @@ export default function ClassPerformance({
                           management training
                         </p>
                       )}
-                      {classData.students.filter((s: any) => s.avgScore < 60)
+                      {classData.students.filter((s: StudentData) => s.avgScore < 60)
                         .length > 0 && (
                         <p>
                           •{" "}
                           {
                             classData.students.filter(
-                              (s: any) => s.avgScore < 60
+                              (s: StudentData) => s.avgScore < 60
                             ).length
                           }{" "}
                           students need additional support

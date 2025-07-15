@@ -40,13 +40,15 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import { useRole } from "@/contexts/role-context";
-import { Cohort as CohortType, Profile, Simulation } from "@/types";
+import { Class, Cohort as CohortType, Profile, Simulation } from "@/types";
 import { createCohort } from "@/utils/mutations/cohorts/create-cohort";
 import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
+import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getProfilesByClass } from "@/utils/queries/profiles/get-profiles-by-class";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import { GripVertical, Loader2, Trash2 } from "lucide-react";
+import { GripVertical, Loader2, Search, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export interface CohortProps {
@@ -68,6 +70,10 @@ export default function Cohort({ cohortId }: CohortProps) {
   const [editingCohortId, setEditingCohortId] = useState<string | null>(null);
   const [draggedProfile, setDraggedProfile] = useState<string | null>(null);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+
+  // Search and filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedClassForAdd, setSelectedClassForAdd] = useState<string>("");
 
   const isEditMode = !!cohortId;
 
@@ -93,6 +99,11 @@ export default function Cohort({ cohortId }: CohortProps) {
   const { data: profiles = [] } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
+  });
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ["classes"],
+    queryFn: () => getAllClasses(),
   });
 
   const { data: simulations = [] } = useQuery({
@@ -145,6 +156,25 @@ export default function Cohort({ cohortId }: CohortProps) {
     );
   }, [simulations, cohortId, isEditMode]);
 
+  // Filter available profiles based on search term
+  const filteredAvailableProfiles = useMemo(() => {
+    return profiles
+      .filter(
+        (profile: Profile) =>
+          !formData.profileIds?.includes(profile.id) &&
+          profile.role !== "admin" &&
+          profile.role !== "instructional"
+      )
+      .filter((profile: Profile) => {
+        if (!searchTerm) return true;
+        const fullName =
+          `${profile.firstName} ${profile.lastName}`.toLowerCase();
+        const alias = profile.alias.toLowerCase();
+        const search = searchTerm.toLowerCase();
+        return fullName.includes(search) || alias.includes(search);
+      });
+  }, [profiles, formData.profileIds, searchTerm]);
+
   // Role-based access control - check after all hooks
   if (effectiveRole !== "admin") {
     return (
@@ -177,6 +207,41 @@ export default function Cohort({ cohortId }: CohortProps) {
         ...prev,
         profileIds: [...(prev.profileIds || []), profileId],
       }));
+    }
+  };
+
+  const addProfilesByClass = async (classId: string) => {
+    try {
+      const classProfiles = await getProfilesByClass(classId);
+      const newProfileIds = classProfiles
+        .filter(
+          (profile: Profile) =>
+            !formData.profileIds?.includes(profile.id) &&
+            profile.role !== "admin" &&
+            profile.role !== "instructional"
+        )
+        .map((profile: Profile) => profile.id);
+
+      if (newProfileIds.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          profileIds: [...(prev.profileIds || []), ...newProfileIds],
+        }));
+
+        const selectedClass = classes.find((c: Class) => c.id === classId);
+        toast.success(
+          `Added ${newProfileIds.length} profiles from ${selectedClass?.name || "class"}`
+        );
+      } else {
+        const selectedClass = classes.find((c: Class) => c.id === classId);
+        toast.info(
+          `No new profiles found in ${selectedClass?.name || "class"}`
+        );
+      }
+    } catch (error) {
+      toast.error(
+        `Failed to add profiles by class: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     }
   };
 
@@ -232,6 +297,8 @@ export default function Cohort({ cohortId }: CohortProps) {
     setOriginalFormData(initialFormData);
     setEditingCohortId(null);
     setErrors({});
+    setSearchTerm("");
+    setSelectedClassForAdd("");
   };
 
   const handleSubmit = async () => {
@@ -329,109 +396,218 @@ export default function Cohort({ cohortId }: CohortProps) {
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-4">
           <div className="flex justify-between items-center">
             <div>
               <Label htmlFor="profiles">Members</Label>
-            </div>
-            <div className="flex gap-2">
-              <Select
-                value=""
-                onValueChange={(value: string) => {
-                  if (value) addProfile(value);
-                }}
-              >
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Add profile" />
-                </SelectTrigger>
-                <SelectContent>
-                  {profiles
-                    .filter(
-                      (profile: Profile) =>
-                        !formData.profileIds?.includes(profile.id) &&
-                        profile.role !== "admin" &&
-                        profile.role !== "instructional"
-                    )
-                    .map((profile: Profile) => (
-                      <SelectItem key={profile.id} value={profile.id}>
-                        {profile.firstName} {profile.lastName} ({profile.alias})
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <p className="text-sm text-muted-foreground">
+                Add individual profiles or entire classes to the cohort
+              </p>
             </div>
           </div>
 
+          {/* Add profiles controls */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search for individual profiles */}
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search profiles by name or alias..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Add individual profile */}
+            <Select
+              value=""
+              onValueChange={(value: string) => {
+                if (value) {
+                  addProfile(value);
+                  setSearchTerm(""); // Clear search after adding
+                }
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Add profile" />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredAvailableProfiles.length === 0 ? (
+                  <SelectItem value="no-profiles" disabled>
+                    {searchTerm ? "No profiles found" : "No available profiles"}
+                  </SelectItem>
+                ) : (
+                  filteredAvailableProfiles.map((profile: Profile) => (
+                    <SelectItem key={profile.id} value={profile.id}>
+                      {profile.firstName} {profile.lastName} ({profile.alias})
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+
+            {/* Add by class */}
+            <Select
+              value={selectedClassForAdd}
+              onValueChange={(value: string) => {
+                if (value) {
+                  addProfilesByClass(value);
+                  setSelectedClassForAdd("");
+                }
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Add by class" />
+              </SelectTrigger>
+              <SelectContent>
+                {classes.length === 0 ? (
+                  <SelectItem value="no-classes" disabled>
+                    No classes available
+                  </SelectItem>
+                ) : (
+                  classes.map((classItem: Class) => (
+                    <SelectItem key={classItem.id} value={classItem.id}>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        {classItem.name}
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Display current members */}
           {formData.profileIds?.length === 0 ? (
             <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
               <div>
                 <p className="font-medium mb-1">No members selected</p>
+                <p className="text-sm">
+                  Use the controls above to add profiles individually or by
+                  class
+                </p>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {formData.profileIds?.map((profileId) => {
-                const profile = profiles.find(
-                  (p: Profile) => p.id === profileId
-                );
-                if (!profile) return null;
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">
+                  {formData.profileIds?.length} member
+                  {formData.profileIds?.length !== 1 ? "s" : ""} selected
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setFormData((prev) => ({ ...prev, profileIds: [] }))
+                  }
+                >
+                  Clear all
+                </Button>
+              </div>
 
-                return (
-                  <Card
-                    key={profileId}
-                    className={`p-3 cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
-                      draggedProfile === profileId ? "opacity-50" : ""
-                    }`}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, profileId)}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, profileId)}
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-sm">
-                          {profile.firstName} {profile.lastName}
-                        </h4>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeProfile(profileId)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                          <GripVertical className="h-4 w-4 text-muted-foreground" />
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {formData.profileIds?.map((profileId) => {
+                  const profile = profiles.find(
+                    (p: Profile) => p.id === profileId
+                  );
+                  if (!profile) return null;
+
+                  return (
+                    <Card
+                      key={profileId}
+                      className={`p-3 cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
+                        draggedProfile === profileId ? "opacity-50" : ""
+                      }`}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, profileId)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, profileId)}
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-sm">
+                            {profile.firstName} {profile.lastName}
+                          </h4>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeProfile(profileId)}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                            <GripVertical className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <p className="text-xs text-muted-foreground">
+                            {profile.alias}
+                          </p>
+
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              className={`text-xs ${
+                                profile.role === "admin"
+                                  ? "bg-red-100 text-red-800"
+                                  : profile.role === "instructor"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : profile.role === "ta"
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {profile.role
+                                ? profile.role.charAt(0).toUpperCase() +
+                                  profile.role.slice(1)
+                                : "No Role"}
+                            </Badge>
+
+                            {/* Show class badges */}
+                            {profile.classIds &&
+                              profile.classIds.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  {profile.classIds
+                                    .slice(0, 2)
+                                    .map((classId) => {
+                                      const classItem = classes.find(
+                                        (c: Class) => c.id === classId
+                                      );
+                                      return classItem ? (
+                                        <Badge
+                                          key={classId}
+                                          variant="outline"
+                                          className="text-xs"
+                                        >
+                                          {classItem.name}
+                                        </Badge>
+                                      ) : null;
+                                    })}
+                                  {profile.classIds.length > 2 && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs"
+                                    >
+                                      +{profile.classIds.length - 2}
+                                    </Badge>
+                                  )}
+                                </div>
+                              )}
+                          </div>
                         </div>
                       </div>
-
-                      <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground">
-                          {profile.alias}
-                        </p>
-
-                        <Badge
-                          className={`text-xs ${
-                            profile.role === "admin"
-                              ? "bg-red-100 text-red-800"
-                              : profile.role === "instructor"
-                                ? "bg-blue-100 text-blue-800"
-                                : profile.role === "ta"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {profile.role
-                            ? profile.role.charAt(0).toUpperCase() +
-                              profile.role.slice(1)
-                            : "No Role"}
-                        </Badge>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
+                    </Card>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

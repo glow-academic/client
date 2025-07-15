@@ -105,7 +105,6 @@ export default function PerformanceByPersonality({
 }: PerformanceByPersonalityProps) {
   const [personalityTimeRange, setPersonalityTimeRange] =
     useState<TimeRange>(defaultTimeRange);
-  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const colorConfig = COLOR_CONFIGS[color];
 
   // Fetch data
@@ -320,13 +319,6 @@ export default function PerformanceByPersonality({
     { value: "90d" as const, label: "90 days", group: "monthly" },
   ];
 
-  const handleBarClick = (agentName: string) => {
-    setSelectedAgent(agentName);
-  };
-
-  const selectedAgentData = performanceData.find(
-    (agent) => agent.name === selectedAgent
-  );
 
   if (!performanceData.length) {
     return (
@@ -428,9 +420,8 @@ export default function PerformanceByPersonality({
                   radius={[0, 4, 4, 0]}
                   name="Average Score"
                   className="cursor-pointer"
-                  onClick={(data) => handleBarClick(data.name)}
                 >
-                  {performanceData.map((entry, index) => (
+                  {performanceData.map((_, index) => (
                     <Cell
                       key={`cell-${index}`}
                       className="hover:opacity-80 transition-opacity"
