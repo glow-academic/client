@@ -34,7 +34,7 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./client/components:/client/components  # Mount client components with write access for analytics generation
       - ./client/lib:/client/lib  # Mount client lib with write access for analytics generation
-      - history-data:/database/history 
+      - history:/database/history 
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
@@ -52,11 +52,13 @@ services:
     volumes:
       # writable named volumes
       - uploads:/app/uploads
-      - history-data:/app/history
+      - csv:/app/csv
+      - history:/app/history
 
       # read‑only seed folders that live in your repo
       - ./uploads:/seed/uploads:ro
       - ./history:/seed/history:ro
+      - ./csv:/seed/csv:ro
     command: >
       sh -c '
         set -e
@@ -73,9 +75,15 @@ services:
           cp -a /seed/history/. /app/history/
         fi
 
+        # Copy csv if the volume is still empty
+        if [ -z "$(ls -A /app/csv 2>/dev/null)" ]; then
+          echo "[init] Seeding csv volume…"
+          cp -a /seed/csv/. /app/csv/
+        fi
+
         # Always ensure perms for FastAPI UID/GID 1001
-        chown -R 1001:1001 /app/uploads /app/history
-        chmod -R 775 /app/uploads /app/history
+        chown -R 1001:1001 /app/uploads /app/history /app/csv
+        chmod -R 775 /app/uploads /app/history /app/csv
 
         echo "[init] Volume permissions & seeds ready."
       '
@@ -101,7 +109,7 @@ services:
       - APP_PREFIX=${APP_PREFIX}
     volumes:
       - uploads:/app/uploads   # Docker volume for uploads
-      - csv-data:/app/csv
+      - csv:/app/csv
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
@@ -212,7 +220,7 @@ services:
     networks:
       - internal
     volumes:
-      - cypress_data:/e2e/cypress/screenshots
+      - cypress:/e2e/cypress/screenshots
     profiles:
       - test
 
@@ -236,7 +244,7 @@ services:
 
 volumes:
   pgdata:
-  history-data:
-  csv-data:
+  history:
+  csv:
   uploads:
-  cypress_data:
+  cypress:
