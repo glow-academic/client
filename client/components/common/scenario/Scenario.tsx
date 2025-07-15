@@ -927,8 +927,7 @@ export default function Scenario({
               <div className="flex items-start gap-2 p-3 rounded-md bg-blue-50 border border-blue-200">
                 <div className="text-blue-600 text-sm">
                   <strong>💡 Tip:</strong> You can save the scenario with a
-                  blank description and use the "Generate" button above to
-                  create content later, or write your own custom description.
+                  blank description and we will dynamically generate one for each chat.
                 </div>
               </div>
             </div>

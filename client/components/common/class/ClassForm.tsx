@@ -1004,7 +1004,8 @@ export default function ClassForm({ classId }: ClassFormProps) {
 
           {/* Action Buttons */}
           <div className="flex justify-between">
-            <div className="flex-1 flex justify-end">
+            <div className="flex-1 flex justify-end gap-3">
+              <Button type="button" variant="outline" onClick={() => router.push("/create/classes")}>Back</Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting
                   ? editMode

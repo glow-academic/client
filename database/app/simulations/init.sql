@@ -133,7 +133,7 @@ INSERT INTO simulations (id, title, rubric_id, time_limit, scenario_ids, cohort_
 INSERT INTO simulations (id, title, rubric_id, time_limit, scenario_ids, cohort_ids, default_simulation) VALUES
   ('f2533c01-aaaa-bbbb-cccc-dddddddddddd', 'Campus Belonging & Identity', '33333333-3333-3333-3333-333333333333', 15, ARRAY['f2533c01-aaaa-bbbb-cccc-111111111111', 'f2533c02-aaaa-bbbb-cccc-222222222222', 'f2533c03-aaaa-bbbb-cccc-333333333333']::UUID[], ARRAY['f2533c00-aaaa-bbbb-cccc-dddddddddddd']::UUID[], false),
   ('f2533c02-aaaa-bbbb-cccc-dddddddddddd', 'Academic Preparedness & Equity', '33333333-3333-3333-3333-333333333333', 15, ARRAY['f2533c04-aaaa-bbbb-cccc-444444444444', 'f2533c05-aaaa-bbbb-cccc-555555555555', 'f2533c06-aaaa-bbbb-cccc-666666666666']::UUID[], ARRAY['f2533c00-aaaa-bbbb-cccc-dddddddddddd']::UUID[], false),
-  ('f2533c03-aaaa-bbbb-cccc-dddddddddddd', 'Resource Awareness & Cultural Sensitivity', '33333333-3333-3333-3333-333333333333', 15, ARRAY['f2533c07-aaaa-bbbb-cccc-777777777777', 'f2533c08-aaaa-bbbb-cccc-888888888888', 'f2533c09-aaaa-bbbb-cccc-999999999999']::UUID[], ARRAY['f2533c00-aaaa-bbbb-cccc-dddddddddddd']::UUID[], false);
+  ('f2533c03-aaaa-bbbb-cccc-dddddddddddd', 'Cultural & Resource Awareness', '33333333-3333-3333-3333-333333333333', 15, ARRAY['f2533c07-aaaa-bbbb-cccc-777777777777', 'f2533c08-aaaa-bbbb-cccc-888888888888', 'f2533c09-aaaa-bbbb-cccc-999999999999']::UUID[], ARRAY['f2533c00-aaaa-bbbb-cccc-dddddddddddd']::UUID[], false);
 
 -- ============================================================================
 -- FALL 2025 TRAINING COHORTS

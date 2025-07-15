@@ -1,8 +1,8 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 101
-- **Tests Created**: 0
+- **Total Components**: 105
+- **Tests Created**: 4
 - **Tests Updated**: 0
 - **Tests Skipped** (already implemented): 101
 
@@ -84,6 +84,8 @@
 | NewClass | create/classes/NewClass.tsx | NewClass.test.tsx | ✅ Implemented |
 | CohortEdit | create/cohorts/CohortEdit.tsx | CohortEdit.test.tsx | ✅ Implemented |
 | Cohorts | create/cohorts/Cohorts.tsx | Cohorts.test.tsx | ✅ Implemented |
+| CohortsDataTable | create/cohorts/CohortsDataTable.tsx | CohortsDataTable.test.tsx | ✅ Implemented |
+| CohortsDataTableToolbar | create/cohorts/CohortsDataTableToolbar.tsx | CohortsDataTableToolbar.test.tsx | ✅ Implemented |
 | NewCohort | create/cohorts/NewCohort.tsx | NewCohort.test.tsx | ✅ Implemented |
 | NewScenario | create/scenarios/NewScenario.tsx | NewScenario.test.tsx | ✅ Implemented |
 | ScenarioEdit | create/scenarios/ScenarioEdit.tsx | ScenarioEdit.test.tsx | ✅ Implemented |
@@ -93,6 +95,8 @@
 | NewSimulation | create/simulations/NewSimulation.tsx | NewSimulation.test.tsx | ✅ Implemented |
 | SimulationEdit | create/simulations/SimulationEdit.tsx | SimulationEdit.test.tsx | ✅ Implemented |
 | Simulations | create/simulations/Simulations.tsx | Simulations.test.tsx | ✅ Implemented |
+| SimulationsDataTable | create/simulations/SimulationsDataTable.tsx | SimulationsDataTable.test.tsx | ✅ Implemented |
+| SimulationsDataTableToolbar | create/simulations/SimulationsDataTableToolbar.tsx | SimulationsDataTableToolbar.test.tsx | ✅ Implemented |
 | Home | home/Home.tsx | Home.test.tsx | ✅ Implemented |
 | AgentEdit | management/agents/AgentEdit.tsx | AgentEdit.test.tsx | ✅ Implemented |
 | Agents | management/agents/Agents.tsx | Agents.test.tsx | ✅ Implemented |
@@ -215,6 +219,8 @@ __tests__/
 │   ├── cohorts/
 │   │   ├── CohortEdit.test.tsx
 │   │   ├── Cohorts.test.tsx
+│   │   ├── CohortsDataTable.test.tsx
+│   │   ├── CohortsDataTableToolbar.test.tsx
 │   │   ├── NewCohort.test.tsx
 │   ├── scenarios/
 │   │   ├── NewScenario.test.tsx
@@ -226,6 +232,8 @@ __tests__/
 │   │   ├── NewSimulation.test.tsx
 │   │   ├── SimulationEdit.test.tsx
 │   │   ├── Simulations.test.tsx
+│   │   ├── SimulationsDataTable.test.tsx
+│   │   ├── SimulationsDataTableToolbar.test.tsx
 ├── home/
 │   ├── Home.test.tsx
 ├── management/

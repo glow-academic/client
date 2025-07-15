@@ -678,7 +678,8 @@ export default function Simulation({ simulationId }: SimulationProps) {
         </div>
 
         {/* Submit Button */}
-        <div className="flex justify-end gap-4">
+        <div className="flex justify-end gap-3">
+          <Button variant="outline" onClick={() => router.push("/create/simulations")}>Back</Button>
           <Button
             type="submit"
             disabled={isSubmitting}

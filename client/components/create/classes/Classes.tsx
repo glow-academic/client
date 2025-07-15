@@ -19,22 +19,30 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { logError } from "@/utils/logger";
+import { useClassColumns } from "@/hooks/use-class-columns";
+import { Class } from "@/types";
+import { logError, logInfo } from "@/utils/logger";
+import { createClass } from "@/utils/mutations/classes/create-class";
 import { deleteClass } from "@/utils/mutations/classes/delete-class";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
+import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Calendar, Edit, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Calendar, Copy, Edit, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
+import { ClassesDataTable } from "./ClassesDataTable";
 
 export default function ClassesGeneralPage() {
   const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [classToDelete, setClassToDelete] = useState<string | null>(null);
+  const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const router = useRouter();
 
-  // Fetch all data for aggregated view
+  // Fetch all required data
   const {
     data: classes,
     isLoading: isLoadingClasses,
@@ -43,6 +51,48 @@ export default function ClassesGeneralPage() {
     queryKey: ["classes"],
     queryFn: () => getAllClasses(),
   });
+
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getAllProfiles(),
+  });
+
+  const { data: documents = [] } = useQuery({
+    queryKey: ["documents"],
+    queryFn: () => getAllDocuments(),
+  });
+
+  // Create table columns
+  const { columns } = useClassColumns({
+    profiles,
+    documents,
+  });
+
+  // Create filter options
+  const yearOptions = Array.from(
+    new Set(classes?.map((cls) => cls.year.toString()) || [])
+  )
+    .sort()
+    .map((year) => ({ value: year, label: year }));
+
+  const termOptions = [
+    { value: "fall", label: "Fall" },
+    { value: "spring", label: "Spring" },
+    { value: "summer", label: "Summer" },
+  ];
+
+  const profileOptions = profiles.map((profile) => ({
+    value: profile.id,
+    label: `${profile.firstName} ${profile.lastName}`,
+  }));
+
+  const documentCountOptions = [
+    { value: "0", label: "No Documents" },
+    { value: "1-5", label: "1-5 Documents" },
+    { value: "6-10", label: "6-10 Documents" },
+    { value: "11-20", label: "11-20 Documents" },
+    { value: "21+", label: "21+ Documents" },
+  ];
 
   // Delete class mutation
   const deleteClassMutation = useMutation({
@@ -73,6 +123,50 @@ export default function ClassesGeneralPage() {
     }
   };
 
+  const handleDuplicate = async (classItem: Class) => {
+    // Only allow duplicating default classes (reverse logic from cohorts)
+    if (!classItem.defaultClass) {
+      toast.error("This class cannot be duplicated");
+      return;
+    }
+
+    setIsDuplicating(classItem.id);
+    try {
+      logInfo("Duplicating class:", {
+        classId: classItem.id,
+        name: classItem.name,
+      });
+
+      const duplicatedClass = {
+        name: `${classItem.name} Copy`,
+        classCode: `${classItem.classCode}-COPY`,
+        year: classItem.year,
+        term: classItem.term,
+        description: classItem.description,
+        defaultClass: false, // Duplicated classes are not default
+      };
+
+      await createClass(duplicatedClass);
+
+      toast.success("Class duplicated successfully");
+      queryClient.invalidateQueries({ queryKey: ["classes"] });
+      logInfo("Class duplicated successfully:", {
+        originalId: classItem.id,
+        name: duplicatedClass.name,
+      });
+    } catch (error) {
+      logError("Error duplicating class:", error);
+      toast.error("Failed to duplicate class");
+    } finally {
+      setIsDuplicating(null);
+    }
+  };
+
+  const canDuplicate = (classItem: Class) => {
+    // Can only duplicate default classes
+    return classItem.defaultClass;
+  };
+
   const formatClassTerm = (term: string) => {
     switch (term) {
       case "fall":
@@ -85,6 +179,77 @@ export default function ClassesGeneralPage() {
         return term;
     }
   };
+
+  const renderClassCard = (cls: Class) => (
+    <Card
+      key={cls.id}
+      aria-label={cls.name}
+      data-testid={`card-${cls.id}`}
+      className="relative"
+    >
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <CardTitle className="text-lg">{cls.name}</CardTitle>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="outline">{cls.classCode}</Badge>
+              <Badge variant="secondary">
+                {formatClassTerm(cls.term)} {cls.year}
+              </Badge>
+              {cls.defaultClass && (
+                <Badge variant="outline" className="text-xs">
+                  Default
+                </Badge>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              data-testid={`edit-${cls.id}`}
+              onClick={() => handleEditClass(cls.id)}
+              aria-label={`Edit ${cls.name}`}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleDuplicate(cls)}
+              disabled={!canDuplicate(cls) || isDuplicating === cls.id}
+              aria-label={`Duplicate ${cls.name}`}
+            >
+              {isDuplicating === cls.id ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              data-testid={`delete-${cls.id}`}
+              onClick={() => handleDeleteClass(cls.id)}
+              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+              aria-label={`Delete ${cls.name}`}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <p className="text-sm text-muted-foreground line-clamp-2">
+          {cls.description}
+        </p>
+        <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
+          <Calendar className="h-3 w-3" />
+          Created {format(new Date(cls.createdAt), "MMM dd, yyyy")}
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   // Helper function to render the main content
   const renderContent = () => {
@@ -133,69 +298,23 @@ export default function ClassesGeneralPage() {
       );
     }
 
-    // 4. Success State: Show the actual class cards
-    return classes
-      ?.sort(
-        (a, b) =>
-          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      )
-      .map((cls) => (
-        <Card
-          key={cls.id}
-          aria-label={cls.name}
-          data-testid={`card-${cls.id}`}
-          className="relative"
-        >
-          <CardHeader className="pb-3">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <CardTitle className="text-lg">{cls.name}</CardTitle>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="outline">{cls.classCode}</Badge>
-                  <Badge variant="secondary">
-                    {formatClassTerm(cls.term)} {cls.year}
-                  </Badge>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                data-testid={`edit-${cls.id}`}
-                onClick={() => handleEditClass(cls.id)}
-                aria-label={`Edit ${cls.name}`}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                data-testid={`delete-${cls.id}`}
-                onClick={() => handleDeleteClass(cls.id)}
-                className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                aria-label={`Delete ${cls.name}`}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {cls.description}
-            </p>
-            <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
-              <Calendar className="h-3 w-3" />
-              Created {format(new Date(cls.createdAt), "MMM dd, yyyy")}
-            </div>
-          </CardContent>
-        </Card>
-      ));
+    // 4. Success State: Show the table with filtering
+    return (
+      <ClassesDataTable
+        columns={columns}
+        data={classes || []}
+        yearOptions={yearOptions}
+        termOptions={termOptions}
+        profileOptions={profileOptions}
+        documentCountOptions={documentCountOptions}
+        renderClassCard={renderClassCard}
+      />
+    );
   };
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {renderContent()}
-      </div>
+      {renderContent()}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
