@@ -208,7 +208,7 @@ export default function ClassesGeneralPage() {
       key={cls.id}
       aria-label={cls.name}
       data-testid={`card-${cls.id}`}
-      className="relative"
+      className="relative flex flex-col h-full"
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
@@ -258,8 +258,8 @@ export default function ClassesGeneralPage() {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
-        <p className="text-sm text-muted-foreground line-clamp-2">
+      <CardContent className="pt-0 flex-grow flex flex-col">
+        <p className="text-sm text-muted-foreground line-clamp-2 flex-grow">
           {cls.description}
         </p>
         <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">

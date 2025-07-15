@@ -212,10 +212,10 @@ export function Simulations() {
   };
 
   const renderSimulationCard = (simulation: Simulation) => (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader>
+    <Card className="hover:shadow-md transition-shadow flex flex-col h-full">
+      <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
-          <div className="space-y-1">
+          <div className="space-y-1 flex-1">
             <CardTitle className="text-base">{simulation.title}</CardTitle>
             <CardDescription className="flex items-center gap-2">
               <Timer className="h-3 w-3" />
@@ -236,7 +236,15 @@ export function Simulations() {
           </div>
         </div>
       </CardHeader>
-      <CardFooter className="flex justify-end gap-2">
+      <div className="flex-grow"></div>
+      <CardFooter className="flex justify-end gap-2 pt-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleEdit(simulation.id)}
+        >
+          <Edit className="h-4 w-4" />
+        </Button>
         {canDuplicate(simulation) && (
           <Button
             variant="outline"
@@ -251,13 +259,6 @@ export function Simulations() {
             )}
           </Button>
         )}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleEdit(simulation.id)}
-        >
-          <Edit className="h-4 w-4" />
-        </Button>
         <Button
           variant="outline"
           size="sm"

@@ -51,7 +51,9 @@ export default function Cohorts() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
-  const [affectedSimulations, setAffectedSimulations] = useState<Simulation[]>([]);
+  const [affectedSimulations, setAffectedSimulations] = useState<Simulation[]>(
+    []
+  );
   const [memberCount, setMemberCount] = useState(0);
   const [isLoadingImpact, setIsLoadingImpact] = useState(false);
 
@@ -160,10 +162,13 @@ export default function Cohorts() {
   };
 
   const renderCohortCard = (cohort: Cohort) => (
-    <Card key={cohort.id} className="hover:shadow-md transition-shadow">
-      <CardHeader>
+    <Card
+      key={cohort.id}
+      className="hover:shadow-md transition-shadow flex flex-col h-full"
+    >
+      <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
-          <div className="space-y-1">
+          <div className="space-y-1 flex-1">
             <CardTitle className="text-base">{cohort.title}</CardTitle>
             <CardDescription className="flex items-center gap-2">
               <Users className="h-3 w-3" />
@@ -182,7 +187,8 @@ export default function Cohorts() {
           </div>
         </div>
       </CardHeader>
-      <CardFooter className="flex justify-end gap-2">
+      <div className="flex-grow"></div>
+      <CardFooter className="flex justify-end gap-2 pt-3">
         {canDuplicate(cohort) && (
           <Button
             variant="outline"

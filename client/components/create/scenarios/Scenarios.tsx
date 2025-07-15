@@ -159,8 +159,11 @@ export function Scenarios() {
   };
 
   const renderScenarioCard = (scenario: Scenario) => (
-    <Card key={scenario.id} className="hover:shadow-md transition-shadow">
-      <CardHeader>
+    <Card
+      key={scenario.id}
+      className="hover:shadow-md transition-shadow flex flex-col h-full"
+    >
+      <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div className="space-y-2 flex-1">
             <div className="flex items-center gap-2">
@@ -204,11 +207,11 @@ export function Scenarios() {
                 )}
               </div>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground line-clamp-2">
               {scenario.description || "No description available"}
             </p>
           </div>
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center ml-4">
             {canDuplicate(scenario) && (
               <Button
                 variant="outline"
@@ -242,7 +245,8 @@ export function Scenarios() {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <div className="flex-grow"></div>
+      <CardContent className="pt-0">
         <div className="grid grid-cols-2 gap-4 text-sm">
           {scenario.crowdedness !== null && (
             <div className="flex items-center gap-2">

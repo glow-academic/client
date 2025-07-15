@@ -53,8 +53,23 @@ export default function DocumentSelect({
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between"
+          style={{
+            minHeight: "2.5rem",
+            display: "flex",
+            alignItems: "center",
+          }}
         >
-          {selectedDocument?.name || placeholder}
+          <span
+            className="flex-1 min-w-0 truncate text-left"
+            style={{
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              display: "block",
+            }}
+          >
+            {selectedDocument?.name || placeholder}
+          </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -72,6 +87,7 @@ export default function DocumentSelect({
                     onDocumentSelect(doc.id);
                     setOpen(false);
                   }}
+                  className="truncate"
                 >
                   <Check
                     className={`mr-2 h-4 w-4 ${
