@@ -10,6 +10,16 @@ import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 // UI Components
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,16 +33,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import { Cohort, Rubric, Scenario } from "@/types";
 import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
 import { updateSimulation } from "@/utils/mutations/simulations/update-simulation";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { GripVertical, Pencil, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { Skeleton } from "@/components/ui/skeleton";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
+import { GripVertical, Loader2, Pencil, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export interface SimulationProps {
   simulationId?: string;
@@ -63,6 +73,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
   );
   const [draggedScenario, setDraggedScenario] = useState<string | null>(null);
   const [draggedCohort, setDraggedCohort] = useState<string | null>(null);
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const router = useRouter();
 
   const isEditMode = !!simulationId;
@@ -80,6 +91,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
   );
 
   const [formData, setFormData] = useState<FormData>();
+  const [originalFormData, setOriginalFormData] = useState<FormData>();
   const [errors, setErrors] = useState<FormErrors>({});
 
   // Fetch simulations for the list mode
@@ -112,18 +124,48 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   useEffect(() => {
     if (simulation && isEditMode) {
-      setFormData({
+      const simulationData = {
         title: simulation.title,
         timeLimit: simulation.timeLimit,
         rubricId: simulation.rubricId,
         cohortIds: simulation.cohortIds,
         scenarioIds: simulation.scenarioIds,
         active: simulation.active,
-      });
+      };
+      setFormData(simulationData);
+      setOriginalFormData(simulationData); // Set original data for comparison
     } else if (!isEditMode) {
       setFormData(initialFormData);
+      setOriginalFormData(initialFormData);
     }
   }, [simulation, isEditMode, initialFormData]);
+
+  // Check if form has changes
+  const hasChanges = useMemo(() => {
+    if (!isEditMode || !formData || !originalFormData) return false;
+
+    const current = formData;
+    const original = originalFormData;
+
+    return (
+      current.title !== original.title ||
+      current.timeLimit !== original.timeLimit ||
+      current.rubricId !== original.rubricId ||
+      current.active !== original.active ||
+      JSON.stringify(current.cohortIds?.sort()) !==
+        JSON.stringify(original.cohortIds?.sort()) ||
+      JSON.stringify(current.scenarioIds?.sort()) !==
+        JSON.stringify(original.scenarioIds?.sort())
+    );
+  }, [formData, originalFormData, isEditMode]);
+
+  // Count cohorts affected by this simulation
+  const affectedCohorts = useMemo(() => {
+    if (!isEditMode || !simulationId || !formData?.cohortIds) return [];
+    return cohorts.filter((cohort: Cohort) =>
+      formData.cohortIds?.includes(cohort.id)
+    );
+  }, [cohorts, formData?.cohortIds, isEditMode, simulationId]);
 
   const handleInputChange = (
     field: keyof FormData,
@@ -225,13 +267,12 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   const resetFormAndState = () => {
     setFormData(initialFormData);
+    setOriginalFormData(initialFormData);
     setEditingSimulationId(null);
     setErrors({});
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSubmit = async () => {
     if (!validateForm()) {
       toast.error("Please fill in all required fields");
       return;
@@ -247,6 +288,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
           ...formData,
           updatedAt: new Date().toISOString(),
         });
+        toast.success("Simulation updated successfully!");
       } else {
         result = await createSimulation({
           title: formData?.title || "",
@@ -257,6 +299,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
+        toast.success("Simulation created successfully!");
       }
 
       if (!result) {
@@ -266,11 +309,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
       resetFormAndState();
       queryClient.invalidateQueries({ queryKey: ["simulations"] });
-      toast.success(
-        targetSimulationId
-          ? "Simulation updated successfully!"
-          : "Simulation created successfully!"
-      );
       router.push(`/create/simulations`);
     } catch (error) {
       const targetSimulationId = simulationId || editingSimulationId;
@@ -280,6 +318,24 @@ export default function Simulation({ simulationId }: SimulationProps) {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleUpdateClick = () => {
+    if (isEditMode && affectedCohorts.length > 0) {
+      setShowUpdateDialog(true);
+    } else {
+      handleSubmit();
+    }
+  };
+
+  const handleConfirmUpdate = () => {
+    setShowUpdateDialog(false);
+    handleSubmit();
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleUpdateClick();
   };
 
   const editScenario = (scenarioId: string) => {
@@ -292,7 +348,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleFormSubmit} className="space-y-6">
         {/* Basic Simulation Information */}
 
         <div className="space-y-2">
@@ -679,15 +735,20 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
         {/* Submit Button */}
         <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => router.push("/create/simulations")}>Back</Button>
+          <Button
+            variant="outline"
+            onClick={() => router.push("/create/simulations")}
+          >
+            Back
+          </Button>
           <Button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || (isEditMode && !hasChanges)}
             className="min-w-[120px]"
           >
             {isSubmitting ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 {simulationId || editingSimulationId
                   ? "Updating..."
                   : "Creating..."}
@@ -700,6 +761,43 @@ export default function Simulation({ simulationId }: SimulationProps) {
           </Button>
         </div>
       </form>
+
+      {/* Update Confirmation Dialog */}
+      <AlertDialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Update Simulation</AlertDialogTitle>
+            <AlertDialogDescription>
+              This simulation is currently being used by{" "}
+              {affectedCohorts.length} cohort
+              {affectedCohorts.length !== 1 ? "s" : ""}:
+              <ul className="mt-2 list-disc list-inside">
+                {affectedCohorts.map((cohort) => (
+                  <li key={cohort.id} className="text-sm">
+                    {cohort.title} ({cohort.profileIds?.length || 0} members)
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3 text-sm font-medium">
+                Updating this simulation will affect all cohorts that use it.
+                Are you sure you want to proceed?
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmUpdate}
+              disabled={isSubmitting}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {isSubmitting ? "Updating..." : "Update"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

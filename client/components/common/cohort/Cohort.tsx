@@ -6,10 +6,20 @@
  */
 "use client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 // UI Components
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,12 +40,13 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import { useRole } from "@/contexts/role-context";
-import { Cohort as CohortType, Profile } from "@/types";
+import { Cohort as CohortType, Profile, Simulation } from "@/types";
 import { createCohort } from "@/utils/mutations/cohorts/create-cohort";
 import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { GripVertical, Trash2 } from "lucide-react";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { GripVertical, Loader2, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export interface CohortProps {
@@ -56,6 +67,9 @@ export default function Cohort({ cohortId }: CohortProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingCohortId, setEditingCohortId] = useState<string | null>(null);
   const [draggedProfile, setDraggedProfile] = useState<string | null>(null);
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+
+  const isEditMode = !!cohortId;
 
   const initialFormData: Partial<CohortType> = {
     title: "",
@@ -65,6 +79,8 @@ export default function Cohort({ cohortId }: CohortProps) {
   };
 
   const [formData, setFormData] =
+    useState<Partial<CohortType>>(initialFormData);
+  const [originalFormData, setOriginalFormData] =
     useState<Partial<CohortType>>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -79,6 +95,12 @@ export default function Cohort({ cohortId }: CohortProps) {
     queryFn: () => getAllProfiles(),
   });
 
+  const { data: simulations = [] } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getAllSimulations(),
+    enabled: isEditMode, // Only fetch when in edit mode
+  });
+
   // Load cohort data if editing
   useEffect(() => {
     const targetCohortId = cohortId || editingCohortId;
@@ -87,15 +109,41 @@ export default function Cohort({ cohortId }: CohortProps) {
         (c: CohortType) => c.id === targetCohortId
       );
       if (cohortToEdit) {
-        setFormData({
+        const cohortData = {
           title: cohortToEdit.title || "",
           description: cohortToEdit.description || "",
           profileIds: cohortToEdit.profileIds || [],
           active: cohortToEdit.active ?? true,
-        });
+        };
+        setFormData(cohortData);
+        setOriginalFormData(cohortData); // Set original data for comparison
       }
     }
   }, [cohortId, editingCohortId, cohorts]);
+
+  // Check if form has changes
+  const hasChanges = useMemo(() => {
+    if (!isEditMode) return false;
+
+    const current = formData;
+    const original = originalFormData;
+
+    return (
+      current.title !== original.title ||
+      current.description !== original.description ||
+      current.active !== original.active ||
+      JSON.stringify(current.profileIds?.sort()) !==
+        JSON.stringify(original.profileIds?.sort())
+    );
+  }, [formData, originalFormData, isEditMode]);
+
+  // Count simulations using this cohort
+  const affectedSimulations = useMemo(() => {
+    if (!isEditMode || !cohortId) return [];
+    return simulations.filter(
+      (sim: Simulation) => sim.cohortIds && sim.cohortIds.includes(cohortId)
+    );
+  }, [simulations, cohortId, isEditMode]);
 
   // Role-based access control - check after all hooks
   if (effectiveRole !== "admin") {
@@ -181,13 +229,12 @@ export default function Cohort({ cohortId }: CohortProps) {
 
   const resetFormAndState = () => {
     setFormData(initialFormData);
+    setOriginalFormData(initialFormData);
     setEditingCohortId(null);
     setErrors({});
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSubmit = async () => {
     if (!validateForm()) {
       toast.error("Please fill in all required fields");
       return;
@@ -203,6 +250,7 @@ export default function Cohort({ cohortId }: CohortProps) {
           ...formData,
           updatedAt: new Date().toISOString(),
         });
+        toast.success("Cohort updated successfully!");
       } else {
         result = await createCohort({
           title: formData.title || "",
@@ -212,6 +260,7 @@ export default function Cohort({ cohortId }: CohortProps) {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
+        toast.success("Cohort created successfully!");
       }
 
       if (!result) {
@@ -221,11 +270,6 @@ export default function Cohort({ cohortId }: CohortProps) {
 
       resetFormAndState();
       queryClient.invalidateQueries({ queryKey: ["cohorts"] });
-      toast.success(
-        targetCohortId
-          ? "Cohort updated successfully!"
-          : "Cohort created successfully!"
-      );
       router.push(`/create/cohorts`);
     } catch (error) {
       const targetCohortId = cohortId || editingCohortId;
@@ -237,9 +281,27 @@ export default function Cohort({ cohortId }: CohortProps) {
     }
   };
 
+  const handleUpdateClick = () => {
+    if (isEditMode && affectedSimulations.length > 0) {
+      setShowUpdateDialog(true);
+    } else {
+      handleSubmit();
+    }
+  };
+
+  const handleConfirmUpdate = () => {
+    setShowUpdateDialog(false);
+    handleSubmit();
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleUpdateClick();
+  };
+
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleFormSubmit} className="space-y-6">
         {/* Basic Cohort Information */}
 
         <div className="space-y-2">
@@ -376,15 +438,20 @@ export default function Cohort({ cohortId }: CohortProps) {
 
         {/* Submit Button */}
         <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => router.push("/create/cohorts")}>Back</Button>
+          <Button
+            variant="outline"
+            onClick={() => router.push("/create/cohorts")}
+          >
+            Back
+          </Button>
           <Button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || (isEditMode && !hasChanges)}
             className="min-w-[120px]"
           >
             {isSubmitting ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 {cohortId || editingCohortId ? "Updating..." : "Creating..."}
               </>
             ) : cohortId || editingCohortId ? (
@@ -395,6 +462,44 @@ export default function Cohort({ cohortId }: CohortProps) {
           </Button>
         </div>
       </form>
+
+      {/* Update Confirmation Dialog */}
+      <AlertDialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Update Cohort</AlertDialogTitle>
+            <AlertDialogDescription>
+              This cohort is currently used by {affectedSimulations.length}{" "}
+              simulation{affectedSimulations.length !== 1 ? "s" : ""}:
+              <ul className="mt-2 list-disc list-inside">
+                {affectedSimulations.map((sim) => (
+                  <li key={sim.id} className="text-sm">
+                    {sim.title}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3 text-sm font-medium">
+                The cohort has {formData.profileIds?.length || 0} member
+                {(formData.profileIds?.length || 0) !== 1 ? "s" : ""} assigned.
+                Updating this cohort will affect all simulations that use it.
+                Are you sure you want to proceed?
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmUpdate}
+              disabled={isSubmitting}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {isSubmitting ? "Updating..." : "Update"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

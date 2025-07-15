@@ -11,6 +11,16 @@ import React, {
 import { toast } from "sonner";
 import * as tus from "tus-js-client";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,7 +44,7 @@ import { Textarea } from "@/components/ui/textarea";
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Class, Document, DocumentType } from "@/types";
+import { Class, Document, DocumentType, Scenario } from "@/types";
 import { deleteDocument } from "@/utils/api/documents/delete-document";
 import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
 import { processCourse } from "@/utils/api/documents/process-course";
@@ -44,6 +54,7 @@ import { updateClass } from "@/utils/mutations/classes/update-class";
 import { updateDocument } from "@/utils/mutations/documents/update-document";
 import { getClass } from "@/utils/queries/classes/get-class";
 import { getDocumentsByClass } from "@/utils/queries/documents/get-documents-by-class";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import {
   AlertTriangle,
   Brain,
@@ -101,6 +112,7 @@ export default function ClassForm({ classId }: ClassFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
 
   const editMode = !!classId;
 
@@ -117,11 +129,15 @@ export default function ClassForm({ classId }: ClassFormProps) {
   );
 
   const [formData, setFormData] = useState<FormData>();
+  const [originalFormData, setOriginalFormData] = useState<FormData>();
 
   // --- MODIFIED STATE MANAGEMENT ---
   const [editedDocuments, setEditedDocuments] = useState<EditableDocument[]>(
     []
   );
+  const [originalDocuments, setOriginalDocuments] = useState<
+    EditableDocument[]
+  >([]);
   const [documentsToDelete, setDocumentsToDelete] = useState<string[]>([]);
 
   // Document management state
@@ -156,10 +172,18 @@ export default function ClassForm({ classId }: ClassFormProps) {
     enabled: editMode,
   });
 
+  // Fetch scenarios to check for impact
+  const { data: scenarios = [] } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => getAllScenarios(),
+    enabled: editMode, // Only fetch when in edit mode
+  });
+
   // --- MODIFIED: Initialize or reset the local document state ---
   const resetFormState = useCallback(() => {
     if (documents) {
       setEditedDocuments(documents);
+      setOriginalDocuments(documents);
       setDocumentsToDelete([]);
     }
   }, [documents]);
@@ -168,6 +192,50 @@ export default function ClassForm({ classId }: ClassFormProps) {
     // When the fetched documents change, reset the local state
     resetFormState();
   }, [resetFormState]);
+
+  // Check if form has changes
+  const hasChanges = useMemo(() => {
+    if (!editMode || !formData || !originalFormData) return false;
+
+    const current = formData;
+    const original = originalFormData;
+
+    // Check basic form fields
+    const formFieldsChanged =
+      current.name !== original.name ||
+      current.classCode !== original.classCode ||
+      current.year !== original.year ||
+      current.term !== original.term ||
+      current.description !== original.description;
+
+    // Check document changes
+    const documentsChanged =
+      editedDocuments.length !== originalDocuments.length ||
+      documentsToDelete.length > 0 ||
+      editedDocuments.some((doc, index) => {
+        const originalDoc = originalDocuments[index];
+        if (!originalDoc) return true;
+        if ("isNew" in doc && doc.isNew) return true;
+        return doc.type !== originalDoc.type;
+      });
+
+    return formFieldsChanged || documentsChanged;
+  }, [
+    formData,
+    originalFormData,
+    editedDocuments,
+    originalDocuments,
+    documentsToDelete,
+    editMode,
+  ]);
+
+  // Count scenarios affected by this class
+  const affectedScenarios = useMemo(() => {
+    if (!editMode || !classId) return [];
+    return scenarios.filter(
+      (scenario: Scenario) => scenario.classId === classId
+    );
+  }, [scenarios, classId, editMode]);
 
   // Handle course processing
   const handleCourseProcessing = async () => {
@@ -184,8 +252,7 @@ export default function ClassForm({ classId }: ClassFormProps) {
 
       const toastId = toast.loading("Processing course information...");
 
-      const isCypress =
-      typeof window !== "undefined" && "Cypress" in window;
+      const isCypress = typeof window !== "undefined" && "Cypress" in window;
       const result = await processCourse(classId, isCypress);
 
       if (!result.success) {
@@ -233,22 +300,23 @@ export default function ClassForm({ classId }: ClassFormProps) {
 
   useEffect(() => {
     if (classData && editMode) {
-      setFormData({
+      const classFormData = {
         name: classData.name,
         classCode: classData.classCode,
         year: classData.year,
         term: classData.term,
         description: classData.description,
-      });
+      };
+      setFormData(classFormData);
+      setOriginalFormData(classFormData); // Set original data for comparison
     } else if (!editMode) {
       setFormData(initialFormData);
+      setOriginalFormData(initialFormData);
     }
   }, [classData, editMode, initialFormData]);
 
   // --- MODIFIED: `handleSubmit` orchestrates all uploads and updates ---
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSubmit = async () => {
     const validationErrors: FormErrors = {};
     if (!formData?.name?.trim()) {
       validationErrors.name = "Class name is required";
@@ -388,6 +456,24 @@ export default function ClassForm({ classId }: ClassFormProps) {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleUpdateClick = () => {
+    if (editMode && affectedScenarios.length > 0) {
+      setShowUpdateDialog(true);
+    } else {
+      handleSubmit();
+    }
+  };
+
+  const handleConfirmUpdate = () => {
+    setShowUpdateDialog(false);
+    handleSubmit();
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleUpdateClick();
   };
 
   // --- MODIFIED: `handleFiles` now only stages files locally ---
@@ -555,7 +641,7 @@ export default function ClassForm({ classId }: ClassFormProps) {
       onDrop={handleDrop}
     >
       <div className="max-w-6xl mx-auto">
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleFormSubmit} className="space-y-6">
           {/* Class Name */}
           <div className="space-y-2">
             <Label htmlFor="name">Class Name *</Label>
@@ -1005,15 +1091,27 @@ export default function ClassForm({ classId }: ClassFormProps) {
           {/* Action Buttons */}
           <div className="flex justify-between">
             <div className="flex-1 flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={() => router.push("/create/classes")}>Back</Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting
-                  ? editMode
-                    ? "Updating..."
-                    : "Creating..."
-                  : editMode
-                    ? "Update Class"
-                    : "Create Class"}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push("/create/classes")}
+              >
+                Back
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting || (editMode && !hasChanges)}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {editMode ? "Updating..." : "Creating..."}
+                  </>
+                ) : editMode ? (
+                  "Update Class"
+                ) : (
+                  "Create Class"
+                )}
               </Button>
             </div>
           </div>
@@ -1142,6 +1240,44 @@ export default function ClassForm({ classId }: ClassFormProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Update Confirmation Dialog */}
+      <AlertDialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Update Class</AlertDialogTitle>
+            <AlertDialogDescription>
+              This class is currently used by {affectedScenarios.length}{" "}
+              scenario{affectedScenarios.length !== 1 ? "s" : ""}:
+              <ul className="mt-2 list-disc list-inside">
+                {affectedScenarios.map((scenario) => (
+                  <li key={scenario.id} className="text-sm">
+                    {scenario.name}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-3 text-sm font-medium">
+                The class also has {editedDocuments.length} document
+                {editedDocuments.length !== 1 ? "s" : ""} associated with it.
+                Updating this class will affect all scenarios that use it. Are
+                you sure you want to proceed?
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmUpdate}
+              disabled={isSubmitting}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {isSubmitting ? "Updating..." : "Update"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

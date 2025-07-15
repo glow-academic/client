@@ -544,7 +544,7 @@ export function UnifiedSidebar({
                     <span className="truncate text-xs">
                       {effectiveRole === "guest" || !profile
                         ? "Not logged in"
-                        : `${profile?.alias}@${process.env["NEXT_PUBLIC_EMAIL_DOMAIN"]}`}
+                        : `${profile?.alias}@${process.env["NEXT_PUBLIC_"]}`}
                     </span>
                   </div>
                   <ChevronRight className="ml-auto size-4" />
