@@ -48,17 +48,37 @@ services:
   # Volume Init Service
   # --------------------
   volume-init:
-    image: busybox
+    image: busybox:1.36   # tiny, has cp ‑a
     volumes:
+      # writable named volumes
       - uploads:/app/uploads
-      - csv-data:/app/csv
+      - history-data:/app/history
+
+      # read‑only seed folders that live in your repo
+      - ./uploads:/seed/uploads:ro
+      - ./history:/seed/history:ro
     command: >
-      sh -c "
-        mkdir -p /app/uploads/tus_uploads &&
-        chown -R 1001:1001 /app/uploads /app/csv &&
-        chmod -R 775       /app/uploads /app/csv &&
-        echo 'Volume permissions initialized'
-      "
+      sh -c '
+        set -e
+
+        # Copy uploads if the volume is still empty
+        if [ -z "$(ls -A /app/uploads 2>/dev/null)" ]; then
+          echo "[init] Seeding uploads volume…"
+          cp -a /seed/uploads/. /app/uploads/
+        fi
+
+        # Copy history if the volume is still empty
+        if [ -z "$(ls -A /app/history 2>/dev/null)" ]; then
+          echo "[init] Seeding history volume…"
+          cp -a /seed/history/. /app/history/
+        fi
+
+        # Always ensure perms for FastAPI UID/GID 1001
+        chown -R 1001:1001 /app/uploads /app/history
+        chmod -R 775 /app/uploads /app/history
+
+        echo "[init] Volume permissions & seeds ready."
+      '
     networks:
       - internal
 
