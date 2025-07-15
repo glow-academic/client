@@ -36,7 +36,7 @@ server {
     }
 
     # WebSocket traffic (prefixed)
-    location /${APP_PREFIX}/socket.io/ {
+    location ^~ /${APP_PREFIX}/socket.io/ {
         proxy_pass         http://api_socketio;
         proxy_http_version 1.1;
         proxy_set_header   Upgrade           $http_upgrade;
