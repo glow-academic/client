@@ -393,7 +393,7 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
                   <AlertDialogDescription>
                     This will permanently delete the user account for{" "}
                     {formData.firstName + " " + formData.lastName} (
-                    {formData.alias}@{process.env["NEXT_PUBLIC_EMAIL_DOMAIN"]}). This action cannot be undone
+                    {formData.alias}@{process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}). This action cannot be undone
                     and will remove all associated data.
                   </AlertDialogDescription>
                 </AlertDialogHeader>

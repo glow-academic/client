@@ -576,7 +576,7 @@ export function UnifiedSidebar({
                       <span className="truncate text-xs">
                         {effectiveRole === "guest" || !profile
                           ? "Not logged in"
-                          : `${profile?.alias}@${process.env["NEXT_PUBLIC_EMAIL_DOMAIN"]}`}
+                          : `${profile?.alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}`}
                       </span>
                     </div>
                   </div>
