@@ -35,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 origin = os.getenv("ORIGIN", "http://localhost:3000")
-app_prefix = os.getenv("APP_PREFIX", "")
+app_prefix = os.getenv("APP_PREFIX", "").strip("/")
 socket_path = f"{app_prefix}/socket.io" if app_prefix else "socket.io"
 
 # ---------------------------------------------------------------------------+

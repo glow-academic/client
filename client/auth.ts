@@ -10,7 +10,7 @@ import { createProfile } from "./utils/mutations/profiles/create-profile";
 import { updateProfile } from "./utils/mutations/profiles/update-profile";
 import { getProfilesByUser } from "./utils/queries/profiles/get-profiles-by-user";
 
-const appPrefix = process.env["APP_PREFIX"] ? `/${process.env["APP_PREFIX"]}` : "";
+const appPrefix = process.env["APP_PREFIX"] || "";
 const clientId = process.env["AUTH_MICROSOFT_ENTRA_ID_ID"] || "";
 const clientSecret = process.env["AUTH_MICROSOFT_ENTRA_ID_SECRET"] || "";
 const secret = process.env["AUTH_SECRET"] || "";

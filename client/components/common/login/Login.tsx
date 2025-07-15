@@ -215,7 +215,7 @@ export default function Login() {
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedRole");
 
-      const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] ? `/${process.env["NEXT_PUBLIC_APP_PREFIX"]}` : "";
+      const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
 
       let redirectTo = `${appPrefix}/home`;
       if (profile?.role !== "ta") {

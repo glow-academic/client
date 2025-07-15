@@ -3,10 +3,8 @@ import type { NextConfig } from "next";
 import type { WebpackConfigContext } from "next/dist/server/config-shared";
 import type { Configuration as WebpackConfig } from "webpack";
 
-const appPrefix = process.env["APP_PREFIX"] ? `/${process.env["APP_PREFIX"]}` : "";
-
 module.exports = {
-  basePath: appPrefix,
+  basePath: process.env["APP_PREFIX"] || "",
   output: "standalone",
   devIndicators: false,
   trailingSlash: false,

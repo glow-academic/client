@@ -771,9 +771,7 @@ export function WebSocketProvider({
         attempt: connectionAttempts.current + 1,
       });
 
-      const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
-      const socketPath = appPrefix ? `/${appPrefix}/socket.io` : "/socket.io";
-
+      const socketPath = `${process.env["NEXT_PUBLIC_APP_PREFIX"] || ""}/socket.io`;
       const socket = io(getApiBase(), {
         path: socketPath,
         autoConnect: true,
