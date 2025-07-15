@@ -76,17 +76,17 @@ CREATE TABLE profiles (
 -- SEED DATA
 -- ============================================================================
 
-INSERT INTO profiles (id, first_name, last_name, alias, viewed_intro, role, class_ids) VALUES
-  ('965bd24f-dfae-4063-b370-e1373df46322', 'Ashok', 'Saravanan', 'sarava18', true, 'admin', ARRAY[]::UUID[]),
-  ('6a2518eb-eba7-4650-aee0-d387c3fb8265', 'Alex', 'Siladie', 'asiladie', true, 'admin', ARRAY[]::UUID[]),
-  ('34f445d6-7318-45a7-ba49-086b85b76b85', 'Ethan', 'Dickey', 'dickeye', true, 'admin', ARRAY[]::UUID[]),
-  ('456878aa-12ca-464b-86fe-fa22ebe58614', 'Andres', 'Bejarano', 'abejara', true, 'admin', ARRAY[]::UUID[]),
-  ('a1bc0cb2-c9a2-4c80-8dd5-75156eb58ce1', 'Houyame', 'Lkhider-Hudson', 'hlkhider', true, 'instructional', ARRAY[]::UUID[]),
-  ('b44a9d96-2b2e-4bcc-88e7-58cb6214aac1', 'Quiondriya', 'Gee', 'qgee', true, 'instructional', ARRAY[]::UUID[]),
-  ('c7c6f71a-2a4b-4e87-9320-4f444a603519', 'Justin', 'Gillingham', 'jdgillin', true, 'instructional', ARRAY[]::UUID[]),
-  ('34a3c43e-27ee-4924-9f61-be4ac9e370f2', 'Jonathan', 'Morris', 'morrisjb', true, 'instructional', ARRAY[]::UUID[]),
-  ('fed71b5d-6170-4462-b919-e992f7716338', 'Max', 'Rees', 'mcrees', true, 'instructional', ARRAY[]::UUID[]),
-  ('37ed3d71-c381-4933-a1eb-66e3d4e0b0ac', 'Nicholas', 'Brasovan', 'nbrasova', true, 'instructional', ARRAY[]::UUID[]);
+INSERT INTO profiles (id, first_name, last_name, alias, role, class_ids) VALUES
+  ('965bd24f-dfae-4063-b370-e1373df46322', 'Ashok', 'Saravanan', 'sarava18', 'admin', ARRAY[]::UUID[]),
+  ('6a2518eb-eba7-4650-aee0-d387c3fb8265', 'Alex', 'Siladie', 'asiladie', 'admin', ARRAY[]::UUID[]),
+  ('34f445d6-7318-45a7-ba49-086b85b76b85', 'Ethan', 'Dickey', 'dickeye', 'admin', ARRAY[]::UUID[]),
+  ('456878aa-12ca-464b-86fe-fa22ebe58614', 'Andres', 'Bejarano', 'abejara', 'admin', ARRAY[]::UUID[]),
+  ('a1bc0cb2-c9a2-4c80-8dd5-75156eb58ce1', 'Houyame', 'Lkhider-Hudson', 'hlkhider', 'instructional', ARRAY[]::UUID[]),
+  ('b44a9d96-2b2e-4bcc-88e7-58cb6214aac1', 'Quiondriya', 'Gee', 'qgee', 'instructional', ARRAY[]::UUID[]),
+  ('c7c6f71a-2a4b-4e87-9320-4f444a603519', 'Justin', 'Gillingham', 'jdgillin','instructional', ARRAY[]::UUID[]),
+  ('34a3c43e-27ee-4924-9f61-be4ac9e370f2', 'Jonathan', 'Morris', 'morrisjb', 'instructional', ARRAY[]::UUID[]),
+  ('fed71b5d-6170-4462-b919-e992f7716338', 'Max', 'Rees', 'mcrees', 'instructional', ARRAY[]::UUID[]),
+  ('37ed3d71-c381-4933-a1eb-66e3d4e0b0ac', 'Nicholas', 'Brasovan', 'nbrasova', 'instructional', ARRAY[]::UUID[]);
 
 
 -- Instructor Users

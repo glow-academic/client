@@ -69,6 +69,94 @@ import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useSession } from "next-auth/react";
 import SimulationHistory from "../common/history/SimulationHistory";
+import { updateProfile } from "@/utils/mutations/profiles/update-profile";
+
+// Overlay Component for First-Time Users
+const WelcomeOverlay = React.memo(({ onClose }: { onClose: () => void }) => {
+  return (
+    <div className="fixed inset-0 bg-black/50  z-50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Welcome to Glow! 🌟
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              <svg
+                className="w-6 h-6 text-gray-500 dark:text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <div className="space-y-6">
+            {/* My Cohorts Section */}
+            <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                📚 My Cohorts
+              </h3>
+              <p className="text-blue-800 dark:text-blue-200">
+                These are like quizzes and this is what you get graded on. You
+                will have a "x" amount of students to interact with in a "y"
+                number of minutes. You will keep retaking these cohorts until
+                you get a passing score.
+              </p>
+            </div>
+
+            {/* Default Simulations Section */}
+            <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-2">
+                🎯 Default Simulations
+              </h3>
+              <p className="text-green-800 dark:text-green-200">
+                These are practice simulations with a specific type of student.
+                You have unlimited time for these and you still get a score, but
+                it doesn't go into the gradebook.
+              </p>
+            </div>
+
+            {/* History Section */}
+            <div className="bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-100 mb-2">
+                📊 History
+              </h3>
+              <p className="text-purple-800 dark:text-purple-200">
+                This will show your previous interactions and you can see how
+                you did in previous cohorts and simulations. You can click on
+                individual ones to go and see exactly what you said, and you can
+                also filter by various characteristics to try and find a
+                particular conversation you may have had.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={onClose}
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+WelcomeOverlay.displayName = "WelcomeOverlay";
 
 // Type for attempt data
 interface AttemptData {
@@ -311,7 +399,7 @@ const SimulationCard = React.memo(
                 ? "permanent-simulation-card"
                 : "simulation-card"
             }
-            className="group overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-white dark:bg-gray-900 border-0 shadow-lg backface-hidden"
+            className="group overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-white dark:bg-gray-900 border-0 shadow-lg backface-hidden rounded-lg"
           >
             {/* Background Pattern */}
             <div className="absolute inset-0 opacity-5">
@@ -328,14 +416,14 @@ const SimulationCard = React.memo(
               ></div>
             </div>
 
-            <CardHeader className="pb-4 relative z-10">
+            <CardHeader className="pb-1 relative z-10">
               <div className="flex items-start justify-between">
                 <div
-                  className={`p-3 rounded-xl bg-gradient-to-br ${gradientClass} shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                  className={`p-2 rounded-xl bg-gradient-to-br ${gradientClass} shadow-lg group-hover:scale-110 transition-transform duration-300`}
                 >
-                  <IconComponent className="h-6 w-6 text-white" />
+                  <IconComponent className="h-5 w-5 text-white" />
                 </div>
-                <div className="flex flex-col items-end space-y-2">
+                <div className="flex flex-col items-end space-y-1">
                   {/* Flip Icon */}
                   {effectiveRole !== "guest" && (
                     <Tooltip>
@@ -373,7 +461,7 @@ const SimulationCard = React.memo(
               </div>
             </CardHeader>
 
-            <CardContent className="space-y-4 relative z-10">
+            <CardContent className="space-y-1 relative z-10">
               <div>
                 <h3
                   className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors"
@@ -381,14 +469,14 @@ const SimulationCard = React.memo(
                 >
                   {simulation.title}
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 leading-relaxed">
+                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
                   {type === "default"
                     ? agent?.description
                     : `Interactive simulation with ${validScenarioIds.length} scenario${validScenarioIds.length !== 1 ? "s" : ""}`}
                 </p>
               </div>
 
-              <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex items-center space-x-3 text-xs text-gray-500 dark:text-gray-400">
                 <div
                   className="flex items-center"
                   data-testid="simulation-duration"
@@ -432,7 +520,7 @@ const SimulationCard = React.memo(
               <button
                 onClick={() => onStartSimulation(simulation.id)}
                 disabled={loadingSimulation === simulation.id}
-                className={`w-full text-center py-3 rounded-lg bg-gradient-to-r ${gradientClass} text-white font-medium text-sm hover:shadow-lg transition-all duration-300 ${
+                className={`w-full text-center py-2 rounded-lg bg-gradient-to-r ${gradientClass} text-white font-medium text-sm hover:shadow-lg transition-all duration-300 ${
                   loadingSimulation === simulation.id
                     ? "animate-pulse cursor-not-allowed"
                     : "hover:scale-105 cursor-pointer"
@@ -449,8 +537,8 @@ const SimulationCard = React.memo(
 
           {/* Back Side - Only render when flipped */}
           {isFlipped && (
-            <Card className="absolute inset-0 bg-white dark:bg-gray-900 border-0 shadow-lg rotate-y-180 backface-hidden">
-              <CardHeader className="pb-3">
+            <Card className="absolute inset-0 bg-white dark:bg-gray-900 border-0 shadow-lg rotate-y-180 backface-hidden rounded-lg">
+              <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="font-bold text-lg text-gray-900 dark:text-white">
@@ -486,7 +574,7 @@ const SimulationCard = React.memo(
                 </div>
               </CardHeader>
 
-              <CardContent className="max-h-48 overflow-auto">
+              <CardContent className="max-h-40 overflow-auto">
                 {rubricData.attempts.length > 0 ? (
                   <table className="w-full text-xs">
                     <thead className="sticky top-0 bg-white dark:bg-gray-900">
@@ -612,6 +700,7 @@ export default function Home() {
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const [soloCarouselIndex, setSoloCarouselIndex] = useState(0);
   const [multiCarouselIndex, setMultiCarouselIndex] = useState(0);
+  const [showWelcomeOverlay, setShowWelcomeOverlay] = useState(false);
 
   // Use global WebSocket context instead of local connection
   const { isConnected, emitStartSimulation } = useWebSocket();
@@ -702,6 +791,29 @@ export default function Home() {
       ),
     enabled: !!grades && grades.length > 0,
   });
+
+  const handleCloseWelcomeOverlay = useCallback(async () => {
+    try {
+      if (!profile) {
+        logError("Profile not found");
+        return;
+      }
+      await updateProfile(profile.id, {
+        viewedIntro: true,
+      });
+    } catch (error) {
+      logError("Error updating profile", error);
+    }
+    setShowWelcomeOverlay(false);
+  }, [profile]);
+
+  useEffect(() => {
+    if (profile) {
+      if (!profile.viewedIntro) {
+        setShowWelcomeOverlay(true);
+      }
+    }
+  }, [profile]);
 
   // Set up simulation-specific event listeners using global WebSocket
   useEffect(() => {
@@ -826,19 +938,19 @@ export default function Home() {
   );
 
   // Get user's cohorts and filter simulations based on cohort membership
-  // Users with actual admin/instructional roles can see all cohorts, regular users only see cohorts they're members of
+  // Admins can see all cohorts, regular users only see cohorts they're members of
   const userCohorts = useMemo(() => {
     if (!cohorts) return [];
 
-    // Check actual user role (not simulated role) for full cohort access
-    if (profile?.role === "admin" || profile?.role === "instructional") {
+    // Admins can see all cohorts
+    if (effectiveRole === "admin") {
       return cohorts;
     }
 
     // Regular users only see cohorts they're members of
     if (!profile) return [];
     return cohorts.filter((cohort) => cohort.profileIds?.includes(profile.id));
-  }, [cohorts, profile]);
+  }, [cohorts, profile, effectiveRole]);
 
   const cohortSimulations = useMemo(() => {
     if (!simulations || !userCohorts.length) return [];
@@ -1107,7 +1219,7 @@ export default function Home() {
   // Loading state
   if (simulationsLoading) {
     return (
-      <div className="space-y-8">
+      <div className="space-y-4">
         <div className="flex items-center justify-between space-y-2">
           <div>
             <Skeleton className="h-8 w-48 mb-2" />
@@ -1156,7 +1268,7 @@ export default function Home() {
     // Guest view - show all simulations with carousels
     return (
       <TooltipProvider>
-        <div className="space-y-8">
+        <div className="space-y-4">
           {/* Default Simulations Carousel */}
           {defaultSimulations.length > 0 &&
             renderCarousel(defaultSimulations, "default")}
@@ -1178,6 +1290,9 @@ export default function Home() {
               </div>
             )}
         </div>
+        {showWelcomeOverlay && (
+          <WelcomeOverlay onClose={handleCloseWelcomeOverlay} />
+        )}
       </TooltipProvider>
     );
   }
@@ -1185,7 +1300,7 @@ export default function Home() {
   // Regular user view - show all simulations with carousels
   return (
     <TooltipProvider>
-      <div className="space-y-8">
+      <div className="space-y-2">
         {/* Cohort Simulations Carousel */}
         {cohortSimulations.length > 0 &&
           renderCarousel(cohortSimulations, "cohort")}
@@ -1194,7 +1309,13 @@ export default function Home() {
         {defaultSimulations.length > 0 &&
           renderCarousel(defaultSimulations, "default")}
 
-        <SimulationHistory showAll={false} showExport={false} />
+        {/* History Section */}
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            History
+          </h2>
+          <SimulationHistory showAll={false} showExport={false} />
+        </div>
 
         {/* No simulations message */}
         {defaultSimulations.length === 0 && cohortSimulations.length === 0 && (
@@ -1208,6 +1329,9 @@ export default function Home() {
           </div>
         )}
       </div>
+      {showWelcomeOverlay && (
+        <WelcomeOverlay onClose={handleCloseWelcomeOverlay} />
+      )}
     </TooltipProvider>
   );
 }
