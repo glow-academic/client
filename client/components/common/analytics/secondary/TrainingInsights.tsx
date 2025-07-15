@@ -6,6 +6,7 @@
  */
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -13,6 +14,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -21,8 +32,17 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
-import { subDays } from "date-fns";
-import { Award, Clock, MessageSquare, Target, TrendingUp } from "lucide-react";
+import { format, subDays } from "date-fns";
+import {
+  Award,
+  BarChart3,
+  Clock,
+  Info,
+  MessageSquare,
+  Target,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 import { useMemo } from "react";
 
 type ColorTheme =
@@ -287,6 +307,29 @@ const COLOR_CONFIGS = {
   },
 };
 
+interface InsightDetail {
+  key: string;
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  text: string;
+  value: number;
+  config: {
+    bg: string;
+    border: string;
+    icon: string;
+    title: string;
+    text: string;
+  };
+  historicalData: Array<{
+    date: string;
+    value: number;
+    label: string;
+  }>;
+  recommendations: string[];
+  trend: number;
+  status: "improving" | "declining" | "stable";
+}
+
 export default function TrainingInsights({
   className,
   color = "blue",
@@ -333,24 +376,73 @@ export default function TrainingInsights({
     queryFn: () => getAllRubrics(),
   });
 
-  // Calculate insights
+  // Calculate insights with detailed metrics
   const insights = useMemo(() => {
     if (!grades || !profiles || !chats || !attempts || !simulations || !rubrics)
       return null;
 
-    // Calculate dynamic metrics for training insights
-    const currentWeekGrades = grades.filter((grade) => {
-      const gradeDate = new Date(grade.createdAt);
-      const weekAgo = subDays(new Date(), 7);
-      return gradeDate >= weekAgo;
-    });
+    // Helper function to calculate weekly data
+    const getWeeklyData = (weeksBack: number) => {
+      const weekStart = subDays(new Date(), weeksBack * 7);
+      const weekEnd = subDays(new Date(), (weeksBack - 1) * 7);
+      return grades.filter((grade) => {
+        const gradeDate = new Date(grade.createdAt);
+        return gradeDate >= weekStart && gradeDate < weekEnd;
+      });
+    };
 
-    const lastWeekGrades = grades.filter((grade) => {
-      const gradeDate = new Date(grade.createdAt);
-      const twoWeeksAgo = subDays(new Date(), 14);
-      const weekAgo = subDays(new Date(), 7);
-      return gradeDate >= twoWeeksAgo && gradeDate < weekAgo;
-    });
+    // Calculate historical data for the last 8 weeks
+    const historicalWeeks = Array.from({ length: 8 }, (_, i) => {
+      const weekGrades = getWeeklyData(i + 1);
+      const weekScores = weekGrades.map((grade) => {
+        const chat = chats.find((c) => c.id === grade.simulationChatId);
+        const attempt = attempts.find((a) => a.id === chat?.attemptId);
+        const simulation = simulations.find(
+          (s) => s.id === attempt?.simulationId
+        );
+        const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
+        const rubricTotalPoints = rubric?.points || 100;
+        return Math.round((grade.score / rubricTotalPoints) * 100);
+      });
+
+      const avgScore =
+        weekScores.length > 0
+          ? Math.round(
+              weekScores.reduce((sum, score) => sum + score, 0) /
+                weekScores.length
+            )
+          : 0;
+
+      const avgTime =
+        weekGrades.length > 0
+          ? Math.round(
+              weekGrades.reduce((sum, g) => sum + g.timeTaken, 0) /
+                weekGrades.length /
+                60
+            )
+          : 0;
+
+      const passRate =
+        weekGrades.length > 0
+          ? Math.round(
+              (weekGrades.filter((g) => g.passed).length / weekGrades.length) *
+                100
+            )
+          : 0;
+
+      return {
+        week: i + 1,
+        date: format(subDays(new Date(), i * 7), "MMM dd"),
+        avgScore,
+        avgTime,
+        passRate,
+        sessions: weekGrades.length,
+      };
+    }).reverse();
+
+    // Calculate current metrics
+    const currentWeekGrades = getWeeklyData(1);
+    const lastWeekGrades = getWeeklyData(2);
 
     // Calculate current week average using rubric points
     let currentWeekAvg = 0;
@@ -425,13 +517,168 @@ export default function TrainingInsights({
       avgOverallScore = Math.round(totalScoreSum / grades.length);
     }
 
+    // Create detailed insight items
+    const insightItems: InsightDetail[] = [
+      {
+        key: "weeklyTrend",
+        icon: TrendingUp,
+        title: "Weekly Trend",
+        text:
+          weeklyTrend > 0
+            ? `Scores improved by ${weeklyTrend}% this week`
+            : weeklyTrend < 0
+              ? `Scores decreased by ${Math.abs(weeklyTrend)}% this week`
+              : "Scores remained stable this week",
+        value: weeklyTrend,
+        config: colorConfig.weeklyTrend,
+        historicalData: historicalWeeks.map((week) => ({
+          date: week.date,
+          value: week.avgScore,
+          label: `Week ${week.week}: ${week.avgScore}%`,
+        })),
+        recommendations: [
+          ...(weeklyTrend < -5
+            ? [
+                "Investigate recent performance decline",
+                "Consider additional training sessions",
+              ]
+            : []),
+          ...(weeklyTrend > 5
+            ? [
+                "Maintain current training approach",
+                "Consider advanced scenarios",
+              ]
+            : []),
+          ...(weeklyTrend === 0
+            ? ["Monitor for consistency", "Look for improvement opportunities"]
+            : []),
+        ],
+        trend: weeklyTrend,
+        status:
+          weeklyTrend > 2
+            ? "improving"
+            : weeklyTrend < -2
+              ? "declining"
+              : "stable",
+      },
+      {
+        key: "sessionEfficiency",
+        icon: Clock,
+        title: "Session Efficiency",
+        text: `Average session time: ${avgTrainingTime} minutes`,
+        value: avgTrainingTime,
+        config: colorConfig.sessionEfficiency,
+        historicalData: historicalWeeks.map((week) => ({
+          date: week.date,
+          value: week.avgTime,
+          label: `Week ${week.week}: ${week.avgTime}m`,
+        })),
+        recommendations: [
+          ...(avgTrainingTime > 45
+            ? [
+                "Consider time management strategies",
+                "Review session complexity",
+              ]
+            : []),
+          ...(avgTrainingTime < 20
+            ? [
+                "Ensure adequate depth in training",
+                "Consider more complex scenarios",
+              ]
+            : []),
+          ...(avgTrainingTime >= 20 && avgTrainingTime <= 45
+            ? ["Optimal session duration", "Maintain current pacing"]
+            : []),
+        ],
+        trend:
+          historicalWeeks.length > 1
+            ? (historicalWeeks[historicalWeeks.length - 1]?.avgTime || 0) -
+              (historicalWeeks[historicalWeeks.length - 2]?.avgTime || 0)
+            : 0,
+        status:
+          avgTrainingTime > 45
+            ? "declining"
+            : avgTrainingTime < 30
+              ? "improving"
+              : "stable",
+      },
+      {
+        key: "successRate",
+        icon: Award,
+        title: "Success Rate",
+        text: `${passRate}% of sessions meet passing criteria`,
+        value: passRate,
+        config: colorConfig.successRate,
+        historicalData: historicalWeeks.map((week) => ({
+          date: week.date,
+          value: week.passRate,
+          label: `Week ${week.week}: ${week.passRate}%`,
+        })),
+        recommendations: [
+          ...(passRate < 70
+            ? ["Review failing scenarios", "Provide additional support"]
+            : []),
+          ...(passRate >= 70 && passRate < 85
+            ? ["Identify improvement opportunities", "Focus on consistency"]
+            : []),
+          ...(passRate >= 85
+            ? ["Excellent performance", "Consider advanced challenges"]
+            : []),
+        ],
+        trend:
+          historicalWeeks.length > 1
+            ? (historicalWeeks[historicalWeeks.length - 1]?.passRate || 0) -
+              (historicalWeeks[historicalWeeks.length - 2]?.passRate || 0)
+            : 0,
+        status:
+          passRate >= 85 ? "improving" : passRate < 70 ? "declining" : "stable",
+      },
+      {
+        key: "overallPerformance",
+        icon: MessageSquare,
+        title: "Overall Performance",
+        text: `Average score across all sessions: ${avgOverallScore}%`,
+        value: avgOverallScore,
+        config: colorConfig.overallPerformance,
+        historicalData: historicalWeeks.map((week) => ({
+          date: week.date,
+          value: week.avgScore,
+          label: `Week ${week.week}: ${week.avgScore}%`,
+        })),
+        recommendations: [
+          ...(avgOverallScore < 70
+            ? ["Focus on foundational skills", "Increase practice frequency"]
+            : []),
+          ...(avgOverallScore >= 70 && avgOverallScore < 85
+            ? ["Target specific weak areas", "Maintain consistent training"]
+            : []),
+          ...(avgOverallScore >= 85
+            ? ["Outstanding performance", "Ready for advanced scenarios"]
+            : []),
+        ],
+        trend:
+          historicalWeeks.length > 1
+            ? (historicalWeeks[historicalWeeks.length - 1]?.avgScore || 0) -
+              (historicalWeeks[historicalWeeks.length - 2]?.avgScore || 0)
+            : 0,
+        status:
+          avgOverallScore >= 85
+            ? "improving"
+            : avgOverallScore < 70
+              ? "declining"
+              : "stable",
+      },
+    ];
+
     return {
       weeklyTrend,
       avgTrainingTime,
       passRate,
       avgOverallScore,
+      insightItems,
+      historicalWeeks,
     };
-  }, [grades, profiles, chats, attempts, simulations, rubrics]);
+  }, [grades, profiles, chats, attempts, simulations, rubrics, colorConfig]);
 
   if (!insights) {
     return (
@@ -451,41 +698,7 @@ export default function TrainingInsights({
   }
 
   // Create insights array and limit by maxItems
-  const insightItems = [
-    {
-      key: "weeklyTrend",
-      icon: TrendingUp,
-      title: "Weekly Trend",
-      text:
-        insights.weeklyTrend > 0
-          ? `Scores improved by ${insights.weeklyTrend}% this week`
-          : insights.weeklyTrend < 0
-            ? `Scores decreased by ${Math.abs(insights.weeklyTrend)}% this week`
-            : "Scores remained stable this week",
-      config: colorConfig.weeklyTrend,
-    },
-    {
-      key: "sessionEfficiency",
-      icon: Clock,
-      title: "Session Efficiency",
-      text: `Average session time: ${insights.avgTrainingTime} minutes`,
-      config: colorConfig.sessionEfficiency,
-    },
-    {
-      key: "successRate",
-      icon: Award,
-      title: "Success Rate",
-      text: `${insights.passRate}% of sessions meet passing criteria`,
-      config: colorConfig.successRate,
-    },
-    {
-      key: "overallPerformance",
-      icon: MessageSquare,
-      title: "Overall Performance",
-      text: `Average score across all sessions: ${insights.avgOverallScore}%`,
-      config: colorConfig.overallPerformance,
-    },
-  ].slice(0, maxItems);
+  const insightItems = insights?.insightItems?.slice(0, maxItems) || [];
 
   return (
     <Card className={cn("w-full h-full flex flex-col", className)}>
@@ -499,22 +712,205 @@ export default function TrainingInsights({
       <CardContent className="flex-1 overflow-y-auto">
         <div className="space-y-3">
           {insightItems.map((item) => (
-            <div
-              key={item.key}
-              className={`p-3 ${item.config.bg} border ${item.config.border} rounded-lg`}
-            >
-              <div className="flex items-start gap-2">
-                <item.icon className={`h-4 w-4 ${item.config.icon} mt-0.5`} />
-                <div>
-                  <div className={`text-sm font-medium ${item.config.title}`}>
-                    {item.title}
-                  </div>
-                  <div className={`text-xs ${item.config.text} mt-1`}>
-                    {item.text}
+            <Dialog key={item.key}>
+              <DialogTrigger asChild>
+                <div
+                  className={`p-3 ${item.config.bg} border ${item.config.border} rounded-lg cursor-pointer hover:opacity-90 transition-opacity`}
+                >
+                  <div className="flex items-start gap-2">
+                    <item.icon
+                      className={`h-4 w-4 ${item.config.icon} mt-0.5`}
+                    />
+                    <div className="flex-1">
+                      <div
+                        className={`text-sm font-medium ${item.config.title} flex items-center gap-2`}
+                      >
+                        {item.title}
+                        <Info className="h-3 w-3 text-muted-foreground" />
+                      </div>
+                      <div className={`text-xs ${item.config.text} mt-1`}>
+                        {item.text}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <item.icon className={`h-5 w-5 ${item.config.icon}`} />
+                    {item.title} Analysis
+                  </DialogTitle>
+                  <DialogDescription>
+                    Detailed insights and recommendations for{" "}
+                    {item.title.toLowerCase()}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-6">
+                  {/* Current Status */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-muted rounded-lg">
+                      <div className="text-3xl font-bold text-primary">
+                        {item.value}
+                        {item.key === "weeklyTrend"
+                          ? "%"
+                          : item.key === "sessionEfficiency"
+                            ? "m"
+                            : "%"}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Current Value
+                      </div>
+                    </div>
+                    <div className="text-center p-4 bg-muted rounded-lg">
+                      <div
+                        className={`text-3xl font-bold ${item.trend >= 0 ? "text-green-600" : "text-red-600"}`}
+                      >
+                        {item.trend >= 0 ? "+" : ""}
+                        {item.trend}
+                        {item.key === "sessionEfficiency" ? "m" : "%"}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Weekly Change
+                      </div>
+                    </div>
+                    <div className="text-center p-4 bg-muted rounded-lg">
+                      <Badge
+                        variant={
+                          item.status === "improving"
+                            ? "default"
+                            : item.status === "declining"
+                              ? "destructive"
+                              : "secondary"
+                        }
+                        className="text-sm"
+                      >
+                        {item.status === "improving"
+                          ? "Improving"
+                          : item.status === "declining"
+                            ? "Declining"
+                            : "Stable"}
+                      </Badge>
+                      <div className="text-sm text-muted-foreground mt-2">
+                        Status
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Historical Trend */}
+                  <div>
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4" />
+                      8-Week Historical Trend
+                    </h4>
+                    <div className="space-y-2">
+                      {item.historicalData.map((dataPoint, index) => (
+                        <div key={index} className="flex items-center gap-3">
+                          <div className="w-16 text-sm text-muted-foreground">
+                            {dataPoint.date}
+                          </div>
+                          <div className="flex-1">
+                            <Progress
+                              value={
+                                item.key === "sessionEfficiency"
+                                  ? Math.min((dataPoint.value / 60) * 100, 100)
+                                  : dataPoint.value
+                              }
+                              className="h-2"
+                            />
+                          </div>
+                          <div className="w-16 text-sm text-right">
+                            {dataPoint.value}
+                            {item.key === "sessionEfficiency" ? "m" : "%"}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Key Insights */}
+                  <div>
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <Target className="h-4 w-4" />
+                      Key Insights
+                    </h4>
+                    <div className="text-sm text-muted-foreground space-y-2">
+                      <div className="p-3 bg-muted rounded-lg">
+                        <strong>Performance Pattern:</strong> {item.text}
+                      </div>
+                      <div className="p-3 bg-muted rounded-lg">
+                        <strong>Trend Analysis:</strong>{" "}
+                        {item.trend > 0
+                          ? "Positive"
+                          : item.trend < 0
+                            ? "Negative"
+                            : "Neutral"}{" "}
+                        trend over the past week
+                      </div>
+                      <div className="p-3 bg-muted rounded-lg">
+                        <strong>Historical Context:</strong> Based on{" "}
+                        {item.historicalData.length} weeks of data
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Recommendations */}
+                  <div>
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4" />
+                      Recommendations
+                    </h4>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      {item.recommendations.length > 0 ? (
+                        item.recommendations.map((rec, index) => (
+                          <p key={index}>• {rec}</p>
+                        ))
+                      ) : (
+                        <p>
+                          • Continue current approach - performance is within
+                          expected range
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Action Items */}
+                  <div>
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Suggested Actions
+                    </h4>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      {item.status === "declining" && (
+                        <>
+                          <p>• Schedule review meeting with training team</p>
+                          <p>• Analyze recent session data for patterns</p>
+                          <p>• Consider adjusting training methodology</p>
+                        </>
+                      )}
+                      {item.status === "improving" && (
+                        <>
+                          <p>• Document successful practices for replication</p>
+                          <p>• Consider expanding current training approach</p>
+                          <p>• Prepare for next level challenges</p>
+                        </>
+                      )}
+                      {item.status === "stable" && (
+                        <>
+                          <p>• Monitor for consistency over time</p>
+                          <p>• Look for optimization opportunities</p>
+                          <p>• Maintain current training standards</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           ))}
         </div>
       </CardContent>

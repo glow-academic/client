@@ -7,6 +7,7 @@
  */
 "use client";
 
+import { Button } from "@/components/ui/button";
 import registry from "@/lib/registry";
 import { logError } from "@/utils/logger";
 import { getAllComponents } from "@/utils/queries/components/get-all-components";
@@ -17,6 +18,7 @@ import { getAllSimulationAttempts } from "@/utils/queries/simulation_attempts/ge
 import { getAllSimulationChatGrades } from "@/utils/queries/simulation_chat_grades/get-all-simulation-chat-grades";
 import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-simulation-chats";
 import { useQuery } from "@tanstack/react-query";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -45,6 +47,12 @@ export default function Dashboard() {
   const [leftFooterCarouselIndex, setLeftFooterCarouselIndex] = useState(0);
   const [rightFooterCarouselIndex, setRightFooterCarouselIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+
+  // Hover states for arrow visibility
+  const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
+  const [isSecondaryHovered, setIsSecondaryHovered] = useState(false);
+  const [isLeftFooterHovered, setIsLeftFooterHovered] = useState(false);
+  const [isRightFooterHovered, setIsRightFooterHovered] = useState(false);
 
   // Data queries
   const { data: userProfile } = useQuery({
@@ -271,6 +279,51 @@ export default function Dashboard() {
     dashboardConfig?.footerComponentIds?.length,
   ]);
 
+  // Navigation functions
+  const navigatePrimary = (direction: "prev" | "next") => {
+    const length = dashboardConfig?.primaryComponentIds?.length || 1;
+    if (direction === "prev") {
+      setPrimaryCarouselIndex((prev) => (prev - 1 + length) % length);
+    } else {
+      setPrimaryCarouselIndex((prev) => (prev + 1) % length);
+    }
+  };
+
+  const navigateSecondary = (direction: "prev" | "next") => {
+    const length = dashboardConfig?.secondaryComponentIds?.length || 1;
+    if (direction === "prev") {
+      setSecondaryCarouselIndex((prev) => (prev - 1 + length) % length);
+    } else {
+      setSecondaryCarouselIndex((prev) => (prev + 1) % length);
+    }
+  };
+
+  const navigateLeftFooter = (direction: "prev" | "next") => {
+    const leftFooterComponents =
+      dashboardConfig?.footerComponentIds?.filter(
+        (_, index) => index % 2 === 0
+      ) || [];
+    const length = leftFooterComponents.length || 1;
+    if (direction === "prev") {
+      setLeftFooterCarouselIndex((prev) => (prev - 1 + length) % length);
+    } else {
+      setLeftFooterCarouselIndex((prev) => (prev + 1) % length);
+    }
+  };
+
+  const navigateRightFooter = (direction: "prev" | "next") => {
+    const rightFooterComponents =
+      dashboardConfig?.footerComponentIds?.filter(
+        (_, index) => index % 2 === 1
+      ) || [];
+    const length = rightFooterComponents.length || 1;
+    if (direction === "prev") {
+      setRightFooterCarouselIndex((prev) => (prev - 1 + length) % length);
+    } else {
+      setRightFooterCarouselIndex((prev) => (prev + 1) % length);
+    }
+  };
+
   // Loading state
   if (
     isLoadingComponents ||
@@ -365,9 +418,15 @@ export default function Dashboard() {
           {primaryComponentIds.length > 0 && (
             <div className="flex flex-col space-y-4">
               <div
-                className="relative flex-1"
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
+                className="relative flex-1 group"
+                onMouseEnter={() => {
+                  setIsHovered(true);
+                  setIsPrimaryHovered(true);
+                }}
+                onMouseLeave={() => {
+                  setIsHovered(false);
+                  setIsPrimaryHovered(false);
+                }}
               >
                 {primaryComponentIds.length > 0 &&
                   renderComponent(
@@ -376,6 +435,32 @@ export default function Dashboard() {
                     ]!,
                     `primary-${primaryCarouselIndex}`
                   )}
+
+                {/* Primary Navigation Arrows */}
+                {primaryComponentIds.length > 1 && (
+                  <>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
+                        isPrimaryHovered ? "opacity-100" : "opacity-0"
+                      } hover:opacity-100`}
+                      onClick={() => navigatePrimary("prev")}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className={`absolute right-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
+                        isPrimaryHovered ? "opacity-100" : "opacity-0"
+                      } hover:opacity-100`}
+                      onClick={() => navigatePrimary("next")}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
               </div>
 
               {/* Primary carousel indicators */}
@@ -401,7 +486,11 @@ export default function Dashboard() {
           {/* Secondary Section */}
           {secondaryComponentIds.length > 0 && (
             <div className="flex flex-col space-y-4">
-              <div className="flex-1">
+              <div
+                className="relative flex-1 group"
+                onMouseEnter={() => setIsSecondaryHovered(true)}
+                onMouseLeave={() => setIsSecondaryHovered(false)}
+              >
                 {secondaryComponentIds.length > 0 &&
                   renderComponent(
                     secondaryComponentIds[
@@ -409,6 +498,32 @@ export default function Dashboard() {
                     ]!,
                     `secondary-${secondaryCarouselIndex}`
                   )}
+
+                {/* Secondary Navigation Arrows */}
+                {secondaryComponentIds.length > 1 && (
+                  <>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
+                        isSecondaryHovered ? "opacity-100" : "opacity-0"
+                      } hover:opacity-100`}
+                      onClick={() => navigateSecondary("prev")}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className={`absolute right-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
+                        isSecondaryHovered ? "opacity-100" : "opacity-0"
+                      } hover:opacity-100`}
+                      onClick={() => navigateSecondary("next")}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
               </div>
 
               {/* Secondary carousel indicators */}
@@ -453,13 +568,46 @@ export default function Dashboard() {
                 {/* Left Footer Section */}
                 {leftFooterComponents.length > 0 && (
                   <div className="space-y-4">
-                    {leftFooterComponents.length > 0 &&
-                      renderComponent(
-                        leftFooterComponents[
-                          leftFooterCarouselIndex % leftFooterComponents.length
-                        ]!,
-                        `left-footer-${leftFooterCarouselIndex}`
+                    <div
+                      className="relative group"
+                      onMouseEnter={() => setIsLeftFooterHovered(true)}
+                      onMouseLeave={() => setIsLeftFooterHovered(false)}
+                    >
+                      {leftFooterComponents.length > 0 &&
+                        renderComponent(
+                          leftFooterComponents[
+                            leftFooterCarouselIndex %
+                              leftFooterComponents.length
+                          ]!,
+                          `left-footer-${leftFooterCarouselIndex}`
+                        )}
+
+                      {/* Left Footer Navigation Arrows */}
+                      {leftFooterComponents.length > 1 && (
+                        <>
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
+                              isLeftFooterHovered ? "opacity-100" : "opacity-0"
+                            } hover:opacity-100`}
+                            onClick={() => navigateLeftFooter("prev")}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className={`absolute right-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
+                              isLeftFooterHovered ? "opacity-100" : "opacity-0"
+                            } hover:opacity-100`}
+                            onClick={() => navigateLeftFooter("next")}
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </>
                       )}
+                    </div>
 
                     {/* Left footer carousel indicators */}
                     {showIndicators && leftFooterComponents.length > 1 && (
@@ -485,14 +633,46 @@ export default function Dashboard() {
                 {/* Right Footer Section */}
                 {rightFooterComponents.length > 0 && (
                   <div className="space-y-4">
-                    {rightFooterComponents.length > 0 &&
-                      renderComponent(
-                        rightFooterComponents[
-                          rightFooterCarouselIndex %
-                            rightFooterComponents.length
-                        ]!,
-                        `right-footer-${rightFooterCarouselIndex}`
+                    <div
+                      className="relative group"
+                      onMouseEnter={() => setIsRightFooterHovered(true)}
+                      onMouseLeave={() => setIsRightFooterHovered(false)}
+                    >
+                      {rightFooterComponents.length > 0 &&
+                        renderComponent(
+                          rightFooterComponents[
+                            rightFooterCarouselIndex %
+                              rightFooterComponents.length
+                          ]!,
+                          `right-footer-${rightFooterCarouselIndex}`
+                        )}
+
+                      {/* Right Footer Navigation Arrows */}
+                      {rightFooterComponents.length > 1 && (
+                        <>
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
+                              isRightFooterHovered ? "opacity-100" : "opacity-0"
+                            } hover:opacity-100`}
+                            onClick={() => navigateRightFooter("prev")}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className={`absolute right-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
+                              isRightFooterHovered ? "opacity-100" : "opacity-0"
+                            } hover:opacity-100`}
+                            onClick={() => navigateRightFooter("next")}
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </>
                       )}
+                    </div>
 
                     {/* Right footer carousel indicators */}
                     {showIndicators && rightFooterComponents.length > 1 && (

@@ -14,6 +14,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { getAgentConfig } from "@/utils/agents";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
@@ -26,12 +36,13 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { isAfter, subDays } from "date-fns";
-import { Users } from "lucide-react";
+import { Clock, Info, Target, TrendingUp, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -94,6 +105,7 @@ export default function PerformanceByPersonality({
 }: PerformanceByPersonalityProps) {
   const [personalityTimeRange, setPersonalityTimeRange] =
     useState<TimeRange>(defaultTimeRange);
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const colorConfig = COLOR_CONFIGS[color];
 
   // Fetch data
@@ -143,7 +155,7 @@ export default function PerformanceByPersonality({
     queryFn: () => getAllRubrics(),
   });
 
-  // Calculate performance by personality
+  // Calculate performance by personality with detailed metrics
   const performanceData = useMemo(() => {
     if (
       !agents ||
@@ -192,30 +204,95 @@ export default function PerformanceByPersonality({
           agentChats.some((chat) => chat.id === grade.simulationChatId)
         );
 
-        // Calculate average score using rubric points
+        // Calculate detailed metrics
+        const scoreDistribution = agentGrades.map((grade) => {
+          const chat = chats.find((c) => c.id === grade.simulationChatId);
+          const attempt = attempts.find((a) => a.id === chat?.attemptId);
+          const simulation = simulations.find(
+            (s) => s.id === attempt?.simulationId
+          );
+          const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
+          const rubricTotalPoints = rubric?.points || 100;
+          const scorePercent = Math.round(
+            (grade.score / rubricTotalPoints) * 100
+          );
+          return {
+            score: scorePercent,
+            timeTaken: Math.round(grade.timeTaken / 60), // Convert to minutes
+            passed: grade.passed,
+            createdAt: grade.createdAt,
+          };
+        });
+
+        // Calculate average score
         let avgScore = 0;
         if (agentGrades.length > 0) {
-          const scoreSum = agentGrades.reduce((sum, grade) => {
-            const chat = chats.find((c) => c.id === grade.simulationChatId);
-            const attempt = attempts.find((a) => a.id === chat?.attemptId);
-            const simulation = simulations.find(
-              (s) => s.id === attempt?.simulationId
-            );
-            const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
-            const rubricTotalPoints = rubric?.points || 100;
-            const scorePercent = Math.round(
-              (grade.score / rubricTotalPoints) * 100
-            );
-            return sum + scorePercent;
-          }, 0);
+          const scoreSum = scoreDistribution.reduce(
+            (sum, item) => sum + item.score,
+            0
+          );
           avgScore = Math.round(scoreSum / agentGrades.length);
         }
+
+        // Calculate average time
+        const avgTime =
+          scoreDistribution.length > 0
+            ? Math.round(
+                scoreDistribution.reduce(
+                  (sum, item) => sum + item.timeTaken,
+                  0
+                ) / scoreDistribution.length
+              )
+            : 0;
+
+        // Calculate pass rate
+        const passRate =
+          scoreDistribution.length > 0
+            ? Math.round(
+                (scoreDistribution.filter((item) => item.passed).length /
+                  scoreDistribution.length) *
+                  100
+              )
+            : 0;
+
+        // Calculate trend (last 7 days vs previous 7 days)
+        const last7Days = scoreDistribution.filter((item) =>
+          isAfter(new Date(item.createdAt), subDays(new Date(), 7))
+        );
+        const previous7Days = scoreDistribution.filter((item) => {
+          const itemDate = new Date(item.createdAt);
+          return (
+            itemDate >= subDays(new Date(), 14) &&
+            itemDate < subDays(new Date(), 7)
+          );
+        });
+
+        const recentAvg =
+          last7Days.length > 0
+            ? Math.round(
+                last7Days.reduce((sum, item) => sum + item.score, 0) /
+                  last7Days.length
+              )
+            : avgScore;
+        const previousAvg =
+          previous7Days.length > 0
+            ? Math.round(
+                previous7Days.reduce((sum, item) => sum + item.score, 0) /
+                  previous7Days.length
+              )
+            : avgScore;
+        const trend = recentAvg - previousAvg;
 
         return {
           name: agent.name,
           score: avgScore,
           sessions: agentChats.length,
           color: getAgentConfig(agent.name).colors.bgColor,
+          scoreDistribution,
+          avgTime,
+          passRate,
+          trend,
+          recentSessions: last7Days.length,
         };
       })
       .filter((agent) => agent.sessions > 0) // Only show agents with sessions
@@ -242,6 +319,14 @@ export default function PerformanceByPersonality({
     { value: "60d" as const, label: "60 days", group: "monthly" },
     { value: "90d" as const, label: "90 days", group: "monthly" },
   ];
+
+  const handleBarClick = (agentName: string) => {
+    setSelectedAgent(agentName);
+  };
+
+  const selectedAgentData = performanceData.find(
+    (agent) => agent.name === selectedAgent
+  );
 
   if (!performanceData.length) {
     return (
@@ -342,45 +427,265 @@ export default function PerformanceByPersonality({
                   fill={colorConfig.primary}
                   radius={[0, 4, 4, 0]}
                   name="Average Score"
-                />
+                  className="cursor-pointer"
+                  onClick={(data) => handleBarClick(data.name)}
+                >
+                  {performanceData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      className="hover:opacity-80 transition-opacity"
+                    />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
 
           <div className="space-y-4 overflow-y-auto">
             {performanceData.map((type) => (
-              <div
-                key={type.name}
-                className="flex items-center justify-between p-4 rounded-lg border"
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-4 h-4 rounded-full ${type.color}`}></div>
-                  <div>
-                    <p className="font-medium">{type.name} Student</p>
-                    <p className="text-sm text-muted-foreground">
-                      {type.sessions} sessions
-                    </p>
+              <Dialog key={type.name}>
+                <DialogTrigger asChild>
+                  <div className="flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-4 h-4 rounded-full ${type.color}`}
+                      ></div>
+                      <div>
+                        <p className="font-medium">{type.name} Student</p>
+                        <p className="text-sm text-muted-foreground">
+                          {type.sessions} sessions
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right flex items-center gap-2">
+                      <div>
+                        <p className="text-lg font-bold">{type.score}%</p>
+                        <Badge
+                          variant={
+                            type.score >= 80
+                              ? "default"
+                              : type.score >= 70
+                                ? "secondary"
+                                : "destructive"
+                          }
+                        >
+                          {type.score >= 80
+                            ? "Excellent"
+                            : type.score >= 70
+                              ? "Good"
+                              : "Needs Work"}
+                        </Badge>
+                      </div>
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold">{type.score}%</p>
-                  <Badge
-                    variant={
-                      type.score >= 80
-                        ? "default"
-                        : type.score >= 70
-                          ? "secondary"
-                          : "destructive"
-                    }
-                  >
-                    {type.score >= 80
-                      ? "Excellent"
-                      : type.score >= 70
-                        ? "Good"
-                        : "Needs Work"}
-                  </Badge>
-                </div>
-              </div>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <div
+                        className={`w-4 h-4 rounded-full ${type.color}`}
+                      ></div>
+                      {type.name} Student Performance
+                    </DialogTitle>
+                    <DialogDescription>
+                      Detailed performance analysis for {type.name} student
+                      interactions
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-6">
+                    {/* Key Metrics */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center p-3 bg-muted rounded-lg">
+                        <div className="text-2xl font-bold text-primary">
+                          {type.score}%
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Avg Score
+                        </div>
+                      </div>
+                      <div className="text-center p-3 bg-muted rounded-lg">
+                        <div className="text-2xl font-bold text-primary">
+                          {type.avgTime}m
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Avg Time
+                        </div>
+                      </div>
+                      <div className="text-center p-3 bg-muted rounded-lg">
+                        <div className="text-2xl font-bold text-primary">
+                          {type.passRate}%
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Pass Rate
+                        </div>
+                      </div>
+                      <div className="text-center p-3 bg-muted rounded-lg">
+                        <div
+                          className={`text-2xl font-bold ${type.trend >= 0 ? "text-green-600" : "text-red-600"}`}
+                        >
+                          {type.trend >= 0 ? "+" : ""}
+                          {type.trend}%
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          7-day Trend
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Performance Distribution */}
+                    <div>
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <Target className="h-4 w-4" />
+                        Score Distribution
+                      </h4>
+                      <div className="space-y-2">
+                        {[
+                          {
+                            range: "90-100%",
+                            count: type.scoreDistribution.filter(
+                              (s) => s.score >= 90
+                            ).length,
+                            color: "bg-green-500",
+                          },
+                          {
+                            range: "80-89%",
+                            count: type.scoreDistribution.filter(
+                              (s) => s.score >= 80 && s.score < 90
+                            ).length,
+                            color: "bg-blue-500",
+                          },
+                          {
+                            range: "70-79%",
+                            count: type.scoreDistribution.filter(
+                              (s) => s.score >= 70 && s.score < 80
+                            ).length,
+                            color: "bg-yellow-500",
+                          },
+                          {
+                            range: "60-69%",
+                            count: type.scoreDistribution.filter(
+                              (s) => s.score >= 60 && s.score < 70
+                            ).length,
+                            color: "bg-orange-500",
+                          },
+                          {
+                            range: "Below 60%",
+                            count: type.scoreDistribution.filter(
+                              (s) => s.score < 60
+                            ).length,
+                            color: "bg-red-500",
+                          },
+                        ].map((item) => (
+                          <div
+                            key={item.range}
+                            className="flex items-center gap-3"
+                          >
+                            <div className="w-16 text-sm text-muted-foreground">
+                              {item.range}
+                            </div>
+                            <div className="flex-1">
+                              <Progress
+                                value={
+                                  type.scoreDistribution.length > 0
+                                    ? (item.count /
+                                        type.scoreDistribution.length) *
+                                      100
+                                    : 0
+                                }
+                                className="h-2"
+                              />
+                            </div>
+                            <div className="w-8 text-sm text-right">
+                              {item.count}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Recent Activity */}
+                    <div>
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        Recent Activity
+                      </h4>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <p>
+                          • {type.recentSessions} sessions in the last 7 days
+                        </p>
+                        <p>
+                          •{" "}
+                          {
+                            type.scoreDistribution.filter((s) => s.passed)
+                              .length
+                          }{" "}
+                          out of {type.scoreDistribution.length} sessions passed
+                        </p>
+                        <p>
+                          • Average session duration: {type.avgTime} minutes
+                        </p>
+                        {type.trend !== 0 && (
+                          <p
+                            className={
+                              type.trend >= 0
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }
+                          >
+                            • Performance{" "}
+                            {type.trend >= 0 ? "improved" : "declined"} by{" "}
+                            {Math.abs(type.trend)}% this week
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Recommendations */}
+                    <div>
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4" />
+                        Recommendations
+                      </h4>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        {type.score < 70 && (
+                          <p>
+                            • Focus on additional training scenarios for{" "}
+                            {type.name} students
+                          </p>
+                        )}
+                        {type.avgTime > 30 && (
+                          <p>
+                            • Consider time management strategies for{" "}
+                            {type.name} interactions
+                          </p>
+                        )}
+                        {type.passRate < 80 && (
+                          <p>
+                            • Review common failure patterns in {type.name}{" "}
+                            scenarios
+                          </p>
+                        )}
+                        {type.trend < 0 && (
+                          <p>
+                            • Recent performance decline - consider refresher
+                            training
+                          </p>
+                        )}
+                        {type.score >= 80 && type.trend >= 0 && (
+                          <p>
+                            • Excellent performance! Consider advanced scenarios
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             ))}
           </div>
         </div>

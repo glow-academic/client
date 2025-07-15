@@ -6,6 +6,7 @@
  */
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -13,7 +14,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
@@ -23,7 +33,7 @@ import { getAllSimulationChatGrades } from "@/utils/queries/simulation_chat_grad
 import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-simulation-chats";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Clock, Info, Target, TrendingUp, Users } from "lucide-react";
 import { useMemo } from "react";
 
 type ColorTheme =
@@ -36,6 +46,40 @@ type ColorTheme =
   | "emerald"
   | "indigo";
 type Layout = "vertical" | "horizontal";
+
+interface StudentData {
+  id: string;
+  name: string;
+  scores: number[];
+  avgScore: number;
+  sessions: number;
+}
+
+interface ScoreDistribution {
+  score: number;
+  studentName: string;
+  timeTaken: number;
+  passed: boolean;
+  createdAt: string;
+}
+
+interface RecentActivity {
+  studentName: string;
+  score: number;
+  date: string;
+}
+
+interface ClassMetric {
+  classCode: string;
+  className: string;
+  avgScore: number;
+  totalGrades: number;
+  students: StudentData[];
+  scoreDistribution: ScoreDistribution[];
+  recentActivity: RecentActivity[];
+  passRate: number;
+  avgTime: number;
+}
 
 export interface ClassPerformanceProps {
   className?: string;
@@ -124,8 +168,8 @@ export default function ClassPerformance({
     queryFn: getAllRubrics,
   });
 
-  // Calculate class performance metrics
-  const classMetrics = useMemo(() => {
+  // Calculate class performance metrics with detailed data
+  const classMetrics = useMemo((): ClassMetric[] => {
     if (
       !classes ||
       !profiles ||
@@ -138,13 +182,18 @@ export default function ClassPerformance({
       return [];
 
     // Create a map of class ID to class data
-    const classMap = new Map();
+    const classMap = new Map<string, any>();
     classes.forEach((cls) => {
       classMap.set(cls.id, {
         ...cls,
         totalScore: 0,
         totalGrades: 0,
         avgScore: 0,
+        students: [] as StudentData[],
+        scoreDistribution: [] as ScoreDistribution[],
+        recentActivity: [] as RecentActivity[],
+        passRate: 0,
+        avgTime: 0,
       });
     });
 
@@ -184,16 +233,93 @@ export default function ClassPerformance({
       classData.avgScore = Math.round(
         classData.totalScore / classData.totalGrades
       );
+
+      // Add to score distribution
+      classData.scoreDistribution.push({
+        score: scorePercent,
+        studentName: profile.firstName + " " + profile.lastName,
+        timeTaken: Math.round(grade.timeTaken / 60), // Convert to minutes
+        passed: grade.passed,
+        createdAt: grade.createdAt,
+      });
+
+      // Add unique students
+      const existingStudent = classData.students.find(
+        (s: StudentData) => s.id === profile.id
+      );
+      if (!existingStudent) {
+        classData.students.push({
+          id: profile.id,
+          name: profile.firstName + " " + profile.lastName,
+          scores: [scorePercent],
+          avgScore: scorePercent,
+          sessions: 1,
+        });
+      } else {
+        existingStudent.scores.push(scorePercent);
+        existingStudent.avgScore = Math.round(
+          existingStudent.scores.reduce(
+            (sum: number, score: number) => sum + score,
+            0
+          ) / existingStudent.scores.length
+        );
+        existingStudent.sessions += 1;
+      }
+
+      // Add to recent activity (last 7 days)
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      if (new Date(grade.createdAt) > weekAgo) {
+        classData.recentActivity.push({
+          studentName: profile.firstName + " " + profile.lastName,
+          score: scorePercent,
+          date: grade.createdAt,
+        });
+      }
+    });
+
+    // Calculate additional metrics for each class
+    Array.from(classMap.values()).forEach((classData: any) => {
+      if (classData.scoreDistribution.length > 0) {
+        // Calculate pass rate
+        classData.passRate = Math.round(
+          (classData.scoreDistribution.filter((s: any) => s.passed).length /
+            classData.scoreDistribution.length) *
+            100
+        );
+
+        // Calculate average time
+        classData.avgTime = Math.round(
+          classData.scoreDistribution.reduce(
+            (sum: number, item: any) => sum + item.timeTaken,
+            0
+          ) / classData.scoreDistribution.length
+        );
+
+        // Sort students by average score
+        classData.students.sort((a: any, b: any) => b.avgScore - a.avgScore);
+
+        // Sort recent activity by date
+        classData.recentActivity.sort(
+          (a: any, b: any) =>
+            new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+      }
     });
 
     // Convert to array and filter out classes with no data
     return Array.from(classMap.values())
-      .filter((cls) => cls.totalGrades > 0)
-      .map((cls) => ({
+      .filter((cls: any) => cls.totalGrades > 0)
+      .map((cls: any) => ({
         classCode: cls.classCode || cls.name || "Unknown",
         className: cls.name || cls.classCode || "Unknown",
         avgScore: cls.avgScore,
         totalGrades: cls.totalGrades,
+        students: cls.students,
+        scoreDistribution: cls.scoreDistribution,
+        recentActivity: cls.recentActivity,
+        passRate: cls.passRate,
+        avgTime: cls.avgTime,
       }))
       .sort((a, b) => b.avgScore - a.avgScore)
       .slice(0, maxItems);
@@ -239,22 +365,287 @@ export default function ClassPerformance({
       <CardContent className="flex-1 overflow-y-auto">
         <div className="space-y-4">
           {classMetrics.map((classData) => (
-            <div key={classData.classCode} className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm">
-                    {classData.classCode}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    ({classData.totalGrades} sessions)
-                  </span>
+            <Dialog key={classData.classCode}>
+              <DialogTrigger asChild>
+                <div className="space-y-6 cursor-pointer hover:bg-muted/50 p-3 rounded-lg transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">
+                        {classData.classCode}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        ({classData.totalGrades} sessions)
+                      </span>
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <span
+                      className={`text-sm font-semibold ${colorConfig.accent}`}
+                    >
+                      {classData.avgScore}%
+                    </span>
+                  </div>
+                  <Progress value={classData.avgScore} className="h-2" />
                 </div>
-                <span className={`text-sm font-semibold ${colorConfig.accent}`}>
-                  {classData.avgScore}%
-                </span>
-              </div>
-              <Progress value={classData.avgScore} className="h-2" />
-            </div>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <BookOpen className="h-5 w-5" />
+                    {classData.className} Performance
+                  </DialogTitle>
+                  <DialogDescription>
+                    Detailed performance analysis for {classData.classCode}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-6">
+                  {/* Key Metrics */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-3 bg-muted rounded-lg">
+                      <div className="text-2xl font-bold text-primary">
+                        {classData.avgScore}%
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Class Average
+                      </div>
+                    </div>
+                    <div className="text-center p-3 bg-muted rounded-lg">
+                      <div className="text-2xl font-bold text-primary">
+                        {classData.students.length}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Students
+                      </div>
+                    </div>
+                    <div className="text-center p-3 bg-muted rounded-lg">
+                      <div className="text-2xl font-bold text-primary">
+                        {classData.passRate}%
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Pass Rate
+                      </div>
+                    </div>
+                    <div className="text-center p-3 bg-muted rounded-lg">
+                      <div className="text-2xl font-bold text-primary">
+                        {classData.avgTime}m
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Avg Time
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Score Distribution */}
+                  <div>
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <Target className="h-4 w-4" />
+                      Score Distribution
+                    </h4>
+                    <div className="space-y-2">
+                      {[
+                        {
+                          range: "90-100%",
+                          count: classData.scoreDistribution.filter(
+                            (s: any) => s.score >= 90
+                          ).length,
+                          color: "bg-green-500",
+                        },
+                        {
+                          range: "80-89%",
+                          count: classData.scoreDistribution.filter(
+                            (s: any) => s.score >= 80 && s.score < 90
+                          ).length,
+                          color: "bg-blue-500",
+                        },
+                        {
+                          range: "70-79%",
+                          count: classData.scoreDistribution.filter(
+                            (s: any) => s.score >= 70 && s.score < 80
+                          ).length,
+                          color: "bg-yellow-500",
+                        },
+                        {
+                          range: "60-69%",
+                          count: classData.scoreDistribution.filter(
+                            (s: any) => s.score >= 60 && s.score < 70
+                          ).length,
+                          color: "bg-orange-500",
+                        },
+                        {
+                          range: "Below 60%",
+                          count: classData.scoreDistribution.filter(
+                            (s: any) => s.score < 60
+                          ).length,
+                          color: "bg-red-500",
+                        },
+                      ].map((item) => (
+                        <div
+                          key={item.range}
+                          className="flex items-center gap-3"
+                        >
+                          <div className="w-16 text-sm text-muted-foreground">
+                            {item.range}
+                          </div>
+                          <div className="flex-1">
+                            <Progress
+                              value={
+                                classData.scoreDistribution.length > 0
+                                  ? (item.count /
+                                      classData.scoreDistribution.length) *
+                                    100
+                                  : 0
+                              }
+                              className="h-2"
+                            />
+                          </div>
+                          <div className="w-8 text-sm text-right">
+                            {item.count}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Student Performance */}
+                  <div>
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Student Performance
+                    </h4>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {classData.students.map((student: any) => (
+                        <div
+                          key={student.id}
+                          className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                        >
+                          <div>
+                            <div className="font-medium text-sm">
+                              {student.name}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {student.sessions} sessions
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-bold">
+                              {student.avgScore}%
+                            </div>
+                            <Badge
+                              variant={
+                                student.avgScore >= 80
+                                  ? "default"
+                                  : student.avgScore >= 70
+                                    ? "secondary"
+                                    : "destructive"
+                              }
+                              className="text-xs"
+                            >
+                              {student.avgScore >= 80
+                                ? "Excellent"
+                                : student.avgScore >= 70
+                                  ? "Good"
+                                  : "Needs Work"}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Recent Activity */}
+                  <div>
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Recent Activity (Last 7 Days)
+                    </h4>
+                    {classData.recentActivity.length > 0 ? (
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {classData.recentActivity
+                          .slice(0, 10)
+                          .map((activity: any, index: number) => (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between text-sm"
+                            >
+                              <span>{activity.studentName}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground">
+                                  {new Date(activity.date).toLocaleDateString()}
+                                </span>
+                                <Badge
+                                  variant={
+                                    activity.score >= 80
+                                      ? "default"
+                                      : activity.score >= 70
+                                        ? "secondary"
+                                        : "destructive"
+                                  }
+                                >
+                                  {activity.score}%
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        No recent activity
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Recommendations */}
+                  <div>
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4" />
+                      Recommendations
+                    </h4>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      {classData.avgScore < 70 && (
+                        <p>
+                          • Class average below 70% - consider additional
+                          support sessions
+                        </p>
+                      )}
+                      {classData.passRate < 80 && (
+                        <p>
+                          • Low pass rate - review common areas of difficulty
+                        </p>
+                      )}
+                      {classData.avgTime > 45 && (
+                        <p>
+                          • Sessions taking longer than average - consider time
+                          management training
+                        </p>
+                      )}
+                      {classData.students.filter((s: any) => s.avgScore < 60)
+                        .length > 0 && (
+                        <p>
+                          •{" "}
+                          {
+                            classData.students.filter(
+                              (s: any) => s.avgScore < 60
+                            ).length
+                          }{" "}
+                          students need additional support
+                        </p>
+                      )}
+                      {classData.avgScore >= 85 && classData.passRate >= 90 && (
+                        <p>
+                          • Excellent class performance! Consider advanced
+                          scenarios
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           ))}
         </div>
       </CardContent>
