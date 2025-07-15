@@ -75,6 +75,7 @@ class Cohorts(_Base, table=True):
     title: str = Field(sa_column=Column('title', Text))
     active: bool = Field(sa_column=Column('active', Boolean, default=True))
     profile_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('profile_ids', ARRAY(Uuid(as_uuid=True))))
+    default_cohort: bool = Field(sa_column=Column('default_cohort', Boolean, default=False))
     description: Optional[str] = Field(default=None, sa_column=Column('description', Text))
 
 
