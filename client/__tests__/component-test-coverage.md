@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 105
-- **Tests Created**: 4
+- **Total Components**: 107
+- **Tests Created**: 2
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 101
+- **Tests Skipped** (already implemented): 105
 
 ## Component Coverage
 
@@ -81,6 +81,8 @@
 | ClassEdit | create/classes/ClassEdit.tsx | ClassEdit.test.tsx | ✅ Implemented |
 | ClassStatus | create/classes/ClassStatus.tsx | ClassStatus.test.tsx | ✅ Implemented |
 | Classes | create/classes/Classes.tsx | Classes.test.tsx | ✅ Implemented |
+| ClassesDataTable | create/classes/ClassesDataTable.tsx | ClassesDataTable.test.tsx | ✅ Implemented |
+| ClassesDataTableToolbar | create/classes/ClassesDataTableToolbar.tsx | ClassesDataTableToolbar.test.tsx | ✅ Implemented |
 | NewClass | create/classes/NewClass.tsx | NewClass.test.tsx | ✅ Implemented |
 | CohortEdit | create/cohorts/CohortEdit.tsx | CohortEdit.test.tsx | ✅ Implemented |
 | Cohorts | create/cohorts/Cohorts.tsx | Cohorts.test.tsx | ✅ Implemented |
@@ -215,6 +217,8 @@ __tests__/
 │   │   ├── ClassEdit.test.tsx
 │   │   ├── ClassStatus.test.tsx
 │   │   ├── Classes.test.tsx
+│   │   ├── ClassesDataTable.test.tsx
+│   │   ├── ClassesDataTableToolbar.test.tsx
 │   │   ├── NewClass.test.tsx
 │   ├── cohorts/
 │   │   ├── CohortEdit.test.tsx

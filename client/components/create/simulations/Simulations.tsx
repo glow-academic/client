@@ -7,7 +7,7 @@
 "use client";
 import { logError, logInfo } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Edit, Plus, Sparkles, Timer, Trash2, Users } from "lucide-react";
+import { Copy, Edit, Timer, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -33,14 +33,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { useSimulationColumns } from "@/hooks/use-simulation-columns";
-import { Simulation } from "@/types";
+import { Cohort, Scenario, Simulation } from "@/types";
 import { SimulationsDataTable } from "./SimulationsDataTable";
 
 export function Simulations() {
@@ -53,6 +52,9 @@ export function Simulations() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
+  const [affectedCohorts, setAffectedCohorts] = useState<Cohort[]>([]);
+  const [affectedScenarios, setAffectedScenarios] = useState<Scenario[]>([]);
+  const [isLoadingImpact, setIsLoadingImpact] = useState(false);
 
   // Fetch all required data
   const { data: simulations = [], refetch: refetchSimulations } = useQuery({
@@ -135,16 +137,32 @@ export function Simulations() {
   };
 
   const handleDeleteClick = (id: string, name: string) => {
-    setDeleteItem({ id, name });
-    setShowDeleteDialog(true);
+    const simulationToDelete = simulations.find((s) => s.id === id);
+    if (simulationToDelete) {
+      setDeleteItem({ id, name });
+      setIsLoadingImpact(true);
+
+      // Calculate impact
+      const affectedCohortsList = cohorts.filter(
+        (cohort) =>
+          simulationToDelete.cohortIds &&
+          simulationToDelete.cohortIds.includes(cohort.id)
+      );
+      const affectedScenariosList = scenarios.filter(
+        (scenario) =>
+          simulationToDelete.scenarioIds &&
+          simulationToDelete.scenarioIds.includes(scenario.id)
+      );
+
+      setAffectedCohorts(affectedCohortsList);
+      setAffectedScenarios(affectedScenariosList);
+      setIsLoadingImpact(false);
+      setShowDeleteDialog(true);
+    }
   };
 
   const handleEdit = (id: string) => {
     router.push(`/create/simulations/s/${id}`);
-  };
-
-  const handleCreateNew = () => {
-    router.push("/create");
   };
 
   const handleDuplicate = async (simulation: Simulation) => {
@@ -215,35 +233,30 @@ export function Simulations() {
             <Badge variant={simulation.active ? "default" : "secondary"}>
               {simulation.active ? "Active" : "Inactive"}
             </Badge>
-            {simulation.defaultSimulation && (
-              <Badge variant="outline" className="text-xs">
-                Default
-              </Badge>
-            )}
           </div>
         </div>
       </CardHeader>
       <CardFooter className="flex justify-end gap-2">
+        {canDuplicate(simulation) && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDuplicate(simulation)}
+            disabled={isDuplicating === simulation.id}
+          >
+            {isDuplicating === simulation.id ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"
           onClick={() => handleEdit(simulation.id)}
         >
           <Edit className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleDuplicate(simulation)}
-          disabled={
-            !canDuplicate(simulation) || isDuplicating === simulation.id
-          }
-        >
-          {isDuplicating === simulation.id ? (
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          ) : (
-            <Copy className="h-4 w-4" />
-          )}
         </Button>
         <Button
           variant="outline"
@@ -255,26 +268,6 @@ export function Simulations() {
       </CardFooter>
     </Card>
   );
-
-  if (simulations.length === 0) {
-    return (
-      <div className="space-y-6">
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Sparkles className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">No simulations yet</h3>
-            <p className="text-muted-foreground text-center mb-4">
-              Create your first simulation using our interactive playground
-            </p>
-            <Button onClick={handleCreateNew}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Your First Simulation
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -292,18 +285,83 @@ export function Simulations() {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Simulation</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the simulation "{deleteItem?.name}".
-              This action cannot be undone.
+              {isLoadingImpact ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Loading impact analysis...
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p>
+                    Are you sure you want to delete the simulation "
+                    {deleteItem?.name}"? This action cannot be undone.
+                  </p>
+
+                  {(affectedCohorts.length > 0 ||
+                    affectedScenarios.length > 0) && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                      <div className="font-medium text-red-800 mb-2">
+                        ⚠️ Impact of deletion:
+                      </div>
+
+                      {affectedCohorts.length > 0 && (
+                        <div className="mb-2">
+                          <span className="font-medium text-red-700">
+                            {affectedCohorts.length} cohort
+                            {affectedCohorts.length !== 1 ? "s" : ""} will lose
+                            access to this simulation:
+                          </span>
+                          <ul className="mt-1 list-disc list-inside text-sm text-red-600">
+                            {affectedCohorts.slice(0, 3).map((cohort) => (
+                              <li key={cohort.id}>
+                                {cohort.title} ({cohort.profileIds?.length || 0}{" "}
+                                members)
+                              </li>
+                            ))}
+                            {affectedCohorts.length > 3 && (
+                              <li>...and {affectedCohorts.length - 3} more</li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+
+                      {affectedScenarios.length > 0 && (
+                        <div>
+                          <span className="font-medium text-red-700">
+                            {affectedScenarios.length} scenario
+                            {affectedScenarios.length !== 1 ? "s" : ""} are used
+                            in this simulation:
+                          </span>
+                          <ul className="mt-1 list-disc list-inside text-sm text-red-600">
+                            {affectedScenarios.slice(0, 3).map((scenario) => (
+                              <li key={scenario.id}>{scenario.name}</li>
+                            ))}
+                            {affectedScenarios.length > 3 && (
+                              <li>
+                                ...and {affectedScenarios.length - 3} more
+                              </li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="mt-3 text-sm font-medium text-red-700">
+                    This action will permanently remove the simulation.
+                  </div>
+                </div>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeleting || isLoadingImpact}
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
               {isDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>

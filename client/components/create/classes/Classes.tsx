@@ -20,13 +20,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useClassColumns } from "@/hooks/use-class-columns";
-import { Class } from "@/types";
+import { Class, Document, Scenario } from "@/types";
 import { logError, logInfo } from "@/utils/logger";
 import { createClass } from "@/utils/mutations/classes/create-class";
 import { deleteClass } from "@/utils/mutations/classes/delete-class";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
+import { getDocumentsByClass } from "@/utils/queries/documents/get-documents-by-class";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getScenariosByClass } from "@/utils/queries/scenarios/get-scenarios-by-class";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Calendar, Copy, Edit, Trash2 } from "lucide-react";
@@ -40,6 +42,9 @@ export default function ClassesGeneralPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [classToDelete, setClassToDelete] = useState<string | null>(null);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
+  const [affectedScenarios, setAffectedScenarios] = useState<Scenario[]>([]);
+  const [affectedDocuments, setAffectedDocuments] = useState<Document[]>([]);
+  const [isLoadingImpact, setIsLoadingImpact] = useState(false);
   const router = useRouter();
 
   // Fetch all required data
@@ -112,9 +117,27 @@ export default function ClassesGeneralPage() {
   };
 
   // Helper functions
-  const handleDeleteClass = (classId: string) => {
+  const handleDeleteClass = async (classId: string) => {
     setClassToDelete(classId);
-    setDeleteDialogOpen(true);
+    setIsLoadingImpact(true);
+
+    try {
+      // Fetch affected scenarios and documents
+      const [scenarios, docs] = await Promise.all([
+        getScenariosByClass([classId]),
+        getDocumentsByClass([classId]),
+      ]);
+
+      setAffectedScenarios(scenarios);
+      setAffectedDocuments(docs);
+    } catch (error) {
+      logError("Error fetching impact data:", error);
+      setAffectedScenarios([]);
+      setAffectedDocuments([]);
+    } finally {
+      setIsLoadingImpact(false);
+      setDeleteDialogOpen(true);
+    }
   };
 
   const confirmDeleteClass = () => {
@@ -196,16 +219,26 @@ export default function ClassesGeneralPage() {
               <Badge variant="secondary">
                 {formatClassTerm(cls.term)} {cls.year}
               </Badge>
-              {cls.defaultClass && (
-                <Badge variant="outline" className="text-xs">
-                  Default
-                </Badge>
-              )}
             </div>
           </div>
           <div className="flex items-center gap-1">
+            {canDuplicate(cls) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDuplicate(cls)}
+                disabled={isDuplicating === cls.id}
+                aria-label={`Duplicate ${cls.name}`}
+              >
+                {isDuplicating === cls.id ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            )}
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               data-testid={`edit-${cls.id}`}
               onClick={() => handleEditClass(cls.id)}
@@ -214,24 +247,10 @@ export default function ClassesGeneralPage() {
               <Edit className="h-4 w-4" />
             </Button>
             <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleDuplicate(cls)}
-              disabled={!canDuplicate(cls) || isDuplicating === cls.id}
-              aria-label={`Duplicate ${cls.name}`}
-            >
-              {isDuplicating === cls.id ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               data-testid={`delete-${cls.id}`}
               onClick={() => handleDeleteClass(cls.id)}
-              className="text-red-500 hover:text-red-700 hover:bg-red-50"
               aria-label={`Delete ${cls.name}`}
             >
               <Trash2 className="h-4 w-4" />
@@ -322,17 +341,80 @@ export default function ClassesGeneralPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Class</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this class? This action cannot be
-              undone and will remove all associated data including simulations,
-              attempts, and grades.
+              {isLoadingImpact ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Loading impact analysis...
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p>
+                    Are you sure you want to delete this class? This action
+                    cannot be undone.
+                  </p>
+
+                  {(affectedScenarios.length > 0 ||
+                    affectedDocuments.length > 0) && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                      <div className="font-medium text-red-800 mb-2">
+                        ⚠️ This will affect the following:
+                      </div>
+
+                      {affectedScenarios.length > 0 && (
+                        <div className="mb-2">
+                          <span className="font-medium text-red-700">
+                            {affectedScenarios.length} scenario
+                            {affectedScenarios.length !== 1 ? "s" : ""}:
+                          </span>
+                          <ul className="mt-1 list-disc list-inside text-sm text-red-600">
+                            {affectedScenarios.slice(0, 3).map((scenario) => (
+                              <li key={scenario.id}>{scenario.name}</li>
+                            ))}
+                            {affectedScenarios.length > 3 && (
+                              <li>
+                                ...and {affectedScenarios.length - 3} more
+                              </li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+
+                      {affectedDocuments.length > 0 && (
+                        <div>
+                          <span className="font-medium text-red-700">
+                            {affectedDocuments.length} document
+                            {affectedDocuments.length !== 1 ? "s" : ""}:
+                          </span>
+                          <ul className="mt-1 list-disc list-inside text-sm text-red-600">
+                            {affectedDocuments.slice(0, 3).map((doc) => (
+                              <li key={doc.id}>{doc.name}</li>
+                            ))}
+                            {affectedDocuments.length > 3 && (
+                              <li>
+                                ...and {affectedDocuments.length - 3} more
+                              </li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="mt-3 text-sm font-medium text-red-700">
+                    This action will permanently remove the class.
+                  </div>
+                </div>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteClassMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteClass}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={deleteClassMutation.isPending}
+              disabled={deleteClassMutation.isPending || isLoadingImpact}
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
               {deleteClassMutation.isPending ? "Deleting..." : "Delete"}
             </AlertDialogAction>

@@ -36,10 +36,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useScenarioColumns } from "@/hooks/use-scenario-columns";
-import { Scenario } from "@/types";
+import { Scenario, Simulation } from "@/types";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
 import { deleteScenario } from "@/utils/mutations/scenarios/delete-scenario";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { ScenariosDataTable } from "./ScenariosDataTable";
 
 export function Scenarios() {
@@ -51,11 +52,20 @@ export function Scenarios() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
+  const [affectedSimulations, setAffectedSimulations] = useState<Simulation[]>(
+    []
+  );
+  const [isLoadingImpact, setIsLoadingImpact] = useState(false);
 
   // Fetch scenarios data
   const { data: scenarios = [], refetch: refetchScenarios } = useQuery({
     queryKey: ["scenarios"],
     queryFn: () => getAllScenarios(),
+  });
+
+  const { data: simulations = [] } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getAllSimulations(),
   });
 
   // Get table columns and filter options
@@ -123,6 +133,15 @@ export function Scenarios() {
 
   const handleDeleteClick = (id: string, name: string) => {
     setDeleteItem({ id, name });
+    setIsLoadingImpact(true);
+
+    // Calculate impact - find simulations that use this scenario
+    const affectedSims = simulations.filter(
+      (sim) => sim.scenarioIds && sim.scenarioIds.includes(id)
+    );
+
+    setAffectedSimulations(affectedSims);
+    setIsLoadingImpact(false);
     setShowDeleteDialog(true);
   };
 
@@ -266,18 +285,60 @@ export function Scenarios() {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Scenario</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the scenario "{deleteItem?.name}".
-              This action cannot be undone.
+              {isLoadingImpact ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Loading impact analysis...
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p>
+                    Are you sure you want to delete the scenario "
+                    {deleteItem?.name}"? This action cannot be undone.
+                  </p>
+
+                  {affectedSimulations.length > 0 && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                      <div className="font-medium text-red-800 mb-2">
+                        ⚠️ Impact of deletion:
+                      </div>
+
+                      <div>
+                        <span className="font-medium text-red-700">
+                          {affectedSimulations.length} simulation
+                          {affectedSimulations.length !== 1 ? "s" : ""}{" "}
+                          currently use this scenario:
+                        </span>
+                        <ul className="mt-1 list-disc list-inside text-sm text-red-600">
+                          {affectedSimulations.slice(0, 3).map((sim) => (
+                            <li key={sim.id}>{sim.title}</li>
+                          ))}
+                          {affectedSimulations.length > 3 && (
+                            <li>
+                              ...and {affectedSimulations.length - 3} more
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-3 text-sm font-medium text-red-700">
+                    This action will permanently remove the scenario and cannot
+                    be undone.
+                  </div>
+                </div>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeleting || isLoadingImpact}
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
               {isDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
