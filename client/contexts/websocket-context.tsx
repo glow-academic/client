@@ -771,8 +771,11 @@ export function WebSocketProvider({
         attempt: connectionAttempts.current + 1,
       });
 
+      const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
+      const socketPath = appPrefix ? `/${appPrefix}/socket.io` : "/socket.io";
+
       const socket = io(getApiBase(), {
-        path: "/socket.io",
+        path: socketPath,
         autoConnect: true,
         timeout: 30000, // Increase timeout
         reconnection: true,
@@ -799,7 +802,6 @@ export function WebSocketProvider({
           profileId,
           transport: socket.io.engine.transport.name,
         });
-
       });
 
       // Handle connection confirmation from server
@@ -908,7 +910,6 @@ export function WebSocketProvider({
         chat_type: roomType,
       });
       currentRoomsRef.current.add(roomId);
-
     },
     [isConnected]
   );
@@ -952,10 +953,7 @@ export function WebSocketProvider({
   );
 
   const emitSendSimulationMessage = useCallback(
-    (data: {
-      chat_id: string;
-      message: string;
-    }) => {
+    (data: { chat_id: string; message: string }) => {
       if (!socketRef.current || !isConnected) {
         logError("Cannot send simulation message - WebSocket not connected");
         return;

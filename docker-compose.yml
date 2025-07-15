@@ -79,6 +79,7 @@ services:
       - DB_PORT=5432
       - DB_HOST=database
       - DOCKER_ENV=1
+      - APP_PREFIX=${APP_PREFIX}
     volumes:
       - uploads:/app/uploads   # Docker volume for uploads
       - csv-data:/app/csv

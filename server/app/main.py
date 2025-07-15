@@ -35,6 +35,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 origin = os.getenv("ORIGIN", "http://localhost:3000")
+app_prefix = os.getenv("APP_PREFIX", "")
+socket_path = f"{app_prefix}/socket.io" if app_prefix else "socket.io"
 
 # ---------------------------------------------------------------------------+
 # 2.  CORS etc. remains intact                                               +
@@ -413,7 +415,7 @@ from app.services.mcp.server import server
 fastapi_app.mount("/domain", server.streamable_http_app(), name="MCP Server")
 
 # Create the combined ASGI app with Socket.IO
-app = socketio.ASGIApp(sio, fastapi_app, socketio_path="socket.io")
+app = socketio.ASGIApp(sio, fastapi_app, socketio_path=socket_path)
 
 # Add specific logger for evaluation
 eval_logger = logging.getLogger("app.agents.generic")
