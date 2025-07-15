@@ -14,7 +14,8 @@ CREATE TABLE cohorts (
   title      TEXT        NOT NULL,
   description TEXT        NULL,
   active      BOOLEAN     NOT NULL           DEFAULT TRUE,
-  profile_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[] -- references profiles
+  profile_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[], -- references profiles
+  default_cohort BOOLEAN     NOT NULL           DEFAULT FALSE
 );
 
 CREATE TABLE simulations (
@@ -138,7 +139,7 @@ INSERT INTO simulations (id, title, rubric_id, time_limit, scenario_ids, cohort_
 -- FALL 2025 TRAINING COHORTS
 -- ============================================================================
 
-INSERT INTO cohorts (id, title, description, profile_ids, active) VALUES
+INSERT INTO cohorts (id, title, description, profile_ids, active, default_cohort) VALUES
   ('f2511b00-aaaa-bbbb-cccc-dddddddddddd', 'Fall 2025 W1 Training (Beginner)', 'Foundational TA training focusing on basic student interaction skills, handling confused students, and time management. Designed for new TAs with limited tutoring experience.',
    ARRAY[
      -- Instructors supervising CS 180 and CS 182 courses
@@ -149,7 +150,7 @@ INSERT INTO cohorts (id, title, description, profile_ids, active) VALUES
      -- Additional CS 180 TAs
      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'ffffffff-ffff-ffff-ffff-ffffffffffff',
      'c5180001-1111-2222-3333-444444444444', 'c5180002-1111-2222-3333-444444444444', '99b90118-7b9e-4e12-8e81-d7ccc2916601'
-   ]::UUID[], true),
+   ]::UUID[], true, true),
 
   ('f2511a00-aaaa-bbbb-cccc-dddddddddddd', 'Fall 2025 W1 Training (Advanced)', 'Advanced TA training focusing on complex technical concepts, handling frustrated students, and maintaining composure under pressure. For experienced TAs ready for challenging scenarios.',
    ARRAY[
@@ -160,7 +161,7 @@ INSERT INTO cohorts (id, title, description, profile_ids, active) VALUES
      '12ab34cd-56ef-78ab-90cd-12ef34567890', 'c5381001-4444-5555-6666-777777777777', 'c5381002-4444-5555-6666-777777777777',
      -- Multi-class experienced TAs
      'c5abc003-aaaa-bbbb-cccc-dddddddddddd', 'c5abc004-aaaa-bbbb-cccc-dddddddddddd', '99b90118-7b9e-4e12-8e81-d7ccc2916610'
-   ]::UUID[], true),
+   ]::UUID[], true, true),
 
   ('f2522100-aaaa-bbbb-cccc-dddddddddddd', 'Fall 2025 W2 Training (CS 1XX/2XX)', 'Document-based training for lower-level CS courses. Focus on using course materials effectively while maintaining student engagement and explaining foundational concepts clearly.',
    ARRAY[
@@ -173,7 +174,7 @@ INSERT INTO cohorts (id, title, description, profile_ids, active) VALUES
      'abcdef12-3456-7890-abcd-ef1234567890', 'c5182001-2222-3333-4444-555555555555', 'c5182002-2222-3333-4444-555555555555',
      'c5251002-3333-4444-5555-666666666666', 'c5251003-3333-4444-5555-666666666666', 'c5abc001-aaaa-bbbb-cccc-dddddddddddd',
      'c5abc002-aaaa-bbbb-cccc-dddddddddddd', '99b90118-7b9e-4e12-8e81-d7ccc2916603', '99b90118-7b9e-4e12-8e81-d7ccc2916605'
-   ]::UUID[], true),
+   ]::UUID[], true, true),
 
   ('f2522200-aaaa-bbbb-cccc-dddddddddddd', 'Fall 2025 W2 Training (CS 3XX/4XX)', 'Document-based training for upper-level CS courses. Advanced technical communication skills, handling high-stakes academic pressure, and complex theoretical concepts.',
    ARRAY[
@@ -186,7 +187,7 @@ INSERT INTO cohorts (id, title, description, profile_ids, active) VALUES
      -- Multi-class advanced TAs
      'c5abc004-aaaa-bbbb-cccc-dddddddddddd', '99b90118-7b9e-4e12-8e81-d7ccc2916607', '99b90118-7b9e-4e12-8e81-d7ccc2916608',
      '99b90118-7b9e-4e12-8e81-d7ccc2916610'
-   ]::UUID[], true),
+   ]::UUID[], true, true),
 
   ('f2533c00-aaaa-bbbb-cccc-dddddddddddd', 'Fall 2025 W3 Communication Training', 'Specialized training for sensitive communication topics including campus belonging, academic equity, and cultural sensitivity. Essential skills for all TAs working with diverse student populations.',
    ARRAY[
@@ -201,7 +202,7 @@ INSERT INTO cohorts (id, title, description, profile_ids, active) VALUES
      -- Representative TAs from all course levels
      'a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6', 'dddddddd-dddd-dddd-dddd-dddddddddddd', 'c5251004-3333-4444-5555-666666666666',
      '99b90118-7b9e-4e12-8e81-d7ccc2916604', '99b90118-7b9e-4e12-8e81-d7ccc2916606', '99b90118-7b9e-4e12-8e81-d7ccc2916609'
-   ]::UUID[], true);
+   ]::UUID[], true, true);
 
 
   --- GPT GENERATED DATA ---

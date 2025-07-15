@@ -374,6 +374,7 @@ export const cohorts = pgTable("cohorts", {
 	description: text(),
 	active: boolean().default(true).notNull(),
 	profileIds: uuid("profile_ids").array().default(["RAY"]).notNull(),
+	defaultCohort: boolean("default_cohort").default(false).notNull(),
 });
 
 export const simulations = pgTable("simulations", {

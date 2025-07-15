@@ -1,0 +1,182 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { ColumnDef } from "@tanstack/react-table";
+import { useMemo } from "react";
+
+import { Agent, Cohort, Scenario, Simulation } from "@/types";
+import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+
+export function useScenarioColumns() {
+  // Fetch data for filter options
+  const { data: simulations = [] } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getAllSimulations(),
+  });
+
+  const { data: cohorts = [] } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
+  });
+
+  const { data: agents = [] } = useQuery({
+    queryKey: ["agents"],
+    queryFn: () => getAllAgents(),
+  });
+
+  const columns = useMemo<ColumnDef<Scenario>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Name",
+        cell: ({ row }) => row.getValue("name"),
+        filterFn: (row, id, value) => {
+          const name = row.getValue(id) as string;
+          const description = row.original.description || "";
+          const location = row.original.location || "";
+          const seniority = row.original.seniority || "";
+          const tod = row.original.tod || "";
+          const urgency = row.original.urgency || "";
+
+          const searchText = value.toLowerCase();
+          return (
+            name.toLowerCase().includes(searchText) ||
+            description.toLowerCase().includes(searchText) ||
+            location.toLowerCase().includes(searchText) ||
+            seniority.toLowerCase().includes(searchText) ||
+            tod.toLowerCase().includes(searchText) ||
+            urgency.toLowerCase().includes(searchText)
+          );
+        },
+      },
+      {
+        accessorKey: "simulationIds",
+        header: "Simulations",
+        cell: ({ row }) => {
+          const scenario = row.original;
+          const scenarioSimulations = simulations.filter((sim: Simulation) =>
+            sim.scenarioIds.includes(scenario.id)
+          );
+          return scenarioSimulations.map((sim: Simulation) => sim.id);
+        },
+        filterFn: (row, _, value) => {
+          const scenario = row.original;
+          const scenarioSimulations = simulations.filter((sim: Simulation) =>
+            sim.scenarioIds.includes(scenario.id)
+          );
+          const simulationIds = scenarioSimulations.map(
+            (sim: Simulation) => sim.id
+          );
+          return value.some((filterValue: string) =>
+            simulationIds.includes(filterValue)
+          );
+        },
+      },
+      {
+        accessorKey: "cohortIds",
+        header: "Cohorts",
+        cell: ({ row }) => {
+          const scenario = row.original;
+          const scenarioSimulations = simulations.filter((sim: Simulation) =>
+            sim.scenarioIds.includes(scenario.id)
+          );
+          const cohortIds = scenarioSimulations.flatMap(
+            (sim: Simulation) => sim.cohortIds
+          );
+          return [...new Set(cohortIds)]; // Remove duplicates
+        },
+        filterFn: (row, _, value) => {
+          const scenario = row.original;
+          const scenarioSimulations = simulations.filter((sim: Simulation) =>
+            sim.scenarioIds.includes(scenario.id)
+          );
+          const cohortIds = scenarioSimulations.flatMap(
+            (sim: Simulation) => sim.cohortIds
+          );
+          return value.some((filterValue: string) =>
+            cohortIds.includes(filterValue)
+          );
+        },
+      },
+      {
+        accessorKey: "agentId",
+        header: "Agent",
+        cell: ({ row }) => row.getValue("agentId"),
+        filterFn: (row, id, value) => {
+          const agentId = row.getValue(id) as string;
+          return value.includes(agentId);
+        },
+      },
+      {
+        accessorKey: "scenarioType",
+        header: "Type",
+        cell: ({ row }) => {
+          const scenario = row.original;
+          if (scenario.defaultScenario) return "default";
+          if (scenario.generated) return "generated";
+          return "general";
+        },
+        filterFn: (row, _, value) => {
+          const scenario = row.original;
+          let type = "general";
+          if (scenario.defaultScenario) type = "default";
+          if (scenario.generated) type = "generated";
+          return value.includes(type);
+        },
+      },
+      {
+        accessorKey: "updatedAt",
+        header: "Updated",
+        cell: ({ row }) => row.getValue("updatedAt"),
+      },
+    ],
+    [simulations]
+  );
+
+  // Filter options
+  const simulationOptions = useMemo(
+    () =>
+      simulations.map((simulation: Simulation) => ({
+        value: simulation.id,
+        label: simulation.title,
+      })),
+    [simulations]
+  );
+
+  const cohortOptions = useMemo(
+    () =>
+      cohorts.map((cohort: Cohort) => ({
+        value: cohort.id,
+        label: cohort.title,
+      })),
+    [cohorts]
+  );
+
+  const agentOptions = useMemo(
+    () =>
+      agents.map((agent: Agent) => ({
+        value: agent.id,
+        label: agent.name,
+      })),
+    [agents]
+  );
+
+  const scenarioTypeOptions = useMemo(
+    () => [
+      { value: "general", label: "General" },
+      { value: "generated", label: "Generated" },
+      { value: "default", label: "Default" },
+    ],
+    []
+  );
+
+  return {
+    columns,
+    simulationOptions,
+    cohortOptions,
+    agentOptions,
+    scenarioTypeOptions,
+  };
+}

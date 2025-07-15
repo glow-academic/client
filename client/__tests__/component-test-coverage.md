@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 99
+- **Total Components**: 101
 - **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 99
+- **Tests Skipped** (already implemented): 101
 
 ## Component Coverage
 
@@ -88,6 +88,8 @@
 | NewScenario | create/scenarios/NewScenario.tsx | NewScenario.test.tsx | ✅ Implemented |
 | ScenarioEdit | create/scenarios/ScenarioEdit.tsx | ScenarioEdit.test.tsx | ✅ Implemented |
 | Scenarios | create/scenarios/Scenarios.tsx | Scenarios.test.tsx | ✅ Implemented |
+| ScenariosDataTable | create/scenarios/ScenariosDataTable.tsx | ScenariosDataTable.test.tsx | ✅ Implemented |
+| ScenariosDataTableToolbar | create/scenarios/ScenariosDataTableToolbar.tsx | ScenariosDataTableToolbar.test.tsx | ✅ Implemented |
 | NewSimulation | create/simulations/NewSimulation.tsx | NewSimulation.test.tsx | ✅ Implemented |
 | SimulationEdit | create/simulations/SimulationEdit.tsx | SimulationEdit.test.tsx | ✅ Implemented |
 | Simulations | create/simulations/Simulations.tsx | Simulations.test.tsx | ✅ Implemented |
@@ -218,6 +220,8 @@ __tests__/
 │   │   ├── NewScenario.test.tsx
 │   │   ├── ScenarioEdit.test.tsx
 │   │   ├── Scenarios.test.tsx
+│   │   ├── ScenariosDataTable.test.tsx
+│   │   ├── ScenariosDataTableToolbar.test.tsx
 │   ├── simulations/
 │   │   ├── NewSimulation.test.tsx
 │   │   ├── SimulationEdit.test.tsx
