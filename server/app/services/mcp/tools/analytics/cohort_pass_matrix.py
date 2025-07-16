@@ -21,12 +21,11 @@ from sqlmodel import select
 
 def cohort_pass_matrix(cohort_id: str) -> Dict[str, Any]:
     """
-    📈 Cohort pass/fail matrix across simulations
-    ---------------------------------------------
+    Cohort pass/fail matrix across simulations
     Show pass/fail rates for all students in a cohort.
 
     Input
-      • cohort_id – UUID of the cohort
+      • cohort_id - UUID of the cohort
 
     Returns
       { "cohort": {…}, "matrix": [{…}], "summary": {…} }
@@ -35,7 +34,7 @@ def cohort_pass_matrix(cohort_id: str) -> Dict[str, Any]:
       ask:  "Show pass rates for cohort X"
       call: cohort_pass_matrix("uuid-here")
 
-    See also 👉 cohort_overview() for cohort details.
+    See also cohort_overview() for cohort details.
     """
     try:
         cohort_uuid = uuid.UUID(cohort_id)

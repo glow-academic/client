@@ -24,13 +24,12 @@ from sqlmodel import select
 
 def student_sim_report(profile_id: str, recent: int = 50) -> Dict[str, Any]:
     """
-    🔎 Deep dive: every attempt, chat, grade, feedback
-    ---------------------------------------------------
+    Deep dive: every attempt, chat, grade, feedback
     Comprehensive student simulation report.
 
     Input
-      • profile_id – UUID of the student profile
-      • recent – Limit messages per chat (default: 50)
+      • profile_id - UUID of the student profile
+      • recent - Limit messages per chat (default: 50)
 
     Returns
       { "profile": { … }, "attempts": [ … ] }
@@ -39,7 +38,7 @@ def student_sim_report(profile_id: str, recent: int = 50) -> Dict[str, Any]:
       ask:  "Full report on student X"
       call: student_sim_report("uuid-here")
 
-    See also 👉 profile_overview() for summary view.
+    See also profile_overview() for summary view.
     """
     try:
         profile_uuid = uuid.UUID(profile_id)

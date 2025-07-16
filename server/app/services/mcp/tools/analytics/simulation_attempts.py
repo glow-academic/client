@@ -16,13 +16,12 @@ from sqlmodel import select
 
 def simulation_attempts(sim_id: str, limit: int = 200) -> List[Dict[str, Any]]:
     """
-    🔎 Flat list of attempts (who, when, score)
-    -------------------------------------------
+    Flat list of attempts (who, when, score)
     List all attempts for a specific simulation.
 
     Input
-      • sim_id – UUID of the simulation
-      • limit – Max results (default: 200)
+      • sim_id - UUID of the simulation
+      • limit - Max results (default: 200)
 
     Returns
       [ { "id": "…", "student": "…", "score": 85, … }, … ]
@@ -31,7 +30,7 @@ def simulation_attempts(sim_id: str, limit: int = 200) -> List[Dict[str, Any]]:
       ask:  "List last 200 attempts on Sim Y"
       call: simulation_attempts("uuid-here")
 
-    See also 👉 simulation_overview() for aggregate stats.
+    See also simulation_overview() for aggregate stats.
     """
     try:
         simulation_uuid = uuid.UUID(sim_id)

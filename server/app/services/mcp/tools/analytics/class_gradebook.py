@@ -22,12 +22,11 @@ from sqlmodel import select
 
 def class_gradebook(class_id: str) -> Dict[str, Any]:
     """
-    📊 Class gradebook with all student grades
-    ------------------------------------------
+    Class gradebook with all student grades
     Show all students in a class with their simulation performance.
 
     Input
-      • class_id – UUID of the class
+      • class_id - UUID of the class
 
     Returns
       { "class": {…}, "students": [{…}], "simulations": [{…}] }
@@ -36,7 +35,7 @@ def class_gradebook(class_id: str) -> Dict[str, Any]:
       ask:  "Show me the gradebook for class X"
       call: class_gradebook("uuid-here")
 
-    See also 👉 profile_overview() for individual student details.
+    See also profile_overview() for individual student details.
     """
     try:
         class_uuid = uuid.UUID(class_id)
