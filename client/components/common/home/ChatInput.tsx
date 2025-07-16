@@ -88,7 +88,7 @@ export default function ChatInput({
   return (
     <form
       onSubmit={isSendingMessage ? handleStop : handleSubmit}
-      className="p-3 border-t bg-background"
+      className="p-3 border-t bg-background rounded-b-2xl"
     >
       {/* MODIFIED: Use a relative container to position the button inside */}
       <div className="relative flex items-end">
