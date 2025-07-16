@@ -189,11 +189,11 @@ export default function ChatWidget({ up }: { up: boolean }) {
             />
           ) : (
             <div className="flex items-center justify-center h-full p-6">
-              <div className="text-center space-y-8 max-w-5xl w-full">
+              <div className="flex flex-col justify-center items-center gap-8 max-w-5xl w-full h-full">
                 <GlowHeader />
                 <div
-                  className={`transition-opacity duration-300 ease-in-out ${
-                    showPrompts ? "opacity-100" : "opacity-0"
+                  className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                    showPrompts ? "opacity-100 max-h-96" : "opacity-0 max-h-0"
                   }`}
                 >
                   <ChatStarterPrompts
