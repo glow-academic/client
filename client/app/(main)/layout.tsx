@@ -256,6 +256,16 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
+    if (!shouldShowChatComponents) {
+      return (
+        <>
+          <ChatFab up={true} />
+          <ChatWidget up={true} />
+          <ChatDialog />
+        </>
+      );
+    }
+
     return null;
   };
 
@@ -288,8 +298,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       {/* Chat Components - Only show on main screens defined in the sidebar */}
       {shouldShowChatComponents && (
         <>
-          <ChatFab />
-          <ChatWidget />
+          <ChatFab up={false} />
+          <ChatWidget up={false} />
           <ChatDialog />
         </>
       )}

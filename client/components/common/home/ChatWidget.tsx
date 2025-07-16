@@ -25,7 +25,7 @@ import ChatMessages from "./ChatMessages";
 import ChatStarterPrompts from "./ChatStarterPrompts";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-export default function ChatWidget() {
+export default function ChatWidget({ up }: { up: boolean }) {
   const {
     uiState,
     expand,
@@ -74,7 +74,7 @@ export default function ChatWidget() {
   };
 
   return (
-    <Card className="fixed bottom-2 right-2 w-96 h-[550px] shadow-xl border-2 z-40 flex flex-col bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 p-0 rounded-2xl gap-0">
+    <Card className={`fixed bottom-2 right-2 w-96 h-[550px] shadow-xl border-2 z-40 flex flex-col bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 p-0 rounded-2xl gap-0 ${up ? "top-2 right-2" : "bottom-2 right-2"}`}>
       <CardHeader className="border-b flex flex-row items-center justify-between space-y-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-t-2xl rounded-b-none h-15 p-5 gap-5">
         <div className="flex items-center gap-2 flex-1 min-w-0 relative z-10">
           <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shrink-0">
