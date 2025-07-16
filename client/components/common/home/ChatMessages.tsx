@@ -447,10 +447,10 @@ export default function ChatMessages({
         <button
           aria-label="Scroll to latest"
           onClick={handleScrollDown}
-          className="absolute z-20 left-1/2 -translate-x-1/2 bottom-4 bg-white dark:bg-gray-900 border border-blue-200 dark:border-blue-800 shadow-lg rounded-full p-2 hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors"
+          className="absolute z-20 left-1/2 -translate-x-1/2 bottom-4 bg-blue-500 dark:bg-blue-600 border border-blue-700 dark:border-blue-400 shadow-lg rounded-full p-2 hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors"
           style={{ boxShadow: "0 2px 8px 0 rgba(0,0,0,0.08)" }}
         >
-          <ArrowDown className="h-4 w-4 text-blue-500" />
+          <ArrowDown className="h-4 w-4 text-white" />
         </button>
       )}
     </div>
