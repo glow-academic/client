@@ -25,17 +25,11 @@ const allPrompts = [
   "Generate attendance reports for all classes",
 ];
 
-import { useRef } from "react";
-
 export default function ChatStarterPrompts({
   onPromptClick,
   variant = "expanded",
 }: ChatStarterPromptsProps) {
-  const [selectedPrompts, setSelectedPrompts] = useState<string[]>([]);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
   const PROMPT_COUNT = variant === "expanded" ? 4 : 2;
-  const ANIMATION_INTERVAL = 3000;
 
   const getRandomPrompts = (count: number) => {
     // Shuffle and pick unique prompts
@@ -43,31 +37,13 @@ export default function ChatStarterPrompts({
     return shuffled.slice(0, count);
   };
 
-  // Animation: change prompts
-  const animatePrompts = () => {
-    setSelectedPrompts((prev) => {
-      let next = getRandomPrompts(PROMPT_COUNT);
-      // Ensure not exactly the same as previous
-      let tries = 0;
-      while (
-        prev.length &&
-        next.every((p, i) => prev[i] === p) &&
-        tries < 5
-      ) {
-        next = getRandomPrompts(PROMPT_COUNT);
-        tries++;
-      }
-      return next;
-    });
-  };
+  const [selectedPrompts, setSelectedPrompts] = useState<string[]>(() =>
+    getRandomPrompts(PROMPT_COUNT)
+  );
 
   useEffect(() => {
     setSelectedPrompts(getRandomPrompts(PROMPT_COUNT));
-    if (timeoutRef.current) clearInterval(timeoutRef.current);
-    timeoutRef.current = setInterval(animatePrompts, ANIMATION_INTERVAL);
-    return () => {
-      if (timeoutRef.current) clearInterval(timeoutRef.current);
-    };
+    // Only run on mount or when variant changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [variant]);
 

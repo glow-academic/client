@@ -450,7 +450,7 @@ export default function ChatMessages({
           className="absolute z-20 left-1/2 -translate-x-1/2 bottom-4 bg-white dark:bg-gray-900 border border-blue-200 dark:border-blue-800 shadow-lg rounded-full p-2 hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors"
           style={{ boxShadow: "0 2px 8px 0 rgba(0,0,0,0.08)" }}
         >
-          <ArrowDown className="h-6 w-6 text-blue-500" />
+          <ArrowDown className="h-4 w-4 text-blue-500" />
         </button>
       )}
     </div>
