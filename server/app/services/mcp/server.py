@@ -29,6 +29,7 @@ from app.services.mcp.tools.schema.query_data import query_data
 from app.services.mcp.tools.search.find_classes import find_classes
 from app.services.mcp.tools.search.find_profiles import find_profiles
 from app.services.mcp.tools.search.find_simulations import find_simulations
+from app.services.mcp.tools.search.find_agents import find_agents
 from mcp.server.fastmcp import FastMCP
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -56,8 +57,8 @@ def _query_data(sql: str) -> str:
 
 
 @server.tool()
-def _profile_overview(key: str) -> Dict[str, Any]:
-    return profile_overview(key)
+def _profile_overview(profile_id: str) -> Dict[str, Any]:
+    return profile_overview(profile_id)
 
 
 @server.tool()
@@ -88,6 +89,11 @@ def _agent_overview(agent_id: str) -> Dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 # ✱ Search / Helper Tools (3 tools)
 # ─────────────────────────────────────────────────────────────────────────────
+
+
+@server.tool()
+def _find_agents(query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    return find_agents(query, limit)
 
 
 @server.tool()

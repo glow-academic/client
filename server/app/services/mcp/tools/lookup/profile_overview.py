@@ -7,20 +7,14 @@ import uuid
 from typing import Any, Dict
 
 from app.db import get_session
-from app.models import (
-    Classes,
-    Profiles,
-    SimulationAttempts,
-    SimulationChatGrades,
-    SimulationChats,
-    Simulations,
-)
+from app.models import (Classes, Profiles, SimulationAttempts,
+                        SimulationChatGrades, SimulationChats, Simulations)
 from sqlalchemy import func, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select
 
 
-def profile_overview(key: str) -> Dict[str, Any]:
+def profile_overview(profile_id: str) -> Dict[str, Any]:
     """
     Profile overview
     ----------------
@@ -28,7 +22,7 @@ def profile_overview(key: str) -> Dict[str, Any]:
     Accepts UUID or name.
 
     Input
-      • key - UUID or name/alias to search for
+      • profile_id - UUID or name/alias to search for
 
     Returns
       { "profile": { … }, "classes": [ … ], "latest_grades": [ … ] }
@@ -44,11 +38,11 @@ def profile_overview(key: str) -> Dict[str, Any]:
         # Try UUID first
         profile = None
         try:
-            profile_uuid = uuid.UUID(key)
+            profile_uuid = uuid.UUID(profile_id)
             profile = session.get(Profiles, profile_uuid)
         except ValueError:
             # Search by name
-            search_pattern = f"%{key.lower()}%"
+            search_pattern = f"%{profile_id.lower()}%"
             stmt = (
                 select(Profiles)
                 .where(
@@ -63,7 +57,7 @@ def profile_overview(key: str) -> Dict[str, Any]:
             profile = session.exec(stmt).first()
 
         if not profile:
-            return {"error": f"Profile not found: {key}"}
+            return {"error": f"Profile not found: {profile_id}"}
 
         # Get profile data
         profile_data = {
