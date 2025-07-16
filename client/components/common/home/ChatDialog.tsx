@@ -47,7 +47,9 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
   } = useAssistant();
   const { effectiveRole } = useRole();
   const [promptToSet, setPromptToSet] = useState<string>("");
+  const [showPrompts, setShowPrompts] = useState(true);
 
+  // Get the chat data
   const { data: chat } = useQuery({
     queryKey: ["assistantChat", currentChatId],
     queryFn: () => getAssistantChat(currentChatId!),
@@ -177,12 +179,18 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
         </DialogHeader>
         <div className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 min-h-0 p-2 shadow-inner">
-            <ChatMessages onPromptClick={handlePromptClick} />
+            <ChatMessages
+              onPromptClick={handlePromptClick}
+              showPrompts={showPrompts}
+            />
           </div>
           <div className="border-t">
             <ChatInput
               promptToSet={promptToSet}
               onPromptSet={handlePromptSet}
+              togglePrompt={(value: boolean) => {
+                setShowPrompts(value);
+              }}
             />
           </div>
         </div>

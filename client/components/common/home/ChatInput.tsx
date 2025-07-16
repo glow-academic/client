@@ -15,11 +15,13 @@ import { useEffect, useRef, useState } from "react"; // Import useRef
 export interface ChatInputProps {
   promptToSet?: string;
   onPromptSet?: () => void;
+  togglePrompt?: (value: boolean) => void;
 }
 
 export default function ChatInput({
   promptToSet,
   onPromptSet,
+  togglePrompt,
 }: ChatInputProps = {}) {
   const [message, setMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null); // Create a ref for the textarea
@@ -48,6 +50,13 @@ export default function ChatInput({
       onPromptSet?.();
     }
   }, [promptToSet, onPromptSet]);
+
+  // Toggle prompt based on message content
+  useEffect(() => {
+    if (togglePrompt) {
+      togglePrompt(!message.trim());
+    }
+  }, [message, togglePrompt]);
 
   // Only show for instructor, instructional, or admin roles
   const shouldShow = ["instructor", "instructional", "admin"].includes(

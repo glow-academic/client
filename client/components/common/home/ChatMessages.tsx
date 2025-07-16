@@ -20,6 +20,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CheckCircle, Loader2, Wrench, ArrowDown } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ChatStarterPrompts from "./ChatStarterPrompts";
+import GlowHeader from "./GlowHeader";
 
 // MODIFIED: Added variant prop to adjust dot size
 const LoadingDots = ({
@@ -138,7 +139,9 @@ const ToolCallCard = ({
       <CardContent className={isMinimized ? "p-2" : "p-4"}>
         <div className="flex items-center justify-between">
           {/* MODIFIED: Conditional gap */}
-          <div className={`flex items-center ${isMinimized ? "gap-2" : "gap-3"}`}>
+          <div
+            className={`flex items-center ${isMinimized ? "gap-2" : "gap-3"}`}
+          >
             {/* MODIFIED: Conditional icon container size */}
             <div
               className={`bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shrink-0 ${
@@ -168,7 +171,9 @@ const ToolCallCard = ({
             </div>
           </div>
           {/* MODIFIED: Conditional gap */}
-          <div className={`flex items-center ${isMinimized ? "gap-1" : "gap-2"}`}>
+          <div
+            className={`flex items-center ${isMinimized ? "gap-1" : "gap-2"}`}
+          >
             {getStatusIcon()}
             {/* MODIFIED: Conditional badge size */}
             <Badge
@@ -196,11 +201,13 @@ type TimelineItem = {
 
 export interface ChatMessagesProps {
   onPromptClick?: (prompt: string) => void;
+  showPrompts?: boolean;
   variant?: "expanded" | "minimized";
 }
 
 export default function ChatMessages({
   onPromptClick,
+  showPrompts,
   variant = "expanded",
 }: ChatMessagesProps = {}) {
   const { currentChatId, isConnected } = useAssistant();
@@ -298,11 +305,12 @@ export default function ChatMessages({
     const handleScroll = () => {
       // Find the scrollable div inside ScrollArea
       const scrollable =
-        scrollContainer.querySelector('[data-radix-scroll-area-viewport]') ||
+        scrollContainer.querySelector("[data-radix-scroll-area-viewport]") ||
         scrollContainer;
       if (!scrollable) return;
 
-      const { scrollTop, scrollHeight, clientHeight } = scrollable as HTMLElement;
+      const { scrollTop, scrollHeight, clientHeight } =
+        scrollable as HTMLElement;
       // Consider at bottom if within 32px of bottom
       const atBottom = scrollHeight - scrollTop - clientHeight < 32;
       setIsAtBottom(atBottom);
@@ -311,7 +319,7 @@ export default function ChatMessages({
 
     // Attach to the scrollable viewport
     const scrollable =
-      scrollContainer.querySelector('[data-radix-scroll-area-viewport]') ||
+      scrollContainer.querySelector("[data-radix-scroll-area-viewport]") ||
       scrollContainer;
     if (scrollable) {
       scrollable.addEventListener("scroll", handleScroll);
@@ -356,10 +364,21 @@ export default function ChatMessages({
 
   if (!currentChatId) {
     return (
-      <ChatStarterPrompts
-        onPromptClick={onPromptClick || (() => {})}
-        variant="expanded"
-      />
+      <div className="flex items-center justify-center h-full p-6">
+        <div className="text-center space-y-8 max-w-5xl w-full">
+          <GlowHeader />
+          <div
+            className={`transition-opacity duration-300 ease-in-out ${
+              showPrompts ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <ChatStarterPrompts
+              onPromptClick={onPromptClick || (() => {})}
+              variant="expanded"
+            />
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -387,7 +406,9 @@ export default function ChatMessages({
                   <div
                     // MODIFIED: Conditional padding and rounding
                     className={`max-w-[80%] shadow-md ${
-                      variant === "minimized" ? "rounded-lg p-2" : "rounded-xl p-4"
+                      variant === "minimized"
+                        ? "rounded-lg p-2"
+                        : "rounded-xl p-4"
                     } ${
                       message.role === "user"
                         ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"

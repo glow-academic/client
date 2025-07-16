@@ -14,6 +14,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useAssistant } from "@/contexts/assistant-context";
 import { useRole } from "@/contexts/role-context";
 import { getAssistantChat } from "@/utils/queries/assistant_chats/get-assistant-chat";
@@ -23,7 +29,7 @@ import { useState } from "react";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
 import ChatStarterPrompts from "./ChatStarterPrompts";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import GlowHeader from "./GlowHeader";
 
 export default function ChatWidget({ up }: { up: boolean }) {
   const {
@@ -38,6 +44,7 @@ export default function ChatWidget({ up }: { up: boolean }) {
   } = useAssistant();
   const { effectiveRole } = useRole();
   const [promptToSet, setPromptToSet] = useState<string>("");
+  const [showPrompts, setShowPrompts] = useState(true);
 
   // Only show for instructor, instructional, or admin roles
   const shouldShow = ["instructor", "instructional", "admin"].includes(
@@ -74,7 +81,9 @@ export default function ChatWidget({ up }: { up: boolean }) {
   };
 
   return (
-    <Card className={`fixed bottom-2 right-2 w-96 h-[550px] shadow-xl border-2 z-40 flex flex-col bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 p-0 rounded-2xl gap-0 ${up ? "top-2 right-2" : "bottom-2 right-2"}`}>
+    <Card
+      className={`fixed bottom-2 right-2 w-96 h-[550px] shadow-xl border-2 z-40 flex flex-col bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 p-0 rounded-2xl gap-0 ${up ? "top-2 right-2" : "bottom-2 right-2"}`}
+    >
       <CardHeader className="border-b flex flex-row items-center justify-between space-y-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-t-2xl rounded-b-none h-15 p-5 gap-5">
         <div className="flex items-center gap-2 flex-1 min-w-0 relative z-10">
           <div className="w-full">
@@ -174,16 +183,36 @@ export default function ChatWidget({ up }: { up: boolean }) {
       <CardContent className="flex-1 p-0 flex flex-col min-h-0 rounded-2xl">
         <div className="flex-1 min-h-0 overflow-hidden shadow-inner p-2">
           {currentChatId ? (
-            <ChatMessages onPromptClick={handlePromptClick} variant="minimized" />
-          ) : (
-            <ChatStarterPrompts
+            <ChatMessages
               onPromptClick={handlePromptClick}
               variant="minimized"
             />
+          ) : (
+            <div className="flex items-center justify-center h-full p-6">
+              <div className="text-center space-y-8 max-w-5xl w-full">
+                <GlowHeader />
+                <div
+                  className={`transition-opacity duration-300 ease-in-out ${
+                    showPrompts ? "opacity-100" : "opacity-0"
+                  }`}
+                >
+                  <ChatStarterPrompts
+                    onPromptClick={handlePromptClick}
+                    variant="minimized"
+                  />
+                </div>
+              </div>
+            </div>
           )}
         </div>
         <div className="border-t">
-          <ChatInput promptToSet={promptToSet} onPromptSet={handlePromptSet} />
+          <ChatInput
+            promptToSet={promptToSet}
+            onPromptSet={handlePromptSet}
+            togglePrompt={(value: boolean) => {
+              setShowPrompts(value);
+            }}
+          />
         </div>
       </CardContent>
     </Card>

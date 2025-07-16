@@ -47,18 +47,6 @@ export default function ChatStarterPrompts({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [variant]);
 
-  // Shared GLOW Assistant header
-  const GlowHeader = (
-    <div className="flex items-center justify-center gap-3 mb-6">
-      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center relative">
-        <span className="text-white font-bold text-lg z-10">G</span>
-      </div>
-      <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-        GLOW Assistant
-      </h3>
-    </div>
-  );
-
   // Prompt card (no padding, hover = card area)
   const PromptCard = ({ prompt, index }: { prompt: string; index: number }) => (
     <Card
@@ -76,23 +64,12 @@ export default function ChatStarterPrompts({
   );
 
   return (
-    <div className="flex items-center justify-center h-full p-6">
-      <div className="text-center space-y-8 max-w-5xl w-full">
-        <div className="space-y-4">
-          {GlowHeader}
-          <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-            Get insights about student performance, generate reports, and
-            analyze training data with our intelligent assistant
-          </p>
-        </div>
-        <div>
-          <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-${PROMPT_COUNT} gap-4`}>
-            {selectedPrompts.map((prompt, index) => (
-              <PromptCard prompt={prompt} index={index} key={prompt} />
-            ))}
-          </div>
-        </div>
-      </div>
+    <div
+      className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-${PROMPT_COUNT} gap-4`}
+    >
+      {selectedPrompts.map((prompt, index) => (
+        <PromptCard prompt={prompt} index={index} key={prompt} />
+      ))}
     </div>
   );
 }
