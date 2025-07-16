@@ -147,7 +147,7 @@ export default function ChatWidget() {
         </div>
       </CardHeader>
       <CardContent className="flex-1 p-0 flex flex-col min-h-0 rounded-2xl">
-        <div className="flex-1 min-h-0 overflow-hidden shadow-inner pt-2">
+        <div className="flex-1 min-h-0 overflow-hidden shadow-inner p-2">
           {currentChatId ? (
             <ChatMessages onPromptClick={handlePromptClick} variant="minimized" />
           ) : (
