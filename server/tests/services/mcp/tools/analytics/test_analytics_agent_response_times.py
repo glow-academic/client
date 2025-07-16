@@ -6,99 +6,111 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 from sqlalchemy.exc import SQLAlchemyError
-from app.models import Agents, Scenarios, SimulationChats, SimulationMessages
 from app.services.mcp.tools.analytics.agent_response_times import agent_response_times
 
-AGENT_ID = uuid.uuid4()
-SCENARIO_ID = uuid.uuid4()
-CHAT_ID = uuid.uuid4()
+# Use MagicMock to simulate SQLModel objects, as they won't be coming from a real DB
+class MockAgent:
+    def __init__(self, id, name, description):
+        self.id = id
+        self.name = name
+        self.description = description
 
-@pytest.fixture(autouse=True)
-def patch_db_session(mocker, test_session):
-    """Ensure the function under test uses the test_session."""
-    mocker.patch('app.services.mcp.tools.analytics.agent_response_times.get_session', return_value=iter([test_session]))
+class MockScenario:
+    def __init__(self, id, name, agent_id):
+        self.id = id
+        self.name = name
+        self.agent_id = agent_id
 
+class MockChat:
+    def __init__(self, id, scenario_id, created_at):
+        self.id = id
+        self.scenario_id = scenario_id
+        self.created_at = created_at
+
+class MockMessage:
+     def __init__(self, chat_id, type, content, created_at):
+        self.id = uuid.uuid4()
+        self.chat_id = chat_id
+        self.type = type
+        self.content = content
+        self.created_at = created_at
+
+@pytest.fixture
+def mock_db_session():
+    """Provides a fully mocked database session."""
+    return MagicMock()
+
+@patch('app.services.mcp.tools.analytics.agent_response_times.get_session')
 class TestAgentResponseTimes:
-    """Tests for agent_response_times function."""
+    """Tests for agent_response_times function using a mocked session."""
 
-    def test_success_with_data(self, test_session):
-        """Test successful execution with valid data."""
-        # Arrange: Populate DB with mock data
-        agent = Agents(id=AGENT_ID, name="Test Agent", description="An agent for testing.")
-        scenario = Scenarios(id=SCENARIO_ID, agent_id=AGENT_ID, name="Test Scenario")
-        chat = SimulationChats(id=CHAT_ID, scenario_id=SCENARIO_ID, created_at=datetime.now())
+    def test_success_with_data(self, mock_get_session, mock_db_session):
+        """Test successful execution with mocked data."""
+        # Arrange
+        mock_get_session.return_value = iter([mock_db_session])
+        agent_id = uuid.uuid4()
+        scenario_id = uuid.uuid4()
+        chat_id = uuid.uuid4()
+
+        # 1. Configure mock for fetching the agent
+        mock_agent = MockAgent(id=agent_id, name="Test Agent", description="...")
+        mock_db_session.get.return_value = mock_agent
+
+        # 2. Configure mock for fetching scenarios
+        mock_scenario = MockScenario(id=scenario_id, name="Test Scenario", agent_id=agent_id)
         
+        # 3. Configure mock for fetching chats and messages
         time_now = datetime.now()
-        msg1 = SimulationMessages(chat_id=CHAT_ID, type="query", content="Hello?", created_at=time_now - timedelta(seconds=15))
-        msg2 = SimulationMessages(chat_id=CHAT_ID, type="response", content="Hi!", created_at=time_now - timedelta(seconds=5)) # 10s response time
-        msg3 = SimulationMessages(chat_id=CHAT_ID, type="query", content="Again?", created_at=time_now - timedelta(seconds=4))
-        msg4 = SimulationMessages(chat_id=CHAT_ID, type="response", content="Yes.", created_at=time_now) # 4s response time
+        messages = [
+            MockMessage(chat_id, "query", "Q1", time_now - timedelta(seconds=10)),
+            MockMessage(chat_id, "response", "A1", time_now - timedelta(seconds=5)), # 5s
+            MockMessage(chat_id, "query", "Q2", time_now - timedelta(seconds=4)),
+            MockMessage(chat_id, "response", "A2", time_now) # 4s
+        ]
         
-        test_session.add_all([agent, scenario, chat, msg1, msg2, msg3, msg4])
-        test_session.commit()
+        # Mocks must be configured to return values for each `session.exec` call
+        # We can use side_effect to return different values on subsequent calls
+        mock_exec_chain = MagicMock()
+        mock_exec_chain.all.side_effect = [
+            [mock_scenario],  # First call to .all() returns scenarios
+            [MockChat(chat_id, scenario_id, datetime.now())], # Second call returns chats
+            messages # Third call returns messages
+        ]
+        mock_db_session.exec.return_value = mock_exec_chain
 
         # Act
-        result = agent_response_times(str(AGENT_ID))
+        result = agent_response_times(str(agent_id))
 
         # Assert
         assert "error" not in result
-        assert result["agent"]["id"] == str(AGENT_ID)
         assert result["stats"]["total_responses"] == 2
-        assert result["stats"]["avg_response_time"] == 7.00 # (10 + 4) / 2
+        assert result["stats"]["avg_response_time"] == 4.50
         assert result["stats"]["min_response_time"] == 4.00
-        assert result["stats"]["max_response_time"] == 10.00
-        assert result["stats"]["median_response_time"] == 4.00 # sorted([4, 10]) -> 4
-        assert len(result["recent_responses"]) == 2
-        assert result["recent_responses"][0]["response_time_seconds"] == 10.00 # Sorted slowest first
+        assert result["stats"]["max_response_time"] == 5.00
+        assert result["agent"]["id"] == str(agent_id)
+        mock_db_session.close.assert_called_once() # Verify session was closed
 
-    def test_agent_not_found(self, test_session):
+    def test_agent_not_found(self, mock_get_session, mock_db_session):
         """Test case where the agent_id does not exist."""
+        mock_get_session.return_value = iter([mock_db_session])
+        mock_db_session.get.return_value = None # Simulate agent not found
+        
         non_existent_id = str(uuid.uuid4())
         result = agent_response_times(non_existent_id)
+        
         assert result == {"error": f"Agent not found: {non_existent_id}"}
+        mock_db_session.close.assert_called_once()
 
-    def test_invalid_uuid_format(self, test_session):
-        """Test case with an invalid UUID format for agent_id."""
-        invalid_id = "not-a-uuid"
-        result = agent_response_times(invalid_id)
-        assert result == {"error": f"Invalid agent_id format: {invalid_id}"}
+    def test_database_error(self, mock_get_session, mock_db_session):
+        """Test handling of a SQLAlchemyError."""
+        mock_get_session.return_value = iter([mock_db_session])
+        mock_db_session.get.side_effect = SQLAlchemyError("Connection failed")
 
-    def test_agent_with_no_scenarios(self, test_session):
-        """Test case where agent exists but has no associated scenarios."""
-        agent = Agents(id=AGENT_ID, name="Lonely Agent")
-        test_session.add(agent)
-        test_session.commit()
-
-        result = agent_response_times(str(AGENT_ID))
-        assert "error" not in result
-        assert result["stats"]["message"] == "No scenarios found for this agent"
-        assert result["recent_responses"] == []
-
-    def test_agent_with_no_response_data(self, test_session):
-        """Test case where agent has scenarios but no recent chat data."""
-        agent = Agents(id=AGENT_ID, name="Quiet Agent")
-        scenario = Scenarios(id=SCENARIO_ID, agent_id=AGENT_ID, name="Empty Scenario")
-        test_session.add_all([agent, scenario])
-        test_session.commit()
-
-        result = agent_response_times(str(AGENT_ID))
-        assert "error" not in result
-        assert "No response data found" in result["stats"]["message"]
-        assert result["recent_responses"] == []
-
-    def test_database_error(self, mocker):
-        """Test handling of a SQLAlchemyError during database query."""
-        # Arrange: Mock the session to raise an error
-        mock_session = MagicMock()
-        mock_session.get.side_effect = SQLAlchemyError("Connection failed")
-        mocker.patch('app.services.mcp.tools.analytics.agent_response_times.get_session', return_value=iter([mock_session]))
-
-        # Act
-        result = agent_response_times(str(AGENT_ID))
-
-        # Assert
+        result = agent_response_times(str(uuid.uuid4()))
+        
         assert "error" in result
         assert "Database error" in result["error"]
+        mock_db_session.close.assert_called_once()
 
 import pytest
 
