@@ -81,25 +81,26 @@ export default function ChatInput({
       onSubmit={isSendingMessage ? handleStop : handleSubmit}
       className="p-3 bg-gradient-to-r from-gray-50/50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50"
     >
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-end">
         <Textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={isSendingMessage}
-          className="flex-1 resize-none min-h-[32px] max-h-[90px] border focus:border-blue-300 dark:focus:border-blue-600 transition-colors text-sm"
-          rows={1}
+          className="flex-1 resize-none min-h-[50px] max-h-[64px] border focus:border-blue-300 dark:focus:border-blue-600 transition-colors text-sm h-10"
+          rows={2}
+          style={{ height: "40px", maxHeight: "64px" }}
         />
         {isSendingMessage ? (
           <Button
             type="submit"
             disabled={isStoppingMessage}
             size="sm"
-            className="shrink-0 h-8 w-8 p-0 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 border-0"
+            className="shrink-0 h-10 w-10 p-0 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 border-0 flex items-center justify-center"
             variant="destructive"
           >
-            <Square className="h-3.5 w-3.5" />
+            <Square className="h-4 w-4" />
           </Button>
         ) : (
           <Button
@@ -107,9 +108,9 @@ export default function ChatInput({
             disabled={isDisabled}
             title={buttonTitle}
             size="sm"
-            className="shrink-0 h-8 w-8 p-0 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0 disabled:opacity-50"
+            className="shrink-0 h-10 w-10 p-0 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0 disabled:opacity-50 flex items-center justify-center"
           >
-            <Send className="h-3.5 w-3.5" />
+            <Send className="h-4 w-4" />
           </Button>
         )}
       </div>
