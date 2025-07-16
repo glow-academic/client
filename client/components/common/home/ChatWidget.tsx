@@ -23,6 +23,7 @@ import { useState } from "react";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
 import ChatStarterPrompts from "./ChatStarterPrompts";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function ChatWidget() {
   const {
@@ -119,31 +120,58 @@ export default function ChatWidget() {
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {currentChatId && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setCurrentChatId(null)}
-              className="h-7 w-7 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50 relative z-10"
-            >
-              <Edit className="h-3 w-3" />
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setCurrentChatId(null)}
+                    className="h-7 w-7 hover:bg-white/50 dark:hover:bg-gray-800/50 relative z-10"
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>New Chat</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={expand}
-            className="h-7 w-7 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50 relative z-10"
-          >
-            <Maximize2 className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={close}
-            className="h-7 w-7 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50 relative z-10"
-          >
-            <X className="h-3 w-3" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={expand}
+                  className="h-7 w-7 hover:bg-white/50 dark:hover:bg-gray-800/50 relative z-10"
+                >
+                  <Maximize2 className="h-3 w-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Expand</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={close}
+                  className="h-7 w-7 hover:bg-white/50 dark:hover:bg-gray-800/50 relative z-10"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Close</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </CardHeader>
       <CardContent className="flex-1 p-0 flex flex-col min-h-0 rounded-2xl">

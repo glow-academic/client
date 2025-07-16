@@ -17,8 +17,8 @@ import { logInfo } from "@/utils/logger";
 import { getAssistantMessagesByChat } from "@/utils/queries/assistant_messages/get-assistant-messages-by-chat";
 import { getAssistantToolCallsByChat } from "@/utils/queries/assistant_tool_calls/get-assistant-tool-calls-by-chat";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle, Loader2, Wrench } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
+import { CheckCircle, Loader2, Wrench, ArrowDown } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ChatStarterPrompts from "./ChatStarterPrompts";
 
 // MODIFIED: Added variant prop to adjust dot size
@@ -206,6 +206,12 @@ export default function ChatMessages({
   const { currentChatId, isConnected } = useAssistant();
   const { effectiveRole } = useRole();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const scrollAreaRef = useRef<HTMLDivElement | null>(null);
+
+  // Track if user is scrolled to bottom
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  // Track if there are new messages after user scrolled up
+  const [showScrollDown, setShowScrollDown] = useState(false);
 
   const { data: messages, isLoading: isLoadingMessages } = useQuery({
     queryKey: ["assistantMessages", currentChatId],
@@ -267,16 +273,66 @@ export default function ChatMessages({
     );
   }, [messages, toolCalls]);
 
+  // Scroll to bottom when new messages arrive, unless user has scrolled up
   useEffect(() => {
     const timeline = createTimeline();
     if (timeline.length > 0) {
-      const timer = setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
-      return () => clearTimeout(timer);
+      if (isAtBottom) {
+        const timer = setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+        return () => clearTimeout(timer);
+      } else {
+        // If not at bottom, show scroll down icon
+        setShowScrollDown(true);
+      }
     }
     return () => {};
-  }, [createTimeline]);
+  }, [createTimeline, isAtBottom]);
+
+  // Listen for scroll events to determine if user is at bottom
+  useEffect(() => {
+    const scrollContainer = scrollAreaRef.current;
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      // Find the scrollable div inside ScrollArea
+      const scrollable =
+        scrollContainer.querySelector('[data-radix-scroll-area-viewport]') ||
+        scrollContainer;
+      if (!scrollable) return;
+
+      const { scrollTop, scrollHeight, clientHeight } = scrollable as HTMLElement;
+      // Consider at bottom if within 32px of bottom
+      const atBottom = scrollHeight - scrollTop - clientHeight < 32;
+      setIsAtBottom(atBottom);
+      if (atBottom) setShowScrollDown(false);
+    };
+
+    // Attach to the scrollable viewport
+    const scrollable =
+      scrollContainer.querySelector('[data-radix-scroll-area-viewport]') ||
+      scrollContainer;
+    if (scrollable) {
+      scrollable.addEventListener("scroll", handleScroll);
+    }
+
+    // Initial check
+    handleScroll();
+
+    return () => {
+      if (scrollable) {
+        scrollable.removeEventListener("scroll", handleScroll);
+      }
+    };
+  }, [scrollAreaRef, messages, toolCalls]);
+
+  // When user clicks scroll down, scroll to bottom and hide icon
+  const handleScrollDown = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    setShowScrollDown(false);
+    setIsAtBottom(true);
+  };
 
   if (!shouldShow) {
     return null;
@@ -310,80 +366,93 @@ export default function ChatMessages({
   const timeline = createTimeline();
 
   return (
-    <ScrollArea className="h-full">
-      {/* MODIFIED: Conditional padding and spacing */}
-      <div
-        className={
-          variant === "minimized" ? "p-1 space-y-2" : "p-2 space-y-4"
-        }
-      >
-        {timeline.map((item) => {
-          if (item.type === "message") {
-            const message = item.data as AssistantMessage;
-            return (
-              <div
-                key={message.id}
-                className={`flex ${
-                  message.role === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
+    <div className="relative h-full">
+      <ScrollArea className="h-full" ref={scrollAreaRef}>
+        {/* MODIFIED: Conditional padding and spacing */}
+        <div
+          className={
+            variant === "minimized" ? "p-1 space-y-2" : "p-2 space-y-4"
+          }
+        >
+          {timeline.map((item) => {
+            if (item.type === "message") {
+              const message = item.data as AssistantMessage;
+              return (
                 <div
-                  // MODIFIED: Conditional padding and rounding
-                  className={`max-w-[80%] shadow-md ${
-                    variant === "minimized" ? "rounded-lg p-2" : "rounded-xl p-4"
-                  } ${
-                    message.role === "user"
-                      ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
-                      : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm"
+                  key={message.id}
+                  className={`flex ${
+                    message.role === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
-                  {message.role === "assistant" &&
-                  !message.completed &&
-                  message.content === "" ? (
-                    <div className="flex items-center">
-                      {/* MODIFIED: Conditional font size and margin */}
-                      <span
-                        className={`text-muted-foreground ${
+                  <div
+                    // MODIFIED: Conditional padding and rounding
+                    className={`max-w-[80%] shadow-md ${
+                      variant === "minimized" ? "rounded-lg p-2" : "rounded-xl p-4"
+                    } ${
+                      message.role === "user"
+                        ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
+                        : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm"
+                    }`}
+                  >
+                    {message.role === "assistant" &&
+                    !message.completed &&
+                    message.content === "" ? (
+                      <div className="flex items-center">
+                        {/* MODIFIED: Conditional font size and margin */}
+                        <span
+                          className={`text-muted-foreground ${
+                            variant === "minimized"
+                              ? "text-xs mr-1.5"
+                              : "text-sm mr-2"
+                          }`}
+                        >
+                          Thinking
+                        </span>
+                        {/* MODIFIED: Pass variant to LoadingDots */}
+                        <LoadingDots variant={variant} />
+                      </div>
+                    ) : (
+                      // MODIFIED: Conditional font size and leading
+                      <div
+                        className={
                           variant === "minimized"
-                            ? "text-xs mr-1.5"
-                            : "text-sm mr-2"
-                        }`}
+                            ? "text-xs leading-normal"
+                            : "text-sm leading-relaxed"
+                        }
                       >
-                        Thinking
-                      </span>
-                      {/* MODIFIED: Pass variant to LoadingDots */}
-                      <LoadingDots variant={variant} />
-                    </div>
-                  ) : (
-                    // MODIFIED: Conditional font size and leading
-                    <div
-                      className={
-                        variant === "minimized"
-                          ? "text-xs leading-normal"
-                          : "text-sm leading-relaxed"
-                      }
-                    >
-                      <Markdown>{message.content}</Markdown>
-                    </div>
-                  )}
+                        <Markdown>{message.content}</Markdown>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          } else {
-            const toolCall = item.data as AssistantToolCall;
-            return (
-              <div key={toolCall.id} className="flex justify-start">
-                <div className="max-w-[80%] w-full">
-                  {/* MODIFIED: Pass variant to ToolCallCard */}
-                  <ToolCallCard toolCall={toolCall} variant={variant} />
+              );
+            } else {
+              const toolCall = item.data as AssistantToolCall;
+              return (
+                <div key={toolCall.id} className="flex justify-start">
+                  <div className="max-w-[80%] w-full">
+                    {/* MODIFIED: Pass variant to ToolCallCard */}
+                    <ToolCallCard toolCall={toolCall} variant={variant} />
+                  </div>
                 </div>
-              </div>
-            );
-          }
-        })}
+              );
+            }
+          })}
 
-        <div ref={messagesEndRef} />
-      </div>
-    </ScrollArea>
+          <div ref={messagesEndRef} />
+        </div>
+      </ScrollArea>
+      {/* Arrow Down Scroll Icon */}
+      {showScrollDown && (
+        <button
+          aria-label="Scroll to latest"
+          onClick={handleScrollDown}
+          className="absolute z-20 left-1/2 -translate-x-1/2 bottom-4 bg-white dark:bg-gray-900 border border-blue-200 dark:border-blue-800 shadow-lg rounded-full p-2 hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors"
+          style={{ boxShadow: "0 2px 8px 0 rgba(0,0,0,0.08)" }}
+        >
+          <ArrowDown className="h-6 w-6 text-blue-500" />
+        </button>
+      )}
+    </div>
   );
 }
