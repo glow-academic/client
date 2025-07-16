@@ -245,10 +245,12 @@ class TestSimulationOverview:
         
         # When rubric_id is not None, session.get for rubric should return None (no rubric)
         mock_session.get.side_effect = [mock_sim, None]  # simulation, rubric
-        # Mock session.exec calls: attempts, chats (cohorts and scenarios calls are skipped since arrays are empty)
+        # Mock session.exec calls: attempts, then for each attempt: chats, then for each chat: grade
         mock_session.exec.return_value.all.side_effect = [
             mock_attempts,  # attempts
-            mock_chats,  # chats
+            [mock_chats[0]],  # chats for attempt 1
+            [mock_chats[1]],  # chats for attempt 2
+            [mock_chats[2]],  # chats for attempt 3
         ]
         mock_session.exec.return_value.first.side_effect = mock_grades
         
@@ -355,11 +357,10 @@ class TestSimulationOverview:
         
         # When rubric_id is not None, session.get for rubric should return None (no rubric)
         mock_session.get.side_effect = [mock_sim, None]  # simulation, rubric
-        # Mock session.exec calls: attempts, chats (cohorts and scenarios calls are skipped since arrays are empty)
+        # Mock session.exec calls: attempts, then for each attempt: chats, then for each chat: grade
         mock_session.exec.return_value.all.side_effect = [
             mock_attempts,  # attempts
-            mock_chats,  # chats
-        ]
+        ] + [[chat] for chat in mock_chats]  # chats for each attempt
         mock_session.exec.return_value.first.side_effect = mock_grades + [None, None]  # 8 grades + 2 None
         
         result = simulation_overview(str(sim_id))
