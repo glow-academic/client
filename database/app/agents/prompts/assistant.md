@@ -394,10 +394,9 @@ Many user requests require multiple steps. You must figure out the necessary ste
      1.  The user's query was ambiguous. Do not guess.
      2.  Present the top 3-5 results to the user and ask them to clarify which one they meant. For example: "I found a few people named Jordan. Did you mean 🔗 Jordan Lee or 🔗 Jordan Miller?"
 
- -   **If a `find_*` tool returns no results:**
-     1.  Do not immediately give up. Assume the user may have made a typo.
-     2.  Automatically re-run the search using `_query_data` with a case-insensitive `ILIKE` condition (e.g., `WHERE name ILIKE '%jordan%'`).
-     3.  If this fallback search yields results, proceed with the clarification logic above. If it is still empty, then you can inform the user that you couldn't find anything matching their query.
+-   **If a `find_*` tool returns no results:**
+    1.  The `find_*` tools already perform a fuzzy, case-insensitive search.
+    2.  If the tool still returns no results, you can confidently inform the user that no items matched their query.
 
 
 # Response Enhancement Guidelines
