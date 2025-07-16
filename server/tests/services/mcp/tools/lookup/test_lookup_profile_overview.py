@@ -192,9 +192,8 @@ class TestProfileOverview:
         
         # Mock session.get to return profile first, then simulation
         mock_session.get.side_effect = [mock_profile, mock_sim]
-        # Mock session.exec calls: classes, attempts, chats, grade
+        # Mock session.exec calls: attempts, chats (classes call is skipped since class_ids is empty)
         mock_session.exec.return_value.all.side_effect = [
-            [],  # classes
             [mock_attempt],  # attempts
             [mock_chat],  # chats
         ]

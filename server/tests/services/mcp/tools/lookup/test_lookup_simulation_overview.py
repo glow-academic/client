@@ -96,10 +96,8 @@ class TestSimulationOverview:
         mock_grade = MockGrade(mock_chat.id, 90, True)
 
         mock_session.get.side_effect = [mock_sim, mock_rubric]
-        # Mock session.exec calls: cohorts, scenarios, attempts, chats, grade
+        # Mock session.exec calls: attempts, chats (cohorts and scenarios calls are skipped since arrays are empty)
         mock_session.exec.return_value.all.side_effect = [
-            [],  # cohorts
-            [],  # scenarios
             [mock_attempt],  # attempts
             [mock_chat],  # chats
         ]
@@ -160,6 +158,7 @@ class TestSimulationOverview:
         
         # When rubric_id is None, session.get for rubric should return None
         mock_session.get.side_effect = [mock_sim, None]  # simulation, rubric
+        # No exec calls are made since all arrays are empty
         mock_session.exec.return_value.all.return_value = []
         
         result = simulation_overview(str(sim_id))
@@ -203,9 +202,8 @@ class TestSimulationOverview:
         
         # When rubric_id is not None, session.get for rubric should return None (no rubric)
         mock_session.get.side_effect = [mock_sim, None]  # simulation, rubric
-        # Mock session.exec calls: cohorts, scenarios, attempts
+        # Mock session.exec calls: scenarios, attempts (cohorts call is skipped since cohort_ids is empty)
         mock_session.exec.return_value.all.side_effect = [
-            [],  # cohorts
             [mock_scenario],  # scenarios
             [],  # attempts
         ]
@@ -247,10 +245,8 @@ class TestSimulationOverview:
         
         # When rubric_id is not None, session.get for rubric should return None (no rubric)
         mock_session.get.side_effect = [mock_sim, None]  # simulation, rubric
-        # Mock session.exec calls: cohorts, scenarios, attempts, chats, grades
+        # Mock session.exec calls: attempts, chats (cohorts and scenarios calls are skipped since arrays are empty)
         mock_session.exec.return_value.all.side_effect = [
-            [],  # cohorts
-            [],  # scenarios
             mock_attempts,  # attempts
             mock_chats,  # chats
         ]
@@ -274,10 +270,8 @@ class TestSimulationOverview:
         
         # When rubric_id is not None, session.get for rubric should return None (no rubric)
         mock_session.get.side_effect = [mock_sim, None]  # simulation, rubric
-        # Mock session.exec calls: cohorts, scenarios, attempts, chats, grade
+        # Mock session.exec calls: attempts, chats (cohorts and scenarios calls are skipped since arrays are empty)
         mock_session.exec.return_value.all.side_effect = [
-            [],  # cohorts
-            [],  # scenarios
             [mock_attempt],  # attempts
             [mock_chat],  # chats
         ]
@@ -310,10 +304,8 @@ class TestSimulationOverview:
         
         # When rubric_id is not None, session.get for rubric should return None (no rubric)
         mock_session.get.side_effect = [mock_sim, None]  # simulation, rubric
-        # Mock session.exec calls: cohorts, scenarios, attempts, chats, grades
+        # Mock session.exec calls: attempts, chats (cohorts and scenarios calls are skipped since arrays are empty)
         mock_session.exec.return_value.all.side_effect = [
-            [],  # cohorts
-            [],  # scenarios
             [mock_attempt],  # attempts
             mock_chats,  # chats
         ]
@@ -336,6 +328,7 @@ class TestSimulationOverview:
         
         # When rubric_id is not None, session.get for rubric should return None (no rubric)
         mock_session.get.side_effect = [mock_sim, None]  # simulation, rubric
+        # No exec calls are made since all arrays are empty
         mock_session.exec.return_value.all.return_value = []
         
         result = simulation_overview(str(sim_id))
@@ -362,10 +355,8 @@ class TestSimulationOverview:
         
         # When rubric_id is not None, session.get for rubric should return None (no rubric)
         mock_session.get.side_effect = [mock_sim, None]  # simulation, rubric
-        # Mock session.exec calls: cohorts, scenarios, attempts, chats, grades
+        # Mock session.exec calls: attempts, chats (cohorts and scenarios calls are skipped since arrays are empty)
         mock_session.exec.return_value.all.side_effect = [
-            [],  # cohorts
-            [],  # scenarios
             mock_attempts,  # attempts
             mock_chats,  # chats
         ]

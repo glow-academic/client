@@ -172,8 +172,8 @@ class TestCohortOverview:
         ]
         
         mock_session.get.return_value = mock_cohort
-        # The function makes two exec calls: one for profiles (empty), one for all active simulations
-        mock_session.exec.return_value.all.side_effect = [[], mock_sims]
+        # Only one exec call is made for simulations since profile_ids is empty
+        mock_session.exec.return_value.all.side_effect = [mock_sims]
         
         result = cohort_overview(str(cohort_id))
         
