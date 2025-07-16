@@ -7,15 +7,8 @@ import uuid
 from typing import Any, Dict
 
 from app.db import get_session
-from app.models import (
-    Cohorts,
-    Rubrics,
-    Scenarios,
-    SimulationAttempts,
-    SimulationChatGrades,
-    SimulationChats,
-    Simulations,
-)
+from app.models import (Cohorts, Rubrics, Scenarios, SimulationAttempts,
+                        SimulationChatGrades, SimulationChats, Simulations)
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select
 
@@ -55,7 +48,7 @@ def simulation_overview(sim_id: str) -> Dict[str, Any]:
             "title": simulation.title,
             "active": simulation.active,
             "time_limit": simulation.time_limit,
-            "created_at": simulation.created_at.isoformat(),
+            "created_at": simulation.created_at.isoformat() if simulation.created_at else None,
         }
 
         # Get rubric
