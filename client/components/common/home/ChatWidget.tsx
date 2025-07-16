@@ -73,54 +73,49 @@ export default function ChatWidget() {
   };
 
   return (
-    <Card className="fixed bottom-4 right-4 w-96 h-[520px] shadow-xl border-2 z-40 flex flex-col bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
-      <CardHeader className="p-3 border-b flex flex-row items-center justify-between space-y-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+    <Card className="fixed bottom-4 right-4 w-96 h-[520px] shadow-xl border-2 z-40 flex flex-col bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 p-0 rounded-2xl gap-0">
+      <CardHeader className="border-b flex flex-row items-center justify-between space-y-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-t-2xl rounded-b-none h-15 p-5 gap-5">
         <div className="flex items-center gap-2 flex-1 min-w-0 relative z-10">
           <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shrink-0">
             <span className="text-white font-bold text-xs">G</span>
           </div>
-          <Select
-            value={currentChatId || "new"}
-            onValueChange={handleChatSelect}
-            disabled={isLoadingChats}
-          >
-            <SelectTrigger className="w-full border-none shadow-none p-0 h-auto focus:ring-0">
-              <SelectValue>
-                <div className="flex items-center">
-                  <span className="text-sm font-medium truncate">
-                    {getCurrentChatTitle()}
-                  </span>
-                  {/* show BETA */}
-                  <span
-                    className="text-xs ml-2 px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 font-semibold shadow-sm"
-                    style={{ backgroundColor: "#FEF3C7" }}
-                  >
-                    BETA
-                  </span>
-                </div>
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {chats && chats.length > 0 && (
-                <>
-                  <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
-                    Past Chats
+          <div className="w-full">
+            <Select
+              value={currentChatId || "new"}
+              onValueChange={handleChatSelect}
+              disabled={isLoadingChats}
+            >
+              <SelectTrigger className="w-full border border-gray-300 dark:border-gray-700 rounded-md shadow-none p-2 h-auto focus:ring-0 bg-white dark:bg-gray-900">
+                <SelectValue>
+                  <div className="flex items-center">
+                    <span className="text-sm font-medium truncate">
+                      {getCurrentChatTitle()}
+                    </span>
                   </div>
-                  {chats
-                    .sort(
-                      (a, b) =>
-                        new Date(b.createdAt).getTime() -
-                        new Date(a.createdAt).getTime()
-                    )
-                    .map((pastChat) => (
-                      <SelectItem key={pastChat.id} value={pastChat.id}>
-                        <span className="truncate">{pastChat.title}</span>
-                      </SelectItem>
-                    ))}
-                </>
-              )}
-            </SelectContent>
-          </Select>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {chats && chats.length > 0 && (
+                  <>
+                    <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
+                      Past Chats
+                    </div>
+                    {chats
+                      .sort(
+                        (a, b) =>
+                          new Date(b.createdAt).getTime() -
+                          new Date(a.createdAt).getTime()
+                      )
+                      .map((pastChat) => (
+                        <SelectItem key={pastChat.id} value={pastChat.id}>
+                          <span className="truncate">{pastChat.title}</span>
+                        </SelectItem>
+                      ))}
+                  </>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {currentChatId && (
@@ -151,10 +146,10 @@ export default function ChatWidget() {
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 p-0 flex flex-col min-h-0">
-        <div className="flex-1 min-h-0 overflow-hidden shadow-inner">
+      <CardContent className="flex-1 p-0 flex flex-col min-h-0 rounded-2xl">
+        <div className="flex-1 min-h-0 overflow-hidden shadow-inner pt-2">
           {currentChatId ? (
-            <ChatMessages onPromptClick={handlePromptClick} />
+            <ChatMessages onPromptClick={handlePromptClick} variant="minimized" />
           ) : (
             <ChatStarterPrompts
               onPromptClick={handlePromptClick}

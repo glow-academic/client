@@ -141,10 +141,12 @@ type TimelineItem = {
 
 export interface ChatMessagesProps {
   onPromptClick?: (prompt: string) => void;
+  variant?: "expanded" | "minimized";
 }
 
 export default function ChatMessages({
   onPromptClick,
+  variant = "expanded",
 }: ChatMessagesProps = {}) {
   const { currentChatId, isConnected } = useAssistant();
   const { effectiveRole } = useRole();
@@ -263,8 +265,8 @@ export default function ChatMessages({
   const timeline = createTimeline();
 
   return (
-    <ScrollArea className="h-full">
-      <div className="p-6 space-y-6">
+    <ScrollArea className={`h-full ${variant === "minimized" ? "p-0" : ""}`}>
+      <div className="p-2 space-y-6">
         {timeline.map((item) => {
           if (item.type === "message") {
             const message = item.data as AssistantMessage;

@@ -1,5 +1,6 @@
 # server/app/main.py
 import base64
+import contextlib
 import logging
 import os
 import platform
@@ -7,7 +8,7 @@ import sys
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any, AsyncIterator, Dict
 
 import socketio  # type: ignore
 from app.db import init_db
@@ -391,9 +392,18 @@ def get_socketio_instance() -> socketio.AsyncServer:
     """Get the global Socket.IO server instance"""
     return sio
 
+# Create a combined lifespan to manage both session managers
+@contextlib.asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
+    async with contextlib.AsyncExitStack() as stack:
+        from app.services.mcp.server import server
+        await stack.enter_async_context(server.session_manager.run())
+        
+        yield
+
 
 # Create FastAPI app
-fastapi_app = FastAPI(title="GLOW API", on_startup=[init_db])
+fastapi_app = FastAPI(title="GLOW API", on_startup=[init_db], lifespan=lifespan)
 
 # Add CORS middleware FIRST
 fastapi_app.add_middleware(

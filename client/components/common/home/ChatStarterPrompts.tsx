@@ -62,13 +62,6 @@ export default function ChatStarterPrompts({
               <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 GLOW Assistant
               </h3>
-              {/* show BETA */}
-              <span
-                className="text-xs ml-2 px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 font-semibold shadow-sm"
-                style={{ backgroundColor: "#FEF3C7" }}
-              >
-                BETA
-              </span>
             </div>
             <p className="text-base text-muted-foreground max-w-2xl mx-auto">
               Get insights about student performance, generate reports, and

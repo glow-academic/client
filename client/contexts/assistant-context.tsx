@@ -209,7 +209,6 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
 
   const close = useCallback(() => {
     setUiState("closed");
-    setCurrentChatId(null);
   }, []);
 
   // Chat management methods
