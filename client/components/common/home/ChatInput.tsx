@@ -101,16 +101,16 @@ export default function ChatInput({
           disabled={isSendingMessage}
           // MODIFIED: Styling for auto-growth, padding for button, and max height
           className="flex-1 resize-none overflow-y-auto pr-12 text-sm max-h-24"
-          rows={2} // Start with 2 rows by default
+          rows={1} // Start with 2 rows by default
         />
         {/* MODIFIED: Button is now absolutely positioned inside the relative container */}
-        <div className="absolute bottom-2.5 right-2.5 flex flex-col gap-2">
+        <div className="absolute bottom-1 right-1 flex flex-col gap-2">
           {isSendingMessage ? (
             <Button
               type="submit"
               disabled={isStoppingMessage}
               size="icon"
-              className="shrink-0 h-8 w-8 p-0 bg-red-600 hover:bg-red-700"
+              className="shrink-0 h-7 w-7 p-0 bg-red-600 hover:bg-red-700"
               variant="destructive"
               title="Stop"
             >
@@ -122,7 +122,7 @@ export default function ChatInput({
               disabled={isDisabled}
               title={buttonTitle}
               size="icon"
-              className="shrink-0 h-8 w-8 p-0 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600"
+              className="shrink-0 h-7 w-7 p-0 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600"
             >
               <Send className="h-4 w-4" />
             </Button>
