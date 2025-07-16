@@ -14,12 +14,12 @@ from sqlmodel import select
 
 def agent_overview(agent_id: str) -> Dict[str, Any]:
     """
-    🤖 Agent overview with metadata & usage
-    ---------------------------------------
+    Agent overview
+    --------------
     Show agent details and associated simulations.
 
     Input
-      • agent_id – UUID of the agent
+      • agent_id - UUID of the agent
 
     Returns
       { "id": "…", "name": "…", "simulations": […], … }

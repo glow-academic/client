@@ -22,13 +22,13 @@ from sqlmodel import select
 
 def profile_overview(key: str) -> Dict[str, Any]:
     """
-    🔎 Profile overview
-    -------------------
+    Profile overview
+    ----------------
     Profile + last login, classes, dashboard flags, latest grades.
     Accepts UUID or name.
 
     Input
-      • key – UUID or name/alias to search for
+      • key - UUID or name/alias to search for
 
     Returns
       { "profile": { … }, "classes": [ … ], "latest_grades": [ … ] }

@@ -190,13 +190,15 @@ class TestProfileOverview:
         mock_chat = MockChat(chat_id, attempt_id)
         mock_grade = MockGrade(chat_id, 85, True)
         
-        mock_session.get.side_effect = [mock_profile, mock_sim]  # profile, simulation
+        # Mock session.get to return profile first, then simulation
+        mock_session.get.side_effect = [mock_profile, mock_sim]
+        # Mock session.exec calls: classes, attempts, chats, grade
         mock_session.exec.return_value.all.side_effect = [
             [],  # classes
             [mock_attempt],  # attempts
             [mock_chat],  # chats
         ]
-        mock_session.exec.return_value.first.return_value = mock_grade  # grade
+        mock_session.exec.return_value.first.side_effect = [mock_grade]  # grade
 
         result = profile_overview(str(profile_id))
 
@@ -254,26 +256,26 @@ class TestProfileOverview:
 
     def test_profile_overview_case_insensitive_search(self, mock_get_session):
         """Test profile_overview case insensitive name search."""
-        mock_session = MagicMock()
-        mock_get_session.return_value = iter([mock_session])
+        # Test each case variation separately to avoid session exhaustion
+        test_cases = ["nina park", "NINA PARK", "NiNa PaRk"]
         
-        mock_profile = MockProfile(uuid.uuid4(), "Nina", "Park", "npark")
-        mock_session.get.return_value = None  # UUID lookup fails
-        mock_session.exec.return_value.first.return_value = mock_profile  # Name search succeeds
-        mock_session.exec.return_value.all.return_value = []
+        for test_case in test_cases:
+            mock_session = MagicMock()
+            mock_get_session.return_value = iter([mock_session])
+            
+            mock_profile = MockProfile(uuid.uuid4(), "Nina", "Park", "npark")
+            mock_session.get.return_value = None  # UUID lookup fails
+            mock_session.exec.return_value.first.return_value = mock_profile  # Name search succeeds
+            mock_session.exec.return_value.all.return_value = []
 
-        # Test different case variations
-        result1 = profile_overview("nina park")
-        result2 = profile_overview("NINA PARK")
-        result3 = profile_overview("NiNa PaRk")
+            result = profile_overview(test_case)
 
-        assert result1["profile"]["alias"] == "npark"
-        assert result2["profile"]["alias"] == "npark"
-        assert result3["profile"]["alias"] == "npark"
+            assert result["profile"]["alias"] == "npark"
 
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `profile_overview`")
 class TestProfile_Overview:

@@ -131,9 +131,9 @@ class TestScenarioOverview:
         
         assert result["simulation_count"] == 3
         assert len(result["simulations"]) == 3
-        assert result["simulations"][0]["name"] == "Sim 1"
-        assert result["simulations"][1]["name"] == "Sim 2"
-        assert result["simulations"][2]["name"] == "Sim 3"
+        assert result["simulations"][0]["title"] == "Sim 1"
+        assert result["simulations"][1]["title"] == "Sim 2"
+        assert result["simulations"][2]["title"] == "Sim 3"
 
     def test_scenario_overview_array_filtering(self, mock_get_session):
         """Test scenario_overview array filtering logic."""
@@ -243,6 +243,7 @@ class TestScenarioOverview:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `scenario_overview`")
 class TestScenario_Overview:

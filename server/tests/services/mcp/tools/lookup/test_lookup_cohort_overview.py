@@ -172,6 +172,7 @@ class TestCohortOverview:
         ]
         
         mock_session.get.return_value = mock_cohort
+        # The function makes two exec calls: one for profiles (empty), one for all active simulations
         mock_session.exec.return_value.all.side_effect = [[], mock_sims]
         
         result = cohort_overview(str(cohort_id))
@@ -218,6 +219,7 @@ class TestCohortOverview:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `cohort_overview`")
 class TestCohort_Overview:

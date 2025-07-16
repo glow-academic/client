@@ -96,13 +96,14 @@ class TestSimulationOverview:
         mock_grade = MockGrade(mock_chat.id, 90, True)
 
         mock_session.get.side_effect = [mock_sim, mock_rubric]
+        # Mock session.exec calls: cohorts, scenarios, attempts, chats, grade
         mock_session.exec.return_value.all.side_effect = [
             [],  # cohorts
             [],  # scenarios
             [mock_attempt],  # attempts
             [mock_chat],  # chats
         ]
-        mock_session.exec.return_value.first.return_value = mock_grade
+        mock_session.exec.return_value.first.side_effect = [mock_grade]
         
         result = simulation_overview(str(sim_id))
         
@@ -157,7 +158,8 @@ class TestSimulationOverview:
         
         mock_sim = MockSimulation(sim_id, "Test Sim", rubric_id=None)
         
-        mock_session.get.return_value = mock_sim
+        # When rubric_id is None, session.get for rubric should return None
+        mock_session.get.side_effect = [mock_sim, None]  # simulation, rubric
         mock_session.exec.return_value.all.return_value = []
         
         result = simulation_overview(str(sim_id))
@@ -174,7 +176,8 @@ class TestSimulationOverview:
         mock_sim = MockSimulation(sim_id, "Test Sim", cohort_ids=[cohort_id])
         mock_cohort = MockCohort(cohort_id, "Test Cohort")
         
-        mock_session.get.return_value = mock_sim
+        # When rubric_id is not None, session.get for rubric should return None (no rubric)
+        mock_session.get.side_effect = [mock_sim, None]  # simulation, rubric
         mock_session.exec.return_value.all.side_effect = [
             [mock_cohort],  # cohorts
             [],  # scenarios
@@ -198,7 +201,9 @@ class TestSimulationOverview:
         mock_sim = MockSimulation(sim_id, "Test Sim", scenario_ids=[scenario_id])
         mock_scenario = MockScenario(scenario_id, "Test Scenario", "Desc")
         
-        mock_session.get.return_value = mock_sim
+        # When rubric_id is not None, session.get for rubric should return None (no rubric)
+        mock_session.get.side_effect = [mock_sim, None]  # simulation, rubric
+        # Mock session.exec calls: cohorts, scenarios, attempts
         mock_session.exec.return_value.all.side_effect = [
             [],  # cohorts
             [mock_scenario],  # scenarios
@@ -240,7 +245,9 @@ class TestSimulationOverview:
             MockGrade(mock_chats[2].id, 90, True),   # Passed
         ]
         
-        mock_session.get.return_value = mock_sim
+        # When rubric_id is not None, session.get for rubric should return None (no rubric)
+        mock_session.get.side_effect = [mock_sim, None]  # simulation, rubric
+        # Mock session.exec calls: cohorts, scenarios, attempts, chats, grades
         mock_session.exec.return_value.all.side_effect = [
             [],  # cohorts
             [],  # scenarios
@@ -265,14 +272,16 @@ class TestSimulationOverview:
         mock_attempt = MockAttempt(uuid.uuid4(), sim_id)
         mock_chat = MockChat(uuid.uuid4(), mock_attempt.id)
         
-        mock_session.get.return_value = mock_sim
+        # When rubric_id is not None, session.get for rubric should return None (no rubric)
+        mock_session.get.side_effect = [mock_sim, None]  # simulation, rubric
+        # Mock session.exec calls: cohorts, scenarios, attempts, chats, grade
         mock_session.exec.return_value.all.side_effect = [
             [],  # cohorts
             [],  # scenarios
             [mock_attempt],  # attempts
             [mock_chat],  # chats
         ]
-        mock_session.exec.return_value.first.return_value = None  # No grade
+        mock_session.exec.return_value.first.side_effect = [None]  # No grade
         
         result = simulation_overview(str(sim_id))
         
@@ -299,7 +308,9 @@ class TestSimulationOverview:
         # Only one chat has a grade
         mock_grade = MockGrade(mock_chats[0].id, 85, True)
         
-        mock_session.get.return_value = mock_sim
+        # When rubric_id is not None, session.get for rubric should return None (no rubric)
+        mock_session.get.side_effect = [mock_sim, None]  # simulation, rubric
+        # Mock session.exec calls: cohorts, scenarios, attempts, chats, grades
         mock_session.exec.return_value.all.side_effect = [
             [],  # cohorts
             [],  # scenarios
@@ -323,7 +334,8 @@ class TestSimulationOverview:
         mock_sim = MockSimulation(sim_id, "Test Sim")
         mock_sim.created_at = None
         
-        mock_session.get.return_value = mock_sim
+        # When rubric_id is not None, session.get for rubric should return None (no rubric)
+        mock_session.get.side_effect = [mock_sim, None]  # simulation, rubric
         mock_session.exec.return_value.all.return_value = []
         
         result = simulation_overview(str(sim_id))
@@ -348,7 +360,9 @@ class TestSimulationOverview:
             passed = i < 6  # First 6 passed
             mock_grades.append(MockGrade(mock_chats[i].id, 85 if passed else 65, passed))
         
-        mock_session.get.return_value = mock_sim
+        # When rubric_id is not None, session.get for rubric should return None (no rubric)
+        mock_session.get.side_effect = [mock_sim, None]  # simulation, rubric
+        # Mock session.exec calls: cohorts, scenarios, attempts, chats, grades
         mock_session.exec.return_value.all.side_effect = [
             [],  # cohorts
             [],  # scenarios
@@ -366,6 +380,7 @@ class TestSimulationOverview:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `simulation_overview`")
 class TestSimulation_Overview:
