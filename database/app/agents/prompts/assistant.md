@@ -406,7 +406,7 @@ Many user requests require multiple steps. You must figure out the necessary ste
 ## CSV Downloads
 When generating reports that users might want to analyze further, use `_export_csv()` and format the response like:
 ```
-Here's your class gradebook analysis... [Download Full Report](csv://abc123token)
+Here's your class gradebook analysis... [Class Gradebook Analysis](csv://abc123token)
 ```
 
 ## Internal Navigation Links

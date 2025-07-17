@@ -30,4 +30,8 @@ async def get_csv(
         raise HTTPException(status_code=404, detail="CSV file not found")
 
     # Return the file as a response
-    return FileResponse(path=file_path, filename=token, media_type="text/csv")
+    return FileResponse(
+        path=file_path,
+        filename=f"{token}.csv",
+        media_type="text/csv",
+    )

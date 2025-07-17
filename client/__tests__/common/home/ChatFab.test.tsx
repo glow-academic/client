@@ -5,19 +5,33 @@ import userEvent from '@testing-library/user-event';
 // ——————————————————————————————————————————
 import ChatFab from '@/components/common/home/ChatFab';
 
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+import type { ChatFabProps } from '@/components/common/home/ChatFab';
+const mockProps: ChatFabProps = {
+  up: false,
+};
+// ------------------------------------------------------------------
 describe('ChatFab', () => {
   
 
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       
-      renderWithMocks(<ChatFab  />);
+      renderWithMocks(<ChatFab {...mockProps} />);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
     });
 
-    
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: ChatFabProps
+      
+      // TODO add props assertions
+    });
 
     it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -58,7 +72,11 @@ describe('ChatFab', () => {
 
     });
 
-    
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
+    });
   });
 });
 
@@ -69,8 +87,8 @@ describe('ChatFab', () => {
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Has props: true
+ * - Props interface: ChatFabProps
  * - Client component: true
  * - Uses hooks: useAssistant, useRole, usePathname
  * - Uses router: true
@@ -85,7 +103,7 @@ describe('ChatFab', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<ChatFab />);
+ * render(<ChatFab {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

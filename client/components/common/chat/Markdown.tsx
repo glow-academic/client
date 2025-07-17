@@ -15,7 +15,6 @@ import remarkGfm from "remark-gfm";
 import RemarkMathPlugin from "remark-math";
 // remarkDirective might not be needed if no custom directives are used in the barebones version
 // import remarkDirective from 'remark-directive';
-import { logError } from "@/utils/logger";
 import "highlight.js/styles/github.css"; // Keep highlight.js CSS for code blocks
 import Link from "next/link";
 import rehypeHighlight from "rehype-highlight";
@@ -35,39 +34,18 @@ const MarkdownLink = ({
   children,
   ...props
 }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
-  // Check if it's a CSV download link
-  if (href && href.startsWith("csv://")) {
-    const token = href.substring(6); // Remove 'csv://' prefix
-
-    const handleCsvDownload = async (e: React.MouseEvent) => {
-      e.preventDefault();
-
-      // Dynamically import the CSV download utility
-      const { downloadCsv } = await import("@/utils/api/csv/download-csv");
-
-      try {
-        const result = await downloadCsv(token);
-        if (!result.success) {
-          logError("Failed to download CSV:", result.message);
-          // You could show a toast notification here
-        }
-      } catch (error) {
-        logError("Error downloading CSV:", error);
-      }
-    };
-
+  const isCsvLink = href && href.startsWith("/api/download/csv/token/");
+  // if a csv link, we should prepend Download to the Link Name
+  if (isCsvLink) {
     return (
-      <button
-        onClick={handleCsvDownload}
-        className="prose-a inline-flex items-center gap-1 hover:underline cursor-pointer border-none bg-transparent p-0 font-inherit text-inherit"
-        type="button"
+      <a
+        href={href + "?name=" + children}
+        className="prose-a inline-flex items-center gap-1 hover:underline"
       >
-        {children}
-        <span className="text-xs">📥</span>
-      </button>
+        Download {children}
+      </a>
     );
   }
-
   // Check if it's an internal GLOW link (starts with #/ or /)
   const isInternalLink =
     href && (href.startsWith("#/") || href.startsWith("/"));
@@ -106,8 +84,15 @@ export default function Markdown({ children }: MarkdownProps) {
 
   // Removed getDocumentLabel and renderBadges functions
 
-  // Simplified text processing: only keep newline handling for <br> tags
-  const processedText = children.replace(/\n/g, "  \n");
+  // Normalize newlines only - don't inject extra spaces that could break link parsing
+  let processedText = children.replace(/\r?\n/g, "\n");
+
+  // have logic to make it a link here?
+  // turn csv://token into /api/download/csv/token/token
+  processedText = processedText.replace(
+    /\]\(csv:\/\/([\w-]+)\)/gi,
+    "](/api/download/csv/token/$1)"
+  );
 
   return (
     <div className="latex-container">

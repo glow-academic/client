@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Simulation } from "@/types";
 
-interface SimulationsDataTableToolbarProps {
+export interface SimulationsDataTableToolbarProps {
   table: Table<Simulation>;
   cohortOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
