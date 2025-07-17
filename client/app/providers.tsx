@@ -46,7 +46,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => getQueryClient());
 
   return (
-    <SessionProvider basePath={`${appPrefix}/api/auth`}>
+    <SessionProvider baseUrl="https://glow.cs.purdue.edu" basePath={`${appPrefix}/api/auth`}>
       <QueryClientProvider client={queryClient}>
           <RoleAndWebSocketProviderWrapper>
             {children}
