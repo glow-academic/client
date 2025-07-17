@@ -95,6 +95,7 @@ interface SimulationContextType {
   // UI state
   showResults: boolean;
   isSingleChatAttempt: boolean;
+  isLastAttempt: boolean;
   expectedChatCount: number;
   freshlyCompletedChats: Set<string>;
   setFreshlyCompletedChats: React.Dispatch<React.SetStateAction<Set<string>>>;
@@ -444,6 +445,7 @@ export function SimulationProvider({
   const expectedChatCount =
     simulation?.scenarioIds?.length || chats?.length || 1;
   const isSingleChatAttempt = expectedChatCount === 1;
+  const isLastAttempt = currentChatIndex === expectedChatCount - 1;
 
   // Timer calculation
   const timer = useMemo((): TimerState => {
@@ -955,6 +957,7 @@ export function SimulationProvider({
     // UI state
     showResults,
     isSingleChatAttempt,
+    isLastAttempt,
     expectedChatCount,
     freshlyCompletedChats,
     setFreshlyCompletedChats,
