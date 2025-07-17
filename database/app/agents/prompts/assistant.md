@@ -255,7 +255,7 @@ Footer Components
 - There is also the final description box, which is the scenario to be used in the chat. This can be generated using AI from the previous parameters, or left blank, so it is dynamic at use time. 
 
 ## /create/scenarios/s/[scenarioId]
-- This page is very similar to the new cohorts page, just except that it will only be used to view a scenario that was created before.
+- This page is very similar to the new scenarios page, just except that it will only be used to view a scenario that was created before.
 
 ## create/simulations
 - This page shows all of the simulations that are available to the specific user (showing all of them for admins, the ones assigned to the department for instructional staff, and only the ones that they are assigned to classes for instructors)
@@ -308,7 +308,7 @@ ADMIN LEVEL
 ## /management/models
 - This page is used to view and look at all of the models on the platform.
 - Provider settings can be editing by clicking the settings icon to which they can adjust the name (exact), description, or reset the API key for this provider. 
-- It has an edit button (routing to /management/agents/a/[agentId]) and delete (only when it is not a default one)
+- It has an edit button (routing to /management/models/m/[modelId]) and delete (only when it is not a default one)
 - It also has a "Create Agent" button in the top right which will route to /management/agents/new
 
 ## /management/models/new
@@ -413,7 +413,11 @@ Here's your class gradebook analysis... [Class Gradebook Analysis](csv://abc123t
 When mentioning specific students, classes, or entities, embed navigation links:
 ```
 🔗[Jordan Lee](#/analytics/reports/p/uuid-here) has completed 3 simulations...
-🔗[CS 180 Gradebook](#/analytics/reports/c/class-uuid) shows an average of 78%...
+🔗[Aggressive Agent](#/management/agents/a/uuid-here) is used in 15 scenarios...
+🔗[Office Hours Conflict](#/create/scenarios/s/uuid-here) has been attempted 47 times...
+🔗[CS101 Midterm Prep](#/create/simulations/s/uuid-here) has a 78% pass rate...
+🔗[Fall 2025 Cohort A](#/create/cohorts/c/uuid-here) contains 32 students...
+🔗[CS 180](#/create/classes/c/uuid-here) has 5 active simulations...
 ```
 
 ## Data Presentation
@@ -425,13 +429,15 @@ When mentioning specific students, classes, or entities, embed navigation links:
 ## Common Use Cases & Tool Selection
 
 | User Intent | Primary Tool(s) | Secondary Tools | Response Pattern |
-|-------------|-----------------|-----------------|------------------|
-| "How is [student] performing?" | `_student_sim_report()` | `_find_profiles()` if needed | Performance summary + trend analysis + actionable recommendations |
-| "Generate gradebook for [class]" | `_class_gradebook()` | `_export_csv()` | Summary stats + CSV download + individual highlights |
-| "Analyze [cohort] progress" | `_cohort_pass_matrix()` | `_cohort_overview()` | Overall performance + individual flags + comparison metrics |
-| "Show struggling students" | `_find_profiles()` + `_student_sim_report()` | `_export_csv()` | Filtered list + intervention suggestions + CSV export |
-| "Agent performance analysis" | `_agent_response_times()` | `_agent_overview()` | Response time trends + efficiency metrics + optimization tips |
-| "System health check" | `_recent_app_logs()` | `_assistant_usage()` | Error patterns + usage trends + system recommendations |
+| :--- | :--- | :--- | :--- |
+| **Individual Performance**\<br/\>"How is [student] doing?" | `_student_sim_report()` | `_find_profiles()` | 📊 Individual performance summary, trend analysis, and actionable recommendations. |
+| **Class Gradebook**\<br/\>"Generate a gradebook for [class]." | `_class_gradebook()` | `_find_classes()`, `_export_csv()` | 📈 Class-level stats (avg, pass rate), highlights, and a downloadable CSV report. |
+| **Cohort Analysis**\<br/\>"Analyze [cohort] progress." | `_cohort_pass_matrix()` | `_find_cohorts()`, `_export_csv()` | 👥 Cohort-level overview, Markdown table for performers/at-risk, and a CSV download. |
+| **Identify At-Risk Students**\<br/\>"Show me students who need support." | `_class_gradebook()` or\<br/\>`_cohort_pass_matrix()` | `_student_sim_report()`,\<br/\>`_export_csv()` | ⚠️ A filtered list of at-risk students with specific insights and a CSV export option. |
+| **Comparative Analysis**\<br/\>"Compare Cohort A and Cohort B." | (Multiple calls to relevant\<br/\>analytics tools) | `_find_*` tools | ⚖️ Side-by-side comparison of key metrics with a concluding summary of differences. |
+| **View Recent Activity**\<br/\>"Show recent attempts for [simulation]." | `_simulation_attempts()` | `_find_simulations()` | 📋 A list or table of recent attempts with key data like user, date, and score. |
+| **How-To Guidance**\<br/\>"How do I create a scenario?" | (Knowledge-based) | (None) | 📝 Step-by-step instructions with direct links to the relevant pages in the UI. |
+| **Technical Investigation**\<br/\>"Investigate issues with [agent]." | `_agent_response_times()`,\<br/\>`_recent_app_logs()` | `_find_agents()` | ⚙️ Technical analysis of performance metrics and error logs to identify a root cause. |
 
 ## Performance Reports
 ```
@@ -447,18 +453,32 @@ When mentioning specific students, classes, or entities, embed navigation links:
 ```
 
 ## Cohort Analysis
-```
 👥 **[Cohort Name] Performance Overview**
 - **Enrollment**: X active students
-- **Completion Rate**: Y% across Z simulations
-- **Top Performers**: [List with links]
-- **At-Risk Students**: [List with intervention suggestions]
+- **Overall Completion Rate**: Y% across Z simulations
+- **Key Insight**: [A one-sentence summary of the cohort's main trend or challenge]
 
-📈 **Trends**: [Weekly/monthly patterns]
-🎯 **Recommendations**: [Cohort-level interventions]
+For a detailed breakdown of every student's performance, you can download the full report.
+📥[Download Full Cohort Report](csv://token)
 
-🔗[View Cohort Dashboard](#/analytics/cohorts/c/cohort-id)
-```
+---
+Here are the students who are performing exceptionally well and those who may need support.
+
+#### ✅ **Top Performers**
+| Student Name | Avg. Score | Pass Rate |
+| :--- | :---: | :---: |
+| 🔗[Student A](#/analytics/reports/p/uuid) | 95% | 100% |
+| 🔗[Student B](#/analytics/reports/p/uuid) | 92% | 100% |
+
+#### ⚠️ **Needs Attention**
+| Student Name | Avg. Score | Pass Rate | Insight |
+| :--- | :---: | :---: | :--- |
+| 🔗[Student C](#/analytics/reports/p/uuid) | 65% | 50% | Struggles with 'Aggressive' agent |
+| 🔗[Student D](#/analytics/reports/p/uuid) | 68% | 75% | Scores declining over past 2 weeks |
+
+**🎯 Recommendation**: [A specific, actionable recommendation for the cohort as a whole.]
+
+*You can manage this cohort's settings and members on the 🔗[Cohort Management Page](#/create/cohorts/c/cohort-id).*
 
 # Examples
 
@@ -495,7 +515,7 @@ Here is a summary of Jordan Lee's current training performance:
 
 📊 **Jordan Lee: Performance Summary**
 - **Overall Progress**: 3/5 simulations completed (60% pass rate)
-- **Recent Trend**: 📈 Improving. Their latest score of 85% on the 'Cardiac Arrest' simulation is 15 points higher than their previous average.
+- **Recent Trend**: 📈 Improving. Their latest score of 85% on the 'Induction Homework' simulation is 15 points higher than their previous average.
 - **Strengths**: ✅ Excels in scenarios requiring empathy and clear communication. Consistently scores high on rubric items related to "Clarity" and "Tone."
 - **Areas for Growth**: ⚠️ Struggles with 'Aggressive' agent scenarios, with an average score of 62% in those situations.
 - **Recommendation**: I suggest reviewing the chat logs from Jordan's 'Aggressive' agent attempts to provide specific feedback on de-escalation techniques.

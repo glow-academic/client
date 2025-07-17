@@ -47,9 +47,6 @@ const mockReportResponse = {
 
 
 
-// CSV API MOCKS
-export const downloadCsvMock = vi.fn(() => Promise.resolve(mockErrorResponse));
-
 // DOCUMENTS API MOCKS
 export const deleteDocumentMock = vi.fn(() => Promise.resolve(mockErrorResponse));
 export const finalizeDocumentUploadMock = vi.fn(() => Promise.resolve(mockDocumentResponse));
@@ -59,7 +56,6 @@ export const processCourseMock = vi.fn(() => Promise.resolve(mockProcessingRespo
 export const newScenarioMock = vi.fn(() => Promise.resolve(mockScenarioResponse));
 export const testScenarioMock = vi.fn(() => Promise.resolve(mockReportResponse));
 
-vi.mock('@/utils/api/csv/download-csv', () => ({ downloadCsv: downloadCsvMock }));
 vi.mock('@/utils/api/documents/delete-document', () => ({ deleteDocument: deleteDocumentMock }));
 vi.mock('@/utils/api/documents/finalize-document-upload', () => ({ finalizeDocumentUpload: finalizeDocumentUploadMock }));
 vi.mock('@/utils/api/documents/process-course', () => ({ processCourse: processCourseMock }));
@@ -68,7 +64,6 @@ vi.mock('@/utils/api/scenarios/test-scenario', () => ({ testScenario: testScenar
 
 // Utility functions for testing
 export const resetAllApiMocks = () => {
-  downloadCsvMock.mockClear();
   deleteDocumentMock.mockClear();
   finalizeDocumentUploadMock.mockClear();
   processCourseMock.mockClear();
@@ -86,7 +81,6 @@ export const setApiMockError = (mockFn: ReturnType<typeof vi.fn>, error: unknown
 
 // Export all mocks for easy access
 export const apiMocks = {
-  downloadCsv: downloadCsvMock,
   deleteDocument: deleteDocumentMock,
   finalizeDocumentUpload: finalizeDocumentUploadMock,
   processCourse: processCourseMock,
