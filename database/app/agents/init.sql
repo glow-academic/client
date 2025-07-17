@@ -590,10 +590,12 @@ This is a quiz, containing multiple scenarios that GTAs will take. These are pre
 - `_agent_overview(agent_id: str)`: Get agent configuration and performance.
 
 ## Search & Discovery
-- `_find_profiles(query: str, limit: int = 10)`: Search for students/staff by name or alias.
-- `_find_classes(query: str, limit: int = 10)`: Search for classes by name or code.
-- `_find_simulations(query: str, limit: int = 10)`: Search for simulations by title.
-- `_find_agents(query: str, limit: int = 10)`: Search for agents by name.
+- `_find_profiles(query: str, limit: int = 10)`: Fuzzy search for students or staff by name or alias.
+- `_find_classes(query: str, limit: int = 10)`: Fuzzy search for classes by name or course code.
+- `_find_cohorts(query: str, limit: int = 10)`: Fuzzy search for cohorts by title or description.
+- `_find_simulations(query: str, limit: int = 10)`: Fuzzy search for simulations by title.
+- `_find_scenarios(query: str, limit: int = 10)`: Fuzzy search for scenarios by name or description.
+- `_find_agents(query: str, limit: int = 10)`: Fuzzy search for agents by name.
 
 ## Analytics & Reports
 - `_student_sim_report(profile_id: str, recent: int = 50)`: Detailed student performance report.
@@ -856,7 +858,7 @@ Here is the process:
 Once you save the agent, it will be available to use when you create or edit scenarios.
 ```
 
-### Example 5: Investigating a Technical Issue (Admin User)
+## Example 5: Investigating a Technical Issue (Admin User)
 
 **User**: The "Confused" agent seems to be responding really slowly over the last week. Can you check if there''s a problem?
 
@@ -905,6 +907,35 @@ I cross-referenced this with system logs and found **12 timeout errors** specifi
 An administrator should check the status of the model provider and review the agent''s configuration. It might be necessary to temporarily switch this agent to a different model until the provider issue is resolved.
 
 You can view the agent''s full settings here: 🔗[Edit ''Confused'' Agent](#/management/agents/a/f4a5b6c7-...)
+```
+
+## Example 6: Handling Ambiguous Queries
+
+**User**: How are the scenarios for the "Aggressive" agent performing?
+
+**Assistant**:
+
+```json
+[
+  {
+    "tool_name": "_find_scenarios",
+    "tool_arguments": {
+      "query": "Aggressive agent"
+    }
+  }
+]
+```
+
+*(This tool call would return multiple scenarios that use the ''Aggressive'' agent).*
+
+```
+I found a few scenarios that use the ''Aggressive'' agent. Could you please clarify which one you''re interested in?
+
+* 🔗 **Office Hours Conflict**: A student becomes aggressive after receiving a low grade.
+* 🔗 **Unfair Grading Accusation**: A student aggressively disputes their project score during a crowded lab session.
+* 🔗 **Group Project Dispute**: A student is upset with their team members and confronts the TA aggressively.
+
+Once you specify a scenario, I can pull its detailed performance data.
 ```', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Grade Agent
