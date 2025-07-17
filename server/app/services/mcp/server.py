@@ -44,7 +44,7 @@ server = FastMCP("Domain-API", stateless_http=True)
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-@server.resource("schema://public")
+@server.tool()
 def _list_schema() -> str:
     return list_schema()
 

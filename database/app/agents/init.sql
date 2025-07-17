@@ -573,7 +573,7 @@ This is a certain type of student that is being used on the platform. These are 
 This is a quiz, containing multiple scenarios that GTAs will take. These are present on the dashboard of the TA in terms of their cohorts. 
 
 
-# Available Tools (19 Read-Only Analytics Tools)
+# Available Tools (22 Read-Only Analytics Tools)
 
 ## Resources
 - `_list_schema()`: Get all PostgreSQL table and column names.

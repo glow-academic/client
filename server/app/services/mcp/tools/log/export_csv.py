@@ -39,6 +39,7 @@ def export_csv(sql: str) -> str:
     try:
         with engine.connect() as conn:
             result = conn.execute(text(sql))
+            header = result.keys()  # More robust: get header from result proxy
             rows = result.fetchmany(1000)  # Limit to 1000 rows for CSV export
 
             if not rows:
@@ -49,12 +50,10 @@ def export_csv(sql: str) -> str:
             writer = csv.writer(output)
 
             # Write header
-            if rows:
-                writer.writerow(rows[0].keys())
+            writer.writerow(header)
 
-            # Write data rows
-            for row in rows:
-                writer.writerow(row)
+            # Write data rows, converting each row to a tuple
+            writer.writerows(tuple(row) for row in rows)
 
             csv_content = output.getvalue()
             output.close()
