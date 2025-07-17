@@ -1,5 +1,3 @@
-# tests/services/mcp/tools/search/test_find_simulations.py
-
 import uuid
 from datetime import datetime
 from unittest.mock import MagicMock, patch
@@ -8,10 +6,15 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.services.mcp.tools.search.find_simulations import find_simulations
 
+
 class MockSimulation:
     def __init__(self, id, title, active=True, time_limit=30):
-        self.id, self.title, self.active, self.time_limit = id, title, active, time_limit
+        self.id = id
+        self.title = title
+        self.active = active
+        self.time_limit = time_limit
         self.created_at = datetime.now()
+
 
 @patch("app.services.mcp.tools.search.find_simulations.get_session")
 class TestFind_Simulations:
@@ -28,8 +31,12 @@ class TestFind_Simulations:
         result = find_simulations(query="Cardiac")
 
         assert len(result) == 1
-        assert result[0]["id"] == str(mock_sim.id)
-        assert result[0]["title"] == "Cardiac Arrest Scenario"
+        r0 = result[0]
+        assert r0["id"] == str(mock_sim.id)
+        assert r0["title"] == "Cardiac Arrest Scenario"
+        assert "score" in r0
+        assert isinstance(r0["score"], int)
+        assert r0["score"] > 0
         mock_session.close.assert_called_once()
 
     def test_find_simulations_no_results(self, mock_get_session):
@@ -51,3 +58,21 @@ class TestFind_Simulations:
         result = find_simulations(query="Test")
 
         assert result == [{"error": "Database error: DB Error"}]
+
+    def test_find_simulations_ranking(self, mock_get_session):
+        """Ensure best match sorts first."""
+        mock_session = MagicMock()
+        mock_get_session.return_value = iter([mock_session])
+
+        sim_exact = MockSimulation(uuid.uuid4(), "Cardiac Arrest")
+        sim_prefix = MockSimulation(uuid.uuid4(), "Cardiac Arrest Scenario")
+        sim_far = MockSimulation(uuid.uuid4(), "Respiratory Distress")
+
+        # Return reversed order to ensure re-ranking works
+        mock_session.exec.return_value.all.return_value = [sim_far, sim_prefix, sim_exact]
+
+        result = find_simulations(query="Cardiac Arrest", limit=5)
+
+        assert len(result) == 3
+        assert result[0]["title"] == "Cardiac Arrest"
+        assert result[0]["score"] > result[1]["score"] >= result[2]["score"]

@@ -34,6 +34,7 @@ class TestFind_Agents:
         mock_agent = MockAgent(
             uuid.uuid4(), "Aggressive Agent", "An agent simulating an aggressive student."
         )
+        # find_agents() does session.exec(...).all(), so return list
         mock_session.exec.return_value.all.return_value = [mock_agent]
 
         # --- Act ---
@@ -44,6 +45,27 @@ class TestFind_Agents:
         assert result[0]["id"] == str(mock_agent.id)
         assert result[0]["name"] == "Aggressive Agent"
         assert result[0]["description"] == "An agent simulating an aggressive student."
+        assert "score" in result[0]
+        assert isinstance(result[0]["score"], int)
+        assert result[0]["score"] > 0  # score should be positive for a match
+
+    def test_find_agents_ranking(self, mock_get_session):
+        """Agents are returned sorted by score (best match first)."""
+        mock_session = MagicMock()
+        mock_get_session.return_value = iter([mock_session])
+
+        a_exact = MockAgent(uuid.uuid4(), "Tutor Bot", "Helps students")
+        a_prefix = MockAgent(uuid.uuid4(), "Tutor Assistant", "Assistive")
+        a_far = MockAgent(uuid.uuid4(), "Other Agent", "Unrelated")
+
+        mock_session.exec.return_value.all.return_value = [a_far, a_prefix, a_exact]
+
+        result = find_agents(query="Tutor")
+
+        # first should be exact match "Tutor Bot" (score 100)
+        assert result[0]["name"] == "Tutor Bot"
+        assert result[0]["score"] >= result[1]["score"] >= result[2]["score"]
+    
 
     def test_find_agents_error(self, mock_get_session):
         """Test find_agents error handling during a database failure."""
