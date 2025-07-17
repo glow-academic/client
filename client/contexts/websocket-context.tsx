@@ -19,6 +19,7 @@ import React, {
 } from "react";
 import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
+import { v4 as uuidv4 } from "uuid";
 
 interface WebSocketContextType {
   // Connection state
@@ -40,7 +41,7 @@ interface WebSocketContextType {
   // Simulation event emitters
   emitStartSimulation: (data: {
     simulation_id: string;
-    profile_id: string;
+    profile_id?: string | null;
   }) => void;
   emitSendSimulationMessage: (data: {
     chat_id: string;
@@ -76,7 +77,7 @@ export const useWebSocket = () => {
 
 interface WebSocketProviderProps {
   children: React.ReactNode;
-  profileId?: string | undefined;
+  profileId: string | null | undefined;
 }
 
 export function WebSocketProvider({
@@ -89,6 +90,21 @@ export function WebSocketProvider({
   const connectionAttempts = useRef(0);
   const maxConnectionAttempts = 5;
   const currentRoomsRef = useRef<Set<string>>(new Set());
+
+  /**
+   * Stable guest id (per tab) used when profileId === null.
+   * Using sessionStorage lets us survive re-renders & soft navigations.
+   */
+  const guestIdRef = useRef<string | null>(null);
+  if (guestIdRef.current === null) {
+    if (typeof window !== "undefined") {
+      const existing = sessionStorage.getItem("guest-id");
+      guestIdRef.current = existing ?? uuidv4();
+      if (!existing) sessionStorage.setItem("guest-id", guestIdRef.current);
+    } else {
+      guestIdRef.current = uuidv4();
+    }
+  }
 
   // Loading states for debugging
   const [isStartingSimulation, setIsStartingSimulation] = useState(false);
@@ -552,14 +568,17 @@ export function WebSocketProvider({
           }
         );
 
-        queryClient.setQueryData(
-          ["assistantChats", profileId],
-          (old: AssistantChat[] = []) => {
-            return old.map((chat) =>
-              chat.id === data.chat_id ? { ...chat, title: data.title } : chat
-            );
-          }
-        );
+        // Only update profile-scoped chat list if we actually have a profile
+        if (profileId) {
+          queryClient.setQueryData(
+            ["assistantChats", profileId],
+            (old: AssistantChat[] = []) => {
+              return old.map((chat) =>
+                chat.id === data.chat_id ? { ...chat, title: data.title } : chat
+              );
+            }
+          );
+        }
       });
 
       socket.on(
@@ -633,8 +652,20 @@ export function WebSocketProvider({
         (data: { chat_id: string; success: boolean; message: string }) => {
           logInfo("Simulation stopped", data);
           setIsStoppingSimulation(false);
+
+          // Always let SimulationContext know about the stop event
+          window.dispatchEvent(
+            new CustomEvent("simulationStopped", {
+              detail: {
+                chatId: data.chat_id,
+                success: data.success,
+                message: data.message,
+              },
+            })
+          );
+
           if (data.success) {
-            // No toast for successful stops
+            // No toast for successful stops unless there's a message
             if (data.message) {
               toast.success(data.message);
             }
@@ -745,12 +776,11 @@ export function WebSocketProvider({
     [queryClient, profileId]
   );
 
-  // Initialize WebSocket connection when profileId is available
+  // Initialize WebSocket connection when profileId is resolved (may be null for guest)
   useEffect(() => {
-    if (!profileId) {
-      logInfo("Waiting for profile ID before connecting WebSocket", {
-        profileId,
-      });
+    // Distinguish undefined (still loading) vs null (guest) vs string (user)
+    if (profileId === undefined) {
+      logInfo("Waiting for profileId resolution before connecting WebSocket");
       return;
     }
 
@@ -772,6 +802,17 @@ export function WebSocketProvider({
       });
 
       const socketPath = `${process.env["NEXT_PUBLIC_APP_PREFIX"] || ""}/socket.io`;
+      const query: Record<string, string | number | undefined> = {
+        timestamp: Date.now(),
+        EIO: "4",
+      };
+      if (profileId) {
+        query["profileId"] = profileId;
+      } else {
+        // guest mode
+        query["guestId"] = guestIdRef.current!;
+      }
+
       const socket = io(getApiBase(), {
         path: socketPath,
         autoConnect: true,
@@ -783,11 +824,7 @@ export function WebSocketProvider({
         transports: ["websocket"], // Skip long-polling altogether
         upgrade: false, // No long-polling probe
         rememberUpgrade: true, // Cache for future reloads
-        query: {
-          profileId,
-          timestamp: Date.now(),
-          EIO: "4",
-        },
+        query,
       });
 
       socketRef.current = socket;
@@ -799,16 +836,23 @@ export function WebSocketProvider({
           socketId: socket.id,
           profileId,
           transport: socket.io.engine.transport.name,
+          guestId: !profileId ? guestIdRef.current : undefined,
         });
       });
 
       // Handle connection confirmation from server
       socket.on(
         "connection_confirmed",
-        (data: { sid: string; profile_id: string; server_time: number }) => {
+        (data: {
+          sid: string;
+          profile_id: string | null;
+          guest_id?: string;
+          server_time: number;
+        }) => {
           logInfo("Server confirmed WebSocket connection", {
             serverSid: data.sid,
             profileId: data.profile_id,
+            guestId: data.guest_id,
             serverTime: data.server_time,
             clientTime: Date.now(),
           });
@@ -936,16 +980,22 @@ export function WebSocketProvider({
 
   // Event emitters
   const emitStartSimulation = useCallback(
-    (data: { simulation_id: string; profile_id: string }) => {
+    (data: { simulation_id: string; profile_id?: string | null }) => {
       if (!socketRef.current || !isConnected) {
         logError("Cannot start simulation - WebSocket not connected");
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
 
+      // Normalize nullish → ""
+      const payload = {
+        simulation_id: data.simulation_id,
+        profile_id: data.profile_id ?? "",
+      };
+
       setIsStartingSimulation(true);
-      logInfo("Emitting start_simulation", data);
-      socketRef.current.emit("start_simulation", data);
+      logInfo("Emitting start_simulation", payload);
+      socketRef.current.emit("start_simulation", payload);
     },
     [isConnected]
   );

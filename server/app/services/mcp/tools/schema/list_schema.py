@@ -10,8 +10,7 @@ from sqlalchemy import text
 
 def list_schema() -> str:
     """
-    🔎 Database schema overview
-    ---------------------------
+    Database schema overview
     Lists all tables and columns in the public schema.
 
     Quick-start

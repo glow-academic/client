@@ -78,14 +78,23 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     }
 
     if (simulationContext) {
-      // Destructure values from the context
       const {
         endChat,
         endChatLoading,
         isSingleChatAttempt,
+        isLastAttempt,
         simulation,
         isActive,
       } = simulationContext;
+
+      let buttonLabel = "End Chat";
+      if (isSingleChatAttempt) {
+        buttonLabel = "End Session";
+      } else if (isLastAttempt) {
+        buttonLabel = "End Session";
+      } else {
+        buttonLabel = "End & Next Chat";
+      }
 
       return (
         <Button
@@ -97,11 +106,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
           }
           className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
         >
-          {endChatLoading
-            ? "Ending..."
-            : isSingleChatAttempt
-              ? "End Session"
-              : "End Chat"}
+          {endChatLoading ? "Ending..." : buttonLabel}
         </Button>
       );
     }
@@ -256,6 +261,16 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
+    if (!shouldShowChatComponents) {
+      return (
+        <>
+          <ChatFab up={true} />
+          <ChatWidget up={true} />
+          <ChatDialog />
+        </>
+      );
+    }
+
     return null;
   };
 
@@ -288,8 +303,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       {/* Chat Components - Only show on main screens defined in the sidebar */}
       {shouldShowChatComponents && (
         <>
-          <ChatFab />
-          <ChatWidget />
+          <ChatFab up={false} />
+          <ChatWidget up={false} />
           <ChatDialog />
         </>
       )}

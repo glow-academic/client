@@ -1,5 +1,6 @@
 # server/app/main.py
 import base64
+import contextlib
 import logging
 import os
 import platform
@@ -7,12 +8,13 @@ import sys
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any, AsyncIterator, Dict
 
 import socketio  # type: ignore
 from app.db import init_db
 from app.routes.documents import router as documents_router
 from app.routes.scenarios import router as scenarios_router
+from app.routes.csv import router as csv_router
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -220,14 +222,27 @@ async def send_assistant_message(sid: str, data: Dict[str, Any]) -> None:
 async def connect(sid: str, environ: Any, auth: Any) -> bool:
     """Handle WebSocket connection with robust, profile-based socket management."""
     query_string = environ.get("QUERY_STRING", "")
-    profile_id = None
-    if "profileId=" in query_string:
-        try:
-            profile_id = query_string.split("profileId=")[1].split("&")[0]
-        except IndexError:
-            pass
+    profile_id: str | None = None
+    guest_id: str | None = None
 
-    logger.info(f"Client connecting: sid={sid}, profile_id={profile_id}")
+    # Very lightweight QS parsing (qs is short); avoid full parser to keep dep surface small
+    try:
+        parts = query_string.split("&") if query_string else []
+        for p in parts:
+            if p.startswith("profileId="):
+                val = p[len("profileId=") :]
+                if val:  # empty means guest
+                    profile_id = val
+            elif p.startswith("guestId="):
+                val = p[len("guestId=") :]
+                if val:
+                    guest_id = val
+    except Exception:  # defensive; ignore malformed
+        pass
+
+    logger.info(
+        f"Client connecting: sid={sid}, profile_id={profile_id}, guest_id={guest_id}"
+    )
 
     if profile_id:
         # Check if another socket is already active for this profile
@@ -268,14 +283,28 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
                 db_session.close()
         except Exception as e:
             logger.error(f"Error updating profile {profile_id} in database: {e}")
+    else:
+        # Guest connection (no profile). Optionally join a guest room for targeted emits.
+        if guest_id:
+            await sio.enter_room(sid, f"guest_{guest_id}")
+            logger.info(f"Guest {guest_id} joined room guest_{guest_id}")
+        else:
+            logger.info("Anonymous guest connection with no guest_id; broadcasts only.")
 
     await sio.emit(
         "connection_confirmed",
-        {"sid": sid, "profile_id": profile_id, "server_time": time.time()},
+        {
+            "sid": sid,
+            "profile_id": profile_id,
+            "guest_id": guest_id,
+            "server_time": time.time(),
+        },
         room=sid,
     )
 
-    logger.info(f"Client connected successfully: sid={sid}, profile_id={profile_id}")
+    logger.info(
+        f"Client connected successfully: sid={sid}, profile_id={profile_id}, guest_id={guest_id}"
+    )
     return True
 
 
@@ -391,9 +420,18 @@ def get_socketio_instance() -> socketio.AsyncServer:
     """Get the global Socket.IO server instance"""
     return sio
 
+# Create a combined lifespan to manage both session managers
+@contextlib.asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
+    async with contextlib.AsyncExitStack() as stack:
+        from app.services.mcp.server import server
+        await stack.enter_async_context(server.session_manager.run())
+        
+        yield
+
 
 # Create FastAPI app
-fastapi_app = FastAPI(title="GLOW API", on_startup=[init_db])
+fastapi_app = FastAPI(title="GLOW API", on_startup=[init_db], lifespan=lifespan)
 
 # Add CORS middleware FIRST
 fastapi_app.add_middleware(
@@ -407,7 +445,7 @@ fastapi_app.add_middleware(
 # Include routers
 fastapi_app.include_router(documents_router, prefix="/documents")
 fastapi_app.include_router(scenarios_router, prefix="/scenarios")
-
+fastapi_app.include_router(csv_router, prefix="/csv")
 
 # mounting the mcp servers - ensure trailing slashes for proper routing
 from app.services.mcp.server import server

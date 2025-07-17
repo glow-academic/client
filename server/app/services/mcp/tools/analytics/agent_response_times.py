@@ -20,13 +20,12 @@ from sqlmodel import select
 
 def agent_response_times(agent_id: str, window_days: int = 30) -> Dict[str, Any]:
     """
-    ⏱️ Agent response time analysis
-    ------------------------------
+    Agent response time analysis
     Analyze response times for a specific agent.
 
     Input
-      • agent_id – UUID of the agent
-      • window_days – Analysis window in days (default: 30)
+      • agent_id - UUID of the agent
+      • window_days - Analysis window in days (default: 30)
 
     Returns
       { "agent": {…}, "stats": {…}, "recent_responses": […] }
@@ -35,7 +34,7 @@ def agent_response_times(agent_id: str, window_days: int = 30) -> Dict[str, Any]
       ask:  "How fast does agent X respond?"
       call: agent_response_times("uuid-here")
 
-    See also 👉 agent_overview() for agent details.
+    See also agent_overview() for agent details.
     """
     try:
         agent_uuid = uuid.UUID(agent_id)

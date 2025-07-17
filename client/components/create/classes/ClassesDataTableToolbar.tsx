@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Class } from "@/types";
 
-interface ClassesDataTableToolbarProps {
+export interface ClassesDataTableToolbarProps {
   table: Table<Class>;
   yearOptions: { value: string; label: string }[];
   termOptions: { value: string; label: string }[];

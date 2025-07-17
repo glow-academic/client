@@ -10,18 +10,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAssistant } from "@/contexts/assistant-context";
 import { useRole } from "@/contexts/role-context";
 import { Send, Square } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface ChatInputProps {
   promptToSet?: string;
   onPromptSet?: () => void;
+  togglePrompt?: (value: boolean) => void;
 }
 
 export default function ChatInput({
   promptToSet,
   onPromptSet,
+  togglePrompt,
 }: ChatInputProps = {}) {
   const [message, setMessage] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const {
     sendMessage,
     stopMessage,
@@ -31,6 +34,58 @@ export default function ChatInput({
   } = useAssistant();
   const { effectiveRole } = useRole();
 
+  // Only show for instructor, instructional, or admin roles
+  const shouldShow = ["instructor", "instructional", "admin"].includes(
+    effectiveRole
+  );
+
+  // NEW: Global key listener to auto-focus the input
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Don't hijack input for shortcuts (e.g., Ctrl+C)
+      if (e.metaKey || e.ctrlKey || e.altKey) {
+        return;
+      }
+
+      // Don't hijack if the user is already in an input field
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          (activeEl as HTMLElement).isContentEditable)
+      ) {
+        return;
+      }
+
+      // Capture single, printable characters
+      if (e.key.length === 1) {
+        e.preventDefault(); // Stop the key from being used elsewhere
+        textareaRef.current?.focus(); // Focus the chat textarea
+        setMessage((prevMessage) => prevMessage + e.key); // Append the typed character
+      }
+    };
+    
+    // Only listen for keys if the component is visible
+    if (shouldShow) {
+      window.addEventListener("keydown", handleGlobalKeyDown);
+    }
+
+    // Cleanup: remove the event listener when the component unmounts
+    return () => {
+      window.removeEventListener("keydown", handleGlobalKeyDown);
+    };
+  }, [shouldShow]); // Re-run this effect if `shouldShow` changes
+
+  // Auto-resize the textarea based on content
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  }, [message]);
+
   // Set message when promptToSet changes
   useEffect(() => {
     if (promptToSet) {
@@ -39,10 +94,12 @@ export default function ChatInput({
     }
   }, [promptToSet, onPromptSet]);
 
-  // Only show for instructor, instructional, or admin roles
-  const shouldShow = ["instructor", "instructional", "admin"].includes(
-    effectiveRole
-  );
+  // Toggle prompt based on message content
+  useEffect(() => {
+    if (togglePrompt) {
+      togglePrompt(!message.trim());
+    }
+  }, [message, togglePrompt]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,48 +127,51 @@ export default function ChatInput({
   }
 
   const placeholder = currentChatId
-    ? "Type your message..."
-    : "Start a conversation with the assistant...";
-
-  const isDisabled = !message.trim();
+    ? "Type a message..."
+    : "Start a conversation...";
+  const isDisabled = !message.trim() || isSendingMessage;
   const buttonTitle = "Send";
 
   return (
     <form
       onSubmit={isSendingMessage ? handleStop : handleSubmit}
-      className="p-3 bg-gradient-to-r from-gray-50/50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50"
+      className="p-3 border-t bg-background rounded-b-2xl"
     >
-      <div className="flex gap-2">
+      <div className="relative flex items-end">
         <Textarea
+          ref={textareaRef}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={isSendingMessage}
-          className="flex-1 resize-none min-h-[32px] max-h-[90px] border focus:border-blue-300 dark:focus:border-blue-600 transition-colors text-sm"
+          className="flex-1 resize-none overflow-y-auto pr-12 text-sm max-h-24"
           rows={1}
         />
-        {isSendingMessage ? (
-          <Button
-            type="submit"
-            disabled={isStoppingMessage}
-            size="sm"
-            className="shrink-0 h-8 w-8 p-0 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 border-0"
-            variant="destructive"
-          >
-            <Square className="h-3.5 w-3.5" />
-          </Button>
-        ) : (
-          <Button
-            type="submit"
-            disabled={isDisabled}
-            title={buttonTitle}
-            size="sm"
-            className="shrink-0 h-8 w-8 p-0 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0 disabled:opacity-50"
-          >
-            <Send className="h-3.5 w-3.5" />
-          </Button>
-        )}
+        <div className="absolute bottom-1 right-1 flex flex-col gap-2">
+          {isSendingMessage ? (
+            <Button
+              type="submit"
+              disabled={isStoppingMessage}
+              size="icon"
+              className="shrink-0 h-7 w-7 p-0 bg-red-600 hover:bg-red-700"
+              variant="destructive"
+              title="Stop"
+            >
+              <Square className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              type="submit"
+              disabled={isDisabled}
+              title={buttonTitle}
+              size="icon"
+              className="shrink-0 h-7 w-7 p-0 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
     </form>
   );

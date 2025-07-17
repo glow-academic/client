@@ -95,6 +95,7 @@ interface SimulationContextType {
   // UI state
   showResults: boolean;
   isSingleChatAttempt: boolean;
+  isLastAttempt: boolean;
   expectedChatCount: number;
   freshlyCompletedChats: Set<string>;
   setFreshlyCompletedChats: React.Dispatch<React.SetStateAction<Set<string>>>;
@@ -103,7 +104,7 @@ interface SimulationContextType {
   isConnected: boolean;
 
   // WebSocket operations
-  sendMessage: (message: string, sketchData?: string | null) => void;
+  sendMessage: (message: string) => void;
   stopMessage: () => void;
   endChat: () => void;
 
@@ -444,6 +445,7 @@ export function SimulationProvider({
   const expectedChatCount =
     simulation?.scenarioIds?.length || chats?.length || 1;
   const isSingleChatAttempt = expectedChatCount === 1;
+  const isLastAttempt = currentChatIndex === expectedChatCount - 1;
 
   // Timer calculation
   const timer = useMemo((): TimerState => {
@@ -681,8 +683,8 @@ export function SimulationProvider({
 
   // WebSocket-based message handler
   const sendMessage = useCallback(
-    async (message: string, sketchData?: string | null) => {
-      if ((!message.trim() && !sketchData) || !currentChat || isSendingMessage)
+    async (message: string) => {
+      if (!message.trim() || !currentChat || isSendingMessage)
         return;
 
       setIsSendingMessage(true);
@@ -955,6 +957,7 @@ export function SimulationProvider({
     // UI state
     showResults,
     isSingleChatAttempt,
+    isLastAttempt,
     expectedChatCount,
     freshlyCompletedChats,
     setFreshlyCompletedChats,

@@ -5,7 +5,7 @@ from typing import Any, Dict
 from app.db import get_session
 from app.models import Cohorts, Profiles, Simulations
 from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import and_, select
+from sqlmodel import select
 
 
 def cohort_overview(cohort_id: str) -> Dict[str, Any]:
@@ -43,7 +43,7 @@ def cohort_overview(cohort_id: str) -> Dict[str, Any]:
             "title": cohort.title,
             "description": cohort.description,
             "active": cohort.active,
-            "created_at": cohort.created_at.isoformat(),
+            "created_at": cohort.created_at.isoformat() if cohort.created_at else None,
         }
 
         # Get roster
@@ -63,12 +63,11 @@ def cohort_overview(cohort_id: str) -> Dict[str, Any]:
                 for profile in profiles
             ]
 
-        # Get simulations
-        simulations_stmt = select(Simulations).where(
-            and_(cohort_uuid in Simulations.cohort_ids, Simulations.active == True)
-        )
-        simulations = session.exec(simulations_stmt).all()
-
+        # FIX: Fetch all active simulations and filter in Python for robust array checking.
+        all_active_sims_stmt = select(Simulations).where(Simulations.active == True)
+        all_active_sims = session.exec(all_active_sims_stmt).all()
+        cohort_sims = [sim for sim in all_active_sims if cohort_uuid in sim.cohort_ids]
+        
         simulations_data = [
             {
                 "id": str(sim.id),
@@ -76,7 +75,7 @@ def cohort_overview(cohort_id: str) -> Dict[str, Any]:
                 "active": sim.active,
                 "time_limit": sim.time_limit,
             }
-            for sim in simulations
+            for sim in cohort_sims
         ]
 
         # Calculate basic stats

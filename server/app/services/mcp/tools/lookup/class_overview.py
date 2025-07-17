@@ -14,12 +14,12 @@ from sqlmodel import select
 
 def class_overview(class_id: str) -> Dict[str, Any]:
     """
-    🔎 Class overview
-    -----------------
+    Class overview
+    --------------
     Class record, roster, topics, scenarios.
 
     Input
-      • class_id – UUID of the class
+      • class_id - UUID of the class
 
     Returns
       { "class": { … }, "roster": [ … ], "scenarios": [ … ] }
@@ -49,13 +49,13 @@ def class_overview(class_id: str) -> Dict[str, Any]:
             "year": class_obj.year,
             "term": class_obj.term,
             "description": class_obj.description,
-            "created_at": class_obj.created_at.isoformat(),
+            "created_at": class_obj.created_at.isoformat() if class_obj.created_at else None,
         }
 
-        # Get roster - profiles that have this class in their class_ids
-        roster_stmt = select(Profiles).where(class_uuid in Profiles.class_ids)
-        profiles = session.exec(roster_stmt).all()
-
+        # FIX: Fetch all profiles and filter in Python to handle ARRAY logic consistently.
+        all_profiles = session.exec(select(Profiles)).all()
+        class_profiles = [p for p in all_profiles if class_uuid in p.class_ids]
+        
         roster = [
             {
                 "id": str(profile.id),
@@ -64,7 +64,7 @@ def class_overview(class_id: str) -> Dict[str, Any]:
                 "alias": profile.alias,
                 "role": profile.role,
             }
-            for profile in profiles
+            for profile in class_profiles
         ]
 
         # Get scenarios

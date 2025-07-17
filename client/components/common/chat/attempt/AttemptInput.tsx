@@ -5,9 +5,8 @@
  * 07/01/2025
  */
 "use client";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
-import { ReactSketchCanvas, ReactSketchCanvasRef } from "react-sketch-canvas";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,7 @@ import { CardFooter } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 
 // Icons
-import { Send, Square, Trash2, Undo2 } from "lucide-react";
+import { Loader2, Send, Square } from "lucide-react";
 
 // Tooltip
 import {
@@ -27,22 +26,18 @@ import {
 
 import { useSimulation } from "@/contexts/simulation-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { logError } from "@/utils/logger";
 
 export default function AttemptInput() {
   const simulationContext = useSimulation();
   const { isConnected } = useWebSocket();
 
   const [newMessage, setNewMessage] = useState("");
-  const [isTall, setIsTall] = useState(false);
 
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const sketchCanvasRef = useRef<ReactSketchCanvasRef>(null);
 
   // Connection state for send button
   const hasTextMessage = newMessage.trim().length > 0;
-  const hasSketchContent = isTall; // We'll assume if sketch mode is open, there might be content
 
   const getConnectionTooltip = () => {
     if (!isConnected) {
@@ -51,7 +46,7 @@ export default function AttemptInput() {
     if (simulationContext?.isSendingMessage) {
       return "Stop sending";
     }
-    if (!hasTextMessage && !hasSketchContent) {
+    if (!hasTextMessage) {
       return "Enter a message";
     }
     return "Send message";
@@ -67,21 +62,9 @@ export default function AttemptInput() {
     e.preventDefault();
     const messageToSend = newMessage.trim();
 
-    // Export sketch if canvas is available and has content
-    let sketchData: string | null = null;
-    if (isTall && sketchCanvasRef.current) {
-      try {
-        // Export canvas as base64 PNG with cropping
-        sketchData = await sketchCanvasRef.current.exportImage("png");
-      } catch (error) {
-        logError("Failed to export sketch:", error);
-        // Continue without sketch if export fails
-      }
-    }
-
     // Require either text message or sketch to send
     if (
-      (!messageToSend && !sketchData) ||
+      !messageToSend ||
       !simulationContext?.currentChat ||
       simulationContext?.isSendingMessage ||
       !isConnected
@@ -90,16 +73,9 @@ export default function AttemptInput() {
 
     setNewMessage("");
 
-    // Clear the canvas after sending
-    if (sketchData && sketchCanvasRef.current) {
-      sketchCanvasRef.current.clearCanvas();
-    }
-
-    simulationContext?.sendMessage(messageToSend, sketchData);
+    simulationContext?.sendMessage(messageToSend);
   };
   const handleStopMessage = () => simulationContext?.stopMessage();
-  const handleUndo = () => sketchCanvasRef.current?.undo();
-  const handleClear = () => sketchCanvasRef.current?.clearCanvas();
 
   // --- Effects ---
   useEffect(() => {
@@ -134,78 +110,14 @@ export default function AttemptInput() {
     simulationContext?.isActive,
   ]);
 
-  useEffect(() => {
-    const panelElement = inputPanelRef.current;
-    if (!panelElement) return;
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const newIsTall = entry.contentRect.height > 160;
-        setIsTall((current) => (newIsTall !== current ? newIsTall : current));
-      }
-    });
-    observer.observe(panelElement);
-    return () => observer.disconnect();
-  }, [simulationContext?.currentChat?.id]);
-
   if (simulationContext?.currentChat?.completed) return null;
 
   return (
     <TooltipProvider>
       <CardFooter
         ref={inputPanelRef}
-        className="h-full p-4 pt-3 pb-3 border-t flex flex-col justify-end min-h-0"
+        className="h-full p-4 pb-2 border-t flex flex-col justify-end min-h-0"
       >
-        <AnimatePresence>
-          {isTall && (
-            <motion.div
-              key="sketch-canvas-area"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="relative w-full flex-1 mb-3"
-            >
-              <ReactSketchCanvas
-                ref={sketchCanvasRef}
-                strokeWidth={4}
-                strokeColor="black"
-                className="border rounded-md"
-              />
-              <div className="absolute top-2 right-2 flex flex-col gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={handleUndo}
-                      className="h-8 w-8 bg-white/80 backdrop-blur-sm"
-                    >
-                      <Undo2 className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Undo</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={handleClear}
-                      className="h-8 w-8 bg-white/80 backdrop-blur-sm"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Clear</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* --- Persistent Bottom Bar --- */}
         <div className="w-full flex items-center gap-2 shrink-0">
           <div className="flex-1">
@@ -223,56 +135,53 @@ export default function AttemptInput() {
           </div>
 
           <div className="flex gap-2">
-            <AnimatePresence mode="popLayout">
-              {/* Send Button - Always show in dev mode, conditionally in non-dev mode */}
-              {simulationContext?.isSendingMessage ||
-                hasTextMessage ||
-                hasSketchContent && (
-                  <motion.div
-                    layout
-                    key="send-btn-short"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.5 }}
+            {/* Always show the send/stop button, just disable as needed */}
+            <motion.div
+              layout
+              key="send-btn-short"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+            >
+              <Tooltip>
+                <TooltipTrigger>
+                  <Button
+                    type="submit"
+                    className="min-h-[40px] h-[40px] px-3"
+                    variant={
+                      simulationContext?.isSendingMessage
+                        ? "destructive"
+                        : "default"
+                    }
+                    disabled={
+                      simulationContext?.isSendingMessage
+                        ? simulationContext?.isStoppingMessage
+                        : !isConnected || !hasTextMessage
+                    }
+                    onClick={
+                      simulationContext?.isSendingMessage
+                        ? handleStopMessage
+                        : (e) => handleSendMessage(e)
+                    }
                   >
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Button
-                          type="submit"
-                          className="min-h-[40px] h-[40px] px-3"
-                          variant={
-                            simulationContext?.isSendingMessage
-                              ? "destructive"
-                              : "default"
-                          }
-                          disabled={
-                            simulationContext?.isSendingMessage
-                              ? false
-                              : !isConnected ||
-                                (!hasTextMessage && !hasSketchContent)
-                          }
-                          onClick={
-                            simulationContext?.isSendingMessage
-                              ? handleStopMessage
-                              : (e) => handleSendMessage(e)
-                          }
-                        >
-                          {simulationContext?.isSendingMessage ? (
-                            <Square className="h-4 w-4" />
-                          ) : (
-                            <Send className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      {getConnectionTooltip() && (
-                        <TooltipContent>
-                          <p>{getConnectionTooltip()}</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </motion.div>
+                    {simulationContext?.isSendingMessage ? (
+                      simulationContext?.isStoppingMessage ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Square className="h-4 w-4" />
+                      )
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                {getConnectionTooltip() && (
+                  <TooltipContent>
+                    <p>{getConnectionTooltip()}</p>
+                  </TooltipContent>
                 )}
-            </AnimatePresence>
+              </Tooltip>
+            </motion.div>
           </div>
         </div>
 

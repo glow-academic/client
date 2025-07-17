@@ -14,6 +14,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useAssistant } from "@/contexts/assistant-context";
 import { useRole } from "@/contexts/role-context";
 import { getAssistantChat } from "@/utils/queries/assistant_chats/get-assistant-chat";
@@ -23,8 +29,9 @@ import { useState } from "react";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
 import ChatStarterPrompts from "./ChatStarterPrompts";
+import GlowHeader from "./GlowHeader";
 
-export default function ChatWidget() {
+export default function ChatWidget({ up }: { up: boolean }) {
   const {
     uiState,
     expand,
@@ -37,6 +44,7 @@ export default function ChatWidget() {
   } = useAssistant();
   const { effectiveRole } = useRole();
   const [promptToSet, setPromptToSet] = useState<string>("");
+  const [showPrompts, setShowPrompts] = useState(true);
 
   // Only show for instructor, instructional, or admin roles
   const shouldShow = ["instructor", "instructional", "admin"].includes(
@@ -73,97 +81,138 @@ export default function ChatWidget() {
   };
 
   return (
-    <Card className="fixed bottom-4 right-4 w-96 h-[520px] shadow-xl border-2 z-40 flex flex-col bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
-      <CardHeader className="p-3 border-b flex flex-row items-center justify-between space-y-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+    <Card
+      className={`fixed bottom-2 right-2 w-96 h-[550px] shadow-xl border-2 z-40 flex flex-col bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 p-0 rounded-2xl gap-0 ${up ? "top-2 right-2" : "bottom-2 right-2"}`}
+    >
+      <CardHeader className="border-b flex flex-row items-center justify-between space-y-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-t-2xl rounded-b-none h-15 p-5 gap-5">
         <div className="flex items-center gap-2 flex-1 min-w-0 relative z-10">
-          <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shrink-0">
-            <span className="text-white font-bold text-xs">G</span>
-          </div>
-          <Select
-            value={currentChatId || "new"}
-            onValueChange={handleChatSelect}
-            disabled={isLoadingChats}
-          >
-            <SelectTrigger className="w-full border-none shadow-none p-0 h-auto focus:ring-0">
-              <SelectValue>
-                <div className="flex items-center">
-                  <span className="text-sm font-medium truncate">
-                    {getCurrentChatTitle()}
-                  </span>
-                  {/* show BETA */}
-                  <span
-                    className="text-xs ml-2 px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 font-semibold shadow-sm"
-                    style={{ backgroundColor: "#FEF3C7" }}
-                  >
-                    BETA
-                  </span>
-                </div>
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {chats && chats.length > 0 && (
-                <>
-                  <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
-                    Past Chats
+          <div className="w-full">
+            <Select
+              value={currentChatId || "new"}
+              onValueChange={handleChatSelect}
+              disabled={isLoadingChats}
+            >
+              <SelectTrigger className="w-full border border-gray-300 dark:border-gray-700 rounded-md shadow-none p-2 h-auto focus:ring-0 bg-white dark:bg-gray-900">
+                <SelectValue>
+                  <div className="flex items-center">
+                    <span className="text-sm font-medium truncate">
+                      {getCurrentChatTitle()}
+                    </span>
                   </div>
-                  {chats
-                    .sort(
-                      (a, b) =>
-                        new Date(b.createdAt).getTime() -
-                        new Date(a.createdAt).getTime()
-                    )
-                    .map((pastChat) => (
-                      <SelectItem key={pastChat.id} value={pastChat.id}>
-                        <span className="truncate">{pastChat.title}</span>
-                      </SelectItem>
-                    ))}
-                </>
-              )}
-            </SelectContent>
-          </Select>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {chats && chats.length > 0 && (
+                  <>
+                    <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
+                      Past Chats
+                    </div>
+                    {chats
+                      .sort(
+                        (a, b) =>
+                          new Date(b.createdAt).getTime() -
+                          new Date(a.createdAt).getTime()
+                      )
+                      .map((pastChat) => (
+                        <SelectItem key={pastChat.id} value={pastChat.id}>
+                          <span className="truncate">{pastChat.title}</span>
+                        </SelectItem>
+                      ))}
+                  </>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {currentChatId && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setCurrentChatId(null)}
-              className="h-7 w-7 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50 relative z-10"
-            >
-              <Edit className="h-3 w-3" />
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setCurrentChatId(null)}
+                    className="h-7 w-7 hover:bg-white/50 dark:hover:bg-gray-800/50 relative z-10"
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>New Chat</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={expand}
-            className="h-7 w-7 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50 relative z-10"
-          >
-            <Maximize2 className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={close}
-            className="h-7 w-7 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50 relative z-10"
-          >
-            <X className="h-3 w-3" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={expand}
+                  className="h-7 w-7 hover:bg-white/50 dark:hover:bg-gray-800/50 relative z-10"
+                >
+                  <Maximize2 className="h-3 w-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Expand</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={close}
+                  className="h-7 w-7 hover:bg-white/50 dark:hover:bg-gray-800/50 relative z-10"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Close</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 p-0 flex flex-col min-h-0">
-        <div className="flex-1 min-h-0 overflow-hidden shadow-inner">
+      <CardContent className="flex-1 p-0 flex flex-col min-h-0 rounded-2xl">
+        <div className="flex-1 min-h-0 overflow-hidden shadow-inner p-2">
           {currentChatId ? (
-            <ChatMessages onPromptClick={handlePromptClick} />
-          ) : (
-            <ChatStarterPrompts
+            <ChatMessages
               onPromptClick={handlePromptClick}
               variant="minimized"
             />
+          ) : (
+            <div className="flex items-center justify-center h-full p-6">
+              <div className="flex flex-col justify-center items-center gap-8 max-w-5xl w-full h-full">
+                <GlowHeader />
+                <div
+                  className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                    showPrompts ? "opacity-100 max-h-96" : "opacity-0 max-h-0"
+                  }`}
+                >
+                  <ChatStarterPrompts
+                    onPromptClick={handlePromptClick}
+                    variant="minimized"
+                  />
+                </div>
+              </div>
+            </div>
           )}
         </div>
         <div className="border-t">
-          <ChatInput promptToSet={promptToSet} onPromptSet={handlePromptSet} />
+          <ChatInput
+            promptToSet={promptToSet}
+            onPromptSet={handlePromptSet}
+            togglePrompt={(value: boolean) => {
+              setShowPrompts(value);
+            }}
+          />
         </div>
       </CardContent>
     </Card>

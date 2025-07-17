@@ -581,7 +581,7 @@ export default function AttemptChat() {
 
                 <ResizableHandle disabled />
                 {/* Input Area */}
-                <ResizablePanel defaultSize={12} minSize={12} maxSize={40}>
+                <ResizablePanel defaultSize={10} minSize={10} maxSize={40}>
                   <AttemptInput />
                 </ResizablePanel>
               </ResizablePanelGroup>

@@ -15,7 +15,11 @@ export async function GET(
   try {
     const { tokenId } = await params;
 
-    logInfo(`Downloading csv ${tokenId}`, { tokenId });
+    // Parse query params for optional filename
+    const { searchParams } = new URL(req.url);
+    const name = searchParams.get("name");
+
+    logInfo(`Downloading csv ${tokenId}`, { tokenId, requestedName: name });
 
     // Forward the request to FastAPI backend
     const response = await fetch(`${getApiBase()}/csv/token/${tokenId}`, {
@@ -34,7 +38,7 @@ export async function GET(
 
     if (!response.ok) {
       const errorMessage = `Failed to download csv ${tokenId}: ${response.status} ${response.statusText}`;
-      logError(errorMessage);
+      logError(errorMessage, { tokenId, status: response.status });
 
       return new Response(
         JSON.stringify({
@@ -54,21 +58,29 @@ export async function GET(
     // Get content type and other headers from the backend response
     const contentType =
       response.headers.get("content-type") || "application/octet-stream";
-    const contentDisposition = response.headers.get("content-disposition");
+    const contentDispositionFromBackend = response.headers.get("content-disposition");
     const contentLength = response.headers.get("content-length");
 
     logInfo(`CSV ${tokenId} downloaded successfully`, {
       tokenId,
       contentType,
       contentLength,
+      usedName: name,
+      backendContentDisposition: contentDispositionFromBackend,
     });
 
     // Create response headers
     const responseHeaders = new Headers();
     responseHeaders.set("Content-Type", contentType);
 
-    if (contentDisposition) {
-      responseHeaders.set("Content-Disposition", contentDisposition);
+    // Set Content-Disposition based on query param or backend header
+    if (name) {
+      responseHeaders.set(
+        "Content-Disposition",
+        `attachment; filename="${name}.csv"`
+      );
+    } else if (contentDispositionFromBackend) {
+      responseHeaders.set("Content-Disposition", contentDispositionFromBackend);
     }
 
     if (contentLength) {

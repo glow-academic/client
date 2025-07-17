@@ -11,7 +11,11 @@ import { useRole } from "@/contexts/role-context";
 import { MessageCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
 
-export default function ChatFab() {
+interface ChatFabProps {
+  up: boolean;
+}
+
+export default function ChatFab({ up = false }: ChatFabProps) {
   const { openWidget, uiState } = useAssistant();
   const { effectiveRole } = useRole();
 
@@ -32,10 +36,24 @@ export default function ChatFab() {
     openWidget();
   };
 
+  // show normal fixed button if up is true
+  if (up) {
+    return (
+      <Button
+        onClick={handleClick}
+        className="shadow-lg hover:shadow-xl transition-all duration-300 z-50 bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0 group"
+        size="sm"
+      >
+        <MessageCircle className="h-6 w-6 group-hover:scale-110 transition-transform duration-200" />
+        Need Help?
+      </Button>
+    );
+  }
+
   return (
     <Button
       onClick={handleClick}
-      className="fixed bottom-4 right-4 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-50 bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0 group"
+      className="fixed bottom-2 right-2 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-50 bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0 group"
       size="lg"
     >
       <MessageCircle className="h-6 w-6 group-hover:scale-110 transition-transform duration-200" />

@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 107
+- **Total Components**: 108
 - **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 107
+- **Tests Skipped** (already implemented): 108
 
 ## Component Coverage
 
@@ -67,6 +67,7 @@
 | ChatMessages | common/home/ChatMessages.tsx | ChatMessages.test.tsx | ✅ Implemented |
 | ChatStarterPrompts | common/home/ChatStarterPrompts.tsx | ChatStarterPrompts.test.tsx | ✅ Implemented |
 | ChatWidget | common/home/ChatWidget.tsx | ChatWidget.test.tsx | ✅ Implemented |
+| GlowHeader | common/home/GlowHeader.tsx | GlowHeader.test.tsx | ✅ Implemented |
 | NavigationBreadcrumbs | common/layout/NavigationBreadcrumbs.tsx | NavigationBreadcrumbs.test.tsx | ✅ Implemented |
 | ReportProblem | common/layout/ReportProblem.tsx | ReportProblem.test.tsx | ✅ Implemented |
 | UnifiedSidebar | common/layout/UnifiedSidebar.tsx | UnifiedSidebar.test.tsx | ✅ Implemented |
@@ -195,6 +196,7 @@ __tests__/
 │   │   ├── ChatMessages.test.tsx
 │   │   ├── ChatStarterPrompts.test.tsx
 │   │   ├── ChatWidget.test.tsx
+│   │   ├── GlowHeader.test.tsx
 │   ├── layout/
 │   │   ├── NavigationBreadcrumbs.test.tsx
 │   │   ├── ReportProblem.test.tsx

@@ -7,15 +7,8 @@ import uuid
 from typing import Any, Dict
 
 from app.db import get_session
-from app.models import (
-    Cohorts,
-    Rubrics,
-    Scenarios,
-    SimulationAttempts,
-    SimulationChatGrades,
-    SimulationChats,
-    Simulations,
-)
+from app.models import (Cohorts, Rubrics, Scenarios, SimulationAttempts,
+                        SimulationChatGrades, SimulationChats, Simulations)
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select
 
@@ -33,7 +26,7 @@ def simulation_overview(sim_id: str) -> Dict[str, Any]:
       { "simulation": { … }, "rubric": { … }, "cohorts": [ … ], "stats": { … } }
 
     Quick-start
-      ask:  "Give me the Cardiac Arrest sim stats"
+      ask:  "Give me the Induction Homework sim stats"
       call: simulation_overview("uuid-here")
 
     See also 👉 simulation_attempts() for detailed attempt list.
@@ -55,7 +48,7 @@ def simulation_overview(sim_id: str) -> Dict[str, Any]:
             "title": simulation.title,
             "active": simulation.active,
             "time_limit": simulation.time_limit,
-            "created_at": simulation.created_at.isoformat(),
+            "created_at": simulation.created_at.isoformat() if simulation.created_at else None,
         }
 
         # Get rubric
