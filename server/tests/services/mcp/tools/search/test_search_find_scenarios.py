@@ -87,15 +87,15 @@ class TestFind_Scenarios:
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
 
-        s_exact = MockScenario(uuid.uuid4(), "Cardiac Arrest", description="Primary ACLS scenario")
-        s_prefix = MockScenario(uuid.uuid4(), "Cardiac Arrest with Complications")
-        s_far = MockScenario(uuid.uuid4(), "Respiratory Distress")
+        s_exact = MockScenario(uuid.uuid4(), "Induction Homework", description="Primary CS scenario")
+        s_prefix = MockScenario(uuid.uuid4(), "Induction Homework with Complications")
+        s_far = MockScenario(uuid.uuid4(), "Math Homework")
 
         # deliberately unsorted coming from DB
         mock_session.exec.return_value.all.return_value = [s_far, s_prefix, s_exact]
 
-        result = find_scenarios(query="Cardiac Arrest", limit=5)
+        result = find_scenarios(query="Induction", limit=5)
 
         assert len(result) == 3
-        assert result[0]["name"] == "Cardiac Arrest"  # exact wins
+        assert result[0]["name"] == "Induction Homework"  # exact wins
         assert result[0]["score"] > result[1]["score"] >= result[2]["score"]

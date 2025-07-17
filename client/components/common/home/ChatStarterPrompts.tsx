@@ -33,7 +33,7 @@ const allPrompts = [
   "Compare the overall pass rate of the 'Fall 2024' cohort to the 'Spring 2025' cohort.",
   "Which class has a higher average completion rate, 'CS 180' or 'ECE 201'?",
   "Is the 'Aggressive' agent or the 'Happy' agent associated with longer average session times?",
-  "Show me if there's a performance difference on the 'Cardiac Arrest' simulation between students in the 'CS' department versus the 'ECE' department.",
+  "Show me if there's a performance difference on the 'Induction Homework' simulation between students in the 'CS' department versus the 'ECE' department.",
 
   // Advanced Insights & Analytics
   "Identify students in the 'CS 180' class with an average score below 70% and generate a summary for each.",

@@ -26,7 +26,7 @@ def simulation_overview(sim_id: str) -> Dict[str, Any]:
       { "simulation": { … }, "rubric": { … }, "cohorts": [ … ], "stats": { … } }
 
     Quick-start
-      ask:  "Give me the Cardiac Arrest sim stats"
+      ask:  "Give me the Induction Homework sim stats"
       call: simulation_overview("uuid-here")
 
     See also 👉 simulation_attempts() for detailed attempt list.
