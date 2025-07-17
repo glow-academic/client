@@ -13,6 +13,14 @@ map $http_cookie $socketio_session_id {
     default        $remote_addr;  # fallback
 }
 
+# Preserve upstream proto (e.g., Apache SSL) so we don't downgrade https -> http.
+# If no upstream header, fall back to this hop's $scheme.
+map $http_x_forwarded_proto $forwarded_proto {
+    default $http_x_forwarded_proto;
+    ""      $scheme;
+}
+
+
 # ----------  upstreams -------------
 upstream next_client  {
   server client:3000;
@@ -32,7 +40,8 @@ server {
         proxy_set_header   Host              $http_host;
         proxy_set_header   X-Real-IP         $remote_addr;
         proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_set_header   X-Forwarded-Proto $forwarded_proto;
+        proxy_set_header   X-Forwarded-Host  $host;
     }
 
     # WebSocket traffic (prefixed)
@@ -44,7 +53,8 @@ server {
         proxy_set_header   Host              $http_host;
         proxy_set_header   X-Real-IP         $remote_addr;
         proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_set_header   X-Forwarded-Proto $forwarded_proto;
+        proxy_set_header   X-Forwarded-Host  $host;
         proxy_buffering    off;
     }
 
@@ -55,6 +65,7 @@ server {
         proxy_set_header   Host              $http_host;
         proxy_set_header   X-Real-IP         $remote_addr;
         proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_set_header   X-Forwarded-Proto $forwarded_proto;
+        proxy_set_header   X-Forwarded-Host  $host;
     }
 }
