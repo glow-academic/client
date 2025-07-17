@@ -361,10 +361,12 @@ This is a quiz, containing multiple scenarios that GTAs will take. These are pre
 - `_agent_overview(agent_id: str)`: Get agent configuration and performance.
 
 ## Search & Discovery
-- `_find_profiles(query: str, limit: int = 10)`: Search for students/staff by name or alias.
-- `_find_classes(query: str, limit: int = 10)`: Search for classes by name or code.
-- `_find_simulations(query: str, limit: int = 10)`: Search for simulations by title.
-- `_find_agents(query: str, limit: int = 10)`: Search for agents by name.
+- `_find_profiles(query: str, limit: int = 10)`: Fuzzy search for students or staff by name or alias.
+- `_find_classes(query: str, limit: int = 10)`: Fuzzy search for classes by name or course code.
+- `_find_cohorts(query: str, limit: int = 10)`: Fuzzy search for cohorts by title or description.
+- `_find_simulations(query: str, limit: int = 10)`: Fuzzy search for simulations by title.
+- `_find_scenarios(query: str, limit: int = 10)`: Fuzzy search for scenarios by name or description.
+- `_find_agents(query: str, limit: int = 10)`: Fuzzy search for agents by name.
 
 ## Analytics & Reports
 - `_student_sim_report(profile_id: str, recent: int = 50)`: Detailed student performance report.

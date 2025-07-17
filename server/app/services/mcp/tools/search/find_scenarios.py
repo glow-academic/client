@@ -120,7 +120,19 @@ def find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
         • limit - Max results (default: 10)
 
     Returns
-        [ { "id": "...", "name": "...", "description": "...", "agent_id": "...", "class_id": "...", "default_scenario": True, "practice_scenario": False, "score": 137 }, ... ]
+        [
+            {
+                "id": str,                  # Scenario UUID
+                "name": str | None,         # Scenario name/title
+                "description": str | None,  # Scenario description
+                "agent_id": str | None,     # Linked agent UUID (if any)
+                "class_id": str | None,     # Linked class UUID (if any)
+                "default_scenario": bool,   # Is this the default scenario?
+                "practice_scenario": bool,  # Is this a practice scenario?
+                "score": int                # Heuristic match score
+            },
+            ...
+        ]
 
     Quick-start
         ask:  "Find all practice scenarios for BIOL-1102"

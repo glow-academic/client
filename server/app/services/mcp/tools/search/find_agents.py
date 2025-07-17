@@ -4,7 +4,21 @@
 # 07/07/2025
 #
 # LIKE-only fuzzy-ish agent search (name).
+#
+# Usage:
+#   find_agents("aggressive")
+#
+# Returns:
+#   [
+#     {"id": "...", "name": "...", "description": "...", "score": 127},
+#     ...
+#   ]
+#
 
+from __future__ import annotations
+
+import re
+import unicodedata
 from typing import Any, Dict, List
 
 from app.db import get_session
@@ -13,6 +27,65 @@ from sqlalchemy import func, literal, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select
 
+# ------------------------------------------------------------------
+# Normalization / tokenization utilities
+# (Consider moving to a shared search util module.)
+# ------------------------------------------------------------------
+
+_WS_RE = re.compile(r"\s+")
+
+
+def _norm(s: str) -> str:
+    """Lowercase, strip accents, collapse internal whitespace."""
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(ch for ch in s if not unicodedata.combining(ch))
+    return _WS_RE.sub(" ", s.strip().lower())
+
+
+def _tokens(s: str) -> List[str]:
+    return [t for t in _norm(s).split(" ") if t]
+
+
+# ------------------------------------------------------------------
+# Scoring heuristic
+# ------------------------------------------------------------------
+
+def _score_agent(q_norm: str, toks: List[str], name: str | None) -> int:
+    """
+    Score an agent candidate relative to the normalized query + tokens.
+    """
+    n_norm = _norm(name or "")
+    score = 0
+
+    # Whole-string exact
+    if n_norm == q_norm:
+        score += 100
+
+    # Whole-string prefix
+    if n_norm.startswith(q_norm):
+        score += 60
+
+    # Per-token boosts
+    for tok in toks:
+        if n_norm.startswith(tok):
+            score += 25
+        if tok in n_norm:
+            score += 10
+
+    # Whole query appears anywhere
+    if q_norm in n_norm:
+        score += 5
+
+    # Length proximity bonus (prefer shorter closer names)
+    gap = abs(len(n_norm) - len(q_norm))
+    score += max(0, 10 - gap)
+
+    return score
+
+
+# ------------------------------------------------------------------
+# Public API
+# ------------------------------------------------------------------
 
 def find_agents(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     """
@@ -21,97 +94,68 @@ def find_agents(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     Performs a case-insensitive, fuzzy search on agent names.
 
     Input
-      • query - Name of the agent to search for
-      • limit - Max results (default: 10)
+        • query - Name of the agent to search for
+        • limit - Max results (default: 10)
 
     Returns
-      [ { "id": "...", "name": "...", "description": "..." }, ... ]
+        [ { "id": "...", "name": "...", "description": "...", "score": ... }, ... ]
+        or [ { "error": "Database error: ..." } ] on failure
 
     Quick-start
-      ask:  "Find the aggressive agent"
-      call: find_agents("Aggressive")
+        ask:  "Find the aggressive agent"
+        call: find_agents("Aggressive")
 
     See also 👉 agent_overview() for detailed agent data.
     """
+    q_norm = _norm(query)
+    if not q_norm:
+        return []
+    toks = _tokens(query)
+
     session = next(get_session())
     try:
-        q_norm = query.strip().lower()
-        toks = [t for t in q_norm.split() if t]
+        a_name = func.lower(Agents.name)
 
-        # full-string contains
         like_full = f"%{q_norm}%"
+        like_prefix = f"{q_norm}%"
 
-        # token contains OR across tokens
+        # token OR clauses
         token_ors = []
         for t in toks:
             p = f"%{t}%"
-            token_ors.append(func.lower(Agents.name).like(p))
+            token_ors.append(a_name.like(p))
+
+        pred = or_(
+            a_name == q_norm,          # exact
+            a_name.like(like_prefix),  # prefix
+            a_name.like(like_full),    # contains
+            or_(*token_ors) if token_ors else literal(False),
+        )
 
         stmt = (
             select(Agents)
-            .where(or_(
-                func.lower(Agents.name) == q_norm,          # exact
-                func.lower(Agents.name).like(q_norm + '%'), # prefix
-                func.lower(Agents.name).like(like_full),    # contains
-                or_(*token_ors) if token_ors else literal(False)
-            ))
-            .limit(limit * 3)
+            .where(pred)
+            .limit(limit * 5)  # candidate pool
         )
+
         agents = session.exec(stmt).all()
 
-        # simple scoring (accumulative; no early returns)
-        def _score(name: str) -> int:
-            n = (name or "").lower()
-            score = 0
-
-            # Exact match to whole query string
-            if n == q_norm:
-                score += 100
-
-            # Prefix (whole query)
-            if n.startswith(q_norm):
-                score += 70
-
-            # Per-token boosts
-            for t in toks:
-                if n.startswith(t):
-                    score += 20
-                if t in n:
-                    score += 10
-
-            # Whole query appears somewhere (not already fully counted)
-            if q_norm in n:
-                score += 5
-
-            # Length proximity bonus: shorter names closer to query get a bump.
-            # Cap at 10, floor at 0 so long names don't go negative.
-            gap = abs(len(n) - len(q_norm))
-            score += max(0, 10 - gap)
-
-            return score
-
-        # Materialize first so we can annotate type + debug easily.
-        raw_results: List[Dict[str, Any]] = []
+        results: List[Dict[str, Any]] = []
         for a in agents:
-            raw_results.append(
+            score = _score_agent(q_norm, toks, a.name)
+            results.append(
                 {
                     "id": str(a.id),
                     "name": a.name,
                     "description": a.description,
-                    # ensure numeric type for mypy & consumers
-                    "score": int(_score(a.name or "")),
+                    "score": score,
                 }
             )
 
-        # Sort highest score first, tie-break by name ASC.
-        results = sorted(
-            raw_results,
-            key=lambda r: (-r["score"], r["name"]),
-        )[:limit]
-        return results
+        results.sort(key=lambda r: (-r["score"], r["name"] or ""))
+        return results[:limit]
 
     except SQLAlchemyError as e:
-        # Handle potential database errors gracefully
         return [{"error": f"Database error: {str(e)}"}]
     finally:
         session.close()

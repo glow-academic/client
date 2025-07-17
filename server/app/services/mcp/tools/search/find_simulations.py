@@ -73,7 +73,17 @@ def find_simulations(query: str, limit: int = 10) -> List[Dict[str, Any]]:
       • limit - Max results (default: 10)
 
     Returns
-      [ { "id": "…", "title": "…", "active": true, … }, … ]
+      [
+        {
+          "id": str,                # Simulation UUID
+          "title": str | None,      # Simulation title
+          "active": bool,           # Is the simulation active?
+          "time_limit": int | None, # Time limit in minutes (if any)
+          "created_at": str | None, # ISO8601 creation timestamp
+          "score": int              # Heuristic match score
+        },
+        ...
+      ]
 
     Quick-start
       ask:  "Which sims mention 'cardiac'?"

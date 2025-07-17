@@ -101,7 +101,18 @@ def find_profiles(query: str, limit: int = 10) -> List[Dict[str, Any]]:
       • limit - Max results (default: 10)
 
     Returns
-      [ { "id": "…", "full_name": "…", … }, … ]
+      [
+        {
+          "id": str,           # Profile UUID
+          "first_name": str | None,
+          "last_name": str | None,
+          "alias": str | None,
+          "role": str | None,
+          "full_name": str,    # "First Last" or alias or "Unknown"
+          "score": int         # Heuristic match score
+        },
+        ...
+      ]
 
     Quick-start
       ask:  "Find everyone named Jordan"

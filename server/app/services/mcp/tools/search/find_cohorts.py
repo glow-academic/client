@@ -118,7 +118,17 @@ def find_cohorts(query: str, limit: int = 10) -> List[Dict[str, Any]]:
         • limit - Max results (default: 10)
 
     Returns
-        [ { "id": "...", "title": "...", "active": True, "description": "...", "profile_count": 42, "score": 137 }, ... ]
+        [ 
+            { 
+                "id": "...", 
+                "title": "...", 
+                "active": <bool>, 
+                "description": "...", 
+                "profile_count": <int>, 
+                "score": <int> 
+            }, 
+            ... 
+        ]
 
     Quick-start
         ask:  "Find all Fall 2025 cohorts"
