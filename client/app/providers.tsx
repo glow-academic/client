@@ -22,16 +22,22 @@ const RoleAndWebSocketProviderWrapper = ({
   children: React.ReactNode;
 }) => {
   const userId = useSession().data?.user?.id;
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading } = useQuery({
     queryKey: ["profile", userId],
     queryFn: () => getProfilesByUser(parseInt(userId!)),
     select: (data) => data[0],
     enabled: !!userId,
   });
 
+  // profileId is undefined while loading, null if loaded and no profile, or the id if present
+  const profileId =
+    isLoading
+      ? undefined
+      : profile?.id ?? null;
+
   return (
     <RoleProvider ProfileRole={profile?.role}>
-      <WebSocketProvider profileId={profile?.id}>{children}</WebSocketProvider>
+      <WebSocketProvider profileId={profileId}>{children}</WebSocketProvider>
     </RoleProvider>
   );
 };

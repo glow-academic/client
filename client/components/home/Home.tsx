@@ -871,7 +871,8 @@ export default function Home() {
           return;
         }
 
-        if (!profile?.id) {
+        // Only enforce profile for non-guests
+        if (effectiveRole !== "guest" && !profile?.id) {
           toast.error("Profile not loaded. Please refresh the page.");
           return;
         }
@@ -882,7 +883,7 @@ export default function Home() {
           );
           logError("WebSocket not connected when trying to start simulation", {
             simulationId,
-            profileId: profile.id,
+            profileId: profile?.id,
             isConnected,
           });
           return;
@@ -892,40 +893,45 @@ export default function Home() {
         const toastId = toast.loading("Starting simulation...");
         setLoadingToastId(toastId);
 
+        const profileIdForEmit =
+          effectiveRole === "guest" ? "" : String(profile!.id); // "" → guest
+
         logInfo("Starting simulation via global WebSocket", {
           simulationId,
-          profileId: profile.id,
+          profileId: profileIdForEmit || "(guest)",
           isConnected,
         });
 
-        // Use global WebSocket to emit start simulation
         emitStartSimulation({
           simulation_id: simulationId,
-          profile_id: profile.id,
+          profile_id: profileIdForEmit,
         });
 
-        // Set a timeout to handle cases where the server doesn't respond
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
+        // timeout...
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
         timeoutRef.current = setTimeout(() => {
           logError("Simulation start timeout - no response from server");
           toast.dismiss(toastId);
           toast.error("Simulation start timed out. Please try again.");
           setLoadingSimulation(null);
           setLoadingToastId(null);
-        }, 30000); // 30 second timeout
+        }, 30000);
       } catch (error) {
         logError("Error starting simulation:", error);
-        if (loadingToastId) {
-          toast.dismiss(loadingToastId);
-        }
+        if (loadingToastId) toast.dismiss(loadingToastId);
         toast.error("Failed to start simulation. Please try again.");
         setLoadingSimulation(null);
         setLoadingToastId(null);
       }
     },
-    [profile, classes, isConnected, emitStartSimulation, loadingToastId]
+    [
+      profile,
+      classes,
+      isConnected,
+      emitStartSimulation,
+      loadingToastId,
+      effectiveRole,
+    ]
   );
 
   // Separate simulations into default and cohort-based
@@ -1130,7 +1136,9 @@ export default function Home() {
           {/* Header with navigation */}
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {type === "default" ? "Default Simulations" : "My Cohort Assignments"}
+              {type === "default"
+                ? "Default Simulations"
+                : "My Cohort Assignments"}
             </h2>
             {totalPages > 1 && (
               <div className="flex items-center space-x-2">
