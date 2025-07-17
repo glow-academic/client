@@ -15,19 +15,12 @@ from typing import Any, Dict
 import socketio  # type: ignore
 from agents import gen_trace_id
 from app.db import get_session
-from app.models import (
-    Scenarios,
-    SimulationAttempts,
-    SimulationChats,
-    SimulationMessages,
-    Simulations,
-)
+from app.models import (Scenarios, SimulationAttempts, SimulationChats,
+                        SimulationMessages, Simulations)
 from app.services.agents.collection.grade import run_grade_agent
 from app.services.agents.collection.scenario import run_scenario_agent
-from app.services.agents.collection.simulation import (
-    cancel_simulation_run,
-    run_simulation_agent,
-)
+from app.services.agents.collection.simulation import (cancel_simulation_run,
+                                                       run_simulation_agent)
 from app.utils.scenario import randomly_fill_scenario_attributes
 from sqlmodel import select
 
@@ -229,7 +222,40 @@ async def handle_stop_simulation(sid: str, data: Dict[str, Any]) -> None:
             if success:
                 logger.info(f"Successfully cancelled simulation run for chat {chat_id}")
 
-                # Emit stop signal via WebSocket (no success message)
+                # Mark the most recent unfinished assistant message complete
+                # Get all response messages for this chat, then sort in Python
+                assistant_msgs = db_session.exec(
+                    select(SimulationMessages)
+                    .where(SimulationMessages.chat_id == chat_id)
+                    .where(SimulationMessages.type == "response")
+                ).all()
+                assistant_msg = None
+                if assistant_msgs:
+                    assistant_msgs_sorted = sorted(
+                        assistant_msgs,
+                        key=lambda m: m.created_at,
+                        reverse=True
+                    )
+                    assistant_msg = assistant_msgs_sorted[0]
+                
+                if assistant_msg and not assistant_msg.completed:
+                    assistant_msg.completed = True
+                    db_session.add(assistant_msg)
+                    db_session.commit()
+                    db_session.refresh(assistant_msg)
+
+                    # Emit a cancellation / final content event so clients update UI
+                    await sio_instance.emit(
+                        "simulation_message_cancelled",
+                        {
+                            "message_id": str(assistant_msg.id),
+                            "chat_id": str(chat_id),
+                            "final_content": assistant_msg.content or "",
+                        },
+                        room=f"simulation_{chat_id}",
+                    )
+
+                # Emit stop signal (even if message was empty)
                 await sio_instance.emit(
                     "simulation_stopped",
                     {

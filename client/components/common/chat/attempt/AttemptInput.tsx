@@ -14,7 +14,7 @@ import { CardFooter } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 
 // Icons
-import { Send, Square } from "lucide-react";
+import { Loader2, Send, Square } from "lucide-react";
 
 // Tooltip
 import {
@@ -62,11 +62,9 @@ export default function AttemptInput() {
     e.preventDefault();
     const messageToSend = newMessage.trim();
 
-
-
     // Require either text message or sketch to send
     if (
-      (!messageToSend) ||
+      !messageToSend ||
       !simulationContext?.currentChat ||
       simulationContext?.isSendingMessage ||
       !isConnected
@@ -106,7 +104,11 @@ export default function AttemptInput() {
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [simulationContext?.currentChat?.completed, simulationContext?.simulation?.timeLimit, simulationContext?.isActive]);
+  }, [
+    simulationContext?.currentChat?.completed,
+    simulationContext?.simulation?.timeLimit,
+    simulationContext?.isActive,
+  ]);
 
   if (simulationContext?.currentChat?.completed) return null;
 
@@ -136,50 +138,53 @@ export default function AttemptInput() {
             <AnimatePresence mode="popLayout">
               {/* Send Button - Always show in dev mode, conditionally in non-dev mode */}
               {simulationContext?.isSendingMessage && (
-                  <motion.div
-                    layout
-                    key="send-btn-short"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.5 }}
-                  >
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Button
-                          type="submit"
-                          className="min-h-[40px] h-[40px] px-3"
-                          variant={
-                            simulationContext?.isSendingMessage
-                              ? "destructive"
-                              : "default"
-                          }
-                          disabled={
-                            simulationContext?.isSendingMessage
-                              ? false
-                              : !isConnected ||
-                                (!hasTextMessage)
-                          }
-                          onClick={
-                            simulationContext?.isSendingMessage
-                              ? handleStopMessage
-                              : (e) => handleSendMessage(e)
-                          }
-                        >
-                          {simulationContext?.isSendingMessage ? (
-                            <Square className="h-4 w-4" />
+                <motion.div
+                  layout
+                  key="send-btn-short"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                >
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Button
+                        type="submit"
+                        className="min-h-[40px] h-[40px] px-3"
+                        variant={
+                          simulationContext?.isSendingMessage
+                            ? "destructive"
+                            : "default"
+                        }
+                        disabled={
+                          simulationContext?.isSendingMessage
+                            ? simulationContext?.isStoppingMessage
+                            : !isConnected || !hasTextMessage
+                        }
+                        onClick={
+                          simulationContext?.isSendingMessage
+                            ? handleStopMessage
+                            : (e) => handleSendMessage(e)
+                        }
+                      >
+                        {simulationContext?.isSendingMessage ? (
+                          simulationContext?.isStoppingMessage ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
-                            <Send className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      {getConnectionTooltip() && (
-                        <TooltipContent>
-                          <p>{getConnectionTooltip()}</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </motion.div>
-                )}
+                            <Square className="h-4 w-4" />
+                          )
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    {getConnectionTooltip() && (
+                      <TooltipContent>
+                        <p>{getConnectionTooltip()}</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
         </div>

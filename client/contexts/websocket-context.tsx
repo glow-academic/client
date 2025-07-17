@@ -652,8 +652,20 @@ export function WebSocketProvider({
         (data: { chat_id: string; success: boolean; message: string }) => {
           logInfo("Simulation stopped", data);
           setIsStoppingSimulation(false);
+
+          // Always let SimulationContext know about the stop event
+          window.dispatchEvent(
+            new CustomEvent("simulationStopped", {
+              detail: {
+                chatId: data.chat_id,
+                success: data.success,
+                message: data.message,
+              },
+            })
+          );
+
           if (data.success) {
-            // No toast for successful stops
+            // No toast for successful stops unless there's a message
             if (data.message) {
               toast.success(data.message);
             }
@@ -974,13 +986,13 @@ export function WebSocketProvider({
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
-  
+
       // Normalize nullish → ""
       const payload = {
         simulation_id: data.simulation_id,
         profile_id: data.profile_id ?? "",
       };
-  
+
       setIsStartingSimulation(true);
       logInfo("Emitting start_simulation", payload);
       socketRef.current.emit("start_simulation", payload);
