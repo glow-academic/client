@@ -5,7 +5,7 @@
  * 07/01/2025
  */
 "use client";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
 
 // UI Components
@@ -135,57 +135,53 @@ export default function AttemptInput() {
           </div>
 
           <div className="flex gap-2">
-            <AnimatePresence mode="popLayout">
-              {/* Send Button - Always show in dev mode, conditionally in non-dev mode */}
-              {simulationContext?.isSendingMessage && (
-                <motion.div
-                  layout
-                  key="send-btn-short"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.5 }}
-                >
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Button
-                        type="submit"
-                        className="min-h-[40px] h-[40px] px-3"
-                        variant={
-                          simulationContext?.isSendingMessage
-                            ? "destructive"
-                            : "default"
-                        }
-                        disabled={
-                          simulationContext?.isSendingMessage
-                            ? simulationContext?.isStoppingMessage
-                            : !isConnected || !hasTextMessage
-                        }
-                        onClick={
-                          simulationContext?.isSendingMessage
-                            ? handleStopMessage
-                            : (e) => handleSendMessage(e)
-                        }
-                      >
-                        {simulationContext?.isSendingMessage ? (
-                          simulationContext?.isStoppingMessage ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Square className="h-4 w-4" />
-                          )
-                        ) : (
-                          <Send className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    {getConnectionTooltip() && (
-                      <TooltipContent>
-                        <p>{getConnectionTooltip()}</p>
-                      </TooltipContent>
+            {/* Always show the send/stop button, just disable as needed */}
+            <motion.div
+              layout
+              key="send-btn-short"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+            >
+              <Tooltip>
+                <TooltipTrigger>
+                  <Button
+                    type="submit"
+                    className="min-h-[40px] h-[40px] px-3"
+                    variant={
+                      simulationContext?.isSendingMessage
+                        ? "destructive"
+                        : "default"
+                    }
+                    disabled={
+                      simulationContext?.isSendingMessage
+                        ? simulationContext?.isStoppingMessage
+                        : !isConnected || !hasTextMessage
+                    }
+                    onClick={
+                      simulationContext?.isSendingMessage
+                        ? handleStopMessage
+                        : (e) => handleSendMessage(e)
+                    }
+                  >
+                    {simulationContext?.isSendingMessage ? (
+                      simulationContext?.isStoppingMessage ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Square className="h-4 w-4" />
+                      )
+                    ) : (
+                      <Send className="h-4 w-4" />
                     )}
-                  </Tooltip>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  </Button>
+                </TooltipTrigger>
+                {getConnectionTooltip() && (
+                  <TooltipContent>
+                    <p>{getConnectionTooltip()}</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </motion.div>
           </div>
         </div>
 
