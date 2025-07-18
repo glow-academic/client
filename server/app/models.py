@@ -118,6 +118,7 @@ class Providers(_Base, table=True):
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     api_key: str = Field(sa_column=Column('api_key', Text))
+    base_url: Optional[str] = Field(default=None, sa_column=Column('base_url', Text))
 
 
 class Rubrics(_Base, table=True):

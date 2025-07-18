@@ -243,9 +243,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/management/models") {
+    if (pathname === "/management/providers") {
       return (
-        <Button onClick={() => router.push("/management/models/new")} size="sm">
+        <Button onClick={() => router.push("/management/providers/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Provider
         </Button>

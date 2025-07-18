@@ -16,7 +16,8 @@ import '@/mocks/api';
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
 const mockProps: ModelProps = {
-  // modelId: 'test-modelId', /* optional */
+  providerId: 'test-providerId',
+  modelId: 'test-modelId',
 };
 // ------------------------------------------------------------------
 describe('Model', () => {

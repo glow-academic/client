@@ -174,6 +174,8 @@ describe("ClassForm", () => {
         id: classId!,
         term: "fall" as const,
         defaultClass: false,
+        profileIds: [],
+        departmentId: "11111111-1111-1111-1111-111111111111",
       });
       vi.mocked(getDocumentsByClass).mockResolvedValue(
         mockSchema.documents as Document[]
@@ -212,6 +214,8 @@ describe("ClassForm", () => {
         term: "fall" as const,
         description: "Updated description",
         defaultClass: false,
+        profileIds: [],
+        departmentId: "11111111-1111-1111-1111-111111111111",
       }); // Mock update success
 
       renderWithMocks(<ClassForm classId={classId!} />);

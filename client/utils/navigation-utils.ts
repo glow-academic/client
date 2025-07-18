@@ -165,8 +165,8 @@ export const getSectionRoute = (section: string): string => {
       return "/management/staff";
     case "agents":
       return "/management/agents";
-    case "models":
-      return "/management/models";
+    case "providers":
+      return "/management/providers";
     case "logs":
       return "/management/logs";
 
@@ -220,9 +220,14 @@ export const getSectionRoute = (section: string): string => {
         const cohortId = section.replace("cohort-", "");
         return `/create/cohorts/c/${cohortId}`;
       }
+      if (section.startsWith("provider-")) {
+        const providerId = section.replace("provider-", "");
+        return `/management/providers/p/${providerId}`;
+      }
       if (section.startsWith("model-")) {
+        const providerId = section.replace("provider-", "");
         const modelId = section.replace("model-", "");
-        return `/management/models/m/${modelId}`;
+        return `/management/providers/p/${providerId}/m/${modelId}`;
       }
       if (section.startsWith("report-")) {
         const profileId = section.replace("report-", "");

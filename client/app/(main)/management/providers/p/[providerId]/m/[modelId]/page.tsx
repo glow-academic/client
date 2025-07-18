@@ -1,5 +1,5 @@
 /**
- * app/(main)/management/models/m/[modelId]/page.tsx
+ * app/(main)/providers/p/[providerId]/m/[modelId]/page.tsx
  * Model edit page for the model.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025

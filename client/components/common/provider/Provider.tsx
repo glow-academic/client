@@ -7,29 +7,38 @@
 "use client";
 import { logError } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Eye, EyeOff, Save, Settings } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { maskApiKey } from "@/utils/model/client-model";
 import { decryptProviderKey } from "@/utils/model/server-model";
 import { updateProviderWithEncryption } from "@/utils/model/update-provider-with-encryption";
+import { createProvider } from "@/utils/mutations/providers/create-provider";
 import { getProvider } from "@/utils/queries/providers/get-provider";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 
 export interface ProviderProps {
   providerId?: string;
+}
+
+interface FormErrors {
+  name?: string;
+  description?: string;
+  apiKey?: string;
+}
+
+interface FormData {
+  name?: string;
+  description?: string;
+  apiKey?: string;
+  baseUrl?: string;
 }
 
 export default function Provider({ providerId }: ProviderProps) {
@@ -39,90 +48,163 @@ export default function Provider({ providerId }: ProviderProps) {
   const [decryptedApiKey, setDecryptedApiKey] = useState<string>("");
   const [isDecrypting, setIsDecrypting] = useState(false);
   const [isEditingApiKey, setIsEditingApiKey] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form state for provider editing
-  const [editForm, setEditForm] = useState({
-    name: "",
-    description: "",
-    apiKey: "",
-    baseUrl: "",
-  });
+  const isEditMode = !!providerId;
+
+  const initialFormData: FormData = useMemo(
+    () => ({
+      name: "",
+      description: "",
+      apiKey: "",
+      baseUrl: "",
+    }),
+    []
+  );
+
+  const [formData, setFormData] = useState<FormData>({});
+  const [errors, setErrors] = useState<FormErrors>({});
 
   // Fetch provider data
-  const { data: provider, isLoading } = useQuery({
+  const { data: provider, isLoading: isProviderLoading } = useQuery({
     queryKey: ["provider", providerId],
     queryFn: () => getProvider(providerId!),
-    enabled: !!providerId,
+    enabled: isEditMode,
   });
 
-  // Initialize form when provider data loads
+  // Initialize form when provider data loads or in create mode
   useEffect(() => {
-    if (provider) {
-      setEditForm({
+    if (isEditMode && provider) {
+      setFormData({
         name: provider.name,
         description: provider.description,
         apiKey: "",
         baseUrl: provider.baseUrl || "",
       });
+    } else if (!isEditMode) {
+      setFormData(initialFormData);
     }
-  }, [provider]);
+  }, [isEditMode, provider, initialFormData]);
 
-  // Check if there are any changes to save
-  const hasChanges =
-    provider &&
-    (editForm.name !== provider.name ||
-      editForm.description !== provider.description ||
-      editForm.baseUrl !== (provider.baseUrl || "") ||
-      (isEditingApiKey && editForm.apiKey.trim() !== ""));
+  const isLoading = isProviderLoading;
 
-  const handleSave = async () => {
-    if (!provider || !hasChanges) return;
+  const handleInputChange = (
+    field: keyof FormData,
+    value: string | undefined
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
 
-    setIsSaving(true);
+  const resetFormAndState = () => {
+    setFormData(initialFormData);
+    setErrors({});
+    setShowApiKey(false);
+    setDecryptedApiKey("");
+    setIsEditingApiKey(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validation
+    if (!formData.name) {
+      setErrors((prev) => ({ ...prev, name: "Name is required" }));
+      return;
+    }
+
+    if (!formData.description) {
+      setErrors((prev) => ({
+        ...prev,
+        description: "Description is required",
+      }));
+      return;
+    }
+
+    if (!isEditMode && !formData.apiKey) {
+      setErrors((prev) => ({
+        ...prev,
+        apiKey: "API Key is required",
+      }));
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
-      // Prepare update data - only include changed fields
-      const updateData: {
-        name?: string;
-        description?: string;
-        apiKey?: string;
-        baseUrl?: string;
-      } = {};
+      let result;
+      if (isEditMode && providerId && provider) {
+        // Prepare update data - only include changed fields
+        const updateData: {
+          name?: string;
+          description?: string;
+          apiKey?: string;
+          baseUrl?: string;
+        } = {};
 
-      if (editForm.name !== provider.name) {
-        updateData.name = editForm.name;
+        if (formData.name !== provider.name) {
+          updateData.name = formData.name;
+        }
+
+        if (formData.description !== provider.description) {
+          updateData.description = formData.description;
+        }
+
+        if (formData.baseUrl !== (provider.baseUrl || "")) {
+          updateData.baseUrl = formData.baseUrl || "";
+        }
+
+        // Only include API key if user is editing it and entered a new one
+        if (
+          isEditingApiKey &&
+          formData.apiKey &&
+          formData.apiKey.trim() !== ""
+        ) {
+          updateData.apiKey = formData.apiKey;
+        }
+
+        // Call secure server action that handles encryption
+        await updateProviderWithEncryption(providerId, updateData);
+        result = true;
+      } else {
+        result = await createProvider({
+          name: formData.name!,
+          description: formData.description!,
+          apiKey: formData.apiKey!,
+          baseUrl: formData.baseUrl || "",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
       }
 
-      if (editForm.description !== provider.description) {
-        updateData.description = editForm.description;
+      if (!result) {
+        toast.error(`Failed to ${isEditMode ? "update" : "create"} provider`);
+        return;
       }
 
-      if (editForm.baseUrl !== (provider.baseUrl || "")) {
-        updateData.baseUrl = editForm.baseUrl;
-      }
-
-      // Only include API key if user is editing it and entered a new one
-      if (isEditingApiKey && editForm.apiKey.trim() !== "") {
-        updateData.apiKey = editForm.apiKey;
-      }
-
-      // Call secure server action that handles encryption
-      await updateProviderWithEncryption(provider.id, updateData);
-
-      toast.success("Provider updated successfully");
-
-      // Refresh data
-      queryClient.invalidateQueries({ queryKey: ["provider", providerId] });
+      resetFormAndState();
       queryClient.invalidateQueries({ queryKey: ["providers"] });
-
-      // Reset API key editing state
-      setIsEditingApiKey(false);
-      setEditForm((prev) => ({ ...prev, apiKey: "" }));
+      if (isEditMode && providerId) {
+        queryClient.invalidateQueries({ queryKey: ["provider", providerId] });
+      }
+      toast.success(
+        isEditMode && providerId
+          ? "Provider updated successfully!"
+          : "Provider created successfully!"
+      );
+      router.push(`/management/providers`);
     } catch (error) {
-      logError("Error updating provider:", error);
-      toast.error("Failed to update provider");
+      logError(
+        `Error ${isEditMode ? "updating" : "creating"} provider:`,
+        error
+      );
+      toast.error(
+        `Failed to ${isEditMode ? "update" : "create"} provider: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     } finally {
-      setIsSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -149,144 +231,90 @@ export default function Provider({ providerId }: ProviderProps) {
 
   const handleStartEditApiKey = () => {
     setIsEditingApiKey(true);
-    setEditForm((prev) => ({ ...prev, apiKey: "" }));
+    setFormData((prev) => ({ ...prev, apiKey: "" }));
   };
 
   const handleCancelEditApiKey = () => {
     setIsEditingApiKey(false);
-    setEditForm((prev) => ({ ...prev, apiKey: "" }));
+    setFormData((prev) => ({ ...prev, apiKey: "" }));
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current" />
-      </div>
-    );
-  }
-
-  if (!provider) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-        <Settings className="h-12 w-12 text-muted-foreground" />
-        <h3 className="text-lg font-medium">Provider not found</h3>
-        <Button variant="outline" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Go Back
-        </Button>
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="sm" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold">Provider Settings</h1>
-          <p className="text-muted-foreground">
-            Manage settings for {provider.name}
-          </p>
-        </div>
-      </div>
+    <div className="space-y-6">
 
-      {/* Provider Settings Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Provider Configuration
-          </CardTitle>
-          <CardDescription>
-            Update your provider settings and API configuration
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Name Field */}
-          <div className="space-y-2">
-            <Label htmlFor="provider-name">Provider Name</Label>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Name Field */}
+        <div className="space-y-2">
+          <Label htmlFor="name">Name</Label>
+          {formData.name !== undefined && !isLoading ? (
             <Input
-              id="provider-name"
-              value={editForm.name}
-              onChange={(e) =>
-                setEditForm((prev) => ({ ...prev, name: e.target.value }))
-              }
+              id="name"
+              value={formData.name}
+              onChange={(e) => handleInputChange("name", e.target.value)}
               placeholder="Enter provider name"
+              className={errors.name ? "border-destructive" : ""}
             />
-          </div>
+          ) : (
+            <Skeleton className="h-10 w-full" />
+          )}
+          {errors.name && (
+            <p className="text-sm text-destructive">{errors.name}</p>
+          )}
+        </div>
 
-          {/* Description Field */}
-          <div className="space-y-2">
-            <Label htmlFor="provider-description">Description</Label>
-            <Input
-              id="provider-description"
-              value={editForm.description}
-              onChange={(e) =>
-                setEditForm((prev) => ({
-                  ...prev,
-                  description: e.target.value,
-                }))
-              }
+        {/* Description Field */}
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          {formData.description !== undefined && !isLoading ? (
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => handleInputChange("description", e.target.value)}
               placeholder="Enter provider description"
+              rows={3}
+              className={errors.description ? "border-destructive" : ""}
             />
-          </div>
+          ) : (
+            <Skeleton className="h-10 w-full" />
+          )}
+          {errors.description && (
+            <p className="text-sm text-destructive">{errors.description}</p>
+          )}
+        </div>
 
-          {/* Base URL Field */}
-          <div className="space-y-2">
-            <Label htmlFor="base-url">
-              Base URL <span className="text-muted-foreground">(Optional)</span>
-            </Label>
-            <Input
-              id="base-url"
-              value={editForm.baseUrl}
-              onChange={(e) =>
-                setEditForm((prev) => ({
-                  ...prev,
-                  baseUrl: e.target.value,
-                }))
-              }
-              placeholder="https://api.custom-provider.com/v1"
-            />
-            <p className="text-sm text-muted-foreground">
-              Leave empty to use the default provider URL. Required for custom
-              models.
-            </p>
-          </div>
-
-          {/* API Key Field */}
-          <div className="space-y-2">
-            <Label htmlFor="api-key">API Key</Label>
+                {/* API Key Field */}
+                <div className="space-y-2">
+          <Label htmlFor="apiKey">API Key</Label>
+          {formData.apiKey !== undefined && !isLoading ? (
             <div className="space-y-2">
               <div className="flex gap-2">
                 <Input
-                  id="api-key"
+                  id="apiKey"
                   type={showApiKey ? "text" : "password"}
                   value={
-                    isEditingApiKey
-                      ? editForm.apiKey
-                      : showApiKey
-                        ? decryptedApiKey
-                        : maskApiKey(provider.apiKey)
+                    isEditMode
+                      ? isEditingApiKey
+                        ? formData.apiKey
+                        : showApiKey
+                          ? decryptedApiKey
+                          : maskApiKey(provider?.apiKey || "")
+                      : formData.apiKey
                   }
                   onChange={(e) =>
-                    isEditingApiKey &&
-                    setEditForm((prev) => ({
-                      ...prev,
-                      apiKey: e.target.value,
-                    }))
+                    (isEditMode ? isEditingApiKey : true) &&
+                    handleInputChange("apiKey", e.target.value)
                   }
-                  placeholder={isEditingApiKey ? "Enter new API key" : ""}
-                  className="flex-1"
-                  readOnly={!isEditingApiKey}
+                  placeholder={
+                    isEditMode && !isEditingApiKey ? "" : "Enter API key"
+                  }
+                  className={`flex-1 ${errors.apiKey ? "border-destructive" : ""}`}
+                  readOnly={isEditMode && !isEditingApiKey}
                 />
 
-                {!isEditingApiKey ? (
+                {isEditMode && !isEditingApiKey ? (
                   <>
                     <Button
+                      type="button"
                       variant="outline"
                       size="sm"
                       onClick={handleToggleApiKey}
@@ -302,6 +330,7 @@ export default function Provider({ providerId }: ProviderProps) {
                       )}
                     </Button>
                     <Button
+                      type="button"
                       variant="outline"
                       size="sm"
                       onClick={handleStartEditApiKey}
@@ -310,8 +339,9 @@ export default function Provider({ providerId }: ProviderProps) {
                       Edit
                     </Button>
                   </>
-                ) : (
+                ) : isEditMode && isEditingApiKey ? (
                   <Button
+                    type="button"
                     variant="outline"
                     size="sm"
                     onClick={handleCancelEditApiKey}
@@ -319,36 +349,65 @@ export default function Provider({ providerId }: ProviderProps) {
                   >
                     Cancel
                   </Button>
-                )}
+                ) : null}
               </div>
 
-              {isEditingApiKey && (
+              {isEditMode && isEditingApiKey && (
                 <div className="text-sm text-muted-foreground bg-blue-50 p-3 rounded-md">
                   <strong>Security Note:</strong> API keys are encrypted before
                   storage. This will replace your current API key.
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* Save Button */}
-          <div className="flex justify-end pt-4 border-t">
-            <Button onClick={handleSave} disabled={!hasChanges || isSaving}>
-              {isSaving ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Changes
-                </>
+              {errors.apiKey && (
+                <p className="text-sm text-destructive">{errors.apiKey}</p>
               )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          ) : (
+            <Skeleton className="h-10 w-full" />
+          )}
+        </div>
+
+        {/* Base URL Field */}
+        <div className="space-y-2">
+          <Label htmlFor="baseUrl">
+            Base URL <span className="text-muted-foreground">(Optional)</span>
+          </Label>
+          {formData.baseUrl !== undefined && !isLoading ? (
+            <Input
+              id="baseUrl"
+              value={formData.baseUrl}
+              onChange={(e) => handleInputChange("baseUrl", e.target.value)}
+              placeholder="https://api.custom-provider.com/v1"
+            />
+          ) : (
+            <Skeleton className="h-10 w-full" />
+          )}
+          <p className="text-sm text-muted-foreground">
+            Leave empty to use the default provider URL. Required for custom
+            models.
+          </p>
+        </div>
+
+        {/* Submit Button */}
+        <div className="flex justify-end gap-4">
+          <Button
+            type="submit"
+            disabled={isSubmitting || isLoading}
+            className="min-w-[120px]"
+          >
+            {isSubmitting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                {isEditMode ? "Updating..." : "Creating..."}
+              </>
+            ) : isEditMode ? (
+              "Update Provider"
+            ) : (
+              "Create Provider"
+            )}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }

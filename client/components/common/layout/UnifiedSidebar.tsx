@@ -235,9 +235,9 @@ export function UnifiedSidebar({
 
       // Staff management - always available for admin
       managementItems.push({
-        title: "Staff",
+        title: "Departments",
         url: "#",
-        section: "staff",
+        section: "departments",
       });
 
       // Agents - available for admin
@@ -255,9 +255,9 @@ export function UnifiedSidebar({
 
       // Models - available for admin
       managementItems.push({
-        title: "Models",
+        title: "Providers",
         url: "#",
-        section: "models",
+        section: "providers",
       });
 
       // Logs - available for admin

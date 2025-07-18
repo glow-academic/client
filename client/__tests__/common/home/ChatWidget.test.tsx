@@ -37,7 +37,7 @@ describe('ChatWidget', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<ChatWidget  />);
+      renderWithMocks(<ChatWidget up={false} />);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
@@ -76,7 +76,7 @@ describe('ChatWidget', () => {
       // Arrange: Override the default success mock with an error for this test.
       // Example: vi.mocked(getAssistantChat).mockRejectedValue(new Error('API Error'));
 
-      renderWithMocks(<ChatWidget  />);
+      renderWithMocks(<ChatWidget up={false} />);
       
       // Assert: Check that your component shows an error message.
       // TODO: Add specific error state assertions
