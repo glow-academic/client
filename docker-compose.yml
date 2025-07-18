@@ -107,6 +107,7 @@ services:
       - DB_HOST=database
       - DOCKER_ENV=1
       - APP_PREFIX=${APP_PREFIX}
+      - INTERNAL_API_BASE=http://server:8000
     volumes:
       - uploads:/app/uploads   # Docker volume for uploads
       - csv:/app/csv
@@ -153,6 +154,7 @@ services:
         DB_NAME: ${DB_NAME}
         DB_PORT: 5432 # since we are running internally
         DB_HOST: database
+        AUTH_URL: ${ORIGIN}${APP_PREFIX}/api/auth
         AUTH_SECRET: ${AUTH_SECRET}
         AUTH_MICROSOFT_ENTRA_ID_ID: ${AUTH_MICROSOFT_ENTRA_ID_ID}
         AUTH_MICROSOFT_ENTRA_ID_SECRET: ${AUTH_MICROSOFT_ENTRA_ID_SECRET}
