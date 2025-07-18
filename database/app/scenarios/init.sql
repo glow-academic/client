@@ -38,7 +38,7 @@ CREATE TABLE scenarios (
   default_scenario BOOLEAN     NOT NULL DEFAULT FALSE,
   practice_scenario BOOLEAN     NOT NULL DEFAULT FALSE,
   generated BOOLEAN     NOT NULL DEFAULT FALSE,
-  parent_id UUID        NULL REFERENCES scenarios(id) ON DELETE SET NULL DEFAULT NULL
+  parent_id UUID        NULL DEFAULT NULL
 );
 
 INSERT INTO scenario_deadlines (id, deadline, description) VALUES

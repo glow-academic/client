@@ -419,7 +419,6 @@ class Scenarios(_Base, table=True):
         ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='SET NULL', name='scenarios_class_id_fkey'),
         ForeignKeyConstraint(['deadline_id'], ['scenario_deadlines.id'], ondelete='SET NULL', name='scenarios_deadline_id_fkey'),
         ForeignKeyConstraint(['location_id'], ['locations.id'], ondelete='SET NULL', name='scenarios_location_id_fkey'),
-        ForeignKeyConstraint(['parent_id'], ['scenarios.id'], ondelete='SET NULL', name='scenarios_parent_id_fkey'),
         ForeignKeyConstraint(['time_id'], ['scenario_times.id'], ondelete='SET NULL', name='scenarios_time_id_fkey'),
         PrimaryKeyConstraint('id', name='scenarios_pkey')
     )
@@ -446,8 +445,6 @@ class Scenarios(_Base, table=True):
     class_: Optional['Classes'] = Relationship(back_populates='scenarios')
     deadline: Optional['ScenarioDeadlines'] = Relationship(back_populates='scenarios')
     location: Optional['Locations'] = Relationship(back_populates='scenarios')
-    parent: Optional['Scenarios'] = Relationship(back_populates='parent_reverse')
-    parent_reverse: List['Scenarios'] = Relationship(back_populates='parent')
     time_: Optional['ScenarioTimes'] = Relationship(back_populates='scenarios')
     simulation_chats: List['SimulationChats'] = Relationship(back_populates='scenario')
 

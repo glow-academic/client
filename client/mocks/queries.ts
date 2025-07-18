@@ -184,6 +184,9 @@ vi.mock('@/utils/queries/profiles/get-profile', () => ({
 vi.mock('@/utils/queries/profiles/get-profiles-by-class', () => ({
   getProfilesByClass: vi.fn(() => mockSchema.profiles || []),
 }));
+vi.mock('@/utils/queries/profiles/get-profiles-by-department', () => ({
+  getProfilesByDepartment: vi.fn(() => mockSchema.profiles || []),
+}));
 vi.mock('@/utils/queries/profiles/get-profiles-by-user', () => ({
   getProfilesByUser: vi.fn(() => mockSchema.profiles || []),
 }));

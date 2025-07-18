@@ -137,14 +137,6 @@ export const scenariosRelations = relations(scenarios, ({one, many}) => ({
 		fields: [scenarios.timeId],
 		references: [scenarioTimes.id]
 	}),
-	scenario: one(scenarios, {
-		fields: [scenarios.parentId],
-		references: [scenarios.id],
-		relationName: "scenarios_parentId_scenarios_id"
-	}),
-	scenarios: many(scenarios, {
-		relationName: "scenarios_parentId_scenarios_id"
-	}),
 	simulationChats: many(simulationChats),
 }));
 

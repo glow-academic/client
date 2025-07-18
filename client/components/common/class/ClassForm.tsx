@@ -40,7 +40,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
-import ProfileSelector from "@/components/common/profile/ProfileSelector";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
@@ -111,6 +110,7 @@ interface FormErrors {
   description?: string;
   documentIds?: string[];
   departmentId?: string;
+  profileIds?: string[];
 }
 
 interface FormData {
@@ -122,6 +122,7 @@ interface FormData {
   description?: string;
   departmentId?: string;
   documentIds?: string[];
+  profileIds?: string[];
 }
 
 export interface ClassFormProps {
@@ -145,6 +146,7 @@ export default function ClassForm({ classId }: ClassFormProps) {
       description: "",
       departmentId: "",
       documentIds: [],
+      profileIds: [],
     }),
     []
   );
@@ -304,6 +306,7 @@ export default function ClassForm({ classId }: ClassFormProps) {
         year: classData.year,
         term: classData.term,
         description: classData.description,
+        profileIds: classData.profileIds,
       };
       setFormData(classFormData);
       setOriginalFormData(classFormData); // Set original data for comparison
@@ -1124,19 +1127,6 @@ export default function ClassForm({ classId }: ClassFormProps) {
               </div>
             )}
           </div>
-
-          {/* Staff Management Section - Only show in edit mode */}
-          {editMode && (
-            <div className="space-y-4">
-              <ProfileSelector
-                selectedProfiles={editedProfiles}
-                onProfilesChange={setEditedProfiles}
-                allowedRoles={["instructor", "ta"]}
-                title="Staff Management"
-                description="Add instructors and teaching assistants to this class"
-              />
-            </div>
-          )}
 
           {/* Action Buttons */}
           <div className="flex justify-between">
