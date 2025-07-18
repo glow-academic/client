@@ -50,6 +50,7 @@ import { createClass } from "@/utils/mutations/classes/create-class";
 import { updateClass } from "@/utils/mutations/classes/update-class";
 import { updateDocument } from "@/utils/mutations/documents/update-document";
 import { getClass } from "@/utils/queries/classes/get-class";
+import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
 import { getDocumentsByClass } from "@/utils/queries/documents/get-documents-by-class";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import {
@@ -87,6 +88,7 @@ interface FormErrors {
   term?: string;
   description?: string;
   documentIds?: string[];
+  departmentId?: string;
 }
 
 interface FormData {
@@ -96,6 +98,7 @@ interface FormData {
   year?: number;
   term?: string;
   description?: string;
+  departmentId?: string;
   documentIds?: string[];
 }
 
@@ -118,6 +121,7 @@ export default function ClassForm({ classId }: ClassFormProps) {
       year: new Date().getFullYear(),
       term: "fall",
       description: "",
+      departmentId: "",
       documentIds: [],
     }),
     []
@@ -167,6 +171,12 @@ export default function ClassForm({ classId }: ClassFormProps) {
     enabled: editMode, // Only fetch when in edit mode
   });
 
+  // Fetch departments for the department selector
+  const { data: departments = [] } = useQuery({
+    queryKey: ["departments"],
+    queryFn: () => getAllDepartments(),
+  });
+
   // --- MODIFIED: Initialize or reset the local document state ---
   const resetFormState = useCallback(() => {
     if (documents) {
@@ -194,7 +204,8 @@ export default function ClassForm({ classId }: ClassFormProps) {
       current.classCode !== original.classCode ||
       current.year !== original.year ||
       current.term !== original.term ||
-      current.description !== original.description;
+      current.description !== original.description ||
+      current.departmentId !== original.departmentId;
 
     // Check document changes
     const documentsChanged =
@@ -234,6 +245,7 @@ export default function ClassForm({ classId }: ClassFormProps) {
       const classFormData = {
         name: classData.name,
         classCode: classData.classCode,
+        departmentId: classData.departmentId,
         year: classData.year,
         term: classData.term,
         description: classData.description,
@@ -251,6 +263,10 @@ export default function ClassForm({ classId }: ClassFormProps) {
     const validationErrors: FormErrors = {};
     if (!formData?.name?.trim()) {
       validationErrors.name = "Class name is required";
+    }
+
+    if (!formData?.departmentId?.trim()) {
+      validationErrors.departmentId = "Department is required";
     }
 
     if (!formData?.classCode?.trim()) {
@@ -475,7 +491,6 @@ export default function ClassForm({ classId }: ClassFormProps) {
 
     // Remove the document from the visible UI state
     setEditedDocuments((prev) => prev.filter((d) => d.id !== docId));
-    toast.info(`'${docToRemove.name}' will be deleted on save.`);
   };
 
   const handleDocumentTypeChange = (docId: string, newType: string) => {
@@ -590,59 +605,66 @@ export default function ClassForm({ classId }: ClassFormProps) {
             )}
           </div>
 
-          {/* Class Code */}
-          <div className="space-y-2">
-            <Label htmlFor="classCode">Class Code *</Label>
-            {formData?.classCode !== undefined && !isLoading ? (
-              <Input
-                id="classCode"
-                value={formData.classCode}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    classCode: e.target.value,
-                  }))
-                }
-                placeholder="e.g., 101"
-                className={errors.classCode ? "border-red-500" : ""}
-              />
-            ) : (
-              <Skeleton className="h-10 w-full" />
-            )}
-            {errors.classCode && (
-              <p className="text-sm text-red-500">{errors.classCode}</p>
-            )}
-          </div>
+          {/* Department and Class Code */}
+          <div className="flex items-center gap-4 w-auto">
+            <div className="space-y-2 flex-shrink-0">
+              <Label htmlFor="department">Department *</Label>
+              {formData?.departmentId !== undefined && !isLoading ? (
+                <Select
+                  value={formData.departmentId || ""}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, departmentId: value }))
+                  }
+                >
+                  <SelectTrigger
+                    className={errors.departmentId ? "border-red-500" : ""}
+                  >
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((department) => (
+                      <SelectItem key={department.id} value={department.id}>
+                        {department.name} ({department.departmentCode})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Skeleton className="h-10 w-full" />
+              )}
+              {errors.departmentId && (
+                <p className="text-sm text-red-500">{errors.departmentId}</p>
+              )}
+            </div>
 
-          {/* Year and Term */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="year">Year *</Label>
-              {formData?.year !== undefined && !isLoading ? (
+            <div className={`space-y-2 ${formData?.classCode !== undefined && !isLoading ? "pb-2" : ""}`} style={{ minWidth: 120 }}>
+              <Label htmlFor="classCode">Class Code *</Label>
+              {formData?.classCode !== undefined && !isLoading ? (
                 <Input
-                  id="year"
-                  type="number"
-                  value={formData.year}
+                  id="classCode"
+                  value={formData.classCode}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      year:
-                        parseInt(e.target.value) || new Date().getFullYear(),
+                      classCode: e.target.value,
                     }))
                   }
-                  min="2020"
-                  max="2030"
-                  className={errors.year ? "border-red-500" : ""}
+                  placeholder="e.g., 101"
+                  className={errors.classCode ? "border-red-500" : ""}
+                  style={{ width: 100 }}
                 />
               ) : (
                 <Skeleton className="h-10 w-full" />
               )}
-              {errors.year && (
-                <p className="text-sm text-red-500">{errors.year}</p>
+              {errors.classCode && (
+                <p className="text-sm text-red-500">{errors.classCode}</p>
               )}
             </div>
+          </div>
 
-            <div className="space-y-2">
+          {/* Term and Year */}
+          <div className="flex items-center gap-4 w-auto">
+            <div className="space-y-2 flex-shrink-0">
               <Label htmlFor="term">Term *</Label>
               {formData?.term !== undefined && !isLoading ? (
                 <Select
@@ -667,6 +689,33 @@ export default function ClassForm({ classId }: ClassFormProps) {
               )}
               {errors.term && (
                 <p className="text-sm text-red-500">{errors.term}</p>
+              )}
+            </div>
+
+            <div className={`space-y-2 ${formData?.year !== undefined && !isLoading ? "pb-2" : ""}`} style={{ minWidth: 120 }}>
+              <Label htmlFor="year">Year *</Label>
+              {formData?.year !== undefined && !isLoading ? (
+                <Input
+                  id="year"
+                  type="number"
+                  value={formData.year}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      year:
+                        parseInt(e.target.value) || new Date().getFullYear(),
+                    }))
+                  }
+                  min="2020"
+                  max="2030"
+                  className={errors.year ? "border-red-500" : ""}
+                  style={{ width: 100 }}
+                />
+              ) : (
+                <Skeleton className="h-10 w-full" />
+              )}
+              {errors.year && (
+                <p className="text-sm text-red-500">{errors.year}</p>
               )}
             </div>
           </div>
@@ -873,7 +922,9 @@ export default function ClassForm({ classId }: ClassFormProps) {
                                   size="sm"
                                   className="h-7 w-7 p-0 text-destructive hover:text-destructive bg-white/90 backdrop-blur-sm"
                                   data-testid={`delete-doc-${doc.id}`}
-                                  onClick={() => stageDocumentForDeletion(doc.id)}
+                                  onClick={() =>
+                                    stageDocumentForDeletion(doc.id)
+                                  }
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
@@ -976,7 +1027,9 @@ export default function ClassForm({ classId }: ClassFormProps) {
                                   size="sm"
                                   className="text-destructive hover:text-destructive"
                                   data-testid={`delete-doc-${doc.id}`}
-                                  onClick={() => stageDocumentForDeletion(doc.id)}
+                                  onClick={() =>
+                                    stageDocumentForDeletion(doc.id)
+                                  }
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
