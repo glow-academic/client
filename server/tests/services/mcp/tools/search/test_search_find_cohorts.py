@@ -4,7 +4,6 @@ Tests for app.services.mcp.tools.search.find_cohorts
 
 import uuid
 from unittest.mock import MagicMock, patch
-import pytest
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.services.mcp.tools.search.find_cohorts import find_cohorts
@@ -12,6 +11,7 @@ from app.services.mcp.tools.search.find_cohorts import find_cohorts
 
 class MockCohort:
     """Minimal mock for Cohorts model."""
+
     def __init__(self, id, title, active=True, profile_ids=None, description=None):
         self.id = id
         self.title = title
@@ -76,7 +76,9 @@ class TestFind_Cohorts:
         mock_get_session.return_value = iter([mock_session])
 
         c_exact = MockCohort(uuid.uuid4(), "Spring 2025 Nursing", profile_ids=[])
-        c_prefix = MockCohort(uuid.uuid4(), "Spring 2025 Nursing Cohort", profile_ids=[uuid.uuid4()])
+        c_prefix = MockCohort(
+            uuid.uuid4(), "Spring 2025 Nursing Cohort", profile_ids=[uuid.uuid4()]
+        )
         c_far = MockCohort(uuid.uuid4(), "General Nursing Group", profile_ids=[])
 
         # Return deliberately reversed to ensure re-ranking

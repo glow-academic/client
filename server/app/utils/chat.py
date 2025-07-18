@@ -1,4 +1,3 @@
-
 import json
 import logging
 import random
@@ -6,8 +5,14 @@ from datetime import datetime
 from typing import Any, Dict, List
 
 from agents.items import TResponseInputItem
-from app.models import (Agents, AssistantMessages, AssistantToolCalls,
-                        Scenarios, SimulationChats, SimulationMessages)
+from app.models import (
+    Agents,
+    AssistantMessages,
+    AssistantToolCalls,
+    Scenarios,
+    SimulationChats,
+    SimulationMessages,
+)
 from openai.types.responses import ResponseFunctionToolCallParam
 from sqlmodel import Session, select
 

@@ -67,7 +67,7 @@ def cohort_overview(cohort_id: str) -> Dict[str, Any]:
         all_active_sims_stmt = select(Simulations).where(Simulations.active == True)
         all_active_sims = session.exec(all_active_sims_stmt).all()
         cohort_sims = [sim for sim in all_active_sims if cohort_uuid in sim.cohort_ids]
-        
+
         simulations_data = [
             {
                 "id": str(sim.id),

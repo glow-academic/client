@@ -31,12 +31,12 @@ def generate_sqlmodel_from_sql():
 
         import_lines = [
             "import uuid",
-            "from datetime import datetime, timezone",
+            "from datetime import datetime, time, timezone",
             "from typing import Any, Dict, List, Optional",
             "",
             "from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime,",
             "                        Enum, ForeignKeyConstraint, Integer,",
-            "                        PrimaryKeyConstraint, String, Text, Uuid, text, Double)",
+            "                        PrimaryKeyConstraint, String, Text, Uuid, text, Double, Time)",
             "from sqlalchemy.dialects.postgresql import JSONB",
             "from sqlmodel import Field, Relationship, SQLModel",
             "from sqlalchemy.orm import Mapped",

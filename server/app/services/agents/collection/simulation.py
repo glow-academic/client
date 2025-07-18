@@ -7,12 +7,18 @@ from agents import Runner, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
-from app.models import (Agents, Documents, Models, Providers, Scenarios,
-                        SimulationAttempts, SimulationChats,
-                        SimulationMessages)
+from app.models import (
+    Agents,
+    Documents,
+    Models,
+    Providers,
+    Scenarios,
+    SimulationAttempts,
+    SimulationChats,
+    SimulationMessages,
+)
 from app.services.agents.generic import GenericAgent
-from app.utils.chat import (get_chat_scenario,
-                            get_simulation_conversation_history)
+from app.utils.chat import get_chat_scenario, get_simulation_conversation_history
 from app.utils.classes import get_class_info
 from fastapi import Depends
 from openai.types.responses import ResponseTextDeltaEvent
@@ -97,10 +103,10 @@ async def _handle_simulation_chat(
         raise ValueError(f"Agent not found for scenario {scenario.id}")
 
     input_items: list[TResponseInputItem] = []
-    if scenario.documents:
+    if scenario.document_ids:
         # get the documents for the scenario
         documents = session.exec(
-            select(Documents).where(Documents.id.in_(scenario.documents))
+            select(Documents).where(Documents.id.in_(scenario.document_ids))
         ).all()
         if not documents:
             raise ValueError(f"Documents not found for scenario {scenario.id}")

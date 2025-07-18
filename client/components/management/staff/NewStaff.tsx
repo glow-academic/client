@@ -7,13 +7,12 @@
 
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { Download, GraduationCap, Shield, User } from "lucide-react";
+import { Download, Shield, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -32,10 +31,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Class as ClassData } from "@/types";
 import { logError } from "@/utils/logger";
 import { createProfile } from "@/utils/mutations/profiles/create-profile";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useSession } from "next-auth/react";
 
@@ -55,7 +52,7 @@ const getRoleIcon = (role: string) => {
     case "instructional":
       return Shield;
     case "instructor":
-      return GraduationCap;
+      return User;
     case "ta":
       return User;
     default:
@@ -100,10 +97,8 @@ export default function NewStaff() {
     lastName: "",
     alias: "",
     role: "" as ProfileRole | "",
-    classIds: [] as string[],
   });
   const [csvPreview, setCsvPreview] = React.useState<CSVUser[]>([]);
-  const [selectedClassIds, setSelectedClassIds] = React.useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Get current user's profile to check if they're admin
@@ -114,12 +109,6 @@ export default function NewStaff() {
     queryFn: () => getProfilesByUser(parseInt(userId!)),
     select: (data) => data[0],
     enabled: !!userId,
-  });
-
-  // Fetch all classes for multi-select
-  const { data: allClasses = [] } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => getAllClasses(),
   });
 
   // Check if current user is admin
@@ -136,7 +125,7 @@ export default function NewStaff() {
       {
         value: "instructor" as ProfileRole,
         label: "Instructor",
-        icon: GraduationCap,
+        icon: User,
       },
       { value: "ta" as ProfileRole, label: "Teaching Assistant", icon: User },
     ];
@@ -152,25 +141,8 @@ export default function NewStaff() {
     return baseRoles;
   }, [isCurrentUserAdmin]);
 
-  const handleInputChange = (field: string, value: string | string[]) => {
+  const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleClassToggle = (classId: string) => {
-    const currentClassIds = formData.classIds;
-    const newClassIds = currentClassIds.includes(classId)
-      ? currentClassIds.filter((id) => id !== classId)
-      : [...currentClassIds, classId];
-
-    handleInputChange("classIds", newClassIds);
-  };
-
-  const handleBulkClassToggle = (classId: string) => {
-    const newClassIds = selectedClassIds.includes(classId)
-      ? selectedClassIds.filter((id) => id !== classId)
-      : [...selectedClassIds, classId];
-
-    setSelectedClassIds(newClassIds);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -184,7 +156,6 @@ export default function NewStaff() {
         lastName: formData.lastName,
         alias: formData.alias,
         role: formData.role,
-        classIds: formData.classIds,
       });
       router.push("/management/staff");
     } catch (error) {
@@ -265,7 +236,6 @@ export default function NewStaff() {
             lastName: user.lastName,
             alias: user.alias,
             role: user.role,
-            classIds: selectedClassIds,
           })
         )
       );
@@ -331,7 +301,8 @@ export default function NewStaff() {
                   required
                 />
                 <p className="text-sm text-muted-foreground">
-                  Will be used as {formData.alias}@{process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
+                  Will be used as {formData.alias}@
+                  {process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
                 </p>
               </div>
               <div className="space-y-2">
@@ -360,59 +331,6 @@ export default function NewStaff() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            {/* Class Assignment Section */}
-            <div className="space-y-2">
-              <Label>Class Assignments</Label>
-              <div className="border rounded-md p-4 max-h-60 overflow-y-auto">
-                {allClasses.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No classes available
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {allClasses.map((classItem: ClassData) => (
-                      <div
-                        key={classItem.id}
-                        className="flex items-center space-x-2"
-                      >
-                        <Checkbox
-                          id={`class-${classItem.id}`}
-                          checked={formData.classIds.includes(classItem.id)}
-                          onCheckedChange={() =>
-                            handleClassToggle(classItem.id)
-                          }
-                        />
-                        <Label
-                          htmlFor={`class-${classItem.id}`}
-                          className="text-sm font-normal cursor-pointer flex-1"
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div>
-                              <span className="font-medium">
-                                {classItem.classCode}
-                              </span>
-                              <span className="text-muted-foreground ml-2">
-                                {classItem.name}
-                              </span>
-                            </div>
-                            <Badge variant="outline" className="text-xs">
-                              {classItem.term.charAt(0).toUpperCase() +
-                                classItem.term.slice(1)}{" "}
-                              {classItem.year}
-                            </Badge>
-                          </div>
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {formData.classIds.length} class
-                {formData.classIds.length !== 1 ? "es" : ""} selected
-              </p>
             </div>
 
             {formData.role && (
@@ -546,67 +464,11 @@ export default function NewStaff() {
                   </div>
                 </div>
 
-                {/* Bulk Class Assignment Section */}
-                <div className="space-y-2">
-                  <Label>Bulk Class Assignment</Label>
-
-                  <div className="border rounded-md p-4 max-h-60 overflow-y-auto">
-                    {allClasses.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        No classes available
-                      </p>
-                    ) : (
-                      <div className="space-y-3">
-                        {allClasses.map((classItem: ClassData) => (
-                          <div
-                            key={classItem.id}
-                            className="flex items-center space-x-2"
-                          >
-                            <Checkbox
-                              id={`bulk-class-${classItem.id}`}
-                              checked={selectedClassIds.includes(classItem.id)}
-                              onCheckedChange={() =>
-                                handleBulkClassToggle(classItem.id)
-                              }
-                            />
-                            <Label
-                              htmlFor={`bulk-class-${classItem.id}`}
-                              className="text-sm font-normal cursor-pointer flex-1"
-                            >
-                              <div className="flex items-center justify-between gap-2">
-                                <div>
-                                  <span className="font-medium">
-                                    {classItem.classCode}
-                                  </span>
-                                  <span className="text-muted-foreground ml-2">
-                                    {classItem.name}
-                                  </span>
-                                </div>
-                                <Badge variant="outline" className="text-xs">
-                                  {classItem.term.charAt(0).toUpperCase() +
-                                    classItem.term.slice(1)}{" "}
-                                  {classItem.year}
-                                </Badge>
-                              </div>
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedClassIds.length} class
-                    {selectedClassIds.length !== 1 ? "es" : ""} selected for all
-                    users
-                  </p>
-                </div>
-
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="outline"
                     onClick={() => {
                       setCsvPreview([]);
-                      setSelectedClassIds([]);
                     }}
                   >
                     Cancel

@@ -4,7 +4,6 @@ Tests for app.services.mcp.tools.search.find_scenarios
 
 import uuid
 from unittest.mock import MagicMock, patch
-import pytest
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.services.mcp.tools.search.find_scenarios import find_scenarios
@@ -12,6 +11,7 @@ from app.services.mcp.tools.search.find_scenarios import find_scenarios
 
 class MockScenario:
     """Minimal stub for Scenarios."""
+
     def __init__(
         self,
         id,
@@ -87,7 +87,9 @@ class TestFind_Scenarios:
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
 
-        s_exact = MockScenario(uuid.uuid4(), "Induction Homework", description="Primary CS scenario")
+        s_exact = MockScenario(
+            uuid.uuid4(), "Induction Homework", description="Primary CS scenario"
+        )
         s_prefix = MockScenario(uuid.uuid4(), "Induction Homework with Complications")
         s_far = MockScenario(uuid.uuid4(), "Math Homework")
 

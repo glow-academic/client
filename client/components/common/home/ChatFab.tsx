@@ -11,7 +11,7 @@ import { useRole } from "@/contexts/role-context";
 import { MessageCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
 
-interface ChatFabProps {
+export interface ChatFabProps {
   up: boolean;
 }
 

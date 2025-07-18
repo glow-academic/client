@@ -13,7 +13,6 @@ export interface FinalizeDocumentUploadParams {
   classId: string;
   zip?: boolean;
   autoClassify?: boolean;
-  autoCourseProcess?: boolean;
   csv?: boolean;
   profile?: string;
 }
@@ -62,7 +61,6 @@ export async function finalizeDocumentUpload(
   classId: string,
   zip?: boolean,
   autoClassify?: boolean,
-  autoCourseProcess?: boolean,
   csv?: boolean,
   profile?: string,
   test?: boolean,
@@ -73,7 +71,6 @@ export async function finalizeDocumentUpload(
       classId,
       ...(zip !== undefined && { zip }),
       ...(autoClassify !== undefined && { autoClassify }),
-      ...(autoCourseProcess !== undefined && { autoCourseProcess }),
       ...(csv !== undefined && { csv }),
       ...(profile !== undefined && { profile }),
       ...(test !== undefined && { test }),

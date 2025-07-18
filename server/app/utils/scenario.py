@@ -2,25 +2,21 @@
 
 import logging
 import random
+import uuid
 
 from agents.items import TResponseInputItem
-from app.models import Agents, Classes, Documents, Scenarios
+from app.models import (
+    Agents,
+    Classes,
+    Documents,
+    Locations,
+    ScenarioDeadlines,
+    Scenarios,
+    ScenarioTimes,
+)
 from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
-
-
-def get_seniority_info(seniority: str) -> TResponseInputItem:
-    """
-    Get the seniority information for a given seniority.
-    """
-
-    seniority_info_string = f"The student is a {seniority}."
-
-    return {
-        "role": "user",
-        "content": f"The following is the seniority information: {seniority_info_string}",
-    }
 
 
 def get_crowdedness_info(crowdedness: int) -> TResponseInputItem:
@@ -49,43 +45,27 @@ def get_intensity_info(intensity: int) -> TResponseInputItem:
     }
 
 
-def get_location_info(location: str) -> TResponseInputItem:
+def get_location_info(location_id: uuid.UUID, session: Session) -> TResponseInputItem:
     """
     Get the location information for a given location.
     """
 
-    location_descriptions = {
-        "haas": "HAAS basement - a quiet, focused study environment in the lower level of the HAAS building",
-        "lawson": "Lawson Commons - an open, collaborative space in the Lawson building with high foot traffic",
-        "dsai": "DS/AI basement - a specialized tech-focused lab environment in the basement of the Data Science/AI building",
-    }
-
-    location_description = location_descriptions.get(location, f"Location: {location}")
+    location = session.exec(select(Locations).where(Locations.id == location_id)).one()
 
     return {
         "role": "user",
-        "content": f"The following is the location information: The interaction takes place in the {location_description}.",
+        "content": f"The following is the location information: The interaction takes place in the {location.name} - {location.description}.",
     }
 
 
-def get_time_of_day_info(time_of_day: str) -> TResponseInputItem:
+def get_time_info(time_id: uuid.UUID, session: Session) -> TResponseInputItem:
     """
     Get the time of day information for a given time.
     """
 
-    time_descriptions = {
-        "9AM": "9:00 AM - early morning session, students may be tired but focused",
-        "10AM": "10:00 AM - mid-morning session, good energy levels",
-        "11AM": "11:00 AM - late morning session, students are alert and engaged",
-        "12PM": "12:00 PM - lunch time session, students may be hungry or rushed",
-        "1PM": "1:00 PM - early afternoon session, post-lunch energy dip possible",
-        "2PM": "2:00 PM - mid-afternoon session, good focus time",
-        "3PM": "3:00 PM - late afternoon session, sustained energy needed",
-        "4PM": "4:00 PM - evening session, students may be tired from the day",
-        "5PM": "5:00 PM - end of day session, students eager to finish",
-    }
+    time = session.exec(select(ScenarioTimes).where(ScenarioTimes.id == time_id)).one()
 
-    time_description = time_descriptions.get(time_of_day, f"Time: {time_of_day}")
+    time_description = time.time_of_day.strftime("%H:%M") + " - " + time.description
 
     return {
         "role": "user",
@@ -93,22 +73,20 @@ def get_time_of_day_info(time_of_day: str) -> TResponseInputItem:
     }
 
 
-def get_urgency_info(urgency: str) -> TResponseInputItem:
+def get_deadline_info(deadline_id: uuid.UUID, session: Session) -> TResponseInputItem:
     """
-    Get the urgency information for a given urgency level.
+    Get the deadline information for a given deadline.
     """
 
-    urgency_descriptions = {
-        "hour": "The assignment is due in a few hours - this is a high-stress situation requiring immediate help",
-        "day": "The assignment is due tomorrow - moderate stress, student is planning ahead",
-        "days": "The assignment is due in a couple of days - low stress, plenty of time to work through problems",
-    }
+    deadline = session.exec(
+        select(ScenarioDeadlines).where(ScenarioDeadlines.id == deadline_id)
+    ).one()
 
-    urgency_description = urgency_descriptions.get(urgency, f"Urgency: {urgency}")
+    deadline_description = deadline.deadline + " - " + deadline.description
 
     return {
         "role": "user",
-        "content": f"The following is the urgency information: {urgency_description}.",
+        "content": f"The following is the deadline information: {deadline_description}.",
     }
 
 
@@ -148,7 +126,7 @@ async def randomly_fill_scenario_attributes(
         scenario_class_id = scenario.class_id
 
     # Random document selection if documents is null
-    if scenario.documents is None:
+    if scenario.document_ids is None:
         # Get all documents, optionally filtered by class if we have one
         if scenario_class_id:
             class_documents = session.exec(
@@ -173,15 +151,7 @@ async def randomly_fill_scenario_attributes(
             scenario_documents = []
             logger.info("No documents found")
     else:
-        scenario_documents = scenario.documents
-
-    # Random seniority selection if seniority is null
-    if scenario.seniority is None:
-        seniority_options = ["freshman", "sophomore", "junior", "senior"]
-        scenario_seniority = random.choice(seniority_options)
-        logger.info(f"Randomly selected seniority: {scenario_seniority}")
-    else:
-        scenario_seniority = scenario.seniority
+        scenario_documents = scenario.document_ids
 
     # Random crowdedness selection if crowdedness is null (1-10 scale)
     if scenario.crowdedness is None:
@@ -198,28 +168,38 @@ async def randomly_fill_scenario_attributes(
         scenario_intensity = scenario.intensity
 
     # Random location selection if location is null
-    if scenario.location is None:
-        location_options = ["haas", "lawson", "dsai"]
-        scenario_location = random.choice(location_options)
-        logger.info(f"Randomly selected location: {scenario_location}")
+    if scenario.location_id is None:
+        all_locations = session.exec(select(ScenarioDeadlines)).all()
+        if all_locations:
+            scenario_location_id = random.choice(all_locations).id
+            logger.info(f"Randomly selected location_id: {scenario_location_id}")
+        else:
+            scenario_location_id = None
     else:
-        scenario_location = scenario.location
+        scenario_location_id = scenario.location_id
 
     # Random time of day selection if time of day is null
-    if scenario.tod is None:
-        tod_options = ["9AM", "10AM", "11AM", "12PM", "1PM", "2PM", "3PM", "4PM", "5PM"]
-        scenario_tod = random.choice(tod_options)
-        logger.info(f"Randomly selected time of day: {scenario_tod}")
+    if scenario.time_id is None:
+        all_times = session.exec(select(ScenarioTimes)).all()
+        if all_times:
+            scenario_time_id = random.choice(all_times).id
+            logger.info(f"Randomly selected time_id: {scenario_time_id}")
+        else:
+            scenario_time_id = None
     else:
-        scenario_tod = scenario.tod
+        scenario_time_id = scenario.time_id
 
     # Random urgency selection if urgency is null
-    if scenario.urgency is None:
-        urgency_options = ["hour", "day", "days"]
-        scenario_urgency = random.choice(urgency_options)
-        logger.info(f"Randomly selected urgency: {scenario_urgency}")
+    if scenario.deadline_id is None:
+        all_deadlines = session.exec(select(ScenarioDeadlines)).all()
+        if all_deadlines:
+            scenario_deadline_id = random.choice(all_deadlines).id
+            logger.info(f"Randomly selected deadline_id: {scenario_deadline_id}")
+        else:
+            scenario_deadline_id = None
+        logger.info(f"Randomly selected deadline_id: {scenario_deadline_id}")
     else:
-        scenario_urgency = scenario.urgency
+        scenario_deadline_id = scenario.deadline_id
 
     return Scenarios(
         name=scenario.name,
@@ -227,11 +207,11 @@ async def randomly_fill_scenario_attributes(
         agent_id=scenario_agent_id,
         class_id=scenario_class_id,
         documents=scenario_documents,
-        seniority=scenario_seniority,
         crowdedness=scenario_crowdedness,
         intensity=scenario_intensity,
-        location=scenario_location,
-        tod=scenario_tod,
-        urgency=scenario_urgency,
+        location_id=scenario_location_id,
+        time_id=scenario_time_id,
+        deadline_id=scenario_deadline_id,
         generated=True,
+        parent_id=scenario.id,  # since we are creating a new scenario, we need to set the parent_id to the original scenario
     )

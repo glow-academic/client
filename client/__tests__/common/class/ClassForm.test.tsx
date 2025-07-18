@@ -90,6 +90,8 @@ describe("ClassForm", () => {
         year: 2025,
         term: "fall" as const,
         defaultClass: false,
+        departmentId: "11111111-1111-1111-1111-111111111111",
+        profileIds: [],
       };
       vi.mocked(createClass).mockResolvedValue(newClassData);
 

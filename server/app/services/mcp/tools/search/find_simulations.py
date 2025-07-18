@@ -110,9 +110,9 @@ def find_simulations(query: str, limit: int = 10) -> List[Dict[str, Any]]:
             token_ors.append(s_title.like(p))
 
         broad_pred = or_(
-            s_title == q_norm,            # exact
-            s_title.like(like_prefix),    # prefix
-            s_title.like(like_full),      # contains whole query
+            s_title == q_norm,  # exact
+            s_title.like(like_prefix),  # prefix
+            s_title.like(like_full),  # contains whole query
             or_(*token_ors) if token_ors else literal(False),  # token contains
         )
 
@@ -133,7 +133,9 @@ def find_simulations(query: str, limit: int = 10) -> List[Dict[str, Any]]:
                     "title": sim.title,
                     "active": sim.active,
                     "time_limit": sim.time_limit,
-                    "created_at": sim.created_at.isoformat() if sim.created_at else None,
+                    "created_at": sim.created_at.isoformat()
+                    if sim.created_at
+                    else None,
                     "score": score,
                 }
             )

@@ -84,7 +84,6 @@ def process_csv_file(file_path: str, session: Session) -> Dict[str, Any]:
                         alias=username,
                         role="ta",
                         viewed_intro=False,
-                        class_ids=[],
                     )
 
                     session.add(new_user)

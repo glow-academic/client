@@ -26,16 +26,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Profile } from "@/types";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { useQuery } from "@tanstack/react-query";
-import {
-  GraduationCap,
-  Pencil,
-  Search,
-  Shield,
-  User as UserIcon,
-} from "lucide-react";
+import { Pencil, Search, Shield, User as UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
 
@@ -72,7 +65,7 @@ const getRoleIcon = (role: string) => {
     case "instructional":
       return Shield;
     case "instructor":
-      return GraduationCap;
+      return UserIcon;
     case "ta":
       return UserIcon;
     default:
@@ -106,11 +99,6 @@ export default function Staff() {
   const { data: allProfiles = [], isLoading } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
-  });
-
-  const { data: allClasses = [] } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => getAllClasses(),
   });
 
   // Filter staff users (include admin, instructional, instructor, ta)
@@ -151,8 +139,6 @@ export default function Staff() {
           return a.role.localeCompare(b.role);
         case "email":
           return a.alias.localeCompare(b.alias);
-        case "classes":
-          return (b.classIds?.length || 0) - (a.classIds?.length || 0);
         default:
           return 0;
       }
@@ -233,7 +219,7 @@ export default function Staff() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <GraduationCap className="h-4 w-4 text-green-600" />
+              <UserIcon className="h-4 w-4 text-green-600" />
               <div>
                 <p className="text-2xl font-bold">{roleCounts.instructor}</p>
                 <p className="text-sm text-muted-foreground">Instructors</p>
@@ -285,7 +271,6 @@ export default function Staff() {
             <SelectItem value="name">Name</SelectItem>
             <SelectItem value="role">Role</SelectItem>
             <SelectItem value="email">Email</SelectItem>
-            <SelectItem value="classes">Classes</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -298,7 +283,6 @@ export default function Staff() {
               <TableHead>Staff Member</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Classes</TableHead>
               <TableHead className="w-[100px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -306,7 +290,7 @@ export default function Staff() {
             {filteredUsers.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={4}
                   className="text-center py-8 text-muted-foreground"
                 >
                   {searchTerm || roleFilter !== "all"
@@ -345,30 +329,6 @@ export default function Staff() {
                     </TableCell>
                     <TableCell className="text-sm">
                       {profile.alias}@{process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      <div className="flex flex-wrap gap-1 max-w-[200px]">
-                        {profile.classIds && profile.classIds.length > 0 ? (
-                          profile.classIds.map((classId, index) => {
-                            const classOption = allClasses.find(
-                              (cls) => cls.id === classId
-                            );
-                            return (
-                              <Badge
-                                key={index}
-                                variant="outline"
-                                className="text-xs bg-blue-100 text-blue-800 border-blue-300"
-                              >
-                                {classOption?.classCode}
-                              </Badge>
-                            );
-                          })
-                        ) : (
-                          <span className="text-muted-foreground">
-                            No classes
-                          </span>
-                        )}
-                      </div>
                     </TableCell>
                     <TableCell>
                       <Button

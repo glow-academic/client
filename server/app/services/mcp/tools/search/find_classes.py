@@ -155,4 +155,3 @@ def find_classes(query: str, limit: int = 10) -> List[Dict[str, Any]]:
         return [{"error": f"Database error: {str(e)}"}]
     finally:
         session.close()
-

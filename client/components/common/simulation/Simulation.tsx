@@ -704,25 +704,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
                               Intensity: {scenario.intensity ?? "N/A"}
                             </Badge>
                           </div>
-
-                          <Badge
-                            className={`text-xs ${
-                              scenario.seniority === "freshman"
-                                ? "bg-blue-100 text-blue-800"
-                                : scenario.seniority === "sophomore"
-                                  ? "bg-green-100 text-green-800"
-                                  : scenario.seniority === "junior"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : scenario.seniority === "senior"
-                                      ? "bg-red-100 text-red-800"
-                                      : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {scenario.seniority
-                              ? scenario.seniority.charAt(0).toUpperCase() +
-                                scenario.seniority.slice(1)
-                              : "No Level"}
-                          </Badge>
                         </div>
                       </div>
                     </div>

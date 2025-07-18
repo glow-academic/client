@@ -45,15 +45,17 @@ class TestAgentOverview:
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         agent_id = uuid.uuid4()
-        
-        mock_agent = MockAgent(agent_id, "Test Agent", "A test agent.", "You are a test agent.")
+
+        mock_agent = MockAgent(
+            agent_id, "Test Agent", "A test agent.", "You are a test agent."
+        )
         mock_scenarios = [MockScenario(uuid.uuid4(), "Scenario 1", "Desc 1")]
-        
+
         mock_session.get.return_value = mock_agent
         mock_session.exec.return_value.all.return_value = mock_scenarios
-        
+
         result = agent_overview(str(agent_id))
-        
+
         assert result["id"] == str(agent_id)
         assert result["name"] == "Test Agent"
         assert result["description"] == "A test agent."
@@ -73,16 +75,16 @@ class TestAgentOverview:
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         mock_session.get.return_value = None
-        
+
         result = agent_overview(str(uuid.uuid4()))
-        
+
         assert "error" in result
         assert "not found" in result["error"]
 
     def test_agent_overview_invalid_uuid(self, mock_get_session):
         """Test agent_overview with invalid UUID format."""
         result = agent_overview("invalid-uuid")
-        
+
         assert "error" in result
         assert "Invalid agent_id format" in result["error"]
 
@@ -91,9 +93,9 @@ class TestAgentOverview:
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         mock_session.get.side_effect = SQLAlchemyError("Database connection failed")
-        
+
         result = agent_overview(str(uuid.uuid4()))
-        
+
         assert "error" in result
         assert "Database error" in result["error"]
 
@@ -102,14 +104,16 @@ class TestAgentOverview:
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         agent_id = uuid.uuid4()
-        
-        mock_agent = MockAgent(agent_id, "Test Agent", "A test agent.", "You are a test agent.")
-        
+
+        mock_agent = MockAgent(
+            agent_id, "Test Agent", "A test agent.", "You are a test agent."
+        )
+
         mock_session.get.return_value = mock_agent
         mock_session.exec.return_value.all.return_value = []
-        
+
         result = agent_overview(str(agent_id))
-        
+
         assert result["scenario_count"] == 0
         assert result["scenarios"] == []
 
@@ -118,19 +122,21 @@ class TestAgentOverview:
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         agent_id = uuid.uuid4()
-        
-        mock_agent = MockAgent(agent_id, "Test Agent", "A test agent.", "You are a test agent.")
+
+        mock_agent = MockAgent(
+            agent_id, "Test Agent", "A test agent.", "You are a test agent."
+        )
         mock_scenarios = [
             MockScenario(uuid.uuid4(), "Scenario 1", "Desc 1"),
             MockScenario(uuid.uuid4(), "Scenario 2", "Desc 2"),
-            MockScenario(uuid.uuid4(), "Scenario 3", "Desc 3")
+            MockScenario(uuid.uuid4(), "Scenario 3", "Desc 3"),
         ]
-        
+
         mock_session.get.return_value = mock_agent
         mock_session.exec.return_value.all.return_value = mock_scenarios
-        
+
         result = agent_overview(str(agent_id))
-        
+
         assert result["scenario_count"] == 3
         assert len(result["scenarios"]) == 3
         assert result["scenarios"][0]["name"] == "Scenario 1"
@@ -142,26 +148,27 @@ class TestAgentOverview:
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         agent_id = uuid.uuid4()
-        
-        mock_agent = MockAgent(agent_id, "Test Agent", "A test agent.", "You are a test agent.")
+
+        mock_agent = MockAgent(
+            agent_id, "Test Agent", "A test agent.", "You are a test agent."
+        )
         mock_agent.created_at = None
         mock_agent.updated_at = None
-        
+
         mock_scenarios = [MockScenario(uuid.uuid4(), "Scenario 1", "Desc 1")]
         mock_scenarios[0].created_at = None
-        
+
         mock_session.get.return_value = mock_agent
         mock_session.exec.return_value.all.return_value = mock_scenarios
-        
+
         result = agent_overview(str(agent_id))
-        
+
         assert result["created_at"] is None
         assert result["updated_at"] is None
         assert result["scenarios"][0]["created_at"] is None
 
 
 
-import pytest
 
 @pytest.mark.skip(reason="TODO: implement tests for `agent_overview`")
 class TestAgent_Overview:
@@ -176,4 +183,3 @@ class TestAgent_Overview:
         """Test agent_overview error handling."""
         # TODO: Implement error test for agent_overview
         assert False, "IMPLEMENT: Error test for agent_overview"
-

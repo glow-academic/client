@@ -11,7 +11,7 @@ import { ClassesDataTableToolbar } from '@/components/create/classes/ClassesData
 // Minimal props factory – edit values as needed
 import type { ClassesDataTableToolbarProps } from '@/components/create/classes/ClassesDataTableToolbar';
 const mockProps: ClassesDataTableToolbarProps = {
-  table: {} as unknown as Table<{ name: string; id: string; createdAt: string; updatedAt: string; classCode: string; year: number; term: "fall" | "spring" | "summer"; description: string; defaultClass: boolean; }>,
+  table: {} as unknown as Table<{ name: string; id: string; createdAt: string; updatedAt: string; classCode: string; year: number; term: "fall" | "spring" | "summer"; description: string; defaultClass: boolean; departmentId: string; profileIds: string[]; }>,
   yearOptions: [],
   termOptions: [],
   profileOptions: [],

@@ -126,6 +126,7 @@ sio = socketio.AsyncServer(
 )
 
 from app.web.assistants import register_assistant_events
+
 # Import and register WebSocket events after sio is created to avoid circular imports
 from app.web.simulations import register_simulation_events
 
@@ -420,13 +421,15 @@ def get_socketio_instance() -> socketio.AsyncServer:
     """Get the global Socket.IO server instance"""
     return sio
 
+
 # Create a combined lifespan to manage both session managers
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
     async with contextlib.AsyncExitStack() as stack:
         from app.services.mcp.server import server
+
         await stack.enter_async_context(server.session_manager.run())
-        
+
         yield
 
 

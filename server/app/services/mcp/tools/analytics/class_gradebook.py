@@ -4,7 +4,7 @@
 # 07/07/2025
 
 import uuid
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from app.db import get_session
 from app.models import (
@@ -53,14 +53,13 @@ def class_gradebook(class_id: str) -> Dict[str, Any]:
         cohorts_stmt = select(Cohorts)
         cohorts = session.exec(cohorts_stmt).all()
 
-        # Get all profiles that belong to this class
-        profiles_stmt = select(Profiles)
-        all_profiles = session.exec(profiles_stmt).all()
-
-        class_students = []
-        for profile in all_profiles:
-            if class_uuid in profile.class_ids:
-                class_students.append(profile)
+        # Get class students using the class's profile_ids array
+        class_students: List[Profiles] = []
+        if class_obj.profile_ids:
+            profiles_stmt = select(Profiles).where(
+                Profiles.id.in_(class_obj.profile_ids)
+            )
+            class_students = list(session.exec(profiles_stmt).all())
 
         # Get all simulations that have cohorts containing class students
         simulations_stmt = select(Simulations)

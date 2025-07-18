@@ -44,7 +44,7 @@ class Test_Query_Data:
         """Tests that write operations (UPDATE, DELETE, etc.) are blocked."""
         result_update = query_data("UPDATE profiles SET first_name = 'Jane'")
         result_delete = query_data("DELETE FROM profiles")
-        
+
         expected_error = "Error: only read-only queries are allowed."
         assert result_update == expected_error
         assert result_delete == expected_error
@@ -53,7 +53,9 @@ class Test_Query_Data:
     def test_query_data_handles_db_error(self, mock_engine):
         """Tests that a database error during execution is caught and returned."""
         # Arrange: Make the connect call raise a SQLAlchemy error.
-        error = ProgrammingError("syntax error", params=None, orig="underlying DB error")
+        error = ProgrammingError(
+            "syntax error", params=None, orig="underlying DB error"
+        )
         mock_engine.connect.side_effect = error
 
         result = query_data("SELECT * FROM non_existent_table")
@@ -61,6 +63,7 @@ class Test_Query_Data:
         # FIX: The assertion now checks for the correct output, which is the
         # full string representation of the exception object `e`.
         assert result == f"Error: {error}"
+
 
 import pytest
 
@@ -78,4 +81,3 @@ class TestQuery_Data:
         """Test query_data error handling."""
         # TODO: Implement error test for query_data
         assert False, "IMPLEMENT: Error test for query_data"
-

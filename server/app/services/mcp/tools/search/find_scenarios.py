@@ -60,7 +60,10 @@ def _tokens(s: str) -> List[str]:
 # Scoring heuristic
 # ------------------------------------------------------------------
 
-def _score_scenario(q_norm: str, toks: List[str], name: str | None, desc: str | None) -> int:
+
+def _score_scenario(
+    q_norm: str, toks: List[str], name: str | None, desc: str | None
+) -> int:
     """
     Score a scenario candidate.
     Name carries more weight than description.
@@ -108,6 +111,7 @@ def _score_scenario(q_norm: str, toks: List[str], name: str | None, desc: str | 
 # ------------------------------------------------------------------
 # Public API
 # ------------------------------------------------------------------
+
 
 def find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     """
@@ -169,9 +173,7 @@ def find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
         )
 
         stmt = (
-            select(Scenarios)
-            .where(pred)
-            .limit(limit * 5)  # candidate pool
+            select(Scenarios).where(pred).limit(limit * 5)  # candidate pool
         )
 
         scenarios = session.exec(stmt).all()

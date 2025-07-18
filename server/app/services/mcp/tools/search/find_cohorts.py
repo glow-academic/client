@@ -57,7 +57,10 @@ def _tokens(s: str) -> List[str]:
 # Scoring heuristic
 # ---------------------------
 
-def _score_cohort(q_norm: str, toks: List[str], title: str | None, desc: str | None) -> int:
+
+def _score_cohort(
+    q_norm: str, toks: List[str], title: str | None, desc: str | None
+) -> int:
     """
     Rank candidates. Title is much stronger than description.
     """
@@ -107,6 +110,7 @@ def _score_cohort(q_norm: str, toks: List[str], title: str | None, desc: str | N
 # Public search function
 # ---------------------------
 
+
 def find_cohorts(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     """
     🔎 Find cohorts by title/description
@@ -118,16 +122,16 @@ def find_cohorts(query: str, limit: int = 10) -> List[Dict[str, Any]]:
         • limit - Max results (default: 10)
 
     Returns
-        [ 
-            { 
-                "id": "...", 
-                "title": "...", 
-                "active": <bool>, 
-                "description": "...", 
-                "profile_count": <int>, 
-                "score": <int> 
-            }, 
-            ... 
+        [
+            {
+                "id": "...",
+                "title": "...",
+                "active": <bool>,
+                "description": "...",
+                "profile_count": <int>,
+                "score": <int>
+            },
+            ...
         ]
 
     Quick-start
@@ -167,9 +171,7 @@ def find_cohorts(query: str, limit: int = 10) -> List[Dict[str, Any]]:
         )
 
         stmt = (
-            select(Cohorts)
-            .where(broad_pred)
-            .limit(limit * 5)  # candidate pool
+            select(Cohorts).where(broad_pred).limit(limit * 5)  # candidate pool
         )
 
         cohorts = session.exec(stmt).all()

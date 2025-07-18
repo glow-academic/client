@@ -49,23 +49,31 @@ def class_overview(class_id: str) -> Dict[str, Any]:
             "year": class_obj.year,
             "term": class_obj.term,
             "description": class_obj.description,
-            "created_at": class_obj.created_at.isoformat() if class_obj.created_at else None,
+            "created_at": class_obj.created_at.isoformat()
+            if class_obj.created_at
+            else None,
         }
 
-        # FIX: Fetch all profiles and filter in Python to handle ARRAY logic consistently.
-        all_profiles = session.exec(select(Profiles)).all()
-        class_profiles = [p for p in all_profiles if class_uuid in p.class_ids]
-        
-        roster = [
-            {
-                "id": str(profile.id),
-                "first_name": profile.first_name,
-                "last_name": profile.last_name,
-                "alias": profile.alias,
-                "role": profile.role,
-            }
-            for profile in class_profiles
-        ]
+        # Get roster (profiles in this class)
+        # Use the class's profile_ids array directly instead of querying profiles
+        roster = []
+        if class_obj.profile_ids:
+            profiles_stmt = select(Profiles).where(
+                Profiles.id.in_(class_obj.profile_ids)
+            )
+            class_profiles = session.exec(profiles_stmt).all()
+
+            roster = [
+                {
+                    "id": str(profile.id),
+                    "first_name": profile.first_name,
+                    "last_name": profile.last_name,
+                    "alias": profile.alias,
+                    "role": profile.role,
+                    "active": profile.active,
+                }
+                for profile in class_profiles
+            ]
 
         # Get scenarios
         scenarios_stmt = select(Scenarios).where(Scenarios.class_id == class_uuid)

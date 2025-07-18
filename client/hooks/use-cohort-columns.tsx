@@ -87,23 +87,27 @@ export function useCohortColumns() {
         cell: ({ row }) => {
           const cohort = row.original;
           const cohortProfileIds = cohort.profileIds || [];
-          const cohortProfiles = profiles.filter((profile: Profile) =>
-            cohortProfileIds.includes(profile.id)
-          );
-          const classIds = cohortProfiles.flatMap(
-            (profile: Profile) => profile.classIds || []
-          );
+          // Find classes that have any of the cohort's profiles assigned
+          const classIds = classes
+            .filter((cls: Class) =>
+              cls.profileIds?.some((profileId: string) =>
+                cohortProfileIds.includes(profileId)
+              )
+            )
+            .map((cls: Class) => cls.id);
           return [...new Set(classIds)]; // Remove duplicates
         },
         filterFn: (row, _, value) => {
           const cohort = row.original;
           const cohortProfileIds = cohort.profileIds || [];
-          const cohortProfiles = profiles.filter((profile: Profile) =>
-            cohortProfileIds.includes(profile.id)
-          );
-          const classIds = cohortProfiles.flatMap(
-            (profile: Profile) => profile.classIds || []
-          );
+          // Find classes that have any of the cohort's profiles assigned
+          const classIds = classes
+            .filter((cls: Class) =>
+              cls.profileIds?.some((profileId: string) =>
+                cohortProfileIds.includes(profileId)
+              )
+            )
+            .map((cls: Class) => cls.id);
           return value.some((filterValue: string) =>
             classIds.includes(filterValue)
           );
@@ -115,7 +119,7 @@ export function useCohortColumns() {
         cell: ({ row }) => row.getValue("updatedAt"),
       },
     ],
-    [simulations, profiles]
+    [simulations, classes]
   );
 
   // Filter options

@@ -54,7 +54,6 @@ import {
   Scenario as ScenarioType,
   Simulation,
 } from "@/types";
-import { Model } from "@/utils/scenario";
 import { newScenario } from "@/utils/api/scenarios/new-scenario";
 import { logError } from "@/utils/logger";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
@@ -62,8 +61,12 @@ import { updateScenario } from "@/utils/mutations/scenarios/update-scenario";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
+import { getAllLocations } from "@/utils/queries/locations/get-all-locations";
+import { getAllScenarioDeadlines } from "@/utils/queries/scenario_deadlines/get-all-scenario-deadlines";
+import { getAllScenarioTimes } from "@/utils/queries/scenario_times/get-all-scenario-times";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { Model } from "@/utils/scenario";
 
 export interface ScenarioProps {
   scenarioId?: string;
@@ -91,14 +94,13 @@ export default function Scenario({
   // Form data state
   const initialFormData: Partial<ScenarioType> = {
     classId: null,
-    documents: [],
+    documentIds: [],
     agentId: null,
-    seniority: null,
     crowdedness: null,
     intensity: null,
-    location: null,
-    tod: null,
-    urgency: null,
+    locationId: null,
+    timeId: null,
+    deadlineId: null,
     name: "",
     description: "",
   };
@@ -133,6 +135,21 @@ export default function Scenario({
     enabled: isEditMode, // Only fetch when in edit mode
   });
 
+  const { data: locations = [] } = useQuery({
+    queryKey: ["locations"],
+    queryFn: () => getAllLocations(),
+  });
+
+  const { data: scenarioDeadlines = [] } = useQuery({
+    queryKey: ["scenarioDeadlines"],
+    queryFn: () => getAllScenarioDeadlines(),
+  });
+
+  const { data: scenarioTimes = [] } = useQuery({
+    queryKey: ["scenarioTimes"],
+    queryFn: () => getAllScenarioTimes(),
+  });
+
   // Only fetch scenario data if in edit mode
   const { data: scenario, isLoading } = useQuery({
     queryKey: ["scenario", scenarioId],
@@ -145,14 +162,13 @@ export default function Scenario({
     if (isEditMode && scenario) {
       const scenarioData = {
         classId: scenario.classId,
-        documents: scenario.documents || [],
+        documentIds: scenario.documentIds || [],
         agentId: scenario.agentId,
-        seniority: scenario.seniority,
         crowdedness: scenario.crowdedness,
         intensity: scenario.intensity,
-        location: scenario.location,
-        tod: scenario.tod,
-        urgency: scenario.urgency,
+        locationId: scenario.locationId,
+        timeId: scenario.timeId,
+        deadlineId: scenario.deadlineId,
         name: scenario.name || "",
         description: scenario.description || "",
       };
@@ -171,16 +187,15 @@ export default function Scenario({
     return (
       current.classId !== original.classId ||
       current.agentId !== original.agentId ||
-      current.seniority !== original.seniority ||
       current.crowdedness !== original.crowdedness ||
       current.intensity !== original.intensity ||
-      current.location !== original.location ||
-      current.tod !== original.tod ||
-      current.urgency !== original.urgency ||
+      current.locationId !== original.locationId ||
+      current.timeId !== original.timeId ||
+      current.deadlineId !== original.deadlineId ||
       current.name !== original.name ||
       current.description !== original.description ||
-      JSON.stringify(current.documents?.sort()) !==
-        JSON.stringify(original.documents?.sort())
+      JSON.stringify(current.documentIds?.sort()) !==
+        JSON.stringify(original.documentIds?.sort())
     );
   }, [formData, originalFormData, isEditMode]);
 
@@ -201,7 +216,7 @@ export default function Scenario({
       case "documents":
         return !formData.classId
           ? "pending"
-          : formData.documents && formData.documents.length > 0
+          : formData.documentIds && formData.documentIds.length > 0
             ? "completed"
             : "active";
       case "agent":
@@ -213,13 +228,13 @@ export default function Scenario({
       case "context":
         return !formData.agentId
           ? "pending"
-          : formData.seniority || formData.crowdedness || formData.intensity
+          : formData.crowdedness || formData.intensity
             ? "completed"
             : "active";
       case "environment":
         return !formData.agentId
           ? "pending"
-          : formData.location || formData.tod || formData.urgency
+          : formData.locationId || formData.timeId || formData.deadlineId
             ? "completed"
             : "active";
       case "content":
@@ -252,7 +267,7 @@ export default function Scenario({
     {
       id: "context",
       title: "Set Context",
-      description: "Configure student level and scenario parameters",
+      description: "Configure scenario parameters",
       status: getStepStatus("context"),
       optional: true,
     },
@@ -317,16 +332,29 @@ export default function Scenario({
     setIsGeneratingScenario(true);
 
     try {
+      // Map new schema fields to old API fields
       const result = await newScenario({
         agentId: formData.agentId || null,
         classId: formData.classId || null,
-        documentIds: formData.documents || [],
-        seniority: formData.seniority || null,
+        documentIds: formData.documentIds || [],
         crowdedness: formData.crowdedness || null,
         intensity: formData.intensity || null,
-        location: formData.location || null,
-        tod: formData.tod || null,
-        urgency: formData.urgency || null,
+        // Map locationId to location string (we'll need to get the location name)
+        location: formData.locationId
+          ? locations.find((loc) => loc.id === formData.locationId)?.name ||
+            null
+          : null,
+        // Map timeId to tod string
+        tod: formData.timeId
+          ? scenarioTimes.find((time) => time.id === formData.timeId)
+              ?.description || null
+          : null,
+        // Map deadlineId to urgency string
+        urgency: formData.deadlineId
+          ? scenarioDeadlines.find(
+              (deadline) => deadline.id === formData.deadlineId
+            )?.description || null
+          : null,
       });
 
       if (!result.success) {
@@ -362,13 +390,12 @@ export default function Scenario({
         description: formData.description?.trim() || "",
         agentId: formData.agentId,
         classId: formData.classId,
-        documents: formData.documents,
+        documentIds: formData.documentIds,
         crowdedness: formData.crowdedness,
         intensity: formData.intensity,
-        seniority: formData.seniority,
-        location: formData.location,
-        tod: formData.tod,
-        urgency: formData.urgency,
+        locationId: formData.locationId,
+        timeId: formData.timeId,
+        deadlineId: formData.deadlineId,
       };
 
       if (isEditMode) {
@@ -422,7 +449,7 @@ export default function Scenario({
 
   const selectedClass = classes.find((cls) => cls.id === formData.classId);
   const selectedDocuments = documents.filter((doc) =>
-    formData.documents?.includes(doc.id)
+    formData.documentIds?.includes(doc.id)
   );
   const selectedAgent = agents.find((agent) => agent.id === formData.agentId);
 
@@ -545,7 +572,7 @@ export default function Scenario({
               }))}
               onMultiSelect={(models) =>
                 handleInputChange(
-                  "documents",
+                  "documentIds",
                   models.map((m) => m.id)
                 )
               }
@@ -653,31 +680,6 @@ export default function Scenario({
             )}
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Seniority */}
-            <div className="space-y-2">
-              <Label>Student Seniority</Label>
-              <Select
-                value={formData.seniority || "none"}
-                onValueChange={(value) =>
-                  handleInputChange(
-                    "seniority",
-                    value === "none" ? null : value
-                  )
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select student level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No preference</SelectItem>
-                  <SelectItem value="freshman">Freshman</SelectItem>
-                  <SelectItem value="sophomore">Sophomore</SelectItem>
-                  <SelectItem value="junior">Junior</SelectItem>
-                  <SelectItem value="senior">Senior</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             {/* Crowdedness */}
             <div className="space-y-2">
               {formData.crowdedness !== null ? (
@@ -790,9 +792,12 @@ export default function Scenario({
             <div className="space-y-2">
               <Label>Location</Label>
               <Select
-                value={formData.location || "none"}
+                value={formData.locationId || "none"}
                 onValueChange={(value) =>
-                  handleInputChange("location", value === "none" ? null : value)
+                  handleInputChange(
+                    "locationId",
+                    value === "none" ? null : value
+                  )
                 }
               >
                 <SelectTrigger>
@@ -800,9 +805,11 @@ export default function Scenario({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No preference</SelectItem>
-                  <SelectItem value="haas">HAAS Basement</SelectItem>
-                  <SelectItem value="lawson">Lawson Commons</SelectItem>
-                  <SelectItem value="dsai">DS/AI Basement</SelectItem>
+                  {locations.map((location) => (
+                    <SelectItem key={location.id} value={location.id}>
+                      {location.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -811,9 +818,9 @@ export default function Scenario({
             <div className="space-y-2">
               <Label>Time of Day</Label>
               <Select
-                value={formData.tod || "none"}
+                value={formData.timeId || "none"}
                 onValueChange={(value) =>
-                  handleInputChange("tod", value === "none" ? null : value)
+                  handleInputChange("timeId", value === "none" ? null : value)
                 }
               >
                 <SelectTrigger>
@@ -821,36 +828,37 @@ export default function Scenario({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No preference</SelectItem>
-                  <SelectItem value="9AM">9:00 AM</SelectItem>
-                  <SelectItem value="10AM">10:00 AM</SelectItem>
-                  <SelectItem value="11AM">11:00 AM</SelectItem>
-                  <SelectItem value="12PM">12:00 PM</SelectItem>
-                  <SelectItem value="1PM">1:00 PM</SelectItem>
-                  <SelectItem value="2PM">2:00 PM</SelectItem>
-                  <SelectItem value="3PM">3:00 PM</SelectItem>
-                  <SelectItem value="4PM">4:00 PM</SelectItem>
-                  <SelectItem value="5PM">5:00 PM</SelectItem>
+                  {scenarioTimes.map((time) => (
+                    <SelectItem key={time.id} value={time.id}>
+                      {time.description}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Urgency */}
+            {/* Deadline */}
             <div className="space-y-2">
               <Label>Assignment Deadline</Label>
               <Select
-                value={formData.urgency || "none"}
+                value={formData.deadlineId || "none"}
                 onValueChange={(value) =>
-                  handleInputChange("urgency", value === "none" ? null : value)
+                  handleInputChange(
+                    "deadlineId",
+                    value === "none" ? null : value
+                  )
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select urgency" />
+                  <SelectValue placeholder="Select deadline" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No preference</SelectItem>
-                  <SelectItem value="hour">Few hours</SelectItem>
-                  <SelectItem value="day">Next day</SelectItem>
-                  <SelectItem value="days">Couple of days</SelectItem>
+                  {scenarioDeadlines.map((deadline) => (
+                    <SelectItem key={deadline.id} value={deadline.id}>
+                      {deadline.description}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -927,7 +935,8 @@ export default function Scenario({
               <div className="flex items-start gap-2 p-3 rounded-md bg-blue-50 border border-blue-200">
                 <div className="text-blue-600 text-sm">
                   <strong>💡 Tip:</strong> You can save the scenario with a
-                  blank description and we will dynamically generate one for each chat.
+                  blank description and we will dynamically generate one for
+                  each chat.
                 </div>
               </div>
             </div>

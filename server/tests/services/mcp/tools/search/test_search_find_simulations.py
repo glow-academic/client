@@ -1,7 +1,6 @@
 import uuid
 from datetime import datetime
 from unittest.mock import MagicMock, patch
-import pytest
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.services.mcp.tools.search.find_simulations import find_simulations
@@ -69,7 +68,11 @@ class TestFind_Simulations:
         sim_far = MockSimulation(uuid.uuid4(), "Respiratory Distress")
 
         # Return reversed order to ensure re-ranking works
-        mock_session.exec.return_value.all.return_value = [sim_far, sim_prefix, sim_exact]
+        mock_session.exec.return_value.all.return_value = [
+            sim_far,
+            sim_prefix,
+            sim_exact,
+        ]
 
         result = find_simulations(query="Induction", limit=5)
 

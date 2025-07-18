@@ -25,8 +25,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -47,8 +45,7 @@ import { cn } from "@/lib/utils";
 import { Class, Document, DocumentType, Scenario } from "@/types";
 import { deleteDocument } from "@/utils/api/documents/delete-document";
 import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
-import { processCourse } from "@/utils/api/documents/process-course";
-import { logError, logInfo } from "@/utils/logger";
+import { logError } from "@/utils/logger";
 import { createClass } from "@/utils/mutations/classes/create-class";
 import { updateClass } from "@/utils/mutations/classes/update-class";
 import { updateDocument } from "@/utils/mutations/documents/update-document";
@@ -56,8 +53,6 @@ import { getClass } from "@/utils/queries/classes/get-class";
 import { getDocumentsByClass } from "@/utils/queries/documents/get-documents-by-class";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import {
-  AlertTriangle,
-  Brain,
   Eye,
   File,
   FileCode,
@@ -148,16 +143,9 @@ export default function ClassForm({ classId }: ClassFormProps) {
     null
   );
   const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [documentToDelete, setDocumentToDelete] =
-    useState<EditableDocument | null>(null);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Upload state (simplified since we're not uploading immediately)
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Course processing state
-  const [showCourseProcessDialog, setShowCourseProcessDialog] = useState(false);
-  const [isProcessingCourse, setIsProcessingCourse] = useState(false);
 
   const { data: classData, isLoading: isLoadingClass } = useQuery({
     queryKey: ["class", classId],
@@ -236,63 +224,6 @@ export default function ClassForm({ classId }: ClassFormProps) {
       (scenario: Scenario) => scenario.classId === classId
     );
   }, [scenarios, classId, editMode]);
-
-  // Handle course processing
-  const handleCourseProcessing = async () => {
-    if (!classId) {
-      toast.error(
-        "Please save the class first before processing course information"
-      );
-      return;
-    }
-
-    try {
-      setIsProcessingCourse(true);
-      setShowCourseProcessDialog(false);
-
-      const toastId = toast.loading("Processing course information...");
-
-      const isCypress = typeof window !== "undefined" && "Cypress" in window;
-      const result = await processCourse(classId, isCypress);
-
-      if (!result.success) {
-        throw new Error(
-          result.message || "Failed to process course information"
-        );
-      }
-
-      toast.dismiss(toastId);
-
-      if (result.status === "success") {
-        // Show details of what was updated
-        if (result.updates_made && result.updates_made.length > 0) {
-          toast.info(`Updated: ${result.updates_made.join(", ")}`);
-        }
-
-        // Refresh the class data
-        queryClient.invalidateQueries({ queryKey: ["class", classId] });
-        queryClient.invalidateQueries({ queryKey: ["classes"] });
-
-        // If there's debug info, log it
-        if (result.debug_info) {
-          logInfo("Course processing debug info:", {
-            debug_info: result.debug_info,
-          });
-        }
-
-        toast.success("Course information processed successfully!");
-      } else {
-        throw new Error(result.message || "Course processing failed");
-      }
-    } catch (error) {
-      toast.error(
-        `Failed to process course: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
-      logError("Course processing error:", error);
-    } finally {
-      setIsProcessingCourse(false);
-    }
-  };
 
   const [errors, setErrors] = useState<FormErrors>({});
   // Update form data when initial data changes
@@ -390,7 +321,6 @@ export default function ClassForm({ classId }: ClassFormProps) {
                   finalClassId!,
                   doc.file.type === "application/zip",
                   true,
-                  undefined,
                   undefined,
                   undefined,
                   isCypress
@@ -545,9 +475,6 @@ export default function ClassForm({ classId }: ClassFormProps) {
 
     // Remove the document from the visible UI state
     setEditedDocuments((prev) => prev.filter((d) => d.id !== docId));
-
-    setShowDeleteDialog(false);
-    setDocumentToDelete(null);
     toast.info(`'${docToRemove.name}' will be deleted on save.`);
   };
 
@@ -847,23 +774,6 @@ export default function ClassForm({ classId }: ClassFormProps) {
                     <Upload className="h-4 w-4" />
                     {isSubmitting ? "Uploading..." : "Upload"}
                   </Button>
-                  {editMode && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowCourseProcessDialog(true)}
-                      className="flex items-center gap-2"
-                      title="Process Course Information"
-                      disabled={isProcessingCourse}
-                    >
-                      {isProcessingCourse ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Brain className="h-4 w-4" />
-                      )}
-                    </Button>
-                  )}
                 </div>
               </div>
             </div>
@@ -963,10 +873,7 @@ export default function ClassForm({ classId }: ClassFormProps) {
                                   size="sm"
                                   className="h-7 w-7 p-0 text-destructive hover:text-destructive bg-white/90 backdrop-blur-sm"
                                   data-testid={`delete-doc-${doc.id}`}
-                                  onClick={() => {
-                                    setDocumentToDelete(doc);
-                                    setShowDeleteDialog(true);
-                                  }}
+                                  onClick={() => stageDocumentForDeletion(doc.id)}
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
@@ -1069,10 +976,7 @@ export default function ClassForm({ classId }: ClassFormProps) {
                                   size="sm"
                                   className="text-destructive hover:text-destructive"
                                   data-testid={`delete-doc-${doc.id}`}
-                                  onClick={() => {
-                                    setDocumentToDelete(doc);
-                                    setShowDeleteDialog(true);
-                                  }}
+                                  onClick={() => stageDocumentForDeletion(doc.id)}
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -1133,111 +1037,6 @@ export default function ClassForm({ classId }: ClassFormProps) {
               />
             )}
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Document Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Remove Document</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p>
-              Are you sure you want to remove{" "}
-              <strong>{documentToDelete?.name}</strong>?
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              We will officially delete this document from the class on save.
-            </p>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() =>
-                documentToDelete &&
-                stageDocumentForDeletion(documentToDelete.id)
-              }
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Saving..." : "Remove"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Course Processing Dialog */}
-      <Dialog
-        open={showCourseProcessDialog}
-        onOpenChange={setShowCourseProcessDialog}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Brain className="h-5 w-5" />
-              Process Course Information
-            </DialogTitle>
-            <DialogDescription>
-              Extract course information from uploaded documents, especially
-              syllabus files.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                  Warning: This will override existing information
-                </p>
-                <p className="text-sm text-amber-700 dark:text-amber-300">
-                  Course processing will analyze your documents (especially
-                  syllabus files) and may update the following fields:
-                </p>
-                <ul className="text-sm text-amber-700 dark:text-amber-300 list-disc list-inside space-y-1 ml-2">
-                  <li>Class name and code</li>
-                  <li>Course description</li>
-                  <li>Year and term</li>
-                  <li>Course topics and prerequisites</li>
-                  <li>Class schedules and events</li>
-                </ul>
-              </div>
-            </div>
-
-            <p className="text-sm text-muted-foreground">
-              This will analyze all documents in this class and extract course
-              information using AI. Make sure you have uploaded relevant
-              documents (especially a syllabus) before processing.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowCourseProcessDialog(false)}
-              disabled={isProcessingCourse}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCourseProcessing}
-              disabled={isProcessingCourse}
-            >
-              {isProcessingCourse ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Processing...
-                </>
-              ) : (
-                "Process Course"
-              )}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 

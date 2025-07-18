@@ -5,18 +5,28 @@ import uuid
 from typing import AsyncGenerator
 
 from agents import Runner, trace
-from agents.items import (ReasoningItem, ToolCallItem, ToolCallOutputItem,
-                          TResponseInputItem)
+from agents.items import (
+    ReasoningItem,
+    ToolCallItem,
+    ToolCallOutputItem,
+    TResponseInputItem,
+)
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
 from app.db import get_session
-from app.models import (Agents, AssistantChats, AssistantMessages,
-                        AssistantToolCalls, Models, Profiles, Providers)
+from app.models import (
+    Agents,
+    AssistantChats,
+    AssistantMessages,
+    AssistantToolCalls,
+    Models,
+    Profiles,
+    Providers,
+)
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_assistant_conversation_history
 from dotenv import load_dotenv
 from fastapi import Depends
-from openai.types.responses import (ResponseFunctionToolCall,
-                                    ResponseTextDeltaEvent)
+from openai.types.responses import ResponseFunctionToolCall, ResponseTextDeltaEvent
 from sqlmodel import Session, select
 
 load_dotenv()
@@ -97,10 +107,12 @@ async def _handle_assistant_chat(
     input_items: list[TResponseInputItem] = []
 
     # get the user profile from the chat
-    user_profile = session.exec(select(Profiles).where(Profiles.id == chat.profile_id)).one()
+    user_profile = session.exec(
+        select(Profiles).where(Profiles.id == chat.profile_id)
+    ).one()
     if not user_profile:
         raise ValueError(f"User profile not found with ID: {chat.profile_id}")
-    
+
     # get the user's role
     user_role = user_profile.role
     if user_role == "admin":

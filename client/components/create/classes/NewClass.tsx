@@ -64,6 +64,7 @@ export default function NewClass() {
         year: new Date().getFullYear(),
         term: "fall",
         description: "Make changes to this class description",
+        departmentId: "11111111-1111-1111-1111-111111111111",
       });
 
       const tempClassId = tempClassResult?.id || "";
@@ -91,7 +92,6 @@ export default function NewClass() {
           fileId: fileUploadStatus.id,
           zip: "true",
           autoClassify: "true",
-          autoCourseProcess: "true",
         };
 
         const upload = new tus.Upload(file, {
@@ -137,15 +137,13 @@ export default function NewClass() {
                 classId: tempClassId,
                 zip: true,
                 autoClassify: true,
-                autoCourseProcess: true,
               };
               const isCypress =
-              typeof window !== "undefined" && "Cypress" in window;
+                typeof window !== "undefined" && "Cypress" in window;
 
               const response = await finalizeDocumentUpload(
                 finalizePayload.fileId,
                 tempClassId,
-                true,
                 true,
                 true,
                 undefined,
@@ -175,7 +173,7 @@ export default function NewClass() {
               setProcessingStep("complete");
 
               // Route to the status page
-              router.push(`/create/classes/new/c/${tempClassId}`);
+              router.push(`/create/classes/c/${tempClassId}`);
 
               resolve();
             } catch (error) {
@@ -363,7 +361,7 @@ export default function NewClass() {
             <div className="flex justify-center gap-2 mt-4">
               <Button
                 onClick={() =>
-                  router.push(`/create/classes/new/c/${createdClassId}`)
+                  router.push(`/create/classes/c/${createdClassId}`)
                 }
               >
                 View Processing Status

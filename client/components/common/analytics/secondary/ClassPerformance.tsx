@@ -209,14 +209,15 @@ export default function ClassPerformance({
 
       // Find the profile
       const profile = profiles.find((p) => p.id === attempt.profileId);
-      if (!profile || !profile.classIds || profile.classIds.length === 0)
-        return;
+      if (!profile) return;
 
-      // Get the first class ID (assuming single class per profile for simplicity)
-      const classId = profile.classIds[0];
-      if (!classId) return;
+      // Find the class that contains this profile
+      const classWithProfile = classes.find(
+        (cls) => cls.profileIds && cls.profileIds.includes(profile.id)
+      );
+      if (!classWithProfile) return;
 
-      const classData = classMap.get(classId);
+      const classData = classMap.get(classWithProfile.id);
       if (!classData) return;
 
       // Find the simulation and rubric to get total points
@@ -230,7 +231,10 @@ export default function ClassPerformance({
       // Update the class metrics
       classData.totalGrades += 1;
       classData.avgScore = Math.round(
-        classData.scoreDistribution.reduce((sum: number, item: ScoreDistribution) => sum + item.score, 0) / classData.totalGrades
+        classData.scoreDistribution.reduce(
+          (sum: number, item: ScoreDistribution) => sum + item.score,
+          0
+        ) / classData.totalGrades
       );
 
       // Add to score distribution
@@ -282,7 +286,9 @@ export default function ClassPerformance({
       if (classData.scoreDistribution.length > 0) {
         // Calculate pass rate
         classData.passRate = Math.round(
-          (classData.scoreDistribution.filter((s: ScoreDistribution) => s.passed).length /
+          (classData.scoreDistribution.filter(
+            (s: ScoreDistribution) => s.passed
+          ).length /
             classData.scoreDistribution.length) *
             100
         );
@@ -296,7 +302,9 @@ export default function ClassPerformance({
         );
 
         // Sort students by average score
-        classData.students.sort((a: StudentData, b: StudentData) => b.avgScore - a.avgScore);
+        classData.students.sort(
+          (a: StudentData, b: StudentData) => b.avgScore - a.avgScore
+        );
 
         // Sort recent activity by date
         classData.recentActivity.sort(
@@ -453,21 +461,24 @@ export default function ClassPerformance({
                         {
                           range: "80-89%",
                           count: classData.scoreDistribution.filter(
-                            (s: ScoreDistribution) => s.score >= 80 && s.score < 90
+                            (s: ScoreDistribution) =>
+                              s.score >= 80 && s.score < 90
                           ).length,
                           color: "bg-blue-500",
                         },
                         {
                           range: "70-79%",
                           count: classData.scoreDistribution.filter(
-                            (s: ScoreDistribution) => s.score >= 70 && s.score < 80
+                            (s: ScoreDistribution) =>
+                              s.score >= 70 && s.score < 80
                           ).length,
                           color: "bg-yellow-500",
                         },
                         {
                           range: "60-69%",
                           count: classData.scoreDistribution.filter(
-                            (s: ScoreDistribution) => s.score >= 60 && s.score < 70
+                            (s: ScoreDistribution) =>
+                              s.score >= 60 && s.score < 70
                           ).length,
                           color: "bg-orange-500",
                         },
@@ -622,8 +633,9 @@ export default function ClassPerformance({
                           management training
                         </p>
                       )}
-                      {classData.students.filter((s: StudentData) => s.avgScore < 60)
-                        .length > 0 && (
+                      {classData.students.filter(
+                        (s: StudentData) => s.avgScore < 60
+                      ).length > 0 && (
                         <p>
                           •{" "}
                           {

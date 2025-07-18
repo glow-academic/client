@@ -50,6 +50,7 @@ def _tokens(s: str) -> List[str]:
 # Scoring heuristic
 # ------------------------------------------------------------------
 
+
 def _score_agent(q_norm: str, toks: List[str], name: str | None) -> int:
     """
     Score an agent candidate relative to the normalized query + tokens.
@@ -86,6 +87,7 @@ def _score_agent(q_norm: str, toks: List[str], name: str | None) -> int:
 # ------------------------------------------------------------------
 # Public API
 # ------------------------------------------------------------------
+
 
 def find_agents(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     """
@@ -126,16 +128,14 @@ def find_agents(query: str, limit: int = 10) -> List[Dict[str, Any]]:
             token_ors.append(a_name.like(p))
 
         pred = or_(
-            a_name == q_norm,          # exact
+            a_name == q_norm,  # exact
             a_name.like(like_prefix),  # prefix
-            a_name.like(like_full),    # contains
+            a_name.like(like_full),  # contains
             or_(*token_ors) if token_ors else literal(False),
         )
 
         stmt = (
-            select(Agents)
-            .where(pred)
-            .limit(limit * 5)  # candidate pool
+            select(Agents).where(pred).limit(limit * 5)  # candidate pool
         )
 
         agents = session.exec(stmt).all()

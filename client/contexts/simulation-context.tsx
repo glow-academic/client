@@ -261,7 +261,7 @@ export function SimulationProvider({
   const scenarioDocuments = useMemo(() => {
     if (!scenario || !documents) return [];
     return documents.filter((doc: Document) =>
-      scenario.documents?.includes(doc.id)
+      scenario.documentIds?.includes(doc.id)
     );
   }, [documents, scenario]);
 

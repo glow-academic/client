@@ -17,7 +17,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,7 +25,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -37,21 +35,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Class as ClassData, ProfileRole } from "@/types";
+import { ProfileRole } from "@/types";
 import { logError } from "@/utils/logger";
 import { deleteProfile } from "@/utils/mutations/profiles/delete-profile";
 import { updateProfile } from "@/utils/mutations/profiles/update-profile";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getProfile } from "@/utils/queries/profiles/get-profile";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  GraduationCap,
-  Save,
-  Shield,
-  Trash2,
-  User as UserIcon,
-} from "lucide-react";
+import { Save, Shield, Trash2, User as UserIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -61,7 +52,6 @@ type FormData = {
   firstName?: string;
   lastName?: string;
   alias?: string;
-  classIds?: string[];
   role?: string;
 };
 
@@ -94,30 +84,14 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
     enabled: !!profileId,
   });
 
-  // Fetch all classes for multi-select
-  const { data: allClasses = [], isLoading: isClassesLoading } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => getAllClasses(),
-  });
-
   const isCurrentUserAdmin = currentUserProfile?.role === "admin";
 
   // Determine overall loading state
-  const isLoading =
-    isProfileLoading || isClassesLoading || isCurrentUserProfileLoading;
+  const isLoading = isProfileLoading || isCurrentUserProfileLoading;
 
-  const handleInputChange = (field: string, value: string | string[]) => {
+  const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setHasChanges(true);
-  };
-
-  const handleClassToggle = (classId: string) => {
-    const currentClassIds = formData.classIds;
-    const newClassIds = currentClassIds?.includes(classId)
-      ? currentClassIds?.filter((id) => id !== classId)
-      : [...(currentClassIds || []), classId];
-
-    handleInputChange("classIds", newClassIds);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -129,13 +103,11 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
         firstName: formData.firstName || "",
         lastName: formData.lastName || "",
         alias: formData.alias || "",
-        classIds: formData.classIds || [],
         role: formData.role as ProfileRole,
       });
       setHasChanges(false);
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
       queryClient.invalidateQueries({ queryKey: ["profile", profileId] });
-      queryClient.invalidateQueries({ queryKey: ["classes"] });
       queryClient.invalidateQueries({ queryKey: ["profile", userId] });
       toast.success("User updated successfully");
       router.push("/management/staff");
@@ -152,7 +124,6 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
       await deleteProfile(profileId);
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
       queryClient.invalidateQueries({ queryKey: ["profile", profileId] });
-      queryClient.invalidateQueries({ queryKey: ["classes"] });
       queryClient.invalidateQueries({ queryKey: ["profile", userId] });
       toast.success("User deleted successfully");
       router.push("/management/staff");
@@ -163,19 +134,6 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
     }
   };
 
-  const formatClassTerm = (term: string) => {
-    switch (term) {
-      case "fall":
-        return "Fall";
-      case "spring":
-        return "Spring";
-      case "summer":
-        return "Summer";
-      default:
-        return term;
-    }
-  };
-
   // Initialize form data when user is loaded
   useEffect(() => {
     if (targetUser) {
@@ -183,7 +141,6 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
         firstName: targetUser.firstName,
         lastName: targetUser.lastName,
         alias: targetUser.alias,
-        classIds: targetUser.classIds,
         role: targetUser.role,
       });
     }
@@ -223,13 +180,13 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
                   <Label htmlFor="lastName">Last Name</Label>
                   {formData?.lastName !== undefined && !isLoading ? (
                     <Input
-                    id="lastName"
-                    value={formData.lastName || ""}
-                    onChange={(e) =>
-                      handleInputChange("lastName", e.target.value)
-                    }
-                    placeholder="Smith"
-                    required
+                      id="lastName"
+                      value={formData.lastName || ""}
+                      onChange={(e) =>
+                        handleInputChange("lastName", e.target.value)
+                      }
+                      placeholder="Smith"
+                      required
                       disabled={isSubmitting}
                     />
                   ) : (
@@ -243,11 +200,13 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
                   <Label htmlFor="alias">Username/Alias</Label>
                   {formData?.alias !== undefined && !isLoading ? (
                     <Input
-                    id="alias"
-                    value={formData.alias || ""}
-                    onChange={(e) => handleInputChange("alias", e.target.value)}
-                    placeholder="jsmith"
-                    required
+                      id="alias"
+                      value={formData.alias || ""}
+                      onChange={(e) =>
+                        handleInputChange("alias", e.target.value)
+                      }
+                      placeholder="jsmith"
+                      required
                       disabled={isSubmitting}
                     />
                   ) : (
@@ -258,107 +217,48 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
                   <Label htmlFor="role">Role</Label>
                   {formData?.role !== undefined && !isLoading ? (
                     <Select
-                    value={formData.role || ""}
-                    onValueChange={(value: ProfileRole) =>
-                      handleInputChange("role", value)
-                    }
-                    disabled={isSubmitting}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {isCurrentUserAdmin && (
-                        <SelectItem value="admin">
+                      value={formData.role || ""}
+                      onValueChange={(value: ProfileRole) =>
+                        handleInputChange("role", value)
+                      }
+                      disabled={isSubmitting}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {isCurrentUserAdmin && (
+                          <SelectItem value="admin">
+                            <div className="flex items-center gap-2">
+                              <Shield className="h-4 w-4 text-red-600" />
+                              Administrator
+                            </div>
+                          </SelectItem>
+                        )}
+                        <SelectItem value="instructional">
                           <div className="flex items-center gap-2">
-                            <Shield className="h-4 w-4 text-red-600" />
-                            Administrator
+                            <Shield className="h-4 w-4" />
+                            Instructional Staff
                           </div>
                         </SelectItem>
-                      )}
-                      <SelectItem value="instructional">
-                        <div className="flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
-                          Instructional Staff
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="instructor">
-                        <div className="flex items-center gap-2">
-                          <GraduationCap className="h-4 w-4" />
-                          Instructor
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="ta">
-                        <div className="flex items-center gap-2">
-                          <UserIcon className="h-4 w-4" />
-                          Teaching Assistant
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
+                        <SelectItem value="instructor">
+                          <div className="flex items-center gap-2">
+                            <UserIcon className="h-4 w-4" />
+                            Instructor
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="ta">
+                          <div className="flex items-center gap-2">
+                            <UserIcon className="h-4 w-4" />
+                            Teaching Assistant
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
                     </Select>
                   ) : (
                     <Skeleton className="h-10 w-full" />
                   )}
                 </div>
-              </div>
-
-              {/* Classes Section */}
-              <div className="space-y-2">
-                <Label>Classes</Label>
-                {formData?.classIds !== undefined && !isLoading ? (
-                  <div className="border rounded-md p-4 max-h-60 overflow-y-auto">
-                  {allClasses.length === 0 || isLoading ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No classes available
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {allClasses.map((classItem: ClassData) => (
-                        <div
-                          key={classItem.id}
-                          className="flex items-center space-x-2"
-                        >
-                          <Checkbox
-                            id={`class-${classItem.id}`}
-                            checked={
-                              formData.classIds?.includes(classItem.id) || false
-                            }
-                            onCheckedChange={() =>
-                              handleClassToggle(classItem.id)
-                            }
-                            disabled={isSubmitting}
-                          />
-                          <Label
-                            htmlFor={`class-${classItem.id}`}
-                            className="text-sm font-normal cursor-pointer flex-1"
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <div>
-                                <span className="font-medium">
-                                  {classItem.classCode}
-                                </span>
-                                <span className="text-muted-foreground ml-2">
-                                  {classItem.name}
-                                </span>
-                              </div>
-                              <Badge variant="outline" className="text-xs">
-                                {formatClassTerm(classItem.term)}{" "}
-                                {classItem.year}
-                              </Badge>
-                            </div>
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                    )}
-                  </div>
-                ) : (
-                  <Skeleton className="h-40 w-full" />
-                )}
-                <p className="text-sm text-muted-foreground">
-                  {formData.classIds?.length || 0} class
-                  {(formData.classIds?.length || 0) !== 1 ? "es" : ""} selected
-                </p>
               </div>
 
               <div className="flex justify-end gap-2">
@@ -393,8 +293,9 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
                   <AlertDialogDescription>
                     This will permanently delete the user account for{" "}
                     {formData.firstName + " " + formData.lastName} (
-                    {formData.alias}@{process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}). This action cannot be undone
-                    and will remove all associated data.
+                    {formData.alias}@{process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}).
+                    This action cannot be undone and will remove all associated
+                    data.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

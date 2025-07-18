@@ -7,8 +7,14 @@ import uuid
 from typing import Any, Dict
 
 from app.db import get_session
-from app.models import (Classes, Profiles, SimulationAttempts,
-                        SimulationChatGrades, SimulationChats, Simulations)
+from app.models import (
+    Classes,
+    Profiles,
+    SimulationAttempts,
+    SimulationChatGrades,
+    SimulationChats,
+    Simulations,
+)
 from sqlalchemy import func, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select
@@ -78,19 +84,19 @@ def profile_overview(profile_id: str) -> Dict[str, Any]:
 
         # Get classes
         classes_data = []
-        if profile.class_ids:
-            classes_stmt = select(Classes).where(Classes.id.in_(profile.class_ids))
-            classes = session.exec(classes_stmt).all()
-            classes_data = [
-                {
-                    "id": str(cls.id),
-                    "name": cls.name,
-                    "class_code": cls.class_code,
-                    "year": cls.year,
-                    "term": cls.term,
-                }
-                for cls in classes
-            ]
+        # Query all classes and filter by profile_id in their profile_ids array
+        all_classes = session.exec(select(Classes)).all()
+        profile_classes = [cls for cls in all_classes if profile.id in cls.profile_ids]
+        classes_data = [
+            {
+                "id": str(cls.id),
+                "name": cls.name,
+                "class_code": cls.class_code,
+                "year": cls.year,
+                "term": cls.term,
+            }
+            for cls in profile_classes
+        ]
 
         # Get latest simulation grades (last 5)
         attempts_stmt = select(SimulationAttempts).where(

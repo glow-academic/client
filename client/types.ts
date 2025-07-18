@@ -1,69 +1,73 @@
 import { 
-  classes as Classes,
-  topics as Topics,
-  schedules as Schedules,
-  events as Events,
-  documents as Documents,
-  providers as Providers,
   accounts as Accounts,
-  sessions as Sessions,
-  models as Models,
-  users as Users,
-  profiles as Profiles,
-  rubrics as Rubrics,
-  standardGroups as StandardGroups,
-  standards as Standards,
-  appLogs as AppLogs,
   appFeedback as AppFeedback,
+  profiles as Profiles,
+  scenarioTimes as ScenarioTimes,
   assistantChats as AssistantChats,
-  scenarios as Scenarios,
+  appLogs as AppLogs,
   assistantMessages as AssistantMessages,
   assistantToolCalls as AssistantToolCalls,
-  components as Components,
-  agents as Agents,
+  departments as Departments,
   dashboards as Dashboards,
   cohorts as Cohorts,
-  simulations as Simulations,
+  components as Components,
+  documents as Documents,
+  providers as Providers,
+  locations as Locations,
   simulationAttempts as SimulationAttempts,
-  simulationChats as SimulationChats,
-  simulationMessages as SimulationMessages,
+  scenarioDeadlines as ScenarioDeadlines,
+  sessions as Sessions,
+  rubrics as Rubrics,
   simulationChatGrades as SimulationChatGrades,
+  standardGroups as StandardGroups,
+  standards as Standards,
+  simulationChats as SimulationChats,
+  simulations as Simulations,
+  classes as Classes,
+  users as Users,
   simulationChatFeedbacks as SimulationChatFeedbacks,
+  migrations as Migrations,
+  agents as Agents,
+  simulationMessages as SimulationMessages,
+  models as Models,
+  scenarios as Scenarios,
   verificationToken as VerificationToken,
-  assistantMessageType, assistantToolType, classTerm, documentType, feedbackType, locations, profileRole, reasoningEffort, seniorityLevels, simulationMessageType, timeOfDay, urgencyType
+  assistantMessageType, assistantToolType, classTerm, documentType, feedbackType, profileRole, reasoningEffort, simulationMessageType
 } from "@/utils/drizzle/schema";
 
 // Use Drizzle schema types
-type Class = typeof Classes.$inferSelect;
-type Topic = typeof Topics.$inferSelect;
-type Schedule = typeof Schedules.$inferSelect;
-type Event = typeof Events.$inferSelect;
-type Document = typeof Documents.$inferSelect;
-type Provider = typeof Providers.$inferSelect;
 type Account = typeof Accounts.$inferSelect;
-type Session = typeof Sessions.$inferSelect;
-type Model = typeof Models.$inferSelect;
-type User = typeof Users.$inferSelect;
-type Profile = typeof Profiles.$inferSelect;
-type Rubric = typeof Rubrics.$inferSelect;
-type StandardGroup = typeof StandardGroups.$inferSelect;
-type Standard = typeof Standards.$inferSelect;
-type AppLog = typeof AppLogs.$inferSelect;
 type AppFeedback = typeof AppFeedback.$inferSelect;
+type Profile = typeof Profiles.$inferSelect;
+type ScenarioTime = typeof ScenarioTimes.$inferSelect;
 type AssistantChat = typeof AssistantChats.$inferSelect;
-type Scenario = typeof Scenarios.$inferSelect;
+type AppLog = typeof AppLogs.$inferSelect;
 type AssistantMessage = typeof AssistantMessages.$inferSelect;
 type AssistantToolCall = typeof AssistantToolCalls.$inferSelect;
-type Component = typeof Components.$inferSelect;
-type Agent = typeof Agents.$inferSelect;
+type Department = typeof Departments.$inferSelect;
 type Dashboard = typeof Dashboards.$inferSelect;
 type Cohort = typeof Cohorts.$inferSelect;
-type Simulation = typeof Simulations.$inferSelect;
+type Component = typeof Components.$inferSelect;
+type Document = typeof Documents.$inferSelect;
+type Provider = typeof Providers.$inferSelect;
+type Location = typeof Locations.$inferSelect;
 type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
-type SimulationChat = typeof SimulationChats.$inferSelect;
-type SimulationMessage = typeof SimulationMessages.$inferSelect;
+type ScenarioDeadline = typeof ScenarioDeadlines.$inferSelect;
+type Session = typeof Sessions.$inferSelect;
+type Rubric = typeof Rubrics.$inferSelect;
 type SimulationChatGrade = typeof SimulationChatGrades.$inferSelect;
+type StandardGroup = typeof StandardGroups.$inferSelect;
+type Standard = typeof Standards.$inferSelect;
+type SimulationChat = typeof SimulationChats.$inferSelect;
+type Simulation = typeof Simulations.$inferSelect;
+type Class = typeof Classes.$inferSelect;
+type User = typeof Users.$inferSelect;
 type SimulationChatFeedback = typeof SimulationChatFeedbacks.$inferSelect;
+type Migration = typeof Migrations.$inferSelect;
+type Agent = typeof Agents.$inferSelect;
+type SimulationMessage = typeof SimulationMessages.$inferSelect;
+type Model = typeof Models.$inferSelect;
+type Scenario = typeof Scenarios.$inferSelect;
 type VerificationToken = typeof VerificationToken.$inferSelect;
 
 type AssistantMessageType = (typeof assistantMessageType.enumValues)[number];
@@ -71,56 +75,50 @@ type AssistantToolType = (typeof assistantToolType.enumValues)[number];
 type ClassTerm = (typeof classTerm.enumValues)[number];
 type DocumentType = (typeof documentType.enumValues)[number];
 type FeedbackType = (typeof feedbackType.enumValues)[number];
-type Locations = (typeof locations.enumValues)[number];
 type ProfileRole = (typeof profileRole.enumValues)[number];
 type ReasoningEffort = (typeof reasoningEffort.enumValues)[number];
-type SeniorityLevels = (typeof seniorityLevels.enumValues)[number];
 type SimulationMessageType = (typeof simulationMessageType.enumValues)[number];
-type TimeOfDay = (typeof timeOfDay.enumValues)[number];
-type UrgencyType = (typeof urgencyType.enumValues)[number];
 
 export type { 
-  Class,
-  Topic,
-  Schedule,
-  Event,
-  Document,
-  Provider,
   Account,
-  Session,
-  Model,
-  User,
-  Profile,
-  Rubric,
-  StandardGroup,
-  Standard,
-  AppLog,
   AppFeedback,
+  Profile,
+  ScenarioTime,
   AssistantChat,
-  Scenario,
+  AppLog,
   AssistantMessage,
   AssistantToolCall,
-  Component,
-  Agent,
+  Department,
   Dashboard,
   Cohort,
-  Simulation,
+  Component,
+  Document,
+  Provider,
+  Location,
   SimulationAttempt,
-  SimulationChat,
-  SimulationMessage,
+  ScenarioDeadline,
+  Session,
+  Rubric,
   SimulationChatGrade,
+  StandardGroup,
+  Standard,
+  SimulationChat,
+  Simulation,
+  Class,
+  User,
   SimulationChatFeedback,
+  Migration,
+  Agent,
+  SimulationMessage,
+  Model,
+  Scenario,
   VerificationToken,
   AssistantMessageType,
   AssistantToolType,
   ClassTerm,
   DocumentType,
   FeedbackType,
-  Locations,
   ProfileRole,
   ReasoningEffort,
-  SeniorityLevels,
-  SimulationMessageType,
-  TimeOfDay,
-  UrgencyType
+  SimulationMessageType
 };

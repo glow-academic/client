@@ -3,12 +3,12 @@ import io
 import json
 import os
 import shutil
-import uuid
-from unittest.mock import ANY, MagicMock, mock_open, patch
+from unittest.mock import ANY, mock_open, patch
 from uuid import uuid4
 
 import pytest
 from app.models import Documents
+
 
 # --- FIXTURE ---
 @pytest.fixture
@@ -22,6 +22,7 @@ def temp_tus_uploads(mocker):
 
 # --- TESTS ---
 
+
 class TestAgentEndpoints:
     """Tests for endpoints that trigger agent runs."""
 
@@ -29,22 +30,15 @@ class TestAgentEndpoints:
     def test_classify_documents_success(self, mock_run_agent, client, mock_session):
         class_id = uuid4()
         mock_run_agent.return_value = {
-            "success": True, "message": "OK", "classified_count": 1, "total_count": 1
+            "success": True,
+            "message": "OK",
+            "classified_count": 1,
+            "total_count": 1,
         }
         response = client.post(f"/documents/classify?class_id={class_id}")
         assert response.status_code == 200
         mock_run_agent.assert_called_once_with(class_id, False, mock_session)
 
-    @patch("app.routes.documents.run_course_agent")
-    def test_course_processing_success(self, mock_run_agent, client, mock_session):
-        class_id = uuid4()
-        mock_run_agent.return_value = {
-            "success": True, "message": "OK", "updates_made": [],
-            "documents_count": 1, "course_info": {}
-        }
-        response = client.post(f"/documents/course?class_id={class_id}")
-        assert response.status_code == 200
-        mock_run_agent.assert_called_once_with(class_id, False, mock_session)
 
 class TestStandardUpload:
     """Tests for the standard multipart file upload endpoint."""
@@ -64,20 +58,26 @@ class TestStandardUpload:
         mock_session.add.assert_called_once_with(ANY)
         mock_session.commit.assert_called_once()
 
+
 class TestDocumentRetrievalAndDeletion:
     """Tests for getting and deleting a single document."""
 
     @patch("app.routes.documents.FileResponse")
     @patch("app.routes.documents.os.path.exists", return_value=True)
-    def test_get_document_success(self, mock_exists, mock_file_response, client, mock_session):
+    def test_get_document_success(
+        self, mock_exists, mock_file_response, client, mock_session
+    ):
         doc_id = uuid4()
         mock_document = Documents(
-            id=doc_id, name="test.pdf", file_path=f"{doc_id}.pdf", mime_type="application/pdf"
+            id=doc_id,
+            name="test.pdf",
+            file_path=f"{doc_id}.pdf",
+            mime_type="application/pdf",
         )
         mock_session.exec.return_value.first.return_value = mock_document
 
         client.get(f"/documents/id/{doc_id}")
-        
+
         mock_session.exec.assert_called_once()
         mock_file_response.assert_called_once_with(
             path=ANY, filename="test.pdf", media_type="application/pdf"
@@ -94,14 +94,16 @@ class TestDocumentRetrievalAndDeletion:
         doc_id = uuid4()
         mock_document = Documents(id=doc_id, name="test.pdf", file_path="path")
         mock_session.exec.return_value.first.return_value = mock_document
-        
+
         response = client.get(f"/documents/id/{doc_id}")
         assert response.status_code == 404
         assert response.json()["detail"] == "Document file not found"
 
     @patch("app.routes.documents.os.remove")
     @patch("app.routes.documents.os.path.exists", return_value=True)
-    def test_delete_document_success(self, mock_exists, mock_remove, client, mock_session):
+    def test_delete_document_success(
+        self, mock_exists, mock_remove, client, mock_session
+    ):
         doc_id = uuid4()
         mock_document = Documents(id=doc_id, name="file.txt", file_path=f"{doc_id}.txt")
         mock_session.exec.return_value.first.return_value = mock_document
@@ -114,6 +116,7 @@ class TestDocumentRetrievalAndDeletion:
         mock_session.commit.assert_called_once()
         mock_remove.assert_called_once()
 
+
 class TestTusProtocol:
     """Tests for the TUS resumable upload protocol endpoints."""
 
@@ -125,9 +128,15 @@ class TestTusProtocol:
 
     @patch("app.routes.documents.os.makedirs")
     @patch("builtins.open", new_callable=mock_open)
-    def test_tus_creation_success(self, mock_file, mock_mkdirs, client, temp_tus_uploads):
+    def test_tus_creation_success(
+        self, mock_file, mock_mkdirs, client, temp_tus_uploads
+    ):
         """Tests the POST request to initiate a TUS upload."""
-        headers = { "Tus-Resumable": "1.0.0", "Upload-Length": "1000", "Upload-Metadata": "filename dGVzdC5wbmc=" }
+        headers = {
+            "Tus-Resumable": "1.0.0",
+            "Upload-Length": "1000",
+            "Upload-Metadata": "filename dGVzdC5wbmc=",
+        }
         response = client.post("/documents/tus", headers=headers)
         assert response.status_code == 201
         assert "Location" in response.headers
@@ -140,7 +149,9 @@ class TestTusProtocol:
         with open(os.path.join(upload_dir, "info"), "w") as f:
             f.write("length:1000\noffset:500")
 
-        response = client.head(f"/documents/tus/{upload_id}", headers={"Tus-Resumable": "1.0.0"})
+        response = client.head(
+            f"/documents/tus/{upload_id}", headers={"Tus-Resumable": "1.0.0"}
+        )
         assert response.status_code == 200
         assert response.headers["Upload-Offset"] == "500"
 
@@ -151,29 +162,49 @@ class TestTusProtocol:
         os.makedirs(upload_dir, exist_ok=True)
         with open(os.path.join(upload_dir, "info"), "w") as f:
             f.write("length:1000\noffset:0")
-        with open(os.path.join(upload_dir, "file"), "wb"): pass
+        with open(os.path.join(upload_dir, "file"), "wb"):
+            pass
 
         headers = {
-            "Tus-Resumable": "1.0.0", "Upload-Offset": "0",
+            "Tus-Resumable": "1.0.0",
+            "Upload-Offset": "0",
             "Content-Type": "application/offset+octet-stream",
         }
         chunk = b"some data"
-        response = client.patch(f"/documents/tus/{upload_id}", headers=headers, content=chunk)
-        assert response.status_code == 200 # Note: your code returns 200, not 204
+        response = client.patch(
+            f"/documents/tus/{upload_id}", headers=headers, content=chunk
+        )
+        assert response.status_code == 200  # Note: your code returns 200, not 204
         assert response.headers["Upload-Offset"] == str(len(chunk))
 
     @patch("app.routes.documents.shutil.rmtree")
     @patch("app.routes.documents.shutil.copy2")
     # Corrected: Added mock for os.path.getsize
     @patch("os.path.getsize", return_value=1024)
-    @patch("builtins.open", new_callable=mock_open, read_data=json.dumps({'fileId': 'test-id', 'filename': 'final.txt', 'filetype': 'text/plain'}))
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data=json.dumps(
+            {"fileId": "test-id", "filename": "final.txt", "filetype": "text/plain"}
+        ),
+    )
     @patch("app.routes.documents.os.path.exists", return_value=True)
     @patch("app.routes.documents.os.listdir", return_value=["some-dir"])
-    def test_finalize_upload_success(self, mock_listdir, mock_exists, mock_file, mock_getsize, mock_copy, mock_rmtree, client, mock_session):
+    def test_finalize_upload_success(
+        self,
+        mock_listdir,
+        mock_exists,
+        mock_file,
+        mock_getsize,
+        mock_copy,
+        mock_rmtree,
+        client,
+        mock_session,
+    ):
         """Tests the finalization call that moves a TUS upload into the system."""
         payload = {"fileId": "test-id", "classId": str(uuid4())}
         response = client.post("/documents/tus/finalize", json=payload)
-        
+
         assert response.status_code == 200
         assert response.json()["status"] == "success"
         mock_session.add.assert_called_once_with(ANY)
@@ -183,6 +214,7 @@ class TestTusProtocol:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `classify_documents`")
 class TestClassify_Documents:
@@ -198,7 +230,9 @@ class TestClassify_Documents:
         # TODO: Implement error test for classify_documents
         assert False, "IMPLEMENT: Error test for classify_documents"
 
+
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `course_processing`")
 class TestCourse_Processing:
@@ -214,7 +248,9 @@ class TestCourse_Processing:
         # TODO: Implement error test for course_processing
         assert False, "IMPLEMENT: Error test for course_processing"
 
+
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `upload_document`")
 class TestUpload_Document:
@@ -230,7 +266,9 @@ class TestUpload_Document:
         # TODO: Implement error test for upload_document
         assert False, "IMPLEMENT: Error test for upload_document"
 
+
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_document`")
 class TestGet_Document:
@@ -246,7 +284,9 @@ class TestGet_Document:
         # TODO: Implement error test for get_document
         assert False, "IMPLEMENT: Error test for get_document"
 
+
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `tus_options`")
 class TestTus_Options:
@@ -262,7 +302,9 @@ class TestTus_Options:
         # TODO: Implement error test for tus_options
         assert False, "IMPLEMENT: Error test for tus_options"
 
+
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `tus_creation`")
 class TestTus_Creation:
@@ -278,7 +320,9 @@ class TestTus_Creation:
         # TODO: Implement error test for tus_creation
         assert False, "IMPLEMENT: Error test for tus_creation"
 
+
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `tus_head`")
 class TestTus_Head:
@@ -294,7 +338,9 @@ class TestTus_Head:
         # TODO: Implement error test for tus_head
         assert False, "IMPLEMENT: Error test for tus_head"
 
+
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `tus_patch`")
 class TestTus_Patch:
@@ -310,7 +356,9 @@ class TestTus_Patch:
         # TODO: Implement error test for tus_patch
         assert False, "IMPLEMENT: Error test for tus_patch"
 
+
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `tus_options_upload_id`")
 class TestTus_Options_Upload_Id:
@@ -326,7 +374,9 @@ class TestTus_Options_Upload_Id:
         # TODO: Implement error test for tus_options_upload_id
         assert False, "IMPLEMENT: Error test for tus_options_upload_id"
 
+
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `finalize_upload`")
 class TestFinalize_Upload:
@@ -342,7 +392,9 @@ class TestFinalize_Upload:
         # TODO: Implement error test for finalize_upload
         assert False, "IMPLEMENT: Error test for finalize_upload"
 
+
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `delete_document`")
 class TestDelete_Document:
@@ -357,4 +409,3 @@ class TestDelete_Document:
         """Test delete_document error handling."""
         # TODO: Implement error test for delete_document
         assert False, "IMPLEMENT: Error test for delete_document"
-

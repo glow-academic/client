@@ -110,7 +110,7 @@ export function Profile({ className }: ProfileProps) {
 
   // Filter classes user is assigned to
   const assignedClasses = classes.filter((cls: Class) =>
-    profile.classIds?.includes(cls.id)
+    cls.profileIds?.includes(profile.id)
   );
 
   const formatClassTerm = (term: string) => {

@@ -78,6 +78,8 @@ describe("NewClass", () => {
         defaultClass: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        departmentId: "11111111-1111-1111-1111-111111111111",
+        profileIds: [],
       });
       vi.mocked(finalizeDocumentUpload).mockResolvedValue({
         success: true,

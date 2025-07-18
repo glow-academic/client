@@ -12,13 +12,12 @@ from sqlalchemy.exc import SQLAlchemyError
 
 
 class MockProfile:
-    def __init__(self, id, fname, lname, alias, role="student", class_ids=None):
+    def __init__(self, id, fname, lname, alias, role="student"):
         self.id = id
         self.first_name = fname
         self.last_name = lname
         self.alias = alias
         self.role = role
-        self.class_ids = class_ids or []
         self.last_login = datetime.now()
         self.created_at = datetime.now()
         self.viewed_intro = False
@@ -26,18 +25,30 @@ class MockProfile:
 
 
 class MockClass:
-    def __init__(self, id, name, code, year=2025, term="Fall", desc=""):
+    def __init__(
+        self, id, name, code, year=2025, term="Fall", desc="", profile_ids=None
+    ):
         self.id = id
         self.name = name
         self.class_code = code
         self.year = year
         self.term = term
         self.description = desc
+        self.profile_ids = profile_ids or []
         self.created_at = datetime.now()
 
 
 class MockSimulation:
-    def __init__(self, id, title, active=True, time_limit=30, rubric_id=None, cohort_ids=None, scenario_ids=None):
+    def __init__(
+        self,
+        id,
+        title,
+        active=True,
+        time_limit=30,
+        rubric_id=None,
+        cohort_ids=None,
+        scenario_ids=None,
+    ):
         self.id = id
         self.title = title
         self.active = active
@@ -81,9 +92,9 @@ class TestProfileOverview:
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         profile_id = uuid.uuid4()
-        
+
         mock_profile = MockProfile(profile_id, "Nina", "Park", "npark")
-        
+
         mock_session.get.return_value = mock_profile
         mock_session.exec.return_value.all.return_value = []
         mock_session.exec.return_value.first.return_value = None
@@ -102,10 +113,12 @@ class TestProfileOverview:
         """Test profile_overview with name search."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         mock_profile = MockProfile(uuid.uuid4(), "Nina", "Park", "npark")
         mock_session.get.return_value = None  # UUID lookup fails
-        mock_session.exec.return_value.first.return_value = mock_profile  # Name search succeeds
+        mock_session.exec.return_value.first.return_value = (
+            mock_profile  # Name search succeeds
+        )
         mock_session.exec.return_value.all.return_value = []  # For classes and attempts
 
         result = profile_overview("Nina Park")
@@ -120,10 +133,12 @@ class TestProfileOverview:
         """Test profile_overview with alias search."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         mock_profile = MockProfile(uuid.uuid4(), "Nina", "Park", "npark")
         mock_session.get.return_value = None  # UUID lookup fails
-        mock_session.exec.return_value.first.return_value = mock_profile  # Alias search succeeds
+        mock_session.exec.return_value.first.return_value = (
+            mock_profile  # Alias search succeeds
+        )
         mock_session.exec.return_value.all.return_value = []  # For classes and attempts
 
         result = profile_overview("npark")
@@ -136,7 +151,7 @@ class TestProfileOverview:
         """Test profile_overview when profile is not found."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         mock_session.get.return_value = None  # UUID lookup fails
         mock_session.exec.return_value.first.return_value = None  # Name search fails
 
@@ -162,12 +177,18 @@ class TestProfileOverview:
         mock_get_session.return_value = iter([mock_session])
         profile_id = uuid.uuid4()
         class_id = uuid.uuid4()
-        
-        mock_profile = MockProfile(profile_id, "Nina", "Park", "npark", class_ids=[class_id])
-        mock_class = MockClass(class_id, "Test Class", "CS101")
-        
+
+        mock_profile = MockProfile(profile_id, "Nina", "Park", "npark")
+        mock_class = MockClass(
+            class_id, "Test Class", "CS101", profile_ids=[profile_id]
+        )
+
         mock_session.get.return_value = mock_profile
-        mock_session.exec.return_value.all.side_effect = [[mock_class], []]  # classes, attempts
+        # Mock the classes query: first call returns all classes, then attempts
+        mock_session.exec.return_value.all.side_effect = [
+            [mock_class],
+            [],
+        ]  # classes, attempts
 
         result = profile_overview(str(profile_id))
 
@@ -183,16 +204,16 @@ class TestProfileOverview:
         sim_id = uuid.uuid4()
         attempt_id = uuid.uuid4()
         chat_id = uuid.uuid4()
-        
+
         mock_profile = MockProfile(profile_id, "Nina", "Park", "npark")
         mock_sim = MockSimulation(sim_id, "Test Simulation")
         mock_attempt = MockAttempt(attempt_id, sim_id, profile_id)
         mock_chat = MockChat(chat_id, attempt_id)
         mock_grade = MockGrade(chat_id, 85, True)
-        
+
         # Mock session.get to return profile first, then simulation
         mock_session.get.side_effect = [mock_profile, mock_sim]
-        # Mock session.exec calls: attempts, chats (classes call is skipped since class_ids is empty)
+        # Mock session.exec calls: attempts, chats (classes call returns all classes, filtered by profile_id in profile_ids)
         mock_session.exec.return_value.all.side_effect = [
             [mock_attempt],  # attempts
             [mock_chat],  # chats
@@ -212,17 +233,17 @@ class TestProfileOverview:
         mock_get_session.return_value = iter([mock_session])
         profile_id = uuid.uuid4()
         sim_id = uuid.uuid4()
-        
+
         mock_profile = MockProfile(profile_id, "Nina", "Park", "npark")
         mock_sim = MockSimulation(sim_id, "Test Simulation")
-        
+
         # Create 7 attempts (should only get latest 5)
         mock_attempts = []
         for i in range(7):
             attempt = MockAttempt(uuid.uuid4(), sim_id, profile_id)
             attempt.created_at = datetime(2025, 1, i + 1)  # Different dates
             mock_attempts.append(attempt)
-        
+
         mock_session.get.side_effect = [mock_profile, mock_sim]
         mock_session.exec.return_value.all.side_effect = [
             [],  # classes
@@ -240,11 +261,11 @@ class TestProfileOverview:
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         profile_id = uuid.uuid4()
-        
+
         mock_profile = MockProfile(profile_id, "Nina", "Park", "npark")
         mock_profile.last_login = None
         mock_profile.created_at = None
-        
+
         mock_session.get.return_value = mock_profile
         mock_session.exec.return_value.all.return_value = []
 
@@ -257,14 +278,16 @@ class TestProfileOverview:
         """Test profile_overview case insensitive name search."""
         # Test each case variation separately to avoid session exhaustion
         test_cases = ["nina park", "NINA PARK", "NiNa PaRk"]
-        
+
         for test_case in test_cases:
             mock_session = MagicMock()
             mock_get_session.return_value = iter([mock_session])
-            
+
             mock_profile = MockProfile(uuid.uuid4(), "Nina", "Park", "npark")
             mock_session.get.return_value = None  # UUID lookup fails
-            mock_session.exec.return_value.first.return_value = mock_profile  # Name search succeeds
+            mock_session.exec.return_value.first.return_value = (
+                mock_profile  # Name search succeeds
+            )
             mock_session.exec.return_value.all.return_value = []
 
             result = profile_overview(test_case)
@@ -272,8 +295,6 @@ class TestProfileOverview:
             assert result["profile"]["alias"] == "npark"
 
 
-
-import pytest
 
 
 @pytest.mark.skip(reason="TODO: implement tests for `profile_overview`")
@@ -289,4 +310,3 @@ class TestProfile_Overview:
         """Test profile_overview error handling."""
         # TODO: Implement error test for profile_overview
         assert False, "IMPLEMENT: Error test for profile_overview"
-

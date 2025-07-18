@@ -69,7 +69,6 @@ export default function ClassesGeneralPage() {
 
   // Create table columns
   const { columns } = useClassColumns({
-    profiles,
     documents,
   });
 
@@ -167,6 +166,8 @@ export default function ClassesGeneralPage() {
         term: classItem.term,
         description: classItem.description,
         defaultClass: false, // Duplicated classes are not default
+        departmentId: classItem.departmentId,
+        profileIds: classItem.profileIds,
       };
 
       await createClass(duplicatedClass);

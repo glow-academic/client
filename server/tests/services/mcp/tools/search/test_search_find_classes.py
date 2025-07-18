@@ -2,7 +2,6 @@
 
 import uuid
 from unittest.mock import MagicMock, patch
-import pytest
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.services.mcp.tools.search.find_classes import find_classes
@@ -99,7 +98,11 @@ class TestFind_Classes:
         )
 
         # Return reversed order to ensure sorting happens
-        mock_session.exec.return_value.all.return_value = [cls_name_only, cls_prefix_code, cls_exact_code]
+        mock_session.exec.return_value.all.return_value = [
+            cls_name_only,
+            cls_prefix_code,
+            cls_exact_code,
+        ]
 
         result = find_classes(query="BIOL-101", limit=5)
 

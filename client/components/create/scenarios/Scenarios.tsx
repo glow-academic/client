@@ -7,17 +7,7 @@
 "use client";
 import { logError, logInfo } from "@/utils/logger";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Activity,
-  AlertTriangle,
-  Clock,
-  Copy,
-  Edit,
-  GraduationCap,
-  MapPin,
-  Trash2,
-  Users,
-} from "lucide-react";
+import { Activity, Copy, Edit, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -179,30 +169,6 @@ export function Scenarios() {
                 {scenario.generated === true && (
                   <Badge variant="outline" className="text-xs">
                     Generated
-                  </Badge>
-                )}
-                {scenario.location && (
-                  <Badge variant="outline" className="text-xs">
-                    <MapPin className="h-3 w-3 mr-1" />
-                    {scenario.location}
-                  </Badge>
-                )}
-                {scenario.seniority && (
-                  <Badge variant="outline" className="text-xs">
-                    <GraduationCap className="h-3 w-3 mr-1" />
-                    {scenario.seniority}
-                  </Badge>
-                )}
-                {scenario.tod && (
-                  <Badge variant="outline" className="text-xs">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {scenario.tod}
-                  </Badge>
-                )}
-                {scenario.urgency && (
-                  <Badge variant="outline" className="text-xs">
-                    <AlertTriangle className="h-3 w-3 mr-1" />
-                    {scenario.urgency}
                   </Badge>
                 )}
               </div>

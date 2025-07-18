@@ -11,7 +11,6 @@ from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
 from app.models import Documents
 from app.services.agents.collection.classify import run_classify_agent
-from app.services.agents.collection.course import run_course_agent
 from fastapi import (
     APIRouter,
     Depends,
@@ -77,50 +76,6 @@ async def classify_documents(
             content={
                 "status": "error",
                 "message": f"Failed to classify documents: {str(e)}",
-            },
-        )
-
-
-@router.post("/course")
-async def course_processing(
-    class_id: uuid.UUID, test: bool = False, session: Session = Depends(get_session)
-) -> JSONResponse:
-    """
-    Process a course using the course agent to extract course information
-    """
-    try:
-        # Run the course agent
-        result = await run_course_agent(class_id, test, session)
-
-        if result["success"]:
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "status": "success",
-                    "message": result["message"],
-                    "updates_made": result["updates_made"],
-                    "documents_count": result["documents_count"],
-                    "course_info": result["course_info"],
-                    "debug_info": result.get("debug_info", ""),
-                },
-            )
-        else:
-            return JSONResponse(
-                status_code=400,
-                content={"status": "error", "message": result["message"]},
-            )
-
-    except ValueError as e:
-        return JSONResponse(
-            status_code=404, content={"status": "error", "message": str(e)}
-        )
-    except Exception as e:
-        logger.error(f"Error processing course: {str(e)}")
-        return JSONResponse(
-            status_code=500,
-            content={
-                "status": "error",
-                "message": f"Failed to process course: {str(e)}",
             },
         )
 
@@ -632,9 +587,7 @@ async def finalize_upload(
 
                 # Automatically classify the documents if requested
                 auto_classify = body.get("autoClassify", False)
-                auto_course_process = body.get("autoCourseProcess", False)
                 classification_result = None
-                course_result = None
 
                 if auto_classify and class_id:
                     try:
@@ -650,24 +603,6 @@ async def finalize_upload(
                             f"Auto-classification completed: {classification_result}"
                         )
 
-                        # If classification was successful and course processing is requested, run course agent
-                        if (
-                            auto_course_process
-                            and classification_result
-                            and classification_result.get("success")
-                        ):
-                            try:
-                                course_result = await run_course_agent(
-                                    class_id, test, session
-                                )
-                                logger.info(
-                                    f"Auto-course processing completed: {course_result}"
-                                )
-                            except Exception as course_error:
-                                logger.warning(
-                                    f"Auto-course processing error: {str(course_error)}"
-                                )
-
                     except Exception as classify_error:
                         logger.warning(
                             f"Auto-classification error: {str(classify_error)}"
@@ -681,7 +616,6 @@ async def finalize_upload(
                         "extracted_count": len(extracted_documents),
                         "documents": extracted_documents,
                         "classification_result": classification_result,
-                        "course_result": course_result,
                     },
                 )
 

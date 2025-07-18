@@ -3,10 +3,10 @@
 """
 Tests for app.services.mcp.tools.search.find_agents
 """
+
 import uuid
 from unittest.mock import MagicMock, patch
 
-import pytest
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.services.mcp.tools.search.find_agents import find_agents
@@ -32,7 +32,9 @@ class TestFind_Agents:
         mock_get_session.return_value = iter([mock_session])
 
         mock_agent = MockAgent(
-            uuid.uuid4(), "Aggressive Agent", "An agent simulating an aggressive student."
+            uuid.uuid4(),
+            "Aggressive Agent",
+            "An agent simulating an aggressive student.",
         )
         # find_agents() does session.exec(...).all(), so return list
         mock_session.exec.return_value.all.return_value = [mock_agent]
@@ -65,14 +67,13 @@ class TestFind_Agents:
         # first should be exact match "Tutor Bot" (score 100)
         assert result[0]["name"] == "Tutor Bot"
         assert result[0]["score"] >= result[1]["score"] >= result[2]["score"]
-    
 
     def test_find_agents_error(self, mock_get_session):
         """Test find_agents error handling during a database failure."""
         # --- Arrange ---
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         # Configure the mock to raise a SQLAlchemyError
         mock_session.exec.side_effect = SQLAlchemyError("Database connection failed")
 

@@ -2,31 +2,30 @@
 # Import analytics tools
 from typing import Any, Dict, List
 
-from app.services.mcp.tools.analytics.agent_response_times import \
-    agent_response_times
+from app.services.mcp.tools.analytics.agent_response_times import agent_response_times
 from app.services.mcp.tools.analytics.class_gradebook import class_gradebook
-from app.services.mcp.tools.analytics.cohort_pass_matrix import \
-    cohort_pass_matrix
-from app.services.mcp.tools.analytics.simulation_attempts import \
-    simulation_attempts
-from app.services.mcp.tools.analytics.student_sim_report import \
-    student_sim_report
+from app.services.mcp.tools.analytics.cohort_pass_matrix import cohort_pass_matrix
+from app.services.mcp.tools.analytics.simulation_attempts import simulation_attempts
+from app.services.mcp.tools.analytics.student_sim_report import student_sim_report
+
 # Import log tools
 from app.services.mcp.tools.log.assistant_usage import assistant_usage
 from app.services.mcp.tools.log.export_csv import export_csv
 from app.services.mcp.tools.log.recent_app_logs import recent_app_logs
+
 # Import lookup tools
 from app.services.mcp.tools.lookup.agent_overview import agent_overview
 from app.services.mcp.tools.lookup.class_overview import class_overview
 from app.services.mcp.tools.lookup.cohort_overview import cohort_overview
 from app.services.mcp.tools.lookup.profile_overview import profile_overview
 from app.services.mcp.tools.lookup.scenario_overview import scenario_overview
-from app.services.mcp.tools.lookup.simulation_overview import \
-    simulation_overview
+from app.services.mcp.tools.lookup.simulation_overview import simulation_overview
+
 # Import schema tools
 from app.services.mcp.tools.schema.list_schema import list_schema
 from app.services.mcp.tools.schema.query_data import query_data
 from app.services.mcp.tools.search.find_agents import find_agents
+
 # Import search tools
 from app.services.mcp.tools.search.find_classes import find_classes
 from app.services.mcp.tools.search.find_cohorts import find_cohorts
@@ -108,13 +107,16 @@ def _find_classes(query: str, limit: int = 10) -> List[Dict[str, Any]]:
 def _find_simulations(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     return find_simulations(query, limit)
 
+
 @server.tool()
 def _find_agents(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     return find_agents(query, limit)
 
+
 @server.tool()
 def _find_cohorts(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     return find_cohorts(query, limit)
+
 
 @server.tool()
 def _find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:

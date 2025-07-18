@@ -3,17 +3,23 @@
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
-import pytest
 from app.services.mcp.tools.log.recent_app_logs import recent_app_logs
 from sqlalchemy.exc import SQLAlchemyError
 
 
 class MockAppLog:
     def __init__(self, id, level, message, created_at):
-        self.id, self.level, self.message, self.created_at = id, level, message, created_at
+        self.id, self.level, self.message, self.created_at = (
+            id,
+            level,
+            message,
+            created_at,
+        )
         self.context = {}
+
     def isoformat(self):
         return self.created_at.isoformat()
+
 
 @patch("app.services.mcp.tools.log.recent_app_logs.get_session")
 class TestRecent_App_Logs:
@@ -34,7 +40,7 @@ class TestRecent_App_Logs:
         mock_session.exec.return_value.all.return_value = filtered_mock_logs
 
         result = recent_app_logs(level="error", limit=5)
-        
+
         assert len(result) == 2
         assert all(log["level"] == "error" for log in result)
         assert result[0]["message"] == "Critical failure"
@@ -51,9 +57,9 @@ class TestRecent_App_Logs:
             for i in range(10)
         ]
         mock_session.exec.return_value.all.return_value = mock_logs
-        
+
         result = recent_app_logs(level="all", limit=5)
-        
+
         assert len(result) == 5
         # The first log in the result should be the most recent one (Log 0)
         assert result[0]["message"] == "Log 0"

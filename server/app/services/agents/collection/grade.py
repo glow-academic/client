@@ -6,10 +6,20 @@ from typing import Any, List
 
 from agents import Runner, trace
 from app.db import get_session
-from app.models import (Agents, Models, Providers, Rubrics, SimulationAttempts,
-                        SimulationChatFeedbacks, SimulationChatGrades,
-                        SimulationChats, SimulationMessages, Simulations,
-                        StandardGroups, Standards)
+from app.models import (
+    Agents,
+    Models,
+    Providers,
+    Rubrics,
+    SimulationAttempts,
+    SimulationChatFeedbacks,
+    SimulationChatGrades,
+    SimulationChats,
+    SimulationMessages,
+    Simulations,
+    StandardGroups,
+    Standards,
+)
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_simulation_conversation_history
 from app.utils.rubric import get_dynamic_rubric

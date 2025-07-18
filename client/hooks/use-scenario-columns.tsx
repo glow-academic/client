@@ -35,19 +35,11 @@ export function useScenarioColumns() {
         filterFn: (row, id, value) => {
           const name = row.getValue(id) as string;
           const description = row.original.description || "";
-          const location = row.original.location || "";
-          const seniority = row.original.seniority || "";
-          const tod = row.original.tod || "";
-          const urgency = row.original.urgency || "";
 
           const searchText = value.toLowerCase();
           return (
             name.toLowerCase().includes(searchText) ||
-            description.toLowerCase().includes(searchText) ||
-            location.toLowerCase().includes(searchText) ||
-            seniority.toLowerCase().includes(searchText) ||
-            tod.toLowerCase().includes(searchText) ||
-            urgency.toLowerCase().includes(searchText)
+            description.toLowerCase().includes(searchText)
           );
         },
       },

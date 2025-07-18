@@ -22,13 +22,12 @@ class MockCohort:
 
 
 class MockProfile:
-    def __init__(self, id, fname, lname, alias, role="student", class_ids=None):
+    def __init__(self, id, fname, lname, alias, role="student"):
         self.id = id
         self.first_name = fname
         self.last_name = lname
         self.alias = alias
         self.role = role
-        self.class_ids = class_ids or []
         self.last_login = datetime.now()
         self.created_at = datetime.now()
         self.viewed_intro = False
@@ -36,7 +35,16 @@ class MockProfile:
 
 
 class MockSimulation:
-    def __init__(self, id, title, active=True, time_limit=30, rubric_id=None, cohort_ids=None, scenario_ids=None):
+    def __init__(
+        self,
+        id,
+        title,
+        active=True,
+        time_limit=30,
+        rubric_id=None,
+        cohort_ids=None,
+        scenario_ids=None,
+    ):
         self.id = id
         self.title = title
         self.active = active
@@ -58,14 +66,14 @@ class TestCohortOverview:
         cohort_id = uuid.uuid4()
         profile_id = uuid.uuid4()
         sim_id = uuid.uuid4()
-        
+
         mock_cohort = MockCohort(cohort_id, "Test Cohort", profile_ids=[profile_id])
         mock_profiles = [MockProfile(profile_id, "Jane", "Doe", "janedoe")]
         mock_sims = [MockSimulation(sim_id, "Test Sim", cohort_ids=[cohort_id])]
-        
+
         mock_session.get.return_value = mock_cohort
         mock_session.exec.return_value.all.side_effect = [mock_profiles, mock_sims]
-        
+
         result = cohort_overview(str(cohort_id))
 
         assert result["cohort"]["id"] == str(cohort_id)
@@ -86,16 +94,16 @@ class TestCohortOverview:
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         mock_session.get.return_value = None
-        
+
         result = cohort_overview(str(uuid.uuid4()))
-        
+
         assert "error" in result
         assert "not found" in result["error"]
 
     def test_cohort_overview_invalid_uuid(self, mock_get_session):
         """Test cohort_overview with invalid UUID format."""
         result = cohort_overview("invalid-uuid")
-        
+
         assert "error" in result
         assert "Invalid cohort_id format" in result["error"]
 
@@ -104,9 +112,9 @@ class TestCohortOverview:
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         mock_session.get.side_effect = SQLAlchemyError("Database connection failed")
-        
+
         result = cohort_overview(str(uuid.uuid4()))
-        
+
         assert "error" in result
         assert "Database error" in result["error"]
 
@@ -115,15 +123,15 @@ class TestCohortOverview:
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         cohort_id = uuid.uuid4()
-        
+
         mock_cohort = MockCohort(cohort_id, "Test Cohort", profile_ids=[])
         mock_sims = []
-        
+
         mock_session.get.return_value = mock_cohort
         mock_session.exec.return_value.all.side_effect = [[], mock_sims]
-        
+
         result = cohort_overview(str(cohort_id))
-        
+
         assert result["roster"] == []
         assert result["simulations"] == []
         assert result["stats"]["total_students"] == 0
@@ -134,20 +142,24 @@ class TestCohortOverview:
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         cohort_id = uuid.uuid4()
-        
-        mock_cohort = MockCohort(cohort_id, "Test Cohort", profile_ids=[uuid.uuid4(), uuid.uuid4(), uuid.uuid4()])
+
+        mock_cohort = MockCohort(
+            cohort_id,
+            "Test Cohort",
+            profile_ids=[uuid.uuid4(), uuid.uuid4(), uuid.uuid4()],
+        )
         mock_profiles = [
             MockProfile(mock_cohort.profile_ids[0], "John", "Doe", "jdoe"),
             MockProfile(mock_cohort.profile_ids[1], "Jane", "Smith", "jsmith"),
-            MockProfile(mock_cohort.profile_ids[2], "Bob", "Johnson", "bjohnson")
+            MockProfile(mock_cohort.profile_ids[2], "Bob", "Johnson", "bjohnson"),
         ]
         mock_sims = []
-        
+
         mock_session.get.return_value = mock_cohort
         mock_session.exec.return_value.all.side_effect = [mock_profiles, mock_sims]
-        
+
         result = cohort_overview(str(cohort_id))
-        
+
         assert len(result["roster"]) == 3
         assert result["roster"][0]["alias"] == "jdoe"
         assert result["roster"][1]["alias"] == "jsmith"
@@ -160,23 +172,33 @@ class TestCohortOverview:
         mock_get_session.return_value = iter([mock_session])
         cohort_id = uuid.uuid4()
         other_cohort_id = uuid.uuid4()
-        
+
         mock_cohort = MockCohort(cohort_id, "Test Cohort", profile_ids=[])
         # Create simulations with different cohort_ids arrays
         mock_sims = [
-            MockSimulation(uuid.uuid4(), "Sim 1", cohort_ids=[cohort_id]),  # Should be included
-            MockSimulation(uuid.uuid4(), "Sim 2", cohort_ids=[other_cohort_id]),  # Should be excluded
-            MockSimulation(uuid.uuid4(), "Sim 3", cohort_ids=[cohort_id, other_cohort_id]),  # Should be included
-            MockSimulation(uuid.uuid4(), "Sim 4", cohort_ids=[], active=False),  # Should be excluded (inactive)
-            MockSimulation(uuid.uuid4(), "Sim 5", cohort_ids=[], active=True),  # Should be excluded (wrong cohort)
+            MockSimulation(
+                uuid.uuid4(), "Sim 1", cohort_ids=[cohort_id]
+            ),  # Should be included
+            MockSimulation(
+                uuid.uuid4(), "Sim 2", cohort_ids=[other_cohort_id]
+            ),  # Should be excluded
+            MockSimulation(
+                uuid.uuid4(), "Sim 3", cohort_ids=[cohort_id, other_cohort_id]
+            ),  # Should be included
+            MockSimulation(
+                uuid.uuid4(), "Sim 4", cohort_ids=[], active=False
+            ),  # Should be excluded (inactive)
+            MockSimulation(
+                uuid.uuid4(), "Sim 5", cohort_ids=[], active=True
+            ),  # Should be excluded (wrong cohort)
         ]
-        
+
         mock_session.get.return_value = mock_cohort
         # Only one exec call is made for simulations since profile_ids is empty
         mock_session.exec.return_value.all.side_effect = [mock_sims]
-        
+
         result = cohort_overview(str(cohort_id))
-        
+
         # Should only include active simulations that have cohort_id in their cohort_ids array
         assert len(result["simulations"]) == 2
         assert result["simulations"][0]["title"] == "Sim 1"
@@ -187,15 +209,15 @@ class TestCohortOverview:
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         cohort_id = uuid.uuid4()
-        
+
         mock_cohort = MockCohort(cohort_id, "Test Cohort", active=False, profile_ids=[])
         mock_sims = []
-        
+
         mock_session.get.return_value = mock_cohort
         mock_session.exec.return_value.all.side_effect = [[], mock_sims]
-        
+
         result = cohort_overview(str(cohort_id))
-        
+
         assert result["cohort"]["active"] is False
         assert result["stats"]["total_students"] == 0
         assert result["stats"]["active_simulations"] == 0
@@ -205,20 +227,18 @@ class TestCohortOverview:
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         cohort_id = uuid.uuid4()
-        
+
         mock_cohort = MockCohort(cohort_id, "Test Cohort", profile_ids=[])
         mock_cohort.created_at = None
-        
+
         mock_session.get.return_value = mock_cohort
         mock_session.exec.return_value.all.side_effect = [[], []]
-        
+
         result = cohort_overview(str(cohort_id))
-        
+
         assert result["cohort"]["created_at"] is None
 
 
-
-import pytest
 
 
 @pytest.mark.skip(reason="TODO: implement tests for `cohort_overview`")
@@ -234,4 +254,3 @@ class TestCohort_Overview:
         """Test cohort_overview error handling."""
         # TODO: Implement error test for cohort_overview
         assert False, "IMPLEMENT: Error test for cohort_overview"
-

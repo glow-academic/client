@@ -18,13 +18,7 @@ export const mockErrorResponse = {
   status: "error" as const,
 };
 
-export const mockProcessingResponse = {
-  success: true,
-  message: "Operation is being processed",
-  status: "processing" as const,
-};
-
-const mockDocumentResponse = {
+export const mockDocumentResponse = {
   ...mockSuccessResponse,
   document_id: "doc-123",
   extracted_count: 1,
@@ -50,7 +44,6 @@ const mockReportResponse = {
 // DOCUMENTS API MOCKS
 export const deleteDocumentMock = vi.fn(() => Promise.resolve(mockErrorResponse));
 export const finalizeDocumentUploadMock = vi.fn(() => Promise.resolve(mockDocumentResponse));
-export const processCourseMock = vi.fn(() => Promise.resolve(mockProcessingResponse));
 
 // SCENARIOS API MOCKS
 export const newScenarioMock = vi.fn(() => Promise.resolve(mockScenarioResponse));
@@ -58,7 +51,6 @@ export const testScenarioMock = vi.fn(() => Promise.resolve(mockReportResponse))
 
 vi.mock('@/utils/api/documents/delete-document', () => ({ deleteDocument: deleteDocumentMock }));
 vi.mock('@/utils/api/documents/finalize-document-upload', () => ({ finalizeDocumentUpload: finalizeDocumentUploadMock }));
-vi.mock('@/utils/api/documents/process-course', () => ({ processCourse: processCourseMock }));
 vi.mock('@/utils/api/scenarios/new-scenario', () => ({ newScenario: newScenarioMock }));
 vi.mock('@/utils/api/scenarios/test-scenario', () => ({ testScenario: testScenarioMock }));
 
@@ -66,7 +58,6 @@ vi.mock('@/utils/api/scenarios/test-scenario', () => ({ testScenario: testScenar
 export const resetAllApiMocks = () => {
   deleteDocumentMock.mockClear();
   finalizeDocumentUploadMock.mockClear();
-  processCourseMock.mockClear();
   newScenarioMock.mockClear();
   testScenarioMock.mockClear();
 };
@@ -83,7 +74,6 @@ export const setApiMockError = (mockFn: ReturnType<typeof vi.fn>, error: unknown
 export const apiMocks = {
   deleteDocument: deleteDocumentMock,
   finalizeDocumentUpload: finalizeDocumentUploadMock,
-  processCourse: processCourseMock,
   newScenario: newScenarioMock,
   testScenario: testScenarioMock,
 };

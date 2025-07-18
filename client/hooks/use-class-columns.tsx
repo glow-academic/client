@@ -1,15 +1,14 @@
 "use client";
 
-import { Class, Document, Profile } from "@/types";
+import { Class, Document } from "@/types";
 import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
 export interface UseClassColumnsProps {
-  profiles: Profile[];
   documents: Document[];
 }
 
-export function useClassColumns({ profiles, documents }: UseClassColumnsProps) {
+export function useClassColumns({ documents }: UseClassColumnsProps) {
   const columns = useMemo<ColumnDef<Class>[]>(
     () => [
       {
@@ -51,19 +50,12 @@ export function useClassColumns({ profiles, documents }: UseClassColumnsProps) {
         id: "profiles",
         header: "Profiles",
         accessorFn: (classItem) => {
-          const classProfiles = profiles.filter((profile: Profile) =>
-            profile.classIds?.includes(classItem.id)
-          );
-          return classProfiles.map((profile: Profile) => profile.id);
+          // Classes now have profileIds directly
+          return classItem.profileIds || [];
         },
         filterFn: (row, _, value) => {
           const classItem = row.original;
-          const classProfiles = profiles.filter((profile: Profile) =>
-            profile.classIds?.includes(classItem.id)
-          );
-          const classProfileIds = classProfiles.map(
-            (profile: Profile) => profile.id
-          );
+          const classProfileIds = classItem.profileIds || [];
           return value.some((filterValue: string) =>
             classProfileIds.includes(filterValue)
           );
@@ -110,7 +102,7 @@ export function useClassColumns({ profiles, documents }: UseClassColumnsProps) {
         cell: ({ row }) => row.getValue("updatedAt"),
       },
     ],
-    [profiles, documents]
+    [documents]
   );
 
   return { columns };

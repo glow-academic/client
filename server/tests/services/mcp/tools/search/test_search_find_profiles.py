@@ -2,7 +2,6 @@
 
 import uuid
 from unittest.mock import MagicMock, patch
-import pytest
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.services.mcp.tools.search.find_profiles import find_profiles
@@ -72,7 +71,9 @@ class TestFind_Profiles:
 
         p_exact = MockProfile(uuid.uuid4(), "Ashok", "Saravanan", "sarava18")
         p_partial = MockProfile(uuid.uuid4(), "Ashley", "Saran", "ash_s")
-        p_alias = MockProfile(uuid.uuid4(), None, None, "ashok_alt")  # simulate alias-only row
+        p_alias = MockProfile(
+            uuid.uuid4(), None, None, "ashok_alt"
+        )  # simulate alias-only row
 
         # Return in worst-first order to prove sort
         mock_session.exec.return_value.all.return_value = [p_alias, p_partial, p_exact]

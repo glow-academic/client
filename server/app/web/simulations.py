@@ -15,12 +15,19 @@ from typing import Any, Dict
 import socketio  # type: ignore
 from agents import gen_trace_id
 from app.db import get_session
-from app.models import (Scenarios, SimulationAttempts, SimulationChats,
-                        SimulationMessages, Simulations)
+from app.models import (
+    Scenarios,
+    SimulationAttempts,
+    SimulationChats,
+    SimulationMessages,
+    Simulations,
+)
 from app.services.agents.collection.grade import run_grade_agent
 from app.services.agents.collection.scenario import run_scenario_agent
-from app.services.agents.collection.simulation import (cancel_simulation_run,
-                                                       run_simulation_agent)
+from app.services.agents.collection.simulation import (
+    cancel_simulation_run,
+    run_simulation_agent,
+)
 from app.utils.scenario import randomly_fill_scenario_attributes
 from sqlmodel import select
 
@@ -125,13 +132,12 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
                 name, description, trace_id = await run_scenario_agent(
                     agent_id=scenario.agent_id,
                     class_id=scenario.class_id,
-                    document_ids=scenario.documents,
-                    seniority=scenario.seniority,
+                    document_ids=scenario.document_ids,
                     crowdedness=scenario.crowdedness,
                     intensity=scenario.intensity,
-                    tod=scenario.tod,
-                    urgency=scenario.urgency,
-                    location=scenario.location,
+                    time_id=scenario.time_id,
+                    deadline_id=scenario.deadline_id,
+                    location_id=scenario.location_id,
                     group_id=new_attempt.id,
                     session=db_session,
                 )
@@ -232,12 +238,10 @@ async def handle_stop_simulation(sid: str, data: Dict[str, Any]) -> None:
                 assistant_msg = None
                 if assistant_msgs:
                     assistant_msgs_sorted = sorted(
-                        assistant_msgs,
-                        key=lambda m: m.created_at,
-                        reverse=True
+                        assistant_msgs, key=lambda m: m.created_at, reverse=True
                     )
                     assistant_msg = assistant_msgs_sorted[0]
-                
+
                 if assistant_msg and not assistant_msg.completed:
                     assistant_msg.completed = True
                     db_session.add(assistant_msg)
@@ -367,13 +371,12 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                         ) = await run_scenario_agent(
                             agent_id=next_scenario.agent_id,
                             class_id=next_scenario.class_id,
-                            document_ids=next_scenario.documents,
-                            seniority=next_scenario.seniority,
+                            document_ids=next_scenario.document_ids,
                             crowdedness=next_scenario.crowdedness,
                             intensity=next_scenario.intensity,
-                            tod=next_scenario.tod,
-                            urgency=next_scenario.urgency,
-                            location=next_scenario.location,
+                            time_id=next_scenario.time_id,
+                            deadline_id=next_scenario.deadline_id,
+                            location_id=next_scenario.location_id,
                             group_id=attempt_id,
                             session=db_session,
                         )
