@@ -69,10 +69,10 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
         "rubrics", // Create
         "classes",
         "cohorts", // Classes (all)
-        "staff",
+        "departments",
         "agents",
         "logs",
-        "models" // Management
+        "providers" // Management
       );
       break;
   }
@@ -119,7 +119,7 @@ export const isMainScreen = (pathname: string, _role: ProfileRole): boolean => {
   // - /create (0 slashes)
   // - /create/classes (1 slash)
   // - /management (0 slashes)
-  // - /management/staff (1 slash)
+  // - /management/departments (1 slash)
   // But NOT:
   // - /create/classes/c/123 (3 slashes)
   // - /analytics/reports/p/456 (3 slashes)
@@ -161,8 +161,8 @@ export const getSectionRoute = (section: string): string => {
     // Management routes
     case "management":
       return "/management";
-    case "staff":
-      return "/management/staff";
+    case "departments":
+      return "/management/departments";
     case "agents":
       return "/management/agents";
     case "providers":
@@ -204,13 +204,9 @@ export const getSectionRoute = (section: string): string => {
         const attemptId = section.replace("attempt-", "");
         return `/home/a/${attemptId}`;
       }
-      if (section.startsWith("user-")) {
-        const userId = section.replace("user-", "");
-        return `/management/staff/u/${userId}`;
-      }
-      if (section.startsWith("profile-")) {
-        const profileId = section.replace("profile-", "");
-        return `/management/staff/p/${profileId}`;
+      if (section.startsWith("department-")) {
+        const departmentId = section.replace("department-", "");
+        return `/management/departments/d/${departmentId}`;
       }
       if (section.startsWith("eval-")) {
         const evalId = section.replace("eval-", "");

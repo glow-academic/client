@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import Staff from "@/components/management/staff/Staff";
+import Departments from "@/components/management/departments/Departments";
 
 import type { Metadata } from "next";
 
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function StaffPage() {
   return (
     <div className="space-y-6">
-      <Staff />
+      <Departments />
     </div>
   );
 }

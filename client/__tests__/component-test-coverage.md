@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 110
+- **Total Components**: 114
 - **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 110
+- **Tests Skipped** (already implemented): 114
 
 ## Component Coverage
 
@@ -52,6 +52,7 @@
 | FooterPreview | common/dashboard/FooterPreview.tsx | FooterPreview.test.tsx | ✅ Implemented |
 | HeaderPreview | common/dashboard/HeaderPreview.tsx | HeaderPreview.test.tsx | ✅ Implemented |
 | SettingsDialog | common/dashboard/SettingsDialog.tsx | SettingsDialog.test.tsx | ✅ Implemented |
+| Department | common/department/Department.tsx | Department.test.tsx | ✅ Implemented |
 | DataTable | common/history/DataTable.tsx | DataTable.test.tsx | ✅ Implemented |
 | DataTableColumnHeader | common/history/DataTableColumnHeader.tsx | DataTableColumnHeader.test.tsx | ✅ Implemented |
 | DataTableFacetedFilter | common/history/DataTableFacetedFilter.tsx | DataTableFacetedFilter.test.tsx | ✅ Implemented |
@@ -73,6 +74,7 @@
 | UnifiedSidebar | common/layout/UnifiedSidebar.tsx | UnifiedSidebar.test.tsx | ✅ Implemented |
 | Login | common/login/Login.tsx | Login.test.tsx | ✅ Implemented |
 | Model | common/model/Model.tsx | Model.test.tsx | ✅ Implemented |
+| ProfileSelector | common/profile/ProfileSelector.tsx | ProfileSelector.test.tsx | ✅ Implemented |
 | Provider | common/provider/Provider.tsx | Provider.test.tsx | ✅ Implemented |
 | Rubric | common/rubric/Rubric.tsx | Rubric.test.tsx | ✅ Implemented |
 | TableRubric | common/rubric/TableRubric.tsx | TableRubric.test.tsx | ✅ Implemented |
@@ -104,6 +106,11 @@
 | AgentEdit | management/agents/AgentEdit.tsx | AgentEdit.test.tsx | ✅ Implemented |
 | Agents | management/agents/Agents.tsx | Agents.test.tsx | ✅ Implemented |
 | NewAgent | management/agents/NewAgent.tsx | NewAgent.test.tsx | ✅ Implemented |
+| DepartmentEdit | management/departments/DepartmentEdit.tsx | DepartmentEdit.test.tsx | ✅ Implemented |
+| Departments | management/departments/Departments.tsx | Departments.test.tsx | ✅ Implemented |
+| NewDepartment | management/departments/NewDepartment.tsx | NewDepartment.test.tsx | ✅ Implemented |
+| NewStaff | management/departments/NewStaff.tsx | NewStaff.test.tsx | ✅ Implemented |
+| StaffEdit | management/departments/StaffEdit.tsx | StaffEdit.test.tsx | ✅ Implemented |
 | ActivityStatus | management/logs/ActivityStatus.tsx | ActivityStatus.test.tsx | ✅ Implemented |
 | ConnectionStatusIndicator | management/logs/ConnectionStatusIndicator.tsx | ConnectionStatusIndicator.test.tsx | ✅ Implemented |
 | Feedback | management/logs/Feedback.tsx | Feedback.test.tsx | ✅ Implemented |
@@ -116,9 +123,6 @@
 | NewRubric | management/rubrics/NewRubric.tsx | NewRubric.test.tsx | ✅ Implemented |
 | RubricEdit | management/rubrics/RubricEdit.tsx | RubricEdit.test.tsx | ✅ Implemented |
 | Rubrics | management/rubrics/Rubrics.tsx | Rubrics.test.tsx | ✅ Implemented |
-| NewStaff | management/staff/NewStaff.tsx | NewStaff.test.tsx | ✅ Implemented |
-| Staff | management/staff/Staff.tsx | Staff.test.tsx | ✅ Implemented |
-| StaffEdit | management/staff/StaffEdit.tsx | StaffEdit.test.tsx | ✅ Implemented |
 | Profile | profile/Profile.tsx | Profile.test.tsx | ✅ Implemented |
 
 ## Directory Structure
@@ -181,6 +185,8 @@ __tests__/
 │   │   ├── FooterPreview.test.tsx
 │   │   ├── HeaderPreview.test.tsx
 │   │   ├── SettingsDialog.test.tsx
+│   ├── department/
+│   │   ├── Department.test.tsx
 │   ├── history/
 │   │   ├── DataTable.test.tsx
 │   │   ├── DataTableColumnHeader.test.tsx
@@ -207,6 +213,8 @@ __tests__/
 │   │   ├── Login.test.tsx
 │   ├── model/
 │   │   ├── Model.test.tsx
+│   ├── profile/
+│   │   ├── ProfileSelector.test.tsx
 │   ├── provider/
 │   │   ├── Provider.test.tsx
 │   ├── rubric/
@@ -250,6 +258,12 @@ __tests__/
 │   │   ├── AgentEdit.test.tsx
 │   │   ├── Agents.test.tsx
 │   │   ├── NewAgent.test.tsx
+│   ├── departments/
+│   │   ├── DepartmentEdit.test.tsx
+│   │   ├── Departments.test.tsx
+│   │   ├── NewDepartment.test.tsx
+│   │   ├── NewStaff.test.tsx
+│   │   ├── StaffEdit.test.tsx
 │   ├── logs/
 │   │   ├── ActivityStatus.test.tsx
 │   │   ├── ConnectionStatusIndicator.test.tsx
@@ -265,10 +279,6 @@ __tests__/
 │   │   ├── NewRubric.test.tsx
 │   │   ├── RubricEdit.test.tsx
 │   │   ├── Rubrics.test.tsx
-│   ├── staff/
-│   │   ├── NewStaff.test.tsx
-│   │   ├── Staff.test.tsx
-│   │   ├── StaffEdit.test.tsx
 ├── profile/
 │   ├── Profile.test.tsx
 

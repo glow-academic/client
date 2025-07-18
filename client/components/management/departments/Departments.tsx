@@ -88,7 +88,7 @@ const getRoleDisplayName = (role: string) => {
   }
 };
 
-export default function Staff() {
+export default function Departments() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [roleFilter, setRoleFilter] = React.useState<string>("all");
   const [sortBy, setSortBy] = React.useState<string>("name");

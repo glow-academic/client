@@ -3,7 +3,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import NewStaff from '@/components/management/staff/NewStaff';
+import NewStaff from '@/components/management/departments/NewStaff';
 
 
 
@@ -79,7 +79,7 @@ describe('NewStaff', () => {
   describe('API Integration', () => {
     it.skip('should handle and display an API error state', async () => {
       // Arrange: Override the default success mock with an error for this test.
-      // Example: vi.mocked(getAllClasses).mockRejectedValue(new Error('API Error'));
+      // Example: vi.mocked(getProfilesByUser).mockRejectedValue(new Error('API Error'));
 
       renderWithMocks(<NewStaff  />);
       
@@ -117,7 +117,7 @@ describe('NewStaff', () => {
 
 /*
  * Component Analysis for NewStaff:
- * Path: management/staff/NewStaff.tsx
+ * Path: management/departments/NewStaff.tsx
  * 
  * Features detected:
  * - Default export: true

@@ -204,11 +204,11 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/management/staff") {
+    if (pathname === "/management/departments") {
       return (
-        <Button onClick={() => router.push("/management/staff/new")} size="sm">
+        <Button onClick={() => router.push("/management/departments/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Add Staff Member
+          Create Department
         </Button>
       );
     }

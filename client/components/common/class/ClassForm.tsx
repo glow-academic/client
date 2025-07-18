@@ -40,18 +40,28 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
+import ProfileSelector from "@/components/common/profile/ProfileSelector";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Class, Document, DocumentType, Scenario } from "@/types";
+import {
+  Class,
+  Document,
+  DocumentType,
+  Profile,
+  ProfileRole,
+  Scenario,
+} from "@/types";
 import { deleteDocument } from "@/utils/api/documents/delete-document";
 import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
 import { logError } from "@/utils/logger";
 import { createClass } from "@/utils/mutations/classes/create-class";
 import { updateClass } from "@/utils/mutations/classes/update-class";
 import { updateDocument } from "@/utils/mutations/documents/update-document";
+import { createProfile } from "@/utils/mutations/profiles/create-profile";
 import { getClass } from "@/utils/queries/classes/get-class";
 import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
 import { getDocumentsByClass } from "@/utils/queries/documents/get-documents-by-class";
+import { getProfilesByClass } from "@/utils/queries/profiles/get-profiles-by-class";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import {
   Eye,
@@ -79,6 +89,18 @@ type EditableDocument =
       type: DocumentType;
       file: File; // The actual File object
       url: string; // A temporary object URL for local previews
+    };
+
+// A new type to represent a profile that is either saved or new
+type EditableProfile =
+  | Profile
+  | {
+      isNew: true;
+      id: string; // A temporary client-side ID
+      firstName: string;
+      lastName: string;
+      alias: string;
+      role: ProfileRole;
     };
 
 interface FormErrors {
@@ -139,6 +161,13 @@ export default function ClassForm({ classId }: ClassFormProps) {
   >([]);
   const [documentsToDelete, setDocumentsToDelete] = useState<string[]>([]);
 
+  // Profile management state
+  const [editedProfiles, setEditedProfiles] = useState<EditableProfile[]>([]);
+  const [originalProfiles, setOriginalProfiles] = useState<EditableProfile[]>(
+    []
+  );
+  const [profilesToDelete, setProfilesToDelete] = useState<string[]>([]);
+
   // Document management state
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -164,6 +193,13 @@ export default function ClassForm({ classId }: ClassFormProps) {
     enabled: editMode,
   });
 
+  // Fetch profiles for this class
+  const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
+    queryKey: ["profiles", classId],
+    queryFn: () => getProfilesByClass(classId!),
+    enabled: editMode,
+  });
+
   // Fetch scenarios to check for impact
   const { data: scenarios = [] } = useQuery({
     queryKey: ["scenarios"],
@@ -177,17 +213,22 @@ export default function ClassForm({ classId }: ClassFormProps) {
     queryFn: () => getAllDepartments(),
   });
 
-  // --- MODIFIED: Initialize or reset the local document state ---
+  // --- MODIFIED: Initialize or reset the local document and profile state ---
   const resetFormState = useCallback(() => {
     if (documents) {
       setEditedDocuments(documents);
       setOriginalDocuments(documents);
       setDocumentsToDelete([]);
     }
-  }, [documents]);
+    if (profiles) {
+      setEditedProfiles(profiles);
+      setOriginalProfiles(profiles);
+      setProfilesToDelete([]);
+    }
+  }, [documents, profiles]);
 
   useEffect(() => {
-    // When the fetched documents change, reset the local state
+    // When the fetched documents or profiles change, reset the local state
     resetFormState();
   }, [resetFormState]);
 
@@ -218,13 +259,27 @@ export default function ClassForm({ classId }: ClassFormProps) {
         return doc.type !== originalDoc.type;
       });
 
-    return formFieldsChanged || documentsChanged;
+    // Check profile changes
+    const profilesChanged =
+      editedProfiles.length !== originalProfiles.length ||
+      profilesToDelete.length > 0 ||
+      editedProfiles.some((profile, index) => {
+        const originalProfile = originalProfiles[index];
+        if (!originalProfile) return true;
+        if ("isNew" in profile && profile.isNew) return true;
+        return profile.role !== originalProfile.role;
+      });
+
+    return formFieldsChanged || documentsChanged || profilesChanged;
   }, [
     formData,
     originalFormData,
     editedDocuments,
     originalDocuments,
     documentsToDelete,
+    editedProfiles,
+    originalProfiles,
+    profilesToDelete,
     editMode,
   ]);
 
@@ -238,7 +293,7 @@ export default function ClassForm({ classId }: ClassFormProps) {
 
   const [errors, setErrors] = useState<FormErrors>({});
   // Update form data when initial data changes
-  const isLoading = isLoadingClass || isLoadingDocuments;
+  const isLoading = isLoadingClass || isLoadingDocuments || isLoadingProfiles;
 
   useEffect(() => {
     if (classData && editMode) {
@@ -299,7 +354,9 @@ export default function ClassForm({ classId }: ClassFormProps) {
         const newClass = await createClass(formData as Class);
         if (!newClass?.id) throw new Error("Failed to create class.");
         finalClassId = newClass.id;
-        toast.success("Class created, now uploading documents...");
+        toast.success(
+          "Class created, now uploading documents and managing profiles..."
+        );
       }
 
       if (!finalClassId) {
@@ -372,14 +429,30 @@ export default function ClassForm({ classId }: ClassFormProps) {
         })
         .filter((p) => p !== null);
 
-      // Wait for all document operations to complete
+      // --- Step 3: Handle all profile operations ---
+      const newProfileUploads = editedProfiles.filter(
+        (profile) => "isNew" in profile && profile.isNew
+      ) as Extract<EditableProfile, { isNew: true }>[];
+
+      // Create profile promises for new profiles
+      const createProfilePromises = newProfileUploads.map((profile) =>
+        createProfile({
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          alias: profile.alias,
+          role: profile.role,
+        })
+      );
+
+      // Wait for all document and profile operations to complete
       await Promise.all([
         ...uploadPromises,
         ...deletePromises,
         ...updatePromises,
+        ...createProfilePromises,
       ]);
 
-      // --- Step 3: Update class details (if in edit mode) ---
+      // --- Step 4: Update class details (if in edit mode) ---
       if (editMode) {
         await updateClass(finalClassId, formData as Class);
       }
@@ -387,10 +460,11 @@ export default function ClassForm({ classId }: ClassFormProps) {
       toast.dismiss(toastId);
       toast.success(`Class ${editMode ? "updated" : "created"} successfully!`);
 
-      // --- Step 4: Invalidate queries and navigate ---
+      // --- Step 5: Invalidate queries and navigate ---
       queryClient.invalidateQueries({ queryKey: ["classes"] });
       queryClient.invalidateQueries({ queryKey: ["class", finalClassId] });
       queryClient.invalidateQueries({ queryKey: ["documents", finalClassId] });
+      queryClient.invalidateQueries({ queryKey: ["profiles", finalClassId] });
 
       router.push(`/create/classes`);
     } catch (error) {
@@ -637,7 +711,10 @@ export default function ClassForm({ classId }: ClassFormProps) {
               )}
             </div>
 
-            <div className={`space-y-2 ${formData?.classCode !== undefined && !isLoading ? "pb-2" : ""}`} style={{ minWidth: 120 }}>
+            <div
+              className={`space-y-2 ${formData?.classCode !== undefined && !isLoading ? "pb-2" : ""}`}
+              style={{ minWidth: 120 }}
+            >
               <Label htmlFor="classCode">Class Code *</Label>
               {formData?.classCode !== undefined && !isLoading ? (
                 <Input
@@ -692,7 +769,10 @@ export default function ClassForm({ classId }: ClassFormProps) {
               )}
             </div>
 
-            <div className={`space-y-2 ${formData?.year !== undefined && !isLoading ? "pb-2" : ""}`} style={{ minWidth: 120 }}>
+            <div
+              className={`space-y-2 ${formData?.year !== undefined && !isLoading ? "pb-2" : ""}`}
+              style={{ minWidth: 120 }}
+            >
               <Label htmlFor="year">Year *</Label>
               {formData?.year !== undefined && !isLoading ? (
                 <Input
@@ -1044,6 +1124,19 @@ export default function ClassForm({ classId }: ClassFormProps) {
               </div>
             )}
           </div>
+
+          {/* Staff Management Section - Only show in edit mode */}
+          {editMode && (
+            <div className="space-y-4">
+              <ProfileSelector
+                selectedProfiles={editedProfiles}
+                onProfilesChange={setEditedProfiles}
+                allowedRoles={["instructor", "ta"]}
+                title="Staff Management"
+                description="Add instructors and teaching assistants to this class"
+              />
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex justify-between">

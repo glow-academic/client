@@ -3,7 +3,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import Staff from '@/components/management/staff/Staff';
+import StaffEdit, { StaffEditProps } from '@/components/management/departments/StaffEdit';
 
 
 
@@ -11,7 +11,15 @@ import Staff from '@/components/management/staff/Staff';
 import '@/mocks/queries';
 import '@/mocks/mutations';
 import '@/mocks/api';
-describe('Staff', () => {
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: StaffEditProps = {
+  profileId: 'test-profileId',
+};
+// ------------------------------------------------------------------
+describe('StaffEdit', () => {
   
   /* ------------------------------------------------------------------ *
    * 💡 Mock Data Usage Guide:
@@ -37,13 +45,18 @@ describe('Staff', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Staff  />);
+      renderWithMocks(<StaffEdit {...mockProps} />);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
     });
 
-    
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: StaffEditProps
+      
+      // TODO add props assertions
+    });
 
     it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -54,7 +67,12 @@ describe('Staff', () => {
   });
 
   describe('User Interactions', () => {
-    
+    it.skip('should handle form submissions', async () => {
+      const user = userEvent.setup();
+      void user;
+      // TODO: form handling assertions
+      // Mock data is available from @/mocks/schema for realistic testing
+    });
 
     it.skip('should handle state changes', async () => {
       const user = userEvent.setup();
@@ -74,9 +92,9 @@ describe('Staff', () => {
   describe('API Integration', () => {
     it.skip('should handle and display an API error state', async () => {
       // Arrange: Override the default success mock with an error for this test.
-      // Example: vi.mocked(getAllClasses).mockRejectedValue(new Error('API Error'));
+      // Example: vi.mocked(getProfile).mockRejectedValue(new Error('API Error'));
 
-      renderWithMocks(<Staff  />);
+      renderWithMocks(<StaffEdit {...mockProps} />);
       
       // Assert: Check that your component shows an error message.
       // TODO: Add specific error state assertions
@@ -106,26 +124,30 @@ describe('Staff', () => {
 
     });
 
-    
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
+    });
   });
 });
 
 /*
- * Component Analysis for Staff:
- * Path: management/staff/Staff.tsx
+ * Component Analysis for StaffEdit:
+ * Path: management/departments/StaffEdit.tsx
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Named exports: StaffEditProps
+ * - Has props: true
+ * - Props interface: StaffEditProps
  * - Client component: true
- * - Uses hooks: useQuery, useRouter, useState, useMemo
+ * - Uses hooks: useQuery, useQueryClient, useSession, useRouter, useEffect, useState, userId, user
  * - Uses router: true
  * - Has API calls: true
- * - Has form handling: false
+ * - Has form handling: true
  * - Uses state: true
- * - Uses effects: false
+ * - Uses effects: true
  * - Uses context: false
  * 
  * TODO: Implement the failing tests above with actual test logic
@@ -133,12 +155,12 @@ describe('Staff', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<Staff />);
+ * render(<StaffEdit {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<Staff {...props} />);
+ * render(<StaffEdit {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:
