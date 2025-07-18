@@ -7,6 +7,7 @@
 "use client";
 import {
   Class,
+  Department,
   Document,
   Scenario,
   Simulation,
@@ -38,6 +39,7 @@ import React, {
 } from "react";
 import { toast } from "sonner";
 import { useWebSocket } from "./websocket-context";
+import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
 
 // Dynamic rubric interface based on grades/feedback
 interface DynamicRubric {
@@ -73,6 +75,7 @@ interface SimulationContextType {
   simulation: Simulation | null;
   scenario: Scenario | null;
   classData: Class | null;
+  department: Department | null;
   documents: Document[];
   scenarioDocuments: Document[];
 
@@ -248,6 +251,11 @@ export function SimulationProvider({
     queryKey: ["class", scenario?.classId],
     queryFn: () => getClass(scenario!.classId!),
     enabled: !!scenario?.classId,
+  });
+
+  const { data: departments } = useQuery({
+    queryKey: ["departments"],
+    queryFn: () => getAllDepartments(),
   });
 
   // Fetch documents
@@ -935,6 +943,7 @@ export function SimulationProvider({
     simulation: simulation || null,
     scenario: scenario || null,
     classData: classData || null,
+    department: departments?.find((department) => department.id === classData?.departmentId) || null,
     documents,
     scenarioDocuments,
 

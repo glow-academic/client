@@ -14,6 +14,7 @@ import {
 import { getAgentConfig } from "@/utils/agents";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
+import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -64,6 +65,11 @@ export function useHistoryColumns({
   const { data: classes, isLoading: isLoadingClasses } = useQuery({
     queryKey: ["classes"],
     queryFn: () => getAllClasses(),
+  });
+
+  const { data: departments, isLoading: isLoadingDepartments } = useQuery({
+    queryKey: ["departments"],
+    queryFn: () => getAllDepartments(),
   });
 
   const { data: agents, isLoading: isLoadingAgents } = useQuery({
@@ -169,10 +175,10 @@ export function useHistoryColumns({
       .filter((cls: Class) => usedClassIds.includes(cls.id))
       .map((cls: Class) => ({
         value: cls.id,
-        label: cls.classCode,
+        label: departments?.find((department) => department.id === cls.departmentId)?.departmentCode + " " + cls.classCode,
         icon: null,
       }));
-  }, [classes, scenarios]);
+  }, [classes, scenarios, departments]);
 
   // Filter valid rubrics based on simulations
   const validRubrics = useMemo(() => {
@@ -741,7 +747,8 @@ export function useHistoryColumns({
     isLoadingFeedbacks ||
     isLoadingClasses ||
     isLoadingSimulations ||
-    isLoadingScenarios;
+    isLoadingScenarios ||
+    isLoadingDepartments;
 
   return {
     columns,

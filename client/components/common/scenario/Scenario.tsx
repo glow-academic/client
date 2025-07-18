@@ -67,6 +67,7 @@ import { getAllScenarioTimes } from "@/utils/queries/scenario_times/get-all-scen
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { Model } from "@/utils/scenario";
+import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
 
 export interface ScenarioProps {
   scenarioId?: string;
@@ -127,6 +128,11 @@ export default function Scenario({
   const { data: classes = [] } = useQuery({
     queryKey: ["classes"],
     queryFn: () => getAllClasses(),
+  });
+
+  const { data: departments } = useQuery({
+    queryKey: ["departments"],
+    queryFn: () => getAllDepartments(),
   });
 
   const { data: simulations = [] } = useQuery({
@@ -290,7 +296,7 @@ export default function Scenario({
   // Convert database data to model format
   const classModels: Model[] = classes.map((cls: Class) => ({
     id: cls.id,
-    name: cls.classCode || cls.name,
+    name: departments?.find((department) => department.id === cls.departmentId)?.departmentCode + " " + cls.classCode,
     description: `${cls.name} - ${cls.term} ${cls.year}`,
     type: "Classes" as const,
     strengths: cls.description || "",
@@ -505,7 +511,7 @@ export default function Scenario({
                 selectedClass
                   ? {
                       id: selectedClass.id,
-                      name: selectedClass.classCode || selectedClass.name,
+                      name: departments?.find((department) => department.id === selectedClass.departmentId)?.departmentCode + "-" + selectedClass.classCode || selectedClass.name,
                       description: `${selectedClass.name} - ${selectedClass.term} ${selectedClass.year}`,
                       type: "Classes" as const,
                     }

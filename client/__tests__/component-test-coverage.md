@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 108
+- **Total Components**: 107
 - **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 108
+- **Tests Skipped** (already implemented): 107
 
 ## Component Coverage
 
@@ -80,7 +80,6 @@
 | ScenarioSlider | common/scenario/ScenarioSlider.tsx | ScenarioSlider.test.tsx | ✅ Implemented |
 | Simulation | common/simulation/Simulation.tsx | Simulation.test.tsx | ✅ Implemented |
 | ClassEdit | create/classes/ClassEdit.tsx | ClassEdit.test.tsx | ✅ Implemented |
-| ClassStatus | create/classes/ClassStatus.tsx | ClassStatus.test.tsx | ✅ Implemented |
 | Classes | create/classes/Classes.tsx | Classes.test.tsx | ✅ Implemented |
 | ClassesDataTable | create/classes/ClassesDataTable.tsx | ClassesDataTable.test.tsx | ✅ Implemented |
 | ClassesDataTableToolbar | create/classes/ClassesDataTableToolbar.tsx | ClassesDataTableToolbar.test.tsx | ✅ Implemented |
@@ -217,7 +216,6 @@ __tests__/
 ├── create/
 │   ├── classes/
 │   │   ├── ClassEdit.test.tsx
-│   │   ├── ClassStatus.test.tsx
 │   │   ├── Classes.test.tsx
 │   │   ├── ClassesDataTable.test.tsx
 │   │   ├── ClassesDataTableToolbar.test.tsx

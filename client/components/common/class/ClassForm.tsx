@@ -603,7 +603,7 @@ export default function ClassForm({ classId }: ClassFormProps) {
                     classCode: e.target.value,
                   }))
                 }
-                placeholder="e.g., CS101"
+                placeholder="e.g., 101"
                 className={errors.classCode ? "border-red-500" : ""}
               />
             ) : (

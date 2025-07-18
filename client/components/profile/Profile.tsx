@@ -22,6 +22,7 @@ import { Class, ProfileRole } from "@/types";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useSession } from "next-auth/react";
+import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
 
 // Helper function to get initials from name
 const getInitials = (name?: string): string => {
@@ -77,6 +78,11 @@ export function Profile({ className }: ProfileProps) {
     queryKey: ["classes"],
     queryFn: () => getAllClasses(),
     enabled: !!profile,
+  });
+
+  const { data: departments } = useQuery({
+    queryKey: ["departments"],
+    queryFn: () => getAllDepartments(),
   });
 
   if (profileLoading) {
@@ -181,13 +187,13 @@ export function Profile({ className }: ProfileProps) {
                       className="flex items-center justify-between p-2 rounded-md bg-muted/50"
                     >
                       <div>
-                        <p className="font-medium">{cls.name}</p>
+                        <p className="font-medium">{departments?.find((department) => department.id === cls.departmentId)?.departmentCode + "-" + cls.classCode}</p>
                         <p className="text-sm text-muted-foreground">
                           {cls.classCode} • {formatClassTerm(cls.term)}{" "}
                           {cls.year}
                         </p>
                       </div>
-                      <Badge variant="outline">{cls.classCode}</Badge>
+                      <Badge variant="outline">{departments?.find((department) => department.id === cls.departmentId)?.departmentCode + " " + cls.classCode}</Badge>
                     </div>
                   ))}
                 </div>

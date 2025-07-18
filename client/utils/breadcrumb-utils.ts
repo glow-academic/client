@@ -15,6 +15,7 @@ import { getProfile } from "./queries/profiles/get-profile";
 import { getRubric } from "./queries/rubrics/get-rubric";
 import { getSimulationAttempt } from "./queries/simulation_attempts/get-simulation-attempt";
 import { getSimulationChat } from "./queries/simulation_chats/get-simulation-chat";
+import { getDepartment } from "./queries/departments/get-department";
 
 interface BreadcrumbItem {
   title: string;
@@ -32,7 +33,8 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
     switch (context) {
       case "class":
         const classData = await getClass(id);
-        return classData?.classCode || `Class ${id.substring(0, 8)}...`;
+        const department = await getDepartment(classData!.departmentId!);
+        return classData && department ? `${department.departmentCode} ${classData.classCode}` : `Class ${id.substring(0, 8)}...`;
 
       case "attempt":
         const attemptData = await getSimulationAttempt(id);

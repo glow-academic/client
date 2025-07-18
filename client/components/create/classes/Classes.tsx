@@ -36,6 +36,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ClassesDataTable } from "./ClassesDataTable";
+import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
 
 export default function ClassesGeneralPage() {
   const queryClient = useQueryClient();
@@ -55,6 +56,11 @@ export default function ClassesGeneralPage() {
   } = useQuery({
     queryKey: ["classes"],
     queryFn: () => getAllClasses(),
+  });
+
+  const { data: departments } = useQuery({
+    queryKey: ["departments"],
+    queryFn: () => getAllDepartments(),
   });
 
   const { data: profiles = [] } = useQuery({
@@ -216,7 +222,7 @@ export default function ClassesGeneralPage() {
           <div className="flex-1">
             <CardTitle className="text-lg">{cls.name}</CardTitle>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant="outline">{cls.classCode}</Badge>
+              <Badge variant="outline">{departments?.find((department) => department.id === cls.departmentId)?.departmentCode + " " + cls.classCode}</Badge>
               <Badge variant="secondary">
                 {formatClassTerm(cls.term)} {cls.year}
               </Badge>

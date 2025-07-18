@@ -26,6 +26,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
+import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllSimulationAttempts } from "@/utils/queries/simulation_attempts/get-all-simulation-attempts";
@@ -72,6 +73,7 @@ interface RecentActivity {
 interface ClassMetric {
   classCode: string;
   className: string;
+  departmentId: string;
   avgScore: number;
   totalGrades: number;
   students: StudentData[];
@@ -138,6 +140,11 @@ export default function ClassPerformance({
     queryFn: getAllClasses,
   });
 
+  const { data: departments } = useQuery({
+    queryKey: ["departments"],
+    queryFn: getAllDepartments,
+  });
+
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: getAllProfiles,
@@ -187,6 +194,7 @@ export default function ClassPerformance({
       classMap.set(cls.id, {
         ...cls,
         className: cls.name,
+        departmentId: cls.departmentId,
         totalGrades: 0,
         avgScore: 0,
         students: [] as StudentData[],
@@ -320,6 +328,7 @@ export default function ClassPerformance({
       .map((cls: ClassMetric) => ({
         classCode: cls.classCode || cls.className || "Unknown",
         className: cls.className || cls.classCode || "Unknown",
+        departmentId: cls.departmentId,
         avgScore: cls.avgScore,
         totalGrades: cls.totalGrades,
         students: cls.students,
@@ -378,7 +387,7 @@ export default function ClassPerformance({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm">
-                        {classData.classCode}
+                        {departments?.find((department) => department.id === classData.departmentId)?.departmentCode + " " + classData.classCode}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         ({classData.totalGrades} sessions)
@@ -401,7 +410,7 @@ export default function ClassPerformance({
                     {classData.className} Performance
                   </DialogTitle>
                   <DialogDescription>
-                    Detailed performance analysis for {classData.classCode}
+                    Detailed performance analysis for {departments?.find((department) => department.id === classData.departmentId)?.departmentCode + " " + classData.classCode}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-6">

@@ -10,6 +10,7 @@ import { use } from "react";
 
 import type { Metadata, ResolvingMetadata } from "next";
 import { getClass } from "@/utils/queries/classes/get-class";
+import { getDepartment } from "@/utils/queries/departments/get-department";
 
 
 export async function generateMetadata(
@@ -18,8 +19,9 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { classId } = await params;
   const classData = await getClass(classId);
+  const department = await getDepartment(classData!.departmentId!);
   return {
-    title: `${classData?.classCode || "Class"}`,
+    title: `${classData && department ? `${department.departmentCode}-${classData.classCode}` : "Class"}`,
     description: `${classData?.name + " " + classData?.classCode + " " + classData?.description || "Class"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
   };
 }

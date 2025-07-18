@@ -23,6 +23,7 @@ import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
 
 // Enhanced types for the TA performance data
 export interface TAPerformanceData {
@@ -97,6 +98,11 @@ export function useReportColumns({
     queryFn: () => getAllClasses(),
   });
 
+  const { data: departments } = useQuery({
+    queryKey: ["departments"],
+    queryFn: () => getAllDepartments(),
+  });
+
   const { data: cohorts } = useQuery({
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
@@ -140,9 +146,9 @@ export function useReportColumns({
     if (!classes) return [];
     return classes.map((classItem) => ({
       value: classItem.id,
-      label: classItem.classCode,
+      label: departments?.find((department) => department.id === classItem.departmentId)?.departmentCode + " " + classItem.classCode,
     }));
-  }, [classes]);
+  }, [classes, departments]);
 
   const cohortOptions = useMemo(() => {
     if (!cohorts) return [];
