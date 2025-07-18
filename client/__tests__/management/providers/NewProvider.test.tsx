@@ -2,34 +2,21 @@ import { describe, it } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import ModelEdit, { ModelEditProps } from '@/components/management/models/ModelEdit';
+import NewProvider from '@/components/management/providers/NewProvider';
 
-
-
-// ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
-const mockProps: ModelEditProps = {
-  modelId: 'test-modelId',
-};
-// ------------------------------------------------------------------
-describe('ModelEdit', () => {
+describe('NewProvider', () => {
   
 
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       
-      renderWithMocks(<ModelEdit {...mockProps} />);
+      renderWithMocks(<NewProvider  />);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
     });
 
-    it.skip('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: ModelEditProps
-      
-      // TODO add props assertions
-    });
+    
 
     it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -53,23 +40,19 @@ describe('ModelEdit', () => {
 
     });
 
-    it.skip('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // TODO: invalid props assertions
-    });
+    
   });
 });
 
 /*
- * Component Analysis for ModelEdit:
- * Path: management/models/ModelEdit.tsx
+ * Component Analysis for NewProvider:
+ * Path: management/providers/NewProvider.tsx
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: ModelEditProps
- * - Has props: true
- * - Props interface: ModelEditProps
+ * - Named exports: None
+ * - Has props: false
+ * - Props interface: None detected
  * - Client component: true
  * - Uses hooks: None
  * - Uses router: false
@@ -84,12 +67,12 @@ describe('ModelEdit', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<ModelEdit {...mockProps} />);
+ * render(<NewProvider />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<ModelEdit {...props} />);
+ * render(<NewProvider {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

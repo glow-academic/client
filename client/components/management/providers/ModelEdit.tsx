@@ -9,10 +9,12 @@ import Model from "@/components/common/model/Model";
 
 export interface ModelEditProps {
   modelId: string;
+  providerId: string;
 }
 
 export default function ModelEdit({
   modelId,
+  providerId,
 }: ModelEditProps) {
-  return <Model modelId={modelId} />;
+  return <Model modelId={modelId} providerId={providerId} />;
 }

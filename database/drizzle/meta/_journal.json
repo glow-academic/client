@@ -267,6 +267,13 @@
       "when": 1752848700677,
       "tag": "0037_normal_lady_vermin",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1752857250037,
+      "tag": "0038_odd_mesmero",
+      "breakpoints": true
     }
   ]
 }

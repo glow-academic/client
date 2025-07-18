@@ -5,13 +5,12 @@
  * 06/08/2025
  */
 
-import ModelEdit from "@/components/management/models/ModelEdit";
-import type { Metadata } from "next";
-import type { ResolvingMetadata } from "next";
+import ModelEdit from "@/components/management/providers/ModelEdit";
 import { getModel } from "@/utils/queries/models/get-model";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { getQueryClient } from "@/utils/react-query/queryClient";
 import { getAllProviders } from "@/utils/queries/providers/get-all-providers";
+import { getQueryClient } from "@/utils/react-query/queryClient";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import type { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ modelId: string }> },
@@ -33,14 +32,14 @@ export async function generateMetadata(
 export default async function ModelEditPage({
   params,
 }: {
-  params: Promise<{ modelId: string }>;
+  params: Promise<{ providerId: string; modelId: string }>;
 }) {
-  const { modelId } = await params;
+  const { providerId, modelId } = await params;
   const queryClient = getQueryClient();
 
   await queryClient.prefetchQuery({
-    queryKey: ['model', modelId],
-    queryFn: () => getModel(modelId)
+    queryKey: ["model", modelId],
+    queryFn: () => getModel(modelId),
   });
 
   await queryClient.prefetchQuery({
@@ -51,7 +50,7 @@ export default async function ModelEditPage({
   return (
     <div className="space-y-6">
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <ModelEdit modelId={modelId} />
+        <ModelEdit modelId={modelId} providerId={providerId} />
       </HydrationBoundary>
     </div>
   );

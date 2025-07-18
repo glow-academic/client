@@ -231,15 +231,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/management/models") {
-      return (
-        <Button onClick={() => router.push("/management/models/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Model
-        </Button>
-      );
-    }
-
     if (
       pathname.startsWith("/management/evals/e/") &&
       !pathname.includes("/r/")
@@ -256,7 +247,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       return (
         <Button onClick={() => router.push("/management/models/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Create Model
+          Create Provider
         </Button>
       );
     }

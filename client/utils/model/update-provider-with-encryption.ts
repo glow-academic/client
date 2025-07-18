@@ -9,6 +9,7 @@ interface UpdateProviderData {
   name?: string;
   description?: string;
   apiKey?: string;
+  baseUrl?: string;
 }
 
 export async function updateProviderWithEncryption(
@@ -28,6 +29,10 @@ export async function updateProviderWithEncryption(
 
     if (data.description !== undefined) {
       updateData.description = data.description;
+    }
+
+    if (data.baseUrl !== undefined) {
+      updateData.baseUrl = data.baseUrl;
     }
 
     // Encrypt API key if provided (ONLY ON SERVER SIDE)

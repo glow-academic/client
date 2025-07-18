@@ -3,7 +3,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import Models from '@/components/management/models/Models';
+import Providers from '@/components/management/providers/Providers';
 
 
 
@@ -11,7 +11,7 @@ import Models from '@/components/management/models/Models';
 import '@/mocks/queries';
 import '@/mocks/mutations';
 import '@/mocks/api';
-describe('Models', () => {
+describe('Providers', () => {
   
   /* ------------------------------------------------------------------ *
    * 💡 Mock Data Usage Guide:
@@ -37,7 +37,7 @@ describe('Models', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Models  />);
+      renderWithMocks(<Providers  />);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
@@ -76,7 +76,7 @@ describe('Models', () => {
       // Arrange: Override the default success mock with an error for this test.
       // Example: vi.mocked(getAllModels).mockRejectedValue(new Error('API Error'));
 
-      renderWithMocks(<Models  />);
+      renderWithMocks(<Providers  />);
       
       // Assert: Check that your component shows an error message.
       // TODO: Add specific error state assertions
@@ -111,8 +111,8 @@ describe('Models', () => {
 });
 
 /*
- * Component Analysis for Models:
- * Path: management/models/Models.tsx
+ * Component Analysis for Providers:
+ * Path: management/providers/Providers.tsx
  * 
  * Features detected:
  * - Default export: true
@@ -133,12 +133,12 @@ describe('Models', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<Models />);
+ * render(<Providers />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<Models {...props} />);
+ * render(<Providers {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

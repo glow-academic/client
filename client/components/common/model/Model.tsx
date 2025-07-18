@@ -23,31 +23,28 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 
-import { cn } from "@/lib/utils";
 import { createModel } from "@/utils/mutations/models/create-model";
 import { updateModel } from "@/utils/mutations/models/update-model";
 import { getModel } from "@/utils/queries/models/get-model";
-import { getAllProviders } from "@/utils/queries/providers/get-all-providers";
 import { useRouter } from "next/navigation";
 import { Model as ModelType } from "@/types";
 interface FormErrors {
   name?: string;
   description?: string;
-  providerId?: string;
 }
 
 interface FormData {
   name?: string;
   description?: string;
-  providerId?: string;
   active?: string;
 }
 
 export interface ModelProps {
   modelId?: string;
+  providerId: string;
 }
 
-export default function Model({ modelId }: ModelProps) {
+export default function Model({ modelId, providerId }: ModelProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -58,7 +55,6 @@ export default function Model({ modelId }: ModelProps) {
     () => ({
       name: "",
       description: "",
-      providerId: "",
       active: "true",
     }),
     []
@@ -67,11 +63,6 @@ export default function Model({ modelId }: ModelProps) {
   const [formData, setFormData] = useState<FormData>({});
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const { data: providers, isLoading: isProvidersLoading } = useQuery({
-    queryKey: ["providers"],
-    queryFn: () => getAllProviders(),
-  });
-
   // Fetch the specific model directly if in edit mode
   const { data: modelToEdit, isLoading: isModelLoading } = useQuery({
     queryKey: ["model", modelId],
@@ -79,7 +70,7 @@ export default function Model({ modelId }: ModelProps) {
     enabled: isEditMode,
   });
 
-  const isLoading = isProvidersLoading || isModelLoading;
+  const isLoading = isModelLoading;
 
   // Single consolidated useEffect to handle all form state scenarios
   useEffect(() => {
@@ -88,7 +79,6 @@ export default function Model({ modelId }: ModelProps) {
       setFormData({
         name: modelToEdit.name,
         description: modelToEdit.description,
-        providerId: modelToEdit.providerId,
         active: modelToEdit.active ? "true" : "false",
       });
     } else if (!isEditMode) {
@@ -128,11 +118,6 @@ export default function Model({ modelId }: ModelProps) {
       return;
     }
 
-    if (!formData.providerId) {
-      setErrors((prev) => ({ ...prev, providerId: "Provider is required" }));
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -141,7 +126,6 @@ export default function Model({ modelId }: ModelProps) {
         result = await updateModel(modelId, {
           name: formData.name,
           description: formData.description,
-          providerId: formData.providerId,
           active: formData.active === "true" ? true : false,
           updatedAt: new Date().toISOString(),
         });
@@ -149,7 +133,7 @@ export default function Model({ modelId }: ModelProps) {
         result = await createModel({
           name: formData.name,
           description: formData.description,
-          providerId: formData.providerId,
+          providerId: providerId,
           active: formData.active === "true" ? true : false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -219,34 +203,6 @@ export default function Model({ modelId }: ModelProps) {
           )}
           {errors.description && (
             <p className="text-sm text-destructive">{errors.description}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="providerId">Provider</Label>
-          {providers && formData.providerId !== undefined ? (
-            <Select
-              value={formData.providerId}
-              onValueChange={(v) => handleInputChange("providerId", v)}
-            >
-              <SelectTrigger
-                className={cn(errors.providerId && "border-destructive")}
-              >
-                <SelectValue placeholder={"Select a provider…"} />
-              </SelectTrigger>
-              <SelectContent>
-                {providers.map((p) => (
-                  <SelectItem key={p.id} value={String(p.id)}>
-                    {p.name} - {p.description}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <Skeleton className="h-10 w-full" />
-          )}
-          {errors.providerId && (
-            <p className="text-sm text-destructive">{errors.providerId}</p>
           )}
         </div>
         

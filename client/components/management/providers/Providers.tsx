@@ -1,5 +1,5 @@
 /**
- * Models.tsx
+ * Providers.tsx
  * Used to display the models page with all created models and management functionality.
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
@@ -12,6 +12,7 @@ import {
   Edit,
   Eye,
   EyeOff,
+  Plus,
   Save,
   Settings,
   Sparkles,
@@ -65,7 +66,7 @@ interface ProviderGroup {
   models: Model[];
 }
 
-export default function Models() {
+export default function Providers() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -323,6 +324,22 @@ export default function Models() {
                   </CardFooter>
                 </Card>
               ))}
+
+            {/* Create New Model Card */}
+            <Card
+              className="border-dashed border-2 hover:border-dashed hover:border-primary/50 transition-colors cursor-pointer"
+              onClick={() => router.push(`/models/p/${group.provider.id}/new`)}
+            >
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Plus className="h-8 w-8 text-muted-foreground mb-3" />
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">
+                  Create New Model
+                </h3>
+                <p className="text-xs text-muted-foreground text-center">
+                  Add a new model to {group.provider.name}
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       ))}

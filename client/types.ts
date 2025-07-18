@@ -1,73 +1,71 @@
 import { 
   accounts as Accounts,
-  appFeedback as AppFeedback,
-  profiles as Profiles,
-  scenarioTimes as ScenarioTimes,
-  assistantChats as AssistantChats,
-  appLogs as AppLogs,
-  assistantMessages as AssistantMessages,
-  assistantToolCalls as AssistantToolCalls,
-  departments as Departments,
-  dashboards as Dashboards,
-  cohorts as Cohorts,
-  components as Components,
-  documents as Documents,
-  providers as Providers,
-  locations as Locations,
-  simulationAttempts as SimulationAttempts,
-  scenarioDeadlines as ScenarioDeadlines,
   sessions as Sessions,
+  users as Users,
+  profiles as Profiles,
+  providers as Providers,
+  departments as Departments,
+  classes as Classes,
+  models as Models,
+  locations as Locations,
+  documents as Documents,
   rubrics as Rubrics,
-  simulationChatGrades as SimulationChatGrades,
   standardGroups as StandardGroups,
   standards as Standards,
-  simulationChats as SimulationChats,
-  simulations as Simulations,
-  classes as Classes,
-  users as Users,
-  simulationChatFeedbacks as SimulationChatFeedbacks,
-  migrations as Migrations,
+  appLogs as AppLogs,
+  appFeedback as AppFeedback,
+  assistantChats as AssistantChats,
+  assistantMessages as AssistantMessages,
+  assistantToolCalls as AssistantToolCalls,
+  components as Components,
+  dashboards as Dashboards,
   agents as Agents,
-  simulationMessages as SimulationMessages,
-  models as Models,
   scenarios as Scenarios,
+  scenarioDeadlines as ScenarioDeadlines,
+  scenarioTimes as ScenarioTimes,
+  cohorts as Cohorts,
+  simulations as Simulations,
+  simulationAttempts as SimulationAttempts,
+  simulationChats as SimulationChats,
+  simulationMessages as SimulationMessages,
+  simulationChatGrades as SimulationChatGrades,
+  simulationChatFeedbacks as SimulationChatFeedbacks,
   verificationToken as VerificationToken,
   assistantMessageType, assistantToolType, classTerm, documentType, feedbackType, profileRole, reasoningEffort, simulationMessageType
 } from "@/utils/drizzle/schema";
 
 // Use Drizzle schema types
 type Account = typeof Accounts.$inferSelect;
-type AppFeedback = typeof AppFeedback.$inferSelect;
-type Profile = typeof Profiles.$inferSelect;
-type ScenarioTime = typeof ScenarioTimes.$inferSelect;
-type AssistantChat = typeof AssistantChats.$inferSelect;
-type AppLog = typeof AppLogs.$inferSelect;
-type AssistantMessage = typeof AssistantMessages.$inferSelect;
-type AssistantToolCall = typeof AssistantToolCalls.$inferSelect;
-type Department = typeof Departments.$inferSelect;
-type Dashboard = typeof Dashboards.$inferSelect;
-type Cohort = typeof Cohorts.$inferSelect;
-type Component = typeof Components.$inferSelect;
-type Document = typeof Documents.$inferSelect;
-type Provider = typeof Providers.$inferSelect;
-type Location = typeof Locations.$inferSelect;
-type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
-type ScenarioDeadline = typeof ScenarioDeadlines.$inferSelect;
 type Session = typeof Sessions.$inferSelect;
+type User = typeof Users.$inferSelect;
+type Profile = typeof Profiles.$inferSelect;
+type Provider = typeof Providers.$inferSelect;
+type Department = typeof Departments.$inferSelect;
+type Class = typeof Classes.$inferSelect;
+type Model = typeof Models.$inferSelect;
+type Location = typeof Locations.$inferSelect;
+type Document = typeof Documents.$inferSelect;
 type Rubric = typeof Rubrics.$inferSelect;
-type SimulationChatGrade = typeof SimulationChatGrades.$inferSelect;
 type StandardGroup = typeof StandardGroups.$inferSelect;
 type Standard = typeof Standards.$inferSelect;
-type SimulationChat = typeof SimulationChats.$inferSelect;
-type Simulation = typeof Simulations.$inferSelect;
-type Class = typeof Classes.$inferSelect;
-type User = typeof Users.$inferSelect;
-type SimulationChatFeedback = typeof SimulationChatFeedbacks.$inferSelect;
-type Migration = typeof Migrations.$inferSelect;
+type AppLog = typeof AppLogs.$inferSelect;
+type AppFeedback = typeof AppFeedback.$inferSelect;
+type AssistantChat = typeof AssistantChats.$inferSelect;
+type AssistantMessage = typeof AssistantMessages.$inferSelect;
+type AssistantToolCall = typeof AssistantToolCalls.$inferSelect;
+type Component = typeof Components.$inferSelect;
+type Dashboard = typeof Dashboards.$inferSelect;
 type Agent = typeof Agents.$inferSelect;
-type SimulationMessage = typeof SimulationMessages.$inferSelect;
-type Model = typeof Models.$inferSelect;
 type Scenario = typeof Scenarios.$inferSelect;
+type ScenarioDeadline = typeof ScenarioDeadlines.$inferSelect;
+type ScenarioTime = typeof ScenarioTimes.$inferSelect;
+type Cohort = typeof Cohorts.$inferSelect;
+type Simulation = typeof Simulations.$inferSelect;
+type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
+type SimulationChat = typeof SimulationChats.$inferSelect;
+type SimulationMessage = typeof SimulationMessages.$inferSelect;
+type SimulationChatGrade = typeof SimulationChatGrades.$inferSelect;
+type SimulationChatFeedback = typeof SimulationChatFeedbacks.$inferSelect;
 type VerificationToken = typeof VerificationToken.$inferSelect;
 
 type AssistantMessageType = (typeof assistantMessageType.enumValues)[number];
@@ -81,37 +79,36 @@ type SimulationMessageType = (typeof simulationMessageType.enumValues)[number];
 
 export type { 
   Account,
-  AppFeedback,
-  Profile,
-  ScenarioTime,
-  AssistantChat,
-  AppLog,
-  AssistantMessage,
-  AssistantToolCall,
-  Department,
-  Dashboard,
-  Cohort,
-  Component,
-  Document,
-  Provider,
-  Location,
-  SimulationAttempt,
-  ScenarioDeadline,
   Session,
+  User,
+  Profile,
+  Provider,
+  Department,
+  Class,
+  Model,
+  Location,
+  Document,
   Rubric,
-  SimulationChatGrade,
   StandardGroup,
   Standard,
-  SimulationChat,
-  Simulation,
-  Class,
-  User,
-  SimulationChatFeedback,
-  Migration,
+  AppLog,
+  AppFeedback,
+  AssistantChat,
+  AssistantMessage,
+  AssistantToolCall,
+  Component,
+  Dashboard,
   Agent,
-  SimulationMessage,
-  Model,
   Scenario,
+  ScenarioDeadline,
+  ScenarioTime,
+  Cohort,
+  Simulation,
+  SimulationAttempt,
+  SimulationChat,
+  SimulationMessage,
+  SimulationChatGrade,
+  SimulationChatFeedback,
   VerificationToken,
   AssistantMessageType,
   AssistantToolType,

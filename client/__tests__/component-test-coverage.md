@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 107
+- **Total Components**: 110
 - **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 107
+- **Tests Skipped** (already implemented): 110
 
 ## Component Coverage
 
@@ -73,6 +73,7 @@
 | UnifiedSidebar | common/layout/UnifiedSidebar.tsx | UnifiedSidebar.test.tsx | ✅ Implemented |
 | Login | common/login/Login.tsx | Login.test.tsx | ✅ Implemented |
 | Model | common/model/Model.tsx | Model.test.tsx | ✅ Implemented |
+| Provider | common/provider/Provider.tsx | Provider.test.tsx | ✅ Implemented |
 | Rubric | common/rubric/Rubric.tsx | Rubric.test.tsx | ✅ Implemented |
 | TableRubric | common/rubric/TableRubric.tsx | TableRubric.test.tsx | ✅ Implemented |
 | Scenario | common/scenario/Scenario.tsx | Scenario.test.tsx | ✅ Implemented |
@@ -107,9 +108,11 @@
 | ConnectionStatusIndicator | management/logs/ConnectionStatusIndicator.tsx | ConnectionStatusIndicator.test.tsx | ✅ Implemented |
 | Feedback | management/logs/Feedback.tsx | Feedback.test.tsx | ✅ Implemented |
 | Logs | management/logs/Logs.tsx | Logs.test.tsx | ✅ Implemented |
-| ModelEdit | management/models/ModelEdit.tsx | ModelEdit.test.tsx | ✅ Implemented |
-| Models | management/models/Models.tsx | Models.test.tsx | ✅ Implemented |
-| NewModel | management/models/NewModel.tsx | NewModel.test.tsx | ✅ Implemented |
+| ModelEdit | management/providers/ModelEdit.tsx | ModelEdit.test.tsx | ✅ Implemented |
+| NewModel | management/providers/NewModel.tsx | NewModel.test.tsx | ✅ Implemented |
+| NewProvider | management/providers/NewProvider.tsx | NewProvider.test.tsx | ✅ Implemented |
+| ProviderEdit | management/providers/ProviderEdit.tsx | ProviderEdit.test.tsx | ✅ Implemented |
+| Providers | management/providers/Providers.tsx | Providers.test.tsx | ✅ Implemented |
 | NewRubric | management/rubrics/NewRubric.tsx | NewRubric.test.tsx | ✅ Implemented |
 | RubricEdit | management/rubrics/RubricEdit.tsx | RubricEdit.test.tsx | ✅ Implemented |
 | Rubrics | management/rubrics/Rubrics.tsx | Rubrics.test.tsx | ✅ Implemented |
@@ -204,6 +207,8 @@ __tests__/
 │   │   ├── Login.test.tsx
 │   ├── model/
 │   │   ├── Model.test.tsx
+│   ├── provider/
+│   │   ├── Provider.test.tsx
 │   ├── rubric/
 │   │   ├── Rubric.test.tsx
 │   │   ├── TableRubric.test.tsx
@@ -250,10 +255,12 @@ __tests__/
 │   │   ├── ConnectionStatusIndicator.test.tsx
 │   │   ├── Feedback.test.tsx
 │   │   ├── Logs.test.tsx
-│   ├── models/
+│   ├── providers/
 │   │   ├── ModelEdit.test.tsx
-│   │   ├── Models.test.tsx
 │   │   ├── NewModel.test.tsx
+│   │   ├── NewProvider.test.tsx
+│   │   ├── ProviderEdit.test.tsx
+│   │   ├── Providers.test.tsx
 │   ├── rubrics/
 │   │   ├── NewRubric.test.tsx
 │   │   ├── RubricEdit.test.tsx
