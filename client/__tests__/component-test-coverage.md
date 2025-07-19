@@ -1,8 +1,8 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 114
-- **Tests Created**: 0
+- **Total Components**: 116
+- **Tests Created**: 2
 - **Tests Updated**: 0
 - **Tests Skipped** (already implemented): 114
 
@@ -43,7 +43,9 @@
 | AttemptChat | common/chat/attempt/AttemptChat.tsx | AttemptChat.test.tsx | ✅ Implemented |
 | AttemptInput | common/chat/attempt/AttemptInput.tsx | AttemptInput.test.tsx | ✅ Implemented |
 | AttemptMessages | common/chat/attempt/AttemptMessages.tsx | AttemptMessages.test.tsx | ✅ Implemented |
+| ClassDocuments | common/class/ClassDocuments.tsx | ClassDocuments.test.tsx | ✅ Implemented |
 | ClassForm | common/class/ClassForm.tsx | ClassForm.test.tsx | ✅ Implemented |
+| ClassStaff | common/class/ClassStaff.tsx | ClassStaff.test.tsx | ✅ Implemented |
 | Cohort | common/cohort/Cohort.tsx | Cohort.test.tsx | ✅ Implemented |
 | CarouselSection | common/dashboard/CarouselSection.tsx | CarouselSection.test.tsx | ✅ Implemented |
 | DashboardEdit | common/dashboard/DashboardEdit.tsx | DashboardEdit.test.tsx | ✅ Implemented |
@@ -174,7 +176,9 @@ __tests__/
 │   │   │   ├── AttemptInput.test.tsx
 │   │   │   ├── AttemptMessages.test.tsx
 │   ├── class/
+│   │   ├── ClassDocuments.test.tsx
 │   │   ├── ClassForm.test.tsx
+│   │   ├── ClassStaff.test.tsx
 │   ├── cohort/
 │   │   ├── Cohort.test.tsx
 │   ├── dashboard/
