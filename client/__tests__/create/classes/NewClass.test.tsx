@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import NewClass from "@/components/create/classes/NewClass";
+import NewClass from "@/components/classes/NewClass";
 import { routerMock } from "@/mocks/navigation";
 import * as mockSchema from "@/mocks/schema";
 import { renderWithMocks } from "@/test/renderWithMocks";

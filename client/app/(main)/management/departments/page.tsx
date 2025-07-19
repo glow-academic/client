@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import Departments from "@/components/management/departments/Departments";
+import Departments from "@/components/management/staff/Staff";
 
 import type { Metadata } from "next";
 

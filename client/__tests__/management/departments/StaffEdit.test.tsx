@@ -3,7 +3,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import StaffEdit, { StaffEditProps } from '@/components/management/departments/StaffEdit';
+import StaffEdit, { StaffEditProps } from '@/components/management/staff/StaffEdit';
 
 
 

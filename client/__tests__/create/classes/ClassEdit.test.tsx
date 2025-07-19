@@ -1,9 +1,7 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import ClassEdit, {
-  ClassEditProps,
-} from "@/components/create/classes/ClassEdit";
+import ClassEdit, { ClassEditProps } from "@/components/classes/ClassEdit";
 import { renderWithMocks } from "@/test/renderWithMocks";
 
 // --- Mocks Setup ---

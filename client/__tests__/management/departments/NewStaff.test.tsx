@@ -3,7 +3,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import NewStaff from '@/components/management/departments/NewStaff';
+import NewStaff from '@/components/management/staff/NewStaff';
 
 
 
