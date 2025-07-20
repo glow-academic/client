@@ -373,18 +373,22 @@ export function UnifiedSidebar({
         section: "staff",
       });
 
-      // Staff management - always available for admin
+      managementItems.push({
+        title: "Activity",
+        url: "#",
+        section: "activity",
+      });
+
+      managementItems.push({
+        title: "Feedback",
+        url: "#",
+        section: "feedback",
+      });
+
       managementItems.push({
         title: "Departments",
         url: "#",
         section: "departments",
-      });
-
-      // Models - available for admin
-      managementItems.push({
-        title: "Providers",
-        url: "#",
-        section: "providers",
       });
     }
 
@@ -405,23 +409,25 @@ export function UnifiedSidebar({
         section: "system-agents",
       });
 
+      // Providers - available for admin
       systemItems.push({
-        title: "Activity",
+        title: "Providers",
         url: "#",
-        section: "activity",
+        section: "providers",
       });
 
-      systemItems.push({
-        title: "Feedback",
-        url: "#",
-        section: "feedback",
-      });
-
-      // System - available for admin
+      // Logs - available for admin
       systemItems.push({
         title: "Logs",
         url: "#",
         section: "logs",
+      });
+
+      // Health - available for admin
+      systemItems.push({
+        title: "Health",
+        url: "#",
+        section: "health",
       });
     }
 
