@@ -7,7 +7,6 @@
 "use client";
 import { logError, logInfo } from "@/utils/logger";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -22,11 +21,11 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { Simulation } from "@/types";
 import { updateProfile } from "@/utils/mutations/profiles/update-profile";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -38,8 +37,10 @@ import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import SimulationHistory from "../common/history/SimulationHistory";
 import { Skeleton } from "../ui/skeleton";
+import CompletionistView from "./CompletionistView";
+import PracticeZone from "./PracticeZone";
 import WelcomeOverlay from "./WelcomeOverlay";
-import SimulationCard from "../common/simulation/SimulationCard";
+import { Cohort, Profile } from "@/types";
 
 export default function Home() {
   const router = useRouter();
@@ -50,13 +51,30 @@ export default function Home() {
     null
   );
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-  const [soloCarouselIndex, setSoloCarouselIndex] = useState(0);
-  const [multiCarouselIndex, setMultiCarouselIndex] = useState(0);
   const [showWelcomeOverlay, setShowWelcomeOverlay] = useState(false);
 
   // Use global WebSocket context instead of local connection
   const { isConnected, emitStartSimulation } = useWebSocket();
   const { effectiveProfile, activeProfile } = useProfile();
+
+  // 1. EXPAND DATA FETCHING SCOPE FOR ADMINS/INSTRUCTORS
+  const isAdminView =
+    effectiveProfile?.role === "admin" ||
+    effectiveProfile?.role === "superadmin" ||
+    effectiveProfile?.role === "instructional";
+
+  // Fetch all profiles if admin, otherwise just the user's
+  const { data: profiles, isLoading: _loadingProfiles } = useQuery({
+    queryKey: ["allProfilesForHome", isAdminView],
+    queryFn: getAllProfiles,
+    enabled: !!effectiveProfile,
+  });
+
+  const profileIdsForQueries = useMemo(() => {
+    if (!profiles) return [];
+    if (isAdminView) return profiles.map((p: Profile) => p.id); // All users for admin
+    return [effectiveProfile!.id]; // Just self for TA/student
+  }, [profiles, isAdminView, effectiveProfile]);
 
   // Fetch classes and simulations
   const { data: classes } = useQuery({
@@ -104,10 +122,11 @@ export default function Home() {
     enabled: !!standardGroups && standardGroups.length > 0,
   });
 
-  const { data: attempts } = useQuery({
-    queryKey: ["simulationAttempts", effectiveProfile?.id],
-    queryFn: () => getSimulationAttemptsByProfiles([effectiveProfile!.id]),
-    enabled: !!effectiveProfile?.id,
+  // 2. USE THE EXPANDED SCOPE IN SUBSEQUENT QUERIES
+  const { data: attempts, isLoading: _loadingAttempts } = useQuery({
+    queryKey: ["simulationAttemptsForHome", profileIdsForQueries],
+    queryFn: () => getSimulationAttemptsByProfiles(profileIdsForQueries),
+    enabled: profileIdsForQueries.length > 0,
   });
 
   const { data: chats } = useQuery({
@@ -155,6 +174,128 @@ export default function Home() {
       }
     }
   }, [effectiveProfile]);
+
+  // 3. PROCESS DATA FOR NEW COMPONENTS
+  const completionistData = useMemo(() => {
+    if (
+      !effectiveProfile ||
+      !cohorts ||
+      !simulations ||
+      !grades ||
+      !profiles ||
+      !attempts
+    ) {
+      return { percentage: 0, actionItems: [] };
+    }
+
+    let percentage = 0;
+    let actionItems:
+      | { type: string; href: string; label: string }[]
+      | Cohort[] = [];
+
+    if (effectiveProfile.role === "ta") {
+      const taCohorts = cohorts.filter((c) =>
+        c.profileIds?.includes(effectiveProfile.id)
+      );
+      const assignedSimulations = simulations.filter(
+        (s) =>
+          !s.defaultSimulation &&
+          s.cohortIds?.some((cid) => taCohorts.some((tc) => tc.id === cid))
+      );
+      if (assignedSimulations.length === 0)
+        return { percentage: 100, actionItems: [] };
+
+      let passedCount = 0;
+      const incompleteCohorts = new Set<string>();
+
+      assignedSimulations.forEach((sim) => {
+        const taAttemptsForSim = attempts.filter(
+          (a) =>
+            a.profileId === effectiveProfile.id && a.simulationId === sim.id
+        );
+        const taAttemptIds = taAttemptsForSim.map((a) => a.id);
+        const taChats = chats?.filter((c) =>
+          taAttemptIds.includes(c.attemptId)
+        );
+        const taGrades = grades.filter((g) =>
+          taChats?.some((c) => c.id === g.simulationChatId)
+        );
+
+        if (taGrades.some((g) => g.passed)) {
+          passedCount++;
+        } else {
+          // Find which cohorts this incomplete simulation belongs to
+          sim.cohortIds?.forEach((cid) => {
+            if (taCohorts.some((tc) => tc.id === cid))
+              incompleteCohorts.add(cid);
+          });
+        }
+      });
+
+      percentage = Math.round((passedCount / assignedSimulations.length) * 100);
+      actionItems = cohorts.filter((c) => incompleteCohorts.has(c.id));
+    } else {
+      // Admin/Instructor/Other Logic
+      const allCohortSimulations = simulations.filter(
+        (s) => !s.defaultSimulation && s.cohortIds?.length > 0
+      );
+      let totalRequiredPasses = 0;
+      let actualPasses = 0;
+
+      allCohortSimulations.forEach((sim) => {
+        sim.cohortIds?.forEach((cid) => {
+          const cohort = cohorts.find((c) => c.id === cid);
+          if (!cohort) return;
+
+          cohort.profileIds?.forEach((pid) => {
+            totalRequiredPasses++;
+            const memberAttempts = attempts.filter(
+              (a) => a.profileId === pid && a.simulationId === sim.id
+            );
+            const memberAttemptIds = memberAttempts.map((a) => a.id);
+            const memberChats = chats?.filter((c) =>
+              memberAttemptIds.includes(c.attemptId)
+            );
+            const memberGrades = grades.filter((g) =>
+              memberChats?.some((c) => c.id === g.simulationChatId)
+            );
+
+            if (memberGrades.some((g) => g.passed)) {
+              actualPasses++;
+            }
+          });
+        });
+      });
+
+      percentage =
+        totalRequiredPasses > 0
+          ? Math.round((actualPasses / totalRequiredPasses) * 100)
+          : 100;
+      actionItems = [
+        {
+          type: "monitor",
+          label: "Monitor All Cohorts",
+          href: "/analytics/reports",
+        },
+      ];
+    }
+
+    return { percentage, actionItems };
+  }, [
+    effectiveProfile,
+    cohorts,
+    simulations,
+    grades,
+    profiles,
+    attempts,
+    chats,
+  ]);
+
+  const practiceSimulations = useMemo(() => {
+    if (!simulations) return [];
+    // Simply filter for all simulations marked as 'defaultSimulation'
+    return simulations.filter((sim) => sim.defaultSimulation);
+  }, [simulations]);
 
   // Set up simulation-specific event listeners using global WebSocket
   useEffect(() => {
@@ -274,44 +415,6 @@ export default function Home() {
       activeProfile,
     ]
   );
-
-  // Separate simulations into default and cohort-based
-  const defaultSimulations = useMemo(
-    () =>
-      simulations?.filter((simulation: Simulation) => {
-        return simulation.defaultSimulation === true;
-      }) || [],
-    [simulations]
-  );
-
-  // Get user's cohorts and filter simulations based on cohort membership
-  // Admins can see all cohorts, regular users only see cohorts they're members of
-  const userCohorts = useMemo(() => {
-    if (!cohorts) return [];
-
-    // Admins can see all cohorts
-    if (effectiveProfile?.role === "admin") {
-      return cohorts;
-    }
-
-    // Regular users only see cohorts they're members of
-    if (!effectiveProfile) return [];
-    return cohorts.filter((cohort) =>
-      cohort.profileIds?.includes(effectiveProfile.id)
-    );
-  }, [cohorts, effectiveProfile]);
-
-  const cohortSimulations = useMemo(() => {
-    if (!simulations || !userCohorts.length) return [];
-    const userCohortIds = userCohorts.map((cohort) => cohort.id);
-    return simulations.filter((simulation: Simulation) => {
-      // Check if any of the simulation's cohort IDs match user's cohorts
-      return simulation.cohortIds?.some(
-        (cohortId: string) =>
-          cohortId !== "RAY" && userCohortIds.includes(cohortId)
-      );
-    });
-  }, [simulations, userCohorts]);
 
   // Memoize rubric data calculation to prevent unnecessary recalculations
   const rubricDataCache = useMemo(() => {
@@ -442,126 +545,6 @@ export default function Home() {
     [rubricDataCache]
   );
 
-  const renderCarousel = useCallback(
-    (simulations: Simulation[], type: "default" | "cohort") => {
-      const carouselIndex =
-        type === "default" ? soloCarouselIndex : multiCarouselIndex;
-      const setCarouselIndex =
-        type === "default" ? setSoloCarouselIndex : setMultiCarouselIndex;
-      const maxVisible = 3;
-
-      // Fix pagination to avoid duplicates
-      const totalPages = Math.ceil(simulations.length / maxVisible);
-      const canScrollLeft = carouselIndex > 0;
-      const canScrollRight = carouselIndex < totalPages - 1;
-
-      if (simulations.length === 0) return null;
-
-      const handlePrevious = () => {
-        if (canScrollLeft) {
-          setCarouselIndex(carouselIndex - 1);
-        }
-      };
-
-      const handleNext = () => {
-        if (canScrollRight) {
-          setCarouselIndex(carouselIndex + 1);
-        }
-      };
-
-      // Get simulations for current page
-      const startIndex = carouselIndex * maxVisible;
-      const endIndex = startIndex + maxVisible;
-      const visibleSimulations = simulations.slice(startIndex, endIndex);
-
-      return (
-        <div className="space-y-4">
-          {/* Header with navigation */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {type === "default"
-                ? "Default Simulations"
-                : "My Cohort Assignments"}
-            </h2>
-            {totalPages > 1 && (
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={handlePrevious}
-                  disabled={!canScrollLeft}
-                  className={`p-2 rounded-lg transition-colors ${
-                    canScrollLeft
-                      ? "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
-                      : "bg-gray-50 text-gray-300 dark:bg-gray-900 dark:text-gray-600 cursor-not-allowed"
-                  }`}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {carouselIndex + 1} of {totalPages}
-                </span>
-                <button
-                  onClick={handleNext}
-                  disabled={!canScrollRight}
-                  className={`p-2 rounded-lg transition-colors ${
-                    canScrollRight
-                      ? "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
-                      : "bg-gray-50 text-gray-300 dark:bg-gray-900 dark:text-gray-600 cursor-not-allowed"
-                  }`}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Carousel container */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {visibleSimulations.map((simulation: Simulation) => (
-              <SimulationCard
-                key={simulation.id}
-                simulation={simulation}
-                type={type}
-                onStartSimulation={handleStartSimulation}
-                loadingSimulation={loadingSimulation}
-                effectiveProfile={effectiveProfile}
-                rubricData={getRealRubricData(simulation.id)}
-                scenarios={scenarios ?? []}
-                agents={agents ?? []}
-              />
-            ))}
-          </div>
-
-          {/* Dots indicator */}
-          {totalPages > 1 && (
-            <div className="flex justify-center space-x-2 mt-4">
-              {Array.from({ length: totalPages }, (_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCarouselIndex(index)}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    index === carouselIndex
-                      ? "bg-blue-500"
-                      : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
-                  }`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    },
-    [
-      soloCarouselIndex,
-      multiCarouselIndex,
-      handleStartSimulation,
-      loadingSimulation,
-      effectiveProfile,
-      getRealRubricData,
-      scenarios,
-      agents,
-    ]
-  );
-
   // Loading state
   if (simulationsLoading) {
     return (
@@ -610,68 +593,28 @@ export default function Home() {
     );
   }
 
-  if (effectiveProfile?.role === "guest") {
-    // Guest view - show all simulations with carousels
-    return (
-      <TooltipProvider>
-        <div className="space-y-4">
-          {/* Default Simulations Carousel */}
-          {defaultSimulations.length > 0 &&
-            renderCarousel(defaultSimulations, "default")}
-
-          {/* Cohort Simulations Carousel */}
-          {cohortSimulations.length > 0 &&
-            renderCarousel(cohortSimulations, "cohort")}
-
-          {/* No simulations message */}
-          {defaultSimulations.length === 0 &&
-            cohortSimulations.length === 0 && (
-              <div className="text-center py-12">
-                <h3 className="text-lg font-semibold mb-2">
-                  No simulations available
-                </h3>
-                <p className="text-muted-foreground">
-                  Contact an administrator to add simulations.
-                </p>
-              </div>
-            )}
-        </div>
-        {showWelcomeOverlay && (
-          <WelcomeOverlay onClose={handleCloseWelcomeOverlay} />
-        )}
-      </TooltipProvider>
-    );
-  }
-
-  // Regular user view - show all simulations with carousels
+  // 4. RENDER NEW COMPONENT STRUCTURE
   return (
     <TooltipProvider>
-      <div className="space-y-2">
-        {/* Cohort Simulations Carousel */}
-        {cohortSimulations.length > 0 &&
-          renderCarousel(cohortSimulations, "cohort")}
+      <div className="container mx-auto p-4 md:p-6 space-y-12">
+        <CompletionistView
+          data={completionistData}
+          profile={effectiveProfile}
+        />
+        <PracticeZone
+          simulations={practiceSimulations}
+          profile={effectiveProfile}
+          onStartSimulation={handleStartSimulation}
+          loadingSimulation={loadingSimulation}
+          getRealRubricData={getRealRubricData}
+          scenarios={scenarios ?? []}
+          agents={agents ?? []}
+        />
 
-        {/* Default Simulations Carousel */}
-        {defaultSimulations.length > 0 &&
-          renderCarousel(defaultSimulations, "default")}
-
-        {/* History Section */}
-        <div className="space-y-2">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            History
-          </h2>
-          <SimulationHistory showAll={false} showExport={false} />
-        </div>
-
-        {/* No simulations message */}
-        {defaultSimulations.length === 0 && cohortSimulations.length === 0 && (
-          <div className="text-center py-12">
-            <h3 className="text-lg font-semibold mb-2">
-              No simulations available
-            </h3>
-            <p className="text-muted-foreground">
-              Contact an administrator to add simulations.
-            </p>
+        {/* History Section for non-guests */}
+        {effectiveProfile?.role !== "guest" && (
+          <div className="space-y-2">
+            <SimulationHistory showAll={false} showExport={false} />
           </div>
         )}
       </div>
