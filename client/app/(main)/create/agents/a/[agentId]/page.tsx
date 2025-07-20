@@ -1,5 +1,5 @@
 /**
- * app/(main)/management/agents/a/[agentId]/page.tsx
+ * app/(main)/create/agents/a/[agentId]/page.tsx
  * Agent edit page for the agent page.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025

@@ -43,21 +43,6 @@ class AppLogs(_Base, table=True):
     created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
 
 
-class Cohorts(_Base, table=True):
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='cohorts_pkey'),
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    title: str = Field(sa_column=Column('title', Text))
-    active: bool = Field(sa_column=Column('active', Boolean, default=True))
-    profile_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('profile_ids', ARRAY(Uuid(as_uuid=True))))
-    default_cohort: bool = Field(sa_column=Column('default_cohort', Boolean, default=False))
-    description: Optional[str] = Field(default=None, sa_column=Column('description', Text))
-
-
 class Components(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='components_pkey'),
@@ -88,6 +73,7 @@ class Departments(_Base, table=True):
     profile_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('profile_ids', ARRAY(Uuid(as_uuid=True))))
 
     classes: List['Classes'] = Relationship(back_populates='department')
+    cohorts: List['Cohorts'] = Relationship(back_populates='department')
     locations: List['Locations'] = Relationship(back_populates='department')
 
 
@@ -105,6 +91,7 @@ class Models(_Base, table=True):
     active: bool = Field(sa_column=Column('active', Boolean, default=True))
 
     agents: List['Agents'] = Relationship(back_populates='model')
+    system_agents: List['SystemAgents'] = Relationship(back_populates='model')
 
 
 class Providers(_Base, table=True):
@@ -220,7 +207,6 @@ class Agents(_Base, table=True):
     system_prompt: str = Field(sa_column=Column('system_prompt', Text))
     temperature: int = Field(sa_column=Column('temperature', Integer))
     default_agent: bool = Field(sa_column=Column('default_agent', Boolean, default=False))
-    editable: bool = Field(sa_column=Column('editable', Boolean, default=False))
     model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
     reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('low', 'medium', 'high', name='reasoning_effort')))
 
@@ -249,6 +235,25 @@ class Classes(_Base, table=True):
     department: Optional['Departments'] = Relationship(back_populates='classes')
     documents: List['Documents'] = Relationship(back_populates='class_')
     scenarios: List['Scenarios'] = Relationship(back_populates='class_')
+
+
+class Cohorts(_Base, table=True):
+    __table_args__ = (
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='cohorts_department_id_fkey'),
+        PrimaryKeyConstraint('id', name='cohorts_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
+    title: str = Field(sa_column=Column('title', Text))
+    active: bool = Field(sa_column=Column('active', Boolean, default=True))
+    profile_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('profile_ids', ARRAY(Uuid(as_uuid=True))))
+    default_cohort: bool = Field(sa_column=Column('default_cohort', Boolean, default=False))
+    department_id: Mapped[uuid.UUID] = Field(sa_column=Column('department_id', Uuid(as_uuid=True)))
+    description: Optional[str] = Field(default=None, sa_column=Column('description', Text))
+
+    department: Optional['Departments'] = Relationship(back_populates='cohorts')
 
 
 class Locations(_Base, table=True):
@@ -333,6 +338,26 @@ class StandardGroups(_Base, table=True):
 
     rubric: Optional['Rubrics'] = Relationship(back_populates='standard_groups')
     standards: List['Standards'] = Relationship(back_populates='standard_group')
+
+
+class SystemAgents(_Base, table=True):
+    __tablename__ = 'system_agents'
+    __table_args__ = (
+        ForeignKeyConstraint(['model_id'], ['models.id'], name='system_agents_model_id_fkey'),
+        PrimaryKeyConstraint('id', name='system_agents_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
+    name: str = Field(sa_column=Column('name', Text))
+    description: str = Field(sa_column=Column('description', Text))
+    system_prompt: str = Field(sa_column=Column('system_prompt', Text))
+    temperature: int = Field(sa_column=Column('temperature', Integer))
+    model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
+    reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('low', 'medium', 'high', name='reasoning_effort')))
+
+    model: Optional['Models'] = Relationship(back_populates='system_agents')
 
 
 class AppFeedback(_Base, table=True):

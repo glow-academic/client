@@ -35,8 +35,12 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { useRole } from "@/contexts/role-context";
+import { Class, Cohort } from "@/types";
 import { logError } from "@/utils/logger";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
+import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -45,7 +49,6 @@ import {
   Check,
   ChevronRight,
   ChevronsUpDown,
-  FileText,
   Home,
   LogOut,
   MessageSquare,
@@ -53,6 +56,8 @@ import {
   Settings,
   Sparkles,
   User,
+  UserCogIcon,
+  Users,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -146,6 +151,85 @@ export function UnifiedSidebar({
     enabled: !!userId,
   });
 
+  const { data: departments } = useQuery({
+    queryKey: ["departments"],
+    queryFn: () => getAllDepartments(),
+  });
+
+  const { data: classes } = useQuery({
+    queryKey: ["classes"],
+    queryFn: () => getAllClasses(),
+  });
+
+  const { data: cohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
+  });
+
+  const getClassSubItems = React.useMemo(() => {
+    if (!classes) return [];
+
+    let profileClasses: Class[] = [];
+
+    switch (effectiveRole) {
+      case "admin":
+        profileClasses = classes;
+        break;
+      case "instructional":
+        profileClasses = classes.filter((classData: Class) =>
+          departments?.some((d) => d.id === classData.departmentId)
+        );
+        break;
+      case "instructor":
+      case "ta":
+        profileClasses = classes.filter((classData: Class) =>
+          classData?.profileIds?.includes(profile?.id || "")
+        );
+        break;
+      default:
+        return [];
+    }
+
+    return profileClasses.map((c: { id: string; classCode: string }) => ({
+      title: c.classCode,
+      url: `/classes/c/${c.id}`,
+      section: `class-${c.id}`,
+      isSubItem: true,
+    }));
+  }, [classes, departments, effectiveRole, profile?.id]);
+
+  const getCohortSubItems = React.useMemo(() => {
+    if (!cohorts) return [];
+
+    let profileCohorts: Cohort[] = [];
+
+    switch (effectiveRole) {
+      case "admin":
+        profileCohorts = cohorts;
+        break;
+      case "instructional":
+        profileCohorts = cohorts.filter((cohortData: Cohort) =>
+          departments?.some((d) => d.id === cohortData.departmentId)
+        );
+        break;
+      case "instructor":
+      case "ta":
+        profileCohorts = cohorts.filter((cohortData: Cohort) =>
+          cohortData?.profileIds?.includes(profile?.id || "")
+        );
+        break;
+      default:
+        return [];
+    }
+
+    return profileCohorts.map((c: { id: string; title: string }) => ({
+      title: c.title,
+      url: `/cohorts/c/${c.id}`,
+      section: `cohort-${c.id}`,
+      isSubItem: true,
+    }));
+  }, [cohorts, departments, effectiveRole, profile?.id]);
+
   // Get available modes based on user role
   const availableModes = React.useMemo(() => {
     if (!profile?.role) return [{ key: "guest", label: "Guest Mode" }];
@@ -198,6 +282,49 @@ export function UnifiedSidebar({
       });
     }
 
+    // Classes and Cohorts sections based on role
+    if (["ta", "instructor"].includes(effectiveRole)) {
+      // TA/Instructor view - collapsible with sub-items
+      menu.push({
+        title: "Classes",
+        url: "#",
+        icon: BookOpen,
+        items: [
+          ...getClassSubItems,
+          ...(effectiveRole === "instructor"
+            ? [{ title: "New", url: "/classes/new", isSubItem: true }]
+            : []),
+        ],
+      });
+
+      menu.push({
+        title: "Cohorts",
+        url: "#",
+        icon: Users,
+        items: [
+          ...getCohortSubItems,
+          ...(effectiveRole === "instructor"
+            ? [{ title: "New", url: "/cohorts/new", isSubItem: true }]
+            : []),
+        ],
+      });
+    } else if (["instructional", "admin"].includes(effectiveRole)) {
+      // Staff/Admin view - single items, no sub-items, no "new"
+      menu.push({
+        title: "Classes",
+        url: "#",
+        icon: BookOpen,
+        section: "classes",
+      });
+
+      menu.push({
+        title: "Cohorts",
+        url: "#",
+        icon: Users,
+        section: "cohorts",
+      });
+    }
+
     // Create - Available from instructor level and up
     if (["instructor", "instructional", "admin"].includes(effectiveRole)) {
       menu.push({
@@ -206,14 +333,14 @@ export function UnifiedSidebar({
         icon: Sparkles,
         items: [
           {
-            title: "Classes",
+            title: "Agents",
             url: "#",
-            section: "classes",
+            section: "agents",
           },
           {
-            title: "Cohorts",
+            title: "Rubrics",
             url: "#",
-            section: "cohorts",
+            section: "rubrics",
           },
           {
             title: "Scenarios",
@@ -233,24 +360,24 @@ export function UnifiedSidebar({
     if (["admin"].includes(effectiveRole)) {
       const managementItems: MenuItem[] = [];
 
+      menu.push({
+        title: "Management",
+        url: "#",
+        icon: UserCogIcon, // Changed to Briefcase from lucide-react for a clear, non-analytics management icon
+        items: managementItems,
+      });
+
+      managementItems.push({
+        title: "Staff",
+        url: "#",
+        section: "staff",
+      });
+
       // Staff management - always available for admin
       managementItems.push({
         title: "Departments",
         url: "#",
         section: "departments",
-      });
-
-      // Agents - available for admin
-      managementItems.push({
-        title: "Agents",
-        url: "#",
-        section: "agents",
-      });
-
-      managementItems.push({
-        title: "Rubrics",
-        url: "#",
-        section: "rubrics",
       });
 
       // Models - available for admin
@@ -259,19 +386,42 @@ export function UnifiedSidebar({
         url: "#",
         section: "providers",
       });
+    }
 
-      // Logs - available for admin
-      managementItems.push({
+    // System  - Available from admin level only
+    if (["admin"].includes(effectiveRole)) {
+      const systemItems: MenuItem[] = [];
+
+      menu.push({
+        title: "System",
+        url: "#",
+        icon: Settings,
+        items: systemItems,
+      });
+
+      systemItems.push({
+        title: "Agents",
+        url: "#",
+        section: "system-agents",
+      });
+
+      systemItems.push({
+        title: "Activity",
+        url: "#",
+        section: "activity",
+      });
+
+      systemItems.push({
+        title: "Feedback",
+        url: "#",
+        section: "feedback",
+      });
+
+      // System - available for admin
+      systemItems.push({
         title: "Logs",
         url: "#",
         section: "logs",
-      });
-
-      menu.push({
-        title: "Management",
-        url: "#",
-        icon: Settings,
-        items: managementItems,
       });
     }
 
@@ -293,7 +443,7 @@ export function UnifiedSidebar({
     }
 
     return menu;
-  }, [effectiveRole, searchTerm]);
+  }, [effectiveRole, searchTerm, getClassSubItems, getCohortSubItems]);
 
   // Note: Removed automatic navigation when section is not available
   // This was causing unwanted redirects. Let the parent component handle navigation logic.
@@ -484,9 +634,6 @@ export function UnifiedSidebar({
                             onClick={() => handleItemClick(subItem)}
                             className={`${subItem.isSubItem ? "pl-8 text-sm" : "pl-8"}`}
                           >
-                            {subItem.isSubItem && (
-                              <FileText className="h-3 w-3 mr-2" />
-                            )}
                             {subItem.title}
                           </SidebarMenuButton>
                         </SidebarMenuItem>

@@ -67,7 +67,6 @@ def agent_overview(agent_id: str) -> Dict[str, Any]:
             "system_prompt": agent.system_prompt,
             "temperature": agent.temperature,
             "default_agent": agent.default_agent,
-            "editable": agent.editable,
             "created_at": agent.created_at.isoformat() if agent.created_at else None,
             "updated_at": agent.updated_at.isoformat() if agent.updated_at else None,
             "scenarios": scenario_list,

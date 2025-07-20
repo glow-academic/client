@@ -127,6 +127,23 @@ export const departments = pgTable("departments", {
 	description: text().notNull(),
 	profileIds: uuid("profile_ids").array().default(["RAY"]).notNull()});
 
+export const cohorts = pgTable("cohorts", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	title: text().notNull(),
+	description: text(),
+	active: boolean().default(true).notNull(),
+	profileIds: uuid("profile_ids").array().default(["RAY"]).notNull(),
+	defaultCohort: boolean("default_cohort").default(false).notNull(),
+	departmentId: uuid("department_id").notNull()}, (table) => [
+	foreignKey({
+			columns: [table.departmentId],
+			foreignColumns: [departments.id],
+			name: "cohorts_department_id_fkey"
+		}).onDelete("cascade"),
+]);
+
 export const dashboards = pgTable("dashboards", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -147,16 +164,6 @@ export const dashboards = pgTable("dashboards", {
 			name: "dashboards_profile_id_fkey"
 		}).onDelete("cascade"),
 ]);
-
-export const cohorts = pgTable("cohorts", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	title: text().notNull(),
-	description: text(),
-	active: boolean().default(true).notNull(),
-	profileIds: uuid("profile_ids").array().default(["RAY"]).notNull(),
-	defaultCohort: boolean("default_cohort").default(false).notNull()});
 
 export const components = pgTable("components", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
@@ -400,7 +407,6 @@ export const agents = pgTable("agents", {
 	systemPrompt: text("system_prompt").notNull(),
 	temperature: integer().notNull(),
 	defaultAgent: boolean("default_agent").default(false).notNull(),
-	editable: boolean().default(false).notNull(),
 	modelId: uuid("model_id"),
 	reasoning: reasoningEffort()}, (table) => [
 	foreignKey({
@@ -477,6 +483,23 @@ export const scenarios = pgTable("scenarios", {
 			foreignColumns: [scenarioTimes.id],
 			name: "scenarios_time_id_fkey"
 		}).onDelete("set null"),
+]);
+
+export const systemAgents = pgTable("system_agents", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	name: text().notNull(),
+	description: text().notNull(),
+	systemPrompt: text("system_prompt").notNull(),
+	temperature: integer().notNull(),
+	modelId: uuid("model_id"),
+	reasoning: reasoningEffort()}, (table) => [
+	foreignKey({
+			columns: [table.modelId],
+			foreignColumns: [models.id],
+			name: "system_agents_model_id_fkey"
+		}),
 ]);
 
 export const verificationToken = pgTable("verification_token", {

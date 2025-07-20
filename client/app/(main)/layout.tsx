@@ -123,7 +123,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    // Check for individual class page pattern: /create/classes/new/c/[classId]
+    // Check for individual class page pattern: /classes/new/c/[classId]
     const classPageMatch = pathname.match(
       /^\/create\/classes\/new\/c\/([^\/]+)(?:\/.*)?$/
     );
@@ -131,7 +131,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       const classId = classPageMatch[1];
       return (
         <Button
-          onClick={() => router.push(`/create/classes/c/${classId}/edit`)}
+          onClick={() => router.push(`/classes/c/${classId}/edit`)}
           size="sm"
           variant="default"
         >
@@ -162,10 +162,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/management/rubrics") {
+    if (pathname === "/create/rubrics") {
       return (
         <Button
-          onClick={() => router.push("/management/rubrics/new")}
+          onClick={() => router.push("/create/rubrics/new")}
           size="sm"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -174,10 +174,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/create/simulations/agents") {
+    if (pathname === "/create/agents") {
       return (
         <Button
-          onClick={() => router.push("/simulations/agents/new")}
+          onClick={() => router.push("/create/agents/new")}
           size="sm"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -186,18 +186,18 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/create/classes") {
+    if (pathname === "/classes") {
       return (
-        <Button onClick={() => router.push("/create/classes/new")} size="sm">
+        <Button onClick={() => router.push("/classes/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Class
         </Button>
       );
     }
 
-    if (pathname === "/management/agents") {
+    if (pathname === "/create/agents") {
       return (
-        <Button onClick={() => router.push("/management/agents/new")} size="sm">
+        <Button onClick={() => router.push("/create/agents/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Agent
         </Button>
@@ -213,32 +213,11 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/management/evals") {
+    if (pathname === "/cohorts") {
       return (
-        <Button onClick={() => router.push("/management/evals/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Evaluation
-        </Button>
-      );
-    }
-
-    if (pathname === "/create/cohorts") {
-      return (
-        <Button onClick={() => router.push("/create/cohorts/new")} size="sm">
+        <Button onClick={() => router.push("/cohorts/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Cohort
-        </Button>
-      );
-    }
-
-    if (
-      pathname.startsWith("/management/evals/e/") &&
-      !pathname.includes("/r/")
-    ) {
-      return (
-        <Button onClick={() => router.push(`${pathname}/edit`)} size="sm">
-          <Pencil className="h-4 w-4 mr-2" />
-          Edit Evaluation
         </Button>
       );
     }

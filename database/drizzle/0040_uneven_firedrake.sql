@@ -1,0 +1,2 @@
+ALTER TABLE "cohorts" ADD COLUMN "department_id" uuid NOT NULL;--> statement-breakpoint
+ALTER TABLE "cohorts" ADD CONSTRAINT "cohorts_department_id_fkey" FOREIGN KEY ("department_id") REFERENCES "public"."departments"("id") ON DELETE cascade ON UPDATE no action;

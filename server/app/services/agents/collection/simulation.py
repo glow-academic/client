@@ -8,7 +8,6 @@ from agents.items import TResponseInputItem
 from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
 from app.models import (
-    Agents,
     Documents,
     Models,
     Providers,
@@ -16,6 +15,7 @@ from app.models import (
     SimulationAttempts,
     SimulationChats,
     SimulationMessages,
+    SystemAgents,
 )
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_chat_scenario, get_simulation_conversation_history
@@ -98,7 +98,7 @@ async def _handle_simulation_chat(
     if not scenario.class_id:
         raise ValueError(f"Scenario {scenario.id} has no class_id")
 
-    agent = session.exec(select(Agents).where(Agents.id == scenario.agent_id)).one()
+    agent = session.exec(select(SystemAgents).where(SystemAgents.id == scenario.agent_id)).one()
     if not agent:
         raise ValueError(f"Agent not found for scenario {scenario.id}")
 

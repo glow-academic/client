@@ -28,7 +28,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Agent } from "@/types";
 import { createAgent } from "@/utils/mutations/agents/create-agent";
 
@@ -47,10 +46,6 @@ export default function Agents() {
     queryKey: ["agents"],
     queryFn: () => getAllAgents(),
   });
-
-  // Separate agents by editable status
-  const editableAgents = agents.filter((agent: Agent) => agent.editable);
-  const nonEditableAgents = agents.filter((agent: Agent) => !agent.editable);
 
   const handleDelete = async () => {
     if (!deleteItem) return;
@@ -83,7 +78,6 @@ export default function Agents() {
         createdAt: undefined,
         updatedAt: undefined,
         defaultAgent: false,
-        editable: true,
         name: `${agent.name} Copy`,
       });
       logInfo("Agent duplicated successfully:", {
@@ -106,7 +100,7 @@ export default function Agents() {
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/management/agents/a/${id}`);
+    router.push(`/create/agents/a/${id}`);
   };
 
   const formatTemperature = (temp: number) => {
@@ -192,50 +186,18 @@ export default function Agents() {
 
   return (
     <div className="space-y-8">
-      {/* Editable Agents Section */}
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold">Simulation Agents</h2>
-          <Badge variant="outline">{editableAgents.length}</Badge>
-        </div>
         <div className="grid gap-4">
-          {editableAgents
+          {agents
             .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
             .map(renderAgentCard)}
-          {editableAgents.length === 0 && (
+          {agents.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
-              No editable agents found.
+              No agents found. Create your first agent to get started.
             </div>
           )}
         </div>
       </div>
-
-      <Separator />
-
-      {/* Non-Editable Agents Section */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold">System Agents</h2>
-          <Badge variant="outline">{nonEditableAgents.length}</Badge>
-        </div>
-        <div className="grid gap-4">
-          {nonEditableAgents
-            .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-            .map(renderAgentCard)}
-          {nonEditableAgents.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No system agents found.
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Empty State */}
-      {agents.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          No agents found. Create your first agent to get started.
-        </div>
-      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

@@ -14,7 +14,7 @@ describe("Classes End-to-End Tests", () => {
   it("should create, read, update, and delete a class manually", () => {
     // --- 1. CREATE ---
     cy.log("--- STARTING MANUAL CREATE ---");
-    cy.visit("/create/classes/new");
+    cy.visit("/classes/new");
     cy.contains("h3", "Create Manually").click();
 
     cy.findByLabelText(/Class Name/i).type(manualClassName);
@@ -26,7 +26,7 @@ describe("Classes End-to-End Tests", () => {
     cy.log("--- STARTING READ ---");
     cy.location("pathname", { timeout: 20_000 }).should(
       "match",
-      /\/create\/classes(\/)?$/
+      /\/classes(\/)?$/
     );
     cy.findByRole("article", { name: manualClassName }).should("be.visible");
     cy.task("db:findClass", { name: manualClassName }).should("exist");
@@ -50,7 +50,7 @@ describe("Classes End-to-End Tests", () => {
 
     cy.location("pathname", { timeout: 20_000 }).should(
       "match",
-      /\/create\/classes(\/)?$/
+      /\/classes(\/)?$/
     );
     cy.findByRole("article", { name: updatedClassName }).should("be.visible");
     cy.task("db:findClass", { name: updatedClassName }).should("exist");
@@ -71,7 +71,7 @@ describe("Classes End-to-End Tests", () => {
 
     // --- 5. DELETE ---
     cy.log("--- STARTING DELETE ---");
-    cy.visit("/create/classes");
+    cy.visit("/classes");
     cy.findByRole("article", { name: updatedClassName })
       .findByTestId(/^delete-/)
       .click();
@@ -88,7 +88,7 @@ describe("Classes End-to-End Tests", () => {
   it("should create a new class by uploading a ZIP file", () => {
     /* unchanged except you can delete the intercept wait
        because we want the real ZIP upload now */
-    cy.visit("/create/classes/new");
+    cy.visit("/classes/new");
     cy.findByTestId("file-input").selectFile(
       `cypress/fixtures/${zipClassName}.zip`,
       { force: true }
@@ -100,13 +100,13 @@ describe("Classes End-to-End Tests", () => {
     );
     cy.contains("Processing complete!").should("be.visible");
 
-    cy.visit("/create/classes");
+    cy.visit("/classes");
     cy.findByRole("article", { name: zipClassName }).should("be.visible");
     cy.task("db:findClass", { name: zipClassName }).should("exist");
 
     // --- 2. DELETE ---
     cy.log("--- STARTING DELETE ---");
-    cy.visit("/create/classes");
+    cy.visit("/classes");
     cy.findByRole("article", { name: zipClassName })
       .findByTestId(/^delete-/)
       .click();

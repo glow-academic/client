@@ -14,13 +14,13 @@ from agents.items import (
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
 from app.db import get_session
 from app.models import (
-    Agents,
     AssistantChats,
     AssistantMessages,
     AssistantToolCalls,
     Models,
     Profiles,
     Providers,
+    SystemAgents,
 )
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_assistant_conversation_history
@@ -100,7 +100,7 @@ async def _handle_assistant_chat(
     """Handle simulation chat processing."""
 
     # find agent with name of "Assistant"
-    agent = session.exec(select(Agents).where(Agents.name == "Assistant")).one()
+    agent = session.exec(select(SystemAgents).where(SystemAgents.name == "Assistant")).one()
     if not agent:
         raise ValueError("Assistant agent not found")
 

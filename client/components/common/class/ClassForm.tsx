@@ -433,7 +433,7 @@ export default function ClassForm({ classId }: ClassFormProps) {
       queryClient.invalidateQueries({ queryKey: ["documents", finalClassId] });
       queryClient.invalidateQueries({ queryKey: ["profiles", finalClassId] });
 
-      router.push(`/create/classes`);
+      router.push(`/classes`);
     } catch (error) {
       toast.dismiss(toastId);
       toast.error(
@@ -708,7 +708,7 @@ export default function ClassForm({ classId }: ClassFormProps) {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.push("/create/classes")}
+                onClick={() => router.push("/classes")}
               >
                 Back
               </Button>

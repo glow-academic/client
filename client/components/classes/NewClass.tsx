@@ -173,7 +173,7 @@ export default function NewClass() {
               setProcessingStep("complete");
 
               // Route to the status page
-              router.push(`/create/classes/c/${tempClassId}`);
+              router.push(`/classes/c/${tempClassId}`);
 
               resolve();
             } catch (error) {
@@ -361,7 +361,7 @@ export default function NewClass() {
             <div className="flex justify-center gap-2 mt-4">
               <Button
                 onClick={() =>
-                  router.push(`/create/classes/c/${createdClassId}`)
+                  router.push(`/classes/c/${createdClassId}`)
                 }
               >
                 View Processing Status

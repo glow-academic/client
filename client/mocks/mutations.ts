@@ -447,6 +447,21 @@ vi.mock('@/utils/mutations/standards/delete-standards', () => ({ deleteStandards
 vi.mock('@/utils/mutations/standards/update-standard', () => ({ updateStandard: updateStandardMock }));
 vi.mock('@/utils/mutations/standards/update-standards', () => ({ updateStandards: updateStandardsMock }));
 
+// SYSTEM_AGENTS MUTATIONS
+export const createSystemAgentMock = vi.fn(() => mockSchema.systemAgents?.[0] || {});
+export const createSystemAgentsMock = vi.fn(() => mockSchema.systemAgents || []);
+export const deleteSystemAgentMock = vi.fn(() => mockSchema.systemAgents?.[0] || {});
+export const deleteSystemAgentsMock = vi.fn(() => mockSchema.systemAgents || []);
+export const updateSystemAgentMock = vi.fn(() => mockSchema.systemAgents?.[0] || {});
+export const updateSystemAgentsMock = vi.fn(() => mockSchema.systemAgents || []);
+
+vi.mock('@/utils/mutations/system_agents/create-system-agent', () => ({ createSystemAgent: createSystemAgentMock }));
+vi.mock('@/utils/mutations/system_agents/create-system-agents', () => ({ createSystemAgents: createSystemAgentsMock }));
+vi.mock('@/utils/mutations/system_agents/delete-system-agent', () => ({ deleteSystemAgent: deleteSystemAgentMock }));
+vi.mock('@/utils/mutations/system_agents/delete-system-agents', () => ({ deleteSystemAgents: deleteSystemAgentsMock }));
+vi.mock('@/utils/mutations/system_agents/update-system-agent', () => ({ updateSystemAgent: updateSystemAgentMock }));
+vi.mock('@/utils/mutations/system_agents/update-system-agents', () => ({ updateSystemAgents: updateSystemAgentsMock }));
+
 // USERS MUTATIONS
 export const createUserMock = vi.fn(() => mockSchema.users?.[0] || {});
 export const createUsersMock = vi.fn(() => mockSchema.users || []);

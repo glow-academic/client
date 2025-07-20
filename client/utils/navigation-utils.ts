@@ -34,7 +34,7 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
       sections.push("home");
       break;
     case "ta":
-      sections.push("home");
+      sections.push("home", "classes", "cohorts");
       break;
     case "instructor":
       sections.push(
@@ -44,7 +44,8 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
         "scenarios",
         "simulations",
         "rubrics", // Create
-        "classes" // Classes (filtered by assignment)
+        "classes",
+        "cohorts" // Classes (filtered by assignment)
       );
       break;
     case "instructional":
@@ -144,6 +145,11 @@ export const getSectionRoute = (section: string): string => {
     case "history":
       return "/analytics/history";
 
+    case "classes":
+      return "/classes";
+    case "cohorts":
+      return "/cohorts";
+
     // Create routes
     case "create":
       return "/create";
@@ -152,23 +158,25 @@ export const getSectionRoute = (section: string): string => {
     case "simulations":
       return "/create/simulations";
     case "rubrics":
-      return "/management/rubrics";
-    case "classes":
-      return "/create/classes";
-    case "cohorts":
-      return "/create/cohorts";
+      return "/create/rubrics";
+    case "agents":
+      return "/create/agents";
 
     // Management routes
     case "management":
       return "/management";
+    case "staff":
+      return "/management/staff";
     case "departments":
       return "/management/departments";
-    case "agents":
-      return "/management/agents";
     case "providers":
       return "/management/providers";
-    case "logs":
-      return "/management/logs";
+    case "activity":
+      return "/management/activity";
+    case "feedback":
+      return "/management/feedback";
+    case "system":
+      return "/management/system";
 
     // Profile route
     case "profile":
@@ -178,15 +186,21 @@ export const getSectionRoute = (section: string): string => {
       // Handle dynamic routes with IDs
       if (section.startsWith("class-")) {
         const classId = section.replace("class-", "");
-        return `/create/classes/c/${classId}`;
+        return `/classes/c/${classId}`;
       }
+
+      if (section.startsWith("cohort-")) {
+        const cohortId = section.replace("cohort-", "");
+        return `/cohorts/c/${cohortId}`;
+      }
+
       if (section.startsWith("simulation-")) {
         const simulationId = section.replace("simulation-", "");
         return `/create/simulations/s/${simulationId}`;
       }
       if (section.startsWith("agent-")) {
         const agentId = section.replace("agent-", "");
-        return `/management/agents/a/${agentId}`;
+        return `/create/agents/a/${agentId}`;
       }
       if (section.startsWith("scenario-")) {
         const scenarioId = section.replace("scenario-", "");
@@ -194,8 +208,10 @@ export const getSectionRoute = (section: string): string => {
       }
       if (section.startsWith("rubric-")) {
         const rubricId = section.replace("rubric-", "");
-        return `/management/rubrics/r/${rubricId}`;
+        return `/create/rubrics/r/${rubricId}`;
       }
+
+
       if (section.startsWith("chat-")) {
         const chatId = section.replace("chat-", "");
         return `/c/${chatId}`;
@@ -204,17 +220,11 @@ export const getSectionRoute = (section: string): string => {
         const attemptId = section.replace("attempt-", "");
         return `/home/a/${attemptId}`;
       }
+
+
       if (section.startsWith("department-")) {
         const departmentId = section.replace("department-", "");
         return `/management/departments/d/${departmentId}`;
-      }
-      if (section.startsWith("eval-")) {
-        const evalId = section.replace("eval-", "");
-        return `/management/evals/e/${evalId}`;
-      }
-      if (section.startsWith("cohort-")) {
-        const cohortId = section.replace("cohort-", "");
-        return `/create/cohorts/c/${cohortId}`;
       }
       if (section.startsWith("provider-")) {
         const providerId = section.replace("provider-", "");
@@ -241,8 +251,8 @@ export const getSectionRoute = (section: string): string => {
 export const getBreadcrumbSectionRoute = (section: string): string => {
   switch (section) {
     case "classes":
-      // For breadcrumbs, "Classes" should go to the create classes page
-      return "/create/classes";
+      // For breadcrumbs, "Classes" should go to the classes list page
+      return "/classes";
     default:
       // Use the regular section route for everything else
       return getSectionRoute(section);

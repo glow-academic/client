@@ -1,5 +1,5 @@
 /**
- * app/(main)/management/agents/a/page.tsx
+ * app/(main)/create/agents/a/page.tsx
  * Agent page for the agents section.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
@@ -15,5 +15,5 @@ export const metadata: Metadata = {
 };
 
 export default function AgentPage() {
-  return redirect("/management/agents/new");
+  return redirect("/create/agents/new");
 }

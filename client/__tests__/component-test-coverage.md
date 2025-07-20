@@ -2,9 +2,9 @@
 
 ## Summary
 - **Total Components**: 116
-- **Tests Created**: 2
+- **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 114
+- **Tests Skipped** (already implemented): 116
 
 ## Component Coverage
 
@@ -16,6 +16,16 @@
 | Reports | analytics/report/Reports.tsx | Reports.test.tsx | ✅ Implemented |
 | ReportsDataTable | analytics/report/ReportsDataTable.tsx | ReportsDataTable.test.tsx | ✅ Implemented |
 | ReportsDataTableToolbar | analytics/report/ReportsDataTableToolbar.tsx | ReportsDataTableToolbar.test.tsx | ✅ Implemented |
+| ClassEdit | classes/ClassEdit.tsx | ClassEdit.test.tsx | ✅ Implemented |
+| Classes | classes/Classes.tsx | Classes.test.tsx | ✅ Implemented |
+| ClassesDataTable | classes/ClassesDataTable.tsx | ClassesDataTable.test.tsx | ✅ Implemented |
+| ClassesDataTableToolbar | classes/ClassesDataTableToolbar.tsx | ClassesDataTableToolbar.test.tsx | ✅ Implemented |
+| NewClass | classes/NewClass.tsx | NewClass.test.tsx | ✅ Implemented |
+| CohortEdit | cohorts/CohortEdit.tsx | CohortEdit.test.tsx | ✅ Implemented |
+| Cohorts | cohorts/Cohorts.tsx | Cohorts.test.tsx | ✅ Implemented |
+| CohortsDataTable | cohorts/CohortsDataTable.tsx | CohortsDataTable.test.tsx | ✅ Implemented |
+| CohortsDataTableToolbar | cohorts/CohortsDataTableToolbar.tsx | CohortsDataTableToolbar.test.tsx | ✅ Implemented |
+| NewCohort | cohorts/NewCohort.tsx | NewCohort.test.tsx | ✅ Implemented |
 | Agent | common/agent/Agent.tsx | Agent.test.tsx | ✅ Implemented |
 | CohortCompletion | common/analytics/footer/CohortCompletion.tsx | CohortCompletion.test.tsx | ✅ Implemented |
 | ScenarioData | common/analytics/footer/ScenarioData.tsx | ScenarioData.test.tsx | ✅ Implemented |
@@ -84,16 +94,12 @@
 | ScenarioPicker | common/scenario/ScenarioPicker.tsx | ScenarioPicker.test.tsx | ✅ Implemented |
 | ScenarioSlider | common/scenario/ScenarioSlider.tsx | ScenarioSlider.test.tsx | ✅ Implemented |
 | Simulation | common/simulation/Simulation.tsx | Simulation.test.tsx | ✅ Implemented |
-| ClassEdit | create/classes/ClassEdit.tsx | ClassEdit.test.tsx | ✅ Implemented |
-| Classes | create/classes/Classes.tsx | Classes.test.tsx | ✅ Implemented |
-| ClassesDataTable | create/classes/ClassesDataTable.tsx | ClassesDataTable.test.tsx | ✅ Implemented |
-| ClassesDataTableToolbar | create/classes/ClassesDataTableToolbar.tsx | ClassesDataTableToolbar.test.tsx | ✅ Implemented |
-| NewClass | create/classes/NewClass.tsx | NewClass.test.tsx | ✅ Implemented |
-| CohortEdit | create/cohorts/CohortEdit.tsx | CohortEdit.test.tsx | ✅ Implemented |
-| Cohorts | create/cohorts/Cohorts.tsx | Cohorts.test.tsx | ✅ Implemented |
-| CohortsDataTable | create/cohorts/CohortsDataTable.tsx | CohortsDataTable.test.tsx | ✅ Implemented |
-| CohortsDataTableToolbar | create/cohorts/CohortsDataTableToolbar.tsx | CohortsDataTableToolbar.test.tsx | ✅ Implemented |
-| NewCohort | create/cohorts/NewCohort.tsx | NewCohort.test.tsx | ✅ Implemented |
+| AgentEdit | create/agents/AgentEdit.tsx | AgentEdit.test.tsx | ✅ Implemented |
+| Agents | create/agents/Agents.tsx | Agents.test.tsx | ✅ Implemented |
+| NewAgent | create/agents/NewAgent.tsx | NewAgent.test.tsx | ✅ Implemented |
+| NewRubric | create/rubrics/NewRubric.tsx | NewRubric.test.tsx | ✅ Implemented |
+| RubricEdit | create/rubrics/RubricEdit.tsx | RubricEdit.test.tsx | ✅ Implemented |
+| Rubrics | create/rubrics/Rubrics.tsx | Rubrics.test.tsx | ✅ Implemented |
 | NewScenario | create/scenarios/NewScenario.tsx | NewScenario.test.tsx | ✅ Implemented |
 | ScenarioEdit | create/scenarios/ScenarioEdit.tsx | ScenarioEdit.test.tsx | ✅ Implemented |
 | Scenarios | create/scenarios/Scenarios.tsx | Scenarios.test.tsx | ✅ Implemented |
@@ -105,26 +111,20 @@
 | SimulationsDataTable | create/simulations/SimulationsDataTable.tsx | SimulationsDataTable.test.tsx | ✅ Implemented |
 | SimulationsDataTableToolbar | create/simulations/SimulationsDataTableToolbar.tsx | SimulationsDataTableToolbar.test.tsx | ✅ Implemented |
 | Home | home/Home.tsx | Home.test.tsx | ✅ Implemented |
-| AgentEdit | management/agents/AgentEdit.tsx | AgentEdit.test.tsx | ✅ Implemented |
-| Agents | management/agents/Agents.tsx | Agents.test.tsx | ✅ Implemented |
-| NewAgent | management/agents/NewAgent.tsx | NewAgent.test.tsx | ✅ Implemented |
+| ActivityStatus | management/activity/ActivityStatus.tsx | ActivityStatus.test.tsx | ✅ Implemented |
 | DepartmentEdit | management/departments/DepartmentEdit.tsx | DepartmentEdit.test.tsx | ✅ Implemented |
-| Departments | management/departments/Departments.tsx | Departments.test.tsx | ✅ Implemented |
 | NewDepartment | management/departments/NewDepartment.tsx | NewDepartment.test.tsx | ✅ Implemented |
-| NewStaff | management/departments/NewStaff.tsx | NewStaff.test.tsx | ✅ Implemented |
-| StaffEdit | management/departments/StaffEdit.tsx | StaffEdit.test.tsx | ✅ Implemented |
-| ActivityStatus | management/logs/ActivityStatus.tsx | ActivityStatus.test.tsx | ✅ Implemented |
-| ConnectionStatusIndicator | management/logs/ConnectionStatusIndicator.tsx | ConnectionStatusIndicator.test.tsx | ✅ Implemented |
-| Feedback | management/logs/Feedback.tsx | Feedback.test.tsx | ✅ Implemented |
-| Logs | management/logs/Logs.tsx | Logs.test.tsx | ✅ Implemented |
+| Feedback | management/feedback/Feedback.tsx | Feedback.test.tsx | ✅ Implemented |
 | ModelEdit | management/providers/ModelEdit.tsx | ModelEdit.test.tsx | ✅ Implemented |
 | NewModel | management/providers/NewModel.tsx | NewModel.test.tsx | ✅ Implemented |
 | NewProvider | management/providers/NewProvider.tsx | NewProvider.test.tsx | ✅ Implemented |
 | ProviderEdit | management/providers/ProviderEdit.tsx | ProviderEdit.test.tsx | ✅ Implemented |
 | Providers | management/providers/Providers.tsx | Providers.test.tsx | ✅ Implemented |
-| NewRubric | management/rubrics/NewRubric.tsx | NewRubric.test.tsx | ✅ Implemented |
-| RubricEdit | management/rubrics/RubricEdit.tsx | RubricEdit.test.tsx | ✅ Implemented |
-| Rubrics | management/rubrics/Rubrics.tsx | Rubrics.test.tsx | ✅ Implemented |
+| NewStaff | management/staff/NewStaff.tsx | NewStaff.test.tsx | ✅ Implemented |
+| Staff | management/staff/Staff.tsx | Staff.test.tsx | ✅ Implemented |
+| StaffEdit | management/staff/StaffEdit.tsx | StaffEdit.test.tsx | ✅ Implemented |
+| ConnectionStatusIndicator | management/system/ConnectionStatusIndicator.tsx | ConnectionStatusIndicator.test.tsx | ✅ Implemented |
+| Logs | management/system/Logs.tsx | Logs.test.tsx | ✅ Implemented |
 | Profile | profile/Profile.tsx | Profile.test.tsx | ✅ Implemented |
 
 ## Directory Structure
@@ -139,6 +139,18 @@ __tests__/
 │   │   ├── Reports.test.tsx
 │   │   ├── ReportsDataTable.test.tsx
 │   │   ├── ReportsDataTableToolbar.test.tsx
+├── classes/
+│   ├── ClassEdit.test.tsx
+│   ├── Classes.test.tsx
+│   ├── ClassesDataTable.test.tsx
+│   ├── ClassesDataTableToolbar.test.tsx
+│   ├── NewClass.test.tsx
+├── cohorts/
+│   ├── CohortEdit.test.tsx
+│   ├── Cohorts.test.tsx
+│   ├── CohortsDataTable.test.tsx
+│   ├── CohortsDataTableToolbar.test.tsx
+│   ├── NewCohort.test.tsx
 ├── common/
 │   ├── agent/
 │   │   ├── Agent.test.tsx
@@ -231,18 +243,14 @@ __tests__/
 │   ├── simulation/
 │   │   ├── Simulation.test.tsx
 ├── create/
-│   ├── classes/
-│   │   ├── ClassEdit.test.tsx
-│   │   ├── Classes.test.tsx
-│   │   ├── ClassesDataTable.test.tsx
-│   │   ├── ClassesDataTableToolbar.test.tsx
-│   │   ├── NewClass.test.tsx
-│   ├── cohorts/
-│   │   ├── CohortEdit.test.tsx
-│   │   ├── Cohorts.test.tsx
-│   │   ├── CohortsDataTable.test.tsx
-│   │   ├── CohortsDataTableToolbar.test.tsx
-│   │   ├── NewCohort.test.tsx
+│   ├── agents/
+│   │   ├── AgentEdit.test.tsx
+│   │   ├── Agents.test.tsx
+│   │   ├── NewAgent.test.tsx
+│   ├── rubrics/
+│   │   ├── NewRubric.test.tsx
+│   │   ├── RubricEdit.test.tsx
+│   │   ├── Rubrics.test.tsx
 │   ├── scenarios/
 │   │   ├── NewScenario.test.tsx
 │   │   ├── ScenarioEdit.test.tsx
@@ -258,31 +266,26 @@ __tests__/
 ├── home/
 │   ├── Home.test.tsx
 ├── management/
-│   ├── agents/
-│   │   ├── AgentEdit.test.tsx
-│   │   ├── Agents.test.tsx
-│   │   ├── NewAgent.test.tsx
+│   ├── activity/
+│   │   ├── ActivityStatus.test.tsx
 │   ├── departments/
 │   │   ├── DepartmentEdit.test.tsx
-│   │   ├── Departments.test.tsx
 │   │   ├── NewDepartment.test.tsx
-│   │   ├── NewStaff.test.tsx
-│   │   ├── StaffEdit.test.tsx
-│   ├── logs/
-│   │   ├── ActivityStatus.test.tsx
-│   │   ├── ConnectionStatusIndicator.test.tsx
+│   ├── feedback/
 │   │   ├── Feedback.test.tsx
-│   │   ├── Logs.test.tsx
 │   ├── providers/
 │   │   ├── ModelEdit.test.tsx
 │   │   ├── NewModel.test.tsx
 │   │   ├── NewProvider.test.tsx
 │   │   ├── ProviderEdit.test.tsx
 │   │   ├── Providers.test.tsx
-│   ├── rubrics/
-│   │   ├── NewRubric.test.tsx
-│   │   ├── RubricEdit.test.tsx
-│   │   ├── Rubrics.test.tsx
+│   ├── staff/
+│   │   ├── NewStaff.test.tsx
+│   │   ├── Staff.test.tsx
+│   │   ├── StaffEdit.test.tsx
+│   ├── system/
+│   │   ├── ConnectionStatusIndicator.test.tsx
+│   │   ├── Logs.test.tsx
 ├── profile/
 │   ├── Profile.test.tsx
 

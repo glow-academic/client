@@ -8,8 +8,8 @@ import {
   assistantMessages as AssistantMessages,
   assistantToolCalls as AssistantToolCalls,
   departments as Departments,
-  dashboards as Dashboards,
   cohorts as Cohorts,
+  dashboards as Dashboards,
   components as Components,
   documents as Documents,
   providers as Providers,
@@ -31,6 +31,7 @@ import {
   simulationMessages as SimulationMessages,
   models as Models,
   scenarios as Scenarios,
+  systemAgents as SystemAgents,
   verificationToken as VerificationToken,
   assistantMessageType, assistantToolType, classTerm, documentType, feedbackType, profileRole, reasoningEffort, simulationMessageType
 } from "@/utils/drizzle/schema";
@@ -45,8 +46,8 @@ type AppLog = typeof AppLogs.$inferSelect;
 type AssistantMessage = typeof AssistantMessages.$inferSelect;
 type AssistantToolCall = typeof AssistantToolCalls.$inferSelect;
 type Department = typeof Departments.$inferSelect;
-type Dashboard = typeof Dashboards.$inferSelect;
 type Cohort = typeof Cohorts.$inferSelect;
+type Dashboard = typeof Dashboards.$inferSelect;
 type Component = typeof Components.$inferSelect;
 type Document = typeof Documents.$inferSelect;
 type Provider = typeof Providers.$inferSelect;
@@ -68,6 +69,7 @@ type Agent = typeof Agents.$inferSelect;
 type SimulationMessage = typeof SimulationMessages.$inferSelect;
 type Model = typeof Models.$inferSelect;
 type Scenario = typeof Scenarios.$inferSelect;
+type SystemAgent = typeof SystemAgents.$inferSelect;
 type VerificationToken = typeof VerificationToken.$inferSelect;
 
 type AssistantMessageType = (typeof assistantMessageType.enumValues)[number];
@@ -89,8 +91,8 @@ export type {
   AssistantMessage,
   AssistantToolCall,
   Department,
-  Dashboard,
   Cohort,
+  Dashboard,
   Component,
   Document,
   Provider,
@@ -112,6 +114,7 @@ export type {
   SimulationMessage,
   Model,
   Scenario,
+  SystemAgent,
   VerificationToken,
   AssistantMessageType,
   AssistantToolType,

@@ -110,6 +110,12 @@ vi.mock('@/utils/queries/cohorts/get-all-cohorts', () => ({
 vi.mock('@/utils/queries/cohorts/get-cohort', () => ({
   getCohort: vi.fn(() => mockSchema.cohorts?.[0] || null),
 }));
+vi.mock('@/utils/queries/cohorts/get-cohorts-by-department', () => ({
+  getCohortsByDepartment: vi.fn(() => mockSchema.cohorts || []),
+}));
+vi.mock('@/utils/queries/cohorts/get-cohorts-by-departments', () => ({
+  getCohortsByDepartments: vi.fn(() => mockSchema.cohorts || []),
+}));
 
 // COMPONENTS QUERIES
 vi.mock('@/utils/queries/components/get-all-components', () => ({
@@ -177,6 +183,9 @@ vi.mock('@/utils/queries/models/get-model', () => ({
 // PROFILES QUERIES
 vi.mock('@/utils/queries/profiles/get-all-profiles', () => ({
   getAllProfiles: vi.fn(() => mockSchema.profiles || []),
+}));
+vi.mock('@/utils/queries/profiles/get-department-by-profile', () => ({
+  getDepartmentByProfile: vi.fn(() => mockSchema.profiles || []),
 }));
 vi.mock('@/utils/queries/profiles/get-profile', () => ({
   getProfile: vi.fn(() => mockSchema.profiles?.[0] || null),
@@ -409,6 +418,20 @@ vi.mock('@/utils/queries/standards/get-standards-by-standardgroup', () => ({
 }));
 vi.mock('@/utils/queries/standards/get-standards-by-standardgroups', () => ({
   getStandardsByStandardgroups: vi.fn(() => mockSchema.standards || []),
+}));
+
+// SYSTEM_AGENTS QUERIES
+vi.mock('@/utils/queries/system_agents/get-all-system-agents', () => ({
+  getAllSystemAgents: vi.fn(() => mockSchema.systemAgents || []),
+}));
+vi.mock('@/utils/queries/system_agents/get-system-agent', () => ({
+  getSystemAgent: vi.fn(() => mockSchema.systemAgents?.[0] || null),
+}));
+vi.mock('@/utils/queries/system_agents/get-system-agents-by-model', () => ({
+  getSystemAgentsByModel: vi.fn(() => mockSchema.systemAgents || []),
+}));
+vi.mock('@/utils/queries/system_agents/get-system-agents-by-models', () => ({
+  getSystemAgentsByModels: vi.fn(() => mockSchema.systemAgents || []),
 }));
 
 // USERS QUERIES

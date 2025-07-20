@@ -2,7 +2,7 @@ import uuid
 
 from agents import Runner, trace
 from app.db import get_session
-from app.models import Agents, AssistantChats, Models, Providers
+from app.models import AssistantChats, Models, Providers, SystemAgents
 from app.services.agents.generic import GenericAgent
 from fastapi import Depends
 from sqlmodel import Session, select
@@ -17,7 +17,7 @@ async def run_title_agent(
     """
 
     # find agent with name of "Title"
-    agent = session.exec(select(Agents).where(Agents.name == "Title")).one()
+    agent = session.exec(select(SystemAgents).where(SystemAgents.name == "Title")).one()
     if not agent:
         raise ValueError("Title agent not found")
 

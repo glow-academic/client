@@ -1,5 +1,5 @@
 /**
- * app/(main)/management/agents/page.tsx
+ * app/(main)/create/agents/page.tsx
  * Agent list page - redirects to home with agents section
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025

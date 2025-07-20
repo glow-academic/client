@@ -143,7 +143,7 @@ export default function Agent({
         toast.success("Agent created successfully!");
       }
 
-      router.push("/management/agents");
+      router.push("/create/agents");
     } catch (error) {
       toast.error(
         `Failed to ${isEditMode ? "update" : "create"} agent: ${error}`

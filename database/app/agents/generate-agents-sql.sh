@@ -31,43 +31,53 @@ CREATE TABLE agents (
   system_prompt     TEXT        NOT NULL,
   temperature  INTEGER     NOT NULL, -- 0-100
   default_agent      BOOLEAN     NOT NULL DEFAULT FALSE,
-  editable BOOLEAN NOT NULL DEFAULT FALSE, -- For internal models, these are not editable
   model_id UUID REFERENCES models(id),
   reasoning reasoning_effort DEFAULT NULL
 );
 
+CREATE TABLE system_agents (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  name       TEXT        NOT NULL,
+  description TEXT        NOT NULL,
+  system_prompt     TEXT        NOT NULL,
+  temperature  INTEGER     NOT NULL, -- 0-100
+  model_id UUID REFERENCES models(id),
+  reasoning reasoning_effort DEFAULT NULL
+);
 -- Insert Core Student Agents (Essential for testing)
-INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
-  ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive','Pushes back on your ideas and challenges assumptions.', '$AGGRESSIVE_PROMPT', 0, true, true, '33333333-cccc-cccc-cccc-333333333333', 'low'),
-  ('22222222-bbbb-bbbb-bbbb-222222222222', 'Happy', 'Provides uplifting feedback and cheerful responses.', '$HAPPY_PROMPT', 0, true, true, '33333333-cccc-cccc-cccc-333333333333', 'low'),
-  ('33333333-cccc-cccc-cccc-333333333333', 'Confused', 'Seeks to understand by asking questions and exploring ideas', '$CONFUSED_PROMPT', 0, true, true, '33333333-cccc-cccc-cccc-333333333333', 'low');
+INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, model_id, reasoning) VALUES
+  ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive','Pushes back on your ideas and challenges assumptions.', '$AGGRESSIVE_PROMPT', 0, true, '33333333-cccc-cccc-cccc-333333333333', 'low'),
+  ('22222222-bbbb-bbbb-bbbb-222222222222', 'Happy', 'Provides uplifting feedback and cheerful responses.', '$HAPPY_PROMPT', 0, true, '33333333-cccc-cccc-cccc-333333333333', 'low'),
+  ('33333333-cccc-cccc-cccc-333333333333', 'Confused', 'Seeks to understand by asking questions and exploring ideas', '$CONFUSED_PROMPT', 0, true, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
 
   -- These agents cannot be edited
 
   -- Insert Assistant Agent
-  INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
-  ('55555555-eeee-eeee-eeee-555555555555', 'Assistant', 'A helpful assistant that can help with a variety of tasks.', '$ASSISTANT_PROMPT', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+  INSERT INTO system_agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES
+  ('55555555-eeee-eeee-eeee-555555555555', 'Assistant', 'A helpful assistant that can help with a variety of tasks.', '$ASSISTANT_PROMPT', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Grade Agent
-  INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
-  ('66666666-ffff-ffff-ffff-666666666666', 'Grade', 'A helpful assistant that can help with a variety of tasks.', '$GRADE_PROMPT', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+  INSERT INTO system_agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES
+  ('66666666-ffff-ffff-ffff-666666666666', 'Grade', 'A helpful assistant that can help with a variety of tasks.', '$GRADE_PROMPT', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Evaluate Agent
-  INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
-  ('77777777-7777-7777-7777-777777777777', 'Evaluate', 'A helpful assistant that can help with a variety of tasks.', '$EVALUATE_PROMPT', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+  INSERT INTO system_agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES
+  ('77777777-7777-7777-7777-777777777777', 'Evaluate', 'A helpful assistant that can help with a variety of tasks.', '$EVALUATE_PROMPT', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Scenario Agent
-  INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
-  ('88888888-8888-8888-8888-888888888888', 'Scenario', 'A helpful assistant that can help with a variety of tasks.', '$SCENARIO_PROMPT', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+  INSERT INTO system_agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES
+  ('88888888-8888-8888-8888-888888888888', 'Scenario', 'A helpful assistant that can help with a variety of tasks.', '$SCENARIO_PROMPT', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Classify Agent
-  INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
-  ('99999999-9999-9999-9999-999999999999', 'Classify', 'A helpful assistant that can help with a variety of tasks.', '$CLASSIFY_PROMPT', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+  INSERT INTO system_agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES
+  ('99999999-9999-9999-9999-999999999999', 'Classify', 'A helpful assistant that can help with a variety of tasks.', '$CLASSIFY_PROMPT', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Title Agent
-  INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Title', 'A helpful assistant that can help with a variety of tasks.', '$TITLE_PROMPT', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+  INSERT INTO system_agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Title', 'A helpful assistant that can help with a variety of tasks.', '$TITLE_PROMPT', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
 EOF
 

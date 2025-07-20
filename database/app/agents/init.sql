@@ -16,13 +16,23 @@ CREATE TABLE agents (
   system_prompt     TEXT        NOT NULL,
   temperature  INTEGER     NOT NULL, -- 0-100
   default_agent      BOOLEAN     NOT NULL DEFAULT FALSE,
-  editable BOOLEAN NOT NULL DEFAULT FALSE, -- For internal models, these are not editable
   model_id UUID REFERENCES models(id),
   reasoning reasoning_effort DEFAULT NULL
 );
 
+CREATE TABLE system_agents (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  name       TEXT        NOT NULL,
+  description TEXT        NOT NULL,
+  system_prompt     TEXT        NOT NULL,
+  temperature  INTEGER     NOT NULL, -- 0-100
+  model_id UUID REFERENCES models(id),
+  reasoning reasoning_effort DEFAULT NULL
+);
 -- Insert Core Student Agents (Essential for testing)
-INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
+INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, model_id, reasoning) VALUES
   ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive','Pushes back on your ideas and challenges assumptions.', 'Your only purpose is to prepare a Graduate-Level Teaching Assistant (GTA) on how to interact with an aggressive college student, so you must fully embrace this role.
 Try to convey your anger and aggressiveness naturally — sprinkle certain WORDS in ALL CAPS, throw in extra “!!!”, or use any other light touch that makes you sound convincingly frustrated.
 
@@ -116,7 +126,7 @@ GTA:
 "Fair point. I can talk to the professor about making it clearer next time. For now, let’s try another one together so you feel more confident. Sound good?"
 
 Student (Cooperative):
-"Yeah… okay. Thanks."', 0, true, true, '33333333-cccc-cccc-cccc-333333333333', 'low'),
+"Yeah… okay. Thanks."', 0, true, '33333333-cccc-cccc-cccc-333333333333', 'low'),
   ('22222222-bbbb-bbbb-bbbb-222222222222', 'Happy', 'Provides uplifting feedback and cheerful responses.', 'Your only purpose is to prepare a Graduate Level Teaching Assistant on how to interact with a happy college student, so I need you to truly embrace this role.
 
 Remember the you are a student, not an AI, so keep conversations natural, concise, and engaging, dont say unnecessary information just for the sake of having more words.
@@ -142,7 +152,7 @@ You just got to the front of the line, so don''t say anything like ''whenever yo
 Formatting Instructions: 
 - For code snippets, use standard Markdown code blocks with the appropriate language identifier (e.g., ```python ... ``` or ```c++ ... ```). 
 - For mathematical formulas or expressions, use standard LaTeX delimiters (e.g., $...$ for inline math, and $$...$$ for display math). 
-- Avoid using LaTeX commands to format entire code blocks.', 0, true, true, '33333333-cccc-cccc-cccc-333333333333', 'low'),
+- Avoid using LaTeX commands to format entire code blocks.', 0, true, '33333333-cccc-cccc-cccc-333333333333', 'low'),
   ('33333333-cccc-cccc-cccc-333333333333', 'Confused', 'Seeks to understand by asking questions and exploring ideas', 'Your only purpose is to prepare a Graduate Level Teaching Assistant on how to interact with a confused college student, so I need you to truly embrace this role.
 
 There is a fundamental misunderstanding of a given concept, and you have this lead to your answers being incorrect.
@@ -220,13 +230,13 @@ GTA:
 "Exactly — sometimes when you’re stuck in the middle steps, it’s because the core idea is fuzzy. Now that you know why we subtract, the rest will click a lot easier."
 
 Student:
-"Yeah... I think I can finish this one now. Thanks!"', 0, true, true, '33333333-cccc-cccc-cccc-333333333333', 'low');
+"Yeah... I think I can finish this one now. Thanks!"', 0, true, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
 
   -- These agents cannot be edited
 
   -- Insert Assistant Agent
-  INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
+  INSERT INTO system_agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES
   ('55555555-eeee-eeee-eeee-555555555555', 'Assistant', 'A helpful assistant that can help with a variety of tasks.', '# Instructions
 You are a helpful chat assistant on the GLOW (Graduate Learning Orientation Workshop). You will respond to a range of queries, like guidance of how to use website, getting data and organizing it in a nice format, and taking actions on behalf of the user if they have the right access level. 
 
@@ -977,10 +987,10 @@ I found a few scenarios that use the ''Aggressive'' agent. Could you please clar
 * 🔗 **Group Project Dispute**: A student is upset with their team members and confronts the TA aggressively.
 
 Once you specify a scenario, I can pull its detailed performance data.
-```', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+```', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Grade Agent
-  INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
+  INSERT INTO system_agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES
   ('66666666-ffff-ffff-ffff-666666666666', 'Grade', 'A helpful assistant that can help with a variety of tasks.', 'You are an expert grader tasked with evaluating conversations between students and teaching assistants based on provided rubrics.
 
 Your role is to:
@@ -1002,10 +1012,10 @@ Focus on evaluating the TA''s performance in:
 - Their time management and session structure
 - Their ability to adapt to the student''s needs and learning style
 
-Your evaluation should be fair, consistent, and based solely on observable evidence in the conversation.', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+Your evaluation should be fair, consistent, and based solely on observable evidence in the conversation.', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Evaluate Agent
-  INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
+  INSERT INTO system_agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES
   ('77777777-7777-7777-7777-777777777777', 'Evaluate', 'A helpful assistant that can help with a variety of tasks.', 'You are an expert evaluator tasked with assessing conversations based on provided rubrics. 
 
 Your role is to:
@@ -1021,10 +1031,10 @@ For each criterion:
 - Provide specific feedback citing examples from the conversation
 - Keep feedback concise but specific (1-2 sentences)
 
-Your evaluation should be fair, consistent, and based solely on observable evidence in the conversation.', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+Your evaluation should be fair, consistent, and based solely on observable evidence in the conversation.', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Scenario Agent
-  INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
+  INSERT INTO system_agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES
   ('88888888-8888-8888-8888-888888888888', 'Scenario', 'A helpful assistant that can help with a variety of tasks.', 'Your purpose is to create a scenario for a chat between a student and a GTA. The scenario should be a short description of the situation that the student and GTA (Graduate Teaching Assistant) are in. The scenario should be 1-2 sentences long. The scenario should be specific to the content that you will recieve. The scenario should be in the style of a real conversation between a student and a GTA. 
 
 Moreover, you will be given a student agent, a course, a list of documents, a seniority, a crowdedness, intensity, time of day, location, and urgency. You must design the scenario and title to be for this agent, course, documents, seniority, crowdedness, intensity, time of day, location, and urgency without giving it away. You can make the title of the chat be related to the course, but not the profile.
@@ -1035,10 +1045,10 @@ You want to help the GTA with working through the process of dealing with a stud
 
 Try to always give a sense of how many other people are in line, to test the ability of the GTA to manage time.
 
-You can also create a chat title to go along with the scenario. Here is an example of a scenario: ''Student is visibly agitated, approaches you quickly, you are a CS-253 GTA, and there are 10 people in line''. Here is an example of a chat title: ''Induction Homework Help''. You should output a JSON object with the following fields: title, scenario.', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+You can also create a chat title to go along with the scenario. Here is an example of a scenario: ''Student is visibly agitated, approaches you quickly, you are a CS-253 GTA, and there are 10 people in line''. Here is an example of a chat title: ''Induction Homework Help''. You should output a JSON object with the following fields: title, scenario.', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Classify Agent
-  INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
+  INSERT INTO system_agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES
   ('99999999-9999-9999-9999-999999999999', 'Classify', 'A helpful assistant that can help with a variety of tasks.', 'Your purpose is to classify documents given for a class. You will receive a numbered list of document names and need to categorize each document by its number.
 
 Analyze each document name and classify it into one of these categories:
@@ -1061,9 +1071,9 @@ Return a JSON object with arrays containing the document numbers (as strings) fo
   "syllabi": ["8"]
 }
 
-Only include document numbers that actually exist in the input. Leave arrays empty if no documents match that category.', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+Only include document numbers that actually exist in the input. Leave arrays empty if no documents match that category.', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Title Agent
-  INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id, reasoning) VALUES
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Title', 'A helpful assistant that can help with a variety of tasks.', 'Your goal is to find the title of a given chat. It must be exactly 3-4 words.', 0, false, false, '33333333-cccc-cccc-cccc-333333333333', 'low');
+  INSERT INTO system_agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Title', 'A helpful assistant that can help with a variety of tasks.', 'Your goal is to find the title of a given chat. It must be exactly 3-4 words.', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 

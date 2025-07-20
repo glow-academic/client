@@ -118,7 +118,7 @@ export default function ClassesGeneralPage() {
   });
 
   const handleEditClass = (classId: string) => {
-    router.push(`/create/classes/c/${classId}`);
+    router.push(`/classes/c/${classId}`);
   };
 
   // Helper functions
