@@ -14,7 +14,8 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 import SimulationHistory from "../history/SimulationHistory";
 import SimulationCard from "../simulation/SimulationCard";
 import SimulationProgress from "./SimulationProgress";
@@ -25,6 +26,7 @@ export interface CohortDashboardProps {
 
 export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
   const { effectiveProfile } = useProfile();
+  const [carouselIndex, setCarouselIndex] = useState(0);
 
   // 1. Fetch the specific cohorts
   const { data: cohorts, isLoading: loadingCohorts } = useQuery({
@@ -176,6 +178,37 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
     effectiveProfile,
   ]);
 
+  // Flatten all simulations for carousel
+  const allSimulationsForCarousel = useMemo(() => {
+    return processedCohortData.flatMap((data) => data.simulations);
+  }, [processedCohortData]);
+
+  // Carousel logic
+  const maxVisible = 3;
+  const totalPages = Math.ceil(allSimulationsForCarousel.length / maxVisible);
+  const canScrollLeft = carouselIndex > 0;
+  const canScrollRight = carouselIndex < totalPages - 1;
+
+  const handlePrevious = useCallback(() => {
+    if (canScrollLeft) {
+      setCarouselIndex(carouselIndex - 1);
+    }
+  }, [canScrollLeft, carouselIndex]);
+
+  const handleNext = useCallback(() => {
+    if (canScrollRight) {
+      setCarouselIndex(carouselIndex + 1);
+    }
+  }, [canScrollRight, carouselIndex]);
+
+  // Get simulations for current page
+  const startIndex = carouselIndex * maxVisible;
+  const endIndex = startIndex + maxVisible;
+  const visibleSimulations = allSimulationsForCarousel.slice(
+    startIndex,
+    endIndex
+  );
+
   // Loading state
   const isLoading =
     loadingCohorts ||
@@ -223,20 +256,58 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
 
   return (
     <div className="container mx-auto p-4 space-y-8">
-      {processedCohortData.map((data) => (
-        <section key={data.cohort.id} className="space-y-6">
-          <h2 className="text-2xl font-semibold">{data.cohort.title}</h2>
+      {/* Progress Visualization Section - All progress bars grouped together */}
+      <div className="space-y-6">
+        <div className="max-h-96 overflow-y-auto space-y-4 pr-2">
+          {processedCohortData.map((data) => (
+            <div key={data.cohort.id} className="space-y-4">
+              {data.simulations.map((sim) => (
+                <SimulationProgress key={sim.id} simulation={sim} />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
 
-          {/* Progress Visualization Section */}
-          <div className="space-y-4">
-            {data.simulations.map((sim) => (
-              <SimulationProgress key={sim.id} simulation={sim} />
-            ))}
+      {/* Assignments List Section - All simulation cards in carousel */}
+      {allSimulationsForCarousel.length > 0 && (
+        <div className="space-y-4">
+          {/* Header with navigation */}
+          <div className="flex items-center justify-between">
+            {totalPages > 1 && (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={handlePrevious}
+                  disabled={!canScrollLeft}
+                  className={`p-2 rounded-lg transition-colors ${
+                    canScrollLeft
+                      ? "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+                      : "bg-gray-50 text-gray-300 dark:bg-gray-900 dark:text-gray-600 cursor-not-allowed"
+                  }`}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {carouselIndex + 1} of {totalPages}
+                </span>
+                <button
+                  onClick={handleNext}
+                  disabled={!canScrollRight}
+                  className={`p-2 rounded-lg transition-colors ${
+                    canScrollRight
+                      ? "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+                      : "bg-gray-50 text-gray-300 dark:bg-gray-900 dark:text-gray-600 cursor-not-allowed"
+                  }`}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Assignments List Section */}
+          {/* Carousel container */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {data.simulations.map((sim) => (
+            {visibleSimulations.map((sim) => (
               <SimulationCard
                 key={sim.id}
                 simulation={sim}
@@ -248,8 +319,25 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
               />
             ))}
           </div>
-        </section>
-      ))}
+
+          {/* Dots indicator */}
+          {totalPages > 1 && (
+            <div className="flex justify-center space-x-2 mt-4">
+              {Array.from({ length: totalPages }, (_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCarouselIndex(index)}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    index === carouselIndex
+                      ? "bg-blue-500"
+                      : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* History Section */}
       <div className="mt-12">

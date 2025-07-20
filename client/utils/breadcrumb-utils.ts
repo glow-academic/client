@@ -164,8 +164,8 @@ export const generateEnhancedBreadcrumbs = async (
         case "home":
           title = "Home";
           break;
-        case "history":
-          title = "History";
+        case "progress":
+          title = "Progress";
           break;
         case "rubric":
           title = "Rubric";
@@ -199,8 +199,8 @@ export const generateEnhancedBreadcrumbs = async (
         case "reports":
           title = "Reports";
           break;
-        case "history":
-          title = "History";
+        case "progress":
+          title = "Progress";
           break;
 
         // Create subsections
@@ -262,8 +262,8 @@ const getSectionFromSegments = (segments: string[]): string => {
     case "home":
       return "home";
 
-    case "history":
-      return "history";
+    case "progress":
+      return "progress";
 
     case "rubric":
       return "rubric";
@@ -347,7 +347,7 @@ const getSectionFromSegments = (segments: string[]): string => {
       if (second) {
         return `chat-${second}`;
       }
-      return "history"; // Chat pages should be under history section
+      return "progress"; // Chat pages should be under progress section
 
     case "a":
       if (second) {
@@ -383,8 +383,8 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
       case "home":
         title = "Home";
         break;
-      case "history":
-        title = "History";
+      case "progress":
+        title = "Progress";
         break;
       case "rubric":
         title = "Rubric";
@@ -418,8 +418,8 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
       case "reports":
         title = "Reports";
         break;
-      case "history":
-        title = "History";
+      case "progress":
+        title = "Progress";
         break;
       case "agents":
         title = "Agents";

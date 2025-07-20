@@ -58,7 +58,7 @@ export function CohortPicker({
   description = "Select one or more cohorts to filter the progress view.",
   onSelect,
   selectedCohorts = [],
-  hideSelectedChips = false,
+  hideSelectedChips = true, // Changed default to true
   ...props
 }: CohortPickerProps) {
   const [open, setOpen] = React.useState(false);

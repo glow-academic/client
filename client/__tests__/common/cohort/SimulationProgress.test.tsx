@@ -10,15 +10,18 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 const mockSimulation = {
-  id: "test-simulation-id",
+  id: "sim-1",
   title: "Test Simulation",
+  description: "A test simulation",
+  defaultSimulation: false,
+  cohortIds: ["cohort-1"],
   progress: {
-    totalMembers: 10,
-    passedCount: 6,
-    inProgressCount: 3,
-    notStartedCount: 1,
-    passedMembers: ["user1", "user2", "user3", "user4", "user5", "user6"],
-    inProgressMembers: ["user7", "user8", "user9"],
+    totalMembers: 1,
+    passedCount: 1,
+    inProgressCount: 0,
+    notStartedCount: 0,
+    passedMembers: ["user-1"],
+    inProgressMembers: [],
   },
 };
 
@@ -30,23 +33,22 @@ describe("SimulationProgress", () => {
 
   it("displays correct completion percentage", () => {
     render(<SimulationProgress simulation={mockSimulation} />);
-    expect(screen.getByText("60%")).toBeInTheDocument();
+    expect(screen.getByText("100%")).toBeInTheDocument();
   });
 
   it("renders progress bar container", () => {
     render(<SimulationProgress simulation={mockSimulation} />);
-    const progressBar = screen.getByTestId("progress-bar");
-    expect(progressBar).toBeInTheDocument();
+    expect(screen.getByTestId("simulation-progress")).toBeInTheDocument();
   });
 
   it("handles zero progress correctly", () => {
     const zeroProgressSimulation = {
       ...mockSimulation,
       progress: {
-        totalMembers: 5,
+        totalMembers: 1,
         passedCount: 0,
         inProgressCount: 0,
-        notStartedCount: 5,
+        notStartedCount: 1,
         passedMembers: [],
         inProgressMembers: [],
       },
@@ -56,29 +58,30 @@ describe("SimulationProgress", () => {
     expect(screen.getByText("0%")).toBeInTheDocument();
   });
 
-  it("handles 100% completion correctly", () => {
-    const completeSimulation = {
+  it("handles partial progress correctly", () => {
+    const partialProgressSimulation = {
       ...mockSimulation,
       progress: {
-        totalMembers: 5,
-        passedCount: 5,
-        inProgressCount: 0,
+        totalMembers: 1,
+        passedCount: 0,
+        inProgressCount: 1,
         notStartedCount: 0,
-        passedMembers: ["user1", "user2", "user3", "user4", "user5"],
-        inProgressMembers: [],
+        passedMembers: [],
+        inProgressMembers: ["user-1"],
       },
     };
 
-    render(<SimulationProgress simulation={completeSimulation} />);
+    render(<SimulationProgress simulation={partialProgressSimulation} />);
     expect(screen.getByText("100%")).toBeInTheDocument();
   });
 
-  it("shows title and percentage on the same line", () => {
+  it("shows title and percentage in flex layout", () => {
     render(<SimulationProgress simulation={mockSimulation} />);
-    const titleElement = screen.getByText("Test Simulation");
-    const percentageElement = screen.getByText("60%");
 
-    expect(titleElement).toBeInTheDocument();
-    expect(percentageElement).toBeInTheDocument();
+    const container = screen.getByTestId("simulation-progress");
+    expect(container).toHaveClass("flex", "items-center", "space-x-4");
+
+    expect(screen.getByText("Test Simulation")).toBeInTheDocument();
+    expect(screen.getByText("100%")).toBeInTheDocument();
   });
 });

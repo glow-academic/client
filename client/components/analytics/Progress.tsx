@@ -65,22 +65,14 @@ export default function Progress() {
   return (
     <div className="space-y-6">
       {/* Cohort Filter */}
-      <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold">Progress Analytics</h1>
-          <p className="text-muted-foreground mt-2">
-            View progress across selected cohorts
-          </p>
-        </div>
-        <div className="w-80">
-          <CohortPicker
-            cohorts={cohortsForPicker}
-            selectedCohorts={selectedCohorts}
-            onSelect={setSelectedCohorts}
-            placeholder="Select cohorts to view..."
-            description="Choose one or more cohorts to filter the progress view. Leave empty to view all cohorts."
-          />
-        </div>
+      <div className="w-full">
+        <CohortPicker
+          cohorts={cohortsForPicker}
+          selectedCohorts={selectedCohorts}
+          onSelect={setSelectedCohorts}
+          placeholder="Select cohorts to view..."
+          description="Choose one or more cohorts to filter the progress view. Leave empty to view all cohorts."
+        />
       </div>
 
       {/* Dashboard Content */}

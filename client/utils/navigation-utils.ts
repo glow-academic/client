@@ -40,7 +40,7 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
       sections.push(
         "dashboard",
         "reports",
-        "history", // Analytics
+        "progress", // Analytics
         "scenarios",
         "simulations",
         "rubrics", // Create
@@ -52,7 +52,7 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
       sections.push(
         "dashboard",
         "reports",
-        "history", // Analytics
+        "progress", // Analytics
         "scenarios",
         "simulations",
         "rubrics", // Create
@@ -64,7 +64,7 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
       sections.push(
         "dashboard",
         "reports",
-        "history", // Analytics
+        "progress", // Analytics
         "scenarios",
         "simulations",
         "rubrics", // Create
@@ -142,8 +142,8 @@ export const getSectionRoute = (section: string): string => {
       return "/analytics/dashboard";
     case "reports":
       return "/analytics/reports";
-    case "history":
-      return "/analytics/history";
+    case "progress":
+      return "/analytics/progress";
 
     case "classes":
       return "/classes";
