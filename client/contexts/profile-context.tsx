@@ -33,6 +33,7 @@ const GUEST_PROFILE: Profile = {
   updatedAt: new Date().toISOString(),
   lastLogin: new Date().toISOString(),
   lastActive: new Date().toISOString(),
+  defaultProfile: false,
 };
 
 interface ProfileContextType {

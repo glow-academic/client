@@ -112,6 +112,9 @@ export function UnifiedSidebar({
   const [searchTerm, setSearchTerm] = React.useState("");
   const [profileSearchTerm, setProfileSearchTerm] = React.useState("");
 
+  // Create a ref for the profile search input
+  const profileSearchInputRef = React.useRef<HTMLInputElement>(null);
+
   // Use the profile context
   const { activeProfile, effectiveProfile, setSimulatedProfile } = useProfile();
 
@@ -565,7 +568,16 @@ export function UnifiedSidebar({
         {/* Profile Switcher */}
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
+            <DropdownMenu
+              onOpenChange={(open) => {
+                if (open) {
+                  // Focus the search input when the dropdown opens
+                  setTimeout(() => {
+                    profileSearchInputRef.current?.focus();
+                  }, 0);
+                }
+              }}
+            >
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
@@ -592,16 +604,17 @@ export function UnifiedSidebar({
                 className="w-[--radix-dropdown-menu-trigger-width] min-w-64"
                 align="start"
               >
-
                 {/* Search input for profiles */}
                 <div className="px-2 py-1.5">
                   <div className="relative">
                     <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
                     <input
+                      ref={profileSearchInputRef}
                       type="text"
                       placeholder="Search profiles..."
                       value={profileSearchTerm}
                       onChange={(e) => setProfileSearchTerm(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
                       className="w-full pl-7 pr-2 py-1.5 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                     />
                   </div>
