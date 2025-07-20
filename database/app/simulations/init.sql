@@ -141,7 +141,7 @@ INSERT INTO simulations (id, title, rubric_id, time_limit, scenario_ids, cohort_
 -- ============================================================================
 
 INSERT INTO cohorts (id, title, description, profile_ids, active, default_cohort, department_id) VALUES
-  ('f2511b00-aaaa-bbbb-cccc-dddddddddddd', 'Fall 2025 W1 Training (Beginner)', 'Foundational TA training focusing on basic student interaction skills, handling confused students, and time management. Designed for new TAs with limited tutoring experience.',
+  ('f2511b00-aaaa-bbbb-cccc-dddddddddddd', 'Fall 25 W1 Beginner', 'Foundational TA training focusing on basic student interaction skills, handling confused students, and time management. Designed for new TAs with limited tutoring experience.',
    ARRAY[
      -- Instructors supervising CS 180 and CS 182 courses
      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-aaaa-bbbb-cccc-111111111111', '33333333-aaaa-bbbb-cccc-333333333333',
@@ -153,7 +153,7 @@ INSERT INTO cohorts (id, title, description, profile_ids, active, default_cohort
      'c5180001-1111-2222-3333-444444444444', 'c5180002-1111-2222-3333-444444444444', '99b90118-7b9e-4e12-8e81-d7ccc2916601'
    ]::UUID[], true, true, '11111111-1111-1111-1111-111111111111'),
 
-  ('f2511a00-aaaa-bbbb-cccc-dddddddddddd', 'Fall 2025 W1 Training (Advanced)', 'Advanced TA training focusing on complex technical concepts, handling frustrated students, and maintaining composure under pressure. For experienced TAs ready for challenging scenarios.',
+  ('f2511a00-aaaa-bbbb-cccc-dddddddddddd', 'Fall 25 W1 Advanced', 'Advanced TA training focusing on complex technical concepts, handling frustrated students, and maintaining composure under pressure. For experienced TAs ready for challenging scenarios.',
    ARRAY[
      -- Instructors supervising CS 251 and CS 381 courses
      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '44444444-aaaa-bbbb-cccc-444444444444', '55555555-aaaa-bbbb-cccc-555555555555',
@@ -164,7 +164,7 @@ INSERT INTO cohorts (id, title, description, profile_ids, active, default_cohort
      'c5abc003-aaaa-bbbb-cccc-dddddddddddd', 'c5abc004-aaaa-bbbb-cccc-dddddddddddd', '99b90118-7b9e-4e12-8e81-d7ccc2916610'
    ]::UUID[], true, true, '11111111-1111-1111-1111-111111111111'),
 
-  ('f2522100-aaaa-bbbb-cccc-dddddddddddd', 'Fall 2025 W2 Training (CS 1XX/2XX)', 'Document-based training for lower-level CS courses. Focus on using course materials effectively while maintaining student engagement and explaining foundational concepts clearly.',
+  ('f2522100-aaaa-bbbb-cccc-dddddddddddd', 'Fall 25 W2 Beginner', 'Document-based training for lower-level CS courses. Focus on using course materials effectively while maintaining student engagement and explaining foundational concepts clearly.',
    ARRAY[
      -- Instructors for CS 180, CS 182, and CS 251
      '11111111-aaaa-bbbb-cccc-111111111111', '22222222-aaaa-bbbb-cccc-222222222222', '33333333-aaaa-bbbb-cccc-333333333333',
@@ -177,7 +177,7 @@ INSERT INTO cohorts (id, title, description, profile_ids, active, default_cohort
      'c5abc002-aaaa-bbbb-cccc-dddddddddddd', '99b90118-7b9e-4e12-8e81-d7ccc2916603', '99b90118-7b9e-4e12-8e81-d7ccc2916605'
    ]::UUID[], true, true, '11111111-1111-1111-1111-111111111111'),
 
-  ('f2522200-aaaa-bbbb-cccc-dddddddddddd', 'Fall 2025 W2 Training (CS 3XX/4XX)', 'Document-based training for upper-level CS courses. Advanced technical communication skills, handling high-stakes academic pressure, and complex theoretical concepts.',
+  ('f2522200-aaaa-bbbb-cccc-dddddddddddd', 'Fall 25 W2 Advanced', 'Document-based training for upper-level CS courses. Advanced technical communication skills, handling high-stakes academic pressure, and complex theoretical concepts.',
    ARRAY[
      -- Instructors for advanced courses
      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '22222222-aaaa-bbbb-cccc-222222222222', '55555555-aaaa-bbbb-cccc-555555555555',
@@ -190,7 +190,7 @@ INSERT INTO cohorts (id, title, description, profile_ids, active, default_cohort
      '99b90118-7b9e-4e12-8e81-d7ccc2916610'
    ]::UUID[], true, true, '11111111-1111-1111-1111-111111111111'),
 
-  ('f2533c00-aaaa-bbbb-cccc-dddddddddddd', 'Fall 2025 W3 Communication Training', 'Specialized training for sensitive communication topics including campus belonging, academic equity, and cultural sensitivity. Essential skills for all TAs working with diverse student populations.',
+  ('f2533c00-aaaa-bbbb-cccc-dddddddddddd', 'Fall 25 W3 Communication', 'Specialized training for sensitive communication topics including campus belonging, academic equity, and cultural sensitivity. Essential skills for all TAs working with diverse student populations.',
    ARRAY[
      -- All instructors for comprehensive communication training
      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-aaaa-bbbb-cccc-111111111111', '22222222-aaaa-bbbb-cccc-222222222222',

@@ -326,18 +326,6 @@ export function UnifiedSidebar({
     if (["ta", "instructor"].includes(effectiveProfile.role)) {
       // TA/Instructor view - collapsible with sub-items
       menu.push({
-        title: "Classes",
-        url: "#",
-        icon: BookOpen,
-        items: [
-          ...getClassSubItems,
-          ...(effectiveProfile.role === "instructor"
-            ? [{ title: "New", url: "/classes/new", isSubItem: true }]
-            : []),
-        ],
-      });
-
-      menu.push({
         title: "Cohorts",
         url: "#",
         icon: Users,
@@ -348,22 +336,35 @@ export function UnifiedSidebar({
             : []),
         ],
       });
-    } else if (
-      ["instructional", "admin", "superadmin"].includes(effectiveProfile.role)
-    ) {
-      // Staff/Admin view - single items, no sub-items, no "new"
+
       menu.push({
         title: "Classes",
         url: "#",
         icon: BookOpen,
-        section: "classes",
+        items: [
+          ...getClassSubItems,
+          ...(effectiveProfile.role === "instructor"
+            ? [{ title: "New", url: "/classes/new", isSubItem: true }]
+            : []),
+        ],
       });
+    } else if (
+      ["instructional", "admin", "superadmin"].includes(effectiveProfile.role)
+    ) {
+      // Staff/Admin view - single items, no sub-items, no "new"
 
       menu.push({
         title: "Cohorts",
         url: "#",
         icon: Users,
         section: "cohorts",
+      });
+
+      menu.push({
+        title: "Classes",
+        url: "#",
+        icon: BookOpen,
+        section: "classes",
       });
     }
 

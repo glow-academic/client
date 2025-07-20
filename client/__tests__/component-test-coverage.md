@@ -1,8 +1,8 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 116
-- **Tests Created**: 0
+- **Total Components**: 117
+- **Tests Created**: 1
 - **Tests Updated**: 0
 - **Tests Skipped** (already implemented): 116
 
@@ -111,6 +111,7 @@
 | SimulationsDataTable | create/simulations/SimulationsDataTable.tsx | SimulationsDataTable.test.tsx | ✅ Implemented |
 | SimulationsDataTableToolbar | create/simulations/SimulationsDataTableToolbar.tsx | SimulationsDataTableToolbar.test.tsx | ✅ Implemented |
 | Home | home/Home.tsx | Home.test.tsx | ✅ Implemented |
+| WelcomeOverlay | home/WelcomeOverlay.tsx | WelcomeOverlay.test.tsx | ✅ Implemented |
 | ActivityStatus | management/activity/ActivityStatus.tsx | ActivityStatus.test.tsx | ✅ Implemented |
 | DepartmentEdit | management/departments/DepartmentEdit.tsx | DepartmentEdit.test.tsx | ✅ Implemented |
 | NewDepartment | management/departments/NewDepartment.tsx | NewDepartment.test.tsx | ✅ Implemented |
@@ -265,6 +266,7 @@ __tests__/
 │   │   ├── SimulationsDataTableToolbar.test.tsx
 ├── home/
 │   ├── Home.test.tsx
+│   ├── WelcomeOverlay.test.tsx
 ├── management/
 │   ├── activity/
 │   │   ├── ActivityStatus.test.tsx
