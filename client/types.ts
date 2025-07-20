@@ -21,17 +21,17 @@ import {
   simulationChatGrades as SimulationChatGrades,
   standardGroups as StandardGroups,
   standards as Standards,
+  systemAgents as SystemAgents,
   simulationChats as SimulationChats,
   simulations as Simulations,
   classes as Classes,
   users as Users,
   simulationChatFeedbacks as SimulationChatFeedbacks,
   migrations as Migrations,
+  models as Models,
   agents as Agents,
   simulationMessages as SimulationMessages,
-  models as Models,
   scenarios as Scenarios,
-  systemAgents as SystemAgents,
   verificationToken as VerificationToken,
   assistantMessageType, assistantToolType, classTerm, documentType, feedbackType, profileRole, reasoningEffort, simulationMessageType
 } from "@/utils/drizzle/schema";
@@ -59,17 +59,17 @@ type Rubric = typeof Rubrics.$inferSelect;
 type SimulationChatGrade = typeof SimulationChatGrades.$inferSelect;
 type StandardGroup = typeof StandardGroups.$inferSelect;
 type Standard = typeof Standards.$inferSelect;
+type SystemAgent = typeof SystemAgents.$inferSelect;
 type SimulationChat = typeof SimulationChats.$inferSelect;
 type Simulation = typeof Simulations.$inferSelect;
 type Class = typeof Classes.$inferSelect;
 type User = typeof Users.$inferSelect;
 type SimulationChatFeedback = typeof SimulationChatFeedbacks.$inferSelect;
 type Migration = typeof Migrations.$inferSelect;
+type Model = typeof Models.$inferSelect;
 type Agent = typeof Agents.$inferSelect;
 type SimulationMessage = typeof SimulationMessages.$inferSelect;
-type Model = typeof Models.$inferSelect;
 type Scenario = typeof Scenarios.$inferSelect;
-type SystemAgent = typeof SystemAgents.$inferSelect;
 type VerificationToken = typeof VerificationToken.$inferSelect;
 
 type AssistantMessageType = (typeof assistantMessageType.enumValues)[number];
@@ -104,17 +104,17 @@ export type {
   SimulationChatGrade,
   StandardGroup,
   Standard,
+  SystemAgent,
   SimulationChat,
   Simulation,
   Class,
   User,
   SimulationChatFeedback,
   Migration,
+  Model,
   Agent,
   SimulationMessage,
-  Model,
   Scenario,
-  SystemAgent,
   VerificationToken,
   AssistantMessageType,
   AssistantToolType,

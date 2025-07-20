@@ -54,7 +54,7 @@ CREATE TABLE users
   PRIMARY KEY (id)
 );
 
-CREATE TYPE profile_role AS ENUM ('admin', 'instructional', 'instructor', 'ta');
+CREATE TYPE profile_role AS ENUM ('superadmin', 'admin', 'instructional', 'instructor', 'ta', 'guest');
 
 CREATE TABLE profiles (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -66,23 +66,40 @@ CREATE TABLE profiles (
   alias      TEXT        NOT NULL,
   viewed_intro BOOLEAN   NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  role       profile_role NOT NULL DEFAULT 'ta',
+  role       profile_role NOT NULL DEFAULT 'guest',
+  default_profile BOOLEAN   NOT NULL DEFAULT FALSE,
   active     BOOLEAN     NOT NULL DEFAULT FALSE,
   last_active TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Insert the default users, which will be used for emulation
+INSERT INTO profiles (first_name, last_name, alias, role, default_profile) VALUES
+  ('Default', 'Superadmin', 'superadmin', 'superadmin', true),
+  ('Default', 'Admin', 'admin', 'admin', true),
+  ('Default', 'Instructional', 'instructional', 'instructional', true),
+  ('Default', 'Instructor', 'instructor', 'instructor', true),
+  ('Default', 'TA', 'ta', 'ta', true),
+  ('Default', 'Guest', 'guest', 'guest', true);
 
 -- ============================================================================
 -- SEED DATA
 -- ============================================================================
 
+-- Superadmin Users
 INSERT INTO profiles (id, first_name, last_name, alias, role) VALUES
-  ('965bd24f-dfae-4063-b370-e1373df46322', 'Ashok', 'Saravanan', 'sarava18', 'admin'),
-  ('6a2518eb-eba7-4650-aee0-d387c3fb8265', 'Alex', 'Siladie', 'asiladie', 'admin'),
-  ('34f445d6-7318-45a7-ba49-086b85b76b85', 'Ethan', 'Dickey', 'dickeye', 'admin'),
-  ('456878aa-12ca-464b-86fe-fa22ebe58614', 'Andres', 'Bejarano', 'abejara', 'admin'),
+  ('965bd24f-dfae-4063-b370-e1373df46322', 'Ashok', 'Saravanan', 'sarava18', 'superadmin'),
+  ('6a2518eb-eba7-4650-aee0-d387c3fb8265', 'Alex', 'Siladie', 'asiladie', 'superadmin'),
+  ('34f445d6-7318-45a7-ba49-086b85b76b85', 'Ethan', 'Dickey', 'dickeye', 'superadmin'),
+  ('456878aa-12ca-464b-86fe-fa22ebe58614', 'Andres', 'Bejarano', 'abejara', 'superadmin');
+
+-- Admin Users
+INSERT INTO profiles (id, first_name, last_name, alias, role) VALUES
+  ('c7c6f71a-2a4b-4e87-9320-4f444a603519', 'Justin', 'Gillingham', 'jdgillin','admin');
+
+  -- Instructional Users
+INSERT INTO profiles (id, first_name, last_name, alias, role) VALUES
   ('a1bc0cb2-c9a2-4c80-8dd5-75156eb58ce1', 'Houyame', 'Lkhider-Hudson', 'hlkhider', 'instructional'),
   ('b44a9d96-2b2e-4bcc-88e7-58cb6214aac1', 'Quiondriya', 'Gee', 'qgee', 'instructional'),
-  ('c7c6f71a-2a4b-4e87-9320-4f444a603519', 'Justin', 'Gillingham', 'jdgillin','instructional'),
   ('34a3c43e-27ee-4924-9f61-be4ac9e370f2', 'Jonathan', 'Morris', 'morrisjb', 'instructional'),
   ('fed71b5d-6170-4462-b919-e992f7716338', 'Max', 'Rees', 'mcrees', 'instructional'),
   ('37ed3d71-c381-4933-a1eb-66e3d4e0b0ac', 'Nicholas', 'Brasovan', 'nbrasova', 'instructional');

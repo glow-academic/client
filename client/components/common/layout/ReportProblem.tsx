@@ -23,12 +23,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useProfile } from "@/contexts/profile-context";
 import { logError, logInfo } from "@/utils/logger";
 import { createAppFeedback } from "@/utils/mutations/app_feedback/create-app-feedback";
-import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MessageSquare } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -51,13 +50,7 @@ export default function ReportProblem({ children }: ReportProblemProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
-  const userId = useSession().data?.user?.id;
-  const { data: profile } = useQuery({
-    queryKey: ["profile", userId],
-    queryFn: () => getProfilesByUser(parseInt(userId!)),
-    select: (data) => data[0],
-    enabled: !!userId,
-  });
+  const { activeProfile } = useProfile();
 
   const [formData, setFormData] = useState<FormData>({
     type: "",
@@ -129,7 +122,7 @@ export default function ReportProblem({ children }: ReportProblemProps) {
       const feedbackData = {
         type: formData.type as "feature" | "bug" | "question" | "other",
         message: formData.message,
-        profileId: profile?.id || null,
+        profileId: activeProfile?.id || null,
       };
 
       logInfo("Submitting feedback", feedbackData);

@@ -72,7 +72,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             lastName: lastName,
             alias: alias || "",
             viewedIntro: false,
-            role: "ta",
+            role: "guest",
           });
 
           logInfo("Created new profile for user:", {

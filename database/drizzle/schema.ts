@@ -6,7 +6,7 @@ export const assistantToolType = pgEnum("assistant_tool_type", ['create', 'read'
 export const classTerm = pgEnum("class_term", ['fall', 'spring', 'summer'])
 export const documentType = pgEnum("document_type", ['homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus'])
 export const feedbackType = pgEnum("feedback_type", ['feature', 'bug', 'question', 'other'])
-export const profileRole = pgEnum("profile_role", ['admin', 'instructional', 'instructor', 'ta'])
+export const profileRole = pgEnum("profile_role", ['superadmin', 'admin', 'instructional', 'instructor', 'ta', 'guest'])
 export const reasoningEffort = pgEnum("reasoning_effort", ['low', 'medium', 'high'])
 export const simulationMessageType = pgEnum("simulation_message_type", ['query', 'response'])
 
@@ -52,7 +52,8 @@ export const profiles = pgTable("profiles", {
 	alias: text().notNull(),
 	viewedIntro: boolean("viewed_intro").default(false).notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	role: profileRole().default('ta').notNull(),
+	role: profileRole().default('guest').notNull(),
+	defaultProfile: boolean("default_profile").default(false).notNull(),
 	active: boolean().default(false).notNull(),
 	lastActive: timestamp("last_active", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [

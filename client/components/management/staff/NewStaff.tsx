@@ -6,7 +6,6 @@
  */
 
 "use client";
-import { useQuery } from "@tanstack/react-query";
 import { Download, Shield, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
@@ -31,12 +30,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useProfile } from "@/contexts/profile-context";
 import { logError } from "@/utils/logger";
 import { createProfile } from "@/utils/mutations/profiles/create-profile";
-import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
-import { useSession } from "next-auth/react";
-
-type ProfileRole = "admin" | "instructional" | "instructor" | "ta";
+import { profileRole } from "@/utils/drizzle/schema";
+type ProfileRole = (typeof profileRole.enumValues)[number];
 
 interface CSVUser {
   firstName: string;
@@ -47,6 +45,8 @@ interface CSVUser {
 
 const getRoleIcon = (role: string) => {
   switch (role) {
+    case "superadmin":
+      return Shield;
     case "admin":
       return Shield;
     case "instructional":
@@ -62,6 +62,8 @@ const getRoleIcon = (role: string) => {
 
 const getRoleDisplayName = (role: string) => {
   switch (role) {
+    case "superadmin":
+      return "Super Administrator";
     case "admin":
       return "Administrator";
     case "instructional":
@@ -77,6 +79,8 @@ const getRoleDisplayName = (role: string) => {
 
 const getRoleBadgeVariant = (role: string) => {
   switch (role) {
+    case "superadmin":
+      return "destructive";
     case "admin":
       return "destructive";
     case "instructional":
@@ -101,22 +105,19 @@ export default function NewStaff() {
   const [csvPreview, setCsvPreview] = React.useState<CSVUser[]>([]);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // Get current user's profile to check if they're admin
-  const userId = useSession().data?.user?.id;
-
-  const { data: currentUserProfile } = useQuery({
-    queryKey: ["profile", userId],
-    queryFn: () => getProfilesByUser(parseInt(userId!)),
-    select: (data) => data[0],
-    enabled: !!userId,
-  });
+  const { effectiveProfile } = useProfile();
 
   // Check if current user is admin
-  const isCurrentUserAdmin = currentUserProfile?.role === "admin";
+  const isCurrentUserAdmin = effectiveProfile?.role === "admin";
 
   // Available roles based on current user permissions
   const availableRoles = React.useMemo(() => {
     const baseRoles = [
+      {
+        value: "superadmin" as ProfileRole,
+        label: "Super Administrator",
+        icon: Shield,
+      },
       {
         value: "instructional" as ProfileRole,
         label: "Instructional Staff",

@@ -3,13 +3,12 @@
  * Provides functionality for creating chats, sending messages, and real-time updates
  */
 "use client";
+import { useProfile } from "@/contexts/profile-context";
 import { AssistantChat } from "@/types";
 import { logError, logInfo } from "@/utils/logger";
 import { createAssistantChat } from "@/utils/mutations/assistant_chats/create-assistant-chat";
 import { getAssistantChatsByProfile } from "@/utils/queries/assistant_chats/get-assistant-chats-by-profile";
-import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
 import React, {
   createContext,
   useCallback,
@@ -85,23 +84,13 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     emitStopAssistant,
   } = useWebSocket();
 
-  const userId = useSession().data?.user?.id;
-
-  // Get user profiles
-  const { data: profiles } = useQuery({
-    queryKey: ["profiles", userId],
-    queryFn: () => getProfilesByUser(parseInt(userId!)),
-    enabled: !!userId,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const profile = profiles?.[0];
+  const { activeProfile } = useProfile();
 
   // Get assistant chats for the profile
   const { data: chats = [], isLoading: isLoadingChats } = useQuery({
-    queryKey: ["assistantChats", profile?.id],
-    queryFn: () => getAssistantChatsByProfile(profile!.id),
-    enabled: !!profile?.id,
+    queryKey: ["assistantChats", activeProfile?.id],
+    queryFn: () => getAssistantChatsByProfile(activeProfile!.id),
+    enabled: !!activeProfile?.id,
     staleTime: 30 * 1000, // 30 seconds
   });
 
@@ -116,7 +105,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       // Update the chats cache immediately
       if (newChat) {
         queryClient.setQueryData(
-          ["assistantChats", profile?.id],
+          ["assistantChats", activeProfile?.id],
           (old: AssistantChat[] = []) => [newChat, ...old]
         );
       }
@@ -217,35 +206,35 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
   }, []);
 
   const startBlankChat = useCallback(async () => {
-    if (!profile?.id) {
+    if (!activeProfile?.id) {
       toast.error("Profile not found");
       return;
     }
 
     try {
-      const newChat = await createChatMutation.mutateAsync(profile.id);
+      const newChat = await createChatMutation.mutateAsync(activeProfile.id);
       if (newChat?.id) {
         setCurrentChatId(newChat.id);
       }
     } catch (error) {
       logError("Failed to create chat:", error);
     }
-  }, [profile?.id, createChatMutation]);
+  }, [activeProfile?.id, createChatMutation]);
 
   const createNewChat = useCallback(async (): Promise<string | null> => {
-    if (!profile?.id) {
+    if (!activeProfile?.id) {
       toast.error("Profile not found");
       return null;
     }
 
     try {
-      const newChat = await createChatMutation.mutateAsync(profile.id);
+      const newChat = await createChatMutation.mutateAsync(activeProfile.id);
       return newChat?.id || null;
     } catch (error) {
       logError("Failed to create chat:", error);
       return null;
     }
-  }, [profile?.id, createChatMutation]);
+  }, [activeProfile?.id, createChatMutation]);
 
   const sendMessage = useCallback(
     async (message: string) => {
@@ -266,14 +255,14 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
 
         // If no chat is selected, create a new one
         if (!chatId) {
-          if (!profile?.id) {
+          if (!activeProfile?.id) {
             toast.error("Profile not found");
             setIsSendingMessage(false);
             return;
           }
 
           logInfo("No chat selected, creating new chat for message");
-          const newChat = await createChatMutation.mutateAsync(profile.id);
+          const newChat = await createChatMutation.mutateAsync(activeProfile.id);
           if (!newChat?.id) {
             toast.error("Failed to create new chat");
             setIsSendingMessage(false);
@@ -327,7 +316,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       isConnected,
       isSendingMessage,
       chats,
-      profile?.id,
+      activeProfile?.id,
       createChatMutation,
       emitStartAssistant,
       emitSendAssistantMessage,

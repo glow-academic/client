@@ -50,14 +50,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useRole } from "@/contexts/role-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { Agent, Scenario, Simulation, Standard, StandardGroup } from "@/types";
 import { getAgentConfig } from "@/utils/agents";
+import { updateProfile } from "@/utils/mutations/profiles/update-profile";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -67,9 +66,9 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { useSession } from "next-auth/react";
 import SimulationHistory from "../common/history/SimulationHistory";
-import { updateProfile } from "@/utils/mutations/profiles/update-profile";
+import { useProfile } from "@/contexts/profile-context";
+import { Profile } from "@/types";
 
 // Overlay Component for First-Time Users
 const WelcomeOverlay = React.memo(({ onClose }: { onClose: () => void }) => {
@@ -332,7 +331,7 @@ const SimulationCard = React.memo(
     type,
     onStartSimulation,
     loadingSimulation,
-    effectiveRole,
+    effectiveProfile,
     rubricData,
     scenarios,
     agents,
@@ -344,7 +343,7 @@ const SimulationCard = React.memo(
     type: "default" | "cohort";
     onStartSimulation: (id: string) => void;
     loadingSimulation: string | null;
-    effectiveRole: string;
+    effectiveProfile: Profile;
     rubricData: { attempts: AttemptData[]; highestScore: number };
     scenarios?: Scenario[];
     agents?: Agent[];
@@ -425,7 +424,7 @@ const SimulationCard = React.memo(
                 </div>
                 <div className="flex flex-col items-end space-y-1">
                   {/* Flip Icon */}
-                  {effectiveRole !== "guest" && (
+                  {effectiveProfile?.role !== "guest" && (
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
@@ -440,7 +439,7 @@ const SimulationCard = React.memo(
                       </TooltipContent>
                     </Tooltip>
                   )}
-                  {effectiveRole === "guest" && (
+                  {effectiveProfile?.role === "guest" && (
                     <div className="text-right">
                       <div
                         className="text-xs font-medium text-gray-500 dark:text-gray-400"
@@ -498,7 +497,7 @@ const SimulationCard = React.memo(
                       : `${validScenarioIds.length} session${validScenarioIds.length !== 1 ? "s" : ""}`}
                   </span>
                 </div>
-                {effectiveRole !== "guest" && rubricData.highestScore > 0 && (
+                {effectiveProfile?.role !== "guest" && rubricData.highestScore > 0 && (
                   <div className="flex items-center">
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -704,18 +703,7 @@ export default function Home() {
 
   // Use global WebSocket context instead of local connection
   const { isConnected, emitStartSimulation } = useWebSocket();
-
-  // Use the role context instead of local state
-  const { effectiveRole } = useRole();
-
-  const userId = useSession().data?.user?.id;
-
-  const { data: profile } = useQuery({
-    queryKey: ["profile", userId],
-    queryFn: () => getProfilesByUser(parseInt(userId!)),
-    select: (data) => data[0],
-    enabled: !!userId,
-  });
+  const { effectiveProfile, activeProfile } = useProfile();
 
   // Fetch classes and simulations
   const { data: classes } = useQuery({
@@ -764,9 +752,9 @@ export default function Home() {
   });
 
   const { data: attempts } = useQuery({
-    queryKey: ["simulationAttempts", profile?.id],
-    queryFn: () => getSimulationAttemptsByProfiles([profile!.id]),
-    enabled: !!profile?.id && effectiveRole !== "guest",
+    queryKey: ["simulationAttempts", effectiveProfile?.id],
+    queryFn: () => getSimulationAttemptsByProfiles([effectiveProfile!.id]),
+    enabled: !!effectiveProfile?.id,
   });
 
   const { data: chats } = useQuery({
@@ -794,26 +782,26 @@ export default function Home() {
 
   const handleCloseWelcomeOverlay = useCallback(async () => {
     try {
-      if (!profile) {
+      if (!effectiveProfile) {
         logError("Profile not found");
         return;
       }
-      await updateProfile(profile.id, {
+      await updateProfile(effectiveProfile.id, {
         viewedIntro: true,
       });
     } catch (error) {
       logError("Error updating profile", error);
     }
     setShowWelcomeOverlay(false);
-  }, [profile]);
+  }, [effectiveProfile]);
 
   useEffect(() => {
-    if (profile) {
-      if (!profile.viewedIntro) {
+    if (effectiveProfile) {
+      if (!effectiveProfile.viewedIntro) {
         setShowWelcomeOverlay(true);
       }
     }
-  }, [profile]);
+  }, [effectiveProfile]);
 
   // Set up simulation-specific event listeners using global WebSocket
   useEffect(() => {
@@ -872,7 +860,7 @@ export default function Home() {
         }
 
         // Only enforce profile for non-guests
-        if (effectiveRole !== "guest" && !profile?.id) {
+        if (effectiveProfile?.role !== "guest" && !effectiveProfile?.id) {
           toast.error("Profile not loaded. Please refresh the page.");
           return;
         }
@@ -883,7 +871,7 @@ export default function Home() {
           );
           logError("WebSocket not connected when trying to start simulation", {
             simulationId,
-            profileId: profile?.id,
+            profileId: effectiveProfile?.id,
             isConnected,
           });
           return;
@@ -894,7 +882,7 @@ export default function Home() {
         setLoadingToastId(toastId);
 
         const profileIdForEmit =
-          effectiveRole === "guest" ? "" : String(profile!.id); // "" → guest
+          effectiveProfile?.role === "guest" ? "" : String(activeProfile!.id); // "" → guest
 
         logInfo("Starting simulation via global WebSocket", {
           simulationId,
@@ -925,12 +913,12 @@ export default function Home() {
       }
     },
     [
-      profile,
+      effectiveProfile,
       classes,
       isConnected,
       emitStartSimulation,
       loadingToastId,
-      effectiveRole,
+      activeProfile,
     ]
   );
 
@@ -949,14 +937,16 @@ export default function Home() {
     if (!cohorts) return [];
 
     // Admins can see all cohorts
-    if (effectiveRole === "admin") {
+    if (effectiveProfile?.role === "admin") {
       return cohorts;
     }
 
     // Regular users only see cohorts they're members of
-    if (!profile) return [];
-    return cohorts.filter((cohort) => cohort.profileIds?.includes(profile.id));
-  }, [cohorts, profile, effectiveRole]);
+    if (!effectiveProfile) return [];
+    return cohorts.filter((cohort) =>
+      cohort.profileIds?.includes(effectiveProfile.id)
+    );
+  }, [cohorts, effectiveProfile]);
 
   const cohortSimulations = useMemo(() => {
     if (!simulations || !userCohorts.length) return [];
@@ -1180,7 +1170,7 @@ export default function Home() {
                 type={type}
                 onStartSimulation={handleStartSimulation}
                 loadingSimulation={loadingSimulation}
-                effectiveRole={effectiveRole}
+                effectiveProfile={effectiveProfile}
                 rubricData={getRealRubricData(simulation.id)}
                 scenarios={scenarios ?? []}
                 agents={agents ?? []}
@@ -1215,7 +1205,7 @@ export default function Home() {
       multiCarouselIndex,
       handleStartSimulation,
       loadingSimulation,
-      effectiveRole,
+      effectiveProfile,
       getRealRubricData,
       scenarios,
       agents,
@@ -1272,7 +1262,7 @@ export default function Home() {
     );
   }
 
-  if (effectiveRole === "guest") {
+  if (effectiveProfile?.role === "guest") {
     // Guest view - show all simulations with carousels
     return (
       <TooltipProvider>

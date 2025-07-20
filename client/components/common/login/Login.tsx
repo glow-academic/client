@@ -6,10 +6,9 @@
  */
 "use client";
 import { Button } from "@/components/ui/button";
+import { useProfile } from "@/contexts/profile-context";
 import { logError, logInfo } from "@/utils/logger";
-import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
-import { useQuery } from "@tanstack/react-query";
-import { signIn, useSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -195,14 +194,7 @@ export default function Login() {
   const [loadingGuest, setLoadingGuest] = useState(false);
   const [loadingMicrosoft, setLoadingMicrosoft] = useState(false);
   const router = useRouter();
-  const userId = useSession().data?.user?.id;
-
-  const { data: profile } = useQuery({
-    queryKey: ["profile", userId],
-    queryFn: () => getProfilesByUser(parseInt(userId!)),
-    select: (data) => data[0],
-    enabled: !!userId,
-  });
+  const { activeProfile } = useProfile();
 
   const handleMicrosoftLogin = async () => {
     try {
@@ -218,7 +210,7 @@ export default function Login() {
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
 
       let redirectTo = `${appPrefix}/home`;
-      if (profile?.role !== "ta") {
+      if (activeProfile?.role !== "ta") {
         redirectTo = `${appPrefix}/analytics`;
       }
 
@@ -226,7 +218,7 @@ export default function Login() {
 
       // Log successful login attempt
       await logInfo("Microsoft login attempt successful", {
-        redirectTo: profile?.role !== "ta" ? "/analytics" : "/home",
+        redirectTo: activeProfile?.role !== "ta" ? "/analytics" : "/home",
       });
 
       toast.success("Signing in with Microsoft...");

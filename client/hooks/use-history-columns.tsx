@@ -1,4 +1,5 @@
 "use client";
+import { useProfile } from "@/contexts/profile-context";
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { DataTableRowActions } from "@/components/common/history/DataTableRowActions";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,6 @@ import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -28,7 +28,6 @@ import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useQuery } from "@tanstack/react-query";
 import { Column, ColumnDef, Row, Table } from "@tanstack/react-table";
-import { useSession } from "next-auth/react";
 import { useMemo } from "react";
 
 // Enhanced types for the data table
@@ -48,14 +47,7 @@ export function useHistoryColumns({
   showAll?: boolean;
   showExport?: boolean;
 }) {
-  const userId = useSession().data?.user?.id;
-
-  const { data: profile } = useQuery({
-    queryKey: ["profile", userId],
-    queryFn: () => getProfilesByUser(parseInt(userId!)),
-    select: (data) => data[0],
-    enabled: !!userId,
-  });
+  const { effectiveProfile } = useProfile();
 
   const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
     queryKey: ["profiles"],
@@ -723,13 +715,13 @@ export function useHistoryColumns({
   let data: unknown[] = enhancedAttempts || [];
 
   // Apply filtering based on showAll parameter
-  if (!showAll && profile) {
+  if (!showAll && effectiveProfile) {
     // If showAll is false, filter to show only current user's data
     data = data.filter(
       (attempt: unknown) =>
-        (attempt as Record<string, unknown>)["profileId"] === profile?.id
+        (attempt as Record<string, unknown>)["profileId"] === effectiveProfile?.id
     );
-  } else if (!profile) {
+  } else if (!effectiveProfile) {
     // If there's no user, show empty data
     data = [];
   }

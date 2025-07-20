@@ -20,9 +20,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Class, ProfileRole } from "@/types";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
-import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
-import { useSession } from "next-auth/react";
 import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
+import { useProfile } from "@/contexts/profile-context";
 
 // Helper function to get initials from name
 const getInitials = (name?: string): string => {
@@ -54,6 +53,14 @@ const getRoleInfo = (role: ProfileRole) => {
       label: "Teaching Assistant",
       color: "outline" as const,
     },
+    superadmin: {
+      label: "Super Administrator",
+      color: "destructive" as const,
+    },
+    guest: {
+      label: "Guest",
+      color: "outline" as const,
+    },
   };
 
   return roleInfo[role] || roleInfo.ta;
@@ -64,20 +71,13 @@ export interface ProfileProps {
 }
 
 export function Profile({ className }: ProfileProps) {
-  const userId = useSession().data?.user?.id;
-
-  const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ["profile", userId],
-    queryFn: () => getProfilesByUser(parseInt(userId!)),
-    select: (data) => data[0],
-    enabled: !!userId,
-  });
+  const { activeProfile } = useProfile();
 
   // Fetch classes for assigned courses
   const { data: classes = [] } = useQuery({
     queryKey: ["classes"],
     queryFn: () => getAllClasses(),
-    enabled: !!profile,
+    enabled: !!activeProfile,
   });
 
   const { data: departments } = useQuery({
@@ -85,19 +85,7 @@ export function Profile({ className }: ProfileProps) {
     queryFn: () => getAllDepartments(),
   });
 
-  if (profileLoading) {
-    return (
-      <div className={className}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Loading Profile...</CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!profile) {
+  if (!activeProfile) {
     return (
       <div className={className}>
         <Card>
@@ -112,11 +100,11 @@ export function Profile({ className }: ProfileProps) {
     );
   }
 
-  const roleInfo = getRoleInfo(profile.role as ProfileRole);
+  const roleInfo = getRoleInfo(activeProfile.role as ProfileRole);
 
   // Filter classes user is assigned to
   const assignedClasses = classes.filter((cls: Class) =>
-    cls.profileIds?.includes(profile.id)
+    cls.profileIds?.includes(activeProfile.id)
   );
 
   const formatClassTerm = (term: string) => {
@@ -139,16 +127,16 @@ export function Profile({ className }: ProfileProps) {
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
               <AvatarFallback className="text-lg">
-                {getInitials(profile.firstName + " " + profile.lastName)}
+                {getInitials(activeProfile.firstName + " " + activeProfile.lastName)}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <CardTitle className="text-2xl">
-                {profile.firstName + " " + profile.lastName}
+                {activeProfile.firstName + " " + activeProfile.lastName}
               </CardTitle>
               <CardDescription className="flex items-center gap-2 mt-1">
                 <Mail className="h-4 w-4" />
-                {profile.alias}@{process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
+                {activeProfile.alias}@{process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
               </CardDescription>
             </div>
             <Badge variant={roleInfo.color}>{roleInfo.label}</Badge>
@@ -160,13 +148,13 @@ export function Profile({ className }: ProfileProps) {
             <div>
               <p className="text-muted-foreground">Last Login</p>
               <p className="font-medium">
-                {new Date(profile.lastLogin).toLocaleDateString()}
+                {new Date(activeProfile.lastLogin).toLocaleDateString()}
               </p>
             </div>
             <div>
               <p className="text-muted-foreground">Account Created</p>
               <p className="font-medium">
-                {new Date(profile.createdAt).toLocaleDateString()}
+                {new Date(activeProfile.createdAt).toLocaleDateString()}
               </p>
             </div>
           </div>

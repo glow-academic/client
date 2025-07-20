@@ -1,6 +1,6 @@
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-
-type ProfileRole = "admin" | "instructional" | "instructor" | "ta" | "guest";
+import { profileRole } from "@/utils/drizzle/schema";
+type ProfileRole = (typeof profileRole.enumValues)[number];
 
 /**
  * Get the first available section for a given role
@@ -106,7 +106,7 @@ export const isSectionAvailableForRole = (
  * Check if the current path represents a main screen that should show chat components
  * Main screens are those with 1 or 2 slashes (main sections and their direct children)
  */
-export const isMainScreen = (pathname: string, _role: ProfileRole): boolean => {
+export const isMainScreen = (pathname: string): boolean => {
   // Remove leading slash and count remaining slashes
   const pathWithoutLeadingSlash = pathname.startsWith("/")
     ? pathname.slice(1)

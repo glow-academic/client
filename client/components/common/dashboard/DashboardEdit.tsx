@@ -41,10 +41,8 @@ import { createDashboard } from "@/utils/mutations/dashboards/create-dashboard";
 import { updateDashboard } from "@/utils/mutations/dashboards/update-dashboard";
 import { getAllComponents } from "@/utils/queries/components/get-all-components";
 import { getAllDashboards } from "@/utils/queries/dashboards/get-all-dashboards";
-import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { List, PanelRightClose, PanelRightOpen, RotateCcw } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import CarouselSection from "./CarouselSection";
@@ -53,6 +51,7 @@ import DropZone from "./DropZone";
 import FooterPreview from "./FooterPreview";
 import HeaderPreview from "./HeaderPreview";
 import SettingsDialog from "./SettingsDialog";
+import { useProfile } from "@/contexts/profile-context";
 
 interface DashboardComponent {
   id: string;
@@ -63,8 +62,6 @@ interface DashboardComponent {
 }
 
 export default function DashboardEdit() {
-  const { data: session } = useSession();
-  const userId = session?.user?.id;
   const queryClient = useQueryClient();
 
   // Local state for dashboard editing
@@ -78,16 +75,11 @@ export default function DashboardEdit() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
+  const { effectiveProfile } = useProfile();
+
   const { data: components } = useQuery({
     queryKey: ["components"],
     queryFn: () => getAllComponents(),
-  });
-
-  const { data: userProfile } = useQuery({
-    queryKey: ["profile", userId],
-    queryFn: () => getProfilesByUser(parseInt(userId!)),
-    select: (data) => data[0],
-    enabled: !!userId,
   });
 
   const { data: dashboards } = useQuery({
@@ -97,9 +89,9 @@ export default function DashboardEdit() {
 
   // Initialize dashboard config from loaded data
   useMemo(() => {
-    if (!dashboards || !userProfile || dashboardConfig) return;
+    if (!dashboards || !effectiveProfile || dashboardConfig) return;
 
-    let dashboard = dashboards.find((d) => d.profileId === userProfile.id);
+    let dashboard = dashboards.find((d) => d.profileId === effectiveProfile.id);
     if (!dashboard) {
       dashboard = dashboards.find((d) => d.profileId === null);
     }
@@ -121,7 +113,7 @@ export default function DashboardEdit() {
       setDashboardConfig(config);
       setOriginalDashboardConfig(config);
     }
-  }, [dashboards, userProfile, dashboardConfig]);
+  }, [dashboards, effectiveProfile, dashboardConfig]);
 
   // Calculate available components
   const availableComponentsData = useMemo(() => {
@@ -336,7 +328,7 @@ export default function DashboardEdit() {
 
   // Save changes function
   const saveChanges = useCallback(async () => {
-    if (!dashboardConfig || !session?.user?.id || !userProfile) return;
+    if (!dashboardConfig || !effectiveProfile) return;
 
     setIsSaving(true);
     try {
@@ -344,7 +336,7 @@ export default function DashboardEdit() {
         // Create a new personal dashboard
         const personalDashboard = {
           ...dashboardConfig,
-          profileId: userProfile.id,
+          profileId: effectiveProfile.id,
         };
 
         // delete the id key
@@ -374,13 +366,7 @@ export default function DashboardEdit() {
     } finally {
       setIsSaving(false);
     }
-  }, [
-    dashboardConfig,
-    session?.user?.id,
-    userProfile,
-    isGlobalDashboard,
-    queryClient,
-  ]);
+  }, [dashboardConfig, effectiveProfile, isGlobalDashboard, queryClient]);
 
   // Create lookup for all components
   const allComponentsLookup = useMemo(() => {

@@ -1,14 +1,14 @@
 "use client";
+import { useProfile } from "@/contexts/profile-context";
 import { useRouter } from "next/navigation";
-import { useRole } from "@/contexts/role-context";
 
 export default function NotFound() {
   const router = useRouter();
-  const { effectiveRole } = useRole();
+  const { effectiveProfile } = useProfile();
 
   const handleBackToGlow = () => {
     // Navigate based on effective role
-    if (effectiveRole === "admin") {
+    if (effectiveProfile?.role !== "ta" && effectiveProfile?.role !== "guest") {
       router.push("/analytics");
     } else {
       router.push("/home");
@@ -19,7 +19,6 @@ export default function NotFound() {
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-background to-secondary/30 px-4">
       <div className="w-full max-w-md p-8 space-y-8 bg-card rounded-lg shadow-lg border border-border text-center">
         <div className="space-y-4">
-
           {/* 404 Message */}
           <div className="space-y-2">
             <h2 className="text-6xl font-bold text-muted-foreground/50">404</h2>

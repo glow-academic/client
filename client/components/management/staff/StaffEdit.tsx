@@ -35,15 +35,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useProfile } from "@/contexts/profile-context";
 import { ProfileRole } from "@/types";
 import { logError } from "@/utils/logger";
 import { deleteProfile } from "@/utils/mutations/profiles/delete-profile";
 import { updateProfile } from "@/utils/mutations/profiles/update-profile";
 import { getProfile } from "@/utils/queries/profiles/get-profile";
-import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Save, Shield, Trash2, User as UserIcon } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -65,17 +64,7 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
   const [formData, setFormData] = useState<FormData>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-
-  // Get current user's profile to check if they're admin
-  const userId = useSession().data?.user?.id;
-
-  const { data: currentUserProfile, isLoading: isCurrentUserProfileLoading } =
-    useQuery({
-      queryKey: ["profile", userId],
-      queryFn: () => getProfilesByUser(parseInt(userId!)),
-      select: (data) => data[0],
-      enabled: !!userId,
-    });
+  const { effectiveProfile } = useProfile();
 
   // Fetch the specific target user profile directly
   const { data: targetUser, isLoading: isProfileLoading } = useQuery({
@@ -84,10 +73,10 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
     enabled: !!profileId,
   });
 
-  const isCurrentUserAdmin = currentUserProfile?.role === "admin";
+  const isCurrentUserAdmin = effectiveProfile?.role === "admin";
 
   // Determine overall loading state
-  const isLoading = isProfileLoading || isCurrentUserProfileLoading;
+  const isLoading = isProfileLoading;
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -108,7 +97,6 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
       setHasChanges(false);
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
       queryClient.invalidateQueries({ queryKey: ["profile", profileId] });
-      queryClient.invalidateQueries({ queryKey: ["profile", userId] });
       toast.success("User updated successfully");
       router.push("/management/staff");
     } catch (error) {
@@ -124,7 +112,6 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
       await deleteProfile(profileId);
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
       queryClient.invalidateQueries({ queryKey: ["profile", profileId] });
-      queryClient.invalidateQueries({ queryKey: ["profile", userId] });
       toast.success("User deleted successfully");
       router.push("/management/staff");
     } catch (error) {

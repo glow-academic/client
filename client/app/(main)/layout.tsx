@@ -22,7 +22,6 @@ import ChatWidget from "@/components/common/home/ChatWidget";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import { AssistantProvider } from "@/contexts/assistant-context";
-import { useRole } from "@/contexts/role-context";
 import {
   SimulationProvider,
   useSimulation,
@@ -40,7 +39,6 @@ import {
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "/";
   const router = useRouter();
-  const { effectiveRole } = useRole();
 
   // Role context is available for child components
   const activeSection = getActiveSectionFromPath(pathname);
@@ -51,8 +49,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Check if we're on a main screen that should show chat components
   const shouldShowChatComponents = useMemo(() => {
-    return isMainScreen(pathname, effectiveRole);
-  }, [pathname, effectiveRole]);
+    return isMainScreen(pathname);
+  }, [pathname]);
 
   // Load enhanced breadcrumbs with async ID resolution
   React.useEffect(() => {
@@ -164,10 +162,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
     if (pathname === "/create/rubrics") {
       return (
-        <Button
-          onClick={() => router.push("/create/rubrics/new")}
-          size="sm"
-        >
+        <Button onClick={() => router.push("/create/rubrics/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Rubric
         </Button>
@@ -176,10 +171,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
     if (pathname === "/create/agents") {
       return (
-        <Button
-          onClick={() => router.push("/create/agents/new")}
-          size="sm"
-        >
+        <Button onClick={() => router.push("/create/agents/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Agent
         </Button>
@@ -206,7 +198,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
     if (pathname === "/management/departments") {
       return (
-        <Button onClick={() => router.push("/management/departments/new")} size="sm">
+        <Button
+          onClick={() => router.push("/management/departments/new")}
+          size="sm"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Department
         </Button>
@@ -224,7 +219,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
     if (pathname === "/management/providers") {
       return (
-        <Button onClick={() => router.push("/management/providers/new")} size="sm">
+        <Button
+          onClick={() => router.push("/management/providers/new")}
+          size="sm"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Provider
         </Button>

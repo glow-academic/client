@@ -7,7 +7,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { useAssistant } from "@/contexts/assistant-context";
-import { useRole } from "@/contexts/role-context";
 import { MessageCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -17,18 +16,12 @@ export interface ChatFabProps {
 
 export default function ChatFab({ up = false }: ChatFabProps) {
   const { openWidget, uiState } = useAssistant();
-  const { effectiveRole } = useRole();
-
-  // Only show for instructor, instructional, or admin roles
-  const shouldShow = ["instructor", "instructional", "admin"].includes(
-    effectiveRole
-  );
 
   // or if the currrent route is home/a/...
   const pathname = usePathname() || "/";
   const isHomeAssistant = pathname.startsWith("/home/a/");
 
-  if (!shouldShow || uiState !== "closed" || isHomeAssistant) {
+  if (uiState !== "closed" || isHomeAssistant) {
     return null;
   }
 

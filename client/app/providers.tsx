@@ -1,14 +1,11 @@
 // app/providers.tsx
 "use client";
 
-import { RoleProvider } from "@/contexts/role-context";
+import { ProfileProvider } from "@/contexts/profile-context";
 import { WebSocketProvider } from "@/contexts/websocket-context";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { getQueryClient } from "@/utils/react-query/queryClient";
-import {
-  QueryClientProvider,
-  useQuery,
-} from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { SessionProvider, useSession } from "next-auth/react";
 import { useState } from "react";
 import { Toaster } from "sonner";
@@ -30,15 +27,12 @@ const RoleAndWebSocketProviderWrapper = ({
   });
 
   // profileId is undefined while loading, null if loaded and no profile, or the id if present
-  const profileId =
-    isLoading
-      ? undefined
-      : profile?.id ?? null;
+  const profileId = isLoading ? undefined : (profile?.id ?? null);
 
   return (
-    <RoleProvider ProfileRole={profile?.role}>
+    <ProfileProvider activeProfile={profile ?? null}>
       <WebSocketProvider profileId={profileId}>{children}</WebSocketProvider>
-    </RoleProvider>
+    </ProfileProvider>
   );
 };
 
@@ -48,10 +42,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider basePath={`${appPrefix}/api/auth`}>
       <QueryClientProvider client={queryClient}>
-          <RoleAndWebSocketProviderWrapper>
-            {children}
-            <Toaster />
-          </RoleAndWebSocketProviderWrapper>
+        <RoleAndWebSocketProviderWrapper>
+          {children}
+          <Toaster />
+        </RoleAndWebSocketProviderWrapper>
       </QueryClientProvider>
     </SessionProvider>
   );

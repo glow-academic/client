@@ -8,7 +8,6 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAssistant } from "@/contexts/assistant-context";
-import { useRole } from "@/contexts/role-context";
 import { Send, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -32,12 +31,6 @@ export default function ChatInput({
     isStoppingMessage,
     currentChatId,
   } = useAssistant();
-  const { effectiveRole } = useRole();
-
-  // Only show for instructor, instructional, or admin roles
-  const shouldShow = ["instructor", "instructional", "admin"].includes(
-    effectiveRole
-  );
 
   // NEW: Global key listener to auto-focus the input
   useEffect(() => {
@@ -65,17 +58,14 @@ export default function ChatInput({
         setMessage((prevMessage) => prevMessage + e.key); // Append the typed character
       }
     };
-    
-    // Only listen for keys if the component is visible
-    if (shouldShow) {
-      window.addEventListener("keydown", handleGlobalKeyDown);
-    }
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
 
     // Cleanup: remove the event listener when the component unmounts
     return () => {
       window.removeEventListener("keydown", handleGlobalKeyDown);
     };
-  }, [shouldShow]); // Re-run this effect if `shouldShow` changes
+  }, []); // Re-run this effect if `shouldShow` changes
 
   // Auto-resize the textarea based on content
   useEffect(() => {
@@ -121,10 +111,6 @@ export default function ChatInput({
       handleSubmit(e);
     }
   };
-
-  if (!shouldShow) {
-    return null;
-  }
 
   const placeholder = currentChatId
     ? "Type a message..."

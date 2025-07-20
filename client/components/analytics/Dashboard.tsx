@@ -8,18 +8,17 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useProfile } from "@/contexts/profile-context";
 import registry from "@/lib/registry";
 import { logError } from "@/utils/logger";
 import { getAllComponents } from "@/utils/queries/components/get-all-components";
 import { getAllDashboards } from "@/utils/queries/dashboards/get-all-dashboards";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { getAllSimulationAttempts } from "@/utils/queries/simulation_attempts/get-all-simulation-attempts";
 import { getAllSimulationChatGrades } from "@/utils/queries/simulation_chat_grades/get-all-simulation-chat-grades";
 import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-simulation-chats";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
 
 interface DashboardConfig {
@@ -36,10 +35,6 @@ interface DashboardConfig {
 }
 
 export default function Dashboard() {
-  // Session and user data
-  const { data: session } = useSession();
-  const userId = session?.user?.id;
-
   // Carousel states
   const [headerCarouselIndex, setHeaderCarouselIndex] = useState(0);
   const [primaryCarouselIndex, setPrimaryCarouselIndex] = useState(0);
@@ -55,12 +50,7 @@ export default function Dashboard() {
   const [isRightFooterHovered, setIsRightFooterHovered] = useState(false);
 
   // Data queries
-  const { data: userProfile } = useQuery({
-    queryKey: ["profile", userId],
-    queryFn: () => getProfilesByUser(parseInt(userId!)),
-    select: (data) => data[0],
-    enabled: !!userId,
-  });
+  const { effectiveProfile } = useProfile();
 
   const { data: components, isLoading: isLoadingComponents } = useQuery({
     queryKey: ["components"],
@@ -95,10 +85,10 @@ export default function Dashboard() {
 
   // Memoized dashboard configuration
   const dashboardConfig: DashboardConfig | null = useMemo(() => {
-    if (!dashboards || !userProfile) return null;
+    if (!dashboards || !effectiveProfile) return null;
 
     // Try to find user's personal dashboard first
-    let dashboard = dashboards.find((d) => d.profileId === userProfile.id);
+    let dashboard = dashboards.find((d) => d.profileId === effectiveProfile.id);
 
     // Fallback to global dashboard
     if (!dashboard) {
@@ -107,7 +97,7 @@ export default function Dashboard() {
 
     if (!dashboard) {
       logError("No dashboard found for user or global fallback", undefined, {
-        userId: userProfile.id,
+        userId: effectiveProfile.id,
         availableDashboards: dashboards.length,
       });
       return null;
@@ -125,7 +115,7 @@ export default function Dashboard() {
       mainSplit: dashboard.mainSplit || 0.75,
       footerSplit: dashboard.footerSplit || 0.5,
     };
-  }, [dashboards, userProfile]);
+  }, [dashboards, effectiveProfile]);
 
   // Memoized components lookup
   const componentsLookup = useMemo(() => {

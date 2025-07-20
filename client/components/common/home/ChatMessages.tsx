@@ -11,13 +11,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAssistant } from "@/contexts/assistant-context";
-import { useRole } from "@/contexts/role-context";
 import { AssistantMessage, AssistantToolCall } from "@/types";
 import { logInfo } from "@/utils/logger";
 import { getAssistantMessagesByChat } from "@/utils/queries/assistant_messages/get-assistant-messages-by-chat";
 import { getAssistantToolCallsByChat } from "@/utils/queries/assistant_tool_calls/get-assistant-tool-calls-by-chat";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle, Loader2, Wrench, ArrowDown } from "lucide-react";
+import { ArrowDown, CheckCircle, Loader2, Wrench } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ChatStarterPrompts from "./ChatStarterPrompts";
 import GlowHeader from "./GlowHeader";
@@ -211,7 +210,6 @@ export default function ChatMessages({
   variant = "expanded",
 }: ChatMessagesProps = {}) {
   const { currentChatId, isConnected } = useAssistant();
-  const { effectiveRole } = useRole();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
 
@@ -248,10 +246,6 @@ export default function ChatMessages({
     logInfo("ChatMessages - toolCalls", { toolCalls });
     logInfo("ChatMessages - isConnected", { isConnected });
   }, [currentChatId, messages, toolCalls, isConnected]);
-
-  const shouldShow = ["instructor", "instructional", "admin"].includes(
-    effectiveRole
-  );
 
   const createTimeline = useCallback((): TimelineItem[] => {
     const timeline: TimelineItem[] = [];
@@ -341,10 +335,6 @@ export default function ChatMessages({
     setShowScrollDown(false);
     setIsAtBottom(true);
   };
-
-  if (!shouldShow) {
-    return null;
-  }
 
   if ((isLoadingMessages || isLoadingToolCalls) && currentChatId) {
     return (

@@ -21,7 +21,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAssistant } from "@/contexts/assistant-context";
-import { useRole } from "@/contexts/role-context";
 import { getAssistantChat } from "@/utils/queries/assistant_chats/get-assistant-chat";
 import { useQuery } from "@tanstack/react-query";
 import { Edit, Maximize2, X } from "lucide-react";
@@ -42,14 +41,8 @@ export default function ChatWidget({ up }: { up: boolean }) {
     selectChat,
     setCurrentChatId,
   } = useAssistant();
-  const { effectiveRole } = useRole();
   const [promptToSet, setPromptToSet] = useState<string>("");
   const [showPrompts, setShowPrompts] = useState(true);
-
-  // Only show for instructor, instructional, or admin roles
-  const shouldShow = ["instructor", "instructional", "admin"].includes(
-    effectiveRole
-  );
 
   const { data: chat } = useQuery({
     queryKey: ["assistantChat", currentChatId],
@@ -57,7 +50,7 @@ export default function ChatWidget({ up }: { up: boolean }) {
     enabled: !!currentChatId,
   });
 
-  if (!shouldShow || uiState !== "widget") {
+  if (uiState !== "widget") {
     return null;
   }
 
