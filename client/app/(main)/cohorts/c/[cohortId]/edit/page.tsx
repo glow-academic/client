@@ -1,11 +1,11 @@
 /**
- * app/(main)/cohorts/c/[cohortId]/page.tsx
- * Cohort dashboard page for the cohort.
+ * app/(main)/cohorts/c/[cohortId]/edit/page.tsx
+ * Cohort edit page for the cohort.
  * @AshokSaravanan222 & @siladiea
  * 07/20/2025
  */
 
-import CohortDashboard from "@/components/common/cohort/CohortDashboard";
+import CohortEdit from "@/components/cohorts/CohortEdit";
 import { use } from "react";
 
 import { getCohort } from "@/utils/queries/cohorts/get-cohort";
@@ -26,7 +26,7 @@ export async function generateMetadata(
   };
 }
 
-export default function CohortDashboardPage({
+export default function CohortEditPage({
   params,
 }: {
   params: Promise<{ cohortId: string }>;
@@ -34,7 +34,7 @@ export default function CohortDashboardPage({
   const { cohortId } = use(params);
   return (
     <div className="space-y-6">
-      <CohortDashboard cohortId={cohortId} />
+      <CohortEdit cohortId={cohortId} />
     </div>
   );
 }

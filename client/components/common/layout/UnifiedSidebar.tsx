@@ -217,12 +217,15 @@ export function UnifiedSidebar({
         return [];
     }
 
-    return profileClasses.map((c: { id: string; classCode: string }) => ({
-      title: c.classCode,
+    return profileClasses.map((c: { id: string; classCode: string, departmentId: string }) => {
+      const department = departments?.find((d) => d.id === c.departmentId);
+      return {
+      title: `${department?.departmentCode} ${c.classCode}`,
       url: `/classes/c/${c.id}`,
       section: `class-${c.id}`,
       isSubItem: true,
-    }));
+    };
+  });
   }, [
     classes,
     departments,
@@ -294,7 +297,7 @@ export function UnifiedSidebar({
 
     // Analytics - Available from instructor level and up
     if (
-      ["instructor", "instructional", "admin", "superadmin"].includes(
+      ["instructional", "admin", "superadmin"].includes(
         effectiveProfile.role
       )
     ) {
@@ -314,9 +317,9 @@ export function UnifiedSidebar({
             section: "reports",
           },
           {
-            title: "History",
+            title: "Progress",
             url: "#",
-            section: "history",
+            section: "progress",
           },
         ],
       });

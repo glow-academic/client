@@ -1,11 +1,11 @@
 /**
- * app/(main)/classes/c/[classId]/page.tsx
- * Dashboard page for the class page.
+ * app/(main)/classes/c/[classId]/edit/page.tsx
+ * Edit page for the class page.
  * @AshokSaravanan222 & @siladiea
  * 07/20/2025
  */
 
-import ClassDashboard from "@/components/common/class/ClassDashboard";
+import ClassEdit from "@/components/classes/ClassEdit";
 import { use } from "react";
 
 import { getClass } from "@/utils/queries/classes/get-class";
@@ -25,7 +25,7 @@ export async function generateMetadata(
   };
 }
 
-export default function ClassDashboardPage({
+export default function ClassEditPage({
   params,
 }: {
   params: Promise<{ classId: string }>;
@@ -33,7 +33,7 @@ export default function ClassDashboardPage({
   const { classId } = use(params);
   return (
     <div className="space-y-6">
-      <ClassDashboard classId={classId} />
+      <ClassEdit classId={classId} />
     </div>
   );
 }

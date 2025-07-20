@@ -73,13 +73,13 @@ CREATE TABLE profiles (
 );
 
 -- Insert the default users, which will be used for emulation
-INSERT INTO profiles (first_name, last_name, alias, role, default_profile) VALUES
-  ('Default', 'Superadmin', 'superadmin', 'superadmin', true),
-  ('Default', 'Admin', 'admin', 'admin', true),
-  ('Default', 'Instructional', 'instructional', 'instructional', true),
-  ('Default', 'Instructor', 'instructor', 'instructor', true),
-  ('Default', 'TA', 'ta', 'ta', true),
-  ('Default', 'Guest', 'guest', 'guest', true);
+INSERT INTO profiles (first_name, last_name, alias, role, default_profile, viewed_intro) VALUES
+  ('Default', 'Superadmin', 'superadmin', 'superadmin', true, true),
+  ('Default', 'Admin', 'admin', 'admin', true, true),
+  ('Default', 'Instructional', 'instructional', 'instructional', true, true),
+  ('Default', 'Instructor', 'instructor', 'instructor', true, true),
+  ('Default', 'TA', 'ta', 'ta', true, true),
+  ('Default', 'Guest', 'guest', 'guest', true, true);
 
 -- ============================================================================
 -- SEED DATA

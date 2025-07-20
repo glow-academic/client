@@ -47,9 +47,9 @@ export const profiles = pgTable("profiles", {
 	viewedIntro: boolean("viewed_intro").default(false).notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	role: profileRole().default('guest').notNull(),
+	defaultProfile: boolean("default_profile").default(false).notNull(),
 	active: boolean().default(false).notNull(),
-	lastActive: timestamp("last_active", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	defaultProfile: boolean("default_profile").default(false).notNull()}, (table) => [
+	lastActive: timestamp("last_active", { withTimezone: true, mode: 'string' }).defaultNow().notNull()}, (table) => [
 	foreignKey({
 			columns: [table.userId],
 			foreignColumns: [users.id],

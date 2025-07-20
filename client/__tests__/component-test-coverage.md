@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 117
-- **Tests Created**: 1
+- **Total Components**: 120
+- **Tests Created**: 2
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 116
+- **Tests Skipped** (already implemented): 118
 
 ## Component Coverage
 
@@ -53,10 +53,12 @@
 | AttemptChat | common/chat/attempt/AttemptChat.tsx | AttemptChat.test.tsx | ✅ Implemented |
 | AttemptInput | common/chat/attempt/AttemptInput.tsx | AttemptInput.test.tsx | ✅ Implemented |
 | AttemptMessages | common/chat/attempt/AttemptMessages.tsx | AttemptMessages.test.tsx | ✅ Implemented |
+| ClassDashboard | common/class/ClassDashboard.tsx | ClassDashboard.test.tsx | ✅ Implemented |
 | ClassDocuments | common/class/ClassDocuments.tsx | ClassDocuments.test.tsx | ✅ Implemented |
 | ClassForm | common/class/ClassForm.tsx | ClassForm.test.tsx | ✅ Implemented |
 | ClassStaff | common/class/ClassStaff.tsx | ClassStaff.test.tsx | ✅ Implemented |
 | Cohort | common/cohort/Cohort.tsx | Cohort.test.tsx | ✅ Implemented |
+| CohortDashboard | common/cohort/CohortDashboard.tsx | CohortDashboard.test.tsx | ✅ Implemented |
 | CarouselSection | common/dashboard/CarouselSection.tsx | CarouselSection.test.tsx | ✅ Implemented |
 | DashboardEdit | common/dashboard/DashboardEdit.tsx | DashboardEdit.test.tsx | ✅ Implemented |
 | DraggableComponent | common/dashboard/DraggableComponent.tsx | DraggableComponent.test.tsx | ✅ Implemented |
@@ -94,6 +96,7 @@
 | ScenarioPicker | common/scenario/ScenarioPicker.tsx | ScenarioPicker.test.tsx | ✅ Implemented |
 | ScenarioSlider | common/scenario/ScenarioSlider.tsx | ScenarioSlider.test.tsx | ✅ Implemented |
 | Simulation | common/simulation/Simulation.tsx | Simulation.test.tsx | ✅ Implemented |
+| SimulationCard | common/simulation/SimulationCard.tsx | SimulationCard.test.tsx | ✅ Implemented |
 | AgentEdit | create/agents/AgentEdit.tsx | AgentEdit.test.tsx | ✅ Implemented |
 | Agents | create/agents/Agents.tsx | Agents.test.tsx | ✅ Implemented |
 | NewAgent | create/agents/NewAgent.tsx | NewAgent.test.tsx | ✅ Implemented |
@@ -189,11 +192,13 @@ __tests__/
 │   │   │   ├── AttemptInput.test.tsx
 │   │   │   ├── AttemptMessages.test.tsx
 │   ├── class/
+│   │   ├── ClassDashboard.test.tsx
 │   │   ├── ClassDocuments.test.tsx
 │   │   ├── ClassForm.test.tsx
 │   │   ├── ClassStaff.test.tsx
 │   ├── cohort/
 │   │   ├── Cohort.test.tsx
+│   │   ├── CohortDashboard.test.tsx
 │   ├── dashboard/
 │   │   ├── CarouselSection.test.tsx
 │   │   ├── DashboardEdit.test.tsx
@@ -243,6 +248,7 @@ __tests__/
 │   │   ├── ScenarioSlider.test.tsx
 │   ├── simulation/
 │   │   ├── Simulation.test.tsx
+│   │   ├── SimulationCard.test.tsx
 ├── create/
 │   ├── agents/
 │   │   ├── AgentEdit.test.tsx

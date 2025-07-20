@@ -307,6 +307,7 @@ export const agents = pgTable("agents", {
 	systemPrompt: text("system_prompt").notNull(),
 	temperature: integer().notNull(),
 	defaultAgent: boolean("default_agent").default(false).notNull(),
+	color: text().notNull(),
 	modelId: uuid("model_id"),
 	reasoning: reasoningEffort(),
 }, (table) => [

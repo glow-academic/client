@@ -207,6 +207,7 @@ class Agents(_Base, table=True):
     system_prompt: str = Field(sa_column=Column('system_prompt', Text))
     temperature: int = Field(sa_column=Column('temperature', Integer))
     default_agent: bool = Field(sa_column=Column('default_agent', Boolean, default=False))
+    color: str = Field(sa_column=Column('color', Text))
     model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
     reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('low', 'medium', 'high', name='reasoning_effort')))
 
