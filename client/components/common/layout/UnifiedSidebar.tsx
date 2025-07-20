@@ -36,13 +36,13 @@ import {
 } from "@/components/ui/sidebar";
 import { useProfile } from "@/contexts/profile-context";
 import { Class, Cohort } from "@/types";
+import { getSimulatableProfiles } from "@/utils/auth/get-simulatable-profiles";
 import { logError } from "@/utils/logger";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
-import { getSimulatableProfiles } from "@/utils/auth/get-simulatable-profiles";
-import { useQuery, } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   BookOpen,
   ChartBar,
@@ -110,6 +110,7 @@ export function UnifiedSidebar({
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [profileSearchTerm, setProfileSearchTerm] = React.useState("");
 
   // Use the profile context
   const { activeProfile, effectiveProfile, setSimulatedProfile } = useProfile();
@@ -123,20 +124,47 @@ export function UnifiedSidebar({
       ["superadmin", "admin", "instructional"].includes(activeProfile.role),
   });
 
-  // Create the final profile list for the dropdown
+  // Create the final profile list for the dropdown, organized by priority
   const profileOptions = React.useMemo(() => {
     if (!activeProfile) return [];
 
-    // Start with the user's own profile
-    const options = [activeProfile];
+    const options = [];
 
-    // Add the other profiles they can simulate
+    // 1. Start with the user's own profile (actualProfile)
+    options.push(activeProfile);
+
+    // 2. Add profiles with defaultProfile = true
     if (simulatableProfiles) {
-      options.push(...simulatableProfiles);
+      const defaultProfiles = simulatableProfiles.filter(
+        (profile) => profile.defaultProfile
+      );
+      options.push(...defaultProfiles);
+    }
+
+    // 3. Add the rest of the simulatable profiles
+    if (simulatableProfiles) {
+      const regularProfiles = simulatableProfiles.filter(
+        (profile) => !profile.defaultProfile
+      );
+      options.push(...regularProfiles);
+    }
+
+    // Apply search filter if profileSearchTerm exists
+    if (profileSearchTerm.trim()) {
+      return options.filter(
+        (profile) =>
+          `${profile.firstName} ${profile.lastName}`
+            .toLowerCase()
+            .includes(profileSearchTerm.toLowerCase()) ||
+          profile.role
+            .toLowerCase()
+            .includes(profileSearchTerm.toLowerCase()) ||
+          profile.alias?.toLowerCase().includes(profileSearchTerm.toLowerCase())
+      );
     }
 
     return options;
-  }, [activeProfile, simulatableProfiles]);
+  }, [activeProfile, simulatableProfiles, profileSearchTerm]);
 
   const { data: departments } = useQuery({
     queryKey: ["departments"],
@@ -192,7 +220,13 @@ export function UnifiedSidebar({
       section: `class-${c.id}`,
       isSubItem: true,
     }));
-  }, [classes, departments, effectiveProfile.role, effectiveProfile?.id, effectiveProfile.defaultProfile]);
+  }, [
+    classes,
+    departments,
+    effectiveProfile.role,
+    effectiveProfile?.id,
+    effectiveProfile.defaultProfile,
+  ]);
 
   const getCohortSubItems = React.useMemo(() => {
     if (!cohorts) return [];
@@ -233,7 +267,13 @@ export function UnifiedSidebar({
       section: `cohort-${c.id}`,
       isSubItem: true,
     }));
-  }, [cohorts, departments, effectiveProfile.role, effectiveProfile?.id, effectiveProfile.defaultProfile]);
+  }, [
+    cohorts,
+    departments,
+    effectiveProfile.role,
+    effectiveProfile?.id,
+    effectiveProfile.defaultProfile,
+  ]);
 
   // Build navigation menu based on role with search filtering
   const navMain = React.useMemo(() => {
@@ -251,7 +291,9 @@ export function UnifiedSidebar({
 
     // Analytics - Available from instructor level and up
     if (
-      ["instructor", "instructional", "admin", "superadmin"].includes(effectiveProfile.role)
+      ["instructor", "instructional", "admin", "superadmin"].includes(
+        effectiveProfile.role
+      )
     ) {
       menu.push({
         title: "Analytics",
@@ -303,7 +345,9 @@ export function UnifiedSidebar({
             : []),
         ],
       });
-    } else if (["instructional", "admin", "superadmin"].includes(effectiveProfile.role)) {
+    } else if (
+      ["instructional", "admin", "superadmin"].includes(effectiveProfile.role)
+    ) {
       // Staff/Admin view - single items, no sub-items, no "new"
       menu.push({
         title: "Classes",
@@ -322,7 +366,9 @@ export function UnifiedSidebar({
 
     // Create - Available from instructor level and up
     if (
-      ["instructor", "instructional", "admin", "superadmin"].includes(effectiveProfile.role)
+      ["instructor", "instructional", "admin", "superadmin"].includes(
+        effectiveProfile.role
+      )
     ) {
       menu.push({
         title: "Create",
@@ -543,41 +589,58 @@ export function UnifiedSidebar({
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width]"
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-64"
                 align="start"
               >
-                <DropdownMenuLabel>Switch Profile</DropdownMenuLabel>
+
+                {/* Search input for profiles */}
+                <div className="px-2 py-1.5">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Search profiles..."
+                      value={profileSearchTerm}
+                      onChange={(e) => setProfileSearchTerm(e.target.value)}
+                      className="w-full pl-7 pr-2 py-1.5 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
                 <DropdownMenuSeparator />
+
                 {isLoadingProfiles ? (
                   <DropdownMenuItem disabled>
                     Loading profiles...
                   </DropdownMenuItem>
                 ) : (
-                  profileOptions.map((profile) => (
-                    <DropdownMenuItem
-                      key={profile.id}
-                      onSelect={() => handleProfileSelect(profile.id)}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6 text-xs">
-                          <AvatarFallback>
-                            {getInitials(
-                              `${profile.firstName} ${profile.lastName}`
-                            )}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col leading-tight">
-                          <span>{`${profile.firstName} ${profile.lastName}`}</span>
-                          <span className="text-xs capitalize text-muted-foreground">
-                            {profile.role}
-                          </span>
+                  <div className="max-h-60 overflow-y-auto">
+                    {profileOptions.map((profile) => (
+                      <DropdownMenuItem
+                        key={profile.id}
+                        onSelect={() => handleProfileSelect(profile.id)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6 text-xs">
+                            <AvatarFallback>
+                              {getInitials(
+                                `${profile.firstName} ${profile.lastName}`
+                              )}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col leading-tight">
+                            <span>{`${profile.firstName} ${profile.lastName}`}</span>
+                            <span className="text-xs capitalize text-muted-foreground">
+                              {profile.role}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      {profile.id === effectiveProfile.id && (
-                        <Check className="ml-auto size-4" />
-                      )}
-                    </DropdownMenuItem>
-                  ))
+                        {profile.id === effectiveProfile.id && (
+                          <Check className="ml-auto size-4" />
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -703,7 +766,9 @@ export function UnifiedSidebar({
                       {effectiveProfile.role === "guest" || !activeProfile
                         ? "GU"
                         : getInitials(
-                            activeProfile?.firstName + " " + activeProfile?.lastName
+                            activeProfile?.firstName +
+                              " " +
+                              activeProfile?.lastName
                           )}
                     </AvatarFallback>
                   </Avatar>
@@ -711,7 +776,9 @@ export function UnifiedSidebar({
                     <span className="truncate font-semibold">
                       {effectiveProfile.role === "guest" || !activeProfile
                         ? "Guest User"
-                        : activeProfile?.firstName + " " + activeProfile?.lastName}
+                        : activeProfile?.firstName +
+                          " " +
+                          activeProfile?.lastName}
                     </span>
                     <span className="truncate text-xs">
                       {effectiveProfile.role === "guest" || !activeProfile
@@ -735,7 +802,9 @@ export function UnifiedSidebar({
                         {effectiveProfile.role === "guest" || !activeProfile
                           ? "GU"
                           : getInitials(
-                              activeProfile?.firstName + " " + activeProfile?.lastName
+                              activeProfile?.firstName +
+                                " " +
+                                activeProfile?.lastName
                             )}
                       </AvatarFallback>
                     </Avatar>
@@ -743,7 +812,9 @@ export function UnifiedSidebar({
                       <span className="truncate font-semibold">
                         {effectiveProfile.role === "guest" || !activeProfile
                           ? "Guest User"
-                          : activeProfile?.firstName + " " + activeProfile?.lastName}
+                          : activeProfile?.firstName +
+                            " " +
+                            activeProfile?.lastName}
                       </span>
                       <span className="truncate text-xs">
                         {effectiveProfile.role === "guest" || !activeProfile
