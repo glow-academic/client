@@ -34,7 +34,7 @@ export default function CohortDashboardPage({
   const { cohortId } = use(params);
   return (
     <div className="space-y-6">
-      <CohortDashboard cohortId={cohortId} />
+      <CohortDashboard cohortIds={[cohortId]} />
     </div>
   );
 }

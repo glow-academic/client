@@ -1,8 +1,8 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 121
-- **Tests Created**: 0
+- **Total Components**: 122
+- **Tests Created**: 1
 - **Tests Updated**: 0
 - **Tests Skipped** (already implemented): 121
 
@@ -11,7 +11,7 @@
 | Component | Path | Test File | Status |
 |-----------|------|-----------|--------|
 | Dashboard | analytics/Dashboard.tsx | Dashboard.test.tsx | ✅ Implemented |
-| History | analytics/History.tsx | History.test.tsx | ✅ Implemented |
+| Progress | analytics/Progress.tsx | Progress.test.tsx | ✅ Implemented |
 | Report | analytics/report/Report.tsx | Report.test.tsx | ✅ Implemented |
 | Reports | analytics/report/Reports.tsx | Reports.test.tsx | ✅ Implemented |
 | ReportsDataTable | analytics/report/ReportsDataTable.tsx | ReportsDataTable.test.tsx | ✅ Implemented |
@@ -59,6 +59,7 @@
 | ClassStaff | common/class/ClassStaff.tsx | ClassStaff.test.tsx | ✅ Implemented |
 | Cohort | common/cohort/Cohort.tsx | Cohort.test.tsx | ✅ Implemented |
 | CohortDashboard | common/cohort/CohortDashboard.tsx | CohortDashboard.test.tsx | ✅ Implemented |
+| CohortPicker | common/cohort/CohortPicker.tsx | CohortPicker.test.tsx | ✅ Implemented |
 | SimulationProgress | common/cohort/SimulationProgress.tsx | SimulationProgress.test.tsx | ✅ Implemented |
 | CarouselSection | common/dashboard/CarouselSection.tsx | CarouselSection.test.tsx | ✅ Implemented |
 | DashboardEdit | common/dashboard/DashboardEdit.tsx | DashboardEdit.test.tsx | ✅ Implemented |
@@ -138,7 +139,7 @@
 __tests__/
 ├── analytics/
 │   ├── Dashboard.test.tsx
-│   ├── History.test.tsx
+│   ├── Progress.test.tsx
 │   ├── report/
 │   │   ├── Report.test.tsx
 │   │   ├── Reports.test.tsx
@@ -200,6 +201,7 @@ __tests__/
 │   ├── cohort/
 │   │   ├── Cohort.test.tsx
 │   │   ├── CohortDashboard.test.tsx
+│   │   ├── CohortPicker.test.tsx
 │   │   ├── SimulationProgress.test.tsx
 │   ├── dashboard/
 │   │   ├── CarouselSection.test.tsx

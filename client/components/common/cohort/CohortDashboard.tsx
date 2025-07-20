@@ -8,7 +8,6 @@
 "use client";
 
 import { useProfile } from "@/contexts/profile-context";
-import { getCohort } from "@/utils/queries/cohorts/get-cohort";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
@@ -21,29 +20,41 @@ import SimulationCard from "../simulation/SimulationCard";
 import SimulationProgress from "./SimulationProgress";
 
 export interface CohortDashboardProps {
-  cohortId: string;
+  cohortIds: string[];
 }
 
-export default function CohortDashboard({ cohortId }: CohortDashboardProps) {
+export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
   const { effectiveProfile } = useProfile();
 
-  // 1. Fetch the specific cohort
-  const { data: cohort, isLoading: loadingCohort } = useQuery({
-    queryKey: ["cohort", cohortId],
-    queryFn: () => getCohort(cohortId),
+  // 1. Fetch the specific cohorts
+  const { data: cohorts, isLoading: loadingCohorts } = useQuery({
+    queryKey: ["cohorts", cohortIds],
+    queryFn: async () => {
+      // Fetch all cohorts and filter by the provided IDs
+      const { getAllCohorts } = await import(
+        "@/utils/queries/cohorts/get-all-cohorts"
+      );
+      const allCohorts = await getAllCohorts();
+      return allCohorts.filter((cohort) => cohortIds.includes(cohort.id));
+    },
+    enabled: cohortIds.length > 0,
   });
 
-  // 2. Fetch all simulations, to be filtered by cohort
+  // 2. Fetch all simulations, to be filtered by cohorts
   const { data: allSimulations, isLoading: loadingSimulations } = useQuery({
     queryKey: ["simulations"],
     queryFn: getAllSimulations,
   });
 
-  // 3. Get all profile IDs from the cohort to fetch member data
+  // 3. Get all profile IDs from the cohorts to fetch member data
   const cohortMemberIds = useMemo(() => {
-    if (!cohort) return [];
-    return cohort.profileIds || [];
-  }, [cohort]);
+    if (!cohorts) return [];
+    const ids = new Set<string>();
+    cohorts.forEach((cohort) => {
+      cohort.profileIds?.forEach((id) => ids.add(id));
+    });
+    return Array.from(ids);
+  }, [cohorts]);
 
   // 4. Fetch all profiles for the members
   const { data: cohortProfiles, isLoading: loadingProfiles } = useQuery({
@@ -82,79 +93,81 @@ export default function CohortDashboard({ cohortId }: CohortDashboardProps) {
 
   // Data processing logic
   const processedCohortData = useMemo(() => {
-    if (!cohort || !allSimulations || !cohortProfiles || !attempts || !grades)
-      return null;
+    if (!cohorts || !allSimulations || !cohortProfiles || !attempts || !grades)
+      return [];
 
-    // Get simulations for this specific cohort (and exclude default/practice ones)
-    const cohortSimulations = allSimulations.filter(
-      (sim) => sim.cohortIds?.includes(cohort.id) && !sim.defaultSimulation
-    );
-
-    // Get the profiles of members in this cohort
-    const cohortMembers = cohortProfiles.filter((p) =>
-      cohort.profileIds?.includes(p.id)
-    );
-
-    // For each simulation, calculate individual TA progress
-    const simulationsWithProgress = cohortSimulations.map((simulation) => {
-      // Find TA's attempts for this simulation
-      const taAttempts = attempts.filter(
-        (att) =>
-          att.profileId === effectiveProfile!.id &&
-          att.simulationId === simulation.id
+    return cohorts.map((cohort) => {
+      // Get simulations for this specific cohort (and exclude default/practice ones)
+      const cohortSimulations = allSimulations.filter(
+        (sim) => sim.cohortIds?.includes(cohort.id) && !sim.defaultSimulation
       );
 
-      const taProgress = {
-        totalAttempts: taAttempts.length,
-        passedCount: 0,
-        inProgressCount: 0,
-        notStartedCount: taAttempts.length === 0 ? 1 : 0,
-        passedMembers: [] as string[],
-        inProgressMembers: [] as string[],
-      };
+      // Get the profiles of members in this cohort
+      const cohortMembers = cohortProfiles.filter((p) =>
+        cohort.profileIds?.includes(p.id)
+      );
 
-      if (taAttempts.length > 0) {
-        const taAttemptIds = taAttempts.map((att) => att.id);
-
-        // Find chats and grades related to these attempts
-        const taChats = chats?.filter((c) =>
-          taAttemptIds.includes(c.attemptId)
-        );
-        const taGrades = grades?.filter((g) =>
-          taChats?.some((c) => c.id === g.simulationChatId)
+      // For each simulation, calculate individual TA progress
+      const simulationsWithProgress = cohortSimulations.map((simulation) => {
+        // Find TA's attempts for this simulation
+        const taAttempts = attempts.filter(
+          (att) =>
+            att.profileId === effectiveProfile!.id &&
+            att.simulationId === simulation.id
         );
 
-        const hasPassed = taGrades?.some((g) => g.passed);
+        const taProgress = {
+          totalAttempts: taAttempts.length,
+          passedCount: 0,
+          inProgressCount: 0,
+          notStartedCount: taAttempts.length === 0 ? 1 : 0,
+          passedMembers: [] as string[],
+          inProgressMembers: [] as string[],
+        };
 
-        if (hasPassed) {
-          taProgress.passedCount = 1;
-          taProgress.passedMembers = [effectiveProfile!.id];
-        } else {
-          taProgress.inProgressCount = 1;
-          taProgress.inProgressMembers = [effectiveProfile!.id];
+        if (taAttempts.length > 0) {
+          const taAttemptIds = taAttempts.map((att) => att.id);
+
+          // Find chats and grades related to these attempts
+          const taChats = chats?.filter((c) =>
+            taAttemptIds.includes(c.attemptId)
+          );
+          const taGrades = grades?.filter((g) =>
+            taChats?.some((c) => c.id === g.simulationChatId)
+          );
+
+          const hasPassed = taGrades?.some((g) => g.passed);
+
+          if (hasPassed) {
+            taProgress.passedCount = 1;
+            taProgress.passedMembers = [effectiveProfile!.id];
+          } else {
+            taProgress.inProgressCount = 1;
+            taProgress.inProgressMembers = [effectiveProfile!.id];
+          }
         }
-      }
+
+        return {
+          ...simulation,
+          progress: {
+            totalMembers: 1, // Individual TA view
+            passedCount: taProgress.passedCount,
+            inProgressCount: taProgress.inProgressCount,
+            notStartedCount: taProgress.notStartedCount,
+            passedMembers: taProgress.passedMembers,
+            inProgressMembers: taProgress.inProgressMembers,
+          },
+        };
+      });
 
       return {
-        ...simulation,
-        progress: {
-          totalMembers: 1, // Individual TA view
-          passedCount: taProgress.passedCount,
-          inProgressCount: taProgress.inProgressCount,
-          notStartedCount: taProgress.notStartedCount,
-          passedMembers: taProgress.passedMembers,
-          inProgressMembers: taProgress.inProgressMembers,
-        },
+        cohort,
+        cohortMembers,
+        simulations: simulationsWithProgress,
       };
     });
-
-    return {
-      cohort,
-      cohortMembers,
-      simulations: simulationsWithProgress,
-    };
   }, [
-    cohort,
+    cohorts,
     allSimulations,
     cohortProfiles,
     attempts,
@@ -165,7 +178,7 @@ export default function CohortDashboard({ cohortId }: CohortDashboardProps) {
 
   // Loading state
   const isLoading =
-    loadingCohort ||
+    loadingCohorts ||
     loadingSimulations ||
     loadingProfiles ||
     loadingAttempts ||
@@ -195,13 +208,13 @@ export default function CohortDashboard({ cohortId }: CohortDashboardProps) {
     );
   }
 
-  if (!processedCohortData) {
+  if (!processedCohortData.length) {
     return (
       <div className="container mx-auto p-4">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Cohort Not Found</h1>
+          <h1 className="text-2xl font-bold mb-4">No Cohorts Found</h1>
           <p className="text-gray-600">
-            The requested cohort could not be found.
+            The requested cohorts could not be found.
           </p>
         </div>
       </div>
@@ -210,33 +223,39 @@ export default function CohortDashboard({ cohortId }: CohortDashboardProps) {
 
   return (
     <div className="container mx-auto p-4 space-y-8">
-      {/* Progress Visualization Section */}
-      <div className="space-y-4">
-        {processedCohortData.simulations.map((sim) => (
-          <SimulationProgress key={sim.id} simulation={sim} />
-        ))}
-      </div>
+      {processedCohortData.map((data) => (
+        <section key={data.cohort.id} className="space-y-6">
+          <h2 className="text-2xl font-semibold">{data.cohort.title}</h2>
 
-      {/* Assignments List Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {processedCohortData.simulations.map((sim) => (
-          <SimulationCard
-            key={sim.id}
-            simulation={sim}
-            type="cohort"
-            onStartSimulation={() => {}} // Placeholder - implement as needed
-            loadingSimulation={null}
-            effectiveProfile={effectiveProfile}
-            rubricData={{ attempts: [], highestScore: 0 }} // Placeholder - implement as needed
-          />
-        ))}
-      </div>
+          {/* Progress Visualization Section */}
+          <div className="space-y-4">
+            {data.simulations.map((sim) => (
+              <SimulationProgress key={sim.id} simulation={sim} />
+            ))}
+          </div>
+
+          {/* Assignments List Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {data.simulations.map((sim) => (
+              <SimulationCard
+                key={sim.id}
+                simulation={sim}
+                type="cohort"
+                onStartSimulation={() => {}} // Placeholder - implement as needed
+                loadingSimulation={null}
+                effectiveProfile={effectiveProfile}
+                rubricData={{ attempts: [], highestScore: 0 }} // Placeholder - implement as needed
+              />
+            ))}
+          </div>
+        </section>
+      ))}
 
       {/* History Section */}
       <div className="mt-12">
         <SimulationHistory
           showAll={shouldShowAll}
-          cohortId={cohortId}
+          cohortIds={cohortIds}
           showExport={shouldShowAll}
         />
       </div>
