@@ -43,9 +43,11 @@ interface EnhancedAttempt extends SimulationAttempt {
 export function useHistoryColumns({
   showAll = false,
   showExport = true,
+  cohortId = undefined,
 }: {
   showAll?: boolean;
   showExport?: boolean;
+  cohortId: string | undefined;
 }) {
   const { effectiveProfile } = useProfile();
 
@@ -713,6 +715,13 @@ export function useHistoryColumns({
 
   // Use enhanced attempts data
   let data: unknown[] = enhancedAttempts || [];
+
+  if (cohortId) {
+    data = data.filter(
+      (attempt: unknown) =>
+        (attempt as Record<string, unknown>)["cohortId"] === cohortId
+    );
+  }
 
   // Apply filtering based on showAll parameter
   if (!showAll && effectiveProfile) {

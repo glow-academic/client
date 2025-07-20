@@ -81,16 +81,17 @@ export default function SimulationCard({
       ? "from-gray-900 to-gray-600"
       : "from-blue-900 to-purple-600";
 
+  // Make the card fill available height and stretch the header to create space
   return (
-    <div className="relative">
+    <div className="relative h-full">
       <Card
         data-testid={
           type === "default" ? "permanent-simulation-card" : "simulation-card"
         }
-        className="group overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-white dark:bg-gray-900 border-0 shadow-lg rounded-lg"
+        className="group overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-white dark:bg-gray-900 border-0 shadow-lg rounded-lg flex flex-col h-full"
       >
         {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0 opacity-5 pointer-events-none select-none">
           <div
             className={`absolute inset-0 bg-gradient-to-br ${backgroundGradient}`}
           ></div>
@@ -107,11 +108,12 @@ export default function SimulationCard({
         <CardHeader className="pb-1 relative z-10">
           <div className="flex items-start justify-between">
             <div
-              className={`p-2 rounded-xl bg-gradient-to-br ${gradientClass} shadow-lg group-hover:scale-110 transition-transform duration-300`}
+              className={`p-2 rounded-xl bg-gradient-to-br ${gradientClass} shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0`}
+              style={{ minHeight: 40, minWidth: 40, display: "flex", alignItems: "center", justifyContent: "center" }}
             >
               <IconComponent className="h-5 w-5 text-white" />
             </div>
-            <div className="flex flex-col items-end space-y-1">
+            <div className="flex flex-col items-end space-y-1 flex-1 min-h-[40px] justify-between">
               {/* Rubric Icon */}
               {effectiveProfile?.role !== "guest" && (
                 <Dialog>
@@ -164,8 +166,9 @@ export default function SimulationCard({
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-1 relative z-10">
-          <div>
+        {/* Make content take up remaining space, but not push footer off */}
+        <CardContent className="space-y-1 relative z-10 flex-1 flex flex-col justify-start">
+          <div className="flex flex-col justify-between h-full">
             <h3
               className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors"
               data-testid="simulation-title"
@@ -179,7 +182,7 @@ export default function SimulationCard({
             </p>
           </div>
 
-          <div className="flex items-center space-x-3 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center space-x-3 text-xs text-gray-500 dark:text-gray-400 mt-2">
             <div
               className="flex items-center"
               data-testid="simulation-duration"

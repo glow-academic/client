@@ -217,15 +217,17 @@ export function UnifiedSidebar({
         return [];
     }
 
-    return profileClasses.map((c: { id: string; classCode: string, departmentId: string }) => {
-      const department = departments?.find((d) => d.id === c.departmentId);
-      return {
-      title: `${department?.departmentCode} ${c.classCode}`,
-      url: `/classes/c/${c.id}`,
-      section: `class-${c.id}`,
-      isSubItem: true,
-    };
-  });
+    return profileClasses.map(
+      (c: { id: string; classCode: string; departmentId: string }) => {
+        const department = departments?.find((d) => d.id === c.departmentId);
+        return {
+          title: `${department?.departmentCode} ${c.classCode}`,
+          url: `/classes/c/${c.id}`,
+          section: `class-${c.id}`,
+          isSubItem: true,
+        };
+      }
+    );
   }, [
     classes,
     departments,
@@ -285,21 +287,17 @@ export function UnifiedSidebar({
   const navMain = React.useMemo(() => {
     const menu: NavSection[] = [];
 
-    // Home - Only for TAs and guests
-    if (effectiveProfile.role === "ta" || effectiveProfile.role === "guest") {
-      menu.push({
-        title: "Home",
-        url: "#",
-        icon: Home,
-        section: "home",
-      });
-    }
+    // Home - For all
+    menu.push({
+      title: "Home",
+      url: "#",
+      icon: Home,
+      section: "home",
+    });
 
     // Analytics - Available from instructor level and up
     if (
-      ["instructional", "admin", "superadmin"].includes(
-        effectiveProfile.role
-      )
+      ["instructional", "admin", "superadmin"].includes(effectiveProfile.role)
     ) {
       menu.push({
         title: "Analytics",

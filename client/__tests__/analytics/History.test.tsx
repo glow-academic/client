@@ -2,7 +2,7 @@ import { describe, it } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import History from '@/components/analytics/History';
+import History from '@/components/analytics/Progress';
 
 describe('History', () => {
   

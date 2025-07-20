@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 120
-- **Tests Created**: 2
+- **Total Components**: 121
+- **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 118
+- **Tests Skipped** (already implemented): 121
 
 ## Component Coverage
 
@@ -59,6 +59,7 @@
 | ClassStaff | common/class/ClassStaff.tsx | ClassStaff.test.tsx | ✅ Implemented |
 | Cohort | common/cohort/Cohort.tsx | Cohort.test.tsx | ✅ Implemented |
 | CohortDashboard | common/cohort/CohortDashboard.tsx | CohortDashboard.test.tsx | ✅ Implemented |
+| SimulationProgress | common/cohort/SimulationProgress.tsx | SimulationProgress.test.tsx | ✅ Implemented |
 | CarouselSection | common/dashboard/CarouselSection.tsx | CarouselSection.test.tsx | ✅ Implemented |
 | DashboardEdit | common/dashboard/DashboardEdit.tsx | DashboardEdit.test.tsx | ✅ Implemented |
 | DraggableComponent | common/dashboard/DraggableComponent.tsx | DraggableComponent.test.tsx | ✅ Implemented |
@@ -199,6 +200,7 @@ __tests__/
 │   ├── cohort/
 │   │   ├── Cohort.test.tsx
 │   │   ├── CohortDashboard.test.tsx
+│   │   ├── SimulationProgress.test.tsx
 │   ├── dashboard/
 │   │   ├── CarouselSection.test.tsx
 │   │   ├── DashboardEdit.test.tsx

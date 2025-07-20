@@ -5,19 +5,18 @@
  * 06/08/2025
  */
 
-import History from "@/components/analytics/History";
-
+import Progress from "@/components/analytics/Progress";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "History",
-  description: `History in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+  title: "Progress",
+  description: `Progress in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
 
 export default function HistoryPage() {
   return (
     <div className="space-y-6">
-      <History />
+      <Progress />
     </div>
   );
 }

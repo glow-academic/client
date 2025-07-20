@@ -10,17 +10,20 @@ import { DataTable } from "./DataTable";
 
 export interface SimulationHistoryProps {
   showAll: boolean;
+  cohortId?: string;
   showExport?: boolean;
-};
+}
 
 export default function SimulationHistory({
   showAll,
   showExport = true,
+  cohortId = undefined,
 }: SimulationHistoryProps) {
   const { columns, data, profileOptions, classOptions, scoreRangeOptions } =
     useHistoryColumns({
       showAll,
       showExport,
+      cohortId,
     });
 
   return (
