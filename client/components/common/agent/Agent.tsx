@@ -35,6 +35,7 @@ interface FormData {
   systemPrompt?: string;
   temperature?: number;
   modelId?: string;
+  reasoning?: "none" | "low" | "medium" | "high";
 }
 
 export interface AgentProps {
@@ -57,6 +58,7 @@ export default function Agent({
       systemPrompt: "",
       temperature: 0.0,
       modelId: "",
+      reasoning: "none",
     }),
     []
   );
@@ -85,6 +87,7 @@ export default function Agent({
         systemPrompt: agent.systemPrompt,
         temperature: agent.temperature,
         modelId: agent.modelId || "",
+        reasoning: agent.reasoning || "none",
       });
     } else if (!isEditMode) {
       setFormData(initialFormData);
@@ -125,6 +128,7 @@ export default function Agent({
           systemPrompt: formData.systemPrompt,
           temperature: Number(formData.temperature),
           modelId: formData.modelId,
+          reasoning: formData.reasoning === "none" ? null : formData.reasoning,
           updatedAt: new Date().toISOString(),
         });
         queryClient.invalidateQueries({ queryKey: ["agents"] });
@@ -137,6 +141,7 @@ export default function Agent({
           systemPrompt: formData.systemPrompt,
           temperature: Number(formData.temperature),
           modelId: formData.modelId,
+          reasoning: formData.reasoning === "none" ? null : formData.reasoning,
           color: "#000000",
         });
         queryClient.invalidateQueries({ queryKey: ["agents"] });
@@ -197,8 +202,7 @@ export default function Agent({
           </div>
 
           <div className={`grid gap-4 grid-cols-1`}>
-            {formData?.modelId !== undefined &&
-            !isLoading ? (
+            {formData?.modelId !== undefined && !isLoading ? (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="modelId">Text Model *</Label>
@@ -217,14 +221,43 @@ export default function Agent({
                     </SelectTrigger>
                     <SelectContent>
                       {models
-                        ?.filter(
-                          (model) => model.active
-                        )
+                        ?.filter((model) => model.active)
                         ?.map((model) => (
                           <SelectItem key={model.id} value={model.id}>
                             {model.name}
                           </SelectItem>
                         ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            ) : (
+              <Skeleton className="h-10 w-full" />
+            )}
+          </div>
+
+          <div className={`grid gap-4 grid-cols-1`}>
+            {formData?.reasoning !== undefined && !isLoading ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="reasoning">Reasoning Effort</Label>
+                  <Select
+                    value={formData?.reasoning || "none"}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        reasoning: value as "none" | "low" | "medium" | "high",
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select reasoning effort" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

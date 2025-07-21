@@ -291,6 +291,11 @@ export function UnifiedSidebar({
             section: "agents",
           },
           {
+            title: "Documents",
+            url: "#",
+            section: "documents",
+          },
+          {
             title: "Rubrics",
             url: "#",
             section: "rubrics",

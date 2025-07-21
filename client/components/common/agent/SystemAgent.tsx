@@ -34,6 +34,7 @@ interface SystemAgentFormData {
   systemPrompt?: string;
   temperature?: number;
   modelId?: string;
+  reasoning?: "none" | "low" | "medium" | "high";
 }
 
 export interface SystemAgentProps {
@@ -51,6 +52,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
       systemPrompt: "",
       temperature: 0.0,
       modelId: "",
+      reasoning: "none",
     }),
     []
   );
@@ -79,6 +81,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
         systemPrompt: agent.systemPrompt,
         temperature: agent.temperature,
         modelId: agent.modelId || "",
+        reasoning: agent.reasoning || "none",
       });
     } else {
       setFormData(initialFormData);
@@ -117,6 +120,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
         systemPrompt: formData.systemPrompt,
         temperature: Number(formData.temperature),
         modelId: formData.modelId,
+        reasoning: formData.reasoning === "none" ? null : formData.reasoning,
         updatedAt: new Date().toISOString(),
       });
       queryClient.invalidateQueries({ queryKey: ["systemAgents"] });
@@ -198,6 +202,37 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                             {model.name}
                           </SelectItem>
                         ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            ) : (
+              <Skeleton className="h-10 w-full" />
+            )}
+          </div>
+
+          <div className={`grid gap-4 grid-cols-1`}>
+            {formData?.reasoning !== undefined && !isLoading ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="reasoning">Reasoning Effort</Label>
+                  <Select
+                    value={formData?.reasoning || "none"}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        reasoning: value as "none" | "low" | "medium" | "high",
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select reasoning effort" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
