@@ -61,6 +61,8 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
       return allCohorts.filter((cohort) => cohortIds.includes(cohort.id));
     },
     enabled: cohortIds.length > 0,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   // 2. Fetch all simulations, to be filtered by cohorts
@@ -76,7 +78,7 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
     cohorts.forEach((cohort) => {
       cohort.profileIds?.forEach((id) => ids.add(id));
     });
-    return Array.from(ids);
+    return Array.from(ids).sort(); // Sort to ensure stable array reference
   }, [cohorts]);
 
   // 4. Fetch all profiles for the members
@@ -84,6 +86,8 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
     queryKey: ["profiles", "cohortMembers", cohortMemberIds],
     queryFn: () => getAllProfiles(), // We fetch all and filter client-side for simplicity
     enabled: cohortMemberIds.length > 0,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   // Filter profiles to only include those in the cohort's profileIds
@@ -101,14 +105,6 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
       allCohortProfileIds.has(profile.id)
     );
 
-    logInfo("CohortDashboard: Profile filtering", {
-      totalProfiles: allProfiles.length,
-      cohortProfileIds: Array.from(allCohortProfileIds),
-      filteredProfiles: filteredProfiles.length,
-      cohortIds: cohorts.map((c) => c.id),
-      cohortTitles: cohorts.map((c) => c.title),
-    });
-
     return filteredProfiles;
   }, [allProfiles, cohorts]);
 
@@ -121,14 +117,14 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
 
   // 6. Fetch chats for those attempts
   const { data: chats, isLoading: loadingChats } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((a) => a.id)],
+    queryKey: ["simulationChats", attempts?.map((a) => a.id)?.sort() || []],
     queryFn: () => getSimulationChatsByAttempts(attempts!.map((a) => a.id)),
     enabled: !!attempts && attempts.length > 0,
   });
 
   // 7. Fetch grades for those chats - this contains the critical 'passed' status
   const { data: grades, isLoading: loadingGrades } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((c) => c.id)],
+    queryKey: ["simulationGrades", chats?.map((c) => c.id)?.sort() || []],
     queryFn: () =>
       getSimulationChatGradesBySimulationChats(chats!.map((c) => c.id)),
     enabled: !!chats && chats.length > 0,
@@ -136,7 +132,7 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
 
   // 8. Fetch messages for those chats (for accolades calculation)
   const { data: messages, isLoading: loadingMessages } = useQuery({
-    queryKey: ["simulationMessages", chats?.map((c) => c.id)],
+    queryKey: ["simulationMessages", chats?.map((c) => c.id)?.sort() || []],
     queryFn: async () => {
       const { getSimulationMessagesByChats } = await import(
         "@/utils/queries/simulation_messages/get-simulation-messages-by-chats"
@@ -298,16 +294,6 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
       return [];
     }
 
-    logInfo("CohortDashboard: Processing data", {
-      cohortCount: cohorts.length,
-      simulationCount: allSimulations.length,
-      profileCount: cohortProfiles.length,
-      attemptCount: safeAttempts.length,
-      gradeCount: safeGrades.length,
-      shouldShowAll,
-      effectiveProfileRole: effectiveProfile?.role,
-    });
-
     return cohorts.map((cohort) => {
       // Get simulations for this specific cohort (and exclude default/practice ones)
       const cohortSimulations = allSimulations.filter((sim) =>
@@ -318,15 +304,6 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
       const cohortMembers = cohortProfiles.filter((p) =>
         cohort.profileIds?.includes(p.id)
       );
-
-      logInfo("CohortDashboard: Processing cohort", {
-        cohortId: cohort.id,
-        cohortTitle: cohort.title,
-        simulationCount: cohortSimulations.length,
-        memberCount: cohortMembers.length,
-        profileIds: cohort.profileIds,
-        simulationIds: cohort.simulationIds,
-      });
 
       // For each simulation, calculate progress based on user role
       const simulationsWithProgress = cohortSimulations.map((simulation) => {
@@ -343,13 +320,13 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
           const cohortChats = chats?.filter((c) =>
             cohortAttemptIds.includes(c.attemptId)
           );
-          const cohortGrades = grades?.filter((g) =>
+          const cohortGrades = safeGrades.filter((g) =>
             cohortChats?.some((c) => c.id === g.simulationChatId)
           );
 
-          const passedCount = cohortGrades?.filter((g) => g.passed).length || 0;
+          const passedCount = cohortGrades.filter((g) => g.passed).length || 0;
           const inProgressCount =
-            cohortGrades?.filter((g) => !g.passed).length || 0;
+            cohortGrades.filter((g) => !g.passed).length || 0;
           const notStartedCount =
             cohortMembers.length - passedCount - inProgressCount;
 
@@ -428,11 +405,11 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
             const taChats = chats?.filter((c) =>
               taAttemptIds.includes(c.attemptId)
             );
-            const taGrades = grades?.filter((g) =>
+            const taGrades = safeGrades.filter((g) =>
               taChats?.some((c) => c.id === g.simulationChatId)
             );
 
-            const hasPassed = taGrades?.some((g) => g.passed);
+            const hasPassed = taGrades.some((g) => g.passed);
 
             if (hasPassed) {
               taProgress.passedCount = 1;
@@ -472,7 +449,6 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
     safeGrades,
     effectiveProfile,
     shouldShowAll,
-    grades,
   ]);
 
   // Flatten all simulations for carousel
@@ -770,10 +746,11 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
         />
       </div>
 
-
       {/* Progress Visualization Section - All progress bars grouped together */}
       <div className="space-y-6">
-      <h2 className="text-2xl font-bold mb-4">{shouldShowAll ? "Cohort Progress" : "Your Progress"}</h2>
+        <h2 className="text-2xl font-bold mb-4">
+          {shouldShowAll ? "Cohort Progress" : "Your Progress"}
+        </h2>
         <div className="max-h-96 overflow-y-auto space-y-4 pr-2">
           {processedCohortData.map((data) => (
             <div key={data.cohort.id} className="space-y-4">
@@ -869,7 +846,7 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
         <h2 className="text-2xl font-bold mb-4">Cohort Leaderboard</h2>
         <LeaderboardTable
           data={leaderboardData}
-          currentUserId={effectiveProfile!.id}
+          currentUserId={effectiveProfile?.id || ""}
         />
       </div>
     </div>

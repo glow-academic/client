@@ -59,6 +59,7 @@ import {
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 export interface UnifiedSidebarProps
@@ -104,6 +105,7 @@ export function UnifiedSidebar({
   onSectionChange,
   ...props
 }: UnifiedSidebarProps) {
+  const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -169,7 +171,12 @@ export function UnifiedSidebar({
   const { data: cohorts } = useQuery({
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
+
+  // Extract stable profile ID to avoid complex dependency expressions
+  const stableProfileId = effectiveProfile?.id || "";
 
   const getCohortSubItems = React.useMemo(() => {
     if (!cohorts) return [];
@@ -188,7 +195,7 @@ export function UnifiedSidebar({
           break;
         }
         profileCohorts = cohorts.filter((cohortData: Cohort) =>
-          cohortData?.profileIds?.includes(effectiveProfile?.id || "")
+          cohortData?.profileIds?.includes(stableProfileId)
         );
         break;
       default:
@@ -204,12 +211,12 @@ export function UnifiedSidebar({
   }, [
     cohorts,
     effectiveProfile.role,
-    effectiveProfile?.id,
+    stableProfileId,
     effectiveProfile.defaultProfile,
   ]);
 
   // Build navigation menu based on role with search filtering
-  const navMain = React.useMemo(() => {
+  const navMain = useMemo(() => {
     const menu: NavSection[] = [];
 
     // Home - For all
@@ -396,15 +403,26 @@ export function UnifiedSidebar({
     onSectionChange
   );
 
-  const handleItemClick = (item: MenuItem) => {
-    if (item.url && item.url !== "#") {
-      // Navigate to the URL (for attempts)
-      router.push(item.url);
-    } else if (item.section) {
-      // Handle section changes
-      handleSectionChange(item.section);
-    }
-  };
+  const handleItemClick = useCallback(
+    (item: MenuItem) => {
+      // Prevent rapid navigation clicks that could cause freezing
+      if (isNavigating) return;
+
+      setIsNavigating(true);
+
+      if (item.url && item.url !== "#") {
+        // Navigate to the URL (for attempts)
+        router.push(item.url);
+      } else if (item.section) {
+        // Handle section changes
+        handleSectionChange(item.section);
+      }
+
+      // Reset navigation state after a short delay
+      setTimeout(() => setIsNavigating(false), 500);
+    },
+    [router, handleSectionChange, isNavigating]
+  );
 
   const handleProfileSelect = (profileId: string) => {
     // If the user selects their own profile, clear the simulation
