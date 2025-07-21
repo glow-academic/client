@@ -21,7 +21,7 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { updateProfile } from "@/utils/mutations/profiles/update-profile";
+import { Cohort, Profile } from "@/types";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
@@ -39,8 +39,7 @@ import SimulationHistory from "../common/history/SimulationHistory";
 import { Skeleton } from "../ui/skeleton";
 import CompletionistView from "./CompletionistView";
 import PracticeZone from "./PracticeZone";
-import WelcomeOverlay from "./WelcomeOverlay";
-import { Cohort, Profile } from "@/types";
+import TATour from "./TATour";
 
 export default function Home() {
   const router = useRouter();
@@ -51,7 +50,7 @@ export default function Home() {
     null
   );
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-  const [showWelcomeOverlay, setShowWelcomeOverlay] = useState(false);
+  const [showTATour, setShowTATour] = useState(false);
 
   // Use global WebSocket context instead of local connection
   const { isConnected, emitStartSimulation } = useWebSocket();
@@ -152,25 +151,14 @@ export default function Home() {
     enabled: !!grades && grades.length > 0,
   });
 
-  const handleCloseWelcomeOverlay = useCallback(async () => {
-    try {
-      if (!effectiveProfile) {
-        logError("Profile not found");
-        return;
-      }
-      await updateProfile(effectiveProfile.id, {
-        viewedIntro: true,
-      });
-    } catch (error) {
-      logError("Error updating profile", error);
-    }
-    setShowWelcomeOverlay(false);
-  }, [effectiveProfile]);
+  const handleCloseTATour = useCallback(() => {
+    setShowTATour(false);
+  }, []);
 
   useEffect(() => {
     if (effectiveProfile) {
-      if (!effectiveProfile.viewedIntro) {
-        setShowWelcomeOverlay(true);
+      if (!effectiveProfile.viewedIntro || !effectiveProfile.viewedChat) {
+        setShowTATour(true);
       }
     }
   }, [effectiveProfile]);
@@ -618,9 +606,7 @@ export default function Home() {
           </div>
         )}
       </div>
-      {showWelcomeOverlay && (
-        <WelcomeOverlay onClose={handleCloseWelcomeOverlay} />
-      )}
+      {showTATour && <TATour onClose={handleCloseTATour} />}
     </TooltipProvider>
   );
 }

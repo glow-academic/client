@@ -40,10 +40,10 @@ import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { getProfilesByClass } from "@/utils/queries/profiles/get-profiles-by-class";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { GripVertical, Loader2, Search, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { getProfilesByClass } from "@/utils/auth/get-profiles-by-class";
 
 export interface CohortProps {
   cohortId?: string;

@@ -22,6 +22,7 @@ import ChatWidget from "@/components/common/home/ChatWidget";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import { AssistantProvider } from "@/contexts/assistant-context";
+import { useProfile } from "@/contexts/profile-context";
 import {
   SimulationProvider,
   useSimulation,
@@ -34,7 +35,6 @@ import {
   createSectionChangeHandler,
   isMainScreen,
 } from "@/utils/navigation-utils";
-import { useProfile } from "@/contexts/profile-context";
 
 // Inner component that uses the role context
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
@@ -105,6 +105,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             endChatLoading || (simulation?.timeLimit ? !isActive : false)
           }
           className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
+          data-tour-end-chat
         >
           {endChatLoading ? "Ending..." : buttonLabel}
         </Button>
@@ -226,10 +227,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
     if (pathname === "/management/staff") {
       return (
-        <Button
-          onClick={() => router.push("/management/staff/new")}
-          size="sm"
-        >
+        <Button onClick={() => router.push("/management/staff/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Staff
         </Button>
@@ -259,10 +257,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
     if (pathname === "/system/providers") {
       return (
-        <Button
-          onClick={() => router.push("/system/providers/new")}
-          size="sm"
-        >
+        <Button onClick={() => router.push("/system/providers/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Provider
         </Button>

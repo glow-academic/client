@@ -49,10 +49,10 @@ import { createProfile } from "@/utils/mutations/profiles/create-profile";
 import { getClass } from "@/utils/queries/classes/get-class";
 import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
 import { getDocumentsByClass } from "@/utils/queries/documents/get-documents-by-class";
-import { getProfilesByClass } from "@/utils/queries/profiles/get-profiles-by-class";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
+import { getProfilesByClass } from "@/utils/auth/get-profiles-by-class";
 
 // A new type to represent a document that is either saved or new
 type EditableDocument =

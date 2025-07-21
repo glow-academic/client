@@ -13,7 +13,6 @@ import { Award, Crown, MessageSquareText, Zap } from "lucide-react";
 import { useMemo } from "react";
 
 // Import query functions
-import { getProfilesByClass } from "@/utils/queries/profiles/get-profiles-by-class";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
@@ -21,6 +20,7 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getSimulationMessagesByChats } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chats";
 import AccoladeCard from "./AccoladeCard";
 import LeaderboardTable from "./LeaderboardTable";
+import { getProfilesByClass } from "@/utils/auth/get-profiles-by-class";
 
 // Import sub-components
 

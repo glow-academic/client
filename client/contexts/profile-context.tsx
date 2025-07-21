@@ -29,6 +29,7 @@ const GUEST_PROFILE: Profile = {
   role: "guest",
   active: true,
   viewedIntro: true,
+  viewedChat: true,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   lastLogin: new Date().toISOString(),
