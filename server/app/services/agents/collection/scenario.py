@@ -5,18 +5,14 @@ from typing import List, Tuple
 from agents import Runner, gen_trace_id, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
-from app.models import Classes, Models, Providers, SystemAgents
+from app.models import Agents, Classes, Models, Providers, SystemAgents
 from app.services.agents.generic import GenericAgent
 from app.utils.agents import get_agent_info
 from app.utils.classes import get_class_info
 from app.utils.document import get_document_info
-from app.utils.scenario import (
-    get_crowdedness_info,
-    get_deadline_info,
-    get_intensity_info,
-    get_location_info,
-    get_time_info,
-)
+from app.utils.scenario import (get_crowdedness_info, get_deadline_info,
+                                get_intensity_info, get_location_info,
+                                get_time_info)
 from fastapi import Depends
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -63,7 +59,7 @@ async def run_scenario_agent(
     if agent_id is None:
         agent_info = None
     else:
-        agent = session.exec(select(SystemAgents).where(SystemAgents.id == agent_id)).one_or_none()
+        agent = session.exec(select(Agents).where(Agents.id == agent_id)).one_or_none()
         if not agent:
             raise ValueError(f"Agent with ID {agent_id} not found")
         agent_info = get_agent_info(agent.id, session)
@@ -109,14 +105,14 @@ async def run_scenario_agent(
         deadline_info = get_deadline_info(deadline_id, session)
 
     # find agent with name of "Scenario"
-    agent = session.exec(select(SystemAgents).where(SystemAgents.name == "Scenario")).one()
-    if not agent:
+    scenario_agent = session.exec(select(SystemAgents).where(SystemAgents.name == "Scenario")).one()
+    if not scenario_agent:
         raise ValueError("Scenario agent not found")
 
     # getting the model from the agent's model_id
-    model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
+    model = session.exec(select(Models).where(Models.id == scenario_agent.model_id)).one()
     if not model:
-        raise ValueError(f"Model with ID {agent.model_id} not found")
+        raise ValueError(f"Model with ID {scenario_agent.model_id} not found")
 
     # getting the provider from the model's provider_id
     provider = session.exec(
@@ -125,18 +121,18 @@ async def run_scenario_agent(
     if not provider:
         raise ValueError(f"Provider with ID {model.provider_id} not found")
 
-    scenario_agent = GenericAgent(
-        agent_name=agent.name,
-        system_prompt=agent.system_prompt,
-        temperature=agent.temperature,
+    scenario_agent_generic = GenericAgent(
+        agent_name=scenario_agent.name,
+        system_prompt=scenario_agent.system_prompt,
+        temperature=scenario_agent.temperature,
         model_name=model.name,
         model_provider=provider.name,
         api_key=provider.api_key,
-        reasoning=agent.reasoning,
-        output_type=Scenario,
+        reasoning=scenario_agent.reasoning,
+        output_type=Scenario
     )
 
-    agent_instance = scenario_agent.agent()
+    agent_instance = scenario_agent_generic.agent()
 
     input_items: list[TResponseInputItem | None] = [
         agent_info,

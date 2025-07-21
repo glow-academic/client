@@ -6,7 +6,6 @@
  */
 "use client";
 import { logInfo } from "@/utils/logger";
-import dynamic from "next/dynamic";
 import {
   createContext,
   useCallback,
@@ -18,12 +17,6 @@ import {
 
 import { Profile } from "@/types";
 import { TourStep } from "@/utils/tour-steps";
-
-// Dynamically import Tour to avoid SSR issues (keeping for potential future use)
-const _Tour = dynamic(() => import("reactour"), {
-  ssr: false,
-  loading: () => null,
-});
 
 // Tour state interface
 interface TourContextState {
@@ -388,7 +381,7 @@ export function TourProvider({ children }: TourProviderProps) {
         </footer>
       </aside>
     );
-  }, [state, closeTour, nextStep, prevStep, goBack]);
+  }, [state, closeTour, nextStep, goBack]);
 
   return (
     <TourContext.Provider value={value}>

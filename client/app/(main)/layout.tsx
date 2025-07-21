@@ -351,7 +351,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Guide Button - Always visible when tour is not complete */}
-      <GuideButton />
+      {effectiveProfile?.role === "ta" && <GuideButton />}
     </AssistantProvider>
   );
 }

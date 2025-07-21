@@ -8,6 +8,9 @@
 "use client";
 
 import { useProfile } from "@/contexts/profile-context";
+import { useWebSocket } from "@/contexts/websocket-context";
+import { logError, logInfo } from "@/utils/logger";
+import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
@@ -15,7 +18,9 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import SimulationHistory from "../history/SimulationHistory";
 import SimulationCard from "../simulation/SimulationCard";
 import SimulationProgress from "./SimulationProgress";
@@ -25,8 +30,16 @@ export interface CohortDashboardProps {
 }
 
 export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, activeProfile } = useProfile();
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [loadingSimulation, setLoadingSimulation] = useState<string | null>(
+    null
+  );
+  const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
+    null
+  );
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const router = useRouter();
 
   // 1. Fetch the specific cohorts
   const { data: cohorts, isLoading: loadingCohorts } = useQuery({
@@ -58,6 +71,11 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
     return Array.from(ids);
   }, [cohorts]);
 
+  const { data: classes } = useQuery({
+    queryKey: ["classes"],
+    queryFn: getAllClasses,
+  });
+
   // 4. Fetch all profiles for the members
   const { data: cohortProfiles, isLoading: loadingProfiles } = useQuery({
     queryKey: ["profiles", "cohortMembers", cohortMemberIds],
@@ -86,6 +104,127 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
       getSimulationChatGradesBySimulationChats(chats!.map((c) => c.id)),
     enabled: !!chats && chats.length > 0,
   });
+
+  const { isConnected, emitStartSimulation } = useWebSocket();
+
+  // Set up simulation-specific event listeners using global WebSocket
+  useEffect(() => {
+    // Listen for successful simulation starts to handle navigation
+    const handleSimulationStarted = (event: CustomEvent) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (loadingToastId) {
+        toast.dismiss(loadingToastId);
+        setLoadingToastId(null);
+      }
+      const { attemptId } = event.detail;
+      logInfo("Navigating to simulation attempt", { attemptId });
+      router.push(`/home/a/${attemptId}`);
+      setLoadingSimulation(null);
+    };
+
+    // Listen for simulation errors to reset loading state
+    const handleSimulationError = () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (loadingToastId) {
+        toast.dismiss(loadingToastId);
+        setLoadingToastId(null);
+      }
+      toast.error("Failed to start simulation. Please try again.");
+      setLoadingSimulation(null);
+    };
+
+    window.addEventListener(
+      "simulationStarted",
+      handleSimulationStarted as EventListener
+    );
+    window.addEventListener("simulationError", handleSimulationError);
+
+    return () => {
+      window.removeEventListener(
+        "simulationStarted",
+        handleSimulationStarted as EventListener
+      );
+      window.removeEventListener("simulationError", handleSimulationError);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [router, loadingToastId]);
+
+  const handleStartSimulation = useCallback(
+    async (simulationId: string) => {
+      try {
+        if (!classes) {
+          toast.error("No classes found. Please contact an administrator.");
+          return;
+        }
+
+        // Only enforce profile for non-guests
+        if (effectiveProfile?.role !== "guest" && !effectiveProfile?.id) {
+          toast.error("Profile not loaded. Please refresh the page.");
+          return;
+        }
+
+        if (!isConnected) {
+          toast.error(
+            "WebSocket not connected. Please wait for connection or refresh the page."
+          );
+          logError("WebSocket not connected when trying to start simulation", {
+            simulationId,
+            profileId: effectiveProfile?.id,
+            isConnected,
+          });
+          return;
+        }
+
+        setLoadingSimulation(simulationId);
+        const toastId = toast.loading("Starting simulation...");
+        setLoadingToastId(toastId);
+
+        const profileIdForEmit =
+          effectiveProfile?.role === "guest" ? "" : String(activeProfile!.id); // "" → guest
+
+        logInfo("Starting simulation via global WebSocket", {
+          simulationId,
+          profileId: profileIdForEmit || "(guest)",
+          isConnected,
+        });
+
+        emitStartSimulation({
+          simulation_id: simulationId,
+          profile_id: profileIdForEmit,
+        });
+
+        // timeout...
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
+          logError("Simulation start timeout - no response from server");
+          toast.dismiss(toastId);
+          toast.error("Simulation start timed out. Please try again.");
+          setLoadingSimulation(null);
+          setLoadingToastId(null);
+        }, 30000);
+      } catch (error) {
+        logError("Error starting simulation:", error);
+        if (loadingToastId) toast.dismiss(loadingToastId);
+        toast.error("Failed to start simulation. Please try again.");
+        setLoadingSimulation(null);
+        setLoadingToastId(null);
+      }
+    },
+    [
+      effectiveProfile,
+      activeProfile,
+      classes,
+      isConnected,
+      emitStartSimulation,
+      loadingToastId,
+    ]
+  );
 
   // Determine if we should show all data (instructor view) or filtered (TA view)
   const shouldShowAll =
@@ -312,8 +451,8 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
                 key={sim.id}
                 simulation={sim}
                 type="cohort"
-                onStartSimulation={() => {}} // Placeholder - implement as needed
-                loadingSimulation={null}
+                onStartSimulation={handleStartSimulation}
+                loadingSimulation={loadingSimulation}
                 effectiveProfile={effectiveProfile}
                 rubricData={{ attempts: [], highestScore: 0 }} // Placeholder - implement as needed
               />

@@ -39,7 +39,6 @@ import SimulationHistory from "../common/history/SimulationHistory";
 import { Skeleton } from "../ui/skeleton";
 import CompletionistView from "./CompletionistView";
 import PracticeZone from "./PracticeZone";
-import TATour from "./TATour";
 
 export default function Home() {
   const router = useRouter();
@@ -596,7 +595,7 @@ export default function Home() {
         )}
       </div>
       {/* Tour launcher - triggers the global tour context */}
-      <TATour onClose={() => {}} />
+      {/* <TATour onClose={() => {}} /> */}
     </TooltipProvider>
   );
 }
