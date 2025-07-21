@@ -35,12 +35,15 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Standard, StandardGroup } from "@/types";
+import { logError } from "@/utils/logger";
+import { updateRubric } from "@/utils/mutations/rubrics/update-rubric";
 import { createStandardGroup } from "@/utils/mutations/standard_groups/create-standard-group";
 import { deleteStandardGroup } from "@/utils/mutations/standard_groups/delete-standard-group";
 import { updateStandardGroup } from "@/utils/mutations/standard_groups/update-standard-group";
 import { createStandard } from "@/utils/mutations/standards/create-standard";
 import { deleteStandard } from "@/utils/mutations/standards/delete-standard";
 import { updateStandard } from "@/utils/mutations/standards/update-standard";
+import { getStandardGroupsByRubric } from "@/utils/queries/standard_groups/get-standard-groups-by-rubric";
 import {
   Award,
   BookOpen,
@@ -233,7 +236,7 @@ interface StandardFormData {
   id?: string;
   name: string;
   description: string;
-  points: number;
+  points: string; // Changed to string for better input handling
   isNew?: boolean;
   isDeleted?: boolean;
 }
@@ -241,8 +244,8 @@ interface StandardFormData {
 interface StandardGroupFormData {
   name: string;
   description: string;
-  points: number;
-  passPoints: number;
+  points: string; // Changed to string for better input handling
+  passPoints: string; // Changed to string for better input handling
 }
 
 export default function RubricStandardGroup({
@@ -261,8 +264,8 @@ export default function RubricStandardGroup({
   const [groupFormData, setGroupFormData] = useState<StandardGroupFormData>({
     name: group?.name || "",
     description: group?.description || "",
-    points: group?.points || 25,
-    passPoints: group?.passPoints || 18,
+    points: group?.points?.toString() || "5",
+    passPoints: group?.passPoints?.toString() || "4",
   });
 
   // Form state for standards
@@ -273,7 +276,7 @@ export default function RubricStandardGroup({
   // Initialize standards form data when component mounts or standards change
   useEffect(() => {
     if (mode === "create") {
-      setStandardsFormData([]);
+      // Don't reset standardsFormData in create mode to preserve user input
       return;
     }
 
@@ -286,7 +289,7 @@ export default function RubricStandardGroup({
       id: standard.id,
       name: standard.name,
       description: standard.description,
-      points: standard.points,
+      points: standard.points.toString(),
       isNew: false,
       isDeleted: false,
     }));
@@ -299,6 +302,7 @@ export default function RubricStandardGroup({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["standardGroups", rubricId] });
       toast.success("Standard group updated successfully");
+      updateRubricPoints();
     },
     onError: () => {
       toast.error("Failed to update standard group");
@@ -311,6 +315,7 @@ export default function RubricStandardGroup({
       queryClient.invalidateQueries({ queryKey: ["standardGroups", rubricId] });
       toast.success("Standard group created successfully");
       setIsEditing(false);
+      updateRubricPoints();
     },
     onError: () => {
       toast.error("Failed to create standard group");
@@ -322,6 +327,7 @@ export default function RubricStandardGroup({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["standardGroups", rubricId] });
       toast.success("Standard group deleted successfully");
+      updateRubricPoints();
     },
     onError: () => {
       toast.error("Failed to delete standard group");
@@ -335,6 +341,7 @@ export default function RubricStandardGroup({
         queryKey: ["standards", [group?.id]],
       });
       toast.success("Standard created successfully");
+      updateRubricPoints();
     },
     onError: () => {
       toast.error("Failed to create standard");
@@ -349,6 +356,7 @@ export default function RubricStandardGroup({
         queryKey: ["standards", [group?.id]],
       });
       toast.success("Standard updated successfully");
+      updateRubricPoints();
     },
     onError: () => {
       toast.error("Failed to update standard");
@@ -362,6 +370,7 @@ export default function RubricStandardGroup({
         queryKey: ["standards", [group?.id]],
       });
       toast.success("Standard deleted successfully");
+      updateRubricPoints();
     },
     onError: () => {
       toast.error("Failed to delete standard");
@@ -370,7 +379,7 @@ export default function RubricStandardGroup({
 
   const handleGroupInputChange = (
     field: keyof StandardGroupFormData,
-    value: string | number
+    value: string
   ) => {
     setGroupFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -378,7 +387,7 @@ export default function RubricStandardGroup({
   const handleStandardInputChange = (
     standardIndex: number,
     field: keyof StandardFormData,
-    value: string | number
+    value: string
   ) => {
     setStandardsFormData((prev) => {
       const updated = [...prev];
@@ -391,7 +400,7 @@ export default function RubricStandardGroup({
     const newStandard: StandardFormData = {
       name: "",
       description: "",
-      points: 0,
+      points: "0",
       isNew: true,
       isDeleted: false,
     };
@@ -424,13 +433,25 @@ export default function RubricStandardGroup({
     if (!groupFormData.description.trim()) {
       errors.push("Standard group description is required");
     }
-    if (groupFormData.points <= 0) {
-      errors.push("Standard group points must be greater than 0");
+
+    const groupPoints = parseInt(groupFormData.points);
+    const groupPassPoints = parseInt(groupFormData.passPoints);
+
+    if (isNaN(groupPoints) || groupPoints <= 0) {
+      errors.push(
+        "Standard group points must be a valid number greater than 0"
+      );
     }
-    if (groupFormData.passPoints <= 0) {
-      errors.push("Standard group pass points must be greater than 0");
+    if (isNaN(groupPassPoints) || groupPassPoints <= 0) {
+      errors.push(
+        "Standard group pass points must be a valid number greater than 0"
+      );
     }
-    if (groupFormData.passPoints > groupFormData.points) {
+    if (
+      !isNaN(groupPoints) &&
+      !isNaN(groupPassPoints) &&
+      groupPassPoints > groupPoints
+    ) {
       errors.push("Pass points cannot exceed maximum points");
     }
 
@@ -448,20 +469,33 @@ export default function RubricStandardGroup({
       if (!standard.description.trim()) {
         errors.push(`Standard ${index + 1}: Description is required`);
       }
-      if (standard.points <= 0) {
-        errors.push(`Standard ${index + 1}: Points must be greater than 0`);
-      }
-      if (standard.points > groupFormData.points) {
+
+      const standardPoints = parseInt(standard.points);
+      if (isNaN(standardPoints) || standardPoints <= 0) {
         errors.push(
-          `Standard ${index + 1}: Points cannot exceed group maximum (${groupFormData.points})`
+          `Standard ${index + 1}: Points must be a valid number greater than 0`
+        );
+      }
+      if (
+        !isNaN(standardPoints) &&
+        !isNaN(groupPoints) &&
+        standardPoints > groupPoints
+      ) {
+        errors.push(
+          `Standard ${index + 1}: Points cannot exceed group maximum (${groupPoints})`
         );
       }
     });
 
     // Check if passing is possible
-    const maxStandardPoints = Math.max(...activeStandards.map((s) => s.points));
-    if (maxStandardPoints < groupFormData.passPoints) {
-      errors.push("No standard has enough points to meet the pass threshold");
+    const standardPointsArray = activeStandards
+      .map((s) => parseInt(s.points))
+      .filter((p) => !isNaN(p));
+    if (standardPointsArray.length > 0 && !isNaN(groupPassPoints)) {
+      const maxStandardPoints = Math.max(...standardPointsArray);
+      if (maxStandardPoints < groupPassPoints) {
+        errors.push("No standard has enough points to meet the pass threshold");
+      }
     }
 
     return errors;
@@ -479,6 +513,8 @@ export default function RubricStandardGroup({
         // Create new standard group
         const newGroup = await createStandardGroupMutation.mutateAsync({
           ...groupFormData,
+          points: parseInt(groupFormData.points),
+          passPoints: parseInt(groupFormData.passPoints),
           rubricId,
           shortName: groupFormData.name.substring(0, 10).toUpperCase(),
         });
@@ -492,7 +528,7 @@ export default function RubricStandardGroup({
                 createStandardMutation.mutateAsync({
                   name: standard.name,
                   description: standard.description,
-                  points: standard.points,
+                  points: parseInt(standard.points),
                   standardGroupId: newGroup.id,
                 })
               );
@@ -507,7 +543,11 @@ export default function RubricStandardGroup({
         // Update existing standard group
         await updateStandardGroupMutation.mutateAsync({
           id: group!.id,
-          data: groupFormData,
+          data: {
+            ...groupFormData,
+            points: parseInt(groupFormData.points),
+            passPoints: parseInt(groupFormData.passPoints),
+          },
         });
 
         // Handle standards
@@ -523,7 +563,7 @@ export default function RubricStandardGroup({
               createStandardMutation.mutateAsync({
                 name: standard.name,
                 description: standard.description,
-                points: standard.points,
+                points: parseInt(standard.points),
                 standardGroupId: group!.id,
               })
             );
@@ -535,7 +575,7 @@ export default function RubricStandardGroup({
                 data: {
                   name: standard.name,
                   description: standard.description,
-                  points: standard.points,
+                  points: parseInt(standard.points),
                 },
               })
             );
@@ -557,8 +597,8 @@ export default function RubricStandardGroup({
       setGroupFormData({
         name: "",
         description: "",
-        points: 25,
-        passPoints: 18,
+        points: "5",
+        passPoints: "4",
       });
       setStandardsFormData([]);
     } else {
@@ -567,8 +607,8 @@ export default function RubricStandardGroup({
       setGroupFormData({
         name: group!.name,
         description: group!.description,
-        points: group!.points,
-        passPoints: group!.passPoints,
+        points: group!.points.toString(),
+        passPoints: group!.passPoints.toString(),
       });
 
       // Reset standards data
@@ -582,7 +622,7 @@ export default function RubricStandardGroup({
         id: standard.id,
         name: standard.name,
         description: standard.description,
-        points: standard.points,
+        points: standard.points.toString(),
         isNew: false,
         isDeleted: false,
       }));
@@ -600,13 +640,47 @@ export default function RubricStandardGroup({
     }
   };
 
-  // Get visible standards (not deleted) and sort by points
+  // Function to update rubric points based on all standard groups
+  const updateRubricPoints = async () => {
+    try {
+      // Get all standard groups for this rubric
+      const allStandardGroups = await queryClient.fetchQuery({
+        queryKey: ["standardGroups", rubricId],
+        queryFn: () => getStandardGroupsByRubric(rubricId),
+      });
+
+      if (allStandardGroups) {
+        const totalPoints = allStandardGroups.reduce(
+          (sum, group) => sum + group.points,
+          0
+        );
+        const totalPassPoints = allStandardGroups.reduce(
+          (sum, group) => sum + group.passPoints,
+          0
+        );
+
+        // Update the rubric with new totals
+        await updateRubric(rubricId, {
+          points: totalPoints,
+          passPoints: totalPassPoints,
+        });
+
+        // Invalidate rubric query to refresh the data
+        queryClient.invalidateQueries({ queryKey: ["rubric", rubricId] });
+      }
+    } catch (error) {
+      logError("Error updating rubric points:", error);
+    }
+  };
+
+  // Get visible standards (not deleted) and sort by points only when not editing
   const visibleStandards = standardsFormData
     .filter((s) => !s.isDeleted)
-    .sort((a, b) => b.points - a.points);
+    .sort((a, b) => (isEditing ? 0 : parseInt(b.points) - parseInt(a.points)));
 
   // Check if we can add more standards
-  const canAddStandard = visibleStandards.length < groupFormData.points;
+  const groupPointsNum = parseInt(groupFormData.points) || 0;
+  const canAddStandard = visibleStandards.length < groupPointsNum;
 
   // Get icon and color for the group
   const IconComponent = getIconForName(groupFormData.name);
@@ -659,10 +733,7 @@ export default function RubricStandardGroup({
                             type="number"
                             value={groupFormData.points}
                             onChange={(e) =>
-                              handleGroupInputChange(
-                                "points",
-                                parseInt(e.target.value) || 0
-                              )
+                              handleGroupInputChange("points", e.target.value)
                             }
                             className="text-sm"
                           />
@@ -675,7 +746,7 @@ export default function RubricStandardGroup({
                             onChange={(e) =>
                               handleGroupInputChange(
                                 "passPoints",
-                                parseInt(e.target.value) || 0
+                                e.target.value
                               )
                             }
                             className="text-sm"
@@ -760,7 +831,7 @@ export default function RubricStandardGroup({
                             handleStandardInputChange(
                               standardIndex,
                               "points",
-                              parseInt(e.target.value) || 0
+                              e.target.value
                             )
                           }
                           className="text-sm w-16"
@@ -769,7 +840,7 @@ export default function RubricStandardGroup({
                         />
                       ) : (
                         <Badge
-                          className={`font-semibold ${getPointColorClass(standard.points, groupFormData.points)}`}
+                          className={`font-semibold ${getPointColorClass(parseInt(standard.points), parseInt(groupFormData.points))}`}
                         >
                           {standard.points}
                         </Badge>

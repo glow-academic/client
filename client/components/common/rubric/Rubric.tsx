@@ -27,7 +27,6 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { logError } from "@/utils/logger";
 import { createRubric } from "@/utils/mutations/rubrics/create-rubric";
-import { updateRubric } from "@/utils/mutations/rubrics/update-rubric";
 import { getRubric } from "@/utils/queries/rubrics/get-rubric";
 import { getStandardGroupsByRubric } from "@/utils/queries/standard_groups/get-standard-groups-by-rubric";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
@@ -118,58 +117,6 @@ export default function Rubric({ rubricId }: RubricProps) {
       toast.error("Failed to create rubric");
     },
   });
-
-  const updateRubricPointsMutation = useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: { points: number; passPoints: number };
-    }) => updateRubric(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["rubric", rubricId] });
-      // Don't show toast for automatic updates
-    },
-    onError: (error) => {
-      logError("Error updating rubric points:", error);
-      // Don't show error toast for automatic updates
-    },
-  });
-
-  // Auto-calculate rubric points when standard groups change
-  useEffect(() => {
-    if (isEditMode && standardGroups && rubric && rubricId) {
-      const totalPoints = standardGroups.reduce(
-        (sum, group) => sum + group.points,
-        0
-      );
-      const totalPassPoints = standardGroups.reduce(
-        (sum, group) => sum + group.passPoints,
-        0
-      );
-
-      // Only update if the calculated values differ from current rubric values
-      if (
-        totalPoints !== rubric.points ||
-        totalPassPoints !== rubric.passPoints
-      ) {
-        updateRubricPointsMutation.mutate({
-          id: rubricId,
-          data: {
-            points: totalPoints,
-            passPoints: totalPassPoints,
-          },
-        });
-      }
-    }
-  }, [
-    standardGroups,
-    rubric,
-    isEditMode,
-    rubricId,
-    updateRubricPointsMutation,
-  ]);
 
   // Helper functions
   const toggleCard = (index: number) => {
@@ -406,6 +353,7 @@ export default function Rubric({ rubricId }: RubricProps) {
             isOpen={true}
             onToggle={() => {}} // No toggle needed for create mode
             mode="create"
+            standards={[]} // Pass empty array for create mode
           />
         </div>
       )}
