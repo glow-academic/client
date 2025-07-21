@@ -158,20 +158,6 @@ vi.mock('@/utils/queries/documents/get-documents-by-class', () => ({
   getDocumentsByClass: vi.fn(() => mockSchema.documents || []),
 }));
 
-// LOCATIONS QUERIES
-vi.mock('@/utils/queries/locations/get-all-locations', () => ({
-  getAllLocations: vi.fn(() => mockSchema.locations || []),
-}));
-vi.mock('@/utils/queries/locations/get-location', () => ({
-  getLocation: vi.fn(() => mockSchema.locations?.[0] || null),
-}));
-vi.mock('@/utils/queries/locations/get-locations-by-department', () => ({
-  getLocationsByDepartment: vi.fn(() => mockSchema.locations || []),
-}));
-vi.mock('@/utils/queries/locations/get-locations-by-departments', () => ({
-  getLocationsByDepartments: vi.fn(() => mockSchema.locations || []),
-}));
-
 // MODELS QUERIES
 vi.mock('@/utils/queries/models/get-all-models', () => ({
   getAllModels: vi.fn(() => mockSchema.models || []),
@@ -186,12 +172,6 @@ vi.mock('@/utils/queries/profiles/get-all-profiles', () => ({
 }));
 vi.mock('@/utils/queries/profiles/get-profile', () => ({
   getProfile: vi.fn(() => mockSchema.profiles?.[0] || null),
-}));
-vi.mock('@/utils/queries/profiles/get-profiles-by-class', () => ({
-  getProfilesByClass: vi.fn(() => mockSchema.profiles || []),
-}));
-vi.mock('@/utils/queries/profiles/get-profiles-by-department', () => ({
-  getProfilesByDepartment: vi.fn(() => mockSchema.profiles || []),
 }));
 vi.mock('@/utils/queries/profiles/get-profiles-by-user', () => ({
   getProfilesByUser: vi.fn(() => mockSchema.profiles || []),
@@ -222,6 +202,14 @@ vi.mock('@/utils/queries/scenario_deadlines/get-all-scenario-deadlines', () => (
 }));
 vi.mock('@/utils/queries/scenario_deadlines/get-scenario-deadline', () => ({
   getScenarioDeadline: vi.fn(() => mockSchema.scenarioDeadlines?.[0] || null),
+}));
+
+// SCENARIO_LOCATIONS QUERIES
+vi.mock('@/utils/queries/scenario_locations/get-all-scenario-locations', () => ({
+  getAllScenarioLocations: vi.fn(() => mockSchema.scenarioLocations || []),
+}));
+vi.mock('@/utils/queries/scenario_locations/get-scenario-location', () => ({
+  getScenarioLocation: vi.fn(() => mockSchema.scenarioLocations?.[0] || null),
 }));
 
 // SCENARIO_TIMES QUERIES
@@ -259,12 +247,6 @@ vi.mock('@/utils/queries/scenarios/get-scenarios-by-location', () => ({
 }));
 vi.mock('@/utils/queries/scenarios/get-scenarios-by-locations', () => ({
   getScenariosByLocations: vi.fn(() => mockSchema.scenarios || []),
-}));
-vi.mock('@/utils/queries/scenarios/get-scenarios-by-parent', () => ({
-  getScenariosByParent: vi.fn(() => mockSchema.scenarios || []),
-}));
-vi.mock('@/utils/queries/scenarios/get-scenarios-by-parents', () => ({
-  getScenariosByParents: vi.fn(() => mockSchema.scenarios || []),
 }));
 vi.mock('@/utils/queries/scenarios/get-scenarios-by-time', () => ({
   getScenariosByTime: vi.fn(() => mockSchema.scenarios || []),

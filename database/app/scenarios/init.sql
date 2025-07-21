@@ -5,6 +5,15 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- TABLE DEFINITIONS
 -- ============================================================================
 
+
+CREATE TABLE scenario_locations (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  name       TEXT        NOT NULL,
+  description TEXT        NOT NULL
+);
+
 CREATE TABLE scenario_deadlines (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
@@ -31,7 +40,7 @@ CREATE TABLE scenarios (
   class_id   UUID        NULL REFERENCES classes(id) ON DELETE SET NULL DEFAULT NULL,
   crowdedness INTEGER     NULL DEFAULT NULL,
   intensity INTEGER     NULL DEFAULT NULL,
-  location_id UUID        NULL REFERENCES locations(id) ON DELETE SET NULL DEFAULT NULL,
+  location_id UUID        NULL REFERENCES scenario_locations(id) ON DELETE SET NULL DEFAULT NULL,
   deadline_id UUID        NULL REFERENCES scenario_deadlines(id) ON DELETE SET NULL DEFAULT NULL,
   time_id UUID        NULL REFERENCES scenario_times(id) ON DELETE SET NULL DEFAULT NULL, 
   document_ids UUID[] NULL DEFAULT NULL, 
@@ -40,6 +49,11 @@ CREATE TABLE scenarios (
   generated BOOLEAN     NOT NULL DEFAULT FALSE,
   parent_id UUID        NULL DEFAULT NULL
 );
+
+  INSERT INTO scenario_locations (id, name, description) VALUES
+    ('11111111-1111-1111-1111-111111111111', 'Lawson', 'An open, collaborative space in the Lawson building with high foot traffic.'),
+    ('22222222-2222-2222-2222-222222222222', 'HAAS', 'A quiet, focused study environment in the lower level of the HAAS building.'),
+    ('33333333-3333-3333-3333-333333333333', 'DSAI', 'A specialized tech-focused lab environment in the basement of the Data Science/AI building.');
 
 INSERT INTO scenario_deadlines (id, deadline, description) VALUES
   ('11111111-1111-1111-1111-111111111111', 'Few hours', 'This is a high-stress situation requiring immediate help'),

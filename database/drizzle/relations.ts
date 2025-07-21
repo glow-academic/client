@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, profiles, departments, classes, locations, documents, rubrics, standardGroups, standards, appFeedback, assistantChats, assistantMessages, assistantToolCalls, dashboards, models, agents, systemAgents, scenarios, scenarioDeadlines, scenarioTimes, cohorts, simulations, simulationAttempts, simulationChats, simulationMessages, simulationChatGrades, simulationChatFeedbacks } from "./schema";
+import { users, profiles, departments, classes, documents, rubrics, standardGroups, standards, appFeedback, assistantChats, assistantMessages, assistantToolCalls, dashboards, models, agents, systemAgents, scenarios, scenarioLocations, scenarioDeadlines, scenarioTimes, cohorts, simulations, simulationAttempts, simulationChats, simulationMessages, simulationChatGrades, simulationChatFeedbacks } from "./schema";
 
 export const profilesRelations = relations(profiles, ({one, many}) => ({
 	user: one(users, {
@@ -27,16 +27,7 @@ export const classesRelations = relations(classes, ({one, many}) => ({
 
 export const departmentsRelations = relations(departments, ({many}) => ({
 	classes: many(classes),
-	locations: many(locations),
 	cohorts: many(cohorts),
-}));
-
-export const locationsRelations = relations(locations, ({one, many}) => ({
-	department: one(departments, {
-		fields: [locations.departmentId],
-		references: [departments.id]
-	}),
-	scenarios: many(scenarios),
 }));
 
 export const documentsRelations = relations(documents, ({one}) => ({
@@ -134,9 +125,9 @@ export const scenariosRelations = relations(scenarios, ({one, many}) => ({
 		fields: [scenarios.classId],
 		references: [classes.id]
 	}),
-	location: one(locations, {
+	scenarioLocation: one(scenarioLocations, {
 		fields: [scenarios.locationId],
-		references: [locations.id]
+		references: [scenarioLocations.id]
 	}),
 	scenarioDeadline: one(scenarioDeadlines, {
 		fields: [scenarios.deadlineId],
@@ -147,6 +138,10 @@ export const scenariosRelations = relations(scenarios, ({one, many}) => ({
 		references: [scenarioTimes.id]
 	}),
 	simulationChats: many(simulationChats),
+}));
+
+export const scenarioLocationsRelations = relations(scenarioLocations, ({many}) => ({
+	scenarios: many(scenarios),
 }));
 
 export const scenarioDeadlinesRelations = relations(scenarioDeadlines, ({many}) => ({

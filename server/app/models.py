@@ -74,7 +74,6 @@ class Departments(_Base, table=True):
 
     classes: List['Classes'] = Relationship(back_populates='department')
     cohorts: List['Cohorts'] = Relationship(back_populates='department')
-    locations: List['Locations'] = Relationship(back_populates='department')
 
 
 class Models(_Base, table=True):
@@ -140,6 +139,21 @@ class ScenarioDeadlines(_Base, table=True):
     description: str = Field(sa_column=Column('description', Text))
 
     scenarios: List['Scenarios'] = Relationship(back_populates='deadline')
+
+
+class ScenarioLocations(_Base, table=True):
+    __tablename__ = 'scenario_locations'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='scenario_locations_pkey'),
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
+    name: str = Field(sa_column=Column('name', Text))
+    description: str = Field(sa_column=Column('description', Text))
+
+    scenarios: List['Scenarios'] = Relationship(back_populates='location')
 
 
 class ScenarioTimes(_Base, table=True):
@@ -257,23 +271,6 @@ class Cohorts(_Base, table=True):
     department: Optional['Departments'] = Relationship(back_populates='cohorts')
 
 
-class Locations(_Base, table=True):
-    __table_args__ = (
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='locations_department_id_fkey'),
-        PrimaryKeyConstraint('id', name='locations_pkey')
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-    department_id: Mapped[uuid.UUID] = Field(sa_column=Column('department_id', Uuid(as_uuid=True)))
-
-    department: Optional['Departments'] = Relationship(back_populates='locations')
-    scenarios: List['Scenarios'] = Relationship(back_populates='location')
-
-
 class Profiles(_Base, table=True):
     __table_args__ = (
         ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE', name='profiles_user_id_fkey'),
@@ -287,6 +284,7 @@ class Profiles(_Base, table=True):
     last_name: str = Field(sa_column=Column('last_name', Text))
     alias: str = Field(sa_column=Column('alias', Text))
     viewed_intro: bool = Field(sa_column=Column('viewed_intro', Boolean, default=False))
+    viewed_chat: bool = Field(sa_column=Column('viewed_chat', Boolean, default=False))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     role: str = Field(sa_column=Column('role', Enum('superadmin', 'admin', 'instructional', 'instructor', 'ta', 'guest', name='profile_role'), default=r'guest'))
     default_profile: bool = Field(sa_column=Column('default_profile', Boolean, default=False))
@@ -445,7 +443,7 @@ class Scenarios(_Base, table=True):
         ForeignKeyConstraint(['agent_id'], ['agents.id'], ondelete='SET NULL', name='scenarios_agent_id_fkey'),
         ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='SET NULL', name='scenarios_class_id_fkey'),
         ForeignKeyConstraint(['deadline_id'], ['scenario_deadlines.id'], ondelete='SET NULL', name='scenarios_deadline_id_fkey'),
-        ForeignKeyConstraint(['location_id'], ['locations.id'], ondelete='SET NULL', name='scenarios_location_id_fkey'),
+        ForeignKeyConstraint(['location_id'], ['scenario_locations.id'], ondelete='SET NULL', name='scenarios_location_id_fkey'),
         ForeignKeyConstraint(['time_id'], ['scenario_times.id'], ondelete='SET NULL', name='scenarios_time_id_fkey'),
         PrimaryKeyConstraint('id', name='scenarios_pkey')
     )
@@ -471,7 +469,7 @@ class Scenarios(_Base, table=True):
     agent: Optional['Agents'] = Relationship(back_populates='scenarios')
     class_: Optional['Classes'] = Relationship(back_populates='scenarios')
     deadline: Optional['ScenarioDeadlines'] = Relationship(back_populates='scenarios')
-    location: Optional['Locations'] = Relationship(back_populates='scenarios')
+    location: Optional['ScenarioLocations'] = Relationship(back_populates='scenarios')
     time_: Optional['ScenarioTimes'] = Relationship(back_populates='scenarios')
     simulation_chats: List['SimulationChats'] = Relationship(back_populates='scenario')
 

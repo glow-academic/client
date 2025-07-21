@@ -25,7 +25,6 @@ import { createDepartment } from "@/utils/mutations/departments/create-departmen
 import { deleteDepartment } from "@/utils/mutations/departments/delete-department";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
-import { getAllLocations } from "@/utils/queries/locations/get-all-locations";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -69,11 +68,6 @@ export default function DepartmentsGeneralPage() {
   const { data: classes = [] } = useQuery({
     queryKey: ["classes"],
     queryFn: () => getAllClasses(),
-  });
-
-  const { data: locations = [] } = useQuery({
-    queryKey: ["locations"],
-    queryFn: () => getAllLocations(),
   });
 
   // Create filter options
@@ -131,9 +125,7 @@ export default function DepartmentsGeneralPage() {
       const deptClasses = classes.filter(
         (cls: { departmentId: string }) => cls.departmentId === departmentId
       );
-      const deptLocations = locations.filter(
-        (loc: { departmentId: string }) => loc.departmentId === departmentId
-      );
+      const deptLocations: Array<{ id: string; name: string }> = []; // No locations data, so empty array
 
       setAffectedClasses(deptClasses);
       setAffectedLocations(deptLocations);
@@ -195,10 +187,8 @@ export default function DepartmentsGeneralPage() {
     ).length;
   };
 
-  const getLocationCount = (departmentId: string) => {
-    return locations.filter(
-      (loc: { departmentId: string }) => loc.departmentId === departmentId
-    ).length;
+  const getLocationCount = (_departmentId: string) => {
+    return 0; // No locations data, so always 0
   };
 
   const getProfileCount = (department: Department) => {

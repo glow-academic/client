@@ -5,15 +5,8 @@ import random
 import uuid
 
 from agents.items import TResponseInputItem
-from app.models import (
-    Agents,
-    Classes,
-    Documents,
-    Locations,
-    ScenarioDeadlines,
-    Scenarios,
-    ScenarioTimes,
-)
+from app.models import (Agents, Classes, Documents, ScenarioDeadlines,
+                        ScenarioLocations, Scenarios, ScenarioTimes)
 from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
@@ -50,7 +43,7 @@ def get_location_info(location_id: uuid.UUID, session: Session) -> TResponseInpu
     Get the location information for a given location.
     """
 
-    location = session.exec(select(Locations).where(Locations.id == location_id)).one()
+    location = session.exec(select(ScenarioLocations).where(ScenarioLocations.id == location_id)).one()
 
     return {
         "role": "user",
@@ -169,7 +162,7 @@ async def randomly_fill_scenario_attributes(
 
     # Random location selection if location is null
     if scenario.location_id is None:
-        all_locations = session.exec(select(ScenarioDeadlines)).all()
+        all_locations = session.exec(select(ScenarioLocations)).all()
         if all_locations:
             scenario_location_id = random.choice(all_locations).id
             logger.info(f"Randomly selected location_id: {scenario_location_id}")

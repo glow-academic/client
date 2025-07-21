@@ -65,6 +65,7 @@ CREATE TABLE profiles (
   last_name  TEXT        NOT NULL,
   alias      TEXT        NOT NULL,
   viewed_intro BOOLEAN   NOT NULL DEFAULT FALSE,
+  viewed_chat BOOLEAN   NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   role       profile_role NOT NULL DEFAULT 'guest',
   default_profile BOOLEAN   NOT NULL DEFAULT FALSE,
@@ -73,13 +74,13 @@ CREATE TABLE profiles (
 );
 
 -- Insert the default users, which will be used for emulation
-INSERT INTO profiles (first_name, last_name, alias, role, default_profile, viewed_intro) VALUES
-  ('Default', 'Superadmin', 'superadmin', 'superadmin', true, true),
-  ('Default', 'Admin', 'admin', 'admin', true, true),
-  ('Default', 'Instructional', 'instructional', 'instructional', true, true),
-  ('Default', 'Instructor', 'instructor', 'instructor', true, true),
-  ('Default', 'TA', 'ta', 'ta', true, true),
-  ('Default', 'Guest', 'guest', 'guest', true, true);
+INSERT INTO profiles (first_name, last_name, alias, role, default_profile, viewed_intro, viewed_chat) VALUES
+  ('Default', 'Superadmin', 'superadmin', 'superadmin', true, true, true),
+  ('Default', 'Admin', 'admin', 'admin', true, true, true),
+  ('Default', 'Instructional', 'instructional', 'instructional', true, true, true),
+  ('Default', 'Instructor', 'instructor', 'instructor', true, true, true),
+  ('Default', 'TA', 'ta', 'ta', true, true, true),
+  ('Default', 'Guest', 'guest', 'guest', true, true, true);
 
 -- ============================================================================
 -- SEED DATA

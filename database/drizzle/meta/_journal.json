@@ -316,6 +316,20 @@
       "when": 1753029267379,
       "tag": "0044_vengeful_colleen_wing",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1753066568471,
+      "tag": "0045_abnormal_wither",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1753066929829,
+      "tag": "0046_nice_legion",
+      "breakpoints": true
     }
   ]
 }

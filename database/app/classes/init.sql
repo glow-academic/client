@@ -33,15 +33,6 @@ CREATE TYPE document_type AS ENUM ('homework', 'project', 'quiz', 'midterm', 'la
     profile_ids UUID[]      NOT NULL DEFAULT ARRAY[]::UUID[]
   );
 
-  CREATE TABLE locations (
-    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-    name       TEXT        NOT NULL,
-    description TEXT        NOT NULL,
-    department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
-  );
-
   CREATE TABLE documents (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
@@ -67,12 +58,6 @@ CREATE TYPE document_type AS ENUM ('homework', 'project', 'quiz', 'midterm', 'la
     ('77777777-4444-4444-4444-444444444444', 'Introduction To The Analysis Of Algorithms', '381', 2024, 'fall', 'Techniques for analyzing the time and space requirements of algorithms. Application of these techniques to sorting, searching, pattern-matching, graph problems, and other selected problems. Brief introduction to the intractable (NP-hard) problems.', true, '11111111-1111-1111-1111-111111111111', ARRAY['aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '22222222-aaaa-bbbb-cccc-222222222222', '55555555-aaaa-bbbb-cccc-555555555555', '12ab34cd-56ef-78ab-90cd-12ef34567890', 'c5381001-4444-5555-6666-777777777777', 'c5381002-4444-5555-6666-777777777777', 'c5381003-4444-5555-6666-777777777777', 'c5381004-4444-5555-6666-777777777777', 'c5abc003-aaaa-bbbb-cccc-dddddddddddd', 'c5abc004-aaaa-bbbb-cccc-dddddddddddd', 'c5abc005-aaaa-bbbb-cccc-dddddddddddd', '99b90118-7b9e-4e12-8e81-d7ccc2916607', '99b90118-7b9e-4e12-8e81-d7ccc2916608', '99b90118-7b9e-4e12-8e81-d7ccc2916610', '1a002222-4444-4444-4444-444444444444', '1a003333-2222-2222-2222-222222222222', '1a003333-3333-3333-3333-333333333333', '1a003333-4444-4444-4444-444444444444', '1a003333-5555-5555-5555-555555555555']::UUID[]),
     ('88888888-5555-5555-5555-555555555555', 'Computer Networks', '422', 2024, 'fall', 'Network protocols, socket programming, network security, distributed systems, and network performance analysis. Covers TCP/IP, HTTP, DNS, and other networking fundamentals.', true, '11111111-1111-1111-1111-111111111111', ARRAY[]::UUID[]),
     ('99999999-6666-6666-6666-666666666666', 'Machine Learning', '373', 2024, 'fall', 'Introduction to machine learning algorithms, neural networks, feature engineering, model evaluation, and practical applications. Covers supervised and unsupervised learning techniques.', true, '11111111-1111-1111-1111-111111111111', ARRAY[]::UUID[]);
-
-
-  INSERT INTO locations (id, name, description, department_id) VALUES
-    ('11111111-1111-1111-1111-111111111111', 'Lawson', 'An open, collaborative space in the Lawson building with high foot traffic.', '11111111-1111-1111-1111-111111111111'),
-    ('22222222-2222-2222-2222-222222222222', 'HAAS', 'A quiet, focused study environment in the lower level of the HAAS building.', '11111111-1111-1111-1111-111111111111'),
-    ('33333333-3333-3333-3333-333333333333', 'DSAI', 'A specialized tech-focused lab environment in the basement of the Data Science/AI building.', '11111111-1111-1111-1111-111111111111');
 
 -- ============================================================================
 -- DOCUMENT ENTRIES FOR TRAINING SCENARIOS
