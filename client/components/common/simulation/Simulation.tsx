@@ -343,7 +343,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
   };
 
   const editCohort = (cohortId: string) => {
-    router.push(`/create/cohorts/c/${cohortId}`);
+    router.push(`/cohorts/c/${cohortId}`);
   };
 
   return (

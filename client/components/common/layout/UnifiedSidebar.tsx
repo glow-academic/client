@@ -461,21 +461,21 @@ export function UnifiedSidebar({
       systemItems.push({
         title: "Providers",
         url: "#",
-        section: "providers",
+        section: "system-providers",
       });
 
       // Logs - available for admin
       systemItems.push({
         title: "Logs",
         url: "#",
-        section: "logs",
+        section: "system-logs",
       });
 
       // Health - available for admin
       systemItems.push({
         title: "Health",
         url: "#",
-        section: "health",
+        section: "system-health",
       });
     }
 

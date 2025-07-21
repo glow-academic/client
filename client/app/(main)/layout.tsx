@@ -34,11 +34,13 @@ import {
   createSectionChangeHandler,
   isMainScreen,
 } from "@/utils/navigation-utils";
+import { useProfile } from "@/contexts/profile-context";
 
 // Inner component that uses the role context
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "/";
   const router = useRouter();
+  const { effectiveProfile } = useProfile();
 
   // Role context is available for child components
   const activeSection = getActiveSectionFromPath(pathname);
@@ -121,11 +123,55 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
+    if (pathname === "/cohorts") {
+      return (
+        <Button onClick={() => router.push("/cohorts/new")} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Cohort
+        </Button>
+      );
+    }
+
+    if (pathname === "/classes") {
+      return (
+        <Button onClick={() => router.push("/classes/new")} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Class
+        </Button>
+      );
+    }
+
+    // Check for individual class page pattern: /classes/new/c/[classId]
+    const cohortsPageMatch = pathname.match(
+      /^\/create\/cohorts\/new\/c\/([^\/]+)(?:\/.*)?$/
+    );
+    if (
+      cohortsPageMatch &&
+      effectiveProfile?.role !== "guest" &&
+      effectiveProfile.role !== "ta"
+    ) {
+      const cohortId = cohortsPageMatch[1];
+      return (
+        <Button
+          onClick={() => router.push(`/cohorts/c/${cohortId}/edit`)}
+          size="sm"
+          variant="default"
+        >
+          <Pencil className="h-4 w-4 mr-2" />
+          Edit Cohort
+        </Button>
+      );
+    }
+
     // Check for individual class page pattern: /classes/new/c/[classId]
     const classPageMatch = pathname.match(
       /^\/create\/classes\/new\/c\/([^\/]+)(?:\/.*)?$/
     );
-    if (classPageMatch) {
+    if (
+      classPageMatch &&
+      effectiveProfile?.role !== "guest" &&
+      effectiveProfile.role !== "ta"
+    ) {
       const classId = classPageMatch[1];
       return (
         <Button
@@ -135,6 +181,24 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         >
           <Pencil className="h-4 w-4 mr-2" />
           Edit Class
+        </Button>
+      );
+    }
+
+    if (pathname === "/create/agents") {
+      return (
+        <Button onClick={() => router.push("/create/agents/new")} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Agent
+        </Button>
+      );
+    }
+
+    if (pathname === "/create/rubrics") {
+      return (
+        <Button onClick={() => router.push("/create/rubrics/new")} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Rubric
         </Button>
       );
     }
@@ -160,38 +224,14 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/create/rubrics") {
+    if (pathname === "/management/staff") {
       return (
-        <Button onClick={() => router.push("/create/rubrics/new")} size="sm">
+        <Button
+          onClick={() => router.push("/management/staff/new")}
+          size="sm"
+        >
           <Plus className="h-4 w-4 mr-2" />
-          Create Rubric
-        </Button>
-      );
-    }
-
-    if (pathname === "/create/agents") {
-      return (
-        <Button onClick={() => router.push("/create/agents/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Agent
-        </Button>
-      );
-    }
-
-    if (pathname === "/classes") {
-      return (
-        <Button onClick={() => router.push("/classes/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Class
-        </Button>
-      );
-    }
-
-    if (pathname === "/create/agents") {
-      return (
-        <Button onClick={() => router.push("/create/agents/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Agent
+          Create Staff
         </Button>
       );
     }
@@ -208,19 +248,19 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/cohorts") {
+    if (pathname === "/system/agents") {
       return (
-        <Button onClick={() => router.push("/cohorts/new")} size="sm">
+        <Button onClick={() => router.push("/system/agents/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Create Cohort
+          Create Agent
         </Button>
       );
     }
 
-    if (pathname === "/management/providers") {
+    if (pathname === "/system/providers") {
       return (
         <Button
-          onClick={() => router.push("/management/providers/new")}
+          onClick={() => router.push("/system/providers/new")}
           size="sm"
         >
           <Plus className="h-4 w-4 mr-2" />

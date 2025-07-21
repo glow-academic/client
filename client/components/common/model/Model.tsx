@@ -23,11 +23,11 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 
+import { Model as ModelType } from "@/types";
 import { createModel } from "@/utils/mutations/models/create-model";
 import { updateModel } from "@/utils/mutations/models/update-model";
 import { getModel } from "@/utils/queries/models/get-model";
 import { useRouter } from "next/navigation";
-import { Model as ModelType } from "@/types";
 interface FormErrors {
   name?: string;
   description?: string;
@@ -155,7 +155,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
           ? "Model updated successfully!"
           : "Model created successfully!"
       );
-      router.push(`/management/providers`);
+      router.push(`/system/providers`);
     } catch (error) {
       toast.error(
         `Failed to ${isEditMode && modelId ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -205,7 +205,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
             <p className="text-sm text-destructive">{errors.description}</p>
           )}
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="active">Status</Label>
           {formData.active !== undefined && !isLoading ? (

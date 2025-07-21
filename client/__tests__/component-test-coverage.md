@@ -1,8 +1,8 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 126
-- **Tests Created**: 0
+- **Total Components**: 127
+- **Tests Created**: 1
 - **Tests Updated**: 0
 - **Tests Skipped** (already implemented): 126
 
@@ -123,6 +123,7 @@
 | WelcomeOverlay | home/WelcomeOverlay.tsx | WelcomeOverlay.test.tsx | ✅ Implemented |
 | ActivityStatus | management/activity/ActivityStatus.tsx | ActivityStatus.test.tsx | ✅ Implemented |
 | DepartmentEdit | management/departments/DepartmentEdit.tsx | DepartmentEdit.test.tsx | ✅ Implemented |
+| Departments | management/departments/Departments.tsx | Departments.test.tsx | ✅ Implemented |
 | NewDepartment | management/departments/NewDepartment.tsx | NewDepartment.test.tsx | ✅ Implemented |
 | Feedback | management/feedback/Feedback.tsx | Feedback.test.tsx | ✅ Implemented |
 | NewStaff | management/staff/NewStaff.tsx | NewStaff.test.tsx | ✅ Implemented |
@@ -290,6 +291,7 @@ __tests__/
 │   │   ├── ActivityStatus.test.tsx
 │   ├── departments/
 │   │   ├── DepartmentEdit.test.tsx
+│   │   ├── Departments.test.tsx
 │   │   ├── NewDepartment.test.tsx
 │   ├── feedback/
 │   │   ├── Feedback.test.tsx

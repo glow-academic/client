@@ -388,7 +388,7 @@ export default function Department({ departmentId }: DepartmentFormProps) {
         queryKey: ["profiles", finalDepartmentId],
       });
 
-      router.push(`/create/departments`);
+      router.push(`/management/departments`);
     } catch (error) {
       toast.dismiss(toastId);
       toast.error(
@@ -699,7 +699,7 @@ export default function Department({ departmentId }: DepartmentFormProps) {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.push("/create/departments")}
+                onClick={() => router.push("/management/departments")}
               >
                 Back
               </Button>

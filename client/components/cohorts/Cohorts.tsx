@@ -149,11 +149,11 @@ export default function Cohorts() {
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/create/cohorts/c/${id}`);
+    router.push(`/cohorts/c/${id}`);
   };
 
   const handleCreateNew = () => {
-    router.push("/create/cohorts/new");
+    router.push("/cohorts/new");
   };
 
   const canDuplicate = (cohort: Cohort) => {

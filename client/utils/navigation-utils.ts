@@ -1,5 +1,5 @@
-import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { profileRole } from "@/utils/drizzle/schema";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 type ProfileRole = (typeof profileRole.enumValues)[number];
 
 /**
@@ -73,7 +73,31 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
         "departments",
         "agents",
         "logs",
-        "providers" // Management
+        "providers", // Management
+        "system-agents",
+        "system-providers",
+        "system-logs",
+        "system-health" // System
+      );
+      break;
+    case "superadmin":
+      sections.push(
+        "dashboard",
+        "reports",
+        "progress", // Analytics
+        "scenarios",
+        "simulations",
+        "rubrics", // Create
+        "classes",
+        "cohorts", // Classes (all)
+        "departments",
+        "agents",
+        "logs",
+        "providers", // Management
+        "system-agents",
+        "system-providers",
+        "system-logs",
+        "system-health" // System
       );
       break;
   }
@@ -170,13 +194,23 @@ export const getSectionRoute = (section: string): string => {
     case "departments":
       return "/management/departments";
     case "providers":
-      return "/management/providers";
+      return "/system/providers";
     case "activity":
       return "/management/activity";
     case "feedback":
       return "/management/feedback";
     case "system":
       return "/management/system";
+
+    // System routes
+    case "system-agents":
+      return "/system/agents";
+    case "system-providers":
+      return "/system/providers";
+    case "system-logs":
+      return "/system/logs";
+    case "system-health":
+      return "/system/health";
 
     // Profile route
     case "profile":
@@ -211,7 +245,6 @@ export const getSectionRoute = (section: string): string => {
         return `/create/rubrics/r/${rubricId}`;
       }
 
-
       if (section.startsWith("chat-")) {
         const chatId = section.replace("chat-", "");
         return `/c/${chatId}`;
@@ -221,23 +254,28 @@ export const getSectionRoute = (section: string): string => {
         return `/home/a/${attemptId}`;
       }
 
-
       if (section.startsWith("department-")) {
         const departmentId = section.replace("department-", "");
         return `/management/departments/d/${departmentId}`;
       }
       if (section.startsWith("provider-")) {
         const providerId = section.replace("provider-", "");
-        return `/management/providers/p/${providerId}`;
+        return `/system/providers/p/${providerId}`;
       }
       if (section.startsWith("model-")) {
         const providerId = section.replace("provider-", "");
         const modelId = section.replace("model-", "");
-        return `/management/providers/p/${providerId}/m/${modelId}`;
+        return `/system/providers/p/${providerId}/m/${modelId}`;
       }
       if (section.startsWith("report-")) {
         const profileId = section.replace("report-", "");
         return `/analytics/reports/p/${profileId}`;
+      }
+
+      // System dynamic routes
+      if (section.startsWith("system-agent-")) {
+        const agentId = section.replace("system-agent-", "");
+        return `/system/agents/a/${agentId}`;
       }
 
       return "/home"; // Default fallback to home

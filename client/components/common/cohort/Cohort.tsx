@@ -40,10 +40,10 @@ import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getProfilesByClass } from "@/utils/queries/profiles/get-profiles-by-class";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { GripVertical, Loader2, Search, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { getProfilesByClass } from "@/utils/queries/profiles/get-profiles-by-class";
 
 export interface CohortProps {
   cohortId?: string;
@@ -301,6 +301,7 @@ export default function Cohort({ cohortId }: CohortProps) {
           active: formData.active || true,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          departmentId: formData.departmentId || "",
         });
         toast.success("Cohort created successfully!");
       }
@@ -312,7 +313,7 @@ export default function Cohort({ cohortId }: CohortProps) {
 
       resetFormAndState();
       queryClient.invalidateQueries({ queryKey: ["cohorts"] });
-      router.push(`/create/cohorts`);
+      router.push(`/cohorts`);
     } catch (error) {
       const targetCohortId = cohortId || editingCohortId;
       toast.error(
@@ -594,10 +595,7 @@ export default function Cohort({ cohortId }: CohortProps) {
 
         {/* Submit Button */}
         <div className="flex justify-end gap-3">
-          <Button
-            variant="outline"
-            onClick={() => router.push("/create/cohorts")}
-          >
+          <Button variant="outline" onClick={() => router.push("/cohorts")}>
             Back
           </Button>
           <Button

@@ -194,7 +194,7 @@ export default function Provider({ providerId }: ProviderProps) {
           ? "Provider updated successfully!"
           : "Provider created successfully!"
       );
-      router.push(`/management/providers`);
+      router.push(`/system/providers`);
     } catch (error) {
       logError(
         `Error ${isEditMode ? "updating" : "creating"} provider:`,
@@ -241,7 +241,6 @@ export default function Provider({ providerId }: ProviderProps) {
 
   return (
     <div className="space-y-6">
-
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Name Field */}
         <div className="space-y-2">
@@ -282,8 +281,8 @@ export default function Provider({ providerId }: ProviderProps) {
           )}
         </div>
 
-                {/* API Key Field */}
-                <div className="space-y-2">
+        {/* API Key Field */}
+        <div className="space-y-2">
           <Label htmlFor="apiKey">API Key</Label>
           {formData.apiKey !== undefined && !isLoading ? (
             <div className="space-y-2">

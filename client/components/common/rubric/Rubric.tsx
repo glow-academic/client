@@ -37,6 +37,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { Rubric as RubricType, Standard, StandardGroup } from "@/types";
+import { logError } from "@/utils/logger";
 import { createRubric } from "@/utils/mutations/rubrics/create-rubric";
 import { updateRubric } from "@/utils/mutations/rubrics/update-rubric";
 import { updateStandardGroup } from "@/utils/mutations/standard_groups/update-standard-group";
@@ -50,15 +52,13 @@ import {
   ChevronUp,
   Clock,
   Edit,
+  LucideIcon,
   MessageSquare,
   Save,
   Target,
   Users,
   X,
 } from "lucide-react";
-import { logError } from "@/utils/logger";
-import { LucideIcon } from "lucide-react";
-import { Standard, StandardGroup, Rubric as RubricType } from "@/types";
 
 // Icon mapping for different criteria
 const iconMap: Record<string, LucideIcon> = {
@@ -104,8 +104,6 @@ export interface RubricProps {
   showAdvancedFeatures?: boolean;
 }
 
-
-
 export default function Rubric({
   rubricId,
   mode = rubricId ? "edit" : "create",
@@ -133,7 +131,9 @@ export default function Rubric({
   const [standardGroupForms, setStandardGroupForms] = useState<
     Record<string, Partial<StandardGroup>>
   >({});
-  const [standardForms, setStandardForms] = useState<Record<string, Partial<Standard>>>({});
+  const [standardForms, setStandardForms] = useState<
+    Record<string, Partial<Standard>>
+  >({});
   const [openCards, setOpenCards] = useState<Record<number, boolean>>({});
 
   // Queries
@@ -219,7 +219,7 @@ export default function Rubric({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rubrics"] });
       toast.success("Rubric created successfully!");
-      router.push("/management/rubrics");
+      router.push("/create/rubrics");
     },
     onError: (error) => {
       logError("Error creating rubric:", error);
@@ -238,7 +238,7 @@ export default function Rubric({
         setEditing((prev) => ({ ...prev, rubric: false }));
       } else {
         toast.success("Rubric updated successfully!");
-        router.push("/management/rubrics");
+        router.push("/create/rubrics");
       }
     },
     onError: (error) => {
@@ -345,7 +345,7 @@ export default function Rubric({
   };
 
   const handleCancel = () => {
-    router.push("/management/rubrics");
+    router.push("/create/rubrics");
   };
 
   const handleInputChange = (

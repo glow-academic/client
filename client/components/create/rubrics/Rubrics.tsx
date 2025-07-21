@@ -5,12 +5,12 @@
  * 06/07/2025
  */
 "use client";
+import { logError } from "@/utils/logger";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, Edit, FileCheck, Plus, Star, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { logError } from "@/utils/logger";
 
 import { deleteRubric } from "@/utils/mutations/rubrics/delete-rubric";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -76,11 +76,11 @@ export default function Rubrics() {
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/management/rubrics/r/${id}`);
+    router.push(`/create/rubrics/r/${id}`);
   };
 
   const handleCreateNew = () => {
-    router.push("/management/rubrics/new");
+    router.push("/create/rubrics/new");
   };
 
   const getPassPercentage = (rubric: Rubric) => {

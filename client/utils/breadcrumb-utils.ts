@@ -10,12 +10,12 @@ import { getClass } from "@/utils/queries/classes/get-class";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getCohort } from "./queries/cohorts/get-cohort";
+import { getDepartment } from "./queries/departments/get-department";
 import { getModel } from "./queries/models/get-model";
 import { getProfile } from "./queries/profiles/get-profile";
 import { getRubric } from "./queries/rubrics/get-rubric";
 import { getSimulationAttempt } from "./queries/simulation_attempts/get-simulation-attempt";
 import { getSimulationChat } from "./queries/simulation_chats/get-simulation-chat";
-import { getDepartment } from "./queries/departments/get-department";
 
 interface BreadcrumbItem {
   title: string;
@@ -34,7 +34,9 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
       case "class":
         const classData = await getClass(id);
         const department = await getDepartment(classData!.departmentId!);
-        return classData && department ? `${department.departmentCode} ${classData.classCode}` : `Class ${id.substring(0, 8)}...`;
+        return classData && department
+          ? `${department.departmentCode} ${classData.classCode}`
+          : `Class ${id.substring(0, 8)}...`;
 
       case "attempt":
         const attemptData = await getSimulationAttempt(id);
@@ -89,6 +91,10 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
           reportProfileData?.firstName + " " + reportProfileData?.lastName ||
           `Profile ${id.substring(0, 8)}...`
         );
+
+      case "provider":
+        // For now, return a generic provider name since we don't have a getProvider function
+        return `Provider ${id.substring(0, 8)}...`;
 
       default:
         return id.length > 10 ? `${id.substring(0, 8)}...` : id;
@@ -148,6 +154,8 @@ export const generateEnhancedBreadcrumbs = async (
         context = "scenario";
       } else if (prevSegment === "p" && segments.includes("staff")) {
         context = "profile";
+      } else if (prevSegment === "p" && segments.includes("providers")) {
+        context = "provider";
       } else if (prevSegment === "r" && segments.includes("rubrics")) {
         context = "rubric";
       } else if (prevSegment === "p" && segments.includes("reports")) {
@@ -181,6 +189,9 @@ export const generateEnhancedBreadcrumbs = async (
           break;
         case "management":
           title = "Management";
+          break;
+        case "system":
+          title = "System";
           break;
         case "profile":
           title = "Profile";
@@ -226,6 +237,17 @@ export const generateEnhancedBreadcrumbs = async (
           break;
         case "models":
           title = "Models";
+          break;
+
+        // System subsections
+        case "agents":
+          title = "Agents";
+          break;
+        case "providers":
+          title = "Providers";
+          break;
+        case "health":
+          title = "Health";
           break;
         // Common actions
         case "new":
@@ -343,6 +365,27 @@ const getSectionFromSegments = (segments: string[]): string => {
       }
       return "management";
 
+    case "system":
+      if (second === "agents") {
+        if (third === "a" && fourth) {
+          return `system-agent-${fourth}`;
+        }
+        return "system-agents";
+      }
+      if (second === "providers") {
+        if (third === "p" && fourth) {
+          return `provider-${fourth}`;
+        }
+        return "system-providers";
+      }
+      if (second === "logs") {
+        return "system-logs";
+      }
+      if (second === "health") {
+        return "system-health";
+      }
+      return "system";
+
     case "c":
       if (second) {
         return `chat-${second}`;
@@ -401,6 +444,9 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
       case "management":
         title = "Management";
         break;
+      case "system":
+        title = "System";
+        break;
       case "profile":
         title = "Profile";
         break;
@@ -432,6 +478,18 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
         break;
       case "staff":
         title = "Staff";
+        break;
+      case "agents":
+        title = "Agents";
+        break;
+      case "providers":
+        title = "Providers";
+        break;
+      case "logs":
+        title = "Logs";
+        break;
+      case "health":
+        title = "Health";
         break;
       case "new":
         title = "New";
