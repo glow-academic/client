@@ -330,12 +330,6 @@ export function UnifiedSidebar({
         url: "#",
         section: "feedback",
       });
-
-      managementItems.push({
-        title: "Departments",
-        url: "#",
-        section: "departments",
-      });
     }
 
     // System  - Available from superadmin level only

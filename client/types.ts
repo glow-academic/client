@@ -23,13 +23,13 @@ import {
   scenarioLocations as ScenarioLocations,
   scenarioDeadlines as ScenarioDeadlines,
   scenarioTimes as ScenarioTimes,
-  cohorts as Cohorts,
   simulations as Simulations,
   simulationAttempts as SimulationAttempts,
   simulationChats as SimulationChats,
   simulationMessages as SimulationMessages,
   simulationChatGrades as SimulationChatGrades,
   simulationChatFeedbacks as SimulationChatFeedbacks,
+  cohorts as Cohorts,
   verificationToken as VerificationToken,
   assistantMessageType, assistantToolType, documentType, feedbackType, profileRole, reasoningEffort, simulationMessageType
 } from "@/utils/drizzle/schema";
@@ -59,13 +59,13 @@ type ScenarioClasse = typeof ScenarioClasses.$inferSelect;
 type ScenarioLocation = typeof ScenarioLocations.$inferSelect;
 type ScenarioDeadline = typeof ScenarioDeadlines.$inferSelect;
 type ScenarioTime = typeof ScenarioTimes.$inferSelect;
-type Cohort = typeof Cohorts.$inferSelect;
 type Simulation = typeof Simulations.$inferSelect;
 type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
 type SimulationChat = typeof SimulationChats.$inferSelect;
 type SimulationMessage = typeof SimulationMessages.$inferSelect;
 type SimulationChatGrade = typeof SimulationChatGrades.$inferSelect;
 type SimulationChatFeedback = typeof SimulationChatFeedbacks.$inferSelect;
+type Cohort = typeof Cohorts.$inferSelect;
 type VerificationToken = typeof VerificationToken.$inferSelect;
 
 type AssistantMessageType = (typeof assistantMessageType.enumValues)[number];
@@ -101,13 +101,13 @@ export type {
   ScenarioLocation,
   ScenarioDeadline,
   ScenarioTime,
-  Cohort,
   Simulation,
   SimulationAttempt,
   SimulationChat,
   SimulationMessage,
   SimulationChatGrade,
   SimulationChatFeedback,
+  Cohort,
   VerificationToken,
   AssistantMessageType,
   AssistantToolType,

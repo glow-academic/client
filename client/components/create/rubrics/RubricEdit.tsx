@@ -12,5 +12,5 @@ export interface RubricEditProps {
 }
 
 export default function RubricEdit({ rubricId }: RubricEditProps) {
-  return <Rubric rubricId={rubricId} mode="edit" showAdvancedFeatures={true} />;
+  return <Rubric rubricId={rubricId} />;
 }

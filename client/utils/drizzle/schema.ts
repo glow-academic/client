@@ -339,17 +339,6 @@ export const scenarioTimes = pgTable("scenario_times", {
 	timeOfDay: time("time_of_day").notNull(),
 	description: text().notNull()});
 
-export const cohorts = pgTable("cohorts", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	title: text().notNull(),
-	description: text(),
-	active: boolean().default(true).notNull(),
-	profileIds: uuid("profile_ids").array().default(["RAY"]).notNull(),
-	defaultCohort: boolean("default_cohort").default(false).notNull(),
-	simulationIds: uuid("simulation_ids").array().default(["RAY"]).notNull()});
-
 export const simulations = pgTable("simulations", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -459,6 +448,17 @@ export const simulationChatFeedbacks = pgTable("simulation_chat_feedbacks", {
 			name: "simulation_chat_feedbacks_simulation_chat_grade_id_fkey"
 		}).onDelete("cascade"),
 ]);
+
+export const cohorts = pgTable("cohorts", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	title: text().notNull(),
+	description: text(),
+	active: boolean().default(true).notNull(),
+	profileIds: uuid("profile_ids").array().default(["RAY"]).notNull(),
+	defaultCohort: boolean("default_cohort").default(false).notNull(),
+	simulationIds: uuid("simulation_ids").array().default(["RAY"]).notNull()});
 
 export const verificationToken = pgTable("verification_token", {
 	identifier: text().notNull(),

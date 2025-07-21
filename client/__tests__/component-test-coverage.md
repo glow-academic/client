@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 120
+- **Total Components**: 122
 - **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 120
+- **Tests Skipped** (already implemented): 122
 
 ## Component Coverage
 
@@ -88,6 +88,8 @@
 | ProfileSelector | common/profile/ProfileSelector.tsx | ProfileSelector.test.tsx | ✅ Implemented |
 | Provider | common/provider/Provider.tsx | Provider.test.tsx | ✅ Implemented |
 | Rubric | common/rubric/Rubric.tsx | Rubric.test.tsx | ✅ Implemented |
+| RubricDetails | common/rubric/RubricDetails.tsx | RubricDetails.test.tsx | ✅ Implemented |
+| RubricStandardGroup | common/rubric/RubricStandardGroup.tsx | RubricStandardGroup.test.tsx | ✅ Implemented |
 | TableRubric | common/rubric/TableRubric.tsx | TableRubric.test.tsx | ✅ Implemented |
 | Scenario | common/scenario/Scenario.tsx | Scenario.test.tsx | ✅ Implemented |
 | ScenarioPicker | common/scenario/ScenarioPicker.tsx | ScenarioPicker.test.tsx | ✅ Implemented |
@@ -236,6 +238,8 @@ __tests__/
 │   │   ├── Provider.test.tsx
 │   ├── rubric/
 │   │   ├── Rubric.test.tsx
+│   │   ├── RubricDetails.test.tsx
+│   │   ├── RubricStandardGroup.test.tsx
 │   │   ├── TableRubric.test.tsx
 │   ├── scenario/
 │   │   ├── Scenario.test.tsx

@@ -8,5 +8,5 @@
 import Rubric from "@/components/common/rubric/Rubric";
 
 export default function NewRubric() {
-  return <Rubric mode="create" showAdvancedFeatures={false} />;
+  return <Rubric />;
 }

@@ -159,19 +159,9 @@ export default function Rubrics() {
     return Math.round((rubric.passPoints / rubric.points) * 100);
   };
 
-  const getStatusBadge = (rubric: Rubric) => {
-    const passPercentage = getPassPercentage(rubric);
-    if (passPercentage >= 80)
-      return { variant: "default" as const, text: "High Standard" };
-    if (passPercentage >= 60)
-      return { variant: "secondary" as const, text: "Standard" };
-    return { variant: "outline" as const, text: "Flexible" };
-  };
-
   return (
     <div className="space-y-8">
       {rubrics.map((rubric: Rubric) => {
-        const statusBadge = getStatusBadge(rubric);
         const passPercentage = getPassPercentage(rubric);
 
         return (
@@ -192,9 +182,6 @@ export default function Rubrics() {
                       <FileCheck className="h-4 w-4" />
                       Pass: {rubric.passPoints} pts ({passPercentage}%)
                     </div>
-                    <Badge variant={statusBadge.variant}>
-                      {statusBadge.text}
-                    </Badge>
                     <Badge variant={rubric.active ? "default" : "secondary"}>
                       {rubric.active ? "Active" : "Inactive"}
                     </Badge>
