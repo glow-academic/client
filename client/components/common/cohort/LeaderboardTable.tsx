@@ -22,6 +22,7 @@ interface LeaderboardData {
   avgScore: number;
   passRate: number;
   simsCompleted: number;
+  role?: string;
 }
 
 interface LeaderboardTableProps {
@@ -40,6 +41,14 @@ export default function LeaderboardTable({
   data,
   currentUserId,
 }: LeaderboardTableProps) {
+  if (data.length === 0) {
+    return (
+      <div className="rounded-md border p-8 text-center">
+        <p className="text-muted-foreground">No users found in this cohort.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -47,6 +56,7 @@ export default function LeaderboardTable({
           <TableRow>
             <TableHead className="w-[80px]">Rank</TableHead>
             <TableHead>User</TableHead>
+            <TableHead className="text-right">Role</TableHead>
             <TableHead className="text-right">Avg. Score</TableHead>
             <TableHead className="text-right">Pass Rate</TableHead>
             <TableHead className="text-right">Sims Completed</TableHead>
@@ -69,6 +79,11 @@ export default function LeaderboardTable({
                     <Badge variant="default">You</Badge>
                   )}
                 </div>
+              </TableCell>
+              <TableCell className="text-right">
+                <Badge variant="outline" className="text-xs">
+                  {user.role || "Unknown"}
+                </Badge>
               </TableCell>
               <TableCell className="text-right font-semibold">
                 {user.avgScore}%

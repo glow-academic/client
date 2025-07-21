@@ -42,12 +42,12 @@ export default function Progress() {
 
   // Determine if we should show all data (instructor view) or filtered (TA view)
   const shouldShowAll =
-    effectiveProfile?.role === "instructor" ||
+    effectiveProfile?.role === "instructional" ||
     effectiveProfile?.role === "admin" ||
     effectiveProfile?.role === "superadmin";
 
   useEffect(() => {
-    if (shouldShowAll) {
+    if (shouldShowAll && cohortsForPicker.length > 0) {
       setSelectedCohorts(cohortsForPicker);
     }
   }, [shouldShowAll, cohortsForPicker]);
@@ -57,6 +57,21 @@ export default function Progress() {
       <div className="container mx-auto p-4">
         <div className="flex items-center justify-center h-64">
           <div className="text-lg">Loading cohorts...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if no cohorts are available
+  if (!allCohorts || allCohorts.length === 0) {
+    return (
+      <div className="container mx-auto p-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">No Cohorts Available</h1>
+          <p className="text-gray-600">
+            There are no cohorts configured in the system. Please contact an
+            administrator to create cohorts.
+          </p>
         </div>
       </div>
     );
