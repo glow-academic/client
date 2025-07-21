@@ -1,8 +1,8 @@
 /**
- * Agent.tsx
- * Used to create and manage agents - supports both creation and editing
+ * SystemAgent.tsx
+ * Used to edit system agents only (edit mode only)
  * @AshokSaravanan222 & @siladiea
- * 05/20/2025
+ * 07/20/2025
  */
 "use client";
 
@@ -24,12 +24,11 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { createAgent } from "@/utils/mutations/agents/create-agent";
-import { updateAgent } from "@/utils/mutations/agents/update-agent";
-import { getAgent } from "@/utils/queries/agents/get-agent";
+import { updateSystemAgent } from "@/utils/mutations/system_agents/update-system-agent";
 import { getAllModels } from "@/utils/queries/models/get-all-models";
+import { getSystemAgent } from "@/utils/queries/system_agents/get-system-agent";
 
-interface FormData {
+interface SystemAgentFormData {
   name?: string;
   description?: string;
   systemPrompt?: string;
@@ -37,20 +36,15 @@ interface FormData {
   modelId?: string;
 }
 
-export interface AgentProps {
-  agentId?: string;
-  mode?: "create" | "edit";
+export interface SystemAgentProps {
+  agentId: string;
 }
 
-export default function Agent({
-  agentId,
-  mode = agentId ? "edit" : "create",
-}: AgentProps) {
+export default function SystemAgent({ agentId }: SystemAgentProps) {
   const router = useRouter();
-  const isEditMode = mode === "edit" && !!agentId;
   const queryClient = useQueryClient();
 
-  const initialFormData: FormData = useMemo(
+  const initialFormData: SystemAgentFormData = useMemo(
     () => ({
       name: "",
       description: "",
@@ -62,12 +56,12 @@ export default function Agent({
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<FormData>();
+  const [formData, setFormData] = useState<SystemAgentFormData>();
 
   const { data: agent, isLoading: isLoadingAgent } = useQuery({
-    queryKey: ["agent", agentId],
-    queryFn: () => getAgent(agentId!),
-    enabled: isEditMode,
+    queryKey: ["systemAgent", agentId],
+    queryFn: () => getSystemAgent(agentId),
+    enabled: !!agentId,
   });
 
   const { data: models, isLoading: isModelsLoading } = useQuery({
@@ -78,7 +72,7 @@ export default function Agent({
   const isLoading = isLoadingAgent || isModelsLoading;
 
   useEffect(() => {
-    if (agent && isEditMode) {
+    if (agent) {
       setFormData({
         name: agent.name,
         description: agent.description,
@@ -86,10 +80,10 @@ export default function Agent({
         temperature: agent.temperature,
         modelId: agent.modelId || "",
       });
-    } else if (!isEditMode) {
+    } else {
       setFormData(initialFormData);
     }
-  }, [agent, isEditMode, initialFormData]);
+  }, [agent, initialFormData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,7 +104,6 @@ export default function Agent({
     }
 
     if (!formData.modelId || formData.modelId === "") {
-      // must have some model selected
       toast.error("Model selection is required");
       return;
     }
@@ -118,37 +111,20 @@ export default function Agent({
     setIsSubmitting(true);
 
     try {
-      if (isEditMode) {
-        await updateAgent(agentId!, {
-          name: formData.name,
-          description: formData.description,
-          systemPrompt: formData.systemPrompt,
-          temperature: Number(formData.temperature),
-          modelId: formData.modelId,
-          updatedAt: new Date().toISOString(),
-        });
-        queryClient.invalidateQueries({ queryKey: ["agents"] });
-        queryClient.invalidateQueries({ queryKey: ["agent", agentId] });
-        toast.success("Agent updated successfully!");
-      } else {
-        const newAgent = await createAgent({
-          name: formData.name,
-          description: formData.description,
-          systemPrompt: formData.systemPrompt,
-          temperature: Number(formData.temperature),
-          modelId: formData.modelId,
-          color: "#000000",
-        });
-        queryClient.invalidateQueries({ queryKey: ["agents"] });
-        queryClient.invalidateQueries({ queryKey: ["agent", newAgent?.id] });
-        toast.success("Agent created successfully!");
-      }
-
-      router.push("/create/agents");
+      await updateSystemAgent(agentId, {
+        name: formData.name,
+        description: formData.description,
+        systemPrompt: formData.systemPrompt,
+        temperature: Number(formData.temperature),
+        modelId: formData.modelId,
+        updatedAt: new Date().toISOString(),
+      });
+      queryClient.invalidateQueries({ queryKey: ["systemAgents"] });
+      queryClient.invalidateQueries({ queryKey: ["systemAgent", agentId] });
+      toast.success("Agent updated successfully!");
+      router.push("/system/agents");
     } catch (error) {
-      toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} agent: ${error}`
-      );
+      toast.error(`Failed to update agent: ${error}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -197,8 +173,7 @@ export default function Agent({
           </div>
 
           <div className={`grid gap-4 grid-cols-1`}>
-            {formData?.modelId !== undefined &&
-            !isLoading ? (
+            {formData?.modelId !== undefined && !isLoading ? (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="modelId">Text Model *</Label>
@@ -217,9 +192,7 @@ export default function Agent({
                     </SelectTrigger>
                     <SelectContent>
                       {models
-                        ?.filter(
-                          (model) => model.active
-                        )
+                        ?.filter((model) => model.active)
                         ?.map((model) => (
                           <SelectItem key={model.id} value={model.id}>
                             {model.name}
@@ -294,13 +267,7 @@ export default function Agent({
 
           <div className="flex gap-2 justify-end">
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting
-                ? isEditMode
-                  ? "Updating..."
-                  : "Creating..."
-                : isEditMode
-                  ? "Update Agent"
-                  : "Create Agent"}
+              {isSubmitting ? "Updating..." : "Update Agent"}
             </Button>
           </div>
         </form>

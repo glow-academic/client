@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 127
-- **Tests Created**: 1
+- **Total Components**: 132
+- **Tests Created**: 5
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 126
+- **Tests Skipped** (already implemented): 127
 
 ## Component Coverage
 
@@ -27,6 +27,7 @@
 | CohortsDataTableToolbar | cohorts/CohortsDataTableToolbar.tsx | CohortsDataTableToolbar.test.tsx | ✅ Implemented |
 | NewCohort | cohorts/NewCohort.tsx | NewCohort.test.tsx | ✅ Implemented |
 | Agent | common/agent/Agent.tsx | Agent.test.tsx | ✅ Implemented |
+| SystemAgent | common/agent/SystemAgent.tsx | SystemAgent.test.tsx | ✅ Implemented |
 | CohortCompletion | common/analytics/footer/CohortCompletion.tsx | CohortCompletion.test.tsx | ✅ Implemented |
 | ScenarioData | common/analytics/footer/ScenarioData.tsx | ScenarioData.test.tsx | ✅ Implemented |
 | SimulationPerformance | common/analytics/footer/SimulationPerformance.tsx | SimulationPerformance.test.tsx | ✅ Implemented |
@@ -124,12 +125,16 @@
 | ActivityStatus | management/activity/ActivityStatus.tsx | ActivityStatus.test.tsx | ✅ Implemented |
 | DepartmentEdit | management/departments/DepartmentEdit.tsx | DepartmentEdit.test.tsx | ✅ Implemented |
 | Departments | management/departments/Departments.tsx | Departments.test.tsx | ✅ Implemented |
+| DepartmentsDataTable | management/departments/DepartmentsDataTable.tsx | DepartmentsDataTable.test.tsx | ✅ Implemented |
+| DepartmentsDataTableToolbar | management/departments/DepartmentsDataTableToolbar.tsx | DepartmentsDataTableToolbar.test.tsx | ✅ Implemented |
 | NewDepartment | management/departments/NewDepartment.tsx | NewDepartment.test.tsx | ✅ Implemented |
 | Feedback | management/feedback/Feedback.tsx | Feedback.test.tsx | ✅ Implemented |
 | NewStaff | management/staff/NewStaff.tsx | NewStaff.test.tsx | ✅ Implemented |
 | Staff | management/staff/Staff.tsx | Staff.test.tsx | ✅ Implemented |
 | StaffEdit | management/staff/StaffEdit.tsx | StaffEdit.test.tsx | ✅ Implemented |
 | Profile | profile/Profile.tsx | Profile.test.tsx | ✅ Implemented |
+| EditSystemAgent | system/agents/EditSystemAgent.tsx | EditSystemAgent.test.tsx | ✅ Implemented |
+| SystemAgents | system/agents/SystemAgents.tsx | SystemAgents.test.tsx | ✅ Implemented |
 | Health | system/health/Health.tsx | Health.test.tsx | ✅ Implemented |
 | Logs | system/logs/Logs.tsx | Logs.test.tsx | ✅ Implemented |
 | ModelEdit | system/providers/ModelEdit.tsx | ModelEdit.test.tsx | ✅ Implemented |
@@ -165,6 +170,7 @@ __tests__/
 ├── common/
 │   ├── agent/
 │   │   ├── Agent.test.tsx
+│   │   ├── SystemAgent.test.tsx
 │   ├── analytics/
 │   │   ├── footer/
 │   │   │   ├── CohortCompletion.test.tsx
@@ -292,6 +298,8 @@ __tests__/
 │   ├── departments/
 │   │   ├── DepartmentEdit.test.tsx
 │   │   ├── Departments.test.tsx
+│   │   ├── DepartmentsDataTable.test.tsx
+│   │   ├── DepartmentsDataTableToolbar.test.tsx
 │   │   ├── NewDepartment.test.tsx
 │   ├── feedback/
 │   │   ├── Feedback.test.tsx
@@ -302,6 +310,9 @@ __tests__/
 ├── profile/
 │   ├── Profile.test.tsx
 ├── system/
+│   ├── agents/
+│   │   ├── EditSystemAgent.test.tsx
+│   │   ├── SystemAgents.test.tsx
 │   ├── health/
 │   │   ├── Health.test.tsx
 │   ├── logs/
