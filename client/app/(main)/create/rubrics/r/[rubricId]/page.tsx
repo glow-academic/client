@@ -1,5 +1,5 @@
 /**
- * app/management/rubrics/r/[rubricId]/page.tsx
+ * app/create/rubrics/r/[rubricId]/page.tsx
  * Rubric editing page
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025

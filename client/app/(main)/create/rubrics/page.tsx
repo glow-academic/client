@@ -1,5 +1,5 @@
 /**
- * app/management/rubrics/page.tsx
+ * app/create/rubrics/page.tsx
  * Rubric list page - redirects to home with rubrics section
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025

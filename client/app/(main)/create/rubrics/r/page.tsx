@@ -1,5 +1,5 @@
 /**
- * app/(main)/management/rubrics/r/page.tsx
+ * app/(main)/create/rubrics/r/page.tsx
  * Rubric page for the rubrics section. Redirects to rubrics page.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
@@ -15,5 +15,5 @@ export const metadata: Metadata = {
 };
 
 export default function RubricsPage() {
-  return redirect("/management/rubrics");
+  return redirect("/create/rubrics");
 }

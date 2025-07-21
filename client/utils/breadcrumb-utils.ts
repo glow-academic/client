@@ -14,6 +14,7 @@ import { getProfile } from "./queries/profiles/get-profile";
 import { getRubric } from "./queries/rubrics/get-rubric";
 import { getSimulationAttempt } from "./queries/simulation_attempts/get-simulation-attempt";
 import { getSimulationChat } from "./queries/simulation_chats/get-simulation-chat";
+import { getSystemAgent } from "./queries/system_agents/get-system-agent";
 
 interface BreadcrumbItem {
   title: string;
@@ -48,6 +49,9 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
       case "agent":
         const agentData = await getAgent(id);
         return agentData?.name || `Agent ${id.substring(0, 8)}...`;
+      case "system-agent":
+        const systemAgentData = await getSystemAgent(id);
+        return systemAgentData?.name || `System Agent ${id.substring(0, 8)}...`;
 
       case "simulation":
         const simulationData = await getSimulation(id);
@@ -212,6 +216,9 @@ export const generateEnhancedBreadcrumbs = async (
         case "rubrics":
           title = "Rubrics";
           break;
+        case "simulations":
+          title = "Simulations";
+          break;
 
         // Management subsections
         case "staff":
@@ -303,11 +310,11 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "simulations";
       }
-      if (second === "cohorts") {
-        if (third === "c" && fourth) {
-          return `cohort-${fourth}`;
+      if (second === "rubrics") {
+        if (third === "r" && fourth) {
+          return `rubric-${fourth}`;
         }
-        return "cohorts";
+        return "rubrics";
       }
       return "create";
 
@@ -317,30 +324,6 @@ const getSectionFromSegments = (segments: string[]): string => {
           return `profile-${fourth}`;
         }
         return "staff";
-      }
-      if (second === "agents") {
-        if (third === "a" && fourth) {
-          return `agent-${fourth}`;
-        }
-        return "agents";
-      }
-      if (second === "cohorts") {
-        if (third === "c" && fourth) {
-          return `cohort-${fourth}`;
-        }
-        return "cohorts";
-      }
-      if (second === "models") {
-        if (third === "m" && fourth) {
-          return `model-${fourth}`;
-        }
-        return "models";
-      }
-      if (second === "rubrics") {
-        if (third === "r" && fourth) {
-          return `rubric-${fourth}`;
-        }
-        return "rubrics";
       }
       if (second) {
         return second; // staff, agents, logs, models, rubrics
