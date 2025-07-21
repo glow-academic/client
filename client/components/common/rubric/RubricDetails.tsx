@@ -21,6 +21,7 @@ import { logError } from "@/utils/logger";
 import { createRubric } from "@/utils/mutations/rubrics/create-rubric";
 import { updateRubric } from "@/utils/mutations/rubrics/update-rubric";
 import { Edit } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface RubricDetailsProps {
   rubric: RubricType;
@@ -35,10 +36,13 @@ export default function RubricDetails({
 }: RubricDetailsProps) {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(isCreateMode);
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: rubric.name || "",
     description: rubric.description || "",
     active: rubric.active ?? true,
+    points: rubric.points || 0,
+    passPoints: rubric.passPoints || 0,
   });
 
   const updateRubricMutation = useMutation({
@@ -59,8 +63,8 @@ export default function RubricDetails({
       queryClient.invalidateQueries({ queryKey: ["rubric", rubricId] });
       queryClient.invalidateQueries({ queryKey: ["rubrics"] });
       if (isCreateMode && data && "id" in data) {
-        // Redirect to the newly created rubric
-        window.location.href = `/create/rubrics/${data.id}`;
+        // Redirect to the newly created rubric for editing
+        router.push(`/create/rubrics/r/${data.id}`);
       } else {
         toast.success(
           isCreateMode
@@ -98,6 +102,8 @@ export default function RubricDetails({
       name: rubric.name,
       description: rubric.description,
       active: rubric.active ?? true,
+      points: rubric.points,
+      passPoints: rubric.passPoints,
     });
   };
 
@@ -115,6 +121,7 @@ export default function RubricDetails({
                   onChange={(e) => handleInputChange("name", e.target.value)}
                   className="text-2xl font-bold"
                   placeholder="Rubric Name"
+                  disabled={updateRubricMutation.isPending}
                 />
               </div>
               <div className="space-y-2">
@@ -126,6 +133,7 @@ export default function RubricDetails({
                     handleInputChange("description", e.target.value)
                   }
                   placeholder="Rubric Description"
+                  disabled={updateRubricMutation.isPending}
                 />
               </div>
               <div className="flex items-center space-x-2">
@@ -135,22 +143,29 @@ export default function RubricDetails({
                   onCheckedChange={(checked) =>
                     handleInputChange("active", checked)
                   }
+                  disabled={updateRubricMutation.isPending}
                 />
                 <Label htmlFor="active">Active</Label>
               </div>
-              <div className="p-3 bg-muted/20 rounded-lg border">
-                <h4 className="text-sm font-medium mb-2">Points Calculation</h4>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Points are automatically calculated from standard groups and
-                  cannot be edited directly.
-                </p>
-                <div className="flex gap-4">
-                  <Badge variant="outline">Total: {rubric.points} points</Badge>
-                  <Badge variant="outline">
-                    Pass: {rubric.passPoints} points
-                  </Badge>
+              {!isCreateMode && (
+                <div className="p-3 bg-muted/20 rounded-lg border">
+                  <h4 className="text-sm font-medium mb-2">
+                    Points Calculation
+                  </h4>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Points are automatically calculated from standard groups and
+                    cannot be edited directly.
+                  </p>
+                  <div className="flex gap-2">
+                    <Badge variant="outline">
+                      Total: {rubric.points} points
+                    </Badge>
+                    <Badge variant="outline">
+                      Pass: {rubric.passPoints} points
+                    </Badge>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           ) : (
             <div>
@@ -159,7 +174,7 @@ export default function RubricDetails({
               </h1>
               <p className="text-muted-foreground mt-2">
                 {isCreateMode
-                  ? "Define the basic information for this evaluation rubric."
+                  ? "Define the basic information for this evaluation rubric. You'll be able to add standard groups after creation."
                   : rubric.description}
               </p>
               {!isCreateMode && (
@@ -178,11 +193,24 @@ export default function RubricDetails({
           <div className="flex gap-2 justify-end">
             {isEditing ? (
               <>
-                <Button variant="outline" onClick={handleCancel}>
+                <Button
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={updateRubricMutation.isPending}
+                >
                   Cancel
                 </Button>
-                <Button onClick={handleSave}>
-                  {isCreateMode ? "Create" : "Update"}
+                <Button
+                  onClick={handleSave}
+                  disabled={updateRubricMutation.isPending}
+                >
+                  {updateRubricMutation.isPending
+                    ? isCreateMode
+                      ? "Creating..."
+                      : "Updating..."
+                    : isCreateMode
+                    ? "Create Rubric"
+                    : "Update"}
                 </Button>
               </>
             ) : (

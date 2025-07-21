@@ -770,9 +770,13 @@ export default function RubricStandardGroup({
                           : group!.description}
                       </CardDescription>
                       {mode === "edit" && (
-                        <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                          <span>Max Points: {group!.points}</span>
-                          <span>Pass Points: {group!.passPoints}</span>
+                        <div className="flex gap-2 pt-2">
+                          <Badge variant="outline">
+                            Total: {group!.points} points
+                          </Badge>
+                          <Badge variant="outline">
+                            Pass: {group!.passPoints} points
+                          </Badge>
                         </div>
                       )}
                     </div>

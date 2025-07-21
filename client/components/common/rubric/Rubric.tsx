@@ -144,11 +144,11 @@ export default function Rubric({ rubricId }: RubricProps) {
         isCreateMode={!isEditMode}
       />
 
-      {/* Standard Groups - Show for both create and edit modes */}
-      <div className="space-y-6">
-        {/* Existing Standard Groups - Only show in edit mode */}
-        {isEditMode &&
-          standardGroups?.map((group, index) => (
+      {/* Standard Groups - Only show in edit mode */}
+      {isEditMode && (
+        <div className="space-y-6">
+          {/* Existing Standard Groups */}
+          {standardGroups?.map((group, index) => (
             <RubricStandardGroup
               key={group.id}
               group={group}
@@ -161,16 +161,17 @@ export default function Rubric({ rubricId }: RubricProps) {
             />
           ))}
 
-        {/* Add New Standard Group - Show for both create and edit modes */}
-        <RubricStandardGroup
-          rubricId={currentRubricId}
-          index={isEditMode ? standardGroups?.length || 0 : 0}
-          isOpen={true}
-          onToggle={() => {}} // No toggle needed for create mode
-          mode="create"
-          standards={[]} // Pass empty array for create mode
-        />
-      </div>
+          {/* Add New Standard Group */}
+          <RubricStandardGroup
+            rubricId={currentRubricId}
+            index={standardGroups?.length || 0}
+            isOpen={true}
+            onToggle={() => {}} // No toggle needed for create mode
+            mode="create"
+            standards={[]} // Pass empty array for create mode
+          />
+        </div>
+      )}
     </div>
   );
 }
