@@ -7,7 +7,7 @@
 "use client";
 import { logError, logInfo } from "@/utils/logger";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 
@@ -26,15 +26,18 @@ interface TATourProps {
 
 export default function TATour({ onClose }: TATourProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { effectiveProfile } = useProfile();
   const { isConnected, emitStartSimulation } = useWebSocket();
   const {
     state: tourState,
     openTour,
     closeTour,
+    nextStep,
     completeStep,
     setNavigating,
     setLoadingSimulation,
+    setShowGuideButton,
   } = useTour();
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -241,6 +244,118 @@ export default function TATour({ onClose }: TATourProps) {
     openTour,
   ]);
 
+  // Automatic step completion based on user actions
+  useEffect(() => {
+    if (!tourState.isOpen || !effectiveProfile) return;
+
+    const currentStep = tourState.steps[tourState.currentStep];
+    if (!currentStep || currentStep.isCompleted) return;
+
+    // Step 1: Home overview - auto-complete when on home page
+    if (tourState.currentStep === 0 && pathname === "/home") {
+      handleStepComplete(0);
+    }
+
+    // Step 2: Cohorts page - auto-complete when on cohorts page
+    if (tourState.currentStep === 1 && pathname.includes("/cohorts/c/")) {
+      handleStepComplete(1);
+    }
+
+    // Step 3: Classes page - auto-complete when on classes page
+    if (tourState.currentStep === 2 && pathname.includes("/classes/c/")) {
+      handleStepComplete(2);
+    }
+
+    // Step 4: Practice simulation - auto-complete when simulation starts
+    if (tourState.currentStep === 3 && pathname.includes("/home/a/")) {
+      handleStepComplete(3);
+    }
+
+    // Step 5: Send message - auto-complete when message is sent
+    if (tourState.currentStep === 4) {
+      // This will be handled by the message event listener below
+    }
+
+    // Step 6: End chat - auto-complete when end chat button is clicked
+    // This is handled by the event listener below
+  }, [
+    tourState.currentStep,
+    tourState.steps,
+    pathname,
+    effectiveProfile,
+    tourState.isOpen,
+    handleStepComplete,
+  ]);
+
+  // Automatic navigation between steps
+  useEffect(() => {
+    if (!tourState.isOpen || !effectiveProfile) return;
+
+    const currentStep = tourState.steps[tourState.currentStep];
+    if (!currentStep || currentStep.isCompleted) return;
+
+    // Auto-navigate based on current step
+    switch (tourState.currentStep) {
+      case 0: // Home overview - already on home
+        break;
+      case 1: // Navigate to cohorts
+        if (pathname !== "/cohorts" && !pathname.includes("/cohorts/c/")) {
+          handleNavigateToCohort();
+        }
+        break;
+      case 2: // Navigate to classes
+        if (pathname !== "/classes" && !pathname.includes("/classes/c/")) {
+          handleNavigateToClass();
+        }
+        break;
+      case 3: // Navigate to home and start simulation
+        if (pathname !== "/home") {
+          router.push("/home");
+        } else if (practiceSimulations.length > 0 && practiceSimulations[0]) {
+          handleStartSimulation(practiceSimulations[0].id);
+        }
+        break;
+      case 4: // Send message - handled by event listener
+        break;
+      case 5: // End chat - handled by event listener
+        break;
+    }
+  }, [
+    tourState.currentStep,
+    tourState.steps,
+    pathname,
+    effectiveProfile,
+    tourState.isOpen,
+    handleNavigateToCohort,
+    handleNavigateToClass,
+    handleStartSimulation,
+    practiceSimulations,
+    router,
+  ]);
+
+  // Handle step completion and auto-advance
+  useEffect(() => {
+    if (!tourState.isOpen || !effectiveProfile) return;
+
+    const currentStep = tourState.steps[tourState.currentStep];
+    if (!currentStep || !currentStep.isCompleted) return;
+
+    // Auto-advance to next step after a short delay
+    const timer = setTimeout(() => {
+      if (tourState.currentStep < tourState.steps.length - 1) {
+        nextStep();
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [
+    tourState.currentStep,
+    tourState.steps,
+    effectiveProfile,
+    tourState.isOpen,
+    nextStep,
+  ]);
+
   // Set up simulation event listeners
   useEffect(() => {
     const handleSimulationStarted = (event: CustomEvent) => {
@@ -266,7 +381,7 @@ export default function TATour({ onClose }: TATourProps) {
       const target = event.target as HTMLElement;
       if (target.closest("[data-tour-end-chat]")) {
         logInfo("End chat button clicked - marking tour step complete");
-        handleStepComplete(4);
+        handleStepComplete(5);
       }
     };
 
@@ -334,6 +449,18 @@ export default function TATour({ onClose }: TATourProps) {
       );
     };
   }, [customStepActions]);
+
+  // Show guide button when tour is not complete
+  useEffect(() => {
+    if (
+      effectiveProfile &&
+      (!effectiveProfile.viewedIntro || !effectiveProfile.viewedChat)
+    ) {
+      setShowGuideButton(true);
+    } else {
+      setShowGuideButton(false);
+    }
+  }, [effectiveProfile, setShowGuideButton]);
 
   // This component no longer renders UI - it just manages tour state
   return null;

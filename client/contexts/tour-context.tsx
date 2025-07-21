@@ -19,8 +19,8 @@ import {
 import { Profile } from "@/types";
 import { TourStep } from "@/utils/tour-steps";
 
-// Dynamically import Tour to avoid SSR issues
-const Tour = dynamic(() => import("reactour"), {
+// Dynamically import Tour to avoid SSR issues (keeping for potential future use)
+const _Tour = dynamic(() => import("reactour"), {
   ssr: false,
   loading: () => null,
 });
@@ -33,6 +33,7 @@ interface TourContextState {
   profile: Profile | null;
   isNavigating: boolean;
   loadingSimulation: string | null;
+  showGuideButton: boolean;
 }
 
 // Tour actions
@@ -44,7 +45,8 @@ type TourAction =
   | { type: "SET_STEP"; payload: number }
   | { type: "COMPLETE_STEP"; payload: number }
   | { type: "SET_NAVIGATING"; payload: boolean }
-  | { type: "SET_LOADING_SIMULATION"; payload: string | null };
+  | { type: "SET_LOADING_SIMULATION"; payload: string | null }
+  | { type: "SET_SHOW_GUIDE_BUTTON"; payload: boolean };
 
 // Initial state
 const initialState: TourContextState = {
@@ -54,6 +56,7 @@ const initialState: TourContextState = {
   profile: null,
   isNavigating: false,
   loadingSimulation: null,
+  showGuideButton: false,
 };
 
 // Reducer
@@ -69,6 +72,7 @@ function tourReducer(
         currentStep: 0,
         steps: action.payload.steps,
         profile: action.payload.profile,
+        showGuideButton: true,
       };
     case "CLOSE":
       return {
@@ -79,6 +83,7 @@ function tourReducer(
         profile: null,
         isNavigating: false,
         loadingSimulation: null,
+        showGuideButton: false,
       };
     case "NEXT":
       return {
@@ -112,6 +117,11 @@ function tourReducer(
         ...state,
         loadingSimulation: action.payload,
       };
+    case "SET_SHOW_GUIDE_BUTTON":
+      return {
+        ...state,
+        showGuideButton: action.payload,
+      };
     default:
       return state;
   }
@@ -128,6 +138,9 @@ interface TourContextValue {
   completeStep: (stepIndex: number) => void;
   setNavigating: (isNavigating: boolean) => void;
   setLoadingSimulation: (simulationId: string | null) => void;
+  setShowGuideButton: (show: boolean) => void;
+  openGuide: () => void;
+  goBack: () => void;
 }
 
 const TourContext = createContext<TourContextValue | undefined>(undefined);
@@ -173,6 +186,40 @@ export function TourProvider({ children }: TourProviderProps) {
     dispatch({ type: "SET_LOADING_SIMULATION", payload: simulationId });
   }, []);
 
+  const setShowGuideButton = useCallback((show: boolean) => {
+    dispatch({ type: "SET_SHOW_GUIDE_BUTTON", payload: show });
+  }, []);
+
+  const openGuide = useCallback(() => {
+    if (!state.isOpen && state.steps.length > 0 && state.profile) {
+      dispatch({
+        type: "OPEN",
+        payload: { steps: state.steps, profile: state.profile },
+      });
+    }
+  }, [state.isOpen, state.steps, state.profile]);
+
+  const goBack = useCallback(() => {
+    // Navigate back based on current step
+    switch (state.currentStep) {
+      case 0: // Home overview - stay on home
+        break;
+      case 1: // Cohorts - go back to home
+        window.history.back();
+        break;
+      case 2: // Classes - go back to cohorts
+        window.history.back();
+        break;
+      case 3: // Simulation - go back to home
+        window.history.back();
+        break;
+      case 4: // Send message - stay in simulation
+        break;
+      case 5: // End chat - stay in simulation
+        break;
+    }
+  }, [state.currentStep]);
+
   // Context value
   const value = useMemo(
     () => ({
@@ -185,6 +232,9 @@ export function TourProvider({ children }: TourProviderProps) {
       completeStep,
       setNavigating,
       setLoadingSimulation,
+      setShowGuideButton,
+      openGuide,
+      goBack,
     }),
     [
       state,
@@ -196,6 +246,9 @@ export function TourProvider({ children }: TourProviderProps) {
       completeStep,
       setNavigating,
       setLoadingSimulation,
+      setShowGuideButton,
+      openGuide,
+      goBack,
     ]
   );
 
@@ -296,12 +349,6 @@ export function TourProvider({ children }: TourProviderProps) {
                     ? "Starting..."
                     : "Continue"}
               </button>
-              <button
-                onClick={() => completeStep(state.currentStep)}
-                className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md text-sm font-medium hover:bg-secondary/90"
-              >
-                Mark Complete
-              </button>
             </div>
           )}
         </div>
@@ -325,11 +372,11 @@ export function TourProvider({ children }: TourProviderProps) {
           </progress>
           <div className="flex justify-between">
             <button
-              onClick={prevStep}
+              onClick={goBack}
               disabled={state.currentStep === 0}
               className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Back
+              Go Back
             </button>
             <button
               onClick={nextStep}
@@ -341,31 +388,26 @@ export function TourProvider({ children }: TourProviderProps) {
         </footer>
       </aside>
     );
-  }, [state, closeTour, completeStep, nextStep, prevStep]);
+  }, [state, closeTour, nextStep, prevStep, goBack]);
 
   return (
     <TourContext.Provider value={value}>
       {children}
       {state.isOpen && state.steps.length > 0 && (
         <>
-          <Tour
-            steps={state.steps.map((step) => ({
-              selector: step.selector || "body",
-              content: step.content,
-              position: step.position || "bottom",
-            }))}
-            isOpen={state.isOpen}
-            onRequestClose={closeTour}
-            maskClassName="tour-mask"
-            highlightedMaskClassName="tour-highlighted-mask"
-            disableInteraction={false}
-            showNavigation={false}
-            showNavigationNumber={false}
-            showButtons={false}
-            showCloseButton={false}
-            showBadge={false}
-            disableDotsNavigation={true}
-            className="tour-overlay"
+          {/* Disable reactour overlay and just use our custom sidebar */}
+          <div
+            className="tour-mask"
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              zIndex: 1000,
+              pointerEvents: "auto",
+            }}
           />
           {TourSidebar}
         </>

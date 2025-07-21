@@ -34,8 +34,6 @@ export const createTATourSteps = (
       title: "Welcome to GLOW! 🌟",
       content:
         "This is your home dashboard where you can see your progress, overall completion status, and access your assigned simulations. You'll find your cohorts, practice simulations, and history here.",
-      selector: "body",
-      position: "bottom",
       isCompleted: false,
       requiresAction: false,
     },
@@ -76,12 +74,22 @@ export const createTATourSteps = (
       requiresAction: true,
     },
     {
+      id: "send-message",
+      title: "Send a Message 💬",
+      content:
+        "Great! Now let's send a message in the chat. Type something in the chat input and press Enter to send your first message.",
+      action: () => {
+        // Send a message
+        // This will be handled by the tour component
+      },
+      isCompleted: false,
+      requiresAction: true,
+    },
+    {
       id: "end-chat",
       title: "Complete the Chat ✅",
       content:
-        "Great job! Now let's finish this simulation. Click the 'End Chat' button in the top right corner to complete this practice session.",
-      selector: "[data-tour-end-chat]",
-      position: "left",
+        "Excellent! Now let's finish this simulation. Click the 'End Chat' button in the top right corner to complete this practice session.",
       isCompleted: false,
       requiresAction: true,
     },

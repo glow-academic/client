@@ -27,7 +27,7 @@ import {
   SimulationProvider,
   useSimulation,
 } from "@/contexts/simulation-context";
-import { TourProvider } from "@/contexts/tour-context";
+import { TourProvider, useTour } from "@/contexts/tour-context";
 import {
   generateEnhancedBreadcrumbs,
   getActiveSectionFromPath,
@@ -36,6 +36,43 @@ import {
   createSectionChangeHandler,
   isMainScreen,
 } from "@/utils/navigation-utils";
+
+// Guide Button Component
+function GuideButton() {
+  const { state, openGuide } = useTour();
+  const { effectiveProfile } = useProfile();
+
+  // Show guide button when tour is not complete and not currently open
+  const shouldShow =
+    effectiveProfile &&
+    (!effectiveProfile.viewedIntro || !effectiveProfile.viewedChat) &&
+    !state.isOpen;
+
+  if (!shouldShow) return null;
+
+  return (
+    <button
+      onClick={openGuide}
+      className="fixed bottom-6 right-6 z-50 bg-primary text-primary-foreground rounded-full p-4 shadow-lg hover:bg-primary/90 transition-colors"
+      aria-label="Open tour guide"
+    >
+      <svg
+        className="w-6 h-6"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    </button>
+  );
+}
 
 // Inner component that uses the role context
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
@@ -312,6 +349,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
           <ChatDialog />
         </>
       )}
+
+      {/* Guide Button - Always visible when tour is not complete */}
+      <GuideButton />
     </AssistantProvider>
   );
 }
