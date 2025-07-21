@@ -50,7 +50,6 @@ export default function Home() {
     null
   );
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-  const [showTATour, setShowTATour] = useState(false);
 
   // Use global WebSocket context instead of local connection
   const { isConnected, emitStartSimulation } = useWebSocket();
@@ -151,17 +150,7 @@ export default function Home() {
     enabled: !!grades && grades.length > 0,
   });
 
-  const handleCloseTATour = useCallback(() => {
-    setShowTATour(false);
-  }, []);
-
-  useEffect(() => {
-    if (effectiveProfile) {
-      if (!effectiveProfile.viewedIntro || !effectiveProfile.viewedChat) {
-        setShowTATour(true);
-      }
-    }
-  }, [effectiveProfile]);
+  // Tour is now handled by the global tour context
 
   // 3. PROCESS DATA FOR NEW COMPONENTS
   const completionistData = useMemo(() => {
@@ -606,7 +595,8 @@ export default function Home() {
           </div>
         )}
       </div>
-      {showTATour && <TATour onClose={handleCloseTATour} />}
+      {/* Tour launcher - triggers the global tour context */}
+      <TATour onClose={() => {}} />
     </TooltipProvider>
   );
 }

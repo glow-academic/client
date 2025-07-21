@@ -27,6 +27,7 @@ import {
   SimulationProvider,
   useSimulation,
 } from "@/contexts/simulation-context";
+import { TourProvider } from "@/contexts/tour-context";
 import {
   generateEnhancedBreadcrumbs,
   getActiveSectionFromPath,
@@ -325,10 +326,11 @@ export default function MainLayout({
     const match = pathname?.match(/^\/home\/a\/([^\/]+)/);
     return match ? match[1] : null;
   }, [pathname]);
+
   // If we have an attemptId, wrap the content in the provider.
   // Otherwise, render the content directly.
   return (
-    <>
+    <TourProvider>
       {attemptId ? (
         <SimulationProvider attemptId={attemptId}>
           <MainLayoutContent>{children}</MainLayoutContent>
@@ -336,6 +338,6 @@ export default function MainLayout({
       ) : (
         <MainLayoutContent>{children}</MainLayoutContent>
       )}
-    </>
+    </TourProvider>
   );
 }

@@ -1,30 +1,24 @@
 /**
  * TATour.tsx
- * Tour component for TA users that replaces the WelcomeOverlay
+ * Tour launcher component for TA users that triggers the persistent sidebar tour
  * @AshokSaravanan222 & @siladiea
  * 01/15/2025
  */
 "use client";
 import { logError, logInfo } from "@/utils/logger";
 import { useQuery } from "@tanstack/react-query";
-import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 
-// Dynamically import Tour to avoid SSR issues
-const Tour = dynamic(() => import("reactour"), {
-  ssr: false,
-  loading: () => null,
-});
-
 import { useProfile } from "@/contexts/profile-context";
+import { useTour } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { updateProfile } from "@/utils/mutations/profiles/update-profile";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import { TourState, createTATourSteps } from "@/utils/tour-steps";
+import { createTATourSteps } from "@/utils/tour-steps";
 
 interface TATourProps {
   onClose: () => void;
@@ -34,25 +28,16 @@ export default function TATour({ onClose }: TATourProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
   const { isConnected, emitStartSimulation } = useWebSocket();
+  const {
+    state: tourState,
+    openTour,
+    closeTour,
+    completeStep,
+    setNavigating,
+    setLoadingSimulation,
+  } = useTour();
 
-  const [tourState, setTourState] = useState<TourState>({
-    isActive: false,
-    currentStep: 0,
-    steps: [],
-    profile: null,
-  });
-
-  const [isNavigating, setIsNavigating] = useState(false);
-  const [loadingSimulation, setLoadingSimulation] = useState<string | null>(
-    null
-  );
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
-
-  // Ensure component is mounted on client side
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // Fetch data needed for tour navigation
   const { data: cohorts = [] } = useQuery({
@@ -95,12 +80,7 @@ export default function TATour({ onClose }: TATourProps) {
     async (stepIndex: number) => {
       if (!effectiveProfile) return;
 
-      setTourState((prev) => ({
-        ...prev,
-        steps: prev.steps.map((step, index) =>
-          index === stepIndex ? { ...step, isCompleted: true } : step
-        ),
-      }));
+      completeStep(stepIndex);
 
       // Update profile based on completed steps
       const updatedSteps = tourState.steps.map((step, index) =>
@@ -128,14 +108,14 @@ export default function TATour({ onClose }: TATourProps) {
         logError("Error updating profile for tour completion:", error);
       }
     },
-    [effectiveProfile, tourState.steps]
+    [effectiveProfile, tourState.steps, completeStep]
   );
 
   // Handle tour close
-  const handleTourClose = useCallback(() => {
-    setTourState((prev) => ({ ...prev, isActive: false }));
+  const _handleTourClose = useCallback(() => {
+    closeTour();
     onClose();
-  }, [onClose]);
+  }, [closeTour, onClose]);
 
   // Navigation handlers
   const handleNavigateToCohort = useCallback(() => {
@@ -144,11 +124,11 @@ export default function TATour({ onClose }: TATourProps) {
       return;
     }
 
-    setIsNavigating(true);
+    setNavigating(true);
     const firstCohort = taCohorts[0];
     if (!firstCohort) {
       toast.error("No cohorts assigned to you yet.");
-      setIsNavigating(false);
+      setNavigating(false);
       return;
     }
     router.push(`/cohorts/c/${firstCohort.id}`);
@@ -156,9 +136,9 @@ export default function TATour({ onClose }: TATourProps) {
     // Mark step as complete after navigation
     setTimeout(() => {
       handleStepComplete(1);
-      setIsNavigating(false);
+      setNavigating(false);
     }, 1000);
-  }, [taCohorts, router, handleStepComplete]);
+  }, [taCohorts, router, handleStepComplete, setNavigating]);
 
   const handleNavigateToClass = useCallback(() => {
     if (taClasses.length === 0) {
@@ -166,11 +146,11 @@ export default function TATour({ onClose }: TATourProps) {
       return;
     }
 
-    setIsNavigating(true);
+    setNavigating(true);
     const firstClass = taClasses[0];
     if (!firstClass) {
       toast.error("No classes assigned to you yet.");
-      setIsNavigating(false);
+      setNavigating(false);
       return;
     }
     router.push(`/classes/c/${firstClass.id}`);
@@ -178,9 +158,9 @@ export default function TATour({ onClose }: TATourProps) {
     // Mark step as complete after navigation
     setTimeout(() => {
       handleStepComplete(2);
-      setIsNavigating(false);
+      setNavigating(false);
     }, 1000);
-  }, [taClasses, router, handleStepComplete]);
+  }, [taClasses, router, handleStepComplete, setNavigating]);
 
   const handleStartSimulation = useCallback(
     async (simulationId: string) => {
@@ -220,7 +200,13 @@ export default function TATour({ onClose }: TATourProps) {
         setLoadingSimulation(null);
       }
     },
-    [isConnected, effectiveProfile, emitStartSimulation, handleStepComplete]
+    [
+      isConnected,
+      effectiveProfile,
+      emitStartSimulation,
+      handleStepComplete,
+      setLoadingSimulation,
+    ]
   );
 
   const handleEndChat = useCallback(() => {
@@ -229,35 +215,31 @@ export default function TATour({ onClose }: TATourProps) {
     handleStepComplete(4);
   }, [handleStepComplete]);
 
-  // Initialize tour steps
+  // Initialize tour steps and launch tour
   useEffect(() => {
-    if (!effectiveProfile) return;
-
-    const steps = createTATourSteps(
-      effectiveProfile,
-      () => router.push("/home"),
-      (cohortId: string) => router.push(`/cohorts/c/${cohortId}`),
-      (classId: string) => router.push(`/classes/c/${classId}`),
-      (simulationId: string) => handleStartSimulation(simulationId),
-      () => handleEndChat()
-    );
-
-    setTourState((prev) => ({
-      ...prev,
-      steps,
-      profile: effectiveProfile,
-    }));
-  }, [effectiveProfile, router, handleStartSimulation, handleEndChat]);
-
-  // Check if tour should start
-  useEffect(() => {
-    if (!effectiveProfile || tourState.steps.length === 0) return;
+    if (!effectiveProfile || tourState.isOpen) return;
 
     // Start tour if user hasn't viewed intro or chat
     if (!effectiveProfile.viewedIntro || !effectiveProfile.viewedChat) {
-      setTourState((prev) => ({ ...prev, isActive: true }));
+      const steps = createTATourSteps(
+        effectiveProfile,
+        () => router.push("/home"),
+        (cohortId: string) => router.push(`/cohorts/c/${cohortId}`),
+        (classId: string) => router.push(`/classes/c/${classId}`),
+        (simulationId: string) => handleStartSimulation(simulationId),
+        () => handleEndChat()
+      );
+
+      openTour(steps, effectiveProfile);
     }
-  }, [effectiveProfile, tourState.steps.length]);
+  }, [
+    effectiveProfile,
+    tourState.isOpen,
+    router,
+    handleStartSimulation,
+    handleEndChat,
+    openTour,
+  ]);
 
   // Set up simulation event listeners
   useEffect(() => {
@@ -306,9 +288,9 @@ export default function TATour({ onClose }: TATourProps) {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [router, handleStepComplete]);
+  }, [router, handleStepComplete, setLoadingSimulation]);
 
-  // Custom step actions
+  // Custom step actions mapping
   const customStepActions = useMemo(() => {
     return {
       1: handleNavigateToCohort, // Cohorts page
@@ -333,72 +315,26 @@ export default function TATour({ onClose }: TATourProps) {
     practiceSimulations,
   ]);
 
-  // Don't render anything during SSR
-  if (!isMounted) {
-    return null;
-  }
+  // Set up global action handlers for the tour context
+  useEffect(() => {
+    const handleTourAction = (event: CustomEvent) => {
+      const { stepIndex } = event.detail;
+      const action =
+        customStepActions[stepIndex as keyof typeof customStepActions];
+      if (action) {
+        action();
+      }
+    };
 
-  // Tour configuration
-  const tourConfig = {
-    steps: tourState.steps.map((step, index) => ({
-      selector: step.selector || "body",
-      content: (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">{step.title}</h3>
-          <p className="text-sm text-muted-foreground">{step.content}</p>
-          {step.requiresAction && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  const action =
-                    customStepActions[index as keyof typeof customStepActions];
-                  if (action) {
-                    action();
-                  }
-                }}
-                disabled={isNavigating || !!loadingSimulation}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
-              >
-                {isNavigating
-                  ? "Navigating..."
-                  : loadingSimulation
-                    ? "Starting..."
-                    : "Continue"}
-              </button>
-              <button
-                onClick={() => handleStepComplete(index)}
-                className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md text-sm font-medium hover:bg-secondary/90"
-              >
-                Mark Complete
-              </button>
-            </div>
-          )}
-        </div>
-      ),
-      position: step.position || "bottom",
-    })),
-    isOpen: tourState.isActive,
-    onRequestClose: handleTourClose,
-    showNavigation: false,
-    showNavigationNumber: false,
-    showButtons: false,
-    showCloseButton: true,
-    showBadge: false,
-    disableInteraction: false,
-    disableDotsNavigation: true,
-    className: "tour-overlay",
-    maskClassName: "tour-mask",
-    highlightedMaskClassName: "tour-highlighted-mask",
-  };
+    window.addEventListener("tourAction", handleTourAction as EventListener);
+    return () => {
+      window.removeEventListener(
+        "tourAction",
+        handleTourAction as EventListener
+      );
+    };
+  }, [customStepActions]);
 
-  if (!tourState.isActive || tourState.steps.length === 0) {
-    return null;
-  }
-
-  // Additional safety check for Tour component
-  if (!Tour) {
-    return null;
-  }
-
-  return <Tour {...tourConfig} />;
+  // This component no longer renders UI - it just manages tour state
+  return null;
 }

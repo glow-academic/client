@@ -1,0 +1,91 @@
+/* Tour Sidebar Styles */
+.tour-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 320px;
+  height: 100vh;
+  background: var(--background);
+  border-right: 1px solid var(--border);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  z-index: 1100;
+  overflow-y: auto;
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Body class when tour is open */
+body.tour-open {
+  overflow: hidden;
+}
+
+/* Tour mask styles */
+.tour-mask {
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.tour-highlighted-mask {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Tour overlay */
+.tour-overlay {
+  z-index: 1050;
+}
+
+/* Progress bar styling */
+.tour-sidebar progress {
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  border-radius: 9999px;
+  background-color: var(--muted);
+  overflow: hidden;
+}
+
+.tour-sidebar progress::-webkit-progress-bar {
+  background-color: var(--muted);
+  border-radius: 9999px;
+}
+
+.tour-sidebar progress::-webkit-progress-value {
+  background-color: var(--primary);
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+.tour-sidebar progress::-moz-progress-bar {
+  background-color: var(--primary);
+  border-radius: 9999px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .tour-sidebar {
+    width: 100vw;
+    transform: translateX(-100%);
+  }
+  
+  .tour-sidebar.open {
+    transform: translateX(0);
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .tour-sidebar {
+    background: var(--background);
+    border-right-color: var(--border);
+  }
+  
+  .tour-mask {
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .tour-highlighted-mask {
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+} 
