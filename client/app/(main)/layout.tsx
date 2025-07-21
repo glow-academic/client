@@ -284,15 +284,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/system/agents") {
-      return (
-        <Button onClick={() => router.push("/system/agents/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Agent
-        </Button>
-      );
-    }
-
     if (pathname === "/system/providers") {
       return (
         <Button onClick={() => router.push("/system/providers/new")} size="sm">

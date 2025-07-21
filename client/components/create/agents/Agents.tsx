@@ -14,6 +14,7 @@ import { toast } from "sonner";
 
 import { deleteAgent } from "@/utils/mutations/agents/delete-agent";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 
 import {
   AlertDialog,
@@ -28,7 +29,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Agent } from "@/types";
+import { Agent, Scenario } from "@/types";
 import { createAgent } from "@/utils/mutations/agents/create-agent";
 
 export default function Agents() {
@@ -40,11 +41,19 @@ export default function Agents() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
+  const [affectedScenarios, setAffectedScenarios] = useState<Scenario[]>([]);
+  const [isLoadingImpact, setIsLoadingImpact] = useState(false);
 
   // Fetch agents data
   const { data: agents = [], refetch: refetchAgents } = useQuery({
     queryKey: ["agents"],
     queryFn: () => getAllAgents(),
+  });
+
+  // Fetch scenarios data to check for dependencies
+  const { data: scenarios = [] } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => getAllScenarios(),
   });
 
   const handleDelete = async () => {
@@ -96,6 +105,15 @@ export default function Agents() {
 
   const handleDeleteClick = (id: string, name: string) => {
     setDeleteItem({ id, name });
+    setIsLoadingImpact(true);
+
+    // Calculate impact - find scenarios that use this agent
+    const affectedScens = scenarios.filter(
+      (scenario) => scenario.agentId === id
+    );
+
+    setAffectedScenarios(affectedScens);
+    setIsLoadingImpact(false);
     setShowDeleteDialog(true);
   };
 
@@ -121,11 +139,6 @@ export default function Agents() {
                 {agent.name || "Unnamed Agent"}
               </CardTitle>
               <div className="flex gap-1">
-                {agent.defaultAgent && (
-                  <Badge variant="secondary" className="text-xs">
-                    Default
-                  </Badge>
-                )}
                 {agent.reasoning && (
                   <Badge variant="outline" className="text-xs">
                     <Brain className="h-3 w-3 mr-1" />
@@ -203,18 +216,62 @@ export default function Agents() {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Agent</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the agent "{deleteItem?.name}". This
-              action cannot be undone.
+              {isLoadingImpact ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Loading impact analysis...
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p>
+                    Are you sure you want to delete the agent "
+                    {deleteItem?.name}"? This action cannot be undone.
+                  </p>
+
+                  {affectedScenarios.length > 0 && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                      <div className="font-medium text-red-800 mb-2">
+                        ⚠️ Cannot delete agent:
+                      </div>
+
+                      <div>
+                        <span className="font-medium text-red-700">
+                          {affectedScenarios.length} scenario
+                          {affectedScenarios.length !== 1 ? "s" : ""} currently
+                          use this agent:
+                        </span>
+                        <ul className="mt-1 list-disc list-inside text-sm text-red-600">
+                          {affectedScenarios.slice(0, 3).map((scenario) => (
+                            <li key={scenario.id}>{scenario.name}</li>
+                          ))}
+                          {affectedScenarios.length > 3 && (
+                            <li>...and {affectedScenarios.length - 3} more</li>
+                          )}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+
+                  {affectedScenarios.length === 0 && (
+                    <div className="mt-3 text-sm font-medium text-red-700">
+                      This action will permanently remove the agent and cannot
+                      be undone.
+                    </div>
+                  )}
+                </div>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={
+                isDeleting || isLoadingImpact || affectedScenarios.length > 0
+              }
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
               {isDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>

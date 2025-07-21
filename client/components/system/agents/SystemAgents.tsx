@@ -5,74 +5,27 @@
  * 07/20/2025
  */
 "use client";
-import { logError, logInfo } from "@/utils/logger";
 import { useQuery } from "@tanstack/react-query";
-import { Brain, Edit, Thermometer, Trash2 } from "lucide-react";
+import { Brain, Edit, Thermometer } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { toast } from "sonner";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SystemAgent } from "@/types";
 import { getAllSystemAgents } from "@/utils/queries/system_agents/get-all-system-agents";
-import { deleteSystemAgent } from "@/utils/mutations/system_agents/delete-system-agent";
 
 export default function SystemAgents() {
   const router = useRouter();
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch agents data
-  const { data: agents = [], refetch: refetchAgents } = useQuery({
+  const { data: agents = [] } = useQuery({
     queryKey: ["systemAgents"],
     queryFn: () => getAllSystemAgents(),
   });
 
-  const handleDelete = async () => {
-    if (!deleteItem) return;
-
-    setIsDeleting(true);
-    try {
-      await deleteSystemAgent(deleteItem.id);
-      logInfo("Agent deleted successfully:", {
-        id: deleteItem.id,
-        name: deleteItem.name,
-      });
-      toast.success("Agent deleted successfully");
-      refetchAgents();
-    } catch (error) {
-      logError("Error deleting agent:", error);
-      toast.error("Failed to delete agent");
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteDialog(false);
-      setDeleteItem(null);
-    }
-  };
-
-  const handleDeleteClick = (id: string, name: string) => {
-    setDeleteItem({ id, name });
-    setShowDeleteDialog(true);
-  };
-
   const handleEdit = (id: string) => {
-    router.push(`/create/agents/a/${id}`);
+    router.push(`/system/agents/a/${id}`);
   };
 
   const formatTemperature = (temp: number) => {
@@ -117,15 +70,6 @@ export default function SystemAgents() {
             >
               <Edit className="h-4 w-4" />
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                handleDeleteClick(agent.id, agent.name || "Unnamed Agent")
-              }
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
           </div>
         </div>
       </CardHeader>
@@ -154,29 +98,6 @@ export default function SystemAgents() {
           )}
         </div>
       </div>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the agent "{deleteItem?.name}". This
-              action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

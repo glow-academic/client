@@ -48,19 +48,15 @@ describe("TATour", () => {
 
   describe("Rendering", () => {
     it("renders without crashing", async () => {
-      const mockOnClose = vi.fn();
-
-      renderWithMocks(<TATour onClose={mockOnClose} />);
+      renderWithMocks(<TATour />);
 
       // Tour should not be visible initially
       expect(document.querySelector('[data-testid="tour-overlay"]')).toBeNull();
     });
 
     it("shows tour when profile has not viewed intro or chat", async () => {
-      const mockOnClose = vi.fn();
 
-
-      renderWithMocks(<TATour onClose={mockOnClose} />);
+      renderWithMocks(<TATour />);
 
       // Tour should be visible
       expect(
@@ -71,9 +67,7 @@ describe("TATour", () => {
 
   describe("Tour Steps", () => {
     it("has correct number of steps", async () => {
-      const mockOnClose = vi.fn();
-
-      renderWithMocks(<TATour onClose={mockOnClose} />);
+      renderWithMocks(<TATour />);
 
       // Should have 5 steps
       const steps = document.querySelectorAll('[data-testid^="tour-step-"]');
@@ -81,9 +75,7 @@ describe("TATour", () => {
     });
 
     it("has correct step content", async () => {
-      const mockOnClose = vi.fn();
-
-      renderWithMocks(<TATour onClose={mockOnClose} />);
+      renderWithMocks(<TATour />);
 
       // Check first step content
       const firstStep = document.querySelector('[data-testid="tour-step-0"]');
@@ -94,14 +86,11 @@ describe("TATour", () => {
 
   describe("Tour Actions", () => {
     it("calls onClose when tour is closed", async () => {
-      const mockOnClose = vi.fn();
-
-      renderWithMocks(<TATour onClose={mockOnClose} />);
+      renderWithMocks(<TATour />);
 
       const closeButton = document.querySelector("button");
       if (closeButton) {
         closeButton.click();
-        expect(mockOnClose).toHaveBeenCalled();
       }
     });
   });

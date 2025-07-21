@@ -20,11 +20,7 @@ import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { createTATourSteps } from "@/utils/tour-steps";
 
-interface TATourProps {
-  onClose: () => void;
-}
-
-export default function TATour({ onClose }: TATourProps) {
+export default function TATour() {
   const router = useRouter();
   const pathname = usePathname();
   const { effectiveProfile } = useProfile();
@@ -32,7 +28,6 @@ export default function TATour({ onClose }: TATourProps) {
   const {
     state: tourState,
     openTour,
-    closeTour,
     nextStep,
     completeStep,
     setNavigating,
@@ -113,12 +108,6 @@ export default function TATour({ onClose }: TATourProps) {
     },
     [effectiveProfile, tourState.steps, completeStep]
   );
-
-  // Handle tour close
-  const _handleTourClose = useCallback(() => {
-    closeTour();
-    onClose();
-  }, [closeTour, onClose]);
 
   // Navigation handlers
   const handleNavigateToCohort = useCallback(() => {
