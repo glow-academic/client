@@ -1,99 +1,75 @@
-import { describe, it } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+/**
+ * ClassDashboard.test.tsx
+ * Tests for the ClassDashboard component
+ * @AshokSaravanan222 & @siladiea
+ * 07/20/2025
+ */
 
-// ——————————————————————————————————————————
-import ClassDashboard, { ClassDashboardProps } from '@/components/common/class/ClassDashboard';
+import ClassDashboard from "@/components/common/class/ClassDashboard";
+import { ProfileProvider } from "@/contexts/profile-context";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
+// Mock the query functions
+vi.mock("@/utils/queries/profiles/get-profiles-by-class");
+vi.mock(
+  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles"
+);
+vi.mock("@/utils/queries/simulation_chats/get-simulation-chats-by-attempts");
+vi.mock(
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats"
+);
+vi.mock("@/utils/queries/simulation_messages/get-simulation-messages-by-chats");
+vi.mock("@/utils/queries/rubrics/get-all-rubrics");
 
-
-// ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
-const mockProps: ClassDashboardProps = {
-  classId: 'test-classId',
+const mockProfile = {
+  id: "test-profile-id",
+  userId: null,
+  firstName: "Test",
+  lastName: "User",
+  alias: "testuser",
+  role: "ta" as const,
+  active: true,
+  viewedIntro: true,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  lastLogin: new Date().toISOString(),
+  lastActive: new Date().toISOString(),
+  defaultProfile: false,
 };
-// ------------------------------------------------------------------
-describe('ClassDashboard', () => {
-  
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<ClassDashboard {...mockProps} />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-    });
-
-    it.skip('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: ClassDashboardProps
-      
-      // TODO add props assertions
-    });
-
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
-    });
+const TestWrapper = ({ children }: { children: React.ReactNode }) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
   });
 
-  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ProfileProvider activeProfile={mockProfile}>{children}</ProfileProvider>
+    </QueryClientProvider>
+  );
+};
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+describe("ClassDashboard", () => {
+  it("renders loading state initially", () => {
+    render(<ClassDashboard classId="test-class-id" />, {
+      wrapper: TestWrapper,
     });
 
-    it.skip('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // TODO: invalid props assertions
+    expect(screen.getByText("Loading Dashboard...")).toBeInTheDocument();
+  });
+
+  it("renders with classId prop", () => {
+    render(<ClassDashboard classId="test-class-id" />, {
+      wrapper: TestWrapper,
     });
+
+    // Should render the component with the classId
+    expect(screen.getByText("Loading Dashboard...")).toBeInTheDocument();
   });
 });
-
-/*
- * Component Analysis for ClassDashboard:
- * Path: common/class/ClassDashboard.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: ClassDashboardProps
- * - Has props: true
- * - Props interface: ClassDashboardProps
- * - Client component: false
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<ClassDashboard {...mockProps} />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<ClassDashboard {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

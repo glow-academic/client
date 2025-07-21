@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import NewModel from "@/components/management/providers/NewModel";
+import NewModel from "@/components/system/providers/NewModel";
 import { getProvider } from "@/utils/queries/providers/get-provider";
 
 import type { Metadata, ResolvingMetadata } from "next";
@@ -31,7 +31,7 @@ export async function generateMetadata(
 export default function NewModelPage({
   params,
 }: {
-  params: Promise<{ providerId: string }>
+  params: Promise<{ providerId: string }>;
 }) {
   const { providerId } = use(params);
 

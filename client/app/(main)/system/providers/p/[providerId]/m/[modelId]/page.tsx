@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import ModelEdit from "@/components/management/providers/ModelEdit";
+import ModelEdit from "@/components/system/providers/ModelEdit";
 import { getModel } from "@/utils/queries/models/get-model";
 import { getAllProviders } from "@/utils/queries/providers/get-all-providers";
 import { getQueryClient } from "@/utils/react-query/queryClient";

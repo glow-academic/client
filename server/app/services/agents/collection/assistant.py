@@ -5,28 +5,18 @@ import uuid
 from typing import AsyncGenerator
 
 from agents import Runner, trace
-from agents.items import (
-    ReasoningItem,
-    ToolCallItem,
-    ToolCallOutputItem,
-    TResponseInputItem,
-)
+from agents.items import (ReasoningItem, ToolCallItem, ToolCallOutputItem,
+                          TResponseInputItem)
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
 from app.db import get_session
-from app.models import (
-    AssistantChats,
-    AssistantMessages,
-    AssistantToolCalls,
-    Models,
-    Profiles,
-    Providers,
-    SystemAgents,
-)
+from app.models import (AssistantChats, AssistantMessages, AssistantToolCalls,
+                        Models, Profiles, Providers, SystemAgents)
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_assistant_conversation_history
 from dotenv import load_dotenv
 from fastapi import Depends
-from openai.types.responses import ResponseFunctionToolCall, ResponseTextDeltaEvent
+from openai.types.responses import (ResponseFunctionToolCall,
+                                    ResponseTextDeltaEvent)
 from sqlmodel import Session, select
 
 load_dotenv()

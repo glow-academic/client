@@ -1,83 +1,101 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { describe, it } from "vitest";
+import { describe, it } from 'vitest';
+import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import ModelEdit, {
-  ModelEditProps,
-} from "@/components/system/providers/ModelEdit";
+import AccoladeCard from '@/components/common/class/AccoladeCard';
+
+
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-const mockProps: ModelEditProps = {
-  modelId: "test-modelId",
-  providerId: "test-providerId",
+import type { AccoladeCardProps } from '@/components/common/class/AccoladeCard';
+const mockProps: AccoladeCardProps = {
+  icon: <div>test-icon</div>,
+  title: 'test-title',
+  user: 'superadmin',
+  details: 'test-details',
 };
 // ------------------------------------------------------------------
-describe("ModelEdit", () => {
-  describe("basic render smoke-test", () => {
-    it("renders without crashing", async () => {
-      renderWithMocks(<ModelEdit {...mockProps} />);
+describe('AccoladeCard', () => {
+  
 
+  describe('basic render smoke-test', () => {
+    it('renders without crashing', async () => {
+      
+      renderWithMocks(<AccoladeCard {...mockProps} />);
+      
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
     });
 
-    it.skip("should render with props", () => {
+    it.skip('should render with props', () => {
       // TODO: Test component with various props
-      // Props interface: ModelEditProps
+      // Props interface: AccoladeCardProps
+      
       // TODO add props assertions
     });
 
-    it.skip("should have correct accessibility attributes", () => {
+    it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
+      
       // TODO add accessibility assertions
+
     });
   });
 
-  describe("Edge Cases", () => {
-    it.skip("should handle edge cases gracefully", () => {
+  
+
+  
+
+  
+
+  describe('Edge Cases', () => {
+    it.skip('should handle edge cases gracefully', () => {
       // TODO: Test edge cases and error scenarios
+      
       // TODO: edge-case assertions
+
     });
 
-    it.skip("should handle missing or invalid props", () => {
+    it.skip('should handle missing or invalid props', () => {
       // TODO: Test with missing/invalid props
+      
       // TODO: invalid props assertions
     });
   });
 });
 
 /*
- * Component Analysis for ModelEdit:
- * Path: management/providers/ModelEdit.tsx
- *
+ * Component Analysis for AccoladeCard:
+ * Path: common/class/AccoladeCard.tsx
+ * 
  * Features detected:
  * - Default export: true
- * - Named exports: ModelEditProps
+ * - Named exports: None
  * - Has props: true
- * - Props interface: ModelEditProps
- * - Client component: true
- * - Uses hooks: None
+ * - Props interface: AccoladeCardProps
+ * - Client component: false
+ * - Uses hooks: user
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false
  * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
- *
+ * 
  * TODO: Implement the failing tests above with actual test logic
- *
+ * 
  * Example implementations:
- *
+ * 
  * Basic rendering:
- * render(<ModelEdit {...mockProps} />);
+ * render(<AccoladeCard {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
- *
+ * 
  * Props testing:
  * const props = { ... };
- * render(<ModelEdit {...props} />);
+ * render(<AccoladeCard {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
- *
+ * 
  * User interaction:
  * const button = screen.getByRole('button');
  * await user.click(button);

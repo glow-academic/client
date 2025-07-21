@@ -4,8 +4,8 @@
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
-import ConnectionStatusIndicator from "@/components/management/system/ConnectionStatusIndicator";
-import Logs from "@/components/management/system/Logs";
+import ConnectionStatusIndicator from "@/components/system/health/ConnectionStatusIndicator";
+import Logs from "@/components/system/logs/Logs";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

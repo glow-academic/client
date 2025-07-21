@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 124
+- **Total Components**: 126
 - **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 124
+- **Tests Skipped** (already implemented): 126
 
 ## Component Coverage
 
@@ -53,10 +53,12 @@
 | AttemptChat | common/chat/attempt/AttemptChat.tsx | AttemptChat.test.tsx | ✅ Implemented |
 | AttemptInput | common/chat/attempt/AttemptInput.tsx | AttemptInput.test.tsx | ✅ Implemented |
 | AttemptMessages | common/chat/attempt/AttemptMessages.tsx | AttemptMessages.test.tsx | ✅ Implemented |
+| AccoladeCard | common/class/AccoladeCard.tsx | AccoladeCard.test.tsx | ✅ Implemented |
 | ClassDashboard | common/class/ClassDashboard.tsx | ClassDashboard.test.tsx | ✅ Implemented |
 | ClassDocuments | common/class/ClassDocuments.tsx | ClassDocuments.test.tsx | ✅ Implemented |
 | ClassForm | common/class/ClassForm.tsx | ClassForm.test.tsx | ✅ Implemented |
 | ClassStaff | common/class/ClassStaff.tsx | ClassStaff.test.tsx | ✅ Implemented |
+| LeaderboardTable | common/class/LeaderboardTable.tsx | LeaderboardTable.test.tsx | ✅ Implemented |
 | Cohort | common/cohort/Cohort.tsx | Cohort.test.tsx | ✅ Implemented |
 | CohortDashboard | common/cohort/CohortDashboard.tsx | CohortDashboard.test.tsx | ✅ Implemented |
 | CohortPicker | common/cohort/CohortPicker.tsx | CohortPicker.test.tsx | ✅ Implemented |
@@ -196,10 +198,12 @@ __tests__/
 │   │   │   ├── AttemptInput.test.tsx
 │   │   │   ├── AttemptMessages.test.tsx
 │   ├── class/
+│   │   ├── AccoladeCard.test.tsx
 │   │   ├── ClassDashboard.test.tsx
 │   │   ├── ClassDocuments.test.tsx
 │   │   ├── ClassForm.test.tsx
 │   │   ├── ClassStaff.test.tsx
+│   │   ├── LeaderboardTable.test.tsx
 │   ├── cohort/
 │   │   ├── Cohort.test.tsx
 │   │   ├── CohortDashboard.test.tsx

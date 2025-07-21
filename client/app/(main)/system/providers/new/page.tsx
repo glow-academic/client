@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import NewProvider from "@/components/management/providers/NewProvider";
+import NewProvider from "@/components/system/providers/NewProvider";
 
 import type { Metadata } from "next";
 
