@@ -22,7 +22,6 @@ import { SimulationsDataTableToolbar } from "./SimulationsDataTableToolbar";
 export interface SimulationsDataTableProps {
   columns: ColumnDef<Simulation>[];
   data: Simulation[];
-  cohortOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
   rubricOptions: { value: string; label: string }[];
   timeLimitOptions: { value: string; label: string }[];
@@ -32,7 +31,6 @@ export interface SimulationsDataTableProps {
 export function SimulationsDataTable({
   columns,
   data,
-  cohortOptions,
   scenarioOptions,
   rubricOptions,
   timeLimitOptions,
@@ -79,7 +77,6 @@ export function SimulationsDataTable({
     <div className="space-y-4">
       <SimulationsDataTableToolbar
         table={table}
-        cohortOptions={cohortOptions}
         scenarioOptions={scenarioOptions}
         rubricOptions={rubricOptions}
         timeLimitOptions={timeLimitOptions}

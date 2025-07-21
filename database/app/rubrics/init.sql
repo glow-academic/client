@@ -13,7 +13,8 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
     description TEXT        NOT NULL,
     points INTEGER     NOT NULL,
     pass_points INTEGER     NOT NULL,
-    default_rubric BOOLEAN     NOT NULL DEFAULT FALSE
+    default_rubric BOOLEAN     NOT NULL DEFAULT FALSE,
+    active BOOLEAN     NOT NULL DEFAULT TRUE
   );
 
 

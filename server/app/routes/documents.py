@@ -64,7 +64,7 @@ async def documents_health_check() -> JSONResponse:
 
 @router.post("/classify")
 async def classify_documents(
-    class_id: uuid.UUID,
+    document_ids: list[uuid.UUID],
     test: bool = False,
     session: Session = Depends(get_session),
 ) -> JSONResponse:
@@ -73,7 +73,7 @@ async def classify_documents(
     """
     try:
         # Run the classification agent
-        result = await run_classify_agent(class_id, test, session)
+        result = await run_classify_agent(document_ids, test, session)
 
         if result["success"]:
             return JSONResponse(

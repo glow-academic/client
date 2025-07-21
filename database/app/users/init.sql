@@ -54,7 +54,7 @@ CREATE TABLE users
   PRIMARY KEY (id)
 );
 
-CREATE TYPE profile_role AS ENUM ('superadmin', 'admin', 'instructional', 'instructor', 'ta', 'guest');
+CREATE TYPE profile_role AS ENUM ('superadmin', 'admin', 'instructional', 'ta', 'guest');
 
 CREATE TABLE profiles (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -78,7 +78,6 @@ INSERT INTO profiles (first_name, last_name, alias, role, default_profile, viewe
   ('Default', 'Superadmin', 'superadmin', 'superadmin', true, true, true),
   ('Default', 'Admin', 'admin', 'admin', true, true, true),
   ('Default', 'Instructional', 'instructional', 'instructional', true, true, true),
-  ('Default', 'Instructor', 'instructor', 'instructor', true, true, true),
   ('Default', 'TA', 'ta', 'ta', true, true, true),
   ('Default', 'Guest', 'guest', 'guest', true, true, true);
 
@@ -104,16 +103,6 @@ INSERT INTO profiles (id, first_name, last_name, alias, role) VALUES
   ('34a3c43e-27ee-4924-9f61-be4ac9e370f2', 'Jonathan', 'Morris', 'morrisjb', 'instructional'),
   ('fed71b5d-6170-4462-b919-e992f7716338', 'Max', 'Rees', 'mcrees', 'instructional'),
   ('37ed3d71-c381-4933-a1eb-66e3d4e0b0ac', 'Nicholas', 'Brasovan', 'nbrasova', 'instructional');
-
-
--- Instructor Users
-INSERT INTO profiles (id, first_name, last_name, alias, viewed_intro, role) VALUES
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Sarah', 'Chen', 'sarah.chen', true, 'instructor'),
-  ('11111111-aaaa-bbbb-cccc-111111111111', 'Michael', 'Rodriguez', 'michael.rodriguez', true, 'instructor'),
-  ('22222222-aaaa-bbbb-cccc-222222222222', 'Emily', 'Johnson', 'emily.johnson', true, 'instructor'),
-  ('33333333-aaaa-bbbb-cccc-333333333333', 'David', 'Kim', 'david.kim', false, 'instructor'),
-  ('44444444-aaaa-bbbb-cccc-444444444444', 'Lisa', 'Wang', 'lisa.wang', true, 'instructor'),
-  ('55555555-aaaa-bbbb-cccc-555555555555', 'James', 'Thompson', 'james.thompson', true, 'instructor');
 
 -- TAs for CS 180 (Problem Solving And Object-Oriented Programming)
 INSERT INTO profiles (id, first_name, last_name, alias, viewed_intro, role) VALUES

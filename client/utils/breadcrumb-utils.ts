@@ -6,11 +6,9 @@
  */
 import { logError } from "@/utils/logger";
 import { getAgent } from "@/utils/queries/agents/get-agent";
-import { getClass } from "@/utils/queries/classes/get-class";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getCohort } from "./queries/cohorts/get-cohort";
-import { getDepartment } from "./queries/departments/get-department";
 import { getModel } from "./queries/models/get-model";
 import { getProfile } from "./queries/profiles/get-profile";
 import { getRubric } from "./queries/rubrics/get-rubric";
@@ -31,13 +29,6 @@ const shouldDropSegment = (segment: string): boolean => {
 const fetchNameForId = async (id: string, context: string): Promise<string> => {
   try {
     switch (context) {
-      case "class":
-        const classData = await getClass(id);
-        const department = await getDepartment(classData!.departmentId!);
-        return classData && department
-          ? `${department.departmentCode} ${classData.classCode}`
-          : `Class ${id.substring(0, 8)}...`;
-
       case "attempt":
         const attemptData = await getSimulationAttempt(id);
         if (!attemptData) {
@@ -184,9 +175,6 @@ export const generateEnhancedBreadcrumbs = async (
         case "simulations":
           title = "Simulations";
           break;
-        case "classes":
-          title = "Classes";
-          break;
         case "management":
           title = "Management";
           break;
@@ -315,12 +303,6 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "simulations";
       }
-      if (second === "classes") {
-        if (third === "c" && fourth) {
-          return `class-${fourth}`;
-        }
-        return "classes";
-      }
       if (second === "cohorts") {
         if (third === "c" && fourth) {
           return `cohort-${fourth}`;
@@ -437,9 +419,6 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
         break;
       case "simulations":
         title = "Simulations";
-        break;
-      case "classes":
-        title = "Classes";
         break;
       case "management":
         title = "Management";

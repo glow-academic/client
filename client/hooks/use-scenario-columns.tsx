@@ -71,24 +71,42 @@ export function useScenarioColumns() {
         header: "Cohorts",
         cell: ({ row }) => {
           const scenario = row.original;
-          const scenarioSimulations = simulations.filter((sim: Simulation) =>
-            sim.scenarioIds.includes(scenario.id)
+          // Find all simulation IDs for this scenario
+          const scenarioSimulationIds = simulations
+            .filter((sim: Simulation) => sim.scenarioIds.includes(scenario.id))
+            .map((sim: Simulation) => sim.id);
+
+          // Find all cohorts whose simulation_ids include any of the scenario's simulation IDs
+          const relatedCohorts = cohorts.filter((cohort: Cohort) =>
+            Array.isArray(cohort.simulationIds) &&
+            cohort.simulationIds.some((simId: string) =>
+              scenarioSimulationIds.includes(simId)
+            )
           );
-          const cohortIds = scenarioSimulations.flatMap(
-            (sim: Simulation) => sim.cohortIds
-          );
-          return [...new Set(cohortIds)]; // Remove duplicates
+
+          // Return unique cohort IDs
+          return [...new Set(relatedCohorts.map((cohort: Cohort) => cohort.id))];
         },
         filterFn: (row, _, value) => {
           const scenario = row.original;
           const scenarioSimulations = simulations.filter((sim: Simulation) =>
             sim.scenarioIds.includes(scenario.id)
           );
-          const cohortIds = scenarioSimulations.flatMap(
-            (sim: Simulation) => sim.cohortIds
+          const scenarioSimulationIds = scenarioSimulations.map(
+            (sim: Simulation) => sim.id
           );
+
+          // Find all cohorts whose simulation_ids include any of the scenario's simulation IDs
+          const relatedCohorts = cohorts.filter((cohort: Cohort) =>
+            Array.isArray(cohort.simulationIds) &&
+            cohort.simulationIds.some((simId: string) =>
+              scenarioSimulationIds.includes(simId)
+            )
+          );
+
+          // Return unique cohort IDs
           return value.some((filterValue: string) =>
-            cohortIds.includes(filterValue)
+            relatedCohorts.map((cohort: Cohort) => cohort.id).includes(filterValue)
           );
         },
       },
@@ -124,7 +142,7 @@ export function useScenarioColumns() {
         cell: ({ row }) => row.getValue("updatedAt"),
       },
     ],
-    [simulations]
+    [simulations, cohorts]
   );
 
   // Filter options

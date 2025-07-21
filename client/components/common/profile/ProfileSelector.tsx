@@ -255,7 +255,7 @@ export default function ProfileSelector({
           firstName: firstName ?? "",
           lastName: lastName ?? "",
           alias: alias ?? "",
-          role: allowedRoles[0] ?? "instructor", // Use first allowed role as default
+          role: allowedRoles[0] ?? "guest"
         };
 
         onProfilesChange([...selectedProfiles, newProfile]);

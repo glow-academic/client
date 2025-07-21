@@ -11,8 +11,6 @@ export const getFirstAvailableSectionForRole = (role: ProfileRole): string => {
     case "guest":
     case "ta":
       return "home";
-    case "instructor":
-      return "dashboard"; // Analytics overview
     case "instructional":
       return "dashboard"; // Analytics overview
     case "admin":
@@ -36,18 +34,6 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
     case "ta":
       sections.push("home", "classes", "cohorts");
       break;
-    case "instructor":
-      sections.push(
-        "dashboard",
-        "reports",
-        "progress", // Analytics
-        "scenarios",
-        "simulations",
-        "rubrics", // Create
-        "classes",
-        "cohorts" // Classes (filtered by assignment)
-      );
-      break;
     case "instructional":
       sections.push(
         "dashboard",
@@ -56,7 +42,6 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
         "scenarios",
         "simulations",
         "rubrics", // Create
-        "classes",
         "cohorts" // Classes (all)
       );
       break;
@@ -68,9 +53,7 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
         "scenarios",
         "simulations",
         "rubrics", // Create
-        "classes",
         "cohorts", // Classes (all)
-        "departments",
         "agents",
         "logs",
         "providers", // Management
@@ -169,8 +152,6 @@ export const getSectionRoute = (section: string): string => {
     case "progress":
       return "/analytics/progress";
 
-    case "classes":
-      return "/classes";
     case "cohorts":
       return "/cohorts";
 
@@ -191,8 +172,6 @@ export const getSectionRoute = (section: string): string => {
       return "/management";
     case "staff":
       return "/management/staff";
-    case "departments":
-      return "/management/departments";
     case "providers":
       return "/system/providers";
     case "activity":
@@ -254,10 +233,6 @@ export const getSectionRoute = (section: string): string => {
         return `/home/a/${attemptId}`;
       }
 
-      if (section.startsWith("department-")) {
-        const departmentId = section.replace("department-", "");
-        return `/management/departments/d/${departmentId}`;
-      }
       if (section.startsWith("provider-")) {
         const providerId = section.replace("provider-", "");
         return `/system/providers/p/${providerId}`;
@@ -288,9 +263,6 @@ export const getSectionRoute = (section: string): string => {
  */
 export const getBreadcrumbSectionRoute = (section: string): string => {
   switch (section) {
-    case "classes":
-      // For breadcrumbs, "Classes" should go to the classes list page
-      return "/classes";
     default:
       // Use the regular section route for everything else
       return getSectionRoute(section);

@@ -31,7 +31,6 @@ export interface ReportsDataTableProps {
   columns: ColumnDef<TAPerformanceData>[];
   data: TAPerformanceData[];
   performanceOptions: { value: string; label: string }[];
-  classOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
   agentOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
@@ -43,7 +42,6 @@ export function ReportsDataTable({
   columns,
   data,
   performanceOptions,
-  classOptions,
   cohortOptions,
   agentOptions,
   scenarioOptions,
@@ -53,7 +51,6 @@ export function ReportsDataTable({
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({
-      classIds: false,
       agentsTested: false,
       scenarioIds: false,
       simulationIds: false,
@@ -97,7 +94,6 @@ export function ReportsDataTable({
       <ReportsDataTableToolbar
         table={table}
         performanceOptions={performanceOptions}
-        classOptions={classOptions}
         cohortOptions={cohortOptions}
         agentOptions={agentOptions}
         scenarioOptions={scenarioOptions}

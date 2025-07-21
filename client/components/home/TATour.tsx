@@ -15,7 +15,6 @@ import { useProfile } from "@/contexts/profile-context";
 import { useTour } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { updateProfile } from "@/utils/mutations/profiles/update-profile";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { createTATourSteps } from "@/utils/tour-steps";
@@ -43,11 +42,6 @@ export default function TATour() {
     queryFn: () => getAllCohorts(),
   });
 
-  const { data: classes = [] } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => getAllClasses(),
-  });
-
   const { data: simulations = [] } = useQuery({
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
@@ -60,13 +54,6 @@ export default function TATour() {
       cohort.profileIds?.includes(effectiveProfile.id)
     );
   }, [effectiveProfile, cohorts]);
-
-  const taClasses = useMemo(() => {
-    if (!effectiveProfile || !classes) return [];
-    return classes.filter((cls) =>
-      cls.profileIds?.includes(effectiveProfile.id)
-    );
-  }, [effectiveProfile, classes]);
 
   // Get practice simulations (defaultSimulation = true)
   const practiceSimulations = useMemo(() => {
@@ -132,28 +119,6 @@ export default function TATour() {
     }, 1000);
   }, [taCohorts, router, handleStepComplete, setNavigating]);
 
-  const handleNavigateToClass = useCallback(() => {
-    if (taClasses.length === 0) {
-      toast.error("No classes assigned to you yet.");
-      return;
-    }
-
-    setNavigating(true);
-    const firstClass = taClasses[0];
-    if (!firstClass) {
-      toast.error("No classes assigned to you yet.");
-      setNavigating(false);
-      return;
-    }
-    router.push(`/classes/c/${firstClass.id}`);
-
-    // Mark step as complete after navigation
-    setTimeout(() => {
-      handleStepComplete(2);
-      setNavigating(false);
-    }, 1000);
-  }, [taClasses, router, handleStepComplete, setNavigating]);
-
   const handleStartSimulation = useCallback(
     async (simulationId: string) => {
       if (!isConnected) {
@@ -217,7 +182,6 @@ export default function TATour() {
         effectiveProfile,
         () => router.push("/home"),
         (cohortId: string) => router.push(`/cohorts/c/${cohortId}`),
-        (classId: string) => router.push(`/classes/c/${classId}`),
         (simulationId: string) => handleStartSimulation(simulationId),
         () => handleEndChat()
       );
@@ -250,22 +214,17 @@ export default function TATour() {
       handleStepComplete(1);
     }
 
-    // Step 3: Classes page - auto-complete when on classes page
-    if (tourState.currentStep === 2 && pathname.includes("/classes/c/")) {
-      handleStepComplete(2);
-    }
-
-    // Step 4: Practice simulation - auto-complete when simulation starts
-    if (tourState.currentStep === 3 && pathname.includes("/home/a/")) {
+    // Step 3: Practice simulation - auto-complete when simulation starts
+    if (tourState.currentStep === 2 && pathname.includes("/home/a/")) {
       handleStepComplete(3);
     }
 
-    // Step 5: Send message - auto-complete when message is sent
-    if (tourState.currentStep === 4) {
+    // Step 4: Send message - auto-complete when message is sent
+    if (tourState.currentStep === 3) {
       // This will be handled by the message event listener below
     }
 
-    // Step 6: End chat - auto-complete when end chat button is clicked
+    // Step 5: End chat - auto-complete when end chat button is clicked
     // This is handled by the event listener below
   }, [
     tourState.currentStep,
@@ -292,21 +251,16 @@ export default function TATour() {
           handleNavigateToCohort();
         }
         break;
-      case 2: // Navigate to classes
-        if (pathname !== "/classes" && !pathname.includes("/classes/c/")) {
-          handleNavigateToClass();
-        }
-        break;
-      case 3: // Navigate to home and start simulation
+      case 2: // Navigate to home and start simulation
         if (pathname !== "/home") {
           router.push("/home");
         } else if (practiceSimulations.length > 0 && practiceSimulations[0]) {
           handleStartSimulation(practiceSimulations[0].id);
         }
         break;
-      case 4: // Send message - handled by event listener
+      case 3: // Send message - handled by event listener
         break;
-      case 5: // End chat - handled by event listener
+      case 4: // End chat - handled by event listener
         break;
     }
   }, [
@@ -316,7 +270,6 @@ export default function TATour() {
     effectiveProfile,
     tourState.isOpen,
     handleNavigateToCohort,
-    handleNavigateToClass,
     handleStartSimulation,
     practiceSimulations,
     router,
@@ -370,7 +323,7 @@ export default function TATour() {
       const target = event.target as HTMLElement;
       if (target.closest("[data-tour-end-chat]")) {
         logInfo("End chat button clicked - marking tour step complete");
-        handleStepComplete(5);
+        handleStepComplete(4);
       }
     };
 
@@ -398,8 +351,7 @@ export default function TATour() {
   const customStepActions = useMemo(() => {
     return {
       1: handleNavigateToCohort, // Cohorts page
-      2: handleNavigateToClass, // Classes page
-      3: () => {
+      2: () => {
         if (practiceSimulations.length === 0) {
           toast.error("No practice simulations available.");
           return;
@@ -414,7 +366,6 @@ export default function TATour() {
     };
   }, [
     handleNavigateToCohort,
-    handleNavigateToClass,
     handleStartSimulation,
     practiceSimulations,
   ]);

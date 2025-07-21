@@ -13,7 +13,6 @@ from app.models import (Agents, Documents, Models, Providers, Scenarios,
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import (get_chat_scenario,
                             get_simulation_conversation_history)
-from app.utils.classes import get_class_info
 from fastapi import Depends
 from openai.types.responses import ResponseTextDeltaEvent
 from sqlmodel import Session, select
@@ -151,11 +150,8 @@ async def _handle_simulation_chat(
     # Prepare conversation history from chat_id
     conversation_history = get_simulation_conversation_history(messages)
     chat_scenario = get_chat_scenario(chat, session)
-    class_info = get_class_info(scenario.class_id, session)
 
     input_items.insert(0, chat_scenario)
-    if class_info:
-        input_items.append(class_info)
     input_items.extend(conversation_history)
 
     # getting the model from the agent's model_id

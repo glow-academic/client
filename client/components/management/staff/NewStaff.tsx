@@ -350,8 +350,6 @@ export default function NewStaff() {
                     "Will have full system access and user management permissions."}
                   {formData.role === "instructional" &&
                     "Will have permissions to manage instructors and teaching assistants."}
-                  {formData.role === "instructor" &&
-                    "Will have permissions to manage assigned classes and teaching assistants."}
                   {formData.role === "ta" &&
                     "Will have permissions to assist with assigned classes."}
                 </p>
@@ -454,8 +452,6 @@ export default function NewStaff() {
                               "Will have full system access and user management permissions."}
                             {role === "instructional" &&
                               "Will have permissions to manage instructors and teaching assistants."}
-                            {role === "instructor" &&
-                              "Will have permissions to manage assigned classes and teaching assistants."}
                             {role === "ta" &&
                               "Will have permissions to assist with assigned classes."}
                           </p>

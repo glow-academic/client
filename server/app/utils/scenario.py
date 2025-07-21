@@ -5,7 +5,7 @@ import random
 import uuid
 
 from agents.items import TResponseInputItem
-from app.models import (Agents, Classes, Documents, ScenarioDeadlines,
+from app.models import (Agents, Documents, ScenarioClasses, ScenarioDeadlines,
                         ScenarioLocations, Scenarios, ScenarioTimes)
 from sqlmodel import Session, select
 
@@ -37,6 +37,20 @@ def get_intensity_info(intensity: int) -> TResponseInputItem:
         "content": f"The following is the intensity information, on a scale of 1 to 10 (1 being the least intense and 10 being the most intense): {intensity_info_string}",
     }
 
+
+def get_class_info(class_id: uuid.UUID, session: Session) -> TResponseInputItem:
+    """
+    Get the class information for a given class id.
+    """
+
+    class_info = session.exec(select(ScenarioClasses).where(ScenarioClasses.id == class_id)).first()
+    if not class_info:
+        raise ValueError(f"Class not found for class {class_id}")
+
+    return {
+        "role": "user",
+        "content": f"The following is the class information: {class_info.name} (Class Code: {class_info.class_code}) - {class_info.description}",
+    }
 
 def get_location_info(location_id: uuid.UUID, session: Session) -> TResponseInputItem:
     """
@@ -109,7 +123,7 @@ async def randomly_fill_scenario_attributes(
 
     # Random class selection if class_id is null
     if scenario.class_id is None:
-        all_classes = session.exec(select(Classes)).all()
+        all_classes = session.exec(select(ScenarioClasses)).all()
         if all_classes:
             scenario_class_id = random.choice(all_classes).id
             logger.info(f"Randomly selected class_id: {scenario_class_id}")
@@ -120,19 +134,12 @@ async def randomly_fill_scenario_attributes(
 
     # Random document selection if documents is null
     if scenario.document_ids is None:
-        # Get all documents, optionally filtered by class if we have one
-        if scenario_class_id:
-            class_documents = session.exec(
-                select(Documents).where(Documents.class_id == scenario_class_id)
-            ).all()
-        else:
-            class_documents = session.exec(select(Documents)).all()
-
-        if class_documents:
+        all_documents = session.exec(select(Documents)).all()
+        if all_documents:
             # Randomly select 0-3 documents
-            num_docs = random.randint(0, min(3, len(class_documents)))
+            num_docs = random.randint(0, min(3, len(all_documents)))
             if num_docs > 0:
-                selected_docs = random.sample(class_documents, num_docs)
+                selected_docs = random.sample(all_documents, num_docs)
                 scenario_documents = [doc.id for doc in selected_docs]
                 logger.info(
                     f"Randomly selected {num_docs} documents: {scenario_documents}"
@@ -159,6 +166,18 @@ async def randomly_fill_scenario_attributes(
         logger.info(f"Randomly selected intensity: {scenario_intensity}")
     else:
         scenario_intensity = scenario.intensity
+
+
+    # Random class selection if class is null
+    if scenario.class_id is None:
+        all_classes = session.exec(select(ScenarioClasses)).all()
+        if all_classes:
+            scenario_class_id = random.choice(all_classes).id
+            logger.info(f"Randomly selected class_id: {scenario_class_id}")
+        else:
+            scenario_class_id = None
+    else:
+        scenario_class_id = scenario.class_id
 
     # Random location selection if location is null
     if scenario.location_id is None:

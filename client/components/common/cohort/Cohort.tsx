@@ -32,18 +32,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 
-import { Class, Cohort as CohortType, Profile, Simulation } from "@/types";
+import { Cohort as CohortType, Profile, Simulation } from "@/types";
 import { createCohort } from "@/utils/mutations/cohorts/create-cohort";
 import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import { GripVertical, Loader2, Search, Trash2, Users } from "lucide-react";
+import { Loader2, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { getProfilesByClass } from "@/utils/auth/get-profiles-by-class";
+import CohortStaff from "./CohortStaff";
 
 export interface CohortProps {
   cohortId?: string;
@@ -53,18 +53,28 @@ interface FormErrors {
   title?: string;
 }
 
+// A new type to represent a profile that is either saved or new
+type EditableProfile =
+  | Profile
+  | {
+      isNew: true;
+      id: string; // A temporary client-side ID
+      firstName: string;
+      lastName: string;
+      alias: string;
+      role: Profile["role"];
+    };
+
 export default function Cohort({ cohortId }: CohortProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingCohortId, setEditingCohortId] = useState<string | null>(null);
-  const [draggedProfile, setDraggedProfile] = useState<string | null>(null);
+  const [draggedSimulation, setDraggedSimulation] = useState<string | null>(
+    null
+  );
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
-
-  // Search and filter states
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedClassForAdd, setSelectedClassForAdd] = useState<string>("");
 
   const isEditMode = !!cohortId;
 
@@ -72,6 +82,7 @@ export default function Cohort({ cohortId }: CohortProps) {
     title: "",
     description: "",
     profileIds: [],
+    simulationIds: [],
     active: true,
   };
 
@@ -81,27 +92,27 @@ export default function Cohort({ cohortId }: CohortProps) {
     useState<Partial<CohortType>>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
 
+  // Staff management state
+  const [staffProfiles, setStaffProfiles] = useState<EditableProfile[]>([]);
+  const [profilesToDelete, setProfilesToDelete] = useState<string[]>([]);
+
   // Fetch cohorts for the list mode
   const { data: cohorts = [] } = useQuery({
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
   });
 
-  const { data: profiles = [] } = useQuery({
+  const { data: profiles = [], isLoading: isLoadingProfiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
   });
 
-  const { data: classes = [] } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => getAllClasses(),
-  });
-
-  const { data: simulations = [] } = useQuery({
+  const { data: simulations = [], isLoading: isLoadingSimulations } = useQuery({
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
-    enabled: isEditMode, // Only fetch when in edit mode
   });
+
+  const isLoading = isLoadingProfiles || isLoadingSimulations;
 
   // Load cohort data if editing
   useEffect(() => {
@@ -115,13 +126,20 @@ export default function Cohort({ cohortId }: CohortProps) {
           title: cohortToEdit.title || "",
           description: cohortToEdit.description || "",
           profileIds: cohortToEdit.profileIds || [],
+          simulationIds: cohortToEdit.simulationIds || [],
           active: cohortToEdit.active ?? true,
         };
         setFormData(cohortData);
         setOriginalFormData(cohortData); // Set original data for comparison
+
+        // Load staff profiles
+        const cohortProfiles = profiles.filter((profile: Profile) =>
+          cohortToEdit.profileIds?.includes(profile.id)
+        );
+        setStaffProfiles(cohortProfiles);
       }
     }
-  }, [cohortId, editingCohortId, cohorts]);
+  }, [cohortId, editingCohortId, cohorts, profiles]);
 
   // Check if form has changes
   const hasChanges = useMemo(() => {
@@ -134,37 +152,12 @@ export default function Cohort({ cohortId }: CohortProps) {
       current.title !== original.title ||
       current.description !== original.description ||
       current.active !== original.active ||
-      JSON.stringify(current.profileIds?.sort()) !==
-        JSON.stringify(original.profileIds?.sort())
+      JSON.stringify(current.simulationIds?.sort()) !==
+        JSON.stringify(original.simulationIds?.sort()) ||
+      staffProfiles.length !== (original.profileIds?.length || 0) ||
+      profilesToDelete.length > 0
     );
-  }, [formData, originalFormData, isEditMode]);
-
-  // Count simulations using this cohort
-  const affectedSimulations = useMemo(() => {
-    if (!isEditMode || !cohortId) return [];
-    return simulations.filter(
-      (sim: Simulation) => sim.cohortIds && sim.cohortIds.includes(cohortId)
-    );
-  }, [simulations, cohortId, isEditMode]);
-
-  // Filter available profiles based on search term
-  const filteredAvailableProfiles = useMemo(() => {
-    return profiles
-      .filter(
-        (profile: Profile) =>
-          !formData.profileIds?.includes(profile.id) &&
-          profile.role !== "admin" &&
-          profile.role !== "instructional"
-      )
-      .filter((profile: Profile) => {
-        if (!searchTerm) return true;
-        const fullName =
-          `${profile.firstName} ${profile.lastName}`.toLowerCase();
-        const alias = profile.alias.toLowerCase();
-        const search = searchTerm.toLowerCase();
-        return fullName.includes(search) || alias.includes(search);
-      });
-  }, [profiles, formData.profileIds, searchTerm]);
+  }, [formData, originalFormData, isEditMode, staffProfiles, profilesToDelete]);
 
   const handleInputChange = (
     field: keyof Partial<CohortType>,
@@ -176,59 +169,29 @@ export default function Cohort({ cohortId }: CohortProps) {
     }
   };
 
-  const addProfile = (profileId: string) => {
-    if (!formData.profileIds?.includes(profileId)) {
+  // Simulation management handlers
+  const addSimulation = (simulationId: string) => {
+    if (!formData.simulationIds?.includes(simulationId)) {
       setFormData((prev) => ({
         ...prev,
-        profileIds: [...(prev.profileIds || []), profileId],
+        simulationIds: [...(prev.simulationIds || []), simulationId],
       }));
     }
   };
 
-  const addProfilesByClass = async (classId: string) => {
-    try {
-      const classProfiles = await getProfilesByClass(classId);
-      const newProfileIds = classProfiles
-        .filter(
-          (profile: Profile) =>
-            !formData.profileIds?.includes(profile.id) &&
-            profile.role !== "admin" &&
-            profile.role !== "instructional"
-        )
-        .map((profile: Profile) => profile.id);
-
-      if (newProfileIds.length > 0) {
-        setFormData((prev) => ({
-          ...prev,
-          profileIds: [...(prev.profileIds || []), ...newProfileIds],
-        }));
-
-        const selectedClass = classes.find((c: Class) => c.id === classId);
-        toast.success(
-          `Added ${newProfileIds.length} profiles from ${selectedClass?.name || "class"}`
-        );
-      } else {
-        const selectedClass = classes.find((c: Class) => c.id === classId);
-        toast.info(
-          `No new profiles found in ${selectedClass?.name || "class"}`
-        );
-      }
-    } catch (error) {
-      toast.error(
-        `Failed to add profiles by class: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
-    }
-  };
-
-  const removeProfile = (profileId: string) => {
+  const removeSimulation = (simulationId: string) => {
     setFormData((prev) => ({
       ...prev,
-      profileIds: prev.profileIds?.filter((id) => id !== profileId) || [],
+      simulationIds:
+        prev.simulationIds?.filter((id) => id !== simulationId) || [],
     }));
   };
 
-  const handleDragStart = (e: React.DragEvent, profileId: string) => {
-    setDraggedProfile(profileId);
+  const handleDragStartSimulation = (
+    e: React.DragEvent,
+    simulationId: string
+  ) => {
+    setDraggedSimulation(simulationId);
     e.dataTransfer.effectAllowed = "move";
   };
 
@@ -237,23 +200,23 @@ export default function Cohort({ cohortId }: CohortProps) {
     e.dataTransfer.dropEffect = "move";
   };
 
-  const handleDrop = (e: React.DragEvent, targetProfileId: string) => {
+  const handleDrop = (e: React.DragEvent, targetSimulationId: string) => {
     e.preventDefault();
 
-    if (!draggedProfile) return;
+    if (!draggedSimulation) return;
 
-    const newOrder = [...(formData.profileIds || [])];
-    const draggedIndex = newOrder.findIndex((id) => id === draggedProfile);
-    const targetIndex = newOrder.findIndex((id) => id === targetProfileId);
+    const newOrder = [...(formData.simulationIds || [])];
+    const draggedIndex = newOrder.findIndex((id) => id === draggedSimulation);
+    const targetIndex = newOrder.findIndex((id) => id === targetSimulationId);
 
     if (draggedIndex !== -1 && targetIndex !== -1) {
       const [removed] = newOrder.splice(draggedIndex, 1);
       newOrder.splice(targetIndex, 0, removed!);
 
-      setFormData((prev) => ({ ...prev, profileIds: newOrder }));
+      setFormData((prev) => ({ ...prev, simulationIds: newOrder }));
     }
 
-    setDraggedProfile(null);
+    setDraggedSimulation(null);
   };
 
   const validateForm = (): boolean => {
@@ -272,8 +235,8 @@ export default function Cohort({ cohortId }: CohortProps) {
     setOriginalFormData(initialFormData);
     setEditingCohortId(null);
     setErrors({});
-    setSearchTerm("");
-    setSelectedClassForAdd("");
+    setStaffProfiles([]);
+    setProfilesToDelete([]);
   };
 
   const handleSubmit = async () => {
@@ -285,11 +248,15 @@ export default function Cohort({ cohortId }: CohortProps) {
     setIsSubmitting(true);
 
     try {
+      // Prepare profile IDs from staff profiles
+      const profileIds = staffProfiles.map((profile) => profile.id);
+
       let result;
       const targetCohortId = cohortId || editingCohortId;
       if (targetCohortId) {
         result = await updateCohort(targetCohortId, {
           ...formData,
+          profileIds,
           updatedAt: new Date().toISOString(),
         });
         toast.success("Cohort updated successfully!");
@@ -297,11 +264,11 @@ export default function Cohort({ cohortId }: CohortProps) {
         result = await createCohort({
           title: formData.title || "",
           description: formData.description || "",
-          profileIds: formData.profileIds || [],
+          profileIds,
+          simulationIds: formData.simulationIds || [],
           active: formData.active || true,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          departmentId: formData.departmentId || "",
         });
         toast.success("Cohort created successfully!");
       }
@@ -325,11 +292,7 @@ export default function Cohort({ cohortId }: CohortProps) {
   };
 
   const handleUpdateClick = () => {
-    if (isEditMode && affectedSimulations.length > 0) {
-      setShowUpdateDialog(true);
-    } else {
-      handleSubmit();
-    }
+    handleSubmit();
   };
 
   const handleConfirmUpdate = () => {
@@ -342,11 +305,14 @@ export default function Cohort({ cohortId }: CohortProps) {
     handleUpdateClick();
   };
 
+  const editSimulation = (simulationId: string) => {
+    router.push(`/create/simulations/s/${simulationId}`);
+  };
+
   return (
     <div className="space-y-6">
       <form onSubmit={handleFormSubmit} className="space-y-6">
         {/* Basic Cohort Information */}
-
         <div className="space-y-2">
           <Label htmlFor="title">Title *</Label>
           <Input
@@ -372,223 +338,157 @@ export default function Cohort({ cohortId }: CohortProps) {
           />
         </div>
 
-        <div className="space-y-4">
+        {/* Staff Management */}
+        <CohortStaff
+          profiles={staffProfiles}
+          setProfiles={setStaffProfiles}
+          profilesToDelete={profilesToDelete}
+          setProfilesToDelete={setProfilesToDelete}
+          isLoading={isLoading}
+          isSubmitting={isSubmitting}
+        />
+
+        {/* Simulations */}
+        <div className="space-y-2">
           <div className="flex justify-between items-center">
             <div>
-              <Label htmlFor="profiles">Members</Label>
-              <p className="text-sm text-muted-foreground">
-                Add individual profiles or entire classes to the cohort
-              </p>
+              <Label htmlFor="simulations">Simulations</Label>
+              {!isLoading && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Select simulations to assign to this cohort
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {formData.simulationIds !== undefined && !isLoading ? (
+                <Select
+                  value=""
+                  onValueChange={(value: string) => {
+                    if (value) addSimulation(value);
+                  }}
+                >
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Add simulation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {simulations
+                      .filter(
+                        (simulation: Simulation) =>
+                          !formData.simulationIds?.includes(simulation.id)
+                      )
+                      .map((simulation: Simulation) => (
+                        <SelectItem key={simulation.id} value={simulation.id}>
+                          {simulation.title}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Skeleton className="h-10 w-48" />
+              )}
             </div>
           </div>
 
-          {/* Add profiles controls */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Search for individual profiles */}
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Search profiles by name or alias..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            {/* Add individual profile */}
-            <Select
-              value=""
-              onValueChange={(value: string) => {
-                if (value) {
-                  addProfile(value);
-                  setSearchTerm(""); // Clear search after adding
-                }
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Add profile" />
-              </SelectTrigger>
-              <SelectContent>
-                {filteredAvailableProfiles.length === 0 ? (
-                  <SelectItem value="no-profiles" disabled>
-                    {searchTerm ? "No profiles found" : "No available profiles"}
-                  </SelectItem>
-                ) : (
-                  filteredAvailableProfiles.map((profile: Profile) => (
-                    <SelectItem key={profile.id} value={profile.id}>
-                      {profile.firstName} {profile.lastName} ({profile.alias})
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-
-            {/* Add by class */}
-            <Select
-              value={selectedClassForAdd}
-              onValueChange={(value: string) => {
-                if (value) {
-                  addProfilesByClass(value);
-                  setSelectedClassForAdd("");
-                }
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Add by class" />
-              </SelectTrigger>
-              <SelectContent>
-                {classes.length === 0 ? (
-                  <SelectItem value="no-classes" disabled>
-                    No classes available
-                  </SelectItem>
-                ) : (
-                  classes.map((classItem: Class) => (
-                    <SelectItem key={classItem.id} value={classItem.id}>
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        {classItem.name}
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i} className="p-3 min-h-[180px]">
+                  <div className="space-y-3 h-full flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <Skeleton className="h-4 w-1/2" />
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-6 w-6 rounded" />
+                          <Skeleton className="h-6 w-6 rounded" />
+                          <Skeleton className="h-4 w-4 rounded" />
+                        </div>
                       </div>
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Display current members */}
-          {formData.profileIds?.length === 0 ? (
+                      <div className="space-y-2 mt-2">
+                        <Skeleton className="h-3 w-full" />
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-5 w-20 rounded" />
+                          <Skeleton className="h-5 w-20 rounded" />
+                        </div>
+                        <Skeleton className="h-5 w-16 rounded" />
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : formData.simulationIds?.length === 0 ? (
             <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
               <div>
-                <p className="font-medium mb-1">No members selected</p>
+                <p className="font-medium mb-1">No simulations selected</p>
                 <p className="text-sm">
-                  Use the controls above to add profiles individually or by
-                  class
+                  Use the dropdown above to add simulations to this cohort
                 </p>
               </div>
             </div>
           ) : (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">
-                  {formData.profileIds?.length} member
-                  {formData.profileIds?.length !== 1 ? "s" : ""} selected
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setFormData((prev) => ({ ...prev, profileIds: [] }))
-                  }
-                >
-                  Clear all
-                </Button>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {formData.simulationIds?.map((simulationId) => {
+                const simulation = simulations.find(
+                  (s: Simulation) => s.id === simulationId
+                );
+                if (!simulation) return null;
 
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {formData.profileIds?.map((profileId) => {
-                  const profile = profiles.find(
-                    (p: Profile) => p.id === profileId
-                  );
-                  if (!profile) return null;
-
-                  return (
-                    <Card
-                      key={profileId}
-                      className={`p-3 cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
-                        draggedProfile === profileId ? "opacity-50" : ""
-                      }`}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, profileId)}
-                      onDragOver={handleDragOver}
-                      onDrop={(e) => handleDrop(e, profileId)}
-                    >
-                      <div className="space-y-3">
+                return (
+                  <Card
+                    key={simulationId}
+                    className={`p-3 min-h-[180px] cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
+                      draggedSimulation === simulationId ? "opacity-50" : ""
+                    }`}
+                    draggable
+                    onDragStart={(e) =>
+                      handleDragStartSimulation(e, simulationId)
+                    }
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, simulationId)}
+                  >
+                    <div className="space-y-3 h-full flex flex-col justify-between">
+                      <div>
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium text-sm">
-                            {profile.firstName} {profile.lastName}
+                            {simulation.title || "Unnamed Simulation"}
                           </h4>
                           <div className="flex items-center gap-2">
                             <Button
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => removeProfile(profileId)}
+                              onClick={() => editSimulation(simulationId)}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeSimulation(simulationId)}
                               className="h-6 w-6 p-0"
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
-                            <GripVertical className="h-4 w-4 text-muted-foreground" />
                           </div>
                         </div>
 
-                        <div className="space-y-2">
-                          <p className="text-xs text-muted-foreground">
-                            {profile.alias}
-                          </p>
-
-                          <div className="flex items-center gap-2">
-                            <Badge
-                              className={`text-xs ${
-                                profile.role === "admin"
-                                  ? "bg-red-100 text-red-800"
-                                  : profile.role === "instructor"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : profile.role === "ta"
-                                      ? "bg-green-100 text-green-800"
-                                      : "bg-gray-100 text-gray-800"
-                              }`}
-                            >
-                              {profile.role
-                                ? profile.role.charAt(0).toUpperCase() +
-                                  profile.role.slice(1)
-                                : "No Role"}
+                        <div className="space-y-2 mt-2">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Badge variant="outline" className="text-xs">
+                              Time: {simulation.timeLimit || "No limit"} min
                             </Badge>
-
-                            {/* Show class badges */}
-                            {(() => {
-                              // Find classes that contain this profile
-                              const profileClasses = classes.filter(
-                                (cls: Class) =>
-                                  cls.profileIds &&
-                                  cls.profileIds.includes(profile.id)
-                              );
-
-                              if (profileClasses.length === 0) return null;
-
-                              return (
-                                <div className="flex flex-wrap gap-1">
-                                  {profileClasses
-                                    .slice(0, 2)
-                                    .map((classItem: Class) => (
-                                      <Badge
-                                        key={classItem.id}
-                                        variant="outline"
-                                        className="text-xs"
-                                      >
-                                        {classItem.name}
-                                      </Badge>
-                                    ))}
-                                  {profileClasses.length > 2 && (
-                                    <Badge
-                                      variant="outline"
-                                      className="text-xs"
-                                    >
-                                      +{profileClasses.length - 2}
-                                    </Badge>
-                                  )}
-                                </div>
-                              );
-                            })()}
+                            <Badge variant="outline" className="text-xs">
+                              {simulation.active ? "Active" : "Inactive"}
+                            </Badge>
                           </div>
                         </div>
                       </div>
-                    </Card>
-                  );
-                })}
-              </div>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
@@ -623,20 +523,26 @@ export default function Cohort({ cohortId }: CohortProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Update Cohort</AlertDialogTitle>
             <AlertDialogDescription>
-              This cohort is currently used by {affectedSimulations.length}{" "}
-              simulation{affectedSimulations.length !== 1 ? "s" : ""}:
+              This cohort is currently used by{" "}
+              {formData.simulationIds?.length || 0} simulation
+              {(formData.simulationIds?.length || 0) !== 1 ? "s" : ""}:
               <ul className="mt-2 list-disc list-inside">
-                {affectedSimulations.map((sim) => (
-                  <li key={sim.id} className="text-sm">
-                    {sim.title}
-                  </li>
-                ))}
+                {formData.simulationIds?.map((simId) => {
+                  const sim = simulations.find(
+                    (s: Simulation) => s.id === simId
+                  );
+                  return (
+                    <li key={simId} className="text-sm">
+                      {sim?.title || "Unknown Simulation"}
+                    </li>
+                  );
+                })}
               </ul>
               <div className="mt-3 text-sm font-medium">
-                The cohort has {formData.profileIds?.length || 0} member
-                {(formData.profileIds?.length || 0) !== 1 ? "s" : ""} assigned.
-                Updating this cohort will affect all simulations that use it.
-                Are you sure you want to proceed?
+                The cohort has {staffProfiles.length} member
+                {staffProfiles.length !== 1 ? "s" : ""} assigned. Updating this
+                cohort will affect all simulations that use it. Are you sure you
+                want to proceed?
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>

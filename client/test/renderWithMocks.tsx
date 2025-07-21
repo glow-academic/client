@@ -1,9 +1,27 @@
 // helpers/testing/renderWithMocks.tsx
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AssistantProvider } from "@/contexts/assistant-context";
-import { render } from "@testing-library/react";
 import { ProfileProvider } from "@/contexts/profile-context";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render } from "@testing-library/react";
+
+// Mock profile for testing
+const mockProfile = {
+  id: "test-profile-id",
+  userId: 1,
+  firstName: "Test",
+  lastName: "User",
+  alias: "testuser",
+  role: "admin" as const,
+  active: true,
+  viewedIntro: true,
+  viewedChat: true,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  lastLogin: new Date().toISOString(),
+  lastActive: new Date().toISOString(),
+  defaultProfile: false,
+};
 
 // This helper's only job is to provide the QueryClient.
 // Mocking is handled in the test files via Vitest.
@@ -18,11 +36,11 @@ export function renderWithMocks(ui: React.ReactElement) {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <AssistantProvider>
-        <ProfileProvider activeProfile={null}>
+      <ProfileProvider activeProfile={mockProfile}>
+        <AssistantProvider>
           <SidebarProvider>{ui}</SidebarProvider>
-        </ProfileProvider>
-      </AssistantProvider>
+        </AssistantProvider>
+      </ProfileProvider>
     </QueryClientProvider>
   );
 }

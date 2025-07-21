@@ -10,7 +10,6 @@ import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -36,7 +35,6 @@ export default function Reports() {
   const {
     columns,
     performanceOptions,
-    classOptions,
     cohortOptions,
     agentOptions,
     scenarioOptions,
@@ -65,11 +63,6 @@ export default function Reports() {
   const { data: cohorts, isLoading: isLoadingCohorts } = useQuery({
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
-  });
-
-  const { data: _classes, isLoading: isLoadingClasses } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => getAllClasses(),
   });
 
   const { data: _agents, isLoading: isLoadingAgents } = useQuery({
@@ -445,18 +438,6 @@ export default function Reports() {
           ? Math.max(...cohortComparison.map((c) => c.difference))
           : 0;
 
-      // Get unique class IDs from scenarios this user has worked on
-      const userClassIds = [
-        ...new Set(
-          userChats
-            .map((chat) => {
-              const scenario = scenarios.find((s) => s.id === chat.scenarioId);
-              return scenario?.classId;
-            })
-            .filter((classId): classId is string => classId !== null)
-        ),
-      ];
-
       // Get unique agent IDs from scenarios this user has worked on
       const userAgentIds = [
         ...new Set(
@@ -520,7 +501,6 @@ export default function Reports() {
             : 0,
         avgVsCohort: bestCohortPerformance,
         // Additional fields for filtering
-        classIds: userClassIds,
         agentsTested: userAgentIds,
         scenarioIds: userScenarioIds,
         simulationIds: userSimulationIds,
@@ -557,7 +537,6 @@ export default function Reports() {
     isLoadingScenarios ||
     isLoadingMessages ||
     isLoadingCohorts ||
-    isLoadingClasses ||
     isLoadingAgents
   ) {
     return (
@@ -576,7 +555,6 @@ export default function Reports() {
         columns={columns}
         data={taPerformanceData}
         performanceOptions={performanceOptions}
-        classOptions={classOptions}
         cohortOptions={cohortOptions}
         agentOptions={agentOptions}
         scenarioOptions={scenarioOptions}

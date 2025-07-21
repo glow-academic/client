@@ -14,7 +14,6 @@ import { toast } from "sonner";
 
 import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
 import { deleteSimulation } from "@/utils/mutations/simulations/delete-simulation";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
@@ -39,7 +38,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useSimulationColumns } from "@/hooks/use-simulation-columns";
-import { Cohort, Scenario, Simulation } from "@/types";
+import { Scenario, Simulation } from "@/types";
 import { SimulationsDataTable } from "./SimulationsDataTable";
 
 export function Simulations() {
@@ -52,7 +51,6 @@ export function Simulations() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
-  const [affectedCohorts, setAffectedCohorts] = useState<Cohort[]>([]);
   const [affectedScenarios, setAffectedScenarios] = useState<Scenario[]>([]);
   const [isLoadingImpact, setIsLoadingImpact] = useState(false);
 
@@ -60,11 +58,6 @@ export function Simulations() {
   const { data: simulations = [], refetch: refetchSimulations } = useQuery({
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
-  });
-
-  const { data: cohorts = [] } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
   });
 
   const { data: scenarios = [] } = useQuery({
@@ -79,17 +72,11 @@ export function Simulations() {
 
   // Create table columns
   const { columns } = useSimulationColumns({
-    cohorts,
     scenarios,
     rubrics,
   });
 
   // Create filter options
-  const cohortOptions = cohorts.map((cohort) => ({
-    value: cohort.id,
-    label: cohort.title,
-  }));
-
   const scenarioOptions = scenarios.map((scenario) => ({
     value: scenario.id,
     label: scenario.name,
@@ -143,18 +130,12 @@ export function Simulations() {
       setIsLoadingImpact(true);
 
       // Calculate impact
-      const affectedCohortsList = cohorts.filter(
-        (cohort) =>
-          simulationToDelete.cohortIds &&
-          simulationToDelete.cohortIds.includes(cohort.id)
-      );
       const affectedScenariosList = scenarios.filter(
         (scenario) =>
           simulationToDelete.scenarioIds &&
           simulationToDelete.scenarioIds.includes(scenario.id)
       );
 
-      setAffectedCohorts(affectedCohortsList);
       setAffectedScenarios(affectedScenariosList);
       setIsLoadingImpact(false);
       setShowDeleteDialog(true);
@@ -184,7 +165,6 @@ export function Simulations() {
         timeLimit: simulation.timeLimit,
         active: simulation.active,
         scenarioIds: simulation.scenarioIds,
-        cohortIds: simulation.cohortIds,
         rubricId: simulation.rubricId,
         defaultSimulation: false, // Duplicated simulations are not default
       };
@@ -275,7 +255,6 @@ export function Simulations() {
       <SimulationsDataTable
         columns={columns}
         data={simulations}
-        cohortOptions={cohortOptions}
         scenarioOptions={scenarioOptions}
         rubricOptions={rubricOptions}
         timeLimitOptions={timeLimitOptions}
@@ -300,33 +279,11 @@ export function Simulations() {
                     {deleteItem?.name}"? This action cannot be undone.
                   </p>
 
-                  {(affectedCohorts.length > 0 ||
-                    affectedScenarios.length > 0) && (
+                  {affectedScenarios.length > 0 && (
                     <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
                       <div className="font-medium text-red-800 mb-2">
                         ⚠️ Impact of deletion:
                       </div>
-
-                      {affectedCohorts.length > 0 && (
-                        <div className="mb-2">
-                          <span className="font-medium text-red-700">
-                            {affectedCohorts.length} cohort
-                            {affectedCohorts.length !== 1 ? "s" : ""} will lose
-                            access to this simulation:
-                          </span>
-                          <ul className="mt-1 list-disc list-inside text-sm text-red-600">
-                            {affectedCohorts.slice(0, 3).map((cohort) => (
-                              <li key={cohort.id}>
-                                {cohort.title} ({cohort.profileIds?.length || 0}{" "}
-                                members)
-                              </li>
-                            ))}
-                            {affectedCohorts.length > 3 && (
-                              <li>...and {affectedCohorts.length - 3} more</li>
-                            )}
-                          </ul>
-                        </div>
-                      )}
 
                       {affectedScenarios.length > 0 && (
                         <div>

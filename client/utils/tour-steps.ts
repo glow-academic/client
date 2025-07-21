@@ -22,7 +22,6 @@ export const createTATourSteps = (
   profile: Profile | null,
   _onNavigateToHome: () => void,
   _onNavigateToCohort: (cohortId: string) => void,
-  _onNavigateToClass: (classId: string) => void,
   _onStartPracticeSimulation: (simulationId: string) => void,
   _onEndChat: () => void
 ): TourStep[] => {
@@ -44,18 +43,6 @@ export const createTATourSteps = (
         "Let's check out your assigned cohorts. These are the simulations you need to complete for your training. Each cohort contains specific scenarios you'll be graded on.",
       action: () => {
         // Navigate to the first cohort the TA is assigned to
-        // This will be handled by the tour component
-      },
-      isCompleted: false,
-      requiresAction: true,
-    },
-    {
-      id: "classes-page",
-      title: "Your Classes 🎓",
-      content:
-        "Here you can see the classes you're assigned to as a Teaching Assistant. This shows your teaching responsibilities and related information.",
-      action: () => {
-        // Navigate to the first class the TA is assigned to
         // This will be handled by the tour component
       },
       isCompleted: false,

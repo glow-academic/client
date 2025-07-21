@@ -1,80 +1,75 @@
 import { 
   accounts as Accounts,
-  appFeedback as AppFeedback,
+  sessions as Sessions,
+  documents as Documents,
+  users as Users,
   profiles as Profiles,
-  scenarioTimes as ScenarioTimes,
-  assistantChats as AssistantChats,
+  providers as Providers,
+  models as Models,
+  rubrics as Rubrics,
+  standardGroups as StandardGroups,
   appLogs as AppLogs,
+  standards as Standards,
+  appFeedback as AppFeedback,
+  assistantChats as AssistantChats,
   assistantMessages as AssistantMessages,
   assistantToolCalls as AssistantToolCalls,
-  departments as Departments,
-  cohorts as Cohorts,
-  dashboards as Dashboards,
   components as Components,
-  documents as Documents,
-  providers as Providers,
-  rubrics as Rubrics,
-  simulationAttempts as SimulationAttempts,
-  scenarioDeadlines as ScenarioDeadlines,
-  sessions as Sessions,
-  scenarioLocations as ScenarioLocations,
-  simulationChatGrades as SimulationChatGrades,
-  standardGroups as StandardGroups,
-  standards as Standards,
-  systemAgents as SystemAgents,
-  simulationChats as SimulationChats,
-  simulations as Simulations,
-  classes as Classes,
-  users as Users,
-  simulationChatFeedbacks as SimulationChatFeedbacks,
-  migrations as Migrations,
-  models as Models,
+  dashboards as Dashboards,
   agents as Agents,
-  simulationMessages as SimulationMessages,
+  systemAgents as SystemAgents,
   scenarios as Scenarios,
+  scenarioClasses as ScenarioClasses,
+  scenarioLocations as ScenarioLocations,
+  scenarioDeadlines as ScenarioDeadlines,
+  scenarioTimes as ScenarioTimes,
+  cohorts as Cohorts,
+  simulations as Simulations,
+  simulationAttempts as SimulationAttempts,
+  simulationChats as SimulationChats,
+  simulationMessages as SimulationMessages,
+  simulationChatGrades as SimulationChatGrades,
+  simulationChatFeedbacks as SimulationChatFeedbacks,
   verificationToken as VerificationToken,
-  assistantMessageType, assistantToolType, classTerm, documentType, feedbackType, profileRole, reasoningEffort, simulationMessageType
+  assistantMessageType, assistantToolType, documentType, feedbackType, profileRole, reasoningEffort, simulationMessageType
 } from "@/utils/drizzle/schema";
 
 // Use Drizzle schema types
 type Account = typeof Accounts.$inferSelect;
-type AppFeedback = typeof AppFeedback.$inferSelect;
+type Session = typeof Sessions.$inferSelect;
+type Document = typeof Documents.$inferSelect;
+type User = typeof Users.$inferSelect;
 type Profile = typeof Profiles.$inferSelect;
-type ScenarioTime = typeof ScenarioTimes.$inferSelect;
-type AssistantChat = typeof AssistantChats.$inferSelect;
+type Provider = typeof Providers.$inferSelect;
+type Model = typeof Models.$inferSelect;
+type Rubric = typeof Rubrics.$inferSelect;
+type StandardGroup = typeof StandardGroups.$inferSelect;
 type AppLog = typeof AppLogs.$inferSelect;
+type Standard = typeof Standards.$inferSelect;
+type AppFeedback = typeof AppFeedback.$inferSelect;
+type AssistantChat = typeof AssistantChats.$inferSelect;
 type AssistantMessage = typeof AssistantMessages.$inferSelect;
 type AssistantToolCall = typeof AssistantToolCalls.$inferSelect;
-type Department = typeof Departments.$inferSelect;
-type Cohort = typeof Cohorts.$inferSelect;
-type Dashboard = typeof Dashboards.$inferSelect;
 type Component = typeof Components.$inferSelect;
-type Document = typeof Documents.$inferSelect;
-type Provider = typeof Providers.$inferSelect;
-type Rubric = typeof Rubrics.$inferSelect;
-type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
-type ScenarioDeadline = typeof ScenarioDeadlines.$inferSelect;
-type Session = typeof Sessions.$inferSelect;
-type ScenarioLocation = typeof ScenarioLocations.$inferSelect;
-type SimulationChatGrade = typeof SimulationChatGrades.$inferSelect;
-type StandardGroup = typeof StandardGroups.$inferSelect;
-type Standard = typeof Standards.$inferSelect;
-type SystemAgent = typeof SystemAgents.$inferSelect;
-type SimulationChat = typeof SimulationChats.$inferSelect;
-type Simulation = typeof Simulations.$inferSelect;
-type Class = typeof Classes.$inferSelect;
-type User = typeof Users.$inferSelect;
-type SimulationChatFeedback = typeof SimulationChatFeedbacks.$inferSelect;
-type Migration = typeof Migrations.$inferSelect;
-type Model = typeof Models.$inferSelect;
+type Dashboard = typeof Dashboards.$inferSelect;
 type Agent = typeof Agents.$inferSelect;
-type SimulationMessage = typeof SimulationMessages.$inferSelect;
+type SystemAgent = typeof SystemAgents.$inferSelect;
 type Scenario = typeof Scenarios.$inferSelect;
+type ScenarioClasse = typeof ScenarioClasses.$inferSelect;
+type ScenarioLocation = typeof ScenarioLocations.$inferSelect;
+type ScenarioDeadline = typeof ScenarioDeadlines.$inferSelect;
+type ScenarioTime = typeof ScenarioTimes.$inferSelect;
+type Cohort = typeof Cohorts.$inferSelect;
+type Simulation = typeof Simulations.$inferSelect;
+type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
+type SimulationChat = typeof SimulationChats.$inferSelect;
+type SimulationMessage = typeof SimulationMessages.$inferSelect;
+type SimulationChatGrade = typeof SimulationChatGrades.$inferSelect;
+type SimulationChatFeedback = typeof SimulationChatFeedbacks.$inferSelect;
 type VerificationToken = typeof VerificationToken.$inferSelect;
 
 type AssistantMessageType = (typeof assistantMessageType.enumValues)[number];
 type AssistantToolType = (typeof assistantToolType.enumValues)[number];
-type ClassTerm = (typeof classTerm.enumValues)[number];
 type DocumentType = (typeof documentType.enumValues)[number];
 type FeedbackType = (typeof feedbackType.enumValues)[number];
 type ProfileRole = (typeof profileRole.enumValues)[number];
@@ -83,42 +78,39 @@ type SimulationMessageType = (typeof simulationMessageType.enumValues)[number];
 
 export type { 
   Account,
-  AppFeedback,
+  Session,
+  Document,
+  User,
   Profile,
-  ScenarioTime,
-  AssistantChat,
+  Provider,
+  Model,
+  Rubric,
+  StandardGroup,
   AppLog,
+  Standard,
+  AppFeedback,
+  AssistantChat,
   AssistantMessage,
   AssistantToolCall,
-  Department,
-  Cohort,
-  Dashboard,
   Component,
-  Document,
-  Provider,
-  Rubric,
-  SimulationAttempt,
-  ScenarioDeadline,
-  Session,
-  ScenarioLocation,
-  SimulationChatGrade,
-  StandardGroup,
-  Standard,
-  SystemAgent,
-  SimulationChat,
-  Simulation,
-  Class,
-  User,
-  SimulationChatFeedback,
-  Migration,
-  Model,
+  Dashboard,
   Agent,
-  SimulationMessage,
+  SystemAgent,
   Scenario,
+  ScenarioClasse,
+  ScenarioLocation,
+  ScenarioDeadline,
+  ScenarioTime,
+  Cohort,
+  Simulation,
+  SimulationAttempt,
+  SimulationChat,
+  SimulationMessage,
+  SimulationChatGrade,
+  SimulationChatFeedback,
   VerificationToken,
   AssistantMessageType,
   AssistantToolType,
-  ClassTerm,
   DocumentType,
   FeedbackType,
   ProfileRole,

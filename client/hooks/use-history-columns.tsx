@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Agent,
-  Class,
   Profile,
   Scenario,
   SimulationAttempt,
@@ -14,8 +13,6 @@ import {
 } from "@/types";
 import { getAgentConfig } from "@/utils/agents";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
-import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
@@ -54,16 +51,6 @@ export function useHistoryColumns({
   const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
-  });
-
-  const { data: classes, isLoading: isLoadingClasses } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => getAllClasses(),
-  });
-
-  const { data: departments, isLoading: isLoadingDepartments } = useQuery({
-    queryKey: ["departments"],
-    queryFn: () => getAllDepartments(),
   });
 
   const { data: agents, isLoading: isLoadingAgents } = useQuery({
@@ -151,28 +138,6 @@ export function useHistoryColumns({
       icon: null,
     }));
   }, [profiles]);
-
-  // Create class options - only include classes that are used in scenarios
-  const classOptions = useMemo(() => {
-    if (!classes || !scenarios) return [];
-
-    // Get unique class IDs from scenarios
-    const usedClassIds = [
-      ...new Set(
-        scenarios
-          .map((scenario: Scenario) => scenario.classId)
-          .filter((classId): classId is string => classId !== null)
-      ),
-    ];
-
-    return classes
-      .filter((cls: Class) => usedClassIds.includes(cls.id))
-      .map((cls: Class) => ({
-        value: cls.id,
-        label: departments?.find((department) => department.id === cls.departmentId)?.departmentCode + " " + cls.classCode,
-        icon: null,
-      }));
-  }, [classes, scenarios, departments]);
 
   // Filter valid rubrics based on simulations
   const validRubrics = useMemo(() => {
@@ -443,55 +408,6 @@ export function useHistoryColumns({
           );
         },
       },
-      // Class column
-      {
-        accessorKey: "classIds",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Classes" />
-        ),
-        cell: ({ row }) => {
-          const classIds = row.original.classIds || [];
-
-          if (!classIds || classIds.length === 0) {
-            return <span className="text-muted-foreground">No Classes</span>;
-          }
-
-          const classLabels = classIds
-            .map((classId) => {
-              const classOption = classOptions.find(
-                (cls) => cls.value === classId
-              );
-              return classOption ? classOption.label : "Unknown Class";
-            })
-            .filter((label) => label !== "Unknown Class");
-
-          if (classLabels.length === 0) {
-            return (
-              <span className="text-muted-foreground">Unknown Classes</span>
-            );
-          }
-
-          return (
-            <div className="flex flex-wrap gap-1">
-              {classLabels.map((label, index) => (
-                <Badge
-                  key={index}
-                  variant="outline"
-                  className="text-xs bg-blue-100 text-blue-800 border-blue-300"
-                >
-                  {label}
-                </Badge>
-              ))}
-            </div>
-          );
-        },
-        filterFn: (row, id, value) => {
-          const classIds = row.getValue(id) as string[];
-          if (!classIds || classIds.length === 0) return false; // Exclude rows without classIds from filters
-          return classIds.some((classId) => value.includes(classId));
-        },
-        enableSorting: true,
-      },
       // Chats completion column
       {
         accessorKey: "chats",
@@ -705,7 +621,6 @@ export function useHistoryColumns({
     return attemptColumns;
   }, [
     profileOptions,
-    classOptions,
     showAll,
     showExport,
     grades,
@@ -746,17 +661,14 @@ export function useHistoryColumns({
     isLoadingStandards ||
     isLoadingGrades ||
     isLoadingFeedbacks ||
-    isLoadingClasses ||
     isLoadingSimulations ||
-    isLoadingScenarios ||
-    isLoadingDepartments;
+    isLoadingScenarios;
 
   return {
     columns,
     isLoading,
     data: data,
     profileOptions,
-    classOptions,
     agentTypes,
     skillCategories,
     scoreOptions,

@@ -1,17 +1,15 @@
 "use client";
 
-import { Cohort, Rubric, Scenario, Simulation } from "@/types";
+import { Rubric, Scenario, Simulation } from "@/types";
 import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
 export interface UseSimulationColumnsProps {
-  cohorts: Cohort[];
   scenarios: Scenario[];
   rubrics: Rubric[];
 }
 
 export function useSimulationColumns({
-  cohorts,
   scenarios,
   rubrics,
 }: UseSimulationColumnsProps) {
@@ -24,23 +22,6 @@ export function useSimulationColumns({
         filterFn: (row, _, value) => {
           const title = (row.getValue("title") as string).toLowerCase();
           return title.includes(value.toLowerCase());
-        },
-      },
-      {
-        id: "cohorts",
-        header: "Cohorts",
-        accessorFn: (simulation) => {
-          const simulationCohorts = cohorts.filter((cohort: Cohort) =>
-            simulation.cohortIds?.includes(cohort.id)
-          );
-          return simulationCohorts.map((cohort: Cohort) => cohort.id);
-        },
-        filterFn: (row, _, value) => {
-          const simulation = row.original;
-          const simulationCohortIds = simulation.cohortIds || [];
-          return value.some((filterValue: string) =>
-            simulationCohortIds.includes(filterValue)
-          );
         },
       },
       {
@@ -107,7 +88,7 @@ export function useSimulationColumns({
         cell: ({ row }) => row.getValue("updatedAt"),
       },
     ],
-    [cohorts, scenarios, rubrics]
+    [scenarios, rubrics]
   );
 
   return { columns };

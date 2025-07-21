@@ -35,16 +35,13 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { useProfile } from "@/contexts/profile-context";
-import { Class, Cohort } from "@/types";
+import { Cohort } from "@/types";
 import { getSimulatableProfiles } from "@/utils/auth/get-simulatable-profiles";
 import { logError } from "@/utils/logger";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
 import { useQuery } from "@tanstack/react-query";
 import {
-  BookOpen,
   ChartBar,
   Check,
   ChevronRight,
@@ -169,72 +166,10 @@ export function UnifiedSidebar({
     return options;
   }, [activeProfile, simulatableProfiles, profileSearchTerm]);
 
-  const { data: departments } = useQuery({
-    queryKey: ["departments"],
-    queryFn: () => getAllDepartments(),
-  });
-
-  const { data: classes } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => getAllClasses(),
-  });
-
   const { data: cohorts } = useQuery({
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
   });
-
-  const getClassSubItems = React.useMemo(() => {
-    if (!classes) return [];
-
-    let profileClasses: Class[] = [];
-
-    switch (effectiveProfile.role) {
-      case "superadmin":
-      case "admin":
-        profileClasses = classes;
-        break;
-      case "instructional":
-        if (effectiveProfile.defaultProfile) {
-          profileClasses = classes;
-          break;
-        }
-        profileClasses = classes.filter((classData: Class) =>
-          departments?.some((d) => d.id === classData.departmentId)
-        );
-        break;
-      case "instructor":
-      case "ta":
-        if (effectiveProfile.defaultProfile) {
-          profileClasses = classes;
-          break;
-        }
-        profileClasses = classes.filter((classData: Class) =>
-          classData?.profileIds?.includes(effectiveProfile?.id || "")
-        );
-        break;
-      default:
-        return [];
-    }
-
-    return profileClasses.map(
-      (c: { id: string; classCode: string; departmentId: string }) => {
-        const department = departments?.find((d) => d.id === c.departmentId);
-        return {
-          title: `${department?.departmentCode} ${c.classCode}`,
-          url: `/classes/c/${c.id}`,
-          section: `class-${c.id}`,
-          isSubItem: true,
-        };
-      }
-    );
-  }, [
-    classes,
-    departments,
-    effectiveProfile.role,
-    effectiveProfile?.id,
-    effectiveProfile.defaultProfile,
-  ]);
 
   const getCohortSubItems = React.useMemo(() => {
     if (!cohorts) return [];
@@ -247,15 +182,6 @@ export function UnifiedSidebar({
         profileCohorts = cohorts;
         break;
       case "instructional":
-        if (effectiveProfile.defaultProfile) {
-          profileCohorts = cohorts;
-          break;
-        }
-        profileCohorts = cohorts.filter((cohortData: Cohort) =>
-          departments?.some((d) => d.id === cohortData.departmentId)
-        );
-        break;
-      case "instructor":
       case "ta":
         if (effectiveProfile.defaultProfile) {
           profileCohorts = cohorts;
@@ -277,7 +203,6 @@ export function UnifiedSidebar({
     }));
   }, [
     cohorts,
-    departments,
     effectiveProfile.role,
     effectiveProfile?.id,
     effectiveProfile.defaultProfile,
@@ -294,6 +219,27 @@ export function UnifiedSidebar({
       icon: Home,
       section: "home",
     });
+
+    // Classes and Cohorts sections based on role
+    if (["ta"].includes(effectiveProfile.role)) {
+      // TA/Instructor view - collapsible with sub-items
+      menu.push({
+        title: "Cohorts",
+        url: "#",
+        icon: Users,
+        items: [...getCohortSubItems],
+      });
+    } else if (
+      ["instructional", "admin", "superadmin"].includes(effectiveProfile.role)
+    ) {
+      // Staff/Admin view - single items, no sub-items, no "new"
+      menu.push({
+        title: "Cohorts",
+        url: "#",
+        icon: Users,
+        section: "cohorts",
+      });
+    }
 
     // Analytics - Available from instructor level and up
     if (
@@ -323,57 +269,9 @@ export function UnifiedSidebar({
       });
     }
 
-    // Classes and Cohorts sections based on role
-    if (["ta", "instructor"].includes(effectiveProfile.role)) {
-      // TA/Instructor view - collapsible with sub-items
-      menu.push({
-        title: "Cohorts",
-        url: "#",
-        icon: Users,
-        items: [
-          ...getCohortSubItems,
-          ...(effectiveProfile.role === "instructor"
-            ? [{ title: "New", url: "/cohorts/new", isSubItem: true }]
-            : []),
-        ],
-      });
-
-      menu.push({
-        title: "Classes",
-        url: "#",
-        icon: BookOpen,
-        items: [
-          ...getClassSubItems,
-          ...(effectiveProfile.role === "instructor"
-            ? [{ title: "New", url: "/classes/new", isSubItem: true }]
-            : []),
-        ],
-      });
-    } else if (
-      ["instructional", "admin", "superadmin"].includes(effectiveProfile.role)
-    ) {
-      // Staff/Admin view - single items, no sub-items, no "new"
-
-      menu.push({
-        title: "Cohorts",
-        url: "#",
-        icon: Users,
-        section: "cohorts",
-      });
-
-      menu.push({
-        title: "Classes",
-        url: "#",
-        icon: BookOpen,
-        section: "classes",
-      });
-    }
-
     // Create - Available from instructor level and up
     if (
-      ["instructor", "instructional", "admin", "superadmin"].includes(
-        effectiveProfile.role
-      )
+      ["instructional", "admin", "superadmin"].includes(effectiveProfile.role)
     ) {
       menu.push({
         title: "Create",
@@ -497,7 +395,7 @@ export function UnifiedSidebar({
     }
 
     return menu;
-  }, [effectiveProfile.role, searchTerm, getClassSubItems, getCohortSubItems]);
+  }, [effectiveProfile.role, searchTerm, getCohortSubItems]);
 
   const handleSectionChange = createFlexibleSectionChangeHandler(
     router,

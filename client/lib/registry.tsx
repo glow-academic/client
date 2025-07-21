@@ -6,8 +6,8 @@ import React from "react";
 
 import ActiveCohorts from "@/components/common/analytics/header/ActiveCohorts";
 import AverageScore from "@/components/common/analytics/header/AverageScore";
-import ClassPerformance from "@/components/common/analytics/secondary/ClassPerformance";
 import CohortCompletion from "@/components/common/analytics/footer/CohortCompletion";
+import CohortPerformance from "@/components/common/analytics/secondary/CohortPerformance";
 import CompletionRate from "@/components/common/analytics/header/CompletionRate";
 import NeedSupport from "@/components/common/analytics/header/NeedSupport";
 import PassRate from "@/components/common/analytics/header/PassRate";
@@ -564,11 +564,11 @@ export const registry: Record<string, ComponentConfig> = {
         "type": "boolean"
       }
     } },
-  "2a27f6d4-e6a9-f2fd-d691-7de103d7c443": { component: ClassPerformance, props: {
+  "c48dc235-023a-838d-680a-ff19b075ec44": { component: CohortPerformance, props: {
       "className": "",
       "color": "blue",
       "maxItems": 5,
-      "title": "Class Performance",
+      "title": "Cohort Performance",
       "layout": "vertical"
     }, metadata: {
       "className": {

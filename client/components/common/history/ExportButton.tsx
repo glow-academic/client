@@ -26,11 +26,6 @@ interface AttemptData {
   chats?: ChatData[];
 }
 
-interface RowOriginalData {
-  classIds?: string[];
-  [key: string]: unknown;
-}
-
 // TAPerformanceData interface for Reports page
 interface TAPerformanceData {
   firstName: string;
@@ -58,8 +53,6 @@ type ExportableData = ChatData | AttemptData;
 // Column name mapping for CSV export
 const columnMap = {
   createdAt: "Date",
-  classId: "Classes",
-  classCode: "Classes",
   userId: "Name",
   profileId: "Name",
   agent: "Agent",
@@ -109,13 +102,11 @@ const MAX_ROWS_WITHOUT_CONFIRM = 100;
 export interface ExportButtonProps<TData> {
   table: Table<TData>;
   profileOptions: { value: string; label: string }[];
-  classOptions: { value: string; label: string }[];
 }
 
 export function ExportButton<TData>({
   table,
   profileOptions,
-  classOptions,
 }: ExportButtonProps<TData>) {
   const selectedRows = Object.keys(table.getState().rowSelection).length;
   const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
@@ -166,19 +157,6 @@ export function ExportButton<TData>({
             if (column.id === "status") {
               const original = row.original as ExportableData;
               return `"${getStatusLabel(original)}"`;
-            }
-
-            // Special handling for class and user IDs - map to human-readable names
-            if (column.id === "classId" && cellValue) {
-              const original = row.original as RowOriginalData;
-              const classIds = (original.classIds || [cellValue]) as string[];
-              const classLabels = classIds.map((classId: string) => {
-                const classOption = classOptions.find(
-                  (cls) => cls.value === classId
-                );
-                return classOption ? classOption.label : classId;
-              });
-              return `"${classLabels.join("; ")}"`;
             }
 
             if (column.id === "classCode" && cellValue) {

@@ -24,7 +24,6 @@ export interface CohortsDataTableProps {
   data: Cohort[];
   profileOptions: { value: string; label: string }[];
   simulationOptions: { value: string; label: string }[];
-  classOptions: { value: string; label: string }[];
   renderCohortCard: (cohort: Cohort) => React.ReactNode;
 }
 
@@ -33,7 +32,6 @@ export function CohortsDataTable({
   data,
   profileOptions,
   simulationOptions,
-  classOptions,
   renderCohortCard,
 }: CohortsDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
@@ -79,7 +77,6 @@ export function CohortsDataTable({
         table={table}
         profileOptions={profileOptions}
         simulationOptions={simulationOptions}
-        classOptions={classOptions}
       />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {table.getRowModel().rows.length ? (

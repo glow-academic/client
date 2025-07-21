@@ -4,8 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
-import { Class, Cohort, Profile, Simulation } from "@/types";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
+import { Cohort, Profile, Simulation } from "@/types";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 
@@ -19,11 +18,6 @@ export function useCohortColumns() {
   const { data: profiles = [] } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
-  });
-
-  const { data: classes = [] } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => getAllClasses(),
   });
 
   const columns = useMemo<ColumnDef<Cohort>[]>(
@@ -64,14 +58,14 @@ export function useCohortColumns() {
         cell: ({ row }) => {
           const cohort = row.original;
           const cohortSimulations = simulations.filter((sim: Simulation) =>
-            sim.cohortIds.includes(cohort.id)
+            cohort.simulationIds.includes(sim.id)
           );
           return cohortSimulations.map((sim: Simulation) => sim.id);
         },
         filterFn: (row, _, value) => {
           const cohort = row.original;
           const cohortSimulations = simulations.filter((sim: Simulation) =>
-            sim.cohortIds.includes(cohort.id)
+            cohort.simulationIds.includes(sim.id)
           );
           const simulationIds = cohortSimulations.map(
             (sim: Simulation) => sim.id
@@ -82,44 +76,12 @@ export function useCohortColumns() {
         },
       },
       {
-        accessorKey: "classIds",
-        header: "Classes",
-        cell: ({ row }) => {
-          const cohort = row.original;
-          const cohortProfileIds = cohort.profileIds || [];
-          // Find classes that have any of the cohort's profiles assigned
-          const classIds = classes
-            .filter((cls: Class) =>
-              cls.profileIds?.some((profileId: string) =>
-                cohortProfileIds.includes(profileId)
-              )
-            )
-            .map((cls: Class) => cls.id);
-          return [...new Set(classIds)]; // Remove duplicates
-        },
-        filterFn: (row, _, value) => {
-          const cohort = row.original;
-          const cohortProfileIds = cohort.profileIds || [];
-          // Find classes that have any of the cohort's profiles assigned
-          const classIds = classes
-            .filter((cls: Class) =>
-              cls.profileIds?.some((profileId: string) =>
-                cohortProfileIds.includes(profileId)
-              )
-            )
-            .map((cls: Class) => cls.id);
-          return value.some((filterValue: string) =>
-            classIds.includes(filterValue)
-          );
-        },
-      },
-      {
         accessorKey: "updatedAt",
         header: "Updated",
         cell: ({ row }) => row.getValue("updatedAt"),
       },
     ],
-    [simulations, classes]
+    [simulations]
   );
 
   // Filter options
@@ -141,19 +103,9 @@ export function useCohortColumns() {
     [simulations]
   );
 
-  const classOptions = useMemo(
-    () =>
-      classes.map((cls: Class) => ({
-        value: cls.id,
-        label: cls.name,
-      })),
-    [classes]
-  );
-
   return {
     columns,
     profileOptions,
     simulationOptions,
-    classOptions,
   };
 }

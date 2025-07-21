@@ -4,7 +4,7 @@ from typing import Any
 
 from agents import Runner, trace
 from app.db import get_session
-from app.models import Classes, Documents, Models, Providers, SystemAgents
+from app.models import Documents, Models, Providers, SystemAgents
 from app.services.agents.generic import GenericAgent
 from fastapi import Depends
 from pydantic import BaseModel
@@ -23,15 +23,14 @@ class Classify(BaseModel):
     syllabi: list[str] = []
 
 
-async def run_classify_agent(
-    class_id: uuid.UUID, test: bool = False, session: Session = Depends(get_session)
+async def run_classify_agent(document_ids: list[uuid.UUID], test: bool = False, session: Session = Depends(get_session)
 ) -> dict[str, Any]:
     """
     This function is used to run the classify agent.
     Returns a dictionary with classification results.
 
     Args:
-        class_id: The ID of the class
+        document_ids: The IDs of the documents to classify
         test: Whether to run the agent in test mode
 
     Returns:
@@ -43,19 +42,14 @@ async def run_classify_agent(
     if not agent:
         raise ValueError("Classify agent not found")
 
-    # get the class from the class_id
-    class_data = session.exec(select(Classes).where(Classes.id == class_id)).first()
-    if not class_data:
-        raise ValueError(f"Class with ID {class_id} not found")
-
     # get all the documents for the class that haven't been classified yet
     # Note: Since there's no 'classified' field in the model, we'll classify all documents
     documents = session.exec(
-        select(Documents).where(Documents.class_id == class_id)
+        select(Documents).where(Documents.id.in_(document_ids))
     ).all()
 
     if not documents:
-        logger.info(f"No documents found for class {class_id}")
+        logger.info(f"No documents found for document_ids {document_ids}")
         return {
             "success": True,
             "message": "No documents to classify",
@@ -72,7 +66,7 @@ async def run_classify_agent(
 
     formatted_documents = "\n".join(document_list)
 
-    logger.info(f"Classifying {len(documents)} documents for class {class_data.name}")
+    logger.info(f"Classifying {len(documents)} documents for document_ids {document_ids}")
 
     # getting the model from the agent's model_id
     model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
@@ -98,7 +92,7 @@ async def run_classify_agent(
     )
 
     try:
-        with trace(f"{class_data.name} Document Classification"):
+        with trace(f"Classification for {len(document_ids)} documents"):
             if test:
                 # mark all documents as homeworks
                 classification = Classify(
@@ -148,7 +142,7 @@ async def run_classify_agent(
         session.commit()
 
         logger.info(
-            f"Successfully classified {classified_count} documents for class {class_data.name}"
+            f"Successfully classified {classified_count} documents for document_ids {document_ids}"
         )
 
         return {

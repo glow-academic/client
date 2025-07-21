@@ -13,7 +13,6 @@ import { TAPerformanceData } from "@/hooks/use-report-columns";
 export interface ReportsDataTableToolbarProps {
   table: Table<TAPerformanceData>;
   performanceOptions: { value: string; label: string }[];
-  classOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
   agentOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
@@ -24,7 +23,6 @@ export interface ReportsDataTableToolbarProps {
 export function ReportsDataTableToolbar({
   table,
   performanceOptions,
-  classOptions,
   cohortOptions,
   agentOptions,
   scenarioOptions,
@@ -59,15 +57,6 @@ export function ReportsDataTableToolbar({
               column={avgScoreColumn}
               title="Performance"
               options={performanceOptions}
-            />
-          )}
-
-          {/* Class Filter */}
-          {classOptions.length > 0 && table.getColumn("classIds") && (
-            <DataTableFacetedFilter
-              column={table.getColumn("classIds")!}
-              title="Class"
-              options={classOptions}
             />
           )}
 
@@ -125,7 +114,6 @@ export function ReportsDataTableToolbar({
           <ExportButton
             table={table}
             profileOptions={[]} // Will be populated from the data
-            classOptions={classOptions}
           />
         )}
 

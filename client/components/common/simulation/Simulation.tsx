@@ -34,10 +34,9 @@ import {
 } from "@/components/ui/select";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { Cohort, Rubric, Scenario } from "@/types";
+import { Rubric, Scenario } from "@/types";
 import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
 import { updateSimulation } from "@/utils/mutations/simulations/update-simulation";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
@@ -72,7 +71,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
     null
   );
   const [draggedScenario, setDraggedScenario] = useState<string | null>(null);
-  const [draggedCohort, setDraggedCohort] = useState<string | null>(null);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const router = useRouter();
 
@@ -100,12 +98,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
     queryFn: () => getSimulation(simulationId!),
     enabled: isEditMode,
   });
-
-  const { data: cohorts = [], isLoading: isLoadingCohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
-
+  
   const { data: rubrics = [], isLoading: isLoadingRubrics } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
@@ -118,7 +111,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   const isLoading =
     isLoadingSimulation ||
-    isLoadingCohorts ||
     isLoadingRubrics ||
     isLoadingScenarios;
 
@@ -128,7 +120,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
         title: simulation.title,
         timeLimit: simulation.timeLimit,
         rubricId: simulation.rubricId,
-        cohortIds: simulation.cohortIds,
         scenarioIds: simulation.scenarioIds,
         active: simulation.active,
       };
@@ -152,20 +143,10 @@ export default function Simulation({ simulationId }: SimulationProps) {
       current.timeLimit !== original.timeLimit ||
       current.rubricId !== original.rubricId ||
       current.active !== original.active ||
-      JSON.stringify(current.cohortIds?.sort()) !==
-        JSON.stringify(original.cohortIds?.sort()) ||
       JSON.stringify(current.scenarioIds?.sort()) !==
         JSON.stringify(original.scenarioIds?.sort())
     );
   }, [formData, originalFormData, isEditMode]);
-
-  // Count cohorts affected by this simulation
-  const affectedCohorts = useMemo(() => {
-    if (!isEditMode || !simulationId || !formData?.cohortIds) return [];
-    return cohorts.filter((cohort: Cohort) =>
-      formData.cohortIds?.includes(cohort.id)
-    );
-  }, [cohorts, formData?.cohortIds, isEditMode, simulationId]);
 
   const handleInputChange = (
     field: keyof FormData,
@@ -175,22 +156,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
     if (errors[field as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
-  };
-
-  const addCohort = (cohortId: string) => {
-    if (!formData?.cohortIds?.includes(cohortId)) {
-      setFormData((prev) => ({
-        ...prev,
-        cohortIds: [...(prev?.cohortIds || []), cohortId],
-      }));
-    }
-  };
-
-  const removeCohort = (cohortId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      cohortIds: prev?.cohortIds?.filter((id) => id !== cohortId) || [],
-    }));
   };
 
   const addScenario = (scenarioId: string) => {
@@ -211,11 +176,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   const handleDragStartScenario = (e: React.DragEvent, scenarioId: string) => {
     setDraggedScenario(scenarioId);
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  const handleDragStartCohort = (e: React.DragEvent, cohortId: string) => {
-    setDraggedCohort(cohortId);
     e.dataTransfer.effectAllowed = "move";
   };
 
@@ -321,11 +281,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
   };
 
   const handleUpdateClick = () => {
-    if (isEditMode && affectedCohorts.length > 0) {
-      setShowUpdateDialog(true);
-    } else {
-      handleSubmit();
-    }
+    handleSubmit();
   };
 
   const handleConfirmUpdate = () => {
@@ -340,10 +296,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   const editScenario = (scenarioId: string) => {
     router.push(`/create/scenarios/s/${scenarioId}`);
-  };
-
-  const editCohort = (cohortId: string) => {
-    router.push(`/cohorts/c/${cohortId}`);
   };
 
   return (
@@ -417,154 +369,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
           )}
           {errors.rubricId && (
             <p className="text-sm text-destructive">{errors.rubricId}</p>
-          )}
-        </div>
-
-        {/* Cohorts */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <div>
-              <Label htmlFor="cohortIds">Cohorts (Optional)</Label>
-              {!isLoading && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  Select cohorts to include in this simulation. If no cohorts
-                  are selected, the simulation will be available to all users.
-                </p>
-              )}
-            </div>
-            <div className="flex gap-2">
-              {formData?.cohortIds !== undefined && !isLoading ? (
-                <Select
-                  value=""
-                  onValueChange={(value: string) => {
-                    if (value) addCohort(value);
-                  }}
-                >
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Add cohort" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cohorts
-                      .filter(
-                        (cohort: Cohort) =>
-                          !formData.cohortIds?.includes(cohort.id)
-                      )
-                      .map((cohort: Cohort) => (
-                        <SelectItem key={cohort.id} value={cohort.id}>
-                          {cohort.title}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
-            </div>
-          </div>
-
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Card key={i} className="p-3 min-h-[180px]">
-                  <div className="space-y-3 h-full flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <Skeleton className="h-4 w-1/2" />
-                        <div className="flex items-center gap-2">
-                          <Skeleton className="h-6 w-6 rounded" />
-                          <Skeleton className="h-6 w-6 rounded" />
-                          <Skeleton className="h-4 w-4 rounded" />
-                        </div>
-                      </div>
-                      <div className="space-y-2 mt-2">
-                        <Skeleton className="h-3 w-full" />
-                        <div className="flex items-center gap-2">
-                          <Skeleton className="h-5 w-20 rounded" />
-                        </div>
-                        <Skeleton className="h-5 w-16 rounded" />
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          ) : formData?.cohortIds?.length === 0 ? (
-            <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
-              <div>
-                <p className="font-medium mb-1">No cohorts selected</p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {formData?.cohortIds?.map((cohortId) => {
-                const cohort = cohorts.find((c: Cohort) => c.id === cohortId);
-                if (!cohort) return null;
-
-                return (
-                  <Card
-                    key={cohortId}
-                    className={`p-3 cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
-                      draggedCohort === cohortId ? "opacity-50" : ""
-                    }`}
-                    draggable
-                    onDragStart={(e) => handleDragStartCohort(e, cohortId)}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, cohortId)}
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-sm">
-                          {cohort.title || "Unnamed Cohort"}
-                        </h4>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => editCohort(cohortId)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeCohort(cohortId)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                          <GripVertical className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground line-clamp-3">
-                          {cohort.description || "No description provided"}
-                        </p>
-
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Badge variant="outline" className="text-xs">
-                            {cohort.profileIds?.length || 0} members
-                          </Badge>
-                        </div>
-
-                        <Badge
-                          className={`text-xs ${
-                            cohort.active
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {cohort.active ? "Active" : "Inactive"}
-                        </Badge>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
           )}
         </div>
 
@@ -749,20 +553,8 @@ export default function Simulation({ simulationId }: SimulationProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Update Simulation</AlertDialogTitle>
             <AlertDialogDescription>
-              This simulation is currently being used by{" "}
-              {affectedCohorts.length} cohort
-              {affectedCohorts.length !== 1 ? "s" : ""}:
-              <ul className="mt-2 list-disc list-inside">
-                {affectedCohorts.map((cohort) => (
-                  <li key={cohort.id} className="text-sm">
-                    {cohort.title} ({cohort.profileIds?.length || 0} members)
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-3 text-sm font-medium">
-                Updating this simulation will affect all cohorts that use it.
-                Are you sure you want to proceed?
-              </div>
+              This simulation is currently being used by a cohort. Are you sure
+              you want to proceed?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

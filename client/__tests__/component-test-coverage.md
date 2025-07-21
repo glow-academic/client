@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 133
+- **Total Components**: 120
 - **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 133
+- **Tests Skipped** (already implemented): 120
 
 ## Component Coverage
 
@@ -16,11 +16,6 @@
 | Reports | analytics/report/Reports.tsx | Reports.test.tsx | ✅ Implemented |
 | ReportsDataTable | analytics/report/ReportsDataTable.tsx | ReportsDataTable.test.tsx | ✅ Implemented |
 | ReportsDataTableToolbar | analytics/report/ReportsDataTableToolbar.tsx | ReportsDataTableToolbar.test.tsx | ✅ Implemented |
-| ClassEdit | classes/ClassEdit.tsx | ClassEdit.test.tsx | ✅ Implemented |
-| Classes | classes/Classes.tsx | Classes.test.tsx | ✅ Implemented |
-| ClassesDataTable | classes/ClassesDataTable.tsx | ClassesDataTable.test.tsx | ✅ Implemented |
-| ClassesDataTableToolbar | classes/ClassesDataTableToolbar.tsx | ClassesDataTableToolbar.test.tsx | ✅ Implemented |
-| NewClass | classes/NewClass.tsx | NewClass.test.tsx | ✅ Implemented |
 | CohortEdit | cohorts/CohortEdit.tsx | CohortEdit.test.tsx | ✅ Implemented |
 | Cohorts | cohorts/Cohorts.tsx | Cohorts.test.tsx | ✅ Implemented |
 | CohortsDataTable | cohorts/CohortsDataTable.tsx | CohortsDataTable.test.tsx | ✅ Implemented |
@@ -44,7 +39,7 @@
 | PerformanceByPersonality | common/analytics/primary/PerformanceByPersonality.tsx | PerformanceByPersonality.test.tsx | ✅ Implemented |
 | PerformanceTrends | common/analytics/primary/PerformanceTrends.tsx | PerformanceTrends.test.tsx | ✅ Implemented |
 | SessionActivity | common/analytics/primary/SessionActivity.tsx | SessionActivity.test.tsx | ✅ Implemented |
-| ClassPerformance | common/analytics/secondary/ClassPerformance.tsx | ClassPerformance.test.tsx | ✅ Implemented |
+| CohortPerformance | common/analytics/secondary/CohortPerformance.tsx | CohortPerformance.test.tsx | ✅ Implemented |
 | SkillBreakdown | common/analytics/secondary/SkillBreakdown.tsx | SkillBreakdown.test.tsx | ✅ Implemented |
 | TrainingInsights | common/analytics/secondary/TrainingInsights.tsx | TrainingInsights.test.tsx | ✅ Implemented |
 | DocumentSelect | common/chat/DocumentSelect.tsx | DocumentSelect.test.tsx | ✅ Implemented |
@@ -54,15 +49,12 @@
 | AttemptChat | common/chat/attempt/AttemptChat.tsx | AttemptChat.test.tsx | ✅ Implemented |
 | AttemptInput | common/chat/attempt/AttemptInput.tsx | AttemptInput.test.tsx | ✅ Implemented |
 | AttemptMessages | common/chat/attempt/AttemptMessages.tsx | AttemptMessages.test.tsx | ✅ Implemented |
-| AccoladeCard | common/class/AccoladeCard.tsx | AccoladeCard.test.tsx | ✅ Implemented |
-| ClassDashboard | common/class/ClassDashboard.tsx | ClassDashboard.test.tsx | ✅ Implemented |
-| ClassDocuments | common/class/ClassDocuments.tsx | ClassDocuments.test.tsx | ✅ Implemented |
-| ClassForm | common/class/ClassForm.tsx | ClassForm.test.tsx | ✅ Implemented |
-| ClassStaff | common/class/ClassStaff.tsx | ClassStaff.test.tsx | ✅ Implemented |
-| LeaderboardTable | common/class/LeaderboardTable.tsx | LeaderboardTable.test.tsx | ✅ Implemented |
+| AccoladeCard | common/cohort/AccoladeCard.tsx | AccoladeCard.test.tsx | ✅ Implemented |
 | Cohort | common/cohort/Cohort.tsx | Cohort.test.tsx | ✅ Implemented |
 | CohortDashboard | common/cohort/CohortDashboard.tsx | CohortDashboard.test.tsx | ✅ Implemented |
 | CohortPicker | common/cohort/CohortPicker.tsx | CohortPicker.test.tsx | ✅ Implemented |
+| CohortStaff | common/cohort/CohortStaff.tsx | CohortStaff.test.tsx | ✅ Implemented |
+| LeaderboardTable | common/cohort/LeaderboardTable.tsx | LeaderboardTable.test.tsx | ✅ Implemented |
 | SimulationProgress | common/cohort/SimulationProgress.tsx | SimulationProgress.test.tsx | ✅ Implemented |
 | CarouselSection | common/dashboard/CarouselSection.tsx | CarouselSection.test.tsx | ✅ Implemented |
 | DashboardEdit | common/dashboard/DashboardEdit.tsx | DashboardEdit.test.tsx | ✅ Implemented |
@@ -71,7 +63,7 @@
 | FooterPreview | common/dashboard/FooterPreview.tsx | FooterPreview.test.tsx | ✅ Implemented |
 | HeaderPreview | common/dashboard/HeaderPreview.tsx | HeaderPreview.test.tsx | ✅ Implemented |
 | SettingsDialog | common/dashboard/SettingsDialog.tsx | SettingsDialog.test.tsx | ✅ Implemented |
-| Department | common/department/Department.tsx | Department.test.tsx | ✅ Implemented |
+| Document | common/documents/Document.tsx | Document.test.tsx | ✅ Implemented |
 | DataTable | common/history/DataTable.tsx | DataTable.test.tsx | ✅ Implemented |
 | DataTableColumnHeader | common/history/DataTableColumnHeader.tsx | DataTableColumnHeader.test.tsx | ✅ Implemented |
 | DataTableFacetedFilter | common/history/DataTableFacetedFilter.tsx | DataTableFacetedFilter.test.tsx | ✅ Implemented |
@@ -124,11 +116,6 @@
 | TATour | home/TATour.tsx | TATour.test.tsx | ✅ Implemented |
 | WelcomeOverlay | home/WelcomeOverlay.tsx | WelcomeOverlay.test.tsx | ✅ Implemented |
 | ActivityStatus | management/activity/ActivityStatus.tsx | ActivityStatus.test.tsx | ✅ Implemented |
-| DepartmentEdit | management/departments/DepartmentEdit.tsx | DepartmentEdit.test.tsx | ✅ Implemented |
-| Departments | management/departments/Departments.tsx | Departments.test.tsx | ✅ Implemented |
-| DepartmentsDataTable | management/departments/DepartmentsDataTable.tsx | DepartmentsDataTable.test.tsx | ✅ Implemented |
-| DepartmentsDataTableToolbar | management/departments/DepartmentsDataTableToolbar.tsx | DepartmentsDataTableToolbar.test.tsx | ✅ Implemented |
-| NewDepartment | management/departments/NewDepartment.tsx | NewDepartment.test.tsx | ✅ Implemented |
 | Feedback | management/feedback/Feedback.tsx | Feedback.test.tsx | ✅ Implemented |
 | NewStaff | management/staff/NewStaff.tsx | NewStaff.test.tsx | ✅ Implemented |
 | Staff | management/staff/Staff.tsx | Staff.test.tsx | ✅ Implemented |
@@ -156,12 +143,6 @@ __tests__/
 │   │   ├── Reports.test.tsx
 │   │   ├── ReportsDataTable.test.tsx
 │   │   ├── ReportsDataTableToolbar.test.tsx
-├── classes/
-│   ├── ClassEdit.test.tsx
-│   ├── Classes.test.tsx
-│   ├── ClassesDataTable.test.tsx
-│   ├── ClassesDataTableToolbar.test.tsx
-│   ├── NewClass.test.tsx
 ├── cohorts/
 │   ├── CohortEdit.test.tsx
 │   ├── Cohorts.test.tsx
@@ -193,7 +174,7 @@ __tests__/
 │   │   │   ├── PerformanceTrends.test.tsx
 │   │   │   ├── SessionActivity.test.tsx
 │   │   ├── secondary/
-│   │   │   ├── ClassPerformance.test.tsx
+│   │   │   ├── CohortPerformance.test.tsx
 │   │   │   ├── SkillBreakdown.test.tsx
 │   │   │   ├── TrainingInsights.test.tsx
 │   ├── chat/
@@ -205,17 +186,13 @@ __tests__/
 │   │   │   ├── AttemptChat.test.tsx
 │   │   │   ├── AttemptInput.test.tsx
 │   │   │   ├── AttemptMessages.test.tsx
-│   ├── class/
-│   │   ├── AccoladeCard.test.tsx
-│   │   ├── ClassDashboard.test.tsx
-│   │   ├── ClassDocuments.test.tsx
-│   │   ├── ClassForm.test.tsx
-│   │   ├── ClassStaff.test.tsx
-│   │   ├── LeaderboardTable.test.tsx
 │   ├── cohort/
+│   │   ├── AccoladeCard.test.tsx
 │   │   ├── Cohort.test.tsx
 │   │   ├── CohortDashboard.test.tsx
 │   │   ├── CohortPicker.test.tsx
+│   │   ├── CohortStaff.test.tsx
+│   │   ├── LeaderboardTable.test.tsx
 │   │   ├── SimulationProgress.test.tsx
 │   ├── dashboard/
 │   │   ├── CarouselSection.test.tsx
@@ -225,8 +202,8 @@ __tests__/
 │   │   ├── FooterPreview.test.tsx
 │   │   ├── HeaderPreview.test.tsx
 │   │   ├── SettingsDialog.test.tsx
-│   ├── department/
-│   │   ├── Department.test.tsx
+│   ├── documents/
+│   │   ├── Document.test.tsx
 │   ├── history/
 │   │   ├── DataTable.test.tsx
 │   │   ├── DataTableColumnHeader.test.tsx
@@ -297,12 +274,6 @@ __tests__/
 ├── management/
 │   ├── activity/
 │   │   ├── ActivityStatus.test.tsx
-│   ├── departments/
-│   │   ├── DepartmentEdit.test.tsx
-│   │   ├── Departments.test.tsx
-│   │   ├── DepartmentsDataTable.test.tsx
-│   │   ├── DepartmentsDataTableToolbar.test.tsx
-│   │   ├── NewDepartment.test.tsx
 │   ├── feedback/
 │   │   ├── Feedback.test.tsx
 │   ├── staff/

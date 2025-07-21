@@ -7,15 +7,8 @@ import uuid
 from typing import Any, Dict
 
 from app.db import get_session
-from app.models import (
-    Cohorts,
-    Rubrics,
-    Scenarios,
-    SimulationAttempts,
-    SimulationChatGrades,
-    SimulationChats,
-    Simulations,
-)
+from app.models import (Cohorts, Rubrics, Scenarios, SimulationAttempts,
+                        SimulationChatGrades, SimulationChats, Simulations)
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select
 
@@ -72,15 +65,21 @@ def simulation_overview(sim_id: str) -> Dict[str, Any]:
                 "pass_points": rubric.pass_points,
             }
 
-        # Get cohorts
+        # Get cohorts (using cohort.simulation_ids)
         cohorts_data = []
-        if simulation.cohort_ids:
-            cohorts_stmt = select(Cohorts).where(Cohorts.id.in_(simulation.cohort_ids))
-            cohorts = session.exec(cohorts_stmt).all()
-            cohorts_data = [
-                {"id": str(cohort.id), "title": cohort.title, "active": cohort.active}
-                for cohort in cohorts
-            ]
+        cohorts_stmt = select(Cohorts)
+        cohorts = session.exec(cohorts_stmt).all()
+        for cohort in cohorts:
+            # Only include cohort if this simulation is in its simulation_ids
+            if hasattr(cohort, "simulation_ids") and cohort.simulation_ids:
+                if simulation.id in cohort.simulation_ids:
+                    cohorts_data.append(
+                        {
+                            "id": str(cohort.id),
+                            "title": cohort.title,
+                            "active": cohort.active,
+                        }
+                    )
 
         # Get scenarios
         scenarios_data = []

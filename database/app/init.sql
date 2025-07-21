@@ -12,9 +12,9 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- 1. Independent tables (no foreign key dependencies)
 \i app/users/init.sql
 \i app/models/init.sql
-\i app/classes/init.sql
+\i app/documents/init.sql
 \i app/rubrics/init.sql
-\i app/logs/init.sql
+\i app/system/init.sql
 
 -- 2. Assistant tables
 \i app/assistants/init.sql
@@ -30,6 +30,9 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- 6. Tables that depend on multiple previous tables
 \i app/simulations/init.sql
+
+-- 7. Tables that depend on multiple previous tables
+\i app/cohorts/init.sql
 
 -- ============================================================================
 -- COMPLETION MESSAGE

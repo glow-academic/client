@@ -6,8 +6,6 @@
  */
 "use client";
 import {
-  Class,
-  Department,
   Document,
   Scenario,
   Simulation,
@@ -16,7 +14,6 @@ import {
   SimulationMessage,
 } from "@/types";
 import { logInfo } from "@/utils/logger";
-import { getClass } from "@/utils/queries/classes/get-class";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
@@ -39,7 +36,6 @@ import React, {
 } from "react";
 import { toast } from "sonner";
 import { useWebSocket } from "./websocket-context";
-import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
 
 // Dynamic rubric interface based on grades/feedback
 interface DynamicRubric {
@@ -74,8 +70,6 @@ interface SimulationContextType {
   attempt: SimulationAttempt | null;
   simulation: Simulation | null;
   scenario: Scenario | null;
-  classData: Class | null;
-  department: Department | null;
   documents: Document[];
   scenarioDocuments: Document[];
 
@@ -244,18 +238,6 @@ export function SimulationProvider({
     queryKey: ["interaction", currentChat?.scenarioId],
     queryFn: () => getScenario(currentChat!.scenarioId),
     enabled: !!currentChat,
-  });
-
-  // Fetch class data for current scenario
-  const { data: classData } = useQuery({
-    queryKey: ["class", scenario?.classId],
-    queryFn: () => getClass(scenario!.classId!),
-    enabled: !!scenario?.classId,
-  });
-
-  const { data: departments } = useQuery({
-    queryKey: ["departments"],
-    queryFn: () => getAllDepartments(),
   });
 
   // Fetch documents
@@ -942,8 +924,6 @@ export function SimulationProvider({
     attempt: attempt || null,
     simulation: simulation || null,
     scenario: scenario || null,
-    classData: classData || null,
-    department: departments?.find((department) => department.id === classData?.departmentId) || null,
     documents,
     scenarioDocuments,
 

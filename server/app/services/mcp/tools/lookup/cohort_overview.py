@@ -63,10 +63,11 @@ def cohort_overview(cohort_id: str) -> Dict[str, Any]:
                 for profile in profiles
             ]
 
-        # FIX: Fetch all active simulations and filter in Python for robust array checking.
-        all_active_sims_stmt = select(Simulations).where(Simulations.active == True)
-        all_active_sims = session.exec(all_active_sims_stmt).all()
-        cohort_sims = [sim for sim in all_active_sims if cohort_uuid in sim.cohort_ids]
+        # Fetch simulations for this cohort using cohort.simulation_ids
+        cohort_sims: list[Simulations] = []
+        if hasattr(cohort, "simulation_ids") and cohort.simulation_ids:
+            sims_stmt = select(Simulations).where(Simulations.id.in_(cohort.simulation_ids), Simulations.active == True)
+            cohort_sims = list(session.exec(sims_stmt).all())
 
         simulations_data = [
             {

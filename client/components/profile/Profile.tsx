@@ -5,8 +5,7 @@
  * 06/07/2025
  */
 "use client";
-import { useQuery } from "@tanstack/react-query";
-import { GraduationCap, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -17,10 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Class, ProfileRole } from "@/types";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
-import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
+import { ProfileRole } from "@/types";
 import { useProfile } from "@/contexts/profile-context";
 
 // Helper function to get initials from name
@@ -73,17 +69,6 @@ export interface ProfileProps {
 export function Profile({ className }: ProfileProps) {
   const { activeProfile } = useProfile();
 
-  // Fetch classes for assigned courses
-  const { data: classes = [] } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => getAllClasses(),
-    enabled: !!activeProfile,
-  });
-
-  const { data: departments } = useQuery({
-    queryKey: ["departments"],
-    queryFn: () => getAllDepartments(),
-  });
 
   if (!activeProfile) {
     return (
@@ -101,25 +86,7 @@ export function Profile({ className }: ProfileProps) {
   }
 
   const roleInfo = getRoleInfo(activeProfile.role as ProfileRole);
-
-  // Filter classes user is assigned to
-  const assignedClasses = classes.filter((cls: Class) =>
-    cls.profileIds?.includes(activeProfile.id)
-  );
-
-  const formatClassTerm = (term: string) => {
-    switch (term) {
-      case "fall":
-        return "Fall";
-      case "spring":
-        return "Spring";
-      case "summer":
-        return "Summer";
-      default:
-        return term;
-    }
-  };
-
+  
   return (
     <div className={className}>
       <Card>
@@ -158,36 +125,6 @@ export function Profile({ className }: ProfileProps) {
               </p>
             </div>
           </div>
-
-          {/* Assigned Classes */}
-          {assignedClasses.length > 0 && (
-            <>
-              <Separator />
-              <div>
-                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <GraduationCap className="h-4 w-4" />
-                  Assigned Classes
-                </h3>
-                <div className="space-y-2">
-                  {assignedClasses.map((cls: Class) => (
-                    <div
-                      key={cls.id}
-                      className="flex items-center justify-between p-2 rounded-md bg-muted/50"
-                    >
-                      <div>
-                        <p className="font-medium">{departments?.find((department) => department.id === cls.departmentId)?.departmentCode + "-" + cls.classCode}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {cls.classCode} • {formatClassTerm(cls.term)}{" "}
-                          {cls.year}
-                        </p>
-                      </div>
-                      <Badge variant="outline">{departments?.find((department) => department.id === cls.departmentId)?.departmentCode + " " + cls.classCode}</Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
         </CardContent>
       </Card>
     </div>

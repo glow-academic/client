@@ -23,7 +23,6 @@ import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { Cohort, Profile } from "@/types";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -72,12 +71,6 @@ export default function Home() {
     if (isAdminView) return profiles.map((p: Profile) => p.id); // All users for admin
     return [effectiveProfile!.id]; // Just self for TA/student
   }, [profiles, isAdminView, effectiveProfile]);
-
-  // Fetch classes and simulations
-  const { data: classes } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => getAllClasses(),
-  });
 
   const { data: cohorts } = useQuery({
     queryKey: ["cohorts"],
@@ -169,15 +162,31 @@ export default function Home() {
       | { type: string; href: string; label: string }[]
       | Cohort[] = [];
 
+    // Helper: get all non-practice simulations for a cohort
+    const getCohortSimulations = (cohort: Cohort) => {
+      if (!cohort.simulationIds) return [];
+      return simulations.filter(
+        (sim) =>
+          cohort.simulationIds.includes(sim.id) && !sim.defaultSimulation
+      );
+    };
+
     if (effectiveProfile.role === "ta") {
+      // TA: Only cohorts assigned to this TA
       const taCohorts = cohorts.filter((c) =>
         c.profileIds?.includes(effectiveProfile.id)
       );
-      const assignedSimulations = simulations.filter(
-        (s) =>
-          !s.defaultSimulation &&
-          s.cohortIds?.some((cid) => taCohorts.some((tc) => tc.id === cid))
-      );
+
+      // All assigned simulations for these cohorts (flattened, unique)
+      const assignedSimulations: typeof simulations = [];
+      taCohorts.forEach((cohort) => {
+        getCohortSimulations(cohort).forEach((sim) => {
+          if (!assignedSimulations.some((s) => s.id === sim.id)) {
+            assignedSimulations.push(sim);
+          }
+        });
+      });
+
       if (assignedSimulations.length === 0)
         return { percentage: 100, actionItems: [] };
 
@@ -185,6 +194,12 @@ export default function Home() {
       const incompleteCohorts = new Set<string>();
 
       assignedSimulations.forEach((sim) => {
+        // For this TA, for this simulation, in which cohort(s) is it assigned?
+        const simCohorts = taCohorts.filter((c) =>
+          c.simulationIds?.includes(sim.id)
+        );
+
+        // Find attempts for this TA and this simulation
         const taAttemptsForSim = attempts.filter(
           (a) =>
             a.profileId === effectiveProfile.id && a.simulationId === sim.id
@@ -200,11 +215,8 @@ export default function Home() {
         if (taGrades.some((g) => g.passed)) {
           passedCount++;
         } else {
-          // Find which cohorts this incomplete simulation belongs to
-          sim.cohortIds?.forEach((cid) => {
-            if (taCohorts.some((tc) => tc.id === cid))
-              incompleteCohorts.add(cid);
-          });
+          // Add all cohorts where this simulation is assigned and TA is a member
+          simCohorts.forEach((c) => incompleteCohorts.add(c.id));
         }
       });
 
@@ -212,17 +224,13 @@ export default function Home() {
       actionItems = cohorts.filter((c) => incompleteCohorts.has(c.id));
     } else {
       // Admin/Instructor/Other Logic
-      const allCohortSimulations = simulations.filter(
-        (s) => !s.defaultSimulation && s.cohortIds?.length > 0
-      );
+      // For each cohort, for each assigned simulation, for each member, check pass
       let totalRequiredPasses = 0;
       let actualPasses = 0;
 
-      allCohortSimulations.forEach((sim) => {
-        sim.cohortIds?.forEach((cid) => {
-          const cohort = cohorts.find((c) => c.id === cid);
-          if (!cohort) return;
-
+      cohorts.forEach((cohort) => {
+        const cohortSims = getCohortSimulations(cohort);
+        cohortSims.forEach((sim) => {
           cohort.profileIds?.forEach((pid) => {
             totalRequiredPasses++;
             const memberAttempts = attempts.filter(
@@ -235,7 +243,6 @@ export default function Home() {
             const memberGrades = grades.filter((g) =>
               memberChats?.some((c) => c.id === g.simulationChatId)
             );
-
             if (memberGrades.some((g) => g.passed)) {
               actualPasses++;
             }
@@ -324,11 +331,6 @@ export default function Home() {
   const handleStartSimulation = useCallback(
     async (simulationId: string) => {
       try {
-        if (!classes) {
-          toast.error("No classes found. Please contact an administrator.");
-          return;
-        }
-
         // Only enforce profile for non-guests
         if (effectiveProfile?.role !== "guest" && !effectiveProfile?.id) {
           toast.error("Profile not loaded. Please refresh the page.");
@@ -382,14 +384,7 @@ export default function Home() {
         setLoadingToastId(null);
       }
     },
-    [
-      effectiveProfile,
-      classes,
-      isConnected,
-      emitStartSimulation,
-      loadingToastId,
-      activeProfile,
-    ]
+    [effectiveProfile, isConnected, emitStartSimulation, loadingToastId, activeProfile]
   );
 
   // Memoize rubric data calculation to prevent unnecessary recalculations

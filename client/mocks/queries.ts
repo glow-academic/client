@@ -89,32 +89,12 @@ vi.mock('@/utils/queries/assistant_tool_calls/get-assistant-tool-calls-by-chats'
   getAssistantToolCallsByChats: vi.fn(() => mockSchema.assistantToolCalls || []),
 }));
 
-// CLASSES QUERIES
-vi.mock('@/utils/queries/classes/get-all-classes', () => ({
-  getAllClasses: vi.fn(() => mockSchema.classes || []),
-}));
-vi.mock('@/utils/queries/classes/get-class', () => ({
-  getClass: vi.fn(() => mockSchema.classes?.[0] || null),
-}));
-vi.mock('@/utils/queries/classes/get-classes-by-department', () => ({
-  getClassesByDepartment: vi.fn(() => mockSchema.classes || []),
-}));
-vi.mock('@/utils/queries/classes/get-classes-by-departments', () => ({
-  getClassesByDepartments: vi.fn(() => mockSchema.classes || []),
-}));
-
 // COHORTS QUERIES
 vi.mock('@/utils/queries/cohorts/get-all-cohorts', () => ({
   getAllCohorts: vi.fn(() => mockSchema.cohorts || []),
 }));
 vi.mock('@/utils/queries/cohorts/get-cohort', () => ({
   getCohort: vi.fn(() => mockSchema.cohorts?.[0] || null),
-}));
-vi.mock('@/utils/queries/cohorts/get-cohorts-by-department', () => ({
-  getCohortsByDepartment: vi.fn(() => mockSchema.cohorts || []),
-}));
-vi.mock('@/utils/queries/cohorts/get-cohorts-by-departments', () => ({
-  getCohortsByDepartments: vi.fn(() => mockSchema.cohorts || []),
 }));
 
 // COMPONENTS QUERIES
@@ -139,23 +119,12 @@ vi.mock('@/utils/queries/dashboards/get-dashboards-by-profiles', () => ({
   getDashboardsByProfiles: vi.fn(() => mockSchema.dashboards || []),
 }));
 
-// DEPARTMENTS QUERIES
-vi.mock('@/utils/queries/departments/get-all-departments', () => ({
-  getAllDepartments: vi.fn(() => mockSchema.departments || []),
-}));
-vi.mock('@/utils/queries/departments/get-department', () => ({
-  getDepartment: vi.fn(() => mockSchema.departments?.[0] || null),
-}));
-
 // DOCUMENTS QUERIES
 vi.mock('@/utils/queries/documents/get-all-documents', () => ({
   getAllDocuments: vi.fn(() => mockSchema.documents || []),
 }));
 vi.mock('@/utils/queries/documents/get-document', () => ({
   getDocument: vi.fn(() => mockSchema.documents?.[0] || null),
-}));
-vi.mock('@/utils/queries/documents/get-documents-by-class', () => ({
-  getDocumentsByClass: vi.fn(() => mockSchema.documents || []),
 }));
 
 // MODELS QUERIES
@@ -194,6 +163,14 @@ vi.mock('@/utils/queries/rubrics/get-all-rubrics', () => ({
 }));
 vi.mock('@/utils/queries/rubrics/get-rubric', () => ({
   getRubric: vi.fn(() => mockSchema.rubrics?.[0] || null),
+}));
+
+// SCENARIO_CLASSES QUERIES
+vi.mock('@/utils/queries/scenario_classes/get-all-scenario-classes', () => ({
+  getAllScenarioClasses: vi.fn(() => mockSchema.scenarioClasses || []),
+}));
+vi.mock('@/utils/queries/scenario_classes/get-scenario-class', () => ({
+  getScenarioClass: vi.fn(() => mockSchema.scenarioClasses?.[0] || null),
 }));
 
 // SCENARIO_DEADLINES QUERIES

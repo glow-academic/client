@@ -3,7 +3,6 @@
 from typing import Any, Dict, List
 
 from app.services.mcp.tools.analytics.agent_response_times import agent_response_times
-from app.services.mcp.tools.analytics.class_gradebook import class_gradebook
 from app.services.mcp.tools.analytics.cohort_pass_matrix import cohort_pass_matrix
 from app.services.mcp.tools.analytics.simulation_attempts import simulation_attempts
 from app.services.mcp.tools.analytics.student_sim_report import student_sim_report
@@ -15,7 +14,6 @@ from app.services.mcp.tools.log.recent_app_logs import recent_app_logs
 
 # Import lookup tools
 from app.services.mcp.tools.lookup.agent_overview import agent_overview
-from app.services.mcp.tools.lookup.class_overview import class_overview
 from app.services.mcp.tools.lookup.cohort_overview import cohort_overview
 from app.services.mcp.tools.lookup.profile_overview import profile_overview
 from app.services.mcp.tools.lookup.scenario_overview import scenario_overview
@@ -27,7 +25,6 @@ from app.services.mcp.tools.schema.query_data import query_data
 from app.services.mcp.tools.search.find_agents import find_agents
 
 # Import search tools
-from app.services.mcp.tools.search.find_classes import find_classes
 from app.services.mcp.tools.search.find_cohorts import find_cohorts
 from app.services.mcp.tools.search.find_profiles import find_profiles
 from app.services.mcp.tools.search.find_scenarios import find_scenarios
@@ -64,11 +61,6 @@ def _profile_overview(profile_id: str) -> Dict[str, Any]:
 
 
 @server.tool()
-def _class_overview(class_id: str) -> Dict[str, Any]:
-    return class_overview(class_id)
-
-
-@server.tool()
 def _cohort_overview(cohort_id: str) -> Dict[str, Any]:
     return cohort_overview(cohort_id)
 
@@ -96,11 +88,6 @@ def _agent_overview(agent_id: str) -> Dict[str, Any]:
 @server.tool()
 def _find_profiles(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     return find_profiles(query, limit)
-
-
-@server.tool()
-def _find_classes(query: str, limit: int = 10) -> List[Dict[str, Any]]:
-    return find_classes(query, limit)
 
 
 @server.tool()
@@ -132,10 +119,6 @@ def _find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
 def _student_sim_report(profile_id: str, recent: int = 50) -> Dict[str, Any]:
     return student_sim_report(profile_id, recent)
 
-
-@server.tool()
-def _class_gradebook(class_id: str) -> Dict[str, Any]:
-    return class_gradebook(class_id)
 
 
 @server.tool()

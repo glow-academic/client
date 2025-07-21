@@ -18,12 +18,10 @@ import {
 import { useMemo } from "react";
 
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
 
 // Enhanced types for the TA performance data
 export interface TAPerformanceData {
@@ -72,7 +70,6 @@ export interface TAPerformanceData {
   bestCohortRank: number;
   avgVsCohort: number;
   // Additional fields for filtering
-  classIds: string[];
   agentsTested: string[];
   scenarioIds: string[];
   simulationIds: string[];
@@ -93,15 +90,6 @@ export function useReportColumns({
     queryFn: () => getAllProfiles(),
   });
 
-  const { data: classes } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => getAllClasses(),
-  });
-
-  const { data: departments } = useQuery({
-    queryKey: ["departments"],
-    queryFn: () => getAllDepartments(),
-  });
 
   const { data: cohorts } = useQuery({
     queryKey: ["cohorts"],
@@ -142,14 +130,6 @@ export function useReportColumns({
     []
   );
 
-  const classOptions = useMemo(() => {
-    if (!classes) return [];
-    return classes.map((classItem) => ({
-      value: classItem.id,
-      label: departments?.find((department) => department.id === classItem.departmentId)?.departmentCode + " " + classItem.classCode,
-    }));
-  }, [classes, departments]);
-
   const cohortOptions = useMemo(() => {
     if (!cohorts) return [];
     return cohorts.map((cohort) => ({
@@ -161,7 +141,7 @@ export function useReportColumns({
   const agentOptions = useMemo(() => {
     if (!agents) return [];
     return agents
-      .filter((agent) => agent.editable === true)
+      .filter((agent) => agent.defaultAgent === true)
       .map((agent) => ({
         value: agent.id,
         label: agent.name,
@@ -574,20 +554,6 @@ export function useReportColumns({
         enableSorting: false,
         enableHiding: false,
       },
-      // Hidden columns for filtering
-      {
-        accessorKey: "classIds",
-        header: "Class IDs",
-        cell: () => null,
-        enableSorting: false,
-        enableHiding: true,
-        enableColumnFilter: true,
-        filterFn: (row, _, value) => {
-          const ta = row.original;
-          if (!value || value.length === 0) return true;
-          return ta.classIds.some((classId) => value.includes(classId));
-        },
-      },
       {
         accessorKey: "agentsTested",
         header: "Agents Tested",
@@ -639,7 +605,6 @@ export function useReportColumns({
   return {
     columns,
     performanceOptions,
-    classOptions,
     cohortOptions,
     agentOptions,
     scenarioOptions,

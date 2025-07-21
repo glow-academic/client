@@ -49,7 +49,6 @@ import { ScenarioSlider } from "./ScenarioSlider";
 // Types and API functions
 import {
   Agent,
-  Class,
   Document,
   Scenario as ScenarioType,
   Simulation,
@@ -59,15 +58,14 @@ import { logError } from "@/utils/logger";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
 import { updateScenario } from "@/utils/mutations/scenarios/update-scenario";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
-import { getAllLocations } from "@/utils/queries/locations/get-all-locations";
+import { getAllScenarioLocations } from "@/utils/queries/scenario_locations/get-all-scenario-locations";
+import { getAllScenarioClasses } from "@/utils/queries/scenario_classes/get-all-scenario-classes";
 import { getAllScenarioDeadlines } from "@/utils/queries/scenario_deadlines/get-all-scenario-deadlines";
 import { getAllScenarioTimes } from "@/utils/queries/scenario_times/get-all-scenario-times";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { Model } from "@/utils/scenario";
-import { getAllDepartments } from "@/utils/queries/departments/get-all-departments";
 
 export interface ScenarioProps {
   scenarioId?: string;
@@ -125,25 +123,20 @@ export default function Scenario({
     queryFn: () => getAllAgents(),
   });
 
-  const { data: classes = [] } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => getAllClasses(),
-  });
-
-  const { data: departments } = useQuery({
-    queryKey: ["departments"],
-    queryFn: () => getAllDepartments(),
-  });
-
   const { data: simulations = [] } = useQuery({
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
     enabled: isEditMode, // Only fetch when in edit mode
   });
 
-  const { data: locations = [] } = useQuery({
-    queryKey: ["locations"],
-    queryFn: () => getAllLocations(),
+  const { data: _scenarioClasses = [] } = useQuery({
+    queryKey: ["scenarioClasses"],
+    queryFn: () => getAllScenarioClasses(),
+  });
+
+  const { data: scenarioLocations = [] } = useQuery({
+    queryKey: ["scenarioLocations"],
+    queryFn: () => getAllScenarioLocations(),
   });
 
   const { data: scenarioDeadlines = [] } = useQuery({
@@ -293,17 +286,7 @@ export default function Scenario({
     },
   ];
 
-  // Convert database data to model format
-  const classModels: Model[] = classes.map((cls: Class) => ({
-    id: cls.id,
-    name: departments?.find((department) => department.id === cls.departmentId)?.departmentCode + " " + cls.classCode,
-    description: `${cls.name} - ${cls.term} ${cls.year}`,
-    type: "Classes" as const,
-    strengths: cls.description || "",
-  }));
-
   const documentModels: Model[] = documents
-    .filter((doc) => !formData.classId || doc.classId === formData.classId)
     .map((doc: Document) => ({
       id: doc.id,
       name: doc.name,
@@ -338,29 +321,15 @@ export default function Scenario({
     setIsGeneratingScenario(true);
 
     try {
-      // Map new schema fields to old API fields
       const result = await newScenario({
         agentId: formData.agentId || null,
-        classId: formData.classId || null,
         documentIds: formData.documentIds || [],
         crowdedness: formData.crowdedness || null,
         intensity: formData.intensity || null,
-        // Map locationId to location string (we'll need to get the location name)
-        location: formData.locationId
-          ? locations.find((loc) => loc.id === formData.locationId)?.name ||
-            null
-          : null,
-        // Map timeId to tod string
-        tod: formData.timeId
-          ? scenarioTimes.find((time) => time.id === formData.timeId)
-              ?.description || null
-          : null,
-        // Map deadlineId to urgency string
-        urgency: formData.deadlineId
-          ? scenarioDeadlines.find(
-              (deadline) => deadline.id === formData.deadlineId
-            )?.description || null
-          : null,
+        classId: formData.classId || null,
+        locationId: formData.locationId || null,
+        timeId: formData.timeId || null,
+        deadlineId: formData.deadlineId || null,
       });
 
       if (!result.success) {
@@ -453,7 +422,6 @@ export default function Scenario({
     );
   }
 
-  const selectedClass = classes.find((cls) => cls.id === formData.classId);
   const selectedDocuments = documents.filter((doc) =>
     formData.documentIds?.includes(doc.id)
   );
@@ -461,67 +429,7 @@ export default function Scenario({
 
   return (
     <div className="w-full p-6 space-y-8">
-      {/* Progress Flow */}
       <div className="space-y-6">
-        {/* Step 1: Class Selection */}
-        <Card
-          className={`transition-all ${!isEditMode && getStepStatus("class") === "active" ? "ring-2 ring-primary" : ""} ${
-            !isEditMode && getStepStatus("class") === "pending"
-              ? "opacity-50"
-              : ""
-          }`}
-        >
-          <CardHeader className="flex flex-row items-center space-y-0 pb-4">
-            <div className="flex items-center space-x-3">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  getStepStatus("class") === "completed"
-                    ? "bg-green-500 text-white"
-                    : getStepStatus("class") === "active"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                }`}
-              >
-                {getStepStatus("class") === "completed" ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  "1"
-                )}
-              </div>
-              <div>
-                <CardTitle className="text-lg">
-                  {steps[0]?.title || ""}
-                </CardTitle>
-                <CardDescription>{steps[0]?.description || ""}</CardDescription>
-              </div>
-            </div>
-            {getStepStatus("class") === "completed" && (
-              <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto" />
-            )}
-          </CardHeader>
-          <CardContent>
-            <ScenarioPicker
-              models={classModels}
-              types={["Classes"]}
-              label=""
-              placeholder="Select a class..."
-              description="This determines which students and documents are available for the scenario."
-              onSelect={(model) => handleInputChange("classId", model.id)}
-              selectedModel={
-                selectedClass
-                  ? {
-                      id: selectedClass.id,
-                      name: departments?.find((department) => department.id === selectedClass.departmentId)?.departmentCode + "-" + selectedClass.classCode || selectedClass.name,
-                      description: `${selectedClass.name} - ${selectedClass.term} ${selectedClass.year}`,
-                      type: "Classes" as const,
-                    }
-                  : undefined
-              }
-            />
-          </CardContent>
-        </Card>
-
-        {/* Step 2: Documents */}
         <Card
           className={`transition-all ${!isEditMode && getStepStatus("documents") === "active" ? "ring-2 ring-primary" : ""} ${
             !isEditMode && getStepStatus("documents") === "pending"
@@ -811,7 +719,7 @@ export default function Scenario({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No preference</SelectItem>
-                  {locations.map((location) => (
+                  {scenarioLocations.map((location) => (
                     <SelectItem key={location.id} value={location.id}>
                       {location.name}
                     </SelectItem>

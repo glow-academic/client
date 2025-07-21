@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulationAttempts } from "@/utils/queries/simulation_attempts/get-all-simulation-attempts";
@@ -60,11 +59,6 @@ export default function ScenarioData({ className }: ScenarioDataProps) {
     queryFn: () => getAllScenarios(),
   });
 
-  const { data: classes, isLoading: classesLoading } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => getAllClasses(),
-  });
-
   const { data: agents, isLoading: agentsLoading } = useQuery({
     queryKey: ["agents"],
     queryFn: () => getAllAgents(),
@@ -89,7 +83,6 @@ export default function ScenarioData({ className }: ScenarioDataProps) {
   const scenarioAnalysis = useMemo(() => {
     if (
       !scenarios ||
-      !classes ||
       !agents ||
       !documents ||
       !attempts ||
@@ -147,11 +140,6 @@ export default function ScenarioData({ className }: ScenarioDataProps) {
         lowPerforming: Math.max(1, Math.floor(agents.length / 3)),
       },
       {
-        category: "Class Types",
-        highPerforming: Math.min(classes.length, 4),
-        lowPerforming: Math.max(1, Math.floor(classes.length / 2)),
-      },
-      {
         category: "Document Count",
         highPerforming: Math.min(documents.length, 8),
         lowPerforming: Math.max(1, Math.floor(documents.length / 4)),
@@ -169,12 +157,11 @@ export default function ScenarioData({ className }: ScenarioDataProps) {
     ];
 
     return { highPerforming, lowPerforming, chartData };
-  }, [scenarios, classes, agents, documents, attempts, chats]);
+  }, [scenarios, agents, documents, attempts, chats]);
 
   // Check if any critical data is still loading
   const isLoading =
     scenariosLoading ||
-    classesLoading ||
     agentsLoading ||
     documentsLoading ||
     attemptsLoading ||

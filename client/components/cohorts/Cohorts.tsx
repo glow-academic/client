@@ -31,14 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Cohort, Simulation } from "@/types";
 
 export default function Cohorts() {
@@ -69,8 +62,7 @@ export default function Cohorts() {
   });
 
   // Get table columns and filter options
-  const { columns, profileOptions, simulationOptions, classOptions } =
-    useCohortColumns();
+  const { columns, profileOptions, simulationOptions } = useCohortColumns();
 
   const handleDelete = async () => {
     if (!deleteItem) return;
@@ -137,7 +129,9 @@ export default function Cohorts() {
 
       // Calculate impact
       const affectedSims = simulations.filter(
-        (sim) => sim.cohortIds && sim.cohortIds.includes(id)
+        (sim) =>
+          cohortToDelete.simulationIds &&
+          cohortToDelete.simulationIds.some((p) => sim.id === p)
       );
       const memberCnt = cohortToDelete.profileIds?.length || 0;
 
@@ -164,57 +158,71 @@ export default function Cohorts() {
   const renderCohortCard = (cohort: Cohort) => (
     <Card
       key={cohort.id}
-      className="hover:shadow-md transition-shadow flex flex-col h-full"
+      aria-label={cohort.title}
+      data-testid={`card-${cohort.id}`}
+      className="relative flex flex-col h-full"
     >
       <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div className="space-y-1 flex-1">
-            <CardTitle className="text-base">{cohort.title}</CardTitle>
-            <CardDescription className="flex items-center gap-2">
-              <Users className="h-3 w-3" />
-              {cohort.profileIds?.length || 0} members
-            </CardDescription>
-            {cohort.description && (
-              <CardDescription className="text-xs line-clamp-2">
-                {cohort.description}
-              </CardDescription>
-            )}
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <CardTitle className="text-lg">{cohort.title}</CardTitle>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="outline">
+                <Users className="h-3 w-3 mr-1" />
+                {cohort.profileIds?.length || 0} members
+              </Badge>
+              <Badge variant={cohort.active ? "default" : "secondary"}>
+                {cohort.active ? "Active" : "Inactive"}
+              </Badge>
+            </div>
           </div>
-          <div className="flex flex-col gap-1">
-            <Badge variant={cohort.active ? "default" : "secondary"}>
-              {cohort.active ? "Active" : "Inactive"}
-            </Badge>
+          <div className="flex items-center gap-1">
+            {canDuplicate(cohort) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDuplicate(cohort)}
+                disabled={isDuplicating === cohort.id}
+                aria-label={`Duplicate ${cohort.title}`}
+              >
+                {isDuplicating === cohort.id ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid={`edit-${cohort.id}`}
+              onClick={() => handleEdit(cohort.id)}
+              aria-label={`Edit ${cohort.title}`}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid={`delete-${cohort.id}`}
+              onClick={() => handleDeleteClick(cohort.id, cohort.title)}
+              aria-label={`Delete ${cohort.title}`}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </CardHeader>
-      <div className="flex-grow"></div>
-      <CardFooter className="flex justify-end gap-2 pt-3">
-        {canDuplicate(cohort) && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleDuplicate(cohort)}
-            disabled={isDuplicating === cohort.id}
-          >
-            <Copy className="h-4 w-4" />
-            {isDuplicating === cohort.id ? "..." : ""}
-          </Button>
-        )}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleEdit(cohort.id)}
-        >
-          <Edit className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleDeleteClick(cohort.id, cohort.title)}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </CardFooter>
+      <CardContent className="pt-0 flex-grow flex flex-col">
+        <p className="text-sm text-muted-foreground line-clamp-2 flex-grow">
+          {cohort.description || "No description available"}
+        </p>
+        <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
+          <Users className="h-3 w-3" />
+          {cohort.profileIds?.length || 0} members •{" "}
+          {cohort.simulationIds?.length || 0} simulations
+        </div>
+      </CardContent>
     </Card>
   );
 
@@ -246,7 +254,6 @@ export default function Cohorts() {
           data={cohorts}
           profileOptions={profileOptions}
           simulationOptions={simulationOptions}
-          classOptions={classOptions}
           renderCohortCard={renderCohortCard}
         />
       )}

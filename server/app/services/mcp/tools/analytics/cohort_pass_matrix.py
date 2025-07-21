@@ -7,14 +7,8 @@ import uuid
 from typing import Any, Dict
 
 from app.db import get_session
-from app.models import (
-    Cohorts,
-    Profiles,
-    SimulationAttempts,
-    SimulationChatGrades,
-    SimulationChats,
-    Simulations,
-)
+from app.models import (Cohorts, Profiles, SimulationAttempts,
+                        SimulationChatGrades, SimulationChats, Simulations)
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select
 
@@ -55,14 +49,13 @@ def cohort_pass_matrix(cohort_id: str) -> Dict[str, Any]:
             if profile:
                 cohort_members.append(profile)
 
-        # Get simulations for this cohort
-        simulations_stmt = select(Simulations)
-        all_simulations = session.exec(simulations_stmt).all()
-
+        # Get simulations for this cohort using cohort.simulation_ids
         cohort_simulations = []
-        for sim in all_simulations:
-            if cohort_uuid in sim.cohort_ids:
-                cohort_simulations.append(sim)
+        if hasattr(cohort, "simulation_ids") and cohort.simulation_ids:
+            for simulation_id in cohort.simulation_ids:
+                sim = session.get(Simulations, simulation_id)
+                if sim:
+                    cohort_simulations.append(sim)
 
         # Build pass/fail matrix
         matrix = []

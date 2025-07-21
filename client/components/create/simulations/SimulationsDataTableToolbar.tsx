@@ -10,7 +10,6 @@ import { Simulation } from "@/types";
 
 export interface SimulationsDataTableToolbarProps {
   table: Table<Simulation>;
-  cohortOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
   rubricOptions: { value: string; label: string }[];
   timeLimitOptions: { value: string; label: string }[];
@@ -18,7 +17,6 @@ export interface SimulationsDataTableToolbarProps {
 
 export function SimulationsDataTableToolbar({
   table,
-  cohortOptions,
   scenarioOptions,
   rubricOptions,
   timeLimitOptions,
@@ -39,14 +37,6 @@ export function SimulationsDataTableToolbar({
             className="h-8 w-[150px] lg:w-[250px] pl-8"
           />
         </div>
-
-        {table.getColumn("cohorts") && (
-          <DataTableFacetedFilter
-            column={table.getColumn("cohorts")!}
-            title="Cohorts"
-            options={cohortOptions}
-          />
-        )}
 
         {table.getColumn("scenarios") && (
           <DataTableFacetedFilter

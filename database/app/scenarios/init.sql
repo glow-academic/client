@@ -29,6 +29,15 @@ CREATE TABLE scenario_times (
   time_of_day TIME     NOT NULL,
   description TEXT     NOT NULL
 );
+
+CREATE TABLE scenario_classes (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  name       TEXT        NOT NULL,
+  class_code TEXT        NOT NULL,
+  description TEXT     NOT NULL
+);
   
 CREATE TABLE scenarios (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -37,9 +46,9 @@ CREATE TABLE scenarios (
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
   agent_id UUID         NULL REFERENCES agents(id)  ON DELETE SET NULL DEFAULT NULL,
-  class_id   UUID        NULL REFERENCES classes(id) ON DELETE SET NULL DEFAULT NULL,
   crowdedness INTEGER     NULL DEFAULT NULL,
   intensity INTEGER     NULL DEFAULT NULL,
+  class_id   UUID        NULL REFERENCES scenario_classes(id) ON DELETE SET NULL DEFAULT NULL,
   location_id UUID        NULL REFERENCES scenario_locations(id) ON DELETE SET NULL DEFAULT NULL,
   deadline_id UUID        NULL REFERENCES scenario_deadlines(id) ON DELETE SET NULL DEFAULT NULL,
   time_id UUID        NULL REFERENCES scenario_times(id) ON DELETE SET NULL DEFAULT NULL, 
@@ -47,13 +56,23 @@ CREATE TABLE scenarios (
   default_scenario BOOLEAN     NOT NULL DEFAULT FALSE,
   practice_scenario BOOLEAN     NOT NULL DEFAULT FALSE,
   generated BOOLEAN     NOT NULL DEFAULT FALSE,
-  parent_id UUID        NULL DEFAULT NULL
+  parent_id UUID        NULL DEFAULT NULL,
+  active BOOLEAN     NOT NULL DEFAULT TRUE
 );
 
-  INSERT INTO scenario_locations (id, name, description) VALUES
-    ('11111111-1111-1111-1111-111111111111', 'Lawson', 'An open, collaborative space in the Lawson building with high foot traffic.'),
-    ('22222222-2222-2222-2222-222222222222', 'HAAS', 'A quiet, focused study environment in the lower level of the HAAS building.'),
-    ('33333333-3333-3333-3333-333333333333', 'DSAI', 'A specialized tech-focused lab environment in the basement of the Data Science/AI building.');
+INSERT INTO scenario_classes (id, name, class_code, description) VALUES
+    ('44444444-1111-1111-1111-111111111111', 'Problem Solving And Object-Oriented Programming', 'CS 180', 'Problem solving and algorithms, implementation of algorithms in a high level programming language, conditionals, the iterative approach and debugging, collections of data, searching and sorting, solving problems by decomposition, the object-oriented approach, subclasses of existing classes, handling exceptions that occur when the program is running, graphical user interfaces (GUIs), data stored in files, abstract data types, a glimpse at topics from other CS courses.'),
+    ('55555555-2222-2222-2222-222222222222', 'Foundations Of Computer Science', 'CS 182', 'Logic and proofs; sets, functions, relations, sequences and summations; number representations; counting; fundamentals of the analysis of algorithms; graphs and trees; proof techniques; recursion; Boolean logic; finite state machines; pushdown automata; computability and undecidability.'),
+    ('66666666-3333-3333-3333-333333333333', 'Data Structures And Algorithms', 'CS 251', 'Running time analysis of algorithms and their implementations, one-dimensional data structures, trees, heaps, additional sorting algorithms, binary search trees, hash tables, graphs, directed graphs, weighted graph algorithms, additional topics.'),
+    ('77777777-4444-4444-4444-444444444444', 'Introduction To The Analysis Of Algorithms', 'CS 381', 'Techniques for analyzing the time and space requirements of algorithms. Application of these techniques to sorting, searching, pattern-matching, graph problems, and other selected problems. Brief introduction to the intractable (NP-hard) problems.'),
+    ('88888888-5555-5555-5555-555555555555', 'Computer Networks', 'CS 422', 'Network protocols, socket programming, network security, distributed systems, and network performance analysis. Covers TCP/IP, HTTP, DNS, and other networking fundamentals.'),
+    ('99999999-6666-6666-6666-666666666666', 'Machine Learning', 'CS 373', 'Introduction to machine learning algorithms, neural networks, feature engineering, model evaluation, and practical applications. Covers supervised and unsupervised learning techniques.');
+
+
+INSERT INTO scenario_locations (id, name, description) VALUES
+  ('11111111-1111-1111-1111-111111111111', 'Lawson', 'An open, collaborative space in the Lawson building with high foot traffic.'),
+  ('22222222-2222-2222-2222-222222222222', 'HAAS', 'A quiet, focused study environment in the lower level of the HAAS building.'),
+  ('33333333-3333-3333-3333-333333333333', 'DSAI', 'A specialized tech-focused lab environment in the basement of the Data Science/AI building.');
 
 INSERT INTO scenario_deadlines (id, deadline, description) VALUES
   ('11111111-1111-1111-1111-111111111111', 'Few hours', 'This is a high-stress situation requiring immediate help'),
