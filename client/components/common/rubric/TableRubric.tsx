@@ -135,7 +135,7 @@ export default function TableRubric({ rubricId, simulationChatId }: TableRubricP
                             </TableHead>
                             {Array.from({ length: maxStandards }, (_, i) => (
                                 <TableHead key={i} className="bg-primary text-primary-foreground font-semibold text-xs px-2" style={{ width: `${(100 - 20) / maxStandards}%` }}>
-                                    {groupedStandards![0]?.standards[i]?.name}
+                                    {groupedStandards![0]?.standards[i]?.name} ({groupedStandards![0]?.standards[i]?.points})
                                 </TableHead>
                             ))}
                         </TableRow>

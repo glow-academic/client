@@ -6,31 +6,16 @@
  */
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { logError } from "@/utils/logger";
-import { createRubric } from "@/utils/mutations/rubrics/create-rubric";
 import { getRubric } from "@/utils/queries/rubrics/get-rubric";
 import { getStandardGroupsByRubric } from "@/utils/queries/standard_groups/get-standard-groups-by-rubric";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { BookOpen } from "lucide-react";
 import RubricDetails from "./RubricDetails";
 import RubricStandardGroup from "./RubricStandardGroup";
 
@@ -40,19 +25,22 @@ export interface RubricProps {
 
 export default function Rubric({ rubricId }: RubricProps) {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const isEditMode = !!rubricId;
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
+  const [openCards, setOpenCards] = useState<Record<number, boolean>>({});
+
+  // Create a default rubric for creation mode
+  const defaultRubric = {
+    id: "new",
     name: "",
     description: "",
-    points: 100,
-    passPoints: 70,
+    points: 0,
+    passPoints: 0,
     active: true,
-  });
-
-  const [openCards, setOpenCards] = useState<Record<number, boolean>>({});
+    defaultRubric: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
 
   // Queries
   const { data: rubric, isLoading: rubricLoading } = useQuery({
@@ -76,18 +64,9 @@ export default function Rubric({ rubricId }: RubricProps) {
 
   const isLoading = rubricLoading || standardGroupsLoading || standardsLoading;
 
-  // Initialize form values when data loads
-  useEffect(() => {
-    if (isEditMode && rubric) {
-      setFormData({
-        name: rubric.name || "",
-        description: rubric.description || "",
-        points: rubric.points || 100,
-        passPoints: rubric.passPoints || 70,
-        active: rubric.active ?? true,
-      });
-    }
-  }, [rubric, isEditMode]);
+  // Use default rubric for creation mode, actual rubric for edit mode
+  const currentRubric = isEditMode ? rubric || defaultRubric : defaultRubric;
+  const currentRubricId = isEditMode ? rubricId! : "new";
 
   // Initialize open cards when standard groups load
   useEffect(() => {
@@ -100,24 +79,6 @@ export default function Rubric({ rubricId }: RubricProps) {
     }
   }, [standardGroups]);
 
-  // Mutations
-  const createMutation = useMutation({
-    mutationFn: createRubric,
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["rubrics"] });
-      toast.success("Rubric created successfully!");
-      if (data?.id) {
-        router.push(`/create/rubrics/${data.id}`);
-      } else {
-        router.push("/create/rubrics");
-      }
-    },
-    onError: (error) => {
-      logError("Error creating rubric:", error);
-      toast.error("Failed to create rubric");
-    },
-  });
-
   // Helper functions
   const toggleCard = (index: number) => {
     setOpenCards((prev) => ({
@@ -127,54 +88,12 @@ export default function Rubric({ rubricId }: RubricProps) {
   };
 
   // Event handlers
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.name.trim()) {
-      toast.error("Rubric name is required");
-      return;
-    }
-
-    if (!formData.description.trim()) {
-      toast.error("Rubric description is required");
-      return;
-    }
-
-    if (formData.points <= 0) {
-      toast.error("Total points must be greater than 0");
-      return;
-    }
-
-    if (formData.passPoints < 0 || formData.passPoints > formData.points) {
-      toast.error("Pass points must be between 0 and total points");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      createMutation.mutate(formData);
-    } catch (error) {
-      logError("Error creating rubric:", error);
-      toast.error("Failed to create rubric");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleCancel = () => {
     router.push("/create/rubrics");
   };
 
-  const handleInputChange = (
-    field: keyof typeof formData,
-    value: string | number | boolean
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
   // Loading state
-  if (isLoading) {
+  if (isLoading && isEditMode) {
     return (
       <div className="space-y-6">
         <div>
@@ -218,127 +137,23 @@ export default function Rubric({ rubricId }: RubricProps) {
 
   return (
     <div className="space-y-6">
-      {/* Rubric Header - Use RubricDetails component in edit mode */}
-      {isEditMode && rubric ? (
-        <RubricDetails rubric={rubric} rubricId={rubricId!} />
-      ) : null}
+      {/* Rubric Header - Use RubricDetails component for both create and edit modes */}
+      <RubricDetails
+        rubric={currentRubric}
+        rubricId={currentRubricId}
+        isCreateMode={!isEditMode}
+      />
 
-      {/* Create Mode Form */}
-      {!isEditMode && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Rubric Details</CardTitle>
-            <CardDescription>
-              Define the basic information for this evaluation rubric.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Rubric Name *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
-                    placeholder="e.g., Teaching Assistant Evaluation Rubric"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description *</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) =>
-                      handleInputChange("description", e.target.value)
-                    }
-                    placeholder="Describe the purpose and scope of this evaluation rubric"
-                    rows={4}
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="points">Total Points *</Label>
-                    <Input
-                      id="points"
-                      type="number"
-                      min="1"
-                      value={formData.points}
-                      onChange={(e) =>
-                        handleInputChange(
-                          "points",
-                          parseInt(e.target.value) || 0
-                        )
-                      }
-                      placeholder="100"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="passPoints">Pass Points *</Label>
-                    <Input
-                      id="passPoints"
-                      type="number"
-                      min="0"
-                      max={formData.points}
-                      value={formData.passPoints}
-                      onChange={(e) =>
-                        handleInputChange(
-                          "passPoints",
-                          parseInt(e.target.value) || 0
-                        )
-                      }
-                      placeholder="70"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="active"
-                    checked={formData.active}
-                    onCheckedChange={(checked) =>
-                      handleInputChange("active", checked)
-                    }
-                  />
-                  <Label htmlFor="active">Active</Label>
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Creating..." : "Create Rubric"}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Standard Groups - Only show in edit mode */}
-      {isEditMode && (
-        <div className="space-y-6">
-          {/* Existing Standard Groups */}
-          {standardGroups?.map((group, index) => (
+      {/* Standard Groups - Show for both create and edit modes */}
+      <div className="space-y-6">
+        {/* Existing Standard Groups - Only show in edit mode */}
+        {isEditMode &&
+          standardGroups?.map((group, index) => (
             <RubricStandardGroup
               key={group.id}
               group={group}
               standards={standards || []}
-              rubricId={rubricId!}
+              rubricId={currentRubricId}
               index={index}
               isOpen={openCards[index] ?? false}
               onToggle={toggleCard}
@@ -346,70 +161,16 @@ export default function Rubric({ rubricId }: RubricProps) {
             />
           ))}
 
-          {/* Add New Standard Group */}
-          <RubricStandardGroup
-            rubricId={rubricId!}
-            index={standardGroups?.length || 0}
-            isOpen={true}
-            onToggle={() => {}} // No toggle needed for create mode
-            mode="create"
-            standards={[]} // Pass empty array for create mode
-          />
-        </div>
-      )}
-
-      {/* Information Card for Create Mode */}
-      {!isEditMode && (
-        <Card className="bg-muted/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
-              About Rubrics
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid gap-3 md:grid-cols-2">
-              <div>
-                <h4 className="font-semibold mb-2">What is a Rubric?</h4>
-                <ul className="text-sm space-y-1 text-muted-foreground">
-                  <li>• A scoring guide for evaluating performance</li>
-                  <li>• Defines criteria and performance levels</li>
-                  <li>• Provides consistent evaluation standards</li>
-                  <li>• Helps ensure fair and objective assessment</li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">Best Practices</h4>
-                <ul className="text-sm space-y-1 text-muted-foreground">
-                  <li>• Use clear, specific criteria</li>
-                  <li>• Define measurable performance levels</li>
-                  <li>• Align with learning objectives</li>
-                  <li>• Keep language simple and understandable</li>
-                </ul>
-              </div>
-            </div>
-
-            {formData.points > 0 && (
-              <div className="mt-4 p-3 bg-background rounded-lg border">
-                <h4 className="font-semibold mb-2">Current Configuration</h4>
-                <div className="flex gap-4">
-                  <Badge variant="outline">
-                    Total: {formData.points} points
-                  </Badge>
-                  <Badge variant="outline">
-                    Pass: {formData.passPoints} points (
-                    {Math.round((formData.passPoints / formData.points) * 100)}
-                    %)
-                  </Badge>
-                  <Badge variant={formData.active ? "default" : "secondary"}>
-                    {formData.active ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+        {/* Add New Standard Group - Show for both create and edit modes */}
+        <RubricStandardGroup
+          rubricId={currentRubricId}
+          index={isEditMode ? standardGroups?.length || 0 : 0}
+          isOpen={true}
+          onToggle={() => {}} // No toggle needed for create mode
+          mode="create"
+          standards={[]} // Pass empty array for create mode
+        />
+      </div>
     </div>
   );
 }

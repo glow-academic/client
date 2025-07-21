@@ -642,6 +642,11 @@ export default function RubricStandardGroup({
 
   // Function to update rubric points based on all standard groups
   const updateRubricPoints = async () => {
+    // Skip updating rubric points in creation mode
+    if (rubricId === "new") {
+      return;
+    }
+
     try {
       // Get all standard groups for this rubric
       const allStandardGroups = await queryClient.fetchQuery({

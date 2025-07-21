@@ -18,20 +18,23 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Rubric as RubricType } from "@/types";
 import { logError } from "@/utils/logger";
+import { createRubric } from "@/utils/mutations/rubrics/create-rubric";
 import { updateRubric } from "@/utils/mutations/rubrics/update-rubric";
 import { Edit } from "lucide-react";
 
 interface RubricDetailsProps {
   rubric: RubricType;
   rubricId: string;
+  isCreateMode?: boolean;
 }
 
 export default function RubricDetails({
   rubric,
   rubricId,
+  isCreateMode = false,
 }: RubricDetailsProps) {
   const queryClient = useQueryClient();
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(isCreateMode);
   const [formData, setFormData] = useState({
     name: rubric.name || "",
     description: rubric.description || "",
@@ -39,17 +42,39 @@ export default function RubricDetails({
   });
 
   const updateRubricMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<RubricType> }) =>
-      updateRubric(id, data),
-    onSuccess: () => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<RubricType>;
+    }) => {
+      if (isCreateMode) {
+        return await createRubric(data as Parameters<typeof createRubric>[0]);
+      } else {
+        return await updateRubric(id, data);
+      }
+    },
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["rubric", rubricId] });
       queryClient.invalidateQueries({ queryKey: ["rubrics"] });
-      toast.success("Rubric updated successfully");
-      setIsEditing(false);
+      if (isCreateMode && data && "id" in data) {
+        // Redirect to the newly created rubric
+        window.location.href = `/create/rubrics/${data.id}`;
+      } else {
+        toast.success(
+          isCreateMode
+            ? "Rubric created successfully"
+            : "Rubric updated successfully"
+        );
+        setIsEditing(false);
+      }
     },
     onError: (error) => {
       logError("Error updating rubric:", error);
-      toast.error("Failed to update rubric");
+      toast.error(
+        isCreateMode ? "Failed to create rubric" : "Failed to update rubric"
+      );
     },
   });
 
@@ -79,65 +104,65 @@ export default function RubricDetails({
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-1">
-            {isEditing ? (
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
-                    className="text-2xl font-bold"
-                    placeholder="Rubric Name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) =>
-                      handleInputChange("description", e.target.value)
-                    }
-                    placeholder="Rubric Description"
-                  />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="active"
-                    checked={formData.active}
-                    onCheckedChange={(checked) =>
-                      handleInputChange("active", checked)
-                    }
-                  />
-                  <Label htmlFor="active">Active</Label>
-                </div>
-                <div className="p-3 bg-muted/20 rounded-lg border">
-                  <h4 className="text-sm font-medium mb-2">
-                    Points Calculation
-                  </h4>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Points are automatically calculated from standard groups and
-                    cannot be edited directly.
-                  </p>
-                  <div className="flex gap-4">
-                    <Badge variant="outline">
-                      Total: {rubric.points} points
-                    </Badge>
-                    <Badge variant="outline">
-                      Pass: {rubric.passPoints} points
-                    </Badge>
-                  </div>
+        <div className="flex-1 flex flex-col gap-4">
+          {isEditing ? (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  className="text-2xl font-bold"
+                  placeholder="Rubric Name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) =>
+                    handleInputChange("description", e.target.value)
+                  }
+                  placeholder="Rubric Description"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="active"
+                  checked={formData.active}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("active", checked)
+                  }
+                />
+                <Label htmlFor="active">Active</Label>
+              </div>
+              <div className="p-3 bg-muted/20 rounded-lg border">
+                <h4 className="text-sm font-medium mb-2">Points Calculation</h4>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Points are automatically calculated from standard groups and
+                  cannot be edited directly.
+                </p>
+                <div className="flex gap-4">
+                  <Badge variant="outline">Total: {rubric.points} points</Badge>
+                  <Badge variant="outline">
+                    Pass: {rubric.passPoints} points
+                  </Badge>
                 </div>
               </div>
-            ) : (
-              <div>
-                <h1 className="text-2xl font-bold">{rubric.name}</h1>
-                <p className="text-muted-foreground mt-2">
-                  {rubric.description}
-                </p>
+            </div>
+          ) : (
+            <div>
+              <h1 className="text-2xl font-bold">
+                {isCreateMode ? "Create New Rubric" : rubric.name}
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                {isCreateMode
+                  ? "Define the basic information for this evaluation rubric."
+                  : rubric.description}
+              </p>
+              {!isCreateMode && (
                 <div className="flex gap-4 mt-2">
                   <Badge variant="outline">Total: {rubric.points} points</Badge>
                   <Badge variant="outline">
@@ -147,16 +172,18 @@ export default function RubricDetails({
                     {rubric.active ? "Active" : "Inactive"}
                   </Badge>
                 </div>
-              </div>
-            )}
-          </div>
-          <div className="flex gap-2">
+              )}
+            </div>
+          )}
+          <div className="flex gap-2 justify-end">
             {isEditing ? (
               <>
                 <Button variant="outline" onClick={handleCancel}>
                   Cancel
                 </Button>
-                <Button onClick={handleSave}>Update</Button>
+                <Button onClick={handleSave}>
+                  {isCreateMode ? "Create" : "Update"}
+                </Button>
               </>
             ) : (
               <Button
