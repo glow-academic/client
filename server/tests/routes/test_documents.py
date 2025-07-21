@@ -409,3 +409,20 @@ class TestDelete_Document:
         """Test delete_document error handling."""
         # TODO: Implement error test for delete_document
         assert False, "IMPLEMENT: Error test for delete_document"
+
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `documents_health_check`")
+class TestDocuments_Health_Check:
+    """Tests for documents_health_check endpoint."""
+
+    def test_documents_health_check_success(self, client):
+        """Test successful documents_health_check request."""
+        # TODO: Implement test for documents_health_check
+        assert False, "IMPLEMENT: Test for documents_health_check"
+
+    def test_documents_health_check_error(self, client):
+        """Test documents_health_check error handling."""
+        # TODO: Implement error test for documents_health_check
+        assert False, "IMPLEMENT: Error test for documents_health_check"
+

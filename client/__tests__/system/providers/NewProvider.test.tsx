@@ -1,63 +1,80 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { describe, it } from "vitest";
+import { describe, it } from 'vitest';
+import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import ConnectionStatusIndicator from "@/components/system/health/ConnectionStatusIndicator";
+import NewProvider from '@/components/system/providers/NewProvider';
 
-describe("ConnectionStatusIndicator", () => {
-  describe("basic render smoke-test", () => {
-    it("renders without crashing", async () => {
-      renderWithMocks(<ConnectionStatusIndicator />);
+describe('NewProvider', () => {
+  
 
+  describe('basic render smoke-test', () => {
+    it('renders without crashing', async () => {
+      
+      renderWithMocks(<NewProvider  />);
+      
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
     });
 
-    it.skip("should have correct accessibility attributes", () => {
+    
+
+    it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
+      
       // TODO add accessibility assertions
+
     });
   });
 
-  describe("Edge Cases", () => {
-    it.skip("should handle edge cases gracefully", () => {
+  
+
+  
+
+  
+
+  describe('Edge Cases', () => {
+    it.skip('should handle edge cases gracefully', () => {
       // TODO: Test edge cases and error scenarios
+      
       // TODO: edge-case assertions
+
     });
+
+    
   });
 });
 
 /*
- * Component Analysis for ConnectionStatusIndicator:
- * Path: management/system/ConnectionStatusIndicator.tsx
- *
+ * Component Analysis for NewProvider:
+ * Path: system/providers/NewProvider.tsx
+ * 
  * Features detected:
  * - Default export: true
  * - Named exports: None
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: useWebSocket
+ * - Uses hooks: None
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false
  * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
- *
+ * 
  * TODO: Implement the failing tests above with actual test logic
- *
+ * 
  * Example implementations:
- *
+ * 
  * Basic rendering:
- * render(<ConnectionStatusIndicator />);
+ * render(<NewProvider />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
- *
+ * 
  * Props testing:
  * const props = { ... };
- * render(<ConnectionStatusIndicator {...props} />);
+ * render(<NewProvider {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
- *
+ * 
  * User interaction:
  * const button = screen.getByRole('button');
  * await user.click(button);

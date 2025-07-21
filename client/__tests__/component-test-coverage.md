@@ -125,17 +125,17 @@
 | DepartmentEdit | management/departments/DepartmentEdit.tsx | DepartmentEdit.test.tsx | ✅ Implemented |
 | NewDepartment | management/departments/NewDepartment.tsx | NewDepartment.test.tsx | ✅ Implemented |
 | Feedback | management/feedback/Feedback.tsx | Feedback.test.tsx | ✅ Implemented |
-| ModelEdit | management/providers/ModelEdit.tsx | ModelEdit.test.tsx | ✅ Implemented |
-| NewModel | management/providers/NewModel.tsx | NewModel.test.tsx | ✅ Implemented |
-| NewProvider | management/providers/NewProvider.tsx | NewProvider.test.tsx | ✅ Implemented |
-| ProviderEdit | management/providers/ProviderEdit.tsx | ProviderEdit.test.tsx | ✅ Implemented |
-| Providers | management/providers/Providers.tsx | Providers.test.tsx | ✅ Implemented |
 | NewStaff | management/staff/NewStaff.tsx | NewStaff.test.tsx | ✅ Implemented |
 | Staff | management/staff/Staff.tsx | Staff.test.tsx | ✅ Implemented |
 | StaffEdit | management/staff/StaffEdit.tsx | StaffEdit.test.tsx | ✅ Implemented |
-| ConnectionStatusIndicator | management/system/ConnectionStatusIndicator.tsx | ConnectionStatusIndicator.test.tsx | ✅ Implemented |
-| Logs | management/system/Logs.tsx | Logs.test.tsx | ✅ Implemented |
 | Profile | profile/Profile.tsx | Profile.test.tsx | ✅ Implemented |
+| Health | system/health/Health.tsx | Health.test.tsx | ✅ Implemented |
+| Logs | system/logs/Logs.tsx | Logs.test.tsx | ✅ Implemented |
+| ModelEdit | system/providers/ModelEdit.tsx | ModelEdit.test.tsx | ✅ Implemented |
+| NewModel | system/providers/NewModel.tsx | NewModel.test.tsx | ✅ Implemented |
+| NewProvider | system/providers/NewProvider.tsx | NewProvider.test.tsx | ✅ Implemented |
+| ProviderEdit | system/providers/ProviderEdit.tsx | ProviderEdit.test.tsx | ✅ Implemented |
+| Providers | system/providers/Providers.tsx | Providers.test.tsx | ✅ Implemented |
 
 ## Directory Structure
 
@@ -293,21 +293,23 @@ __tests__/
 │   │   ├── NewDepartment.test.tsx
 │   ├── feedback/
 │   │   ├── Feedback.test.tsx
+│   ├── staff/
+│   │   ├── NewStaff.test.tsx
+│   │   ├── Staff.test.tsx
+│   │   ├── StaffEdit.test.tsx
+├── profile/
+│   ├── Profile.test.tsx
+├── system/
+│   ├── health/
+│   │   ├── Health.test.tsx
+│   ├── logs/
+│   │   ├── Logs.test.tsx
 │   ├── providers/
 │   │   ├── ModelEdit.test.tsx
 │   │   ├── NewModel.test.tsx
 │   │   ├── NewProvider.test.tsx
 │   │   ├── ProviderEdit.test.tsx
 │   │   ├── Providers.test.tsx
-│   ├── staff/
-│   │   ├── NewStaff.test.tsx
-│   │   ├── Staff.test.tsx
-│   │   ├── StaffEdit.test.tsx
-│   ├── system/
-│   │   ├── ConnectionStatusIndicator.test.tsx
-│   │   ├── Logs.test.tsx
-├── profile/
-│   ├── Profile.test.tsx
 
 ```
 
