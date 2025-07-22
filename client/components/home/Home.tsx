@@ -167,7 +167,7 @@ export default function Home() {
       if (!cohort.simulationIds) return [];
       return simulations.filter(
         (sim) =>
-          cohort.simulationIds.includes(sim.id) && !sim.defaultSimulation
+          cohort.simulationIds.includes(sim.id) && !sim.practiceSimulation
       );
     };
 
@@ -276,8 +276,8 @@ export default function Home() {
 
   const practiceSimulations = useMemo(() => {
     if (!simulations) return [];
-    // Simply filter for all simulations marked as 'defaultSimulation'
-    return simulations.filter((sim) => sim.defaultSimulation);
+    // Simply filter for all simulations marked as 'practiceSimulation'
+    return simulations.filter((sim) => sim.practiceSimulation);
   }, [simulations]);
 
   // Set up simulation-specific event listeners using global WebSocket
@@ -384,7 +384,13 @@ export default function Home() {
         setLoadingToastId(null);
       }
     },
-    [effectiveProfile, isConnected, emitStartSimulation, loadingToastId, activeProfile]
+    [
+      effectiveProfile,
+      isConnected,
+      emitStartSimulation,
+      loadingToastId,
+      activeProfile,
+    ]
   );
 
   // Memoize rubric data calculation to prevent unnecessary recalculations

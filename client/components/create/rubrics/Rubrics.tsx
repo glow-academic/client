@@ -39,7 +39,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Rubric, Simulation } from "@/types";
+import { useProfile } from "@/contexts/profile-context";
+import { Rubric } from "@/types";
 
 export default function Rubrics() {
   const router = useRouter();
@@ -51,10 +52,7 @@ export default function Rubrics() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
-  const [affectedSimulations, setAffectedSimulations] = useState<Simulation[]>(
-    []
-  );
-  const [isLoadingImpact, setIsLoadingImpact] = useState(false);
+  const { effectiveProfile } = useProfile();
 
   // Fetch rubrics data
   const { data: rubrics = [], refetch: refetchRubrics } = useQuery({
@@ -66,6 +64,19 @@ export default function Rubrics() {
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
   });
+
+  // Check if a rubric is being used by any simulations
+  const isRubricInUse = (rubricId: string) => {
+    return simulations.some((sim) => sim.rubricId === rubricId);
+  };
+
+  // Check if user can edit (admin/superadmin or rubric not in use)
+  const canEditRubric = (rubricId: string) => {
+    const isAdmin =
+      effectiveProfile?.role === "admin" ||
+      effectiveProfile?.role === "superadmin";
+    return isAdmin || !isRubricInUse(rubricId);
+  };
 
   const handleDelete = async () => {
     if (!deleteItem) return;
@@ -125,20 +136,8 @@ export default function Rubrics() {
   };
 
   const handleDeleteClick = (id: string, name: string) => {
-    const rubricToDelete = rubrics.find((r) => r.id === id);
-    if (rubricToDelete) {
-      setDeleteItem({ id, name });
-      setIsLoadingImpact(true);
-
-      // Calculate impact - find simulations that use this rubric
-      const affectedSims = simulations.filter(
-        (sim) => sim.rubricId === rubricToDelete.id
-      );
-
-      setAffectedSimulations(affectedSims);
-      setIsLoadingImpact(false);
-      setShowDeleteDialog(true);
-    }
+    setDeleteItem({ id, name });
+    setShowDeleteDialog(true);
   };
 
   const handleEdit = (id: string) => {
@@ -193,13 +192,15 @@ export default function Rubrics() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => handleEdit(rubric.id)}
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
+                  {canEditRubric(rubric.id) && (
+                    <Button
+                      variant="outline"
+                      onClick={() => handleEdit(rubric.id)}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                  )}
                   {canDuplicate(rubric) && (
                     <Button
                       variant="outline"
@@ -214,13 +215,15 @@ export default function Rubrics() {
                       Duplicate
                     </Button>
                   )}
-                  <Button
-                    variant="outline"
-                    onClick={() => handleDeleteClick(rubric.id, rubric.name)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </Button>
+                  {!isRubricInUse(rubric.id) && (
+                    <Button
+                      variant="outline"
+                      onClick={() => handleDeleteClick(rubric.id, rubric.name)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -255,57 +258,17 @@ export default function Rubrics() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Rubric</AlertDialogTitle>
             <AlertDialogDescription>
-              {isLoadingImpact ? (
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Loading impact analysis...
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p>
-                    Are you sure you want to delete the rubric "
-                    {deleteItem?.name}"? This action cannot be undone.
-                  </p>
-
-                  {affectedSimulations.length > 0 && (
-                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                      <div className="font-medium text-red-800 mb-2">
-                        ⚠️ Impact of deletion:
-                      </div>
-
-                      <div>
-                        <span className="font-medium text-red-700">
-                          {affectedSimulations.length} simulation
-                          {affectedSimulations.length !== 1 ? "s" : ""} will be
-                          affected:
-                        </span>
-                        <ul className="mt-1 list-disc list-inside text-sm text-red-600">
-                          {affectedSimulations.slice(0, 3).map((sim) => (
-                            <li key={sim.id}>{sim.title}</li>
-                          ))}
-                          {affectedSimulations.length > 3 && (
-                            <li>
-                              ...and {affectedSimulations.length - 3} more
-                            </li>
-                          )}
-                        </ul>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="mt-3 text-sm font-medium text-red-700">
-                    This action will permanently remove the rubric and cannot be
-                    undone.
-                  </div>
-                </div>
-              )}
+              <p>
+                Are you sure you want to delete the rubric "{deleteItem?.name}"?
+                This action cannot be undone.
+              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={isDeleting || isLoadingImpact}
+              disabled={isDeleting}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               {isDeleting ? "Deleting..." : "Delete"}

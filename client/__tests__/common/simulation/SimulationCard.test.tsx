@@ -19,6 +19,7 @@ const mockProps: SimulationCardProps = {
     scenarioIds: ["scenario-1"],
     rubricId: "rubric-1",
     defaultSimulation: false,
+    practiceSimulation: false,
   },
   type: 'default',
   onStartSimulation: vi.fn(),

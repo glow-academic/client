@@ -1075,7 +1075,9 @@ Focus on evaluating the TA''s performance in:
 - Their time management and session structure
 - Their ability to adapt to the student''s needs and learning style
 
-Your evaluation should be fair, consistent, and based solely on observable evidence in the conversation.', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
+Your evaluation should be fair, consistent, and based solely on observable evidence in the conversation.
+
+*Note: The TA has the role of ''user''. The AI student has the role of ''assistant''*', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Evaluate Agent
   INSERT INTO system_agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES

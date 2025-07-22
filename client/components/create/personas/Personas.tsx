@@ -29,7 +29,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Persona, Scenario } from "@/types";
+import { useProfile } from "@/contexts/profile-context";
+import { Persona } from "@/types";
 import { createPersona } from "@/utils/mutations/personas/create-persona";
 
 export default function Personas() {
@@ -41,8 +42,7 @@ export default function Personas() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
-  const [affectedScenarios, setAffectedScenarios] = useState<Scenario[]>([]);
-  const [isLoadingImpact, setIsLoadingImpact] = useState(false);
+  const { effectiveProfile } = useProfile();
 
   // Fetch personas data
   const { data: personas = [], refetch: refetchPersonas } = useQuery({
@@ -55,6 +55,19 @@ export default function Personas() {
     queryKey: ["scenarios"],
     queryFn: () => getAllScenarios(),
   });
+
+  // Check if a persona is being used by any scenarios
+  const isPersonaInUse = (personaId: string) => {
+    return scenarios.some((scenario) => scenario.personaId === personaId);
+  };
+
+  // Check if user can edit (admin/superadmin or persona not in use)
+  const canEditPersona = (personaId: string) => {
+    const isAdmin =
+      effectiveProfile?.role === "admin" ||
+      effectiveProfile?.role === "superadmin";
+    return isAdmin || !isPersonaInUse(personaId);
+  };
 
   const handleDelete = async () => {
     if (!deleteItem) return;
@@ -105,15 +118,6 @@ export default function Personas() {
 
   const handleDeleteClick = (id: string, name: string) => {
     setDeleteItem({ id, name });
-    setIsLoadingImpact(true);
-
-    // Calculate impact - find scenarios that use this persona
-    const affectedScens = scenarios.filter(
-      (scenario) => scenario.personaId === id
-    );
-
-    setAffectedScenarios(affectedScens);
-    setIsLoadingImpact(false);
     setShowDeleteDialog(true);
   };
 
@@ -167,22 +171,29 @@ export default function Personas() {
                 {isDuplicating === persona.id ? "..." : ""}
               </Button>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleEdit(persona.id)}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                handleDeleteClick(persona.id, persona.name || "Unnamed Persona")
-              }
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {canEditPersona(persona.id) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleEdit(persona.id)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            {!isPersonaInUse(persona.id) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  handleDeleteClick(
+                    persona.id,
+                    persona.name || "Unnamed Persona"
+                  )
+                }
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -218,59 +229,17 @@ export default function Personas() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Persona</AlertDialogTitle>
             <AlertDialogDescription>
-              {isLoadingImpact ? (
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Loading impact analysis...
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p>
-                    Are you sure you want to delete the persona "
-                    {deleteItem?.name}"? This action cannot be undone.
-                  </p>
-
-                  {affectedScenarios.length > 0 && (
-                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                      <div className="font-medium text-red-800 mb-2">
-                        ⚠️ Cannot delete persona:
-                      </div>
-
-                      <div>
-                        <span className="font-medium text-red-700">
-                          {affectedScenarios.length} scenario
-                          {affectedScenarios.length !== 1 ? "s" : ""} currently
-                          use this persona:
-                        </span>
-                        <ul className="mt-1 list-disc list-inside text-sm text-red-600">
-                          {affectedScenarios.slice(0, 3).map((scenario) => (
-                            <li key={scenario.id}>{scenario.name}</li>
-                          ))}
-                          {affectedScenarios.length > 3 && (
-                            <li>...and {affectedScenarios.length - 3} more</li>
-                          )}
-                        </ul>
-                      </div>
-                    </div>
-                  )}
-
-                  {affectedScenarios.length === 0 && (
-                    <div className="mt-3 text-sm font-medium text-red-700">
-                      This action will permanently remove the persona and cannot
-                      be undone.
-                    </div>
-                  )}
-                </div>
-              )}
+              <p>
+                Are you sure you want to delete the persona "{deleteItem?.name}
+                "? This action cannot be undone.
+              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={
-                isDeleting || isLoadingImpact || affectedScenarios.length > 0
-              }
+              disabled={isDeleting}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               {isDeleting ? "Deleting..." : "Delete"}

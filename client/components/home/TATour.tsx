@@ -57,7 +57,7 @@ export default function TATour() {
 
   // Get practice simulations (defaultSimulation = true)
   const practiceSimulations = useMemo(() => {
-    return simulations.filter((sim) => sim.defaultSimulation);
+    return simulations.filter((sim) => sim.practiceSimulation);
   }, [simulations]);
 
   // Handle step completion

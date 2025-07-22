@@ -14,6 +14,7 @@ const mockSimulation = {
   title: "Test Simulation",
   description: "A test simulation",
   defaultSimulation: false,
+  practiceSimulation: false,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   timeLimit: 10,

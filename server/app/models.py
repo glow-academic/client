@@ -304,6 +304,7 @@ class Simulations(_Base, table=True):
     scenario_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('scenario_ids', ARRAY(Uuid(as_uuid=True))))
     rubric_id: Mapped[uuid.UUID] = Field(sa_column=Column('rubric_id', Uuid(as_uuid=True)))
     default_simulation: bool = Field(sa_column=Column('default_simulation', Boolean, default=False))
+    practice_simulation: bool = Field(sa_column=Column('practice_simulation', Boolean, default=False))
     time_limit: Optional[int] = Field(default=None, sa_column=Column('time_limit', Integer))
 
     rubric: Optional['Rubrics'] = Relationship(back_populates='simulations')

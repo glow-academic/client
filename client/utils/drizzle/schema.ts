@@ -348,7 +348,8 @@ export const simulations = pgTable("simulations", {
 	active: boolean().default(true).notNull(),
 	scenarioIds: uuid("scenario_ids").array().default(["RAY"]).notNull(),
 	rubricId: uuid("rubric_id").notNull(),
-	defaultSimulation: boolean("default_simulation").default(false).notNull()}, (table) => [
+	defaultSimulation: boolean("default_simulation").default(false).notNull(),
+	practiceSimulation: boolean("practice_simulation").default(false).notNull()}, (table) => [
 	foreignKey({
 			columns: [table.rubricId],
 			foreignColumns: [rubrics.id],

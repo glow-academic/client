@@ -32,8 +32,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useProfile } from "@/contexts/profile-context";
 import { useSimulationColumns } from "@/hooks/use-simulation-columns";
-import { Cohort, Scenario, Simulation } from "@/types";
+import { Simulation } from "@/types";
 import { SimulationsDataTable } from "./SimulationsDataTable";
 
 export function Simulations() {
@@ -46,9 +47,7 @@ export function Simulations() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
-  const [affectedScenarios, setAffectedScenarios] = useState<Scenario[]>([]);
-  const [affectedCohorts, setAffectedCohorts] = useState<Cohort[]>([]);
-  const [isLoadingImpact, setIsLoadingImpact] = useState(false);
+  const { effectiveProfile } = useProfile();
 
   // Fetch all required data
   const { data: simulations = [], refetch: refetchSimulations } = useQuery({
@@ -70,6 +69,22 @@ export function Simulations() {
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
   });
+
+  // Check if a simulation is being used by any cohorts
+  const isSimulationInUse = (simulationId: string) => {
+    return cohorts.some(
+      (cohort) =>
+        cohort.simulationIds && cohort.simulationIds.includes(simulationId)
+    );
+  };
+
+  // Check if user can edit (admin/superadmin or simulation not in use)
+  const canEditSimulation = (simulationId: string) => {
+    const isAdmin =
+      effectiveProfile?.role === "admin" ||
+      effectiveProfile?.role === "superadmin";
+    return isAdmin || !isSimulationInUse(simulationId);
+  };
 
   // Create table columns
   const { columns } = useSimulationColumns({
@@ -125,30 +140,8 @@ export function Simulations() {
   };
 
   const handleDeleteClick = (id: string, name: string) => {
-    const simulationToDelete = simulations.find((s) => s.id === id);
-    if (simulationToDelete) {
-      setDeleteItem({ id, name });
-      setIsLoadingImpact(true);
-
-      // Calculate impact on scenarios
-      const affectedScenariosList = scenarios.filter(
-        (scenario) =>
-          simulationToDelete.scenarioIds &&
-          simulationToDelete.scenarioIds.includes(scenario.id)
-      );
-
-      // Calculate impact on cohorts
-      const affectedCohortsList = cohorts.filter(
-        (cohort) =>
-          cohort.simulationIds &&
-          cohort.simulationIds.includes(simulationToDelete.id)
-      );
-
-      setAffectedScenarios(affectedScenariosList);
-      setAffectedCohorts(affectedCohortsList);
-      setIsLoadingImpact(false);
-      setShowDeleteDialog(true);
-    }
+    setDeleteItem({ id, name });
+    setShowDeleteDialog(true);
   };
 
   const handleEdit = (id: string) => {
@@ -156,7 +149,7 @@ export function Simulations() {
   };
 
   const handleDuplicate = async (simulation: Simulation) => {
-    // Only allow duplicating default simulations (reverse logic from cohorts)
+    // Only allow duplicating default simulations
     if (!simulation.defaultSimulation) {
       toast.error("This simulation cannot be duplicated");
       return;
@@ -239,24 +232,30 @@ export function Simulations() {
                 )}
               </Button>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              data-testid={`edit-${simulation.id}`}
-              onClick={() => handleEdit(simulation.id)}
-              aria-label={`Edit ${simulation.title}`}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              data-testid={`delete-${simulation.id}`}
-              onClick={() => handleDeleteClick(simulation.id, simulation.title)}
-              aria-label={`Delete ${simulation.title}`}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {canEditSimulation(simulation.id) && (
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid={`edit-${simulation.id}`}
+                onClick={() => handleEdit(simulation.id)}
+                aria-label={`Edit ${simulation.title}`}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            {!isSimulationInUse(simulation.id) && (
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid={`delete-${simulation.id}`}
+                onClick={() =>
+                  handleDeleteClick(simulation.id, simulation.title)
+                }
+                aria-label={`Delete ${simulation.title}`}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -286,78 +285,17 @@ export function Simulations() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Simulation</AlertDialogTitle>
             <AlertDialogDescription>
-              {isLoadingImpact ? (
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Loading impact analysis...
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p>
-                    Are you sure you want to delete the simulation "
-                    {deleteItem?.name}"? This action cannot be undone.
-                  </p>
-
-                  {(affectedScenarios.length > 0 ||
-                    affectedCohorts.length > 0) && (
-                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                      <div className="font-medium text-red-800 mb-2">
-                        ⚠️ Impact of deletion:
-                      </div>
-
-                      {affectedCohorts.length > 0 && (
-                        <div className="mb-2">
-                          <span className="font-medium text-red-700">
-                            {affectedCohorts.length} cohort
-                            {affectedCohorts.length !== 1 ? "s" : ""} will be
-                            affected:
-                          </span>
-                          <ul className="mt-1 list-disc list-inside text-sm text-red-600">
-                            {affectedCohorts.slice(0, 3).map((cohort) => (
-                              <li key={cohort.id}>{cohort.title}</li>
-                            ))}
-                            {affectedCohorts.length > 3 && (
-                              <li>...and {affectedCohorts.length - 3} more</li>
-                            )}
-                          </ul>
-                        </div>
-                      )}
-
-                      {affectedScenarios.length > 0 && (
-                        <div>
-                          <span className="font-medium text-red-700">
-                            {affectedScenarios.length} scenario
-                            {affectedScenarios.length !== 1 ? "s" : ""} are used
-                            in this simulation:
-                          </span>
-                          <ul className="mt-1 list-disc list-inside text-sm text-red-600">
-                            {affectedScenarios.slice(0, 3).map((scenario) => (
-                              <li key={scenario.id}>{scenario.name}</li>
-                            ))}
-                            {affectedScenarios.length > 3 && (
-                              <li>
-                                ...and {affectedScenarios.length - 3} more
-                              </li>
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="mt-3 text-sm font-medium text-red-700">
-                    This action will permanently remove the simulation and
-                    cannot be undone.
-                  </div>
-                </div>
-              )}
+              <p>
+                Are you sure you want to delete the simulation "
+                {deleteItem?.name}"? This action cannot be undone.
+              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={isDeleting || isLoadingImpact}
+              disabled={isDeleting}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               {isDeleting ? "Deleting..." : "Delete"}

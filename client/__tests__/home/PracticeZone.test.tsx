@@ -15,6 +15,7 @@ describe("PracticeZone", () => {
       id: "1",
       title: "Practice Simulation 1",
       defaultSimulation: true,
+      practiceSimulation: true,
       // Add other required simulation fields
       createdAt: "",
       updatedAt: "",
@@ -28,6 +29,7 @@ describe("PracticeZone", () => {
       id: "2",
       title: "Practice Simulation 2",
       defaultSimulation: true,
+      practiceSimulation: true,
       // Add other required simulation fields
       createdAt: "",
       updatedAt: "",

@@ -26,7 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useScenarioColumns } from "@/hooks/use-scenario-columns";
-import { Scenario, Simulation } from "@/types";
+import { Scenario } from "@/types";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
 import { deleteScenario } from "@/utils/mutations/scenarios/delete-scenario";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
@@ -42,10 +42,6 @@ export function Scenarios() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
-  const [affectedSimulations, setAffectedSimulations] = useState<Simulation[]>(
-    []
-  );
-  const [isLoadingImpact, setIsLoadingImpact] = useState(false);
 
   // Fetch scenarios data
   const { data: scenarios = [], refetch: refetchScenarios } = useQuery({
@@ -57,6 +53,18 @@ export function Scenarios() {
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
   });
+
+  // Check if a scenario is being used by any simulations
+  const isScenarioInUse = (scenarioId: string) => {
+    return simulations.some(
+      (sim) => sim.scenarioIds && sim.scenarioIds.includes(scenarioId)
+    );
+  };
+
+  // Check if user can edit (fully immutable)
+  const canEditScenario = (scenarioId: string) => {
+    return !isScenarioInUse(scenarioId);
+  };
 
   // Get table columns and filter options
   const {
@@ -90,8 +98,8 @@ export function Scenarios() {
   };
 
   const handleDuplicate = async (scenario: Scenario) => {
-    // Only allow duplicating general scenarios
-    if (scenario.defaultScenario || scenario.generated === true) {
+    // Only allow duplicating non-generated scenarios
+    if (scenario.generated === true) {
       toast.error("This scenario cannot be duplicated");
       return;
     }
@@ -123,15 +131,6 @@ export function Scenarios() {
 
   const handleDeleteClick = (id: string, name: string) => {
     setDeleteItem({ id, name });
-    setIsLoadingImpact(true);
-
-    // Calculate impact - find simulations that use this scenario
-    const affectedSims = simulations.filter(
-      (sim) => sim.scenarioIds && sim.scenarioIds.includes(id)
-    );
-
-    setAffectedSimulations(affectedSims);
-    setIsLoadingImpact(false);
     setShowDeleteDialog(true);
   };
 
@@ -144,8 +143,8 @@ export function Scenarios() {
   };
 
   const canDuplicate = (scenario: Scenario) => {
-    // Can only duplicate general scenarios (not default or generated)
-    return !scenario.defaultScenario && scenario.generated !== true;
+    // Can duplicate general scenarios and default scenarios (but not generated ones)
+    return scenario.generated !== true;
   };
 
   const renderScenarioCard = (scenario: Scenario) => (
@@ -189,25 +188,29 @@ export function Scenarios() {
                 {isDuplicating === scenario.id ? "..." : ""}
               </Button>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleEdit(scenario.id)}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                handleDeleteClick(
-                  scenario.id,
-                  scenario.name || "Unnamed Scenario"
-                )
-              }
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {canEditScenario(scenario.id) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleEdit(scenario.id)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            {!isScenarioInUse(scenario.id) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  handleDeleteClick(
+                    scenario.id,
+                    scenario.name || "Unnamed Scenario"
+                  )
+                }
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -257,57 +260,17 @@ export function Scenarios() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Scenario</AlertDialogTitle>
             <AlertDialogDescription>
-              {isLoadingImpact ? (
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Loading impact analysis...
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p>
-                    Are you sure you want to delete the scenario "
-                    {deleteItem?.name}"? This action cannot be undone.
-                  </p>
-
-                  {affectedSimulations.length > 0 && (
-                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                      <div className="font-medium text-red-800 mb-2">
-                        ⚠️ Impact of deletion:
-                      </div>
-
-                      <div>
-                        <span className="font-medium text-red-700">
-                          {affectedSimulations.length} simulation
-                          {affectedSimulations.length !== 1 ? "s" : ""}{" "}
-                          currently use this scenario:
-                        </span>
-                        <ul className="mt-1 list-disc list-inside text-sm text-red-600">
-                          {affectedSimulations.slice(0, 3).map((sim) => (
-                            <li key={sim.id}>{sim.title}</li>
-                          ))}
-                          {affectedSimulations.length > 3 && (
-                            <li>
-                              ...and {affectedSimulations.length - 3} more
-                            </li>
-                          )}
-                        </ul>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="mt-3 text-sm font-medium text-red-700">
-                    This action will permanently remove the scenario and cannot
-                    be undone.
-                  </div>
-                </div>
-              )}
+              <p>
+                Are you sure you want to delete the scenario "{deleteItem?.name}
+                "? This action cannot be undone.
+              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={isDeleting || isLoadingImpact}
+              disabled={isDeleting}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               {isDeleting ? "Deleting..." : "Delete"}

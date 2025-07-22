@@ -1,0 +1,1 @@
+ALTER TABLE "simulations" ADD COLUMN "practice_simulation" boolean DEFAULT false NOT NULL;
