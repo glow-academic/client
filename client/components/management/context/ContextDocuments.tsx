@@ -48,12 +48,10 @@ import {
   Grid3X3,
   Image as ImageIcon,
   List,
-  Save,
   Search,
   Trash2,
   Upload,
   UploadCloud,
-  X,
 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 
@@ -103,7 +101,6 @@ export default function ContextDocuments() {
     id: string;
     name: string;
   } | null>(null);
-
   // Upload state
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -290,13 +287,6 @@ export default function ContextDocuments() {
     }
   };
 
-  const handleCancel = () => {
-    setDocuments([...originalDocuments]);
-    setDocumentsToDelete([]);
-    setHasChanges(false);
-    toast.info("Changes cancelled");
-  };
-
   const getDocumentTypeInfo = (type: string) => {
     const typeMap: Record<
       string,
@@ -391,39 +381,6 @@ export default function ContextDocuments() {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Scenario Documents</h1>
-          <p className="text-muted-foreground">
-            Manage documents for scenario contexts
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => router.push("/management/context")}
-          >
-            <X className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          {hasChanges && (
-            <>
-              <Button
-                variant="outline"
-                onClick={handleCancel}
-                disabled={isSaving}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleSave} disabled={isSaving}>
-                <Save className="h-4 w-4 mr-2" />
-                {isSaving ? "Saving..." : "Save Changes"}
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
-
       {/* Controls Bar */}
       <div className="flex items-center justify-between gap-4">
         {/* Left side - Search and Filters */}
@@ -690,6 +647,21 @@ export default function ContextDocuments() {
             )}
           </div>
         )}
+      </div>
+
+      <div className="flex items-center justify-end">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => router.push("/management/context")}
+            disabled={isSaving}
+          >
+            Back
+          </Button>
+          <Button onClick={handleSave} disabled={isSaving || !hasChanges}>
+            {isSaving ? "Updating..." : "Update Documents"}
+          </Button>
+        </div>
       </div>
 
       {/* Document Preview Dialog */}

@@ -47,21 +47,16 @@ import { ScenarioPicker } from "./ScenarioPicker";
 import { ScenarioSlider } from "./ScenarioSlider";
 
 // Types and API functions
-import {
-  Agent,
-  Document,
-  Scenario as ScenarioType,
-  Simulation,
-} from "@/types";
+import { Agent, Document, Scenario as ScenarioType, Simulation } from "@/types";
 import { newScenario } from "@/utils/api/scenarios/new-scenario";
 import { logError } from "@/utils/logger";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
 import { updateScenario } from "@/utils/mutations/scenarios/update-scenario";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
-import { getAllScenarioLocations } from "@/utils/queries/scenario_locations/get-all-scenario-locations";
 import { getAllScenarioClasses } from "@/utils/queries/scenario_classes/get-all-scenario-classes";
 import { getAllScenarioDeadlines } from "@/utils/queries/scenario_deadlines/get-all-scenario-deadlines";
+import { getAllScenarioLocations } from "@/utils/queries/scenario_locations/get-all-scenario-locations";
 import { getAllScenarioTimes } from "@/utils/queries/scenario_times/get-all-scenario-times";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
@@ -129,7 +124,7 @@ export default function Scenario({
     enabled: isEditMode, // Only fetch when in edit mode
   });
 
-  const { data: _scenarioClasses = [] } = useQuery({
+  const { data: scenarioClasses = [] } = useQuery({
     queryKey: ["scenarioClasses"],
     queryFn: () => getAllScenarioClasses(),
   });
@@ -210,18 +205,12 @@ export default function Scenario({
   // Calculate step status
   const getStepStatus = (stepId: string): StepStatus => {
     switch (stepId) {
-      case "class":
-        return formData.classId ? "completed" : "active";
+      case "agent":
+        return formData.agentId ? "completed" : "active";
       case "documents":
-        return !formData.classId
+        return !formData.documentIds
           ? "pending"
           : formData.documentIds && formData.documentIds.length > 0
-            ? "completed"
-            : "active";
-      case "agent":
-        return !formData.classId
-          ? "pending"
-          : formData.agentId
             ? "completed"
             : "active";
       case "context":
@@ -233,7 +222,10 @@ export default function Scenario({
       case "environment":
         return !formData.agentId
           ? "pending"
-          : formData.locationId || formData.timeId || formData.deadlineId
+          : formData.locationId ||
+              formData.timeId ||
+              formData.deadlineId ||
+              formData.classId
             ? "completed"
             : "active";
       case "content":
@@ -245,10 +237,10 @@ export default function Scenario({
 
   const steps: Step[] = [
     {
-      id: "class",
-      title: "Select Class",
-      description: "Choose the class this scenario will be used in",
-      status: getStepStatus("class"),
+      id: "agent",
+      title: "Select Agent Type",
+      description: "Choose the type of AI agent for this scenario",
+      status: getStepStatus("agent"),
     },
     {
       id: "documents",
@@ -256,12 +248,6 @@ export default function Scenario({
       description: "Select relevant documents for this scenario",
       status: getStepStatus("documents"),
       optional: true,
-    },
-    {
-      id: "agent",
-      title: "Select Agent Type",
-      description: "Choose the type of AI agent for this scenario",
-      status: getStepStatus("agent"),
     },
     {
       id: "context",
@@ -286,14 +272,13 @@ export default function Scenario({
     },
   ];
 
-  const documentModels: Model[] = documents
-    .map((doc: Document) => ({
-      id: doc.id,
-      name: doc.name,
-      description: `${doc.type} document`,
-      type: "Documents" as const,
-      strengths: doc.mimeType,
-    }));
+  const documentModels: Model[] = documents.map((doc: Document) => ({
+    id: doc.id,
+    name: doc.name,
+    description: `${doc.type} document`,
+    type: "Documents" as const,
+    strengths: doc.mimeType,
+  }));
 
   const agentModels: Model[] = agents
     .filter(
@@ -430,6 +415,64 @@ export default function Scenario({
   return (
     <div className="w-full p-6 space-y-8">
       <div className="space-y-6">
+        {/* Step 1: Agent Selection */}
+        <Card
+          className={`transition-all ${!isEditMode && getStepStatus("agent") === "active" ? "ring-2 ring-primary" : ""} ${
+            !isEditMode && getStepStatus("agent") === "pending"
+              ? "opacity-50"
+              : ""
+          }`}
+        >
+          <CardHeader className="flex flex-row items-center space-y-0 pb-4">
+            <div className="flex items-center space-x-3">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  getStepStatus("agent") === "completed"
+                    ? "bg-green-500 text-white"
+                    : getStepStatus("agent") === "active"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                }`}
+              >
+                {getStepStatus("agent") === "completed" ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  "1"
+                )}
+              </div>
+              <div>
+                <CardTitle className="text-lg">
+                  {steps[0]?.title || ""}
+                </CardTitle>
+                <CardDescription>{steps[0]?.description || ""}</CardDescription>
+              </div>
+            </div>
+            {getStepStatus("agent") === "completed" && (
+              <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto" />
+            )}
+          </CardHeader>
+          <CardContent>
+            <ScenarioPicker
+              models={agentModels}
+              types={["Agents"]}
+              label=""
+              placeholder="Select an agent..."
+              description="Choose the AI agent that will interact with students in this scenario."
+              onSelect={(model) => handleInputChange("agentId", model.id)}
+              selectedModel={
+                selectedAgent
+                  ? {
+                      id: selectedAgent.id,
+                      name: selectedAgent.name,
+                      description: selectedAgent.description,
+                      type: "Agents" as const,
+                    }
+                  : undefined
+              }
+            />
+          </CardContent>
+        </Card>
+
         <Card
           className={`transition-all ${!isEditMode && getStepStatus("documents") === "active" ? "ring-2 ring-primary" : ""} ${
             !isEditMode && getStepStatus("documents") === "pending"
@@ -494,64 +537,6 @@ export default function Scenario({
           </CardContent>
         </Card>
 
-        {/* Step 3: Agent Selection */}
-        <Card
-          className={`transition-all ${!isEditMode && getStepStatus("agent") === "active" ? "ring-2 ring-primary" : ""} ${
-            !isEditMode && getStepStatus("agent") === "pending"
-              ? "opacity-50"
-              : ""
-          }`}
-        >
-          <CardHeader className="flex flex-row items-center space-y-0 pb-4">
-            <div className="flex items-center space-x-3">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  getStepStatus("agent") === "completed"
-                    ? "bg-green-500 text-white"
-                    : getStepStatus("agent") === "active"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                }`}
-              >
-                {getStepStatus("agent") === "completed" ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  "3"
-                )}
-              </div>
-              <div>
-                <CardTitle className="text-lg">
-                  {steps[2]?.title || ""}
-                </CardTitle>
-                <CardDescription>{steps[2]?.description || ""}</CardDescription>
-              </div>
-            </div>
-            {getStepStatus("agent") === "completed" && (
-              <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto" />
-            )}
-          </CardHeader>
-          <CardContent>
-            <ScenarioPicker
-              models={agentModels}
-              types={["Agents"]}
-              label=""
-              placeholder="Select an agent..."
-              description="Choose the AI agent that will interact with students in this scenario."
-              onSelect={(model) => handleInputChange("agentId", model.id)}
-              selectedModel={
-                selectedAgent
-                  ? {
-                      id: selectedAgent.id,
-                      name: selectedAgent.name,
-                      description: selectedAgent.description,
-                      type: "Agents" as const,
-                    }
-                  : undefined
-              }
-            />
-          </CardContent>
-        </Card>
-
         {/* Step 4: Context Parameters */}
         <Card
           className={`transition-all ${!isEditMode && getStepStatus("context") === "active" ? "ring-2 ring-primary" : ""} ${
@@ -574,19 +559,19 @@ export default function Scenario({
                 {getStepStatus("context") === "completed" ? (
                   <Check className="w-4 h-4" />
                 ) : (
-                  "4"
+                  "3"
                 )}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <CardTitle className="text-lg">
-                    {steps[3]?.title || ""}
+                    {steps[2]?.title || ""}
                   </CardTitle>
                   <Badge variant="secondary" className="text-xs">
                     Optional
                   </Badge>
                 </div>
-                <CardDescription>{steps[3]?.description || ""}</CardDescription>
+                <CardDescription>{steps[2]?.description || ""}</CardDescription>
               </div>
             </div>
             {getStepStatus("context") === "completed" && (
@@ -682,26 +667,53 @@ export default function Scenario({
                 {getStepStatus("environment") === "completed" ? (
                   <Check className="w-4 h-4" />
                 ) : (
-                  "5"
+                  "4"
                 )}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <CardTitle className="text-lg">
-                    {steps[4]?.title || ""}
+                    {steps[3]?.title || ""}
                   </CardTitle>
                   <Badge variant="secondary" className="text-xs">
                     Optional
                   </Badge>
                 </div>
-                <CardDescription>{steps[4]?.description || ""}</CardDescription>
+                <CardDescription>{steps[3]?.description || ""}</CardDescription>
               </div>
             </div>
             {getStepStatus("environment") === "completed" && (
               <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto" />
             )}
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {/* Class */}
+            <div className="space-y-2">
+              <Label>Class</Label>
+              <Select
+                value={formData.classId || "none"}
+                onValueChange={(value) =>
+                  handleInputChange(
+                    "classId",
+                    value === "none" ? null : value
+                  )
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select class" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No preference</SelectItem>
+                  {scenarioClasses.map((scenarioClass) => (
+                    <SelectItem key={scenarioClass.id} value={scenarioClass.id}>
+                      {scenarioClass.classCode}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+
             {/* Location */}
             <div className="space-y-2">
               <Label>Location</Label>
@@ -744,7 +756,12 @@ export default function Scenario({
                   <SelectItem value="none">No preference</SelectItem>
                   {scenarioTimes.map((time) => (
                     <SelectItem key={time.id} value={time.id}>
-                      {time.description}
+                      {new Date(
+                        `1970-01-01T${time.timeOfDay}`
+                      ).toLocaleTimeString([], {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -770,7 +787,7 @@ export default function Scenario({
                   <SelectItem value="none">No preference</SelectItem>
                   {scenarioDeadlines.map((deadline) => (
                     <SelectItem key={deadline.id} value={deadline.id}>
-                      {deadline.description}
+                      {deadline.deadline}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -801,14 +818,14 @@ export default function Scenario({
                 {getStepStatus("content") === "completed" ? (
                   <Check className="w-4 h-4" />
                 ) : (
-                  "6"
+                  "5"
                 )}
               </div>
               <div className="flex-1">
                 <CardTitle className="text-lg">
-                  {steps[5]?.title || ""}
+                  {steps[4]?.title || ""}
                 </CardTitle>
-                <CardDescription>{steps[5]?.description || ""}</CardDescription>
+                <CardDescription>{steps[4]?.description || ""}</CardDescription>
               </div>
             </div>
             <div className="flex items-center gap-2">
