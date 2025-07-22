@@ -16,7 +16,6 @@ import { useCohortColumns } from "@/hooks/use-cohort-columns";
 import { createCohort } from "@/utils/mutations/cohorts/create-cohort";
 import { deleteCohort } from "@/utils/mutations/cohorts/delete-cohort";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { CohortsDataTable } from "./CohortsDataTable";
 
 import {
@@ -32,7 +31,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Cohort, Simulation } from "@/types";
+import { useProfile } from "@/contexts/profile-context";
+import { Cohort } from "@/types";
 
 export default function Cohorts() {
   const router = useRouter();
@@ -44,11 +44,7 @@ export default function Cohorts() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
-  const [affectedSimulations, setAffectedSimulations] = useState<Simulation[]>(
-    []
-  );
-  const [memberCount, setMemberCount] = useState(0);
-  const [isLoadingImpact, setIsLoadingImpact] = useState(false);
+  const { effectiveProfile } = useProfile();
 
   // Fetch cohorts data
   const { data: cohorts = [], refetch: refetchCohorts } = useQuery({
@@ -56,10 +52,22 @@ export default function Cohorts() {
     queryFn: () => getAllCohorts(),
   });
 
-  const { data: simulations = [] } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
+  // Check if a cohort is being used (has members)
+  const isCohortInUse = (cohortId: string) => {
+    const cohort = cohorts.find((c) => c.id === cohortId);
+    if (!cohort) return false;
+
+    // Check if cohort has members
+    return cohort.profileIds && cohort.profileIds.length > 0;
+  };
+
+  // Check if user can edit (admin/superadmin or cohort not in use)
+  const canEditCohort = (cohortId: string) => {
+    const isAdmin =
+      effectiveProfile?.role === "admin" ||
+      effectiveProfile?.role === "superadmin";
+    return isAdmin || !isCohortInUse(cohortId);
+  };
 
   // Get table columns and filter options
   const { columns, profileOptions, simulationOptions } = useCohortColumns();
@@ -122,24 +130,8 @@ export default function Cohorts() {
   };
 
   const handleDeleteClick = (id: string, name: string) => {
-    const cohortToDelete = cohorts.find((c) => c.id === id);
-    if (cohortToDelete) {
-      setDeleteItem({ id, name });
-      setIsLoadingImpact(true);
-
-      // Calculate impact
-      const affectedSims = simulations.filter(
-        (sim) =>
-          cohortToDelete.simulationIds &&
-          cohortToDelete.simulationIds.some((p) => sim.id === p)
-      );
-      const memberCnt = cohortToDelete.profileIds?.length || 0;
-
-      setAffectedSimulations(affectedSims);
-      setMemberCount(memberCnt);
-      setIsLoadingImpact(false);
-      setShowDeleteDialog(true);
-    }
+    setDeleteItem({ id, name });
+    setShowDeleteDialog(true);
   };
 
   const handleEdit = (id: string) => {
@@ -192,24 +184,28 @@ export default function Cohorts() {
                 )}
               </Button>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              data-testid={`edit-${cohort.id}`}
-              onClick={() => handleEdit(cohort.id)}
-              aria-label={`Edit ${cohort.title}`}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              data-testid={`delete-${cohort.id}`}
-              onClick={() => handleDeleteClick(cohort.id, cohort.title)}
-              aria-label={`Delete ${cohort.title}`}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {canEditCohort(cohort.id) && (
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid={`edit-${cohort.id}`}
+                onClick={() => handleEdit(cohort.id)}
+                aria-label={`Edit ${cohort.title}`}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            {!isCohortInUse(cohort.id) && (
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid={`delete-${cohort.id}`}
+                onClick={() => handleDeleteClick(cohort.id, cohort.title)}
+                aria-label={`Delete ${cohort.title}`}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -264,68 +260,17 @@ export default function Cohorts() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Cohort</AlertDialogTitle>
             <AlertDialogDescription>
-              {isLoadingImpact ? (
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Loading impact analysis...
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p>
-                    Are you sure you want to delete the cohort "
-                    {deleteItem?.name}"? This action cannot be undone.
-                  </p>
-
-                  {(memberCount > 0 || affectedSimulations.length > 0) && (
-                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                      <div className="font-medium text-red-800 mb-2">
-                        ⚠️ Impact of deletion:
-                      </div>
-
-                      {memberCount > 0 && (
-                        <div className="mb-2">
-                          <span className="font-medium text-red-700">
-                            {memberCount} member{memberCount !== 1 ? "s" : ""}{" "}
-                            will lose access to cohort-based simulations
-                          </span>
-                        </div>
-                      )}
-
-                      {affectedSimulations.length > 0 && (
-                        <div>
-                          <span className="font-medium text-red-700">
-                            {affectedSimulations.length} simulation
-                            {affectedSimulations.length !== 1 ? "s" : ""} will
-                            be affected:
-                          </span>
-                          <ul className="mt-1 list-disc list-inside text-sm text-red-600">
-                            {affectedSimulations.slice(0, 3).map((sim) => (
-                              <li key={sim.id}>{sim.title}</li>
-                            ))}
-                            {affectedSimulations.length > 3 && (
-                              <li>
-                                ...and {affectedSimulations.length - 3} more
-                              </li>
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="mt-3 text-sm font-medium text-red-700">
-                    This action will permanently remove the cohort and cannot be
-                    undone.
-                  </div>
-                </div>
-              )}
+              <p>
+                Are you sure you want to delete the cohort "{deleteItem?.name}"?
+                This action cannot be undone.
+              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={isDeleting || isLoadingImpact}
+              disabled={isDeleting}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               {isDeleting ? "Deleting..." : "Delete"}

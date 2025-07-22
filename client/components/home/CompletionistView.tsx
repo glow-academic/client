@@ -53,7 +53,7 @@ export default function CompletionistView({
             (data.actionItems as Cohort[]).map((cohort) => (
               <Link
                 key={cohort.id}
-                href={`/dashboard/cohorts/${cohort.id}`}
+                href={`/cohorts/c/${cohort.id}`}
                 passHref
               >
                 <Button variant="outline">
