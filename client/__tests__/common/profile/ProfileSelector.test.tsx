@@ -4,7 +4,7 @@ import { afterEach, describe, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
 import ProfileSelector from "@/components/common/profile/ProfileSelector";
-import { ProfileRole } from "@/types";
+import { Profile, ProfileRole } from "@/types";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
@@ -16,16 +16,34 @@ import "@/mocks/queries";
 
 // Define the props interface locally since it's not exported
 interface ProfileSelectorProps {
-  selectedProfiles: unknown[];
-  onProfilesChange: (profiles: unknown[]) => void;
+  selectedProfiles: EditableProfile[];
+  onProfilesChange: (profiles: EditableProfile[]) => void;
   allowedRoles: ProfileRole[];
   title?: string;
   description?: string;
+  isLoading?: boolean;
+  isSubmitting?: boolean;
 }
+
+// Define EditableProfile type to match the component
+type EditableProfile =
+  | Profile
+  | {
+      isNew: true;
+      id: string;
+      firstName: string;
+      lastName: string;
+      alias: string;
+      role: ProfileRole;
+    };
 const mockProps: ProfileSelectorProps = {
   selectedProfiles: [],
   onProfilesChange: vi.fn(),
-  allowedRoles: ["instructor", "ta"],
+  allowedRoles: ["instructional", "ta"],
+  title: "Test Title",
+  description: "Test Description",
+  isLoading: false,
+  isSubmitting: false,
   // description: 'test-description', /* optional */
 };
 // ------------------------------------------------------------------

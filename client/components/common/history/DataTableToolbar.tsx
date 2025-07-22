@@ -15,7 +15,6 @@ import { DataTableFacetedFilter } from "@/components/common/history/DataTableFac
 export interface DataTableToolbarProps<TData> {
   table: Table<TData>;
   profileOptions: { value: string; label: string }[];
-  classOptions: { value: string; label: string }[];
   scoreRangeOptions: { value: string; label: string }[];
   isAdmin?: boolean;
   dateRange?: DateRange | undefined;
@@ -27,7 +26,6 @@ export interface DataTableToolbarProps<TData> {
 export function DataTableToolbar<TData>({
   table,
   profileOptions,
-  classOptions,
   scoreRangeOptions,
   isAdmin = false,
   dateRange,
@@ -41,7 +39,6 @@ export function DataTableToolbar<TData>({
       .length > 0;
 
   const profileIdColumn = showAll ? table.getColumn("profileId") : null;
-  const classIdsColumn = table.getColumn("classIds");
   const averageScoreColumn = table.getColumn("averageScore");
 
   return (
@@ -70,14 +67,7 @@ export function DataTableToolbar<TData>({
               options={profileOptions}
             />
           )}
-          {/* Class filter */}
-          {classIdsColumn && classOptions.length > 0 && (
-            <DataTableFacetedFilter
-              column={classIdsColumn}
-              title="Class"
-              options={classOptions}
-            />
-          )}
+
           {/* Score filter */}
           {averageScoreColumn && scoreRangeOptions.length > 0 && (
             <DataTableFacetedFilter
@@ -111,7 +101,6 @@ export function DataTableToolbar<TData>({
             <ExportButton
               table={table}
               profileOptions={profileOptions}
-              classOptions={classOptions}
             />
           )}
 

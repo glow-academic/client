@@ -286,14 +286,9 @@ export function UnifiedSidebar({
         icon: Sparkles,
         items: [
           {
-            title: "Agents",
+            title: "Agents", // renaming to personas later
             url: "#",
             section: "agents",
-          },
-          {
-            title: "Documents",
-            url: "#",
-            section: "documents",
           },
           {
             title: "Rubrics",
@@ -323,6 +318,12 @@ export function UnifiedSidebar({
         url: "#",
         icon: UserCogIcon,
         items: managementItems,
+      });
+
+      managementItems.push({
+        title: "Context",
+        url: "#",
+        section: "context",
       });
 
       managementItems.push({
@@ -500,7 +501,10 @@ export function UnifiedSidebar({
                   size="lg"
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
-                  <Avatar className="h-8 w-8">
+                  <Avatar
+                    className="h-8 w-8 outline outline-muted-foreground"
+                    style={{ outlineWidth: "1px", outlineStyle: "solid" }}
+                  >
                     <AvatarFallback>
                       {getInitials(
                         `${effectiveProfile.firstName} ${effectiveProfile.lastName}`
@@ -551,7 +555,13 @@ export function UnifiedSidebar({
                         onSelect={() => handleProfileSelect(profile.id)}
                       >
                         <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6 text-xs">
+                          <Avatar
+                            className="h-6 w-6 text-xs outline outline-muted-foreground"
+                            style={{
+                              outlineWidth: "1px",
+                              outlineStyle: "solid",
+                            }}
+                          >
                             <AvatarFallback>
                               {getInitials(
                                 `${profile.firstName} ${profile.lastName}`
@@ -691,7 +701,10 @@ export function UnifiedSidebar({
                   size="lg"
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
-                  <Avatar className="h-8 w-8">
+                  <Avatar
+                    className="h-8 w-8 outline outline-muted-foreground"
+                    style={{ outlineWidth: "1px", outlineStyle: "solid" }}
+                  >
                     <AvatarFallback>
                       {effectiveProfile.role === "guest" || !activeProfile
                         ? "GU"
@@ -727,7 +740,10 @@ export function UnifiedSidebar({
               >
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                    <Avatar className="h-8 w-8">
+                    <Avatar
+                      className="h-8 w-8 outline outline-muted-foreground"
+                      style={{ outlineWidth: "1px", outlineStyle: "solid" }}
+                    >
                       <AvatarFallback>
                         {effectiveProfile.role === "guest" || !activeProfile
                           ? "GU"

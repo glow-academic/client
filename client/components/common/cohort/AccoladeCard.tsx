@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Profile } from "@/types";
 import { ReactNode } from "react";
 
-interface AccoladeCardProps {
+export interface AccoladeCardProps {
   icon: ReactNode;
   title: string;
   user: Profile | null | undefined;
@@ -39,7 +39,10 @@ export default function AccoladeCard({
       <CardContent>
         {user ? (
           <div className="flex items-center gap-3">
-            <Avatar className="h-9 w-9">
+            <Avatar
+              className="h-9 w-9 outline outline-muted-foreground"
+              style={{ outlineWidth: "1px", outlineStyle: "solid" }}
+            >
               <AvatarFallback>
                 {getInitials(`${user.firstName} ${user.lastName}`)}
               </AvatarFallback>

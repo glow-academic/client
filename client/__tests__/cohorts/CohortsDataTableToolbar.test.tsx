@@ -10,10 +10,9 @@ import { CohortsDataTableToolbar, CohortsDataTableToolbarProps } from '@/compone
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
 const mockProps: CohortsDataTableToolbarProps = {
-  table: {} as unknown as Table<{ id: string; createdAt: string; updatedAt: string; title: string; description: string | null; active: boolean; profileIds: string[]; defaultCohort: boolean; departmentId: string; }>,
+  table: {} as unknown as Table<{ id: string; createdAt: string; updatedAt: string; title: string; description: string | null; active: boolean; profileIds: string[]; defaultCohort: boolean; simulationIds: string[]; }>,
   profileOptions: [],
   simulationOptions: [],
-  classOptions: [],
 };
 // ------------------------------------------------------------------
 describe('CohortsDataTableToolbar', () => {

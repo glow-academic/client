@@ -52,6 +52,7 @@ describe("PracticeZone", () => {
     lastLogin: "",
     alias: "",
     viewedIntro: false,
+    viewedChat: false,
     defaultProfile: false,
     lastActive: "",
   };
@@ -64,6 +65,7 @@ describe("PracticeZone", () => {
     getRealRubricData: vi.fn(() => ({ attempts: [], highestScore: 0 })),
     scenarios: [],
     agents: [],
+
   };
 
   it("renders practice zone title and description", () => {

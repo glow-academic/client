@@ -23,7 +23,7 @@ import { updateRubric } from "@/utils/mutations/rubrics/update-rubric";
 import { Edit } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-interface RubricDetailsProps {
+export interface RubricDetailsProps {
   rubric: RubricType;
   rubricId: string;
   isCreateMode?: boolean;

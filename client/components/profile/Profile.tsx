@@ -16,8 +16,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ProfileRole } from "@/types";
 import { useProfile } from "@/contexts/profile-context";
+import { ProfileRole } from "@/types";
 
 // Helper function to get initials from name
 const getInitials = (name?: string): string => {
@@ -69,7 +69,6 @@ export interface ProfileProps {
 export function Profile({ className }: ProfileProps) {
   const { activeProfile } = useProfile();
 
-
   if (!activeProfile) {
     return (
       <div className={className}>
@@ -86,15 +85,20 @@ export function Profile({ className }: ProfileProps) {
   }
 
   const roleInfo = getRoleInfo(activeProfile.role as ProfileRole);
-  
+
   return (
     <div className={className}>
       <Card>
         <CardHeader>
           <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
+            <Avatar
+              className="h-16 w-16 outline outline-muted-foreground"
+              style={{ outlineWidth: "1px", outlineStyle: "solid" }}
+            >
               <AvatarFallback className="text-lg">
-                {getInitials(activeProfile.firstName + " " + activeProfile.lastName)}
+                {getInitials(
+                  activeProfile.firstName + " " + activeProfile.lastName
+                )}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">

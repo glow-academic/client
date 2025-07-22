@@ -222,7 +222,7 @@ const getColorClasses = (color: string) => {
   return colorMap[color as keyof typeof colorMap] || colorMap.slate;
 };
 
-interface RubricStandardGroupProps {
+export interface RubricStandardGroupProps {
   group?: StandardGroup;
   standards?: Standard[];
   rubricId: string;

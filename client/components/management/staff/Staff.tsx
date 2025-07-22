@@ -49,8 +49,6 @@ const getRoleBadgeVariant = (role: string) => {
       return "destructive";
     case "instructional":
       return "default";
-    case "instructor":
-      return "secondary";
     case "ta":
       return "outline";
     default:
@@ -64,8 +62,6 @@ const getRoleIcon = (role: string) => {
       return Shield;
     case "instructional":
       return Shield;
-    case "instructor":
-      return UserIcon;
     case "ta":
       return UserIcon;
     default:
@@ -79,8 +75,6 @@ const getRoleDisplayName = (role: string) => {
       return "Administrator";
     case "instructional":
       return "Instructional Staff";
-    case "instructor":
-      return "Instructor";
     case "ta":
       return "Teaching Assistant";
     default:
@@ -101,10 +95,10 @@ export default function Staff() {
     queryFn: () => getAllProfiles(),
   });
 
-  // Filter staff users (include admin, instructional, instructor, ta)
+  // Filter staff users (include admin, instructional, ta)
   const staffUsers = React.useMemo(() => {
     return allProfiles.filter((profile: Profile) =>
-      ["admin", "instructional", "instructor", "ta"].includes(profile.role)
+      ["admin", "instructional", "ta"].includes(profile.role)
     );
   }, [allProfiles]);
 
@@ -155,9 +149,6 @@ export default function Staff() {
         .length,
       instructional: staffUsers.filter(
         (profile: Profile) => profile.role === "instructional"
-      ).length,
-      instructor: staffUsers.filter(
-        (profile: Profile) => profile.role === "instructor"
       ).length,
       ta: staffUsers.filter((profile: Profile) => profile.role === "ta").length,
     };
@@ -219,17 +210,6 @@ export default function Staff() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <UserIcon className="h-4 w-4 text-green-600" />
-              <div>
-                <p className="text-2xl font-bold">{roleCounts.instructor}</p>
-                <p className="text-sm text-muted-foreground">Instructors</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
               <UserIcon className="h-4 w-4 text-purple-600" />
               <div>
                 <p className="text-2xl font-bold">{roleCounts.ta}</p>
@@ -259,7 +239,6 @@ export default function Staff() {
             <SelectItem value="all">All Roles</SelectItem>
             <SelectItem value="admin">Administrators</SelectItem>
             <SelectItem value="instructional">Instructional Staff</SelectItem>
-            <SelectItem value="instructor">Instructors</SelectItem>
             <SelectItem value="ta">Teaching Assistants</SelectItem>
           </SelectContent>
         </Select>
@@ -305,7 +284,10 @@ export default function Staff() {
                   <TableRow key={profile.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
+                        <Avatar
+                          className="h-8 w-8 outline outline-muted-foreground"
+                          style={{ outlineWidth: "1px", outlineStyle: "solid" }}
+                        >
                           <AvatarFallback className="text-xs">
                             {getInitials(
                               profile.firstName + " " + profile.lastName

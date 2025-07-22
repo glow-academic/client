@@ -15,7 +15,6 @@ const mockProps: CohortsDataTableProps = {
   data: [],
   profileOptions: [],
   simulationOptions: [],
-  classOptions: [],
   renderCohortCard: vi.fn(),
 };
 // ------------------------------------------------------------------

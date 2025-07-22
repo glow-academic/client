@@ -1,9 +1,9 @@
-import { describe, it, vi, afterEach } from 'vitest';
+import { describe, it, afterEach, vi } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import RubricDetails from '@/components/common/rubric/RubricDetails';
+import Context from '@/components/management/context/Context';
 
 
 
@@ -11,27 +11,7 @@ import RubricDetails from '@/components/common/rubric/RubricDetails';
 import '@/mocks/queries';
 import '@/mocks/mutations';
 import '@/mocks/api';
-
-
-// ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
-import type { RubricDetailsProps } from '@/components/common/rubric/RubricDetails';
-const mockProps: RubricDetailsProps = {
-  rubric: {
-    id: "1",
-    createdAt: "2021-01-01",
-    updatedAt: "2021-01-01",
-    name: "Test Rubric",
-    description: "Test Description",
-    points: 10,
-    passPoints: 8,
-    defaultRubric: false,
-    active: true,
-  },
-  rubricId: 'test-rubricId',
-};
-// ------------------------------------------------------------------
-describe('RubricDetails', () => {
+describe('Context', () => {
   
   /* ------------------------------------------------------------------ *
    * 💡 Mock Data Usage Guide:
@@ -57,18 +37,13 @@ describe('RubricDetails', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<RubricDetails {...mockProps} />);
+      renderWithMocks(<Context  />);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
     });
 
-    it.skip('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: RubricDetailsProps
-      
-      // TODO add props assertions
-    });
+    
 
     it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -79,19 +54,9 @@ describe('RubricDetails', () => {
   });
 
   describe('User Interactions', () => {
-    it.skip('should handle form submissions', async () => {
-      const user = userEvent.setup();
-      void user;
-      // TODO: form handling assertions
-      // Mock data is available from @/mocks/schema for realistic testing
-    });
+    
 
-    it.skip('should handle state changes', async () => {
-      const user = userEvent.setup();
-      void user;
-      // TODO: state management assertions
-      // Mock data is available from @/mocks/schema for realistic testing
-    });
+    
 
     it.skip('should handle user events', async () => {
       const user = userEvent.setup();
@@ -101,9 +66,32 @@ describe('RubricDetails', () => {
     });
   });
 
-  
+  describe('API Integration', () => {
+    it.skip('should handle and display an API error state', async () => {
+      // Arrange: Override the default success mock with an error for this test.
+      // Example: vi.mocked(getAllDocuments).mockRejectedValue(new Error('API Error'));
 
-  
+      renderWithMocks(<Context  />);
+      
+      // Assert: Check that your component shows an error message.
+      // TODO: Add specific error state assertions
+    });
+
+    it.skip('should handle loading states', () => {
+      // TODO: Test loading states
+      // Mock data is automatically loaded from @/mocks/schema
+      
+      // TODO: loading states assertions
+    });
+  });
+
+  describe('Navigation', () => {
+    it.skip('should handle navigation', () => {
+      // TODO: Test navigation behavior
+      
+      // TODO: navigation assertions
+    });
+  });
 
   describe('Edge Cases', () => {
     it.skip('should handle edge cases gracefully', () => {
@@ -113,29 +101,25 @@ describe('RubricDetails', () => {
 
     });
 
-    it.skip('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // TODO: invalid props assertions
-    });
+    
   });
 });
 
 /*
- * Component Analysis for RubricDetails:
- * Path: common/rubric/RubricDetails.tsx
+ * Component Analysis for Context:
+ * Path: management/context/Context.tsx
  * 
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: true
- * - Props interface: RubricDetailsProps
- * - Client component: false
- * - Uses hooks: useMutation, useQueryClient, useState
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: true
- * - Uses state: true
+ * - Has props: false
+ * - Props interface: None detected
+ * - Client component: true
+ * - Uses hooks: useQuery, useRouter
+ * - Uses router: true
+ * - Has API calls: true
+ * - Has form handling: false
+ * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
  * 
@@ -144,12 +128,12 @@ describe('RubricDetails', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<RubricDetails {...mockProps} />);
+ * render(<Context />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<RubricDetails {...props} />);
+ * render(<Context {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

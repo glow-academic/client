@@ -14,7 +14,6 @@ const mockProps: ReportsDataTableProps = {
   columns: [],
   data: [],
   performanceOptions: [],
-  classOptions: [],
   cohortOptions: [],
   agentOptions: [],
   scenarioOptions: [],

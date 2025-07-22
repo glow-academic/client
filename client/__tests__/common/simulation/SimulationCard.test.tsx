@@ -9,12 +9,37 @@ import SimulationCard, { SimulationCardProps } from '@/components/common/simulat
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
 const mockProps: SimulationCardProps = {
-  simulation: [],
+  simulation: {
+    id: "1",
+    createdAt: "2021-01-01",
+    updatedAt: "2021-01-01",
+    title: "Test Simulation",
+    timeLimit: 10,
+    active: true,
+    scenarioIds: ["scenario-1"],
+    rubricId: "rubric-1",
+    defaultSimulation: false,
+  },
   type: 'default',
   onStartSimulation: vi.fn(),
   loadingSimulation: null,
-  effectiveProfile: 'superadmin',
-  rubricData: [],
+  effectiveProfile: {
+    id: "1",
+    createdAt: "2021-01-01",
+    updatedAt: "2021-01-01",
+    active: true,
+    userId: 1,
+    lastLogin: "2021-01-01",
+    firstName: "Test",
+    lastName: "User",
+    alias: "test-user",
+    viewedIntro: true,
+    viewedChat: true,
+    role: "superadmin",
+    defaultProfile: true,
+    lastActive: "2021-01-01",
+  },
+  rubricData: { attempts: [], highestScore: 0 },
   // scenarios: [], /* optional */
   // agents: [], /* optional */
 };

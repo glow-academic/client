@@ -17,7 +17,6 @@ const mockProps: DataTableProps<unknown, unknown> = {
   columns: [],
   data: [],
   profileOptions: [],
-  classOptions: [],
   scoreRangeOptions: [],
   // showExport: false, /* optional */
   // showAll: false, /* optional */

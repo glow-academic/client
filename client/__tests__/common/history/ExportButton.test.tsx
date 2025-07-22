@@ -14,7 +14,6 @@ import {
 const mockProps: ExportButtonProps<unknown> = {
   table: getMockTable(),
   profileOptions: [],
-  classOptions: [],
 };
 // ------------------------------------------------------------------
 describe("ExportButton", () => {

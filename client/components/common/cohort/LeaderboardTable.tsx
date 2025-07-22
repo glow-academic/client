@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-interface LeaderboardData {
+export interface LeaderboardData {
   id: string;
   name: string;
   avgScore: number;
@@ -25,7 +25,7 @@ interface LeaderboardData {
   role?: string;
 }
 
-interface LeaderboardTableProps {
+export interface LeaderboardTableProps {
   data: LeaderboardData[];
   currentUserId: string;
 }
@@ -71,7 +71,10 @@ export default function LeaderboardTable({
               <TableCell className="font-bold text-lg">{index + 1}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-9 w-9">
+                  <Avatar
+                    className="h-9 w-9 outline outline-muted-foreground"
+                    style={{ outlineWidth: "1px", outlineStyle: "solid" }}
+                  >
                     <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                   </Avatar>
                   <span className="font-medium">{user.name}</span>

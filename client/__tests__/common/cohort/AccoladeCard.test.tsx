@@ -12,7 +12,22 @@ import type { AccoladeCardProps } from '@/components/common/cohort/AccoladeCard'
 const mockProps: AccoladeCardProps = {
   icon: <div>test-icon</div>,
   title: 'test-title',
-  user: 'superadmin',
+  user: {
+    id: '1',
+    updatedAt: '2021-01-01',
+    userId: 1,
+    lastLogin: '2021-01-01',
+    firstName: 'test',
+    lastName: 'user',
+    alias: 'test-user',
+    viewedIntro: true,
+    viewedChat: true,
+    createdAt: '2021-01-01',
+    role: 'superadmin',
+    defaultProfile: true,
+    active: true,
+    lastActive: '2021-01-01',
+  },
   details: 'test-details',
 };
 // ------------------------------------------------------------------

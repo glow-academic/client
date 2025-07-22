@@ -2,9 +2,9 @@
 
 ## Summary
 - **Total Components**: 122
-- **Tests Created**: 0
+- **Tests Created**: 1
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 122
+- **Tests Skipped** (already implemented): 121
 
 ## Component Coverage
 
@@ -56,6 +56,7 @@
 | CohortStaff | common/cohort/CohortStaff.tsx | CohortStaff.test.tsx | ✅ Implemented |
 | LeaderboardTable | common/cohort/LeaderboardTable.tsx | LeaderboardTable.test.tsx | ✅ Implemented |
 | SimulationProgress | common/cohort/SimulationProgress.tsx | SimulationProgress.test.tsx | ✅ Implemented |
+| Document | common/context/Document.tsx | Document.test.tsx | ✅ Implemented |
 | CarouselSection | common/dashboard/CarouselSection.tsx | CarouselSection.test.tsx | ✅ Implemented |
 | DashboardEdit | common/dashboard/DashboardEdit.tsx | DashboardEdit.test.tsx | ✅ Implemented |
 | DraggableComponent | common/dashboard/DraggableComponent.tsx | DraggableComponent.test.tsx | ✅ Implemented |
@@ -63,7 +64,6 @@
 | FooterPreview | common/dashboard/FooterPreview.tsx | FooterPreview.test.tsx | ✅ Implemented |
 | HeaderPreview | common/dashboard/HeaderPreview.tsx | HeaderPreview.test.tsx | ✅ Implemented |
 | SettingsDialog | common/dashboard/SettingsDialog.tsx | SettingsDialog.test.tsx | ✅ Implemented |
-| Document | common/documents/Document.tsx | Document.test.tsx | ✅ Implemented |
 | DataTable | common/history/DataTable.tsx | DataTable.test.tsx | ✅ Implemented |
 | DataTableColumnHeader | common/history/DataTableColumnHeader.tsx | DataTableColumnHeader.test.tsx | ✅ Implemented |
 | DataTableFacetedFilter | common/history/DataTableFacetedFilter.tsx | DataTableFacetedFilter.test.tsx | ✅ Implemented |
@@ -196,6 +196,8 @@ __tests__/
 │   │   ├── CohortStaff.test.tsx
 │   │   ├── LeaderboardTable.test.tsx
 │   │   ├── SimulationProgress.test.tsx
+│   ├── context/
+│   │   ├── Document.test.tsx
 │   ├── dashboard/
 │   │   ├── CarouselSection.test.tsx
 │   │   ├── DashboardEdit.test.tsx
@@ -204,8 +206,6 @@ __tests__/
 │   │   ├── FooterPreview.test.tsx
 │   │   ├── HeaderPreview.test.tsx
 │   │   ├── SettingsDialog.test.tsx
-│   ├── documents/
-│   │   ├── Document.test.tsx
 │   ├── history/
 │   │   ├── DataTable.test.tsx
 │   │   ├── DataTableColumnHeader.test.tsx

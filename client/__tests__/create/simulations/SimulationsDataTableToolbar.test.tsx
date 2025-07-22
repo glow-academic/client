@@ -11,8 +11,7 @@ import { SimulationsDataTableToolbar } from '@/components/create/simulations/Sim
 // Minimal props factory – edit values as needed
 import type { SimulationsDataTableToolbarProps } from '@/components/create/simulations/SimulationsDataTableToolbar';
 const mockProps: SimulationsDataTableToolbarProps = {
-  table: {} as unknown as Table<{ id: string; createdAt: string; updatedAt: string; title: string; timeLimit: number | null; active: boolean; scenarioIds: string[]; cohortIds: string[]; rubricId: string; defaultSimulation: boolean; }>,
-  cohortOptions: [],
+  table: {} as unknown as Table<{ id: string; createdAt: string; updatedAt: string; title: string; timeLimit: number | null; active: boolean; scenarioIds: string[]; rubricId: string; defaultSimulation: boolean; }>,
   scenarioOptions: [],
   rubricOptions: [],
   timeLimitOptions: [],

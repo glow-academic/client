@@ -13,7 +13,6 @@ import {
 const mockProps: DataTableToolbarProps<unknown> = {
   table: getMockTable(),
   profileOptions: [],
-  classOptions: [],
   scoreRangeOptions: [],
   // dateRange: new Date(), /* optional */
   // setDateRange: vi.fn(), /* optional */

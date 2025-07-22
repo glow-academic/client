@@ -46,7 +46,7 @@ type EditableProfile =
       role: ProfileRole;
     };
 
-interface CohortStaffProps {
+export interface CohortStaffProps {
   profiles: EditableProfile[];
   setProfiles: (profiles: EditableProfile[]) => void;
   profilesToDelete: string[];

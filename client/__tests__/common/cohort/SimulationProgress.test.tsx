@@ -14,7 +14,12 @@ const mockSimulation = {
   title: "Test Simulation",
   description: "A test simulation",
   defaultSimulation: false,
-  cohortIds: ["cohort-1"],
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  timeLimit: 10,
+  active: true,
+  scenarioIds: ["scenario-1"],
+  rubricId: "rubric-1",
   progress: {
     totalMembers: 1,
     passedCount: 1,

@@ -7,6 +7,7 @@
 
 import CohortDashboard from "@/components/common/cohort/CohortDashboard";
 import { ProfileProvider } from "@/contexts/profile-context";
+import { Profile } from "@/types";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
@@ -76,7 +77,7 @@ function renderWithProviders(
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <ProfileProvider activeProfile={profile}>{component}</ProfileProvider>
+      <ProfileProvider activeProfile={profile as Profile}>{component}</ProfileProvider>
     </QueryClientProvider>
   );
 }

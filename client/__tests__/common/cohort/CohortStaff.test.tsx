@@ -15,6 +15,8 @@ const mockProps: CohortStaffProps = {
   setProfiles: vi.fn(),
   profilesToDelete: [],
   setProfilesToDelete: vi.fn(),
+  isLoading: false,
+  isSubmitting: false,
 };
 // ------------------------------------------------------------------
 describe('CohortStaff', () => {

@@ -6,8 +6,8 @@ describe("CompletionistView", () => {
   const mockData = {
     percentage: 75,
     actionItems: [
-      { id: "1", title: "Test Cohort 1" },
-      { id: "2", title: "Test Cohort 2" },
+      { id: "1", title: "Test Cohort 1", type: "cohort", href: "/cohorts/1", label: "Test Cohort 1" },
+      { id: "2", title: "Test Cohort 2", type: "cohort", href: "/cohorts/2", label: "Test Cohort 2" },
     ],
   };
 
@@ -26,6 +26,7 @@ describe("CompletionistView", () => {
     viewedIntro: false,
     defaultProfile: false,
     lastActive: "",
+    viewedChat: false,
   };
 
   it("renders completion percentage correctly", () => {

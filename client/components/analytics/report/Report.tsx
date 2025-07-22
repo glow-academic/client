@@ -481,7 +481,10 @@ export default function Report({ profileId }: ReportProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10">
+            <Avatar
+              className="h-10 w-10 outline outline-muted-foreground"
+              style={{ outlineWidth: "1px", outlineStyle: "solid" }}
+            >
               <AvatarFallback>
                 {getInitials(profile.firstName, profile.lastName)}
               </AvatarFallback>

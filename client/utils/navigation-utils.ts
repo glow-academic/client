@@ -170,6 +170,8 @@ export const getSectionRoute = (section: string): string => {
     // Management routes
     case "management":
       return "/management";
+    case "context":
+      return "/management/context";
     case "staff":
       return "/management/staff";
     case "providers":

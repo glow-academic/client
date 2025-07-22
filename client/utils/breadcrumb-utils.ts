@@ -52,7 +52,6 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
       case "system-agent":
         const systemAgentData = await getSystemAgent(id);
         return systemAgentData?.name || `System Agent ${id.substring(0, 8)}...`;
-
       case "simulation":
         const simulationData = await getSimulation(id);
         return simulationData?.title || `Simulation ${id.substring(0, 8)}...`;
@@ -224,8 +223,8 @@ export const generateEnhancedBreadcrumbs = async (
         case "staff":
           title = "Staff";
           break;
-        case "cohorts":
-          title = "Cohorts";
+        case "context":
+          title = "Context";
           break;
         case "logs":
           title = "Logs";
@@ -233,7 +232,7 @@ export const generateEnhancedBreadcrumbs = async (
         case "models":
           title = "Models";
           break;
-
+        
         // System subsections
         case "agents":
           title = "Agents";

@@ -33,7 +33,6 @@ export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   profileOptions: { value: string; label: string }[];
-  classOptions: { value: string; label: string }[];
   scoreRangeOptions: { value: string; label: string }[];
   showExport?: boolean;
   showAll?: boolean;
@@ -43,7 +42,6 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   profileOptions,
-  classOptions,
   scoreRangeOptions,
   showExport = true,
   showAll = false,
@@ -108,7 +106,6 @@ export function DataTable<TData, TValue>({
       <DataTableToolbar
         table={table}
         profileOptions={profileOptions}
-        classOptions={classOptions}
         scoreRangeOptions={scoreRangeOptions}
         dateRange={dateRange}
         setDateRange={setDateRange}

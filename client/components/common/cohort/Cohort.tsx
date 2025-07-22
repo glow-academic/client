@@ -338,16 +338,6 @@ export default function Cohort({ cohortId }: CohortProps) {
           />
         </div>
 
-        {/* Staff Management */}
-        <CohortStaff
-          profiles={staffProfiles}
-          setProfiles={setStaffProfiles}
-          profilesToDelete={profilesToDelete}
-          setProfilesToDelete={setProfilesToDelete}
-          isLoading={isLoading}
-          isSubmitting={isSubmitting}
-        />
-
         {/* Simulations */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
@@ -492,6 +482,16 @@ export default function Cohort({ cohortId }: CohortProps) {
             </div>
           )}
         </div>
+
+        {/* Staff Management */}
+        <CohortStaff
+          profiles={staffProfiles}
+          setProfiles={setStaffProfiles}
+          profilesToDelete={profilesToDelete}
+          setProfilesToDelete={setProfilesToDelete}
+          isLoading={isLoading}
+          isSubmitting={isSubmitting}
+        />
 
         {/* Submit Button */}
         <div className="flex justify-end gap-3">

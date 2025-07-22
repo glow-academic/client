@@ -14,6 +14,7 @@ import { toast } from "sonner";
 
 import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
 import { deleteSimulation } from "@/utils/mutations/simulations/delete-simulation";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
@@ -30,15 +31,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSimulationColumns } from "@/hooks/use-simulation-columns";
-import { Scenario, Simulation } from "@/types";
+import { Cohort, Scenario, Simulation } from "@/types";
 import { SimulationsDataTable } from "./SimulationsDataTable";
 
 export function Simulations() {
@@ -52,6 +47,7 @@ export function Simulations() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const [affectedScenarios, setAffectedScenarios] = useState<Scenario[]>([]);
+  const [affectedCohorts, setAffectedCohorts] = useState<Cohort[]>([]);
   const [isLoadingImpact, setIsLoadingImpact] = useState(false);
 
   // Fetch all required data
@@ -68,6 +64,11 @@ export function Simulations() {
   const { data: rubrics = [] } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
+  });
+
+  const { data: cohorts = [] } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
   });
 
   // Create table columns
@@ -129,14 +130,22 @@ export function Simulations() {
       setDeleteItem({ id, name });
       setIsLoadingImpact(true);
 
-      // Calculate impact
+      // Calculate impact on scenarios
       const affectedScenariosList = scenarios.filter(
         (scenario) =>
           simulationToDelete.scenarioIds &&
           simulationToDelete.scenarioIds.includes(scenario.id)
       );
 
+      // Calculate impact on cohorts
+      const affectedCohortsList = cohorts.filter(
+        (cohort) =>
+          cohort.simulationIds &&
+          cohort.simulationIds.includes(simulationToDelete.id)
+      );
+
       setAffectedScenarios(affectedScenariosList);
+      setAffectedCohorts(affectedCohortsList);
       setIsLoadingImpact(false);
       setShowDeleteDialog(true);
     }
@@ -192,61 +201,71 @@ export function Simulations() {
   };
 
   const renderSimulationCard = (simulation: Simulation) => (
-    <Card className="hover:shadow-md transition-shadow flex flex-col h-full">
+    <Card
+      key={simulation.id}
+      aria-label={simulation.title}
+      data-testid={`card-${simulation.id}`}
+      className="relative flex flex-col h-full hover:shadow-md transition-shadow"
+    >
       <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div className="space-y-1 flex-1">
-            <CardTitle className="text-base">{simulation.title}</CardTitle>
-            <CardDescription className="flex items-center gap-2">
-              <Timer className="h-3 w-3" />
-              {simulation.timeLimit
-                ? `${simulation.timeLimit} minutes`
-                : "No time limit"}
-
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Users className="h-3 w-3" />
-                {simulation.scenarioIds?.length || 0} scenarios
-              </div>
-            </CardDescription>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <CardTitle className="text-lg">{simulation.title}</CardTitle>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="outline">
+                <Timer className="h-3 w-3 mr-1" />
+                {simulation.timeLimit
+                  ? `${simulation.timeLimit} minutes`
+                  : "No time limit"}
+              </Badge>
+              <Badge variant={simulation.active ? "default" : "secondary"}>
+                {simulation.active ? "Active" : "Inactive"}
+              </Badge>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant={simulation.active ? "default" : "secondary"}>
-              {simulation.active ? "Active" : "Inactive"}
-            </Badge>
+          <div className="flex items-center gap-1">
+            {canDuplicate(simulation) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDuplicate(simulation)}
+                disabled={isDuplicating === simulation.id}
+                aria-label={`Duplicate ${simulation.title}`}
+              >
+                {isDuplicating === simulation.id ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid={`edit-${simulation.id}`}
+              onClick={() => handleEdit(simulation.id)}
+              aria-label={`Edit ${simulation.title}`}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid={`delete-${simulation.id}`}
+              onClick={() => handleDeleteClick(simulation.id, simulation.title)}
+              aria-label={`Delete ${simulation.title}`}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </CardHeader>
-      <div className="flex-grow"></div>
-      <CardFooter className="flex justify-end gap-2 pt-3">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleEdit(simulation.id)}
-        >
-          <Edit className="h-4 w-4" />
-        </Button>
-        {canDuplicate(simulation) && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleDuplicate(simulation)}
-            disabled={isDuplicating === simulation.id}
-          >
-            {isDuplicating === simulation.id ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            ) : (
-              <Copy className="h-4 w-4" />
-            )}
-          </Button>
-        )}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleDeleteClick(simulation.id, simulation.title)}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </CardFooter>
+      <CardContent className="pt-0 flex-grow flex flex-col">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Users className="h-3 w-3" />
+          {simulation.scenarioIds?.length || 0} scenarios
+        </div>
+      </CardContent>
     </Card>
   );
 
@@ -279,11 +298,30 @@ export function Simulations() {
                     {deleteItem?.name}"? This action cannot be undone.
                   </p>
 
-                  {affectedScenarios.length > 0 && (
+                  {(affectedScenarios.length > 0 ||
+                    affectedCohorts.length > 0) && (
                     <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
                       <div className="font-medium text-red-800 mb-2">
                         ⚠️ Impact of deletion:
                       </div>
+
+                      {affectedCohorts.length > 0 && (
+                        <div className="mb-2">
+                          <span className="font-medium text-red-700">
+                            {affectedCohorts.length} cohort
+                            {affectedCohorts.length !== 1 ? "s" : ""} will be
+                            affected:
+                          </span>
+                          <ul className="mt-1 list-disc list-inside text-sm text-red-600">
+                            {affectedCohorts.slice(0, 3).map((cohort) => (
+                              <li key={cohort.id}>{cohort.title}</li>
+                            ))}
+                            {affectedCohorts.length > 3 && (
+                              <li>...and {affectedCohorts.length - 3} more</li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
 
                       {affectedScenarios.length > 0 && (
                         <div>
@@ -308,7 +346,8 @@ export function Simulations() {
                   )}
 
                   <div className="mt-3 text-sm font-medium text-red-700">
-                    This action will permanently remove the simulation.
+                    This action will permanently remove the simulation and
+                    cannot be undone.
                   </div>
                 </div>
               )}

@@ -46,18 +46,8 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
       "What can I help you with?",
       "I'm ready to assist you today",
     ];
-    if (simulationContext?.classData?.classCode && simulationContext?.department?.departmentCode) {
-      basePrompts.push(
-        `Are you here for ${simulationContext?.department?.departmentCode} ${simulationContext?.classData.classCode}?`
-      );
-      return [
-        "Hi, how are you?",
-        "What can I help you with?",
-        `Are you here for ${simulationContext?.department?.departmentCode} ${simulationContext?.classData.classCode}?`,
-      ];
-    }
     return basePrompts.slice(0, 3);
-  }, [simulationContext?.classData?.classCode, simulationContext?.department?.departmentCode]);
+  }, []);
 
   const handleStarterPromptClick = (prompt: string) =>
     simulationContext?.sendMessage(prompt);
