@@ -149,8 +149,8 @@ export const getSectionRoute = (section: string): string => {
       return "/analytics/dashboard";
     case "reports":
       return "/analytics/reports";
-    case "progress":
-      return "/analytics/progress";
+    case "leaderboard":
+      return "/analytics/leaderboard";
 
     case "cohorts":
       return "/cohorts";

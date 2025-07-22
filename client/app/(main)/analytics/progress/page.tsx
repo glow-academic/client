@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import Progress from "@/components/analytics/Progress";
+import Progress from "@/components/analytics/Leaderboard";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

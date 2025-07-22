@@ -42,6 +42,7 @@ import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Brain,
   ChartBar,
   Check,
   ChevronRight,
@@ -227,7 +228,7 @@ export function UnifiedSidebar({
       section: "home",
     });
 
-    // Classes and Cohorts sections based on role
+    // Cohorts sections based on role
     if (["ta"].includes(effectiveProfile.role)) {
       // TA/Instructor view - collapsible with sub-items
       menu.push({
@@ -247,6 +248,13 @@ export function UnifiedSidebar({
         section: "cohorts",
       });
     }
+
+    menu.push({
+      title: "Practice",
+      url: "/practice",
+      icon: Brain,
+      section: "practice",
+    });
 
     // Analytics - Available from instructor level and up
     if (
@@ -268,9 +276,9 @@ export function UnifiedSidebar({
             section: "reports",
           },
           {
-            title: "Progress",
+            title: "Leaderboard",
             url: "#",
-            section: "progress",
+            section: "leaderboard",
           },
         ],
       });

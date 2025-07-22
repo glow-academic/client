@@ -16,21 +16,12 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Award,
-  ChevronLeft,
-  ChevronRight,
-  Crown,
-  MessageSquareText,
-  Zap,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import SimulationHistory from "../history/SimulationHistory";
 import SimulationCard from "../simulation/SimulationCard";
-import AccoladeCard from "./AccoladeCard";
-import LeaderboardTable from "./LeaderboardTable";
 import SimulationProgress from "./SimulationProgress";
 
 export interface CohortDashboardProps {
@@ -128,29 +119,6 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
     queryFn: () =>
       getSimulationChatGradesBySimulationChats(chats!.map((c) => c.id)),
     enabled: !!chats && chats.length > 0,
-  });
-
-  // 8. Fetch messages for those chats (for accolades calculation)
-  const { data: messages, isLoading: loadingMessages } = useQuery({
-    queryKey: ["simulationMessages", chats?.map((c) => c.id)?.sort() || []],
-    queryFn: async () => {
-      const { getSimulationMessagesByChats } = await import(
-        "@/utils/queries/simulation_messages/get-simulation-messages-by-chats"
-      );
-      return getSimulationMessagesByChats(chats!.map((c) => c.id));
-    },
-    enabled: !!chats && chats.length > 0,
-  });
-
-  // 9. Fetch all rubrics (for accolades and leaderboard calculation)
-  const { data: rubrics, isLoading: loadingRubrics } = useQuery({
-    queryKey: ["allRubrics"],
-    queryFn: async () => {
-      const { getAllRubrics } = await import(
-        "@/utils/queries/rubrics/get-all-rubrics"
-      );
-      return getAllRubrics();
-    },
   });
 
   const { isConnected, emitStartSimulation } = useWebSocket();
@@ -456,187 +424,6 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
     return processedCohortData.flatMap((data) => data.simulations);
   }, [processedCohortData]);
 
-  // Calculate accolades for the cohort
-  const accolades = useMemo(() => {
-    if (
-      !cohortProfiles ||
-      !safeGrades ||
-      !messages ||
-      !chats ||
-      !rubrics ||
-      !safeAttempts
-    )
-      return {
-        perfectScore: { holder: null, details: "" },
-        longestConvo: { holder: null, details: "" },
-        mostImproved: { holder: null, details: "" },
-        quickestPass: { holder: null, details: "" },
-      };
-
-    // 1. Perfect Score
-    let perfectScoreHolder = null;
-    let perfectScoreDetails = "";
-    for (const grade of safeGrades) {
-      const rubric = rubrics?.find((r) => r.id === grade.rubricId);
-      if (rubric && grade.score === rubric.points) {
-        const attempt = safeAttempts.find((a) =>
-          chats.some(
-            (c) => c.id === grade.simulationChatId && c.attemptId === a.id
-          )
-        );
-        perfectScoreHolder = cohortProfiles.find(
-          (p) => p.id === attempt?.profileId
-        );
-        perfectScoreDetails = `on a simulation.`;
-        break;
-      }
-    }
-
-    // 2. Longest Conversation
-    const chatMessageCounts = chats.map((chat) => ({
-      chatId: chat.id,
-      count: messages?.filter((m) => m.chatId === chat.id).length || 0,
-    }));
-    const longestChat = chatMessageCounts.sort((a, b) => b.count - a.count)[0];
-    const longestChatAttempt = safeAttempts.find((a) =>
-      chats.some((c) => c.id === longestChat?.chatId && c.attemptId === a.id)
-    );
-    const longestConvoHolder = cohortProfiles.find(
-      (p) => p.id === longestChatAttempt?.profileId
-    );
-
-    // 3. Most Improved (Simplified: Biggest score jump on any simulation)
-    // For now, we'll use a placeholder - this would require more complex logic to track improvement over time
-    const mostImprovedHolder = cohortProfiles?.[1]; // Placeholder
-
-    // 4. Quickest Pass
-    const passedGrades = safeGrades.filter((g) => g.passed);
-    const quickestGrade = passedGrades.sort(
-      (a, b) => a.timeTaken - b.timeTaken
-    )[0];
-    const quickestPassAttempt = safeAttempts.find((a) =>
-      chats.some(
-        (c) => c.id === quickestGrade?.simulationChatId && c.attemptId === a.id
-      )
-    );
-    const quickestPassHolder = cohortProfiles.find(
-      (p) => p.id === quickestPassAttempt?.profileId
-    );
-
-    return {
-      perfectScore: {
-        holder: perfectScoreHolder,
-        details: perfectScoreDetails,
-      },
-      longestConvo: {
-        holder: longestConvoHolder,
-        details: `${longestChat?.count || 0} messages`,
-      },
-      mostImproved: {
-        holder: mostImprovedHolder,
-        details: `+45% score increase`,
-      },
-      quickestPass: {
-        holder: quickestPassHolder,
-        details: `${Math.round((quickestGrade?.timeTaken || 0) / 60)} min completion`,
-      },
-    };
-  }, [cohortProfiles, safeGrades, messages, chats, rubrics, safeAttempts]);
-
-  // Calculate leaderboard data for the cohort
-  const leaderboardData = useMemo(() => {
-    if (!cohortProfiles || cohortProfiles.length === 0) {
-      logInfo("CohortDashboard: No cohort profiles found", {
-        cohortProfilesLength: cohortProfiles?.length || 0,
-        cohorts: cohorts?.map((c) => ({
-          id: c.id,
-          title: c.title,
-          profileCount: c.profileIds?.length || 0,
-        })),
-      });
-      return [];
-    }
-
-    let usersToRank = cohortProfiles;
-
-    // For instructional roles, show all users in the cohort
-    // For TA roles, show all users in the cohort (not just other TAs)
-    // This allows TAs to see everyone's progress, not just other TAs
-    if (
-      effectiveProfile?.role === "ta" ||
-      effectiveProfile?.role === "instructional"
-    ) {
-      // Show all users in the cohort
-      usersToRank = cohortProfiles;
-    } else if (
-      effectiveProfile?.role === "admin" ||
-      effectiveProfile?.role === "superadmin"
-    ) {
-      // Admins can see all users
-      usersToRank = cohortProfiles;
-    }
-
-    // Always show all users in the cohort, even if they have no simulation data yet
-    const ranked = usersToRank.map((profile) => {
-      // Get user's grades (if any)
-      const userGrades = safeGrades.filter((g) => {
-        const attempt = safeAttempts.find((a) =>
-          chats?.some(
-            (c) => c.id === g.simulationChatId && c.attemptId === a.id
-          )
-        );
-        return attempt?.profileId === profile.id;
-      });
-
-      // Calculate metrics
-      const totalSims = new Set(
-        userGrades.map(
-          (g) => chats?.find((c) => c.id === g.simulationChatId)?.attemptId
-        )
-      ).size;
-
-      const passRate =
-        userGrades.length > 0
-          ? (userGrades.filter((g) => g.passed).length / userGrades.length) *
-            100
-          : 0;
-
-      let avgScore = 0;
-      if (userGrades.length > 0 && rubrics) {
-        const totalScore = userGrades.reduce((acc, grade) => {
-          const rubric = rubrics.find((r) => r.id === grade.rubricId);
-          return acc + (grade.score / (rubric?.points || 100)) * 100;
-        }, 0);
-        avgScore = totalScore / userGrades.length;
-      }
-
-      return {
-        id: profile.id,
-        name: `${profile.firstName} ${profile.lastName}`,
-        avgScore: Math.round(avgScore),
-        passRate: Math.round(passRate),
-        simsCompleted: totalSims,
-        role: profile.role,
-      };
-    });
-
-    // Sort by average score (highest first), then by name for users with same score
-    return ranked.sort((a, b) => {
-      if (b.avgScore !== a.avgScore) {
-        return b.avgScore - a.avgScore;
-      }
-      return a.name.localeCompare(b.name);
-    });
-  }, [
-    cohortProfiles,
-    effectiveProfile,
-    safeGrades,
-    rubrics,
-    safeAttempts,
-    chats,
-    cohorts,
-  ]);
-
   // Carousel logic
   const maxVisible = 3;
   const totalPages = Math.ceil(allSimulationsForCarousel.length / maxVisible);
@@ -670,9 +457,7 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
     loadingProfiles ||
     loadingAttempts ||
     loadingChats ||
-    loadingGrades ||
-    loadingMessages ||
-    loadingRubrics;
+    loadingGrades;
 
   if (isLoading) {
     return (
@@ -719,7 +504,7 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
   return (
     <div className="container mx-auto p-4 space-y-8">
       {/* Accolades Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <AccoladeCard
           icon={<Award className="h-4 w-4" />}
           title="Perfect Score"
@@ -744,7 +529,7 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
           user={accolades.quickestPass?.holder}
           details={accolades.quickestPass?.details || ""}
         />
-      </div>
+      </div> */}
 
       {/* Progress Visualization Section - All progress bars grouped together */}
       <div className="space-y-6">
@@ -838,15 +623,6 @@ export default function CohortDashboard({ cohortIds }: CohortDashboardProps) {
           showAll={shouldShowAll}
           cohortIds={cohortIds}
           showExport={shouldShowAll}
-        />
-      </div>
-
-      {/* Leaderboard Section */}
-      <div>
-        <h2 className="text-2xl font-bold mb-4">Cohort Leaderboard</h2>
-        <LeaderboardTable
-          data={leaderboardData}
-          currentUserId={effectiveProfile?.id || ""}
         />
       </div>
     </div>
