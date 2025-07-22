@@ -220,13 +220,15 @@ export function UnifiedSidebar({
   const navMain = useMemo(() => {
     const menu: NavSection[] = [];
 
-    // Home - For all
-    menu.push({
-      title: "Home",
-      url: "#",
-      icon: Home,
-      section: "home",
-    });
+    // Home - Only for non guest users
+    if (effectiveProfile.role !== "guest") {
+      menu.push({
+        title: "Home",
+        url: "#",
+        icon: Home,
+        section: "home",
+      });
+    }
 
     // Cohorts sections based on role
     if (["ta"].includes(effectiveProfile.role)) {
@@ -249,6 +251,7 @@ export function UnifiedSidebar({
       });
     }
 
+    // all users
     menu.push({
       title: "Practice",
       url: "/practice",

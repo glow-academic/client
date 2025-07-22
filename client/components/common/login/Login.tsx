@@ -6,7 +6,6 @@
  */
 "use client";
 import { Button } from "@/components/ui/button";
-import { useProfile } from "@/contexts/profile-context";
 import { logError, logInfo } from "@/utils/logger";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -194,7 +193,6 @@ export default function Login() {
   const [loadingGuest, setLoadingGuest] = useState(false);
   const [loadingMicrosoft, setLoadingMicrosoft] = useState(false);
   const router = useRouter();
-  const { activeProfile } = useProfile();
 
   const handleMicrosoftLogin = async () => {
     try {
@@ -209,16 +207,13 @@ export default function Login() {
 
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
 
-      let redirectTo = `${appPrefix}/home`;
-      if (activeProfile?.role !== "ta") {
-        redirectTo = `${appPrefix}/analytics`;
-      }
+      const redirectTo = `${appPrefix}/home`;
 
       await signIn("microsoft-entra-id", { redirectTo: redirectTo });
 
       // Log successful login attempt
       await logInfo("Microsoft login attempt successful", {
-        redirectTo: activeProfile?.role !== "ta" ? "/analytics" : "/home",
+        redirectTo: "/home",
       });
 
       toast.success("Signing in with Microsoft...");
@@ -242,7 +237,7 @@ export default function Login() {
 
       // Log guest access attempt
       await logInfo("Guest access attempt started", {
-        redirectTo: "/home",
+        redirectTo: "/practice",
       });
 
       // Set guest mode in localStorage and redirect
@@ -253,11 +248,11 @@ export default function Login() {
 
       // Log successful guest access
       await logInfo("Guest access attempt successful", {
-        redirectTo: "/home",
+        redirectTo: "/practice",
       });
 
       toast.success("Accessing as guest!");
-      router.push("/home");
+      router.push("/practice");
     } catch (error) {
       const errorMessage = (error as Error).message;
 

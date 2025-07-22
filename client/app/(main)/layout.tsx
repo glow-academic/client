@@ -92,6 +92,14 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     return isMainScreen(pathname);
   }, [pathname]);
 
+  // Check if user has permission to see chat components (instructional, admin, superadmin only)
+  const canShowChatComponents = useMemo(() => {
+    const allowedRoles = ["instructional", "admin", "superadmin"];
+    return (
+      effectiveProfile?.role && allowedRoles.includes(effectiveProfile.role)
+    );
+  }, [effectiveProfile?.role]);
+
   // Load enhanced breadcrumbs with async ID resolution
   React.useEffect(() => {
     const loadBreadcrumbs = async () => {
@@ -293,7 +301,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (!shouldShowChatComponents) {
+    if (!shouldShowChatComponents && canShowChatComponents) {
       return (
         <>
           <ChatFab up={true} />
@@ -332,8 +340,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         </SidebarInset>
       </SidebarProvider>
 
-      {/* Chat Components - Only show on main screens defined in the sidebar */}
-      {shouldShowChatComponents && (
+      {/* Chat Components - Only show on main screens defined in the sidebar for allowed roles */}
+      {shouldShowChatComponents && canShowChatComponents && (
         <>
           <ChatFab up={false} />
           <ChatWidget up={false} />
@@ -341,7 +349,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         </>
       )}
 
-      {/* Guide Button - Always visible when tour is not complete */}
+      {/* Guide Button - Only visible for TAs when tour is not complete */}
       {effectiveProfile?.role === "ta" && <GuideButton />}
     </AssistantProvider>
   );
