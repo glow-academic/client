@@ -31,7 +31,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useProfile } from "@/contexts/profile-context";
 import { Cohort } from "@/types";
 
 export default function Cohorts() {
@@ -44,7 +43,6 @@ export default function Cohorts() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
-  const { effectiveProfile } = useProfile();
 
   // Fetch cohorts data
   const { data: cohorts = [], refetch: refetchCohorts } = useQuery({
@@ -63,10 +61,7 @@ export default function Cohorts() {
 
   // Check if user can edit (admin/superadmin or cohort not in use)
   const canEditCohort = (cohortId: string) => {
-    const isAdmin =
-      effectiveProfile?.role === "admin" ||
-      effectiveProfile?.role === "superadmin";
-    return isAdmin || !isCohortInUse(cohortId);
+    return !isCohortInUse(cohortId);
   };
 
   // Get table columns and filter options
