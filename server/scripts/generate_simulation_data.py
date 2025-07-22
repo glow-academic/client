@@ -33,13 +33,79 @@ def fetch_source_data(session: Session) -> dict:
         raise ValueError("No simulations with linked scenarios found. Please seed the database first.")
     print(f"  > Found {len(simulations)} simulations with scenarios.")
 
-    # Fetch all TA profiles
-    ta_statement = select(Profiles).where(Profiles.role == "ta")
-    ta_profiles = session.exec(ta_statement).all()
-    ta_user_ids = [str(p.id) for p in ta_profiles]
-    if not ta_user_ids:
-        raise ValueError("No 'ta' role profiles found in the database. Please seed the profiles table first.")
-    print(f"  > Found {len(ta_user_ids)} TA profiles.")
+    # Use hardcoded TA profile IDs that are guaranteed to exist in a fresh database
+    # These IDs are from the users/init.sql file and will always be present
+    ta_user_ids = [
+        # CS-180 TAs
+        'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',  # Nina Park
+        'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',  # Rohan Saxena
+        'ffffffff-ffff-ffff-ffff-ffffffffffff',  # Saket Shi
+        'abcdef12-3456-7890-abcd-ef1234567890',  # Samarth Soe
+        'a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6',  # Nikita Park
+        'c5180001-1111-2222-3333-444444444444',  # Alex Chen
+        'c5180002-1111-2222-3333-444444444444',  # Maya Patel
+        
+        # CS-182 TAs
+        'dddddddd-dddd-dddd-dddd-dddddddddddd',  # Richie Qian
+        '12345678-abcd-efab-cdef-123456789abc',  # Tony Xu
+        'abcd1234-efab-cdef-abcd-123456abcdef',  # Yuting Zhou
+        'c5182001-2222-3333-4444-555555555555',  # Jordan Lee
+        'c5182002-2222-3333-4444-555555555555',  # Priya Sharma
+        'c5182003-2222-3333-4444-555555555555',  # Kevin Zhang
+        
+        # CS-251 TAs
+        'cccccccc-cccc-cccc-cccc-cccccccccccc',  # Pranav Patel
+        '87654321-dcba-fedc-baef-987654321cba',  # Tayden Xiao
+        'c5251001-3333-4444-5555-666666666666',  # Sophia Martinez
+        'c5251002-3333-4444-5555-666666666666',  # Ryan O'Connor
+        'c5251003-3333-4444-5555-666666666666',  # Aisha Johnson
+        'c5251004-3333-4444-5555-666666666666',  # Daniel Kim
+        
+        # CS-381 TAs
+        '12ab34cd-56ef-78ab-90cd-12ef34567890',  # William Yoon
+        'c5381001-4444-5555-6666-777777777777',  # Isabella Garcia
+        'c5381002-4444-5555-6666-777777777777',  # Ethan Brown
+        'c5381003-4444-5555-6666-777777777777',  # Zoe Wilson
+        'c5381004-4444-5555-6666-777777777777',  # Marcus Davis
+        
+        # Multi-Class TAs
+        'c5abc001-aaaa-bbbb-cccc-dddddddddddd',  # Grace Liu
+        'c5abc002-aaaa-bbbb-cccc-dddddddddddd',  # Nathan Singh
+        'c5abc003-aaaa-bbbb-cccc-dddddddddddd',  # Emma Rodriguez
+        'c5abc004-aaaa-bbbb-cccc-dddddddddddd',  # Lucas Thompson
+        'c5abc005-aaaa-bbbb-cccc-dddddddddddd',  # Chloe Anderson
+        
+        # NEW TA ACCOUNTS FOR BULK TESTING
+        '99b90118-7b9e-4e12-8e81-d7ccc2916601',  # Harper Nguyen
+        '99b90118-7b9e-4e12-8e81-d7ccc2916602',  # Diego Alvarez
+        '99b90118-7b9e-4e12-8e81-d7ccc2916603',  # Lila Banerjee
+        '99b90118-7b9e-4e12-8e81-d7ccc2916604',  # Owen Foster
+        '99b90118-7b9e-4e12-8e81-d7ccc2916605',  # Sofia Lombardi
+        '99b90118-7b9e-4e12-8e81-d7ccc2916606',  # Noah Rasmussen
+        '99b90118-7b9e-4e12-8e81-d7ccc2916607',  # John Doe
+        '99b90118-7b9e-4e12-8e81-d7ccc2916608',  # Henry Carter
+        '99b90118-7b9e-4e12-8e81-d7ccc2916609',  # Ava Petrova
+        '99b90118-7b9e-4e12-8e81-d7ccc2916610',  # Leo Müller
+        
+        # TA TRAINING COHORT MEMBERS
+        '1a001111-1111-1111-1111-111111111111',  # Amanda Roberts
+        '1a001111-2222-2222-2222-222222222222',  # Brandon Taylor
+        '1a001111-3333-3333-3333-333333333333',  # Chloe Mitchell
+        '1a001111-4444-4444-4444-444444444444',  # Derek Campbell
+        '1a001111-5555-5555-5555-555555555555',  # Emma Foster
+        '1a002222-1111-1111-1111-111111111111',  # Felix Garcia
+        '1a002222-2222-2222-2222-222222222222',  # Grace Henderson
+        '1a002222-3333-3333-3333-333333333333',  # Henry Jackson
+        '1a002222-4444-4444-4444-444444444444',  # Ivy Martinez
+        '1a002222-5555-5555-5555-555555555555',  # Jake Nelson
+        '1a003333-1111-1111-1111-111111111111',  # Kara Phillips
+        '1a003333-2222-2222-2222-222222222222',  # Liam Rodriguez
+        '1a003333-3333-3333-3333-333333333333',  # Maya Stewart
+        '1a003333-4444-4444-4444-444444444444',  # Noah Turner
+        '1a003333-5555-5555-5555-555555555555',  # Olivia Walker
+    ]
+    
+    print(f"  > Using {len(ta_user_ids)} hardcoded TA profile IDs (guaranteed to exist in fresh database)")
 
     # Fetch the default rubric and its full structure
     rubric_statement = select(Rubrics).where(Rubrics.default_rubric == True).where(Rubrics.active == True)

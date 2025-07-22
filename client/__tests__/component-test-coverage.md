@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 122
-- **Tests Created**: 1
+- **Total Components**: 127
+- **Tests Created**: 5
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 121
+- **Tests Skipped** (already implemented): 122
 
 ## Component Coverage
 
@@ -56,7 +56,6 @@
 | CohortStaff | common/cohort/CohortStaff.tsx | CohortStaff.test.tsx | ✅ Implemented |
 | LeaderboardTable | common/cohort/LeaderboardTable.tsx | LeaderboardTable.test.tsx | ✅ Implemented |
 | SimulationProgress | common/cohort/SimulationProgress.tsx | SimulationProgress.test.tsx | ✅ Implemented |
-| Document | common/context/Document.tsx | Document.test.tsx | ✅ Implemented |
 | CarouselSection | common/dashboard/CarouselSection.tsx | CarouselSection.test.tsx | ✅ Implemented |
 | DashboardEdit | common/dashboard/DashboardEdit.tsx | DashboardEdit.test.tsx | ✅ Implemented |
 | DraggableComponent | common/dashboard/DraggableComponent.tsx | DraggableComponent.test.tsx | ✅ Implemented |
@@ -118,6 +117,12 @@
 | TATour | home/TATour.tsx | TATour.test.tsx | ✅ Implemented |
 | WelcomeOverlay | home/WelcomeOverlay.tsx | WelcomeOverlay.test.tsx | ✅ Implemented |
 | ActivityStatus | management/activity/ActivityStatus.tsx | ActivityStatus.test.tsx | ✅ Implemented |
+| Context | management/context/Context.tsx | Context.test.tsx | ✅ Implemented |
+| ContextClasses | management/context/ContextClasses.tsx | ContextClasses.test.tsx | ✅ Implemented |
+| ContextDeadlines | management/context/ContextDeadlines.tsx | ContextDeadlines.test.tsx | ✅ Implemented |
+| ContextDocuments | management/context/ContextDocuments.tsx | ContextDocuments.test.tsx | ✅ Implemented |
+| ContextLocations | management/context/ContextLocations.tsx | ContextLocations.test.tsx | ✅ Implemented |
+| ContextTime | management/context/ContextTime.tsx | ContextTime.test.tsx | ✅ Implemented |
 | Feedback | management/feedback/Feedback.tsx | Feedback.test.tsx | ✅ Implemented |
 | NewStaff | management/staff/NewStaff.tsx | NewStaff.test.tsx | ✅ Implemented |
 | Staff | management/staff/Staff.tsx | Staff.test.tsx | ✅ Implemented |
@@ -196,8 +201,6 @@ __tests__/
 │   │   ├── CohortStaff.test.tsx
 │   │   ├── LeaderboardTable.test.tsx
 │   │   ├── SimulationProgress.test.tsx
-│   ├── context/
-│   │   ├── Document.test.tsx
 │   ├── dashboard/
 │   │   ├── CarouselSection.test.tsx
 │   │   ├── DashboardEdit.test.tsx
@@ -278,6 +281,13 @@ __tests__/
 ├── management/
 │   ├── activity/
 │   │   ├── ActivityStatus.test.tsx
+│   ├── context/
+│   │   ├── Context.test.tsx
+│   │   ├── ContextClasses.test.tsx
+│   │   ├── ContextDeadlines.test.tsx
+│   │   ├── ContextDocuments.test.tsx
+│   │   ├── ContextLocations.test.tsx
+│   │   ├── ContextTime.test.tsx
 │   ├── feedback/
 │   │   ├── Feedback.test.tsx
 │   ├── staff/
