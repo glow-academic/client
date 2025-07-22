@@ -1,17 +1,17 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 128
-- **Tests Created**: 2
+- **Total Components**: 125
+- **Tests Created**: 1
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 126
+- **Tests Skipped** (already implemented): 124
 
 ## Component Coverage
 
 | Component | Path | Test File | Status |
 |-----------|------|-----------|--------|
 | Dashboard | analytics/Dashboard.tsx | Dashboard.test.tsx | ✅ Implemented |
-| Progress | analytics/Progress.tsx | Progress.test.tsx | ✅ Implemented |
+| Leaderboard | analytics/Leaderboard.tsx | Leaderboard.test.tsx | ✅ Implemented |
 | Report | analytics/report/Report.tsx | Report.test.tsx | ✅ Implemented |
 | Reports | analytics/report/Reports.tsx | Reports.test.tsx | ✅ Implemented |
 | ReportsDataTable | analytics/report/ReportsDataTable.tsx | ReportsDataTable.test.tsx | ✅ Implemented |
@@ -51,7 +51,6 @@
 | AttemptMessages | common/chat/attempt/AttemptMessages.tsx | AttemptMessages.test.tsx | ✅ Implemented |
 | AccoladeCard | common/cohort/AccoladeCard.tsx | AccoladeCard.test.tsx | ✅ Implemented |
 | Cohort | common/cohort/Cohort.tsx | Cohort.test.tsx | ✅ Implemented |
-| CohortDashboard | common/cohort/CohortDashboard.tsx | CohortDashboard.test.tsx | ✅ Implemented |
 | CohortPicker | common/cohort/CohortPicker.tsx | CohortPicker.test.tsx | ✅ Implemented |
 | CohortStaff | common/cohort/CohortStaff.tsx | CohortStaff.test.tsx | ✅ Implemented |
 | LeaderboardTable | common/cohort/LeaderboardTable.tsx | LeaderboardTable.test.tsx | ✅ Implemented |
@@ -111,10 +110,8 @@
 | Simulations | create/simulations/Simulations.tsx | Simulations.test.tsx | ✅ Implemented |
 | SimulationsDataTable | create/simulations/SimulationsDataTable.tsx | SimulationsDataTable.test.tsx | ✅ Implemented |
 | SimulationsDataTableToolbar | create/simulations/SimulationsDataTableToolbar.tsx | SimulationsDataTableToolbar.test.tsx | ✅ Implemented |
-| CompletionistView | home/CompletionistView.tsx | CompletionistView.test.tsx | ✅ Implemented |
 | Home | home/Home.tsx | Home.test.tsx | ✅ Implemented |
 | TATour | home/TATour.tsx | TATour.test.tsx | ✅ Implemented |
-| WelcomeOverlay | home/WelcomeOverlay.tsx | WelcomeOverlay.test.tsx | ✅ Implemented |
 | ActivityStatus | management/activity/ActivityStatus.tsx | ActivityStatus.test.tsx | ✅ Implemented |
 | Context | management/context/Context.tsx | Context.test.tsx | ✅ Implemented |
 | ContextClasses | management/context/ContextClasses.tsx | ContextClasses.test.tsx | ✅ Implemented |
@@ -145,7 +142,7 @@
 __tests__/
 ├── analytics/
 │   ├── Dashboard.test.tsx
-│   ├── Progress.test.tsx
+│   ├── Leaderboard.test.tsx
 │   ├── report/
 │   │   ├── Report.test.tsx
 │   │   ├── Reports.test.tsx
@@ -197,7 +194,6 @@ __tests__/
 │   ├── cohort/
 │   │   ├── AccoladeCard.test.tsx
 │   │   ├── Cohort.test.tsx
-│   │   ├── CohortDashboard.test.tsx
 │   │   ├── CohortPicker.test.tsx
 │   │   ├── CohortStaff.test.tsx
 │   │   ├── LeaderboardTable.test.tsx
@@ -274,10 +270,8 @@ __tests__/
 │   │   ├── SimulationsDataTable.test.tsx
 │   │   ├── SimulationsDataTableToolbar.test.tsx
 ├── home/
-│   ├── CompletionistView.test.tsx
 │   ├── Home.test.tsx
 │   ├── TATour.test.tsx
-│   ├── WelcomeOverlay.test.tsx
 ├── management/
 │   ├── activity/
 │   │   ├── ActivityStatus.test.tsx

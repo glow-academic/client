@@ -5,7 +5,7 @@
  * 07/20/2025
  */
 
-import CohortDashboard from "@/components/common/cohort/CohortDashboard";
+import CohortDashboard from "@/components/home/Home";
 import { ProfileProvider } from "@/contexts/profile-context";
 import { Profile } from "@/types";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -77,22 +77,21 @@ function renderWithProviders(
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <ProfileProvider activeProfile={profile as Profile}>{component}</ProfileProvider>
+      <ProfileProvider activeProfile={profile as Profile}>
+        {component}
+      </ProfileProvider>
     </QueryClientProvider>
   );
 }
 
 describe("CohortDashboard", () => {
   it("shows loading state initially for TA users", () => {
-    renderWithProviders(<CohortDashboard cohortIds={["test-cohort-id"]} />);
+    renderWithProviders(<CohortDashboard />);
     expect(screen.getByText("Loading cohort dashboard...")).toBeInTheDocument();
   });
 
   it("shows access denied for guest users", async () => {
-    renderWithProviders(
-      <CohortDashboard cohortIds={["test-cohort-id"]} />,
-      mockGuestProfile
-    );
+    renderWithProviders(<CohortDashboard />, mockGuestProfile);
 
     await waitFor(() => {
       expect(screen.getByText("Access Denied")).toBeInTheDocument();
@@ -103,20 +102,20 @@ describe("CohortDashboard", () => {
   });
 
   it("renders without crashing", () => {
-    renderWithProviders(<CohortDashboard cohortIds={["test-cohort-id"]} />);
+    renderWithProviders(<CohortDashboard />);
     // Basic smoke test - component should render without throwing
     expect(screen.getByText("Loading cohort dashboard...")).toBeInTheDocument();
   });
 
   it("shows no cohorts found when cohorts don't exist", async () => {
-    renderWithProviders(
-      <CohortDashboard cohortIds={["non-existent-cohort"]} />
-    );
+    renderWithProviders(<CohortDashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText("No Cohorts Found")).toBeInTheDocument();
+      expect(screen.getByText("No Cohorts Available")).toBeInTheDocument();
       expect(
-        screen.getByText("The requested cohorts could not be found.")
+        screen.getByText(
+          "There are no cohorts assigned to you. Please contact an administrator."
+        )
       ).toBeInTheDocument();
     });
   });

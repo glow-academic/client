@@ -6,27 +6,47 @@
  */
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { useProfile } from "@/contexts/profile-context";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
-import { Cohort, CohortPicker } from "../common/cohort/CohortPicker";
+import { logInfo } from "@/utils/logger";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { logInfo } from "@/utils/logger";
-import LeaderboardTable from "../common/cohort/LeaderboardTable";
+import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { useQuery } from "@tanstack/react-query";
+import { Award, Check, Crown, MessageSquareText, Zap } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import AccoladeCard from "../common/cohort/AccoladeCard";
-import { Award, Crown, MessageSquareText, Zap } from "lucide-react";
+import { Cohort, CohortPicker } from "../common/cohort/CohortPicker";
+import LeaderboardTable from "../common/cohort/LeaderboardTable";
 
-export default function Leaderboard() {
+export interface LeaderboardProps {
+  cohortId?: string;
+}
+
+export default function Leaderboard({ cohortId }: LeaderboardProps) {
   const { effectiveProfile } = useProfile();
   const [selectedCohorts, setSelectedCohorts] = useState<Cohort[]>([]);
+
+  // Determine if we should show all data (instructor view) or filtered (TA view)
+  const shouldShowAll =
+    effectiveProfile?.role === "instructional" ||
+    effectiveProfile?.role === "admin" ||
+    effectiveProfile?.role === "superadmin";
+
+  // Check if user is a TA
+  const isTA = effectiveProfile?.role === "ta";
 
   const { data: cohorts, isLoading: loadingCohorts } = useQuery({
     queryKey: ["cohorts"],
     queryFn: getAllCohorts,
+  });
+
+  const { data: allSimulations, isLoading: loadingSimulations } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: getAllSimulations,
   });
 
   // 3. Get all profile IDs from the cohorts to fetch member data
@@ -48,56 +68,38 @@ export default function Leaderboard() {
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  // Filter profiles to only include those in the cohort's profileIds
-  const cohortProfiles = useMemo(() => {
-    if (!allProfiles || !cohorts) return [];
-
-    // Get all profile IDs from all selected cohorts
-    const allCohortProfileIds = new Set<string>();
-    cohorts.forEach((cohort) => {
-      cohort.profileIds?.forEach((id) => allCohortProfileIds.add(id));
-    });
-
-    // Filter profiles to only include those in the cohort
-    const filteredProfiles = allProfiles.filter((profile) =>
-      allCohortProfileIds.has(profile.id)
-    );
-
-    return filteredProfiles;
-  }, [allProfiles, cohorts]);
-
   // 5. Fetch all attempts for these members
-  const { data: attempts, isLoading: loadingAttempts } = useQuery({
+  const { data: allAttempts, isLoading: loadingAttempts } = useQuery({
     queryKey: ["simulationAttempts", cohortMemberIds],
     queryFn: () => getSimulationAttemptsByProfiles(cohortMemberIds),
     enabled: cohortMemberIds.length > 0,
   });
 
   // 6. Fetch chats for those attempts
-  const { data: chats, isLoading: loadingChats } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((a) => a.id)?.sort() || []],
-    queryFn: () => getSimulationChatsByAttempts(attempts!.map((a) => a.id)),
-    enabled: !!attempts && attempts.length > 0,
+  const { data: allChats, isLoading: loadingChats } = useQuery({
+    queryKey: ["simulationChats", allAttempts?.map((a) => a.id)?.sort() || []],
+    queryFn: () => getSimulationChatsByAttempts(allAttempts!.map((a) => a.id)),
+    enabled: !!allAttempts && allAttempts.length > 0,
   });
 
   // 7. Fetch grades for those chats - this contains the critical 'passed' status
-  const { data: grades, isLoading: loadingGrades } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((c) => c.id)?.sort() || []],
+  const { data: allGrades, isLoading: loadingGrades } = useQuery({
+    queryKey: ["simulationGrades", allChats?.map((c) => c.id)?.sort() || []],
     queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats!.map((c) => c.id)),
-    enabled: !!chats && chats.length > 0,
+      getSimulationChatGradesBySimulationChats(allChats!.map((c) => c.id)),
+    enabled: !!allChats && allChats.length > 0,
   });
 
   // 8. Fetch messages for those chats (for accolades calculation)
   const { data: messages, isLoading: loadingMessages } = useQuery({
-    queryKey: ["simulationMessages", chats?.map((c) => c.id)?.sort() || []],
+    queryKey: ["simulationMessages", allChats?.map((c) => c.id)?.sort() || []],
     queryFn: async () => {
       const { getSimulationMessagesByChats } = await import(
         "@/utils/queries/simulation_messages/get-simulation-messages-by-chats"
       );
-      return getSimulationMessagesByChats(chats!.map((c) => c.id));
+      return getSimulationMessagesByChats(allChats!.map((c) => c.id));
     },
-    enabled: !!chats && chats.length > 0,
+    enabled: !!allChats && allChats.length > 0,
   });
 
   // 9. Fetch all rubrics (for accolades and leaderboard calculation)
@@ -110,6 +112,210 @@ export default function Leaderboard() {
       return getAllRubrics();
     },
   });
+
+  // Transform cohorts for the picker with completion status
+  const cohortsForPicker = useMemo(() => {
+    if (
+      !cohorts ||
+      !allSimulations ||
+      !allProfiles ||
+      !allAttempts ||
+      !allChats ||
+      !allGrades
+    ) {
+      return [];
+    }
+
+    return cohorts.map((cohort) => {
+      // Get simulations for this cohort
+      const cohortSimulations = allSimulations.filter((sim) =>
+        cohort.simulationIds?.includes(sim.id)
+      );
+
+      // Get the profiles of members in this cohort
+      const cohortMembers = allProfiles.filter((p) =>
+        cohort.profileIds?.includes(p.id)
+      );
+
+      // Calculate completion status
+      let isCompleted = false;
+
+      if (shouldShowAll) {
+        // Instructor view: Check if all members have completed all simulations
+        const cohortAttempts = allAttempts.filter(
+          (att) =>
+            att.profileId &&
+            cohort.profileIds?.includes(att.profileId) &&
+            cohortSimulations.some((sim) => sim.id === att.simulationId)
+        );
+
+        const cohortAttemptIds = cohortAttempts.map((att) => att.id);
+        const cohortChats = allChats?.filter((c) =>
+          cohortAttemptIds.includes(c.attemptId)
+        );
+        const cohortGrades = allGrades.filter((g) =>
+          cohortChats?.some((c) => c.id === g.simulationChatId)
+        );
+
+        const passedCount = cohortGrades.filter((g) => g.passed).length || 0;
+        const totalExpectedAttempts =
+          cohortMembers.length * cohortSimulations.length;
+
+        isCompleted = passedCount >= totalExpectedAttempts;
+      } else {
+        // TA view: Check if current TA has completed all simulations
+        if (!effectiveProfile?.id) {
+          isCompleted = false;
+        } else {
+          const taAttempts = allAttempts.filter(
+            (att) =>
+              att.profileId === effectiveProfile.id! &&
+              cohortSimulations.some((sim) => sim.id === att.simulationId)
+          );
+
+          const taAttemptIds = taAttempts.map((att) => att.id);
+          const taChats = allChats?.filter((c) =>
+            taAttemptIds.includes(c.attemptId)
+          );
+          const taGrades = allGrades.filter((g) =>
+            taChats?.some((c) => c.id === g.simulationChatId)
+          );
+
+          const passedCount = taGrades.filter((g) => g.passed).length || 0;
+          isCompleted = passedCount >= cohortSimulations.length;
+        }
+      }
+
+      return {
+        id: cohort.id,
+        title: cohort.title,
+        description: `Cohort with ${cohort.profileIds?.length || 0} members`,
+        memberCount: cohort.profileIds?.length || 0,
+        isCompleted,
+      };
+    });
+  }, [
+    cohorts,
+    allSimulations,
+    allProfiles,
+    allAttempts,
+    allChats,
+    allGrades,
+    shouldShowAll,
+    effectiveProfile?.id,
+  ]);
+
+  // Get available cohorts based on user role and cohortId prop
+  const availableCohorts = useMemo(() => {
+    if (!cohortsForPicker) return [];
+
+    if (cohortId) {
+      // If cohortId is provided, only show that specific cohort
+      return cohortsForPicker.filter((cohort) => cohort.id === cohortId);
+    }
+
+    if (shouldShowAll) {
+      // Instructors see all cohorts
+      return cohortsForPicker;
+    } else if (isTA && effectiveProfile?.id) {
+      // TAs see only their assigned cohorts
+      return cohortsForPicker.filter((cohort) => {
+        const originalCohort = cohorts?.find((c) => c.id === cohort.id);
+        return originalCohort?.profileIds?.includes(effectiveProfile.id);
+      });
+    }
+
+    return [];
+  }, [
+    cohortsForPicker,
+    shouldShowAll,
+    isTA,
+    effectiveProfile?.id,
+    cohorts,
+    cohortId,
+  ]);
+
+  // Set default selection based on cohortId prop or incomplete cohorts
+  useEffect(() => {
+    if (availableCohorts.length > 0 && selectedCohorts.length === 0) {
+      if (cohortId) {
+        // If cohortId is provided, select that specific cohort
+        const specificCohort = availableCohorts.find(
+          (cohort) => cohort.id === cohortId
+        );
+        if (specificCohort) {
+          setSelectedCohorts([specificCohort]);
+        }
+      } else {
+        // Otherwise, select incomplete cohorts by default
+        const incompleteCohorts = availableCohorts.filter(
+          (cohort) => !cohort.isCompleted
+        );
+        setSelectedCohorts(
+          incompleteCohorts.length > 0 ? incompleteCohorts : availableCohorts
+        );
+      }
+    }
+  }, [availableCohorts, selectedCohorts.length, cohortId]);
+
+  // Get selected cohort IDs
+  const selectedCohortIds = useMemo(() => {
+    return selectedCohorts.map((cohort) => cohort.id);
+  }, [selectedCohorts]);
+
+  // Filter cohorts to only selected ones
+  const filteredCohorts = useMemo(() => {
+    if (!cohorts) return [];
+    return cohorts.filter((cohort) => selectedCohortIds.includes(cohort.id));
+  }, [cohorts, selectedCohortIds]);
+
+  // Filter profiles to only include those in the selected cohorts
+  const cohortProfiles = useMemo(() => {
+    if (!allProfiles || !filteredCohorts) return [];
+
+    // Get all profile IDs from all selected cohorts
+    const allCohortProfileIds = new Set<string>();
+    filteredCohorts.forEach((cohort) => {
+      cohort.profileIds?.forEach((id) => allCohortProfileIds.add(id));
+    });
+
+    // Filter profiles to only include those in the cohort
+    const filteredProfiles = allProfiles.filter((profile) =>
+      allCohortProfileIds.has(profile.id)
+    );
+
+    return filteredProfiles;
+  }, [allProfiles, filteredCohorts]);
+
+  // Filter attempts to only include those from selected cohorts
+  const attempts = useMemo(() => {
+    if (!allAttempts || !filteredCohorts) return [];
+
+    const cohortProfileIds = new Set<string>();
+    filteredCohorts.forEach((cohort) => {
+      cohort.profileIds?.forEach((id) => cohortProfileIds.add(id));
+    });
+
+    return allAttempts.filter(
+      (attempt) => attempt.profileId && cohortProfileIds.has(attempt.profileId)
+    );
+  }, [allAttempts, filteredCohorts]);
+
+  // Filter chats to only include those from selected cohort attempts
+  const chats = useMemo(() => {
+    if (!allChats || !attempts) return [];
+
+    const attemptIds = new Set(attempts.map((a) => a.id));
+    return allChats.filter((chat) => attemptIds.has(chat.attemptId));
+  }, [allChats, attempts]);
+
+  // Filter grades to only include those from selected cohort chats
+  const grades = useMemo(() => {
+    if (!allGrades || !chats) return [];
+
+    const chatIds = new Set(chats.map((c) => c.id));
+    return allGrades.filter((grade) => chatIds.has(grade.simulationChatId));
+  }, [allGrades, chats]);
 
   const safeAttempts = useMemo(() => attempts || [], [attempts]);
   const safeGrades = useMemo(() => grades || [], [grades]);
@@ -204,7 +410,7 @@ export default function Leaderboard() {
     if (!cohortProfiles || cohortProfiles.length === 0) {
       logInfo("Leaderboard: No cohort profiles found", {
         cohortProfilesLength: cohortProfiles?.length || 0,
-        cohorts: cohorts?.map((c) => ({
+        cohorts: filteredCohorts?.map((c) => ({
           id: c.id,
           title: c.title,
           profileCount: c.profileIds?.length || 0,
@@ -290,66 +496,39 @@ export default function Leaderboard() {
     rubrics,
     safeAttempts,
     chats,
-    cohorts,
+    filteredCohorts,
   ]);
 
-  // Transform cohorts for the picker
-  const cohortsForPicker = useMemo(() => {
-    if (!cohorts) return [];
-
-    return cohorts.map((cohort) => ({
-      id: cohort.id,
-      title: cohort.title,
-      description: `Cohort with ${cohort.profileIds?.length || 0} members`,
-      memberCount: cohort.profileIds?.length || 0,
-    }));
-  }, [cohorts]);
-
-  // Get selected cohort IDs
-  const selectedCohortIds = useMemo(() => {
-    return selectedCohorts.map((cohort) => cohort.id);
-  }, [selectedCohorts]);
-
-  // Determine if we should show all data (instructor view) or filtered (TA view)
-  const shouldShowAll =
-    effectiveProfile?.role === "instructional" ||
-    effectiveProfile?.role === "admin" ||
-    effectiveProfile?.role === "superadmin";
-
-  useEffect(() => {
-    if (shouldShowAll && cohortsForPicker.length > 0) {
-      setSelectedCohorts(cohortsForPicker);
-    }
-  }, [shouldShowAll, cohortsForPicker]);
-
   const isLoading =
-  loadingCohorts ||
-  loadingProfiles ||
-  loadingAttempts ||
-  loadingChats ||
-  loadingGrades ||
-  loadingMessages ||
-  loadingRubrics;
+    loadingCohorts ||
+    loadingSimulations ||
+    loadingProfiles ||
+    loadingAttempts ||
+    loadingChats ||
+    loadingGrades ||
+    loadingMessages ||
+    loadingRubrics;
 
   if (isLoading) {
     return (
       <div className="container mx-auto p-4">
         <div className="flex items-center justify-center h-64">
-          <div className="text-lg">Loading cohorts...</div>
+          <div className="text-lg">Loading leaderboard...</div>
         </div>
       </div>
     );
   }
 
   // Show error if no cohorts are available
-  if (!cohorts || cohorts.length === 0) {
+  if (!availableCohorts.length) {
     return (
       <div className="container mx-auto p-4">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">No Cohorts Available</h1>
           <p className="text-gray-600">
-            There are no cohorts configured in the system. Please contact an
-            administrator to create cohorts.
+            {cohortId
+              ? "The specified cohort could not be found or you don't have access to it."
+              : "There are no cohorts assigned to you. Please contact an administrator."}
           </p>
         </div>
       </div>
@@ -358,15 +537,36 @@ export default function Leaderboard() {
 
   return (
     <div className="space-y-6">
-      {/* Cohort Filter */}
-      <div className="w-full">
-        <CohortPicker
-          cohorts={cohortsForPicker}
-          selectedCohorts={selectedCohorts}
-          onSelect={setSelectedCohorts}
-          placeholder="Select cohorts to view..."
-          description="Choose one or more cohorts to filter the progress view. Leave empty to view all cohorts."
-        />
+      {/* Header with title and cohort picker */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Leaderboard</h2>
+        {!cohortId && (
+          <CohortPicker
+            cohorts={availableCohorts.map((cohort) => ({
+              ...cohort,
+              title: cohort.isCompleted ? (
+                <div className="flex items-center gap-2">
+                  <span>{cohort.title}</span>
+                  <Badge
+                    variant="secondary"
+                    className="bg-green-100 text-green-800 border-green-200"
+                  >
+                    <Check className="h-3 w-3 mr-1" />
+                    Complete
+                  </Badge>
+                </div>
+              ) : (
+                cohort.title
+              ),
+            }))}
+            label="Filter Cohorts"
+            placeholder="Select cohorts..."
+            description="Select one or more cohorts to filter the leaderboard view."
+            onSelect={setSelectedCohorts}
+            selectedCohorts={selectedCohorts}
+            hideSelectedChips={true}
+          />
+        )}
       </div>
 
       {/* Dashboard Content */}
@@ -400,7 +600,6 @@ export default function Leaderboard() {
             />
           </div>
           <div>
-            <h2 className="text-2xl font-bold mb-4">Cohort Leaderboard</h2>
             <LeaderboardTable
               data={leaderboardData}
               currentUserId={effectiveProfile?.id || ""}

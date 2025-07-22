@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils";
 
 export interface Cohort {
   id: string;
-  title: string;
+  title: string | React.ReactNode;
   description?: string;
   memberCount?: number;
 }
@@ -102,7 +102,8 @@ export function CohortPicker({
       return placeholder;
     }
     if (selectedCohorts.length === 1) {
-      return selectedCohorts[0]!.title;
+      const title = selectedCohorts[0]!.title;
+      return typeof title === "string" ? title : "Cohort selected";
     }
     return `${selectedCohorts.length} cohorts selected`;
   };
@@ -170,7 +171,9 @@ export function CohortPicker({
             >
               <div className="grid gap-2">
                 <h4 className="font-medium leading-none">
-                  {peekedCohort?.title || "No cohort selected"}
+                  {typeof peekedCohort?.title === "string"
+                    ? peekedCohort.title
+                    : "Cohort selected"}
                 </h4>
                 <div className="text-sm text-muted-foreground">
                   {peekedCohort?.description || "No description available"}
@@ -249,10 +252,12 @@ function CohortItem({ cohort, isSelected, onSelect, onPeek }: CohortItemProps) {
       ref={ref}
       className="data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
     >
-      {cohort.title}
-      <Check
-        className={cn("ml-auto", isSelected ? "opacity-100" : "opacity-0")}
-      />
+      <div className="flex items-center justify-between w-full">
+        <div className="flex items-center gap-2">{cohort.title}</div>
+        <Check
+          className={cn("ml-auto", isSelected ? "opacity-100" : "opacity-0")}
+        />
+      </div>
     </CommandItem>
   );
 }

@@ -5,9 +5,9 @@
  * 07/20/2025
  */
 
-import CohortDashboard from "@/components/common/cohort/CohortDashboard";
 import { use } from "react";
 
+import Leaderboard from "@/components/analytics/Leaderboard";
 import { getCohort } from "@/utils/queries/cohorts/get-cohort";
 import type { Metadata, ResolvingMetadata } from "next";
 
@@ -34,7 +34,7 @@ export default function CohortDashboardPage({
   const { cohortId } = use(params);
   return (
     <div className="space-y-6">
-      <CohortDashboard cohortIds={[cohortId]} />
+      <Leaderboard cohortId={cohortId} />
     </div>
   );
 }
