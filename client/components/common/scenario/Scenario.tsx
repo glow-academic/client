@@ -47,12 +47,12 @@ import { ScenarioPicker } from "./ScenarioPicker";
 import { ScenarioSlider } from "./ScenarioSlider";
 
 // Types and API functions
-import { Agent, Document, Scenario as ScenarioType, Simulation } from "@/types";
+import { Persona, Document, Scenario as ScenarioType, Simulation } from "@/types";
 import { newScenario } from "@/utils/api/scenarios/new-scenario";
 import { logError } from "@/utils/logger";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
 import { updateScenario } from "@/utils/mutations/scenarios/update-scenario";
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllScenarioClasses } from "@/utils/queries/scenario_classes/get-all-scenario-classes";
 import { getAllScenarioDeadlines } from "@/utils/queries/scenario_deadlines/get-all-scenario-deadlines";
@@ -89,7 +89,7 @@ export default function Scenario({
   const initialFormData: Partial<ScenarioType> = {
     classId: null,
     documentIds: [],
-    agentId: null,
+    personaId: null,
     crowdedness: null,
     intensity: null,
     locationId: null,
@@ -113,9 +113,9 @@ export default function Scenario({
     queryFn: () => getAllDocuments(),
   });
 
-  const { data: agents = [] } = useQuery({
-    queryKey: ["agents"],
-    queryFn: () => getAllAgents(),
+  const { data: personas = [] } = useQuery({
+    queryKey: ["personas"],
+    queryFn: () => getAllPersonas(),
   });
 
   const { data: simulations = [] } = useQuery({
@@ -157,7 +157,7 @@ export default function Scenario({
       const scenarioData = {
         classId: scenario.classId,
         documentIds: scenario.documentIds || [],
-        agentId: scenario.agentId,
+        personaId: scenario.personaId,
         crowdedness: scenario.crowdedness,
         intensity: scenario.intensity,
         locationId: scenario.locationId,
@@ -180,7 +180,7 @@ export default function Scenario({
 
     return (
       current.classId !== original.classId ||
-      current.agentId !== original.agentId ||
+      current.personaId !== original.personaId ||
       current.crowdedness !== original.crowdedness ||
       current.intensity !== original.intensity ||
       current.locationId !== original.locationId ||
@@ -205,8 +205,8 @@ export default function Scenario({
   // Calculate step status
   const getStepStatus = (stepId: string): StepStatus => {
     switch (stepId) {
-      case "agent":
-        return formData.agentId ? "completed" : "active";
+      case "persona":
+        return formData.personaId ? "completed" : "active";
       case "documents":
         return !formData.documentIds
           ? "pending"
@@ -214,13 +214,13 @@ export default function Scenario({
             ? "completed"
             : "active";
       case "context":
-        return !formData.agentId
+        return !formData.personaId
           ? "pending"
           : formData.crowdedness || formData.intensity
             ? "completed"
             : "active";
       case "environment":
-        return !formData.agentId
+        return !formData.personaId
           ? "pending"
           : formData.locationId ||
               formData.timeId ||
@@ -229,7 +229,7 @@ export default function Scenario({
             ? "completed"
             : "active";
       case "content":
-        return !formData.agentId ? "pending" : "active"; // Always active once agent is selected, user can choose to fill or leave blank
+        return !formData.personaId ? "pending" : "active"; // Always active once persona is selected, user can choose to fill or leave blank
       default:
         return "pending";
     }
@@ -237,10 +237,10 @@ export default function Scenario({
 
   const steps: Step[] = [
     {
-      id: "agent",
-      title: "Select Agent Type",
-      description: "Choose the type of AI agent for this scenario",
-      status: getStepStatus("agent"),
+      id: "persona",
+      title: "Select Persona Type",
+      description: "Choose the type of persona for this scenario",
+      status: getStepStatus("persona"),
     },
     {
       id: "documents",
@@ -280,18 +280,12 @@ export default function Scenario({
     strengths: doc.mimeType,
   }));
 
-  const agentModels: Model[] = agents
-    .filter(
-      (agent: Agent) =>
-        agent.name.toLowerCase() === "aggressive" ||
-        agent.name.toLowerCase() === "happy" ||
-        agent.name.toLowerCase() === "confused"
-    )
-    .map((agent: Agent) => ({
-      id: agent.id,
-      name: agent.name,
-      description: agent.description,
-      type: "Agents" as const,
+  const personaModels: Model[] = personas
+    .map((persona: Persona) => ({
+      id: persona.id,
+      name: persona.name,
+      description: persona.description,
+      type: "Personas" as const,
     }));
 
   // Event handlers
@@ -307,7 +301,7 @@ export default function Scenario({
 
     try {
       const result = await newScenario({
-        agentId: formData.agentId || null,
+        personaId: formData.personaId || null,
         documentIds: formData.documentIds || [],
         crowdedness: formData.crowdedness || null,
         intensity: formData.intensity || null,
@@ -348,7 +342,7 @@ export default function Scenario({
       const payload = {
         name: formData.name?.trim() || "",
         description: formData.description?.trim() || "",
-        agentId: formData.agentId,
+        personaId: formData.personaId,
         classId: formData.classId,
         documentIds: formData.documentIds,
         crowdedness: formData.crowdedness,
@@ -410,15 +404,15 @@ export default function Scenario({
   const selectedDocuments = documents.filter((doc) =>
     formData.documentIds?.includes(doc.id)
   );
-  const selectedAgent = agents.find((agent) => agent.id === formData.agentId);
+  const selectedPersona = personas.find((persona) => persona.id === formData.personaId);
 
   return (
     <div className="w-full p-6 space-y-8">
       <div className="space-y-6">
         {/* Step 1: Agent Selection */}
         <Card
-          className={`transition-all ${!isEditMode && getStepStatus("agent") === "active" ? "ring-2 ring-primary" : ""} ${
-            !isEditMode && getStepStatus("agent") === "pending"
+          className={`transition-all ${!isEditMode && getStepStatus("persona") === "active" ? "ring-2 ring-primary" : ""} ${
+            !isEditMode && getStepStatus("persona") === "pending"
               ? "opacity-50"
               : ""
           }`}
@@ -427,14 +421,14 @@ export default function Scenario({
             <div className="flex items-center space-x-3">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  getStepStatus("agent") === "completed"
+                  getStepStatus("persona") === "completed"
                     ? "bg-green-500 text-white"
-                    : getStepStatus("agent") === "active"
+                    : getStepStatus("persona") === "active"
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted"
                 }`}
               >
-                {getStepStatus("agent") === "completed" ? (
+                {getStepStatus("persona") === "completed" ? (
                   <Check className="w-4 h-4" />
                 ) : (
                   "1"
@@ -447,25 +441,25 @@ export default function Scenario({
                 <CardDescription>{steps[0]?.description || ""}</CardDescription>
               </div>
             </div>
-            {getStepStatus("agent") === "completed" && (
+            {getStepStatus("persona") === "completed" && (
               <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto" />
             )}
           </CardHeader>
           <CardContent>
             <ScenarioPicker
-              models={agentModels}
-              types={["Agents"]}
+              models={personaModels}
+              types={["Personas"]}
               label=""
-              placeholder="Select an agent..."
-              description="Choose the AI agent that will interact with students in this scenario."
-              onSelect={(model) => handleInputChange("agentId", model.id)}
+              placeholder="Select a persona..."
+              description="Choose the persona that will interact with students in this scenario."
+              onSelect={(model) => handleInputChange("personaId", model.id)}
               selectedModel={
-                selectedAgent
+                selectedPersona
                   ? {
-                      id: selectedAgent.id,
-                      name: selectedAgent.name,
-                      description: selectedAgent.description,
-                      type: "Agents" as const,
+                      id: selectedPersona.id,
+                      name: selectedPersona.name,
+                      description: selectedPersona.description,
+                      type: "Personas" as const,
                     }
                   : undefined
               }

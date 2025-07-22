@@ -120,16 +120,6 @@ export default function Context() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Context Management</h1>
-          <p className="text-muted-foreground">
-            Manage scenario context items including classes, locations,
-            deadlines, times, and documents
-          </p>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Classes */}
         {renderContextCard<ScenarioClasse>(

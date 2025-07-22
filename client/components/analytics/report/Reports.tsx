@@ -9,7 +9,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -36,7 +35,7 @@ export default function Reports() {
     columns,
     performanceOptions,
     cohortOptions,
-    agentOptions,
+    personaOptions,
     scenarioOptions,
     simulationOptions,
   } = useReportColumns({
@@ -63,11 +62,6 @@ export default function Reports() {
   const { data: cohorts, isLoading: isLoadingCohorts } = useQuery({
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
-  });
-
-  const { data: _agents, isLoading: isLoadingAgents } = useQuery({
-    queryKey: ["agents"],
-    queryFn: () => getAllAgents(),
   });
 
   const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
@@ -438,15 +432,15 @@ export default function Reports() {
           ? Math.max(...cohortComparison.map((c) => c.difference))
           : 0;
 
-      // Get unique agent IDs from scenarios this user has worked on
-      const userAgentIds = [
+      // Get unique persona IDs from scenarios this user has worked on
+      const userPersonaIds = [
         ...new Set(
           userChats
             .map((chat) => {
               const scenario = scenarios.find((s) => s.id === chat.scenarioId);
-              return scenario?.agentId;
+              return scenario?.personaId;
             })
-            .filter((agentId): agentId is string => agentId !== null)
+            .filter((personaId): personaId is string => personaId !== null)
         ),
       ];
 
@@ -501,7 +495,7 @@ export default function Reports() {
             : 0,
         avgVsCohort: bestCohortPerformance,
         // Additional fields for filtering
-        agentsTested: userAgentIds,
+        personasTested: userPersonaIds,
         scenarioIds: userScenarioIds,
         simulationIds: userSimulationIds,
       };
@@ -536,8 +530,7 @@ export default function Reports() {
     isLoadingSimulations ||
     isLoadingScenarios ||
     isLoadingMessages ||
-    isLoadingCohorts ||
-    isLoadingAgents
+    isLoadingCohorts
   ) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -556,7 +549,7 @@ export default function Reports() {
         data={taPerformanceData}
         performanceOptions={performanceOptions}
         cohortOptions={cohortOptions}
-        agentOptions={agentOptions}
+        personaOptions={personaOptions}
         scenarioOptions={scenarioOptions}
         simulationOptions={simulationOptions}
         showExport={true}

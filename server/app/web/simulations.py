@@ -130,7 +130,7 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
             # Generate scenario description if empty
             if not scenario.description or scenario.description == "":
                 name, description, trace_id = await run_scenario_agent(
-                    agent_id=scenario.agent_id,
+                    persona_id=scenario.persona_id,
                     class_id=scenario.class_id,
                     document_ids=scenario.document_ids,
                     crowdedness=scenario.crowdedness,
@@ -369,7 +369,7 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                             description,
                             trace_id,
                         ) = await run_scenario_agent(
-                            agent_id=next_scenario.agent_id,
+                            persona_id=next_scenario.persona_id,
                             class_id=next_scenario.class_id,
                             document_ids=next_scenario.document_ids,
                             crowdedness=next_scenario.crowdedness,

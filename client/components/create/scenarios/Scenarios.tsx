@@ -63,7 +63,7 @@ export function Scenarios() {
     columns,
     simulationOptions,
     cohortOptions,
-    agentOptions,
+    personaOptions,
     scenarioTypeOptions,
   } = useScenarioColumns();
 
@@ -246,7 +246,7 @@ export function Scenarios() {
         data={scenarios}
         simulationOptions={simulationOptions}
         cohortOptions={cohortOptions}
-        agentOptions={agentOptions}
+        personaOptions={personaOptions}
         scenarioTypeOptions={scenarioTypeOptions}
         renderScenarioCard={renderScenarioCard}
       />

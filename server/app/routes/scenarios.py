@@ -19,7 +19,7 @@ router = APIRouter()
 
 @router.post("/new")
 async def new_scenario(
-    agent_id: uuid.UUID | None = Form(None),
+    persona_id: uuid.UUID | None = Form(None),
     class_id: uuid.UUID | None = Form(None),
     document_ids: List[uuid.UUID] | None = Form(None),
     seniority: str | None = Form(None),
@@ -35,7 +35,7 @@ async def new_scenario(
     """
     try:
         # Convert empty strings to None for better handling
-        agent_id = agent_id if agent_id else None
+        persona_id = persona_id if persona_id else None
         class_id = class_id if class_id else None
         seniority = seniority if seniority else None
         location_id = location_id if location_id else None
@@ -50,7 +50,7 @@ async def new_scenario(
 
         # Run the scenario agent to generate title and description
         title, description, _ = await run_scenario_agent(
-            agent_id=agent_id,
+            persona_id=persona_id,
             class_id=class_id,
             document_ids=document_ids,
             crowdedness=crowdedness,
@@ -84,7 +84,7 @@ async def new_scenario(
 
 @router.post("/test")
 async def test_scenario(
-    agent_id: uuid.UUID = Form(...),
+    persona_id: uuid.UUID = Form(...),
     description: str = Form(""),
     query: str = Form(...),
     session: Session = Depends(get_session),
@@ -94,8 +94,8 @@ async def test_scenario(
     """
     try:
         # Validate required fields
-        if not agent_id:
-            raise HTTPException(status_code=400, detail="Agent ID is required")
+        if not persona_id:
+            raise HTTPException(status_code=400, detail="Persona ID is required")
 
         if not query:
             raise HTTPException(status_code=400, detail="Query is required")
@@ -125,7 +125,7 @@ async def test_scenario(
                 )
 
                 async for token in run_generic_agent(
-                    agent_id=agent_id,
+                    persona_id=persona_id,
                     input_items=input_items,
                     session=session,
                 ):

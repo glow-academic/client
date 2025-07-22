@@ -20,3 +20,5 @@ Focus on evaluating the TA's performance in:
 - Their ability to adapt to the student's needs and learning style
 
 Your evaluation should be fair, consistent, and based solely on observable evidence in the conversation.
+
+*Note: The TA has the role of 'user'. The AI student has the role of 'assistant'*

@@ -228,7 +228,7 @@ export const dashboards = pgTable("dashboards", {
 		}).onDelete("cascade"),
 ]);
 
-export const agents = pgTable("agents", {
+export const personas = pgTable("personas", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -236,14 +236,14 @@ export const agents = pgTable("agents", {
 	description: text().notNull(),
 	systemPrompt: text("system_prompt").notNull(),
 	temperature: integer().notNull(),
-	defaultAgent: boolean("default_agent").default(false).notNull(),
+	defaultPersona: boolean("default_persona").default(false).notNull(),
 	color: text().notNull(),
 	modelId: uuid("model_id"),
 	reasoning: reasoningEffort()}, (table) => [
 	foreignKey({
 			columns: [table.modelId],
 			foreignColumns: [models.id],
-			name: "agents_model_id_fkey"
+			name: "personas_model_id_fkey"
 		}),
 ]);
 
@@ -270,7 +270,7 @@ export const scenarios = pgTable("scenarios", {
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	name: text().notNull(),
 	description: text().notNull(),
-	agentId: uuid("agent_id"),
+	personaId: uuid("persona_id"),
 	crowdedness: integer(),
 	intensity: integer(),
 	classId: uuid("class_id"),
@@ -284,9 +284,9 @@ export const scenarios = pgTable("scenarios", {
 	parentId: uuid("parent_id"),
 	active: boolean().default(true).notNull()}, (table) => [
 	foreignKey({
-			columns: [table.agentId],
-			foreignColumns: [agents.id],
-			name: "scenarios_agent_id_fkey"
+			columns: [table.personaId],
+			foreignColumns: [personas.id],
+			name: "scenarios_persona_id_fkey"
 		}).onDelete("set null"),
 	foreignKey({
 			columns: [table.classId],

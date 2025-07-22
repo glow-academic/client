@@ -15,7 +15,7 @@ const mockProps: ReportsDataTableToolbarProps = {
   table: getMockTable<TAPerformanceData>(),
   performanceOptions: [],
   cohortOptions: [],
-  agentOptions: [],
+  personaOptions: [],
   scenarioOptions: [],
   simulationOptions: [],
   // showExport: false, /* optional */

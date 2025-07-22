@@ -67,7 +67,7 @@ def scenario_overview(scenario_id: str) -> Dict[str, Any]:
             "name": scenario.name,
             "description": scenario.description,
             "default_scenario": scenario.default_scenario,
-            "agent_id": str(scenario.agent_id) if scenario.agent_id else None,
+            "persona_id": str(scenario.persona_id) if scenario.persona_id else None,
             "class_id": str(scenario.class_id) if scenario.class_id else None,
             "created_at": scenario.created_at.isoformat()
             if scenario.created_at

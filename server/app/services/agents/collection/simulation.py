@@ -7,7 +7,7 @@ from agents import Runner, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
-from app.models import (Agents, Documents, Models, Providers, Scenarios,
+from app.models import (Documents, Models, Personas, Providers, Scenarios,
                         SimulationAttempts, SimulationChats,
                         SimulationMessages)
 from app.services.agents.generic import GenericAgent
@@ -85,15 +85,15 @@ async def _handle_simulation_chat(
     if not scenario:
         raise ValueError(f"Scenario not found for chat {chat.id}")
 
-    if not scenario.agent_id:
-        raise ValueError(f"Scenario {scenario.id} has no agent_id")
+    if not scenario.persona_id:
+        raise ValueError(f"Scenario {scenario.id} has no persona_id")
 
     if not scenario.class_id:
         raise ValueError(f"Scenario {scenario.id} has no class_id")
 
-    agent = session.exec(select(Agents).where(Agents.id == scenario.agent_id)).one()
-    if not agent:
-        raise ValueError(f"Agent not found for scenario {scenario.id}")
+    persona = session.exec(select(Personas).where(Personas.id == scenario.persona_id)).one()
+    if not persona:
+        raise ValueError(f"Persona not found for scenario {scenario.id}")
 
     input_items: list[TResponseInputItem] = []
     if scenario.document_ids:
@@ -155,9 +155,9 @@ async def _handle_simulation_chat(
     input_items.extend(conversation_history)
 
     # getting the model from the agent's model_id
-    model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
+    model = session.exec(select(Models).where(Models.id == persona.model_id)).one()
     if not model:
-        raise ValueError(f"Model with ID {agent.model_id} not found")
+        raise ValueError(f"Model with ID {persona.model_id} not found")
 
     # getting the provider from the model's provider_id
     provider = session.exec(
@@ -167,12 +167,12 @@ async def _handle_simulation_chat(
         raise ValueError(f"Provider with ID {model.provider_id} not found")
 
     agent_instance = GenericAgent(
-        agent_name=agent.name,
-        system_prompt=agent.system_prompt,
-        temperature=agent.temperature,
+        agent_name=persona.name,
+        system_prompt=persona.system_prompt,
+        temperature=persona.temperature,
         model_name=model.name,
         model_provider=provider.name,
-        reasoning=agent.reasoning,
+        reasoning=persona.reasoning,
         api_key=provider.api_key,
     )
 

@@ -18,21 +18,6 @@ vi.mock('@/utils/mutations/accounts/delete-accounts', () => ({ deleteAccounts: d
 vi.mock('@/utils/mutations/accounts/update-account', () => ({ updateAccount: updateAccountMock }));
 vi.mock('@/utils/mutations/accounts/update-accounts', () => ({ updateAccounts: updateAccountsMock }));
 
-// AGENTS MUTATIONS
-export const createAgentMock = vi.fn(() => mockSchema.agents?.[0] || {});
-export const createAgentsMock = vi.fn(() => mockSchema.agents || []);
-export const deleteAgentMock = vi.fn(() => mockSchema.agents?.[0] || {});
-export const deleteAgentsMock = vi.fn(() => mockSchema.agents || []);
-export const updateAgentMock = vi.fn(() => mockSchema.agents?.[0] || {});
-export const updateAgentsMock = vi.fn(() => mockSchema.agents || []);
-
-vi.mock('@/utils/mutations/agents/create-agent', () => ({ createAgent: createAgentMock }));
-vi.mock('@/utils/mutations/agents/create-agents', () => ({ createAgents: createAgentsMock }));
-vi.mock('@/utils/mutations/agents/delete-agent', () => ({ deleteAgent: deleteAgentMock }));
-vi.mock('@/utils/mutations/agents/delete-agents', () => ({ deleteAgents: deleteAgentsMock }));
-vi.mock('@/utils/mutations/agents/update-agent', () => ({ updateAgent: updateAgentMock }));
-vi.mock('@/utils/mutations/agents/update-agents', () => ({ updateAgents: updateAgentsMock }));
-
 // APP_FEEDBACK MUTATIONS
 export const createAppFeedbackMock = vi.fn(() => mockSchema.appFeedback?.[0] || {});
 export const deleteAppFeedbackMock = vi.fn(() => mockSchema.appFeedback?.[0] || {});
@@ -176,6 +161,21 @@ vi.mock('@/utils/mutations/models/delete-model', () => ({ deleteModel: deleteMod
 vi.mock('@/utils/mutations/models/delete-models', () => ({ deleteModels: deleteModelsMock }));
 vi.mock('@/utils/mutations/models/update-model', () => ({ updateModel: updateModelMock }));
 vi.mock('@/utils/mutations/models/update-models', () => ({ updateModels: updateModelsMock }));
+
+// PERSONAS MUTATIONS
+export const createPersonaMock = vi.fn(() => mockSchema.personas?.[0] || {});
+export const createPersonasMock = vi.fn(() => mockSchema.personas || []);
+export const deletePersonaMock = vi.fn(() => mockSchema.personas?.[0] || {});
+export const deletePersonasMock = vi.fn(() => mockSchema.personas || []);
+export const updatePersonaMock = vi.fn(() => mockSchema.personas?.[0] || {});
+export const updatePersonasMock = vi.fn(() => mockSchema.personas || []);
+
+vi.mock('@/utils/mutations/personas/create-persona', () => ({ createPersona: createPersonaMock }));
+vi.mock('@/utils/mutations/personas/create-personas', () => ({ createPersonas: createPersonasMock }));
+vi.mock('@/utils/mutations/personas/delete-persona', () => ({ deletePersona: deletePersonaMock }));
+vi.mock('@/utils/mutations/personas/delete-personas', () => ({ deletePersonas: deletePersonasMock }));
+vi.mock('@/utils/mutations/personas/update-persona', () => ({ updatePersona: updatePersonaMock }));
+vi.mock('@/utils/mutations/personas/update-personas', () => ({ updatePersonas: updatePersonasMock }));
 
 // PROFILES MUTATIONS
 export const createProfileMock = vi.fn(() => mockSchema.profiles?.[0] || {});

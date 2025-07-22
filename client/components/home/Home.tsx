@@ -22,8 +22,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { Cohort, Profile } from "@/types";
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
@@ -87,9 +87,9 @@ export default function Home() {
     queryFn: () => getAllScenarios(),
   });
 
-  const { data: agents } = useQuery({
-    queryKey: ["agents"],
-    queryFn: () => getAllAgents(),
+  const { data: personas } = useQuery({
+    queryKey: ["personas"],
+    queryFn: () => getAllPersonas(),
   });
 
   // Fetch rubric-related data for real progress tracking
@@ -258,7 +258,7 @@ export default function Home() {
         {
           type: "monitor",
           label: "Monitor All Cohorts",
-          href: "/analytics/reports",
+          href: "/analytics/progress",
         },
       ];
     }
@@ -579,7 +579,7 @@ export default function Home() {
           loadingSimulation={loadingSimulation}
           getRealRubricData={getRealRubricData}
           scenarios={scenarios ?? []}
-          agents={agents ?? []}
+          personas={personas ?? []}
         />
 
         {/* History Section for non-guests */}

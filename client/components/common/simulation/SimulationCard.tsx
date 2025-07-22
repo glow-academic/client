@@ -5,9 +5,6 @@
  * 07/20/2025
  */
 
-import { Simulation, Profile, Scenario, Agent } from "@/types";
-import { getAgentConfig } from "@/utils/agents";
-import { User, Users, FileText, Timer, Info } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -26,8 +23,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Persona, Profile, Scenario, Simulation } from "@/types";
+import { getPersonaConfig } from "@/utils/personas";
+import { FileText, Info, Timer, User, Users } from "lucide-react";
 import TableRubric from "../rubric/TableRubric";
-import React from "react";
 
 interface AttemptData {
   attempt: number;
@@ -44,7 +43,7 @@ export interface SimulationCardProps {
   effectiveProfile: Profile;
   rubricData: { attempts: AttemptData[]; highestScore: number };
   scenarios?: Scenario[];
-  agents?: Agent[];
+  personas?: Persona[];
 }
 
 export default function SimulationCard({
@@ -55,7 +54,7 @@ export default function SimulationCard({
   effectiveProfile,
   rubricData,
   scenarios,
-  agents,
+  personas,
 }: SimulationCardProps) {
   const validScenarioIds =
     simulation.scenarioIds?.filter((id: string) => id !== "RAY") || [];
@@ -65,15 +64,18 @@ export default function SimulationCard({
     type === "default"
       ? scenarios?.find((i: Scenario) => i.id === validScenarioIds[0])
       : null;
-  const agent = interaction
-    ? agents?.find((a: Agent) => a.id === interaction.agentId)
+  const persona = interaction
+    ? personas?.find((a: Persona) => a.id === interaction.personaId)
     : null;
-  const agentConfig = agent ? getAgentConfig(agent.name || "general") : null;
-  const IconComponent = type === "default" ? agentConfig?.icon || User : Users;
+
+  // Get persona configuration based on persona name
+  const personaConfig = persona ? getPersonaConfig(persona.name) : null;
+  const IconComponent =
+    type === "default" ? personaConfig?.icon || User : Users;
 
   const gradientClass =
     type === "default"
-      ? agentConfig?.colors?.gradient || "from-gray-500 to-gray-600"
+      ? personaConfig?.colors?.gradient || "from-gray-500 to-gray-600"
       : "from-blue-500 to-purple-600";
 
   const backgroundGradient =
@@ -109,7 +111,13 @@ export default function SimulationCard({
           <div className="flex items-start justify-between">
             <div
               className={`p-2 rounded-xl bg-gradient-to-br ${gradientClass} shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0`}
-              style={{ minHeight: 40, minWidth: 40, display: "flex", alignItems: "center", justifyContent: "center" }}
+              style={{
+                minHeight: 40,
+                minWidth: 40,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
             >
               <IconComponent className="h-5 w-5 text-white" />
             </div>
@@ -177,7 +185,7 @@ export default function SimulationCard({
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
               {type === "default"
-                ? agent?.description
+                ? persona?.description
                 : `Interactive simulation with ${validScenarioIds.length} scenario${validScenarioIds.length !== 1 ? "s" : ""}`}
             </p>
           </div>

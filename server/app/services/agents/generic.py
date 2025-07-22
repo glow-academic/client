@@ -6,7 +6,7 @@ from agents.extensions.models.litellm_model import LitellmModel
 from agents.items import TResponseInputItem
 from agents.mcp.server import MCPServer
 from app.db import get_session
-from app.models import Agents, Models, Providers
+from app.models import Models, Personas, Providers
 from app.utils.auth import decrypt_api_key
 from fastapi import Depends
 from openai.types import Reasoning
@@ -17,7 +17,7 @@ from sqlmodel import Session, select
 
 # this becomes main. Put those other in the files
 async def run_generic_agent(
-    agent_id: uuid.UUID,
+    persona_id: uuid.UUID,
     input_items: list[TResponseInputItem],
     session: Session = Depends(get_session),
 ) -> AsyncGenerator[str, None]:
@@ -25,19 +25,19 @@ async def run_generic_agent(
     This function is used to run the generic agent using the OpenAI Agents SDK.
 
     Args:
-        agent_id: The ID of the agent
+        persona_id: The ID of the persona
         input_text: Optional input text to send to the agent
     Yields:
         Text chunks from the agent's response
     """
-    agent = session.exec(select(Agents).where(Agents.id == agent_id)).one()
-    if not agent:
-        raise ValueError(f"Agent with ID {agent_id} not found")
+    persona = session.exec(select(Personas).where(Personas.id == persona_id)).one()
+    if not persona:
+        raise ValueError(f"Persona with ID {persona_id} not found")
 
     # getting the model from the agent's model_id
-    model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
+    model = session.exec(select(Models).where(Models.id == persona.model_id)).one()
     if not model:
-        raise ValueError(f"Model with ID {agent.model_id} not found")
+        raise ValueError(f"Model with ID {persona.model_id} not found")
 
     # getting the provider from the model's provider_id
     provider = session.exec(
@@ -47,16 +47,16 @@ async def run_generic_agent(
         raise ValueError(f"Provider with ID {model.provider_id} not found")
 
     agent_instance = GenericAgent(
-        agent_name=agent.name,
-        system_prompt=agent.system_prompt,
-        temperature=agent.temperature,
+        agent_name=persona.name,
+        system_prompt=persona.system_prompt,
+        temperature=persona.temperature,
         model_name=model.name,
         model_provider=provider.name,
         api_key=provider.api_key,
-        reasoning=agent.reasoning,
+        reasoning=persona.reasoning,
     )
 
-    with trace(f"Testing {agent.name} Agent"):
+    with trace(f"Testing {persona.name} Agent"):
         result = Runner.run_streamed(
             agent_instance.agent(),
             input=input_items,

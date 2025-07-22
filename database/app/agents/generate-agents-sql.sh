@@ -22,7 +22,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TYPE reasoning_effort AS ENUM ('low', 'medium', 'high');
 
-CREATE TABLE agents (
+CREATE TABLE personas (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
@@ -30,7 +30,7 @@ CREATE TABLE agents (
   description TEXT        NOT NULL,
   system_prompt     TEXT        NOT NULL,
   temperature  INTEGER     NOT NULL, -- 0-100
-  default_agent      BOOLEAN     NOT NULL DEFAULT FALSE,
+  default_persona      BOOLEAN     NOT NULL DEFAULT FALSE,
   color TEXT        NOT NULL, -- hex color code
   model_id UUID REFERENCES models(id),
   reasoning reasoning_effort DEFAULT NULL
@@ -48,7 +48,7 @@ CREATE TABLE system_agents (
   reasoning reasoning_effort DEFAULT NULL
 );
 -- Insert Core Student Agents (Essential for testing)
-INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, color, model_id, reasoning) VALUES
+INSERT INTO personas (id, name, description, system_prompt, temperature, default_persona, color, model_id, reasoning) VALUES
   ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive','Pushes back on your ideas and challenges assumptions.', '$AGGRESSIVE_PROMPT', 0, true, '#FF0000', '33333333-cccc-cccc-cccc-333333333333', 'low'),
   ('22222222-bbbb-bbbb-bbbb-222222222222', 'Happy', 'Provides uplifting feedback and cheerful responses.', '$HAPPY_PROMPT', 0, true, '#00FF00', '33333333-cccc-cccc-cccc-333333333333', 'low'),
   ('33333333-cccc-cccc-cccc-333333333333', 'Confused', 'Seeks to understand by asking questions and exploring ideas', '$CONFUSED_PROMPT', 0, true, '#FFFF00', '33333333-cccc-cccc-cccc-333333333333', 'low');

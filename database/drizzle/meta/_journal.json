@@ -351,6 +351,20 @@
       "when": 1753116665670,
       "tag": "0049_dizzy_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1753190651873,
+      "tag": "0050_polite_cloak",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1753191341276,
+      "tag": "0051_aberrant_ego",
+      "breakpoints": true
     }
   ]
 }

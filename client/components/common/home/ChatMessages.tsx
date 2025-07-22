@@ -98,7 +98,7 @@ const ToolCallCard = ({
       _cohort_overview: (_args) => `Fetch cohort details`,
       _simulation_overview: (_args) => `Fetch simulation information`,
       _scenario_overview: (_args) => `Fetch scenario details`,
-      _agent_overview: (_args) => `Fetch agent information`,
+      _persona_overview: (_args) => `Fetch persona information`,
       _find_profiles: (args) =>
         `Search for profiles matching "${args["query"] || ""}"`,
       _find_classes: (args) =>
@@ -110,8 +110,8 @@ const ToolCallCard = ({
       _cohort_pass_matrix: (_args) => `Generate cohort performance matrix`,
       _simulation_attempts: (args) =>
         `Fetch simulation attempts (${args["limit"] || 200} records)`,
-      _agent_response_times: (args) =>
-        `Analyze agent response times (${args["window_days"] || 30} days)`,
+      _persona_response_times: (args) =>
+        `Analyze persona response times (${args["window_days"] || 30} days)`,
       _recent_app_logs: (args) =>
         `Fetch recent ${args["level"] || "error"} logs (${
           args["limit"] || 100

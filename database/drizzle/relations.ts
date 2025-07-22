@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, profiles, rubrics, standardGroups, standards, appFeedback, assistantChats, assistantMessages, assistantToolCalls, dashboards, models, agents, systemAgents, scenarios, scenarioClasses, scenarioLocations, scenarioDeadlines, scenarioTimes, simulations, simulationAttempts, simulationChats, simulationMessages, simulationChatGrades, simulationChatFeedbacks } from "./schema";
+import { users, profiles, rubrics, standardGroups, standards, appFeedback, assistantChats, assistantMessages, assistantToolCalls, dashboards, models, personas, systemAgents, scenarios, scenarioClasses, scenarioLocations, scenarioDeadlines, scenarioTimes, simulations, simulationAttempts, simulationChats, simulationMessages, simulationChatGrades, simulationChatFeedbacks } from "./schema";
 
 export const profilesRelations = relations(profiles, ({one, many}) => ({
 	user: one(users, {
@@ -75,16 +75,16 @@ export const dashboardsRelations = relations(dashboards, ({one}) => ({
 	}),
 }));
 
-export const agentsRelations = relations(agents, ({one, many}) => ({
+export const personasRelations = relations(personas, ({one, many}) => ({
 	model: one(models, {
-		fields: [agents.modelId],
+		fields: [personas.modelId],
 		references: [models.id]
 	}),
 	scenarios: many(scenarios),
 }));
 
 export const modelsRelations = relations(models, ({many}) => ({
-	agents: many(agents),
+	personas: many(personas),
 	systemAgents: many(systemAgents),
 }));
 
@@ -96,9 +96,9 @@ export const systemAgentsRelations = relations(systemAgents, ({one}) => ({
 }));
 
 export const scenariosRelations = relations(scenarios, ({one, many}) => ({
-	agent: one(agents, {
-		fields: [scenarios.agentId],
-		references: [agents.id]
+	persona: one(personas, {
+		fields: [scenarios.personaId],
+		references: [personas.id]
 	}),
 	scenarioClass: one(scenarioClasses, {
 		fields: [scenarios.classId],

@@ -105,7 +105,7 @@ class Models(_Base, table=True):
     provider_id: Mapped[uuid.UUID] = Field(sa_column=Column('provider_id', Uuid(as_uuid=True)))
     active: bool = Field(sa_column=Column('active', Boolean, default=True))
 
-    agents: List['Agents'] = Relationship(back_populates='model')
+    personas: List['Personas'] = Relationship(back_populates='model')
     system_agents: List['SystemAgents'] = Relationship(back_populates='model')
 
 
@@ -240,10 +240,10 @@ class VerificationToken(_Base, table=True):
     token: str = Field(sa_column=Column('token', Text, primary_key=True))
 
 
-class Agents(_Base, table=True):
+class Personas(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['model_id'], ['models.id'], name='agents_model_id_fkey'),
-        PrimaryKeyConstraint('id', name='agents_pkey')
+        ForeignKeyConstraint(['model_id'], ['models.id'], name='personas_model_id_fkey'),
+        PrimaryKeyConstraint('id', name='personas_pkey')
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
@@ -253,13 +253,13 @@ class Agents(_Base, table=True):
     description: str = Field(sa_column=Column('description', Text))
     system_prompt: str = Field(sa_column=Column('system_prompt', Text))
     temperature: int = Field(sa_column=Column('temperature', Integer))
-    default_agent: bool = Field(sa_column=Column('default_agent', Boolean, default=False))
+    default_persona: bool = Field(sa_column=Column('default_persona', Boolean, default=False))
     color: str = Field(sa_column=Column('color', Text))
     model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
     reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('low', 'medium', 'high', name='reasoning_effort')))
 
-    model: Optional['Models'] = Relationship(back_populates='agents')
-    scenarios: List['Scenarios'] = Relationship(back_populates='agent')
+    model: Optional['Models'] = Relationship(back_populates='personas')
+    scenarios: List['Scenarios'] = Relationship(back_populates='persona')
 
 
 class Profiles(_Base, table=True):
@@ -410,10 +410,10 @@ class Dashboards(_Base, table=True):
 
 class Scenarios(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['agent_id'], ['agents.id'], ondelete='SET NULL', name='scenarios_agent_id_fkey'),
         ForeignKeyConstraint(['class_id'], ['scenario_classes.id'], ondelete='SET NULL', name='scenarios_class_id_fkey'),
         ForeignKeyConstraint(['deadline_id'], ['scenario_deadlines.id'], ondelete='SET NULL', name='scenarios_deadline_id_fkey'),
         ForeignKeyConstraint(['location_id'], ['scenario_locations.id'], ondelete='SET NULL', name='scenarios_location_id_fkey'),
+        ForeignKeyConstraint(['persona_id'], ['personas.id'], ondelete='SET NULL', name='scenarios_persona_id_fkey'),
         ForeignKeyConstraint(['time_id'], ['scenario_times.id'], ondelete='SET NULL', name='scenarios_time_id_fkey'),
         PrimaryKeyConstraint('id', name='scenarios_pkey')
     )
@@ -427,7 +427,7 @@ class Scenarios(_Base, table=True):
     practice_scenario: bool = Field(sa_column=Column('practice_scenario', Boolean, default=False))
     generated: bool = Field(sa_column=Column('generated', Boolean, default=False))
     active: bool = Field(sa_column=Column('active', Boolean, default=True))
-    agent_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('agent_id', Uuid(as_uuid=True)))
+    persona_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('persona_id', Uuid(as_uuid=True)))
     crowdedness: Optional[int] = Field(default=None, sa_column=Column('crowdedness', Integer))
     intensity: Optional[int] = Field(default=None, sa_column=Column('intensity', Integer))
     class_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('class_id', Uuid(as_uuid=True)))
@@ -437,10 +437,10 @@ class Scenarios(_Base, table=True):
     document_ids: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('document_ids', ARRAY(Uuid(as_uuid=True))))
     parent_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('parent_id', Uuid(as_uuid=True)))
 
-    agent: Optional['Agents'] = Relationship(back_populates='scenarios')
     class_: Optional['ScenarioClasses'] = Relationship(back_populates='scenarios')
     deadline: Optional['ScenarioDeadlines'] = Relationship(back_populates='scenarios')
     location: Optional['ScenarioLocations'] = Relationship(back_populates='scenarios')
+    persona: Optional['Personas'] = Relationship(back_populates='scenarios')
     time_: Optional['ScenarioTimes'] = Relationship(back_populates='scenarios')
     simulation_chats: List['SimulationChats'] = Relationship(back_populates='scenario')
 

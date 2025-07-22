@@ -5,7 +5,7 @@
  * 06/18/2025
  */
 import { logError } from "@/utils/logger";
-import { getAgent } from "@/utils/queries/agents/get-agent";
+import { getPersona } from "@/utils/queries/personas/get-persona";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getCohort } from "./queries/cohorts/get-cohort";
@@ -46,12 +46,12 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         const scenarioData = await getScenario(id);
         return scenarioData?.name || `Scenario ${id.substring(0, 8)}...`;
 
+      case "persona":
+        const personaData = await getPersona(id);
+        return personaData?.name || `Persona ${id.substring(0, 8)}...`;
       case "agent":
-        const agentData = await getAgent(id);
+        const agentData = await getSystemAgent(id);
         return agentData?.name || `Agent ${id.substring(0, 8)}...`;
-      case "system-agent":
-        const systemAgentData = await getSystemAgent(id);
-        return systemAgentData?.name || `System Agent ${id.substring(0, 8)}...`;
       case "simulation":
         const simulationData = await getSimulation(id);
         return simulationData?.title || `Simulation ${id.substring(0, 8)}...`;
@@ -142,6 +142,8 @@ export const generateEnhancedBreadcrumbs = async (
         context = "attempt";
       } else if (prevSegment === "s" && segments.includes("simulations")) {
         context = "simulation";
+      } else if (prevSegment === "p" && segments.includes("personas")) {
+        context = "persona";
       } else if (prevSegment === "a" && segments.includes("agents")) {
         context = "agent";
       } else if (prevSegment === "s" && segments.includes("scenarios")) {
@@ -206,8 +208,8 @@ export const generateEnhancedBreadcrumbs = async (
           break;
 
         // Create subsections
-        case "agents":
-          title = "Agents";
+        case "personas":
+          title = "Personas";
           break;
         case "scenarios":
           title = "Scenarios";
@@ -291,11 +293,11 @@ const getSectionFromSegments = (segments: string[]): string => {
       return "analytics";
 
     case "create":
-      if (second === "agents") {
+      if (second === "personas") {
         if (third === "a" && fourth) {
-          return `agent-${fourth}`;
+          return `persona-${fourth}`;
         }
-        return "agents";
+        return "personas";
       }
       if (second === "scenarios") {
         if (third === "s" && fourth) {
@@ -325,28 +327,28 @@ const getSectionFromSegments = (segments: string[]): string => {
         return "staff";
       }
       if (second) {
-        return second; // staff, agents, logs, models, rubrics
+        return second; // staff, personas, logs, models, rubrics
       }
       return "management";
 
     case "system":
       if (second === "agents") {
         if (third === "a" && fourth) {
-          return `system-agent-${fourth}`;
+          return `agent-${fourth}`;
         }
-        return "system-agents";
+        return "agents";
       }
       if (second === "providers") {
         if (third === "p" && fourth) {
           return `provider-${fourth}`;
         }
-        return "system-providers";
+        return "providers";
       }
       if (second === "logs") {
-        return "system-logs";
+        return "logs";
       }
       if (second === "health") {
-        return "system-health";
+        return "health";
       }
       return "system";
 

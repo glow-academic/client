@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useMemo } from "react";
 
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
@@ -70,7 +70,7 @@ export interface TAPerformanceData {
   bestCohortRank: number;
   avgVsCohort: number;
   // Additional fields for filtering
-  agentsTested: string[];
+  personasTested: string[];
   scenarioIds: string[];
   simulationIds: string[];
 }
@@ -96,9 +96,9 @@ export function useReportColumns({
     queryFn: () => getAllCohorts(),
   });
 
-  const { data: agents } = useQuery({
-    queryKey: ["agents"],
-    queryFn: () => getAllAgents(),
+  const { data: personas } = useQuery({
+    queryKey: ["personas"],
+    queryFn: () => getAllPersonas(),
   });
 
   const { data: scenarios } = useQuery({
@@ -138,15 +138,15 @@ export function useReportColumns({
     }));
   }, [cohorts]);
 
-  const agentOptions = useMemo(() => {
-    if (!agents) return [];
-    return agents
-      .filter((agent) => agent.defaultAgent === true)
-      .map((agent) => ({
-        value: agent.id,
-        label: agent.name,
+  const personaOptions = useMemo(() => {
+    if (!personas) return [];
+    return personas
+      .filter((persona) => persona.defaultPersona === true)
+      .map((persona) => ({
+        value: persona.id,
+        label: persona.name,
       }));
-  }, [agents]);
+  }, [personas]);
 
   const scenarioOptions = useMemo(() => {
     if (!scenarios) return [];
@@ -555,8 +555,8 @@ export function useReportColumns({
         enableHiding: false,
       },
       {
-        accessorKey: "agentsTested",
-        header: "Agents Tested",
+        accessorKey: "personasTested",
+        header: "Personas Tested",
         cell: () => null,
         enableSorting: false,
         enableHiding: true,
@@ -564,7 +564,7 @@ export function useReportColumns({
         filterFn: (row, _, value) => {
           const ta = row.original;
           if (!value || value.length === 0) return true;
-          return ta.agentsTested.some((agentId) => value.includes(agentId));
+          return ta.personasTested.some((personaId) => value.includes(personaId));
         },
       },
       {
@@ -606,7 +606,7 @@ export function useReportColumns({
     columns,
     performanceOptions,
     cohortOptions,
-    agentOptions,
+    personaOptions,
     scenarioOptions,
     simulationOptions,
   };

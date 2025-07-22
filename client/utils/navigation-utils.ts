@@ -54,13 +54,13 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
         "simulations",
         "rubrics", // Create
         "cohorts", // Classes (all)
-        "agents",
+        "personas",
         "logs",
         "providers", // Management
-        "system-agents",
-        "system-providers",
-        "system-logs",
-        "system-health" // System
+        "agents",
+        "providers",
+        "logs",
+        "health" // System
       );
       break;
     case "superadmin":
@@ -74,13 +74,13 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
         "classes",
         "cohorts", // Classes (all)
         "departments",
-        "agents",
+        "personas",
         "logs",
         "providers", // Management
-        "system-agents",
-        "system-providers",
-        "system-logs",
-        "system-health" // System
+        "agents",
+        "providers",
+        "logs",
+        "health" // System
       );
       break;
   }
@@ -164,8 +164,8 @@ export const getSectionRoute = (section: string): string => {
       return "/create/simulations";
     case "rubrics":
       return "/create/rubrics";
-    case "agents":
-      return "/create/agents";
+    case "personas":
+      return "/create/personas";
 
     // Management routes
     case "management":
@@ -184,13 +184,13 @@ export const getSectionRoute = (section: string): string => {
       return "/management/system";
 
     // System routes
-    case "system-agents":
+    case "agents":
       return "/system/agents";
-    case "system-providers":
+    case "providers":
       return "/system/providers";
-    case "system-logs":
+    case "logs":
       return "/system/logs";
-    case "system-health":
+    case "health":
       return "/system/health";
 
     // Profile route
@@ -250,8 +250,8 @@ export const getSectionRoute = (section: string): string => {
       }
 
       // System dynamic routes
-      if (section.startsWith("system-agent-")) {
-        const agentId = section.replace("system-agent-", "");
+      if (section.startsWith("agent-")) {
+        const agentId = section.replace("agent-", "");
         return `/system/agents/a/${agentId}`;
       }
 

@@ -6,7 +6,6 @@ from typing import Any, Dict, List
 
 from agents.items import TResponseInputItem
 from app.models import (
-    Agents,
     AssistantMessages,
     AssistantToolCalls,
     Scenarios,
@@ -167,16 +166,3 @@ def get_chat_scenario(chat: SimulationChats, session: Session) -> TResponseInput
         "role": "user",
         "content": f"The following is the scenario for the chat: {scenario.description}",
     }
-
-
-def generate_natural_opening(agent: Agents) -> str:
-    """
-    Generate a natural conversation opening based on the scenario and agent type.
-    """
-    openings = [
-        "Hi, how are you doing today?",
-        "Hey, how's it going?",
-        "Hello, how are you?",
-    ]
-
-    return random.choice(openings)

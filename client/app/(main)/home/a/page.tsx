@@ -1,6 +1,6 @@
 /**
  * app/a/page.tsx
- * Agent page. Redirects to new agent page.
+ * Attempts page. Redirects to new attempt page.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */

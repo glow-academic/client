@@ -16,7 +16,7 @@ import {
   assistantToolCalls as AssistantToolCalls,
   components as Components,
   dashboards as Dashboards,
-  agents as Agents,
+  personas as Personas,
   systemAgents as SystemAgents,
   scenarios as Scenarios,
   scenarioClasses as ScenarioClasses,
@@ -52,7 +52,7 @@ type AssistantMessage = typeof AssistantMessages.$inferSelect;
 type AssistantToolCall = typeof AssistantToolCalls.$inferSelect;
 type Component = typeof Components.$inferSelect;
 type Dashboard = typeof Dashboards.$inferSelect;
-type Agent = typeof Agents.$inferSelect;
+type Persona = typeof Personas.$inferSelect;
 type SystemAgent = typeof SystemAgents.$inferSelect;
 type Scenario = typeof Scenarios.$inferSelect;
 type ScenarioClasse = typeof ScenarioClasses.$inferSelect;
@@ -94,7 +94,7 @@ export type {
   AssistantToolCall,
   Component,
   Dashboard,
-  Agent,
+  Persona,
   SystemAgent,
   Scenario,
   ScenarioClasse,

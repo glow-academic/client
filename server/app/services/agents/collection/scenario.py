@@ -5,13 +5,13 @@ from typing import List, Tuple
 from agents import Runner, gen_trace_id, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
-from app.models import Agents, Models, Providers, SystemAgents
+from app.models import Models, Personas, Providers, SystemAgents
 from app.services.agents.generic import GenericAgent
-from app.utils.agents import get_agent_info
 from app.utils.document import get_document_info
-from app.utils.scenario import (get_crowdedness_info, get_deadline_info,
-                                get_intensity_info, get_location_info,
-                                get_time_info, get_class_info)
+from app.utils.personas import get_persona_info
+from app.utils.scenario import (get_class_info, get_crowdedness_info,
+                                get_deadline_info, get_intensity_info,
+                                get_location_info, get_time_info)
 from fastapi import Depends
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -25,7 +25,7 @@ class Scenario(BaseModel):
 
 
 async def run_scenario_agent(
-    agent_id: uuid.UUID | None = None,
+    persona_id: uuid.UUID | None = None,
     document_ids: List[uuid.UUID] | None = None,
     crowdedness: int | None = None,
     intensity: int | None = None,
@@ -40,7 +40,7 @@ async def run_scenario_agent(
     This function is used to run the scenario agent.
 
     Args:
-        agent_id: The ID of the agent
+        persona_id: The ID of the persona
         class_id: The ID of the class
         document_ids: The IDs of the documents
         crowdedness: The crowdedness of the class
@@ -55,13 +55,13 @@ async def run_scenario_agent(
     """
 
     # Get the agent to get its name for the agent
-    if agent_id is None:
-        agent_info = None
+    if persona_id is None:
+        persona_info = None
     else:
-        agent = session.exec(select(Agents).where(Agents.id == agent_id)).one_or_none()
-        if not agent:
-            raise ValueError(f"Agent with ID {agent_id} not found")
-        agent_info = get_agent_info(agent.id, session)
+        persona = session.exec(select(Personas).where(Personas.id == persona_id)).one_or_none()
+        if not persona:
+            raise ValueError(f"Persona with ID {persona_id} not found")
+        persona_info = get_persona_info(persona.id, session)
 
     if crowdedness is None:
         crowdedness_info = None
@@ -129,7 +129,7 @@ async def run_scenario_agent(
     agent_instance = scenario_agent_generic.agent()
 
     input_items: list[TResponseInputItem | None] = [
-        agent_info,
+        persona_info,
         class_info,
         document_info,
         crowdedness_info,

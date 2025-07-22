@@ -1,6 +1,6 @@
 /**
  * ScenarioData.tsx
- * This is used to show the scenario data. It will be a grouped bar chart that has two sections, one for the highest and lowest performing scenarios. Within those, it should show the trend of what agent, class, crowdedness, intensity, documents, which are causing this to be the case.
+ * This is used to show the scenario data. It will be a grouped bar chart that has two sections, one for the highest and lowest performing scenarios. Within those, it should show the trend of what persona, class, crowdedness, intensity, documents, which are causing this to be the case.
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
@@ -21,7 +21,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulationAttempts } from "@/utils/queries/simulation_attempts/get-all-simulation-attempts";
@@ -59,9 +59,9 @@ export default function ScenarioData({ className }: ScenarioDataProps) {
     queryFn: () => getAllScenarios(),
   });
 
-  const { data: agents, isLoading: agentsLoading } = useQuery({
-    queryKey: ["agents"],
-    queryFn: () => getAllAgents(),
+  const { data: personas, isLoading: personasLoading } = useQuery({
+    queryKey: ["personas"],
+    queryFn: () => getAllPersonas(),
   });
 
   const { data: documents, isLoading: documentsLoading } = useQuery({
@@ -83,7 +83,7 @@ export default function ScenarioData({ className }: ScenarioDataProps) {
   const scenarioAnalysis = useMemo(() => {
     if (
       !scenarios ||
-      !agents ||
+      !personas ||
       !documents ||
       !attempts ||
       !chats
@@ -135,9 +135,9 @@ export default function ScenarioData({ className }: ScenarioDataProps) {
     // Create chart data for visualization
     const chartData = [
       {
-        category: "Agent Variety",
-        highPerforming: Math.min(agents.length, 5),
-        lowPerforming: Math.max(1, Math.floor(agents.length / 3)),
+        category: "Persona Variety",
+        highPerforming: Math.min(personas.length, 5),
+        lowPerforming: Math.max(1, Math.floor(personas.length / 3)),
       },
       {
         category: "Document Count",
@@ -157,12 +157,12 @@ export default function ScenarioData({ className }: ScenarioDataProps) {
     ];
 
     return { highPerforming, lowPerforming, chartData };
-  }, [scenarios, agents, documents, attempts, chats]);
+  }, [scenarios, personas, documents, attempts, chats]);
 
   // Check if any critical data is still loading
   const isLoading =
     scenariosLoading ||
-    agentsLoading ||
+    personasLoading ||
     documentsLoading ||
     attemptsLoading ||
     chatsLoading;

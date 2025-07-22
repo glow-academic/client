@@ -25,8 +25,8 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { getAgentConfig } from "@/utils/agents";
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+import { getPersonaConfig } from "@/utils/personas";
+import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
@@ -113,9 +113,9 @@ export default function PerformanceByPersonality({
     queryFn: () => getAllProfiles(),
   });
 
-  const { data: agents } = useQuery({
-    queryKey: ["agents"],
-    queryFn: () => getAllAgents(),
+  const { data: personas } = useQuery({
+    queryKey: ["personas"],
+    queryFn: () => getAllPersonas(),
   });
 
   const { data: scenarios } = useQuery({
@@ -157,7 +157,7 @@ export default function PerformanceByPersonality({
   // Calculate performance by personality with detailed metrics
   const performanceData = useMemo(() => {
     if (
-      !agents ||
+      !personas ||
       !scenarios ||
       !chats ||
       !grades ||
@@ -192,19 +192,19 @@ export default function PerformanceByPersonality({
     );
 
     // Performance by student type (scenario-based)
-    const performanceByType = agents
-      .filter((agent) => agent.name) // Filter for student agents
-      .map((agent) => {
-        const agentScenarios = scenarios.filter((s) => s.agentId === agent.id);
-        const agentChats = chats.filter((chat) =>
-          agentScenarios.some((scenario) => scenario.id === chat.scenarioId)
+    const performanceByType = personas
+      .filter((persona) => persona.name) // Filter for student personas
+      .map((persona) => {
+        const personaScenarios = scenarios.filter((s) => s.personaId === persona.id);
+        const personaChats = chats.filter((chat) =>
+          personaScenarios.some((scenario) => scenario.id === chat.scenarioId)
         );
-        const agentGrades = filteredGrades.filter((grade) =>
-          agentChats.some((chat) => chat.id === grade.simulationChatId)
+        const personaGrades = filteredGrades.filter((grade) =>
+          personaChats.some((chat) => chat.id === grade.simulationChatId)
         );
 
         // Calculate detailed metrics
-        const scoreDistribution = agentGrades.map((grade) => {
+        const scoreDistribution = personaGrades.map((grade) => {
           const chat = chats.find((c) => c.id === grade.simulationChatId);
           const attempt = attempts.find((a) => a.id === chat?.attemptId);
           const simulation = simulations.find(
@@ -225,12 +225,12 @@ export default function PerformanceByPersonality({
 
         // Calculate average score
         let avgScore = 0;
-        if (agentGrades.length > 0) {
+        if (personaGrades.length > 0) {
           const scoreSum = scoreDistribution.reduce(
             (sum, item) => sum + item.score,
             0
           );
-          avgScore = Math.round(scoreSum / agentGrades.length);
+          avgScore = Math.round(scoreSum / personaGrades.length);
         }
 
         // Calculate average time
@@ -283,10 +283,10 @@ export default function PerformanceByPersonality({
         const trend = recentAvg - previousAvg;
 
         return {
-          name: agent.name,
+          name: persona.name,
           score: avgScore,
-          sessions: agentChats.length,
-          color: getAgentConfig(agent.name).colors.bgColor,
+          sessions: personaChats.length,
+          color: getPersonaConfig(persona.name).colors.bgColor,
           scoreDistribution,
           avgTime,
           passRate,
@@ -294,12 +294,12 @@ export default function PerformanceByPersonality({
           recentSessions: last7Days.length,
         };
       })
-      .filter((agent) => agent.sessions > 0) // Only show agents with sessions
+      .filter((persona) => persona.sessions > 0) // Only show agents with sessions
       .sort((a, b) => b.score - a.score); // Sort by score descending
 
     return performanceByType;
   }, [
-    agents,
+    personas,
     scenarios,
     chats,
     grades,

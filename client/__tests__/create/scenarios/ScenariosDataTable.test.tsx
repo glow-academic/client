@@ -15,7 +15,7 @@ const mockProps: ScenariosDataTableProps = {
   data: [],
   simulationOptions: [],
   cohortOptions: [],
-  agentOptions: [],
+  personaOptions: [],
   scenarioTypeOptions: [],
   renderScenarioCard: vi.fn(),
 };

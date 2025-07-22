@@ -9,7 +9,7 @@ import { getApiBase } from "@/lib/api-base";
 import { logError } from "@/utils/logger";
 
 export interface NewScenarioParams {
-  agentId?: string | null;
+  personaId?: string | null;
   classId?: string | null;
   locationId?: string | null;
   deadlineId?: string | null;
@@ -35,8 +35,8 @@ export async function newScenario(
     const formData = new FormData();
 
     // Only append non-null values
-    if (params.agentId) {
-      formData.append("agent_id", params.agentId);
+    if (params.personaId) {
+      formData.append("persona_id", params.personaId);
     }
     if (params.classId) {
       formData.append("class_id", params.classId);

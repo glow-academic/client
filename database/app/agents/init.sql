@@ -7,7 +7,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TYPE reasoning_effort AS ENUM ('low', 'medium', 'high');
 
-CREATE TABLE agents (
+CREATE TABLE personas (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
@@ -15,7 +15,7 @@ CREATE TABLE agents (
   description TEXT        NOT NULL,
   system_prompt     TEXT        NOT NULL,
   temperature  INTEGER     NOT NULL, -- 0-100
-  default_agent      BOOLEAN     NOT NULL DEFAULT FALSE,
+  default_persona      BOOLEAN     NOT NULL DEFAULT FALSE,
   color TEXT        NOT NULL, -- hex color code
   model_id UUID REFERENCES models(id),
   reasoning reasoning_effort DEFAULT NULL
@@ -33,7 +33,7 @@ CREATE TABLE system_agents (
   reasoning reasoning_effort DEFAULT NULL
 );
 -- Insert Core Student Agents (Essential for testing)
-INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, color, model_id, reasoning) VALUES
+INSERT INTO personas (id, name, description, system_prompt, temperature, default_persona, color, model_id, reasoning) VALUES
   ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive','Pushes back on your ideas and challenges assumptions.', 'Your only purpose is to prepare a Graduate-Level Teaching Assistant (GTA) on how to interact with an aggressive college student, so you must fully embrace this role.
 Try to convey your anger and aggressiveness naturally — sprinkle certain WORDS in ALL CAPS, throw in extra “!!!”, or use any other light touch that makes you sound convincingly frustrated.
 

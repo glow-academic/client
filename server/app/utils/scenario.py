@@ -5,7 +5,7 @@ import random
 import uuid
 
 from agents.items import TResponseInputItem
-from app.models import (Agents, Documents, ScenarioClasses, ScenarioDeadlines,
+from app.models import (Personas, Documents, ScenarioClasses, ScenarioDeadlines,
                         ScenarioLocations, Scenarios, ScenarioTimes)
 from sqlmodel import Session, select
 
@@ -111,15 +111,15 @@ async def randomly_fill_scenario_attributes(
         Updated scenario object with randomly selected values for null attributes
     """
     # Random agent selection if agent_id is null
-    if scenario.agent_id is None:
-        all_agents = session.exec(select(Agents)).all()
-        if all_agents:
-            scenario_agent_id = random.choice(all_agents).id
-            logger.info(f"Randomly selected agent_id: {scenario_agent_id}")
+    if scenario.persona_id is None:
+        all_personas = session.exec(select(Personas)).all()
+        if all_personas:
+            scenario_persona_id = random.choice(all_personas).id
+            logger.info(f"Randomly selected persona_id: {scenario_persona_id}")
         else:
-            scenario_agent_id = None
+            scenario_persona_id = None
     else:
-        scenario_agent_id = scenario.agent_id
+        scenario_persona_id = scenario.persona_id
 
     # Random class selection if class_id is null
     if scenario.class_id is None:
@@ -216,7 +216,7 @@ async def randomly_fill_scenario_attributes(
     return Scenarios(
         name=scenario.name,
         description=scenario.description,
-        agent_id=scenario_agent_id,
+        persona_id=scenario_persona_id,
         class_id=scenario_class_id,
         documents=scenario_documents,
         crowdedness=scenario_crowdedness,

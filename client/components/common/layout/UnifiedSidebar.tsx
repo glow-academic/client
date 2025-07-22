@@ -286,9 +286,9 @@ export function UnifiedSidebar({
         icon: Sparkles,
         items: [
           {
-            title: "Agents", // renaming to personas later
+            title: "Personas",
             url: "#",
-            section: "agents",
+            section: "personas",
           },
           {
             title: "Rubrics",
@@ -359,28 +359,28 @@ export function UnifiedSidebar({
       systemItems.push({
         title: "Agents",
         url: "#",
-        section: "system-agents",
+        section: "agents",
       });
 
       // Providers - available for admin
       systemItems.push({
         title: "Providers",
         url: "#",
-        section: "system-providers",
+        section: "providers",
       });
 
       // Logs - available for admin
       systemItems.push({
         title: "Logs",
         url: "#",
-        section: "system-logs",
+        section: "logs",
       });
 
       // Health - available for admin
       systemItems.push({
         title: "Health",
         url: "#",
-        section: "system-health",
+        section: "health",
       });
     }
 

@@ -1,5 +1,5 @@
 // Type definitions
-export type ModelType = "Agents" | "Documents" | "Classes" | "Seniority";
+export type ModelType = "Personas" | "Documents" | "Classes" | "Seniority";
 
 export interface Model {
   id: string;

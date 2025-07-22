@@ -14,7 +14,7 @@
 #       "id": "...",
 #       "name": "...",
 #       "description": "...",
-#       "agent_id": "...",
+#       "persona_id": "...",
 #       "class_id": "...",
 #       "default_scenario": False,
 #       "practice_scenario": True,
@@ -35,7 +35,6 @@ from app.models import Scenarios
 from sqlalchemy import func, literal, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select
-
 
 # ------------------------------------------------------------------
 # Normalization / tokenization utilities
@@ -129,7 +128,7 @@ def find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
                 "id": str,                  # Scenario UUID
                 "name": str | None,         # Scenario name/title
                 "description": str | None,  # Scenario description
-                "agent_id": str | None,     # Linked agent UUID (if any)
+                "persona_id": str | None,     # Linked persona UUID (if any)
                 "class_id": str | None,     # Linked class UUID (if any)
                 "default_scenario": bool,   # Is this the default scenario?
                 "practice_scenario": bool,  # Is this a practice scenario?
@@ -186,7 +185,7 @@ def find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
                     "id": str(sc.id),
                     "name": sc.name,
                     "description": sc.description,
-                    "agent_id": str(sc.agent_id) if sc.agent_id else None,
+                    "persona_id": str(sc.persona_id) if sc.persona_id else None,
                     "class_id": str(sc.class_id) if sc.class_id else None,
                     "default_scenario": sc.default_scenario,
                     "practice_scenario": sc.practice_scenario,

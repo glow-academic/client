@@ -25,7 +25,7 @@ export interface ScenariosDataTableProps {
   data: Scenario[];
   simulationOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
-  agentOptions: { value: string; label: string }[];
+  personaOptions: { value: string; label: string }[];
   scenarioTypeOptions: { value: string; label: string }[];
   renderScenarioCard: (scenario: Scenario) => React.ReactNode;
 }
@@ -35,7 +35,7 @@ export function ScenariosDataTable({
   data,
   simulationOptions,
   cohortOptions,
-  agentOptions,
+  personaOptions,
   scenarioTypeOptions,
   renderScenarioCard,
 }: ScenariosDataTableProps) {
@@ -82,7 +82,7 @@ export function ScenariosDataTable({
         table={table}
         simulationOptions={simulationOptions}
         cohortOptions={cohortOptions}
-        agentOptions={agentOptions}
+        personaOptions={personaOptions}
         scenarioTypeOptions={scenarioTypeOptions}
       />
       <div className="grid gap-4">

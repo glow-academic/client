@@ -14,7 +14,7 @@ export interface ReportsDataTableToolbarProps {
   table: Table<TAPerformanceData>;
   performanceOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
-  agentOptions: { value: string; label: string }[];
+  personaOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
   simulationOptions: { value: string; label: string }[];
   showExport?: boolean;
@@ -24,7 +24,7 @@ export function ReportsDataTableToolbar({
   table,
   performanceOptions,
   cohortOptions,
-  agentOptions,
+  personaOptions,
   scenarioOptions,
   simulationOptions,
   showExport = true,
@@ -69,12 +69,12 @@ export function ReportsDataTableToolbar({
             />
           )}
 
-          {/* Agent Filter */}
-          {agentOptions.length > 0 && table.getColumn("agentsTested") && (
+          {/* Persona Filter */}
+          {personaOptions.length > 0 && table.getColumn("personasTested") && (
             <DataTableFacetedFilter
-              column={table.getColumn("agentsTested")!}
-              title="Agent"
-              options={agentOptions}
+              column={table.getColumn("personasTested")!}
+              title="Persona"
+              options={personaOptions}
             />
           )}
 

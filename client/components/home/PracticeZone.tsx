@@ -1,4 +1,4 @@
-import { Agent, Profile, Scenario, Simulation } from "@/types";
+import { Persona, Profile, Scenario, Simulation } from "@/types";
 import SimulationCard from "../common/simulation/SimulationCard";
 
 interface AttemptData {
@@ -18,7 +18,7 @@ interface PracticeZoneProps {
     highestScore: number;
   };
   scenarios: Scenario[];
-  agents: Agent[];
+  personas: Persona[];
 }
 
 export default function PracticeZone({
@@ -28,7 +28,7 @@ export default function PracticeZone({
   loadingSimulation,
   getRealRubricData,
   scenarios,
-  agents,
+  personas,
 }: PracticeZoneProps) {
   if (!simulations || simulations.length === 0) return null;
 
@@ -47,7 +47,7 @@ export default function PracticeZone({
                 effectiveProfile={profile}
                 rubricData={getRealRubricData(simulation.id)}
                 scenarios={scenarios}
-                agents={agents}
+                personas={personas}
               />
             )
         )}

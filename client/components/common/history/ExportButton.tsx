@@ -55,14 +55,14 @@ const columnMap = {
   createdAt: "Date",
   userId: "Name",
   profileId: "Name",
-  agent: "Agent",
+  persona: "Persona",
   title: "Title",
   simulationTitle: "Simulation",
   status: "Status",
   score: "Score",
   averageScore: "Score",
   chats: "Chats",
-  agentsTested: "Agents",
+  personasTested: "Personas",
   // Reports page columns
   firstName: "Name",
   username: "Alias",
@@ -175,9 +175,9 @@ export function ExportButton<TData>({
               return `"${completedChats}/${totalChats}"`;
             }
 
-            if (column.id === "agentsTested" && cellValue) {
-              const agents = cellValue as string[];
-              return `"${agents.join(", ")}"`;
+            if (column.id === "personasTested" && cellValue) {
+              const personas = cellValue as string[];
+              return `"${personas.join(", ")}"`;
             }
 
             if (column.id === "averageScore" && cellValue) {

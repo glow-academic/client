@@ -14,7 +14,7 @@ const mockProps: ScenariosDataTableToolbarProps = {
   table: {} as unknown as Table<Scenario>,
   simulationOptions: [],
   cohortOptions: [],
-  agentOptions: [],
+  personaOptions: [],
   scenarioTypeOptions: [],
 };
 // ------------------------------------------------------------------

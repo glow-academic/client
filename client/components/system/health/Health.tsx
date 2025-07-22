@@ -114,7 +114,7 @@ export default function Health() {
       {
         id: "simulation-service",
         name: "Simulation Service",
-        description: "Simulation agent and chat functionality",
+        description: "Simulation persona and chat functionality",
         status: "loading",
         icon: TestTube,
       },

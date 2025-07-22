@@ -5,14 +5,14 @@ import { DataTableRowActions } from "@/components/common/history/DataTableRowAct
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Agent,
+  Persona,
   Profile,
   Scenario,
   SimulationAttempt,
   SimulationChat,
 } from "@/types";
-import { getAgentConfig } from "@/utils/agents";
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+import { getPersonaConfig } from "@/utils/personas";
+import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
@@ -30,7 +30,7 @@ import { useMemo } from "react";
 // Enhanced types for the data table
 interface EnhancedAttempt extends SimulationAttempt {
   chats: SimulationChat[];
-  agentsTested: string[];
+  personasTested: string[];
   simulationTitle: string;
   interactionIds: string[];
   classIds: string[];
@@ -53,9 +53,9 @@ export function useHistoryColumns({
     queryFn: () => getAllProfiles(),
   });
 
-  const { data: agents, isLoading: isLoadingAgents } = useQuery({
-    queryKey: ["agents"],
-    queryFn: () => getAllAgents(),
+  const { data: personas, isLoading: isLoadingPersonas } = useQuery({
+    queryKey: ["personas"],
+    queryFn: () => getAllPersonas(),
   });
 
   const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
@@ -120,14 +120,14 @@ export function useHistoryColumns({
   });
 
   // Create dynamic profile types from database profiles
-  const agentTypes = useMemo(() => {
-    if (!agents) return [];
-    return agents.map((agent: Agent) => ({
-      value: agent.id,
-      label: agent.name,
-      icon: getAgentConfig(agent.name).icon,
+  const personaTypes = useMemo(() => {
+    if (!personas) return [];
+    return personas.map((persona: Persona) => ({
+      value: persona.id,
+      label: persona.name,
+      icon: getPersonaConfig(persona.name).icon,
     }));
-  }, [agents]);
+  }, [personas]);
 
   // Create user options for GTA names
   const profileOptions = useMemo(() => {
@@ -163,7 +163,7 @@ export function useHistoryColumns({
 
   // Create enhanced attempts data
   const enhancedAttempts = useMemo(() => {
-    if (!attempts || !chats || !agents || !simulations || !scenarios) return [];
+    if (!attempts || !chats || !personas || !simulations || !scenarios) return [];
 
     return attempts.map((attempt: SimulationAttempt): EnhancedAttempt => {
       const attemptChats = chats.filter(
@@ -171,23 +171,23 @@ export function useHistoryColumns({
       );
 
       // Get agents from all scenarios in the chats
-      const agentsTested = [
+      const personasTested = [
         ...new Set(
           attemptChats.map((chat) => {
             // find the scenario for this chat
             const scenario = scenarios.find((s) => s.id === chat.scenarioId);
             if (scenario) {
               // Find agent by the agentId in the scenario
-              const scenarioAgent = agents.find(
-                (a) => a.id === scenario.agentId
+              const scenarioAgent = personas.find(
+                (a) => a.id === scenario.personaId
               );
-              return scenarioAgent?.name || "Unknown Agent";
+              return scenarioAgent?.name || "Unknown Persona";
             }
 
-            return "Unknown Agent";
+            return "Unknown Persona";
           })
         ),
-      ].filter((name) => name !== "Unknown Agent"); // Filter out unknown agents
+      ].filter((name) => name !== "Unknown Persona"); // Filter out unknown personas
 
       const simulation = simulations?.find(
         (s) => s.id === attempt.simulationId
@@ -210,14 +210,14 @@ export function useHistoryColumns({
       return {
         ...attempt,
         chats: attemptChats,
-        agentsTested,
+        personasTested,
         simulationTitle:
           simulation?.title || `Simulation ${attempt.simulationId}`,
         interactionIds: simulation?.scenarioIds || [],
         classIds: derivedClassIds, // Add all class IDs for display
       };
     });
-  }, [attempts, chats, agents, simulations, scenarios]);
+  }, [attempts, chats, personas, simulations, scenarios]);
 
   // Create skill categories from standard groups for scoring
   const skillCategories = useMemo(() => {
@@ -435,20 +435,20 @@ export function useHistoryColumns({
       },
       // Agents tested column
       {
-        accessorKey: "agentsTested",
+        accessorKey: "personasTested",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Agents" />
         ),
         cell: ({ row }) => {
-          const agentsTested = row.getValue("agentsTested") as string[];
+          const personasTested = row.getValue("personasTested") as string[];
 
-          if (!agentsTested || agentsTested.length === 0) {
+          if (!personasTested || personasTested.length === 0) {
             return <span className="text-muted-foreground">None</span>;
           }
 
           return (
             <div className="flex flex-wrap gap-1">
-              {agentsTested.map((agentName, index) => {
+              {personasTested.map((agentName, index) => {
                 const badgeColorClass =
                   agentName.toLowerCase() === "aggressive"
                     ? "bg-red-100 text-red-800 border-red-300"
@@ -472,10 +472,10 @@ export function useHistoryColumns({
           );
         },
         filterFn: (row, id, value) => {
-          const agentsTested = row.getValue(id) as string[];
+          const personasTested = row.getValue(id) as string[];
           if (!value || value.length === 0) return true;
           return value.some((filterAgent: string) =>
-            agentsTested?.some((agent) =>
+            personasTested?.some((agent) =>
               agent.toLowerCase().includes(filterAgent.toLowerCase())
             )
           );
@@ -654,7 +654,7 @@ export function useHistoryColumns({
   const isLoading =
     isLoadingProfiles ||
     isLoadingAttempts ||
-    isLoadingAgents ||
+    isLoadingPersonas ||
     isLoadingChats ||
     isLoadingRubrics ||
     isLoadingStandardGroups ||
@@ -669,7 +669,7 @@ export function useHistoryColumns({
     isLoading,
     data: data,
     profileOptions,
-    agentTypes,
+    personaTypes,
     skillCategories,
     scoreOptions,
     scoreRangeOptions,

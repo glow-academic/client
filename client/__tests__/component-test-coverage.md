@@ -21,7 +21,7 @@
 | CohortsDataTable | cohorts/CohortsDataTable.tsx | CohortsDataTable.test.tsx | ✅ Implemented |
 | CohortsDataTableToolbar | cohorts/CohortsDataTableToolbar.tsx | CohortsDataTableToolbar.test.tsx | ✅ Implemented |
 | NewCohort | cohorts/NewCohort.tsx | NewCohort.test.tsx | ✅ Implemented |
-| Agent | common/agent/Agent.tsx | Agent.test.tsx | ✅ Implemented |
+| Persona | common/agent/Persona.tsx | Persona.test.tsx | ✅ Implemented |
 | SystemAgent | common/agent/SystemAgent.tsx | SystemAgent.test.tsx | ✅ Implemented |
 | CohortCompletion | common/analytics/footer/CohortCompletion.tsx | CohortCompletion.test.tsx | ✅ Implemented |
 | ScenarioData | common/analytics/footer/ScenarioData.tsx | ScenarioData.test.tsx | ✅ Implemented |
@@ -95,9 +95,9 @@
 | ScenarioSlider | common/scenario/ScenarioSlider.tsx | ScenarioSlider.test.tsx | ✅ Implemented |
 | Simulation | common/simulation/Simulation.tsx | Simulation.test.tsx | ✅ Implemented |
 | SimulationCard | common/simulation/SimulationCard.tsx | SimulationCard.test.tsx | ✅ Implemented |
-| AgentEdit | create/agents/AgentEdit.tsx | AgentEdit.test.tsx | ✅ Implemented |
-| Agents | create/agents/Agents.tsx | Agents.test.tsx | ✅ Implemented |
-| NewAgent | create/agents/NewAgent.tsx | NewAgent.test.tsx | ✅ Implemented |
+| NewPersona | create/personas/NewPersona.tsx | NewPersona.test.tsx | ✅ Implemented |
+| PersonaEdit | create/personas/PersonaEdit.tsx | PersonaEdit.test.tsx | ✅ Implemented |
+| Personas | create/personas/Personas.tsx | Personas.test.tsx | ✅ Implemented |
 | NewRubric | create/rubrics/NewRubric.tsx | NewRubric.test.tsx | ✅ Implemented |
 | RubricEdit | create/rubrics/RubricEdit.tsx | RubricEdit.test.tsx | ✅ Implemented |
 | Rubrics | create/rubrics/Rubrics.tsx | Rubrics.test.tsx | ✅ Implemented |
@@ -158,7 +158,7 @@ __tests__/
 │   ├── NewCohort.test.tsx
 ├── common/
 │   ├── agent/
-│   │   ├── Agent.test.tsx
+│   │   ├── Persona.test.tsx
 │   │   ├── SystemAgent.test.tsx
 │   ├── analytics/
 │   │   ├── footer/
@@ -252,10 +252,10 @@ __tests__/
 │   │   ├── Simulation.test.tsx
 │   │   ├── SimulationCard.test.tsx
 ├── create/
-│   ├── agents/
-│   │   ├── AgentEdit.test.tsx
-│   │   ├── Agents.test.tsx
-│   │   ├── NewAgent.test.tsx
+│   ├── personas/
+│   │   ├── NewPersona.test.tsx
+│   │   ├── PersonaEdit.test.tsx
+│   │   ├── Personas.test.tsx
 │   ├── rubrics/
 │   │   ├── NewRubric.test.tsx
 │   │   ├── RubricEdit.test.tsx

@@ -4,9 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
-import { Agent, Cohort, Scenario, Simulation } from "@/types";
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+import { Cohort, Persona, Scenario, Simulation } from "@/types";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 
 export function useScenarioColumns() {
@@ -21,9 +21,9 @@ export function useScenarioColumns() {
     queryFn: () => getAllCohorts(),
   });
 
-  const { data: agents = [] } = useQuery({
-    queryKey: ["agents"],
-    queryFn: () => getAllAgents(),
+  const { data: personas = [] } = useQuery({
+    queryKey: ["personas"],
+    queryFn: () => getAllPersonas(),
   });
 
   const columns = useMemo<ColumnDef<Scenario>[]>(
@@ -111,12 +111,12 @@ export function useScenarioColumns() {
         },
       },
       {
-        accessorKey: "agentId",
-        header: "Agent",
-        cell: ({ row }) => row.getValue("agentId"),
+        accessorKey: "personaId",
+        header: "Persona",
+        cell: ({ row }) => row.getValue("personaId"),
         filterFn: (row, id, value) => {
-          const agentId = row.getValue(id) as string;
-          return value.includes(agentId);
+          const personaId = row.getValue(id) as string;
+          return value.includes(personaId);
         },
       },
       {
@@ -164,13 +164,13 @@ export function useScenarioColumns() {
     [cohorts]
   );
 
-  const agentOptions = useMemo(
+  const personaOptions = useMemo(
     () =>
-      agents.map((agent: Agent) => ({
-        value: agent.id,
-        label: agent.name,
+      personas.map((persona: Persona) => ({
+        value: persona.id,
+        label: persona.name,
       })),
-    [agents]
+    [personas]
   );
 
   const scenarioTypeOptions = useMemo(
@@ -186,7 +186,7 @@ export function useScenarioColumns() {
     columns,
     simulationOptions,
     cohortOptions,
-    agentOptions,
+    personaOptions,
     scenarioTypeOptions,
   };
 }

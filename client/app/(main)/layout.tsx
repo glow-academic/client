@@ -224,11 +224,11 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/create/agents") {
+    if (pathname === "/create/personas") {
       return (
-        <Button onClick={() => router.push("/create/agents/new")} size="sm">
+        <Button onClick={() => router.push("/create/personas/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Create Agent
+          Create Persona
         </Button>
       );
     }

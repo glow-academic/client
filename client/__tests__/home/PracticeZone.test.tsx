@@ -64,8 +64,7 @@ describe("PracticeZone", () => {
     loadingSimulation: null,
     getRealRubricData: vi.fn(() => ({ attempts: [], highestScore: 0 })),
     scenarios: [],
-    agents: [],
-
+    personas: [],
   };
 
   it("renders practice zone title and description", () => {
