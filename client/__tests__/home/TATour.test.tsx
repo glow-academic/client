@@ -145,8 +145,6 @@ describe("TATour", () => {
 
   it("should handle step 2 to 3 transition with attemptId logic", () => {
     // Test case 1: No attemptId - should trigger simulation card click
-    const { rerender } = renderTATour();
-
     // Mock DOM elements for simulation cards
     const mockCard = document.createElement("div");
     mockCard.setAttribute("data-testid", "simulation-card");
