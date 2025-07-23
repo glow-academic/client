@@ -15,6 +15,7 @@ import {
   useReducer,
 } from "react";
 
+import { useProfile } from "@/contexts/profile-context";
 import { Profile } from "@/types";
 import { TourStep } from "@/utils/tour-steps";
 
@@ -156,6 +157,7 @@ interface TourProviderProps {
 
 export function TourProvider({ children }: TourProviderProps) {
   const [state, dispatch] = useReducer(tourReducer, initialState);
+  const { effectiveProfile } = useProfile();
 
   // Actions
   const openTour = useCallback(
@@ -246,7 +248,7 @@ export function TourProvider({ children }: TourProviderProps) {
     | "resume"
     | "complete"
     | "hidden" => {
-    if (!state.profile) {
+    if (!effectiveProfile) {
       return "hidden";
     }
 
@@ -258,8 +260,8 @@ export function TourProvider({ children }: TourProviderProps) {
       return "hidden";
     }
 
-    // Check tour completion status
-    if (state.profile.viewedIntro && state.profile.viewedChat) {
+    // Check tour completion status using latest profile data
+    if (effectiveProfile.viewedIntro && effectiveProfile.viewedChat) {
       return "complete";
     }
 
@@ -268,7 +270,7 @@ export function TourProvider({ children }: TourProviderProps) {
     }
 
     return "start";
-  }, [state.profile, state.isOpen]);
+  }, [effectiveProfile, state.isOpen]);
 
   // Context value
   const value = useMemo(
@@ -354,9 +356,12 @@ export function TourProvider({ children }: TourProviderProps) {
     const currentStep = state.steps[state.currentStep];
     if (!currentStep) return null;
 
-    // Check if tour is actually completed based on profile status
+    // Get the latest profile data from the profile context
+    // const { effectiveProfile } = useProfile(); // This line is removed as per the edit hint
+
+    // Check if tour is actually completed based on latest profile status
     const isTourCompleted =
-      state.profile?.viewedIntro && state.profile?.viewedChat;
+      effectiveProfile?.viewedIntro && effectiveProfile?.viewedChat;
     const isLastStep = state.currentStep + 1 === state.steps.length;
 
     return (
@@ -509,7 +514,7 @@ export function TourProvider({ children }: TourProviderProps) {
         </div>
       </aside>
     );
-  }, [state, closeTour, prevStep]);
+  }, [state, closeTour, prevStep, effectiveProfile]);
 
   return (
     <TourContext.Provider value={value}>
