@@ -1,6 +1,6 @@
 /**
  * CohortStaff.tsx
- * Used to show the cohort staff.
+ * Used to show the cohort staff with enhanced data table toolbar integration.
  * @AshokSaravanan222 & @siladiea
  * 07/18/2025
  */
@@ -8,21 +8,28 @@
 "use client";
 import { useCallback, useState } from "react";
 
+import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Profile, ProfileRole } from "@/types";
-import { Eye, Grid3X3, List, Search, Trash2, UploadCloud } from "lucide-react";
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import { Eye, Grid3X3, List, Trash2, UploadCloud } from "lucide-react";
 import { useRouter } from "next/navigation";
 import CohortAddStaff from "./CohortAddStaff";
 
@@ -56,11 +63,22 @@ export default function CohortStaff({
   isLoading = false,
   currentCohortName,
 }: CohortStaffProps) {
-  // Profile management state
-  const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState<string>("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const router = useRouter();
+
+  // View mode state
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+
+  // Table state for filtering and pagination
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "firstName", desc: false },
+  ]);
+
+  // Role options for faceted filter
+  const roleOptions = [
+    { value: "instructional", label: "👨‍🏫 Instructor" },
+    { value: "ta", label: "👨‍🎓 TA" },
+  ];
 
   // Handle adding new profiles from the upload component
   const handleAddProfiles = useCallback(
@@ -71,18 +89,21 @@ export default function CohortStaff({
   );
 
   // Profile management handlers
-  const stageProfileForDeletion = (profileId: string) => {
-    const profileToRemove = profiles.find((p) => p.id === profileId);
-    if (!profileToRemove) return;
+  const stageProfileForDeletion = useCallback(
+    (profileId: string) => {
+      const profileToRemove = profiles.find((p) => p.id === profileId);
+      if (!profileToRemove) return;
 
-    // If it's an existing profile, add its ID to the deletion queue
-    if (!("isNew" in profileToRemove)) {
-      setProfilesToDelete([...profilesToDelete, profileId]);
-    }
+      // If it's an existing profile, add its ID to the deletion queue
+      if (!("isNew" in profileToRemove)) {
+        setProfilesToDelete([...profilesToDelete, profileId]);
+      }
 
-    // Remove the profile from the visible UI state
-    setProfiles(profiles.filter((p) => p.id !== profileId));
-  };
+      // Remove the profile from the visible UI state
+      setProfiles(profiles.filter((p) => p.id !== profileId));
+    },
+    [profiles, profilesToDelete, setProfiles, setProfilesToDelete]
+  );
 
   const getProfileRoleIcon = (role: ProfileRole) => {
     switch (role) {
@@ -95,55 +116,99 @@ export default function CohortStaff({
     }
   };
 
-  const viewProfile = (profile: EditableProfile) => {
-    // Navigate to the profile report page
-    router.push(`/analytics/reports/p/${profile.id}`);
-  };
+  const viewProfile = useCallback(
+    (profile: EditableProfile) => {
+      // Navigate to the profile report page
+      router.push(`/analytics/reports/p/${profile.id}`);
+    },
+    [router]
+  );
 
-  // Filter profiles from the *edited* state for rendering
-  const filteredProfiles = profiles.filter((profile: EditableProfile) => {
-    const matchesSearch = searchQuery
-      ? profile.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        profile.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        profile.alias.toLowerCase().includes(searchQuery.toLowerCase())
-      : true;
-    const matchesRole =
-      roleFilter === "all" ? true : profile.role === roleFilter;
-    return matchesSearch && matchesRole;
+  // Define table columns for filtering and pagination
+  const columns: ColumnDef<EditableProfile>[] = [
+    {
+      accessorKey: "firstName",
+      header: "Name",
+    },
+    {
+      accessorKey: "role",
+      header: "Role",
+    },
+  ];
+
+  const table = useReactTable({
+    data: profiles,
+    columns,
+    state: {
+      sorting,
+      columnFilters,
+    },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      pagination: {
+        pageSize: 12, // Show 12 items per page for grid view
+      },
+    },
   });
+
+  // Check if any filters are active
+  const isFiltered = table.getState().columnFilters.length > 0;
+
+  const firstNameColumn = table.getColumn("firstName");
+  const roleColumn = table.getColumn("role");
+
+  // Get filtered and paginated data
+  const filteredProfiles = table.getRowModel().rows.map((row) => row.original);
 
   return (
     <div className="space-y-4">
       <Label>Staff</Label>
 
-      {/* Controls Bar */}
-      <div className="flex items-center justify-between gap-4">
-        {/* Left side - Search and Filters */}
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+      {/* Enhanced Header with Data Table Toolbar Features */}
+      <div className="flex items-center justify-between">
+        <div className="flex flex-1 items-center space-x-2 flex-wrap">
+          <div className="mb-2">
             <Input
-              placeholder="Search staff..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-9 w-64"
+              placeholder="Search staff by name or alias..."
+              value={(firstNameColumn?.getFilterValue() as string) ?? ""}
+              onChange={(event) =>
+                firstNameColumn?.setFilterValue(event.target.value)
+              }
+              className="h-8 w-[150px] lg:w-[250px]"
             />
           </div>
 
-          <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-40 h-9">
-              <SelectValue placeholder="Filter by role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="instructional">👨‍🏫 Instructor</SelectItem>
-              <SelectItem value="ta">👨‍🎓 TA</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center space-x-2 flex-wrap mb-2">
+            {/* Role Filter */}
+            {roleColumn && roleOptions.length > 0 && (
+              <DataTableFacetedFilter
+                column={roleColumn}
+                title="Role"
+                options={roleOptions}
+              />
+            )}
+
+            {isFiltered && (
+              <Button
+                variant="ghost"
+                onClick={() => table.resetColumnFilters()}
+                className="h-8 px-2 lg:px-3"
+              >
+                Reset
+              </Button>
+            )}
+          </div>
         </div>
 
-        {/* Right side - View Toggle */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center space-x-2 mb-2">
+          {/* View Toggle */}
           <div className="flex border rounded-md">
             <Button
               type="button"
@@ -164,13 +229,13 @@ export default function CohortStaff({
               <List className="h-4 w-4" />
             </Button>
           </div>
-          <div className="flex items-center gap-2">
-            <CohortAddStaff
-              onAddProfiles={handleAddProfiles}
-              currentCohortName={currentCohortName || ""}
-              existingProfileIds={profiles.map((p) => p.id)}
-            />
-          </div>
+
+          {/* Add Staff Button */}
+          <CohortAddStaff
+            onAddProfiles={handleAddProfiles}
+            currentCohortName={currentCohortName || ""}
+            existingProfileIds={profiles.map((p) => p.id)}
+          />
         </div>
       </div>
 
@@ -296,7 +361,7 @@ export default function CohortStaff({
                               </Badge>
                             )}
                             {isNewProfile && (
-                              <span className="bg-blue-500 text-white text-xs px-1 py-0.5 rounded">
+                              <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded">
                                 NEW
                               </span>
                             )}
@@ -335,6 +400,9 @@ export default function CohortStaff({
           )}
         </div>
       )}
+
+      {/* Pagination Footer */}
+      {filteredProfiles.length > 0 && <DataTablePagination table={table} />}
     </div>
   );
 }
