@@ -1,51 +1,6 @@
-import { Cohort } from "@/types";
 import { profileRole } from "@/utils/drizzle/schema";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { getAllCohorts } from "./queries/cohorts/get-all-cohorts";
-
 type ProfileRole = (typeof profileRole.enumValues)[number];
-
-/**
- * Get the first available cohort for a given role and profile
- * This determines which cohort users should be navigated to when clicking "Cohorts" breadcrumb
- */
-export const getFirstAvailableCohort = async (
-  role: ProfileRole,
-  profileId?: string,
-  defaultProfile?: boolean
-): Promise<Cohort | null> => {
-  try {
-    const cohorts = await getAllCohorts();
-    if (!cohorts || cohorts.length === 0) return null;
-
-    let availableCohorts: Cohort[] = [];
-
-    switch (role) {
-      case "superadmin":
-      case "admin":
-        availableCohorts = cohorts;
-        break;
-      case "instructional":
-      case "ta":
-        if (defaultProfile) {
-          availableCohorts = cohorts;
-        } else if (profileId) {
-          availableCohorts = cohorts.filter((cohort) =>
-            cohort.profileIds?.includes(profileId)
-          );
-        }
-        break;
-      default:
-        return null;
-    }
-
-    // Return the first available cohort, or null if none available
-    return availableCohorts.length > 0 ? availableCohorts[0] || null : null;
-  } catch (error) {
-    console.error("Error getting first available cohort:", error);
-    return null;
-  }
-};
 
 /**
  * Get the first available section for a given role
@@ -335,10 +290,6 @@ export const getBreadcrumbSectionRoute = (
   _currentPathname?: string
 ): string => {
   switch (section) {
-    case "cohorts":
-      // Special case: return a special route that indicates we want the first available cohort
-      // This will be handled by the breadcrumb component
-      return "/cohorts/first";
     default:
       // Use the regular section route for everything else
       return getSectionRoute(section, _currentPathname);

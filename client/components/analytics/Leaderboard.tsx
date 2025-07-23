@@ -532,7 +532,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     <div className="space-y-6">
       {/* Header with title and cohort picker */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Leaderboard</h2>
+        {!cohortId && <h2 className="text-2xl font-bold">Leaderboard</h2>}
         {!cohortId && (
           <CohortPicker
             cohorts={availableCohorts.map((cohort) => ({
