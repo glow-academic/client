@@ -12,14 +12,7 @@ import { DataTableFacetedFilter } from "@/components/common/history/DataTableFac
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -37,7 +30,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Eye, Grid3X3, List, LogOut, Trash2, UploadCloud } from "lucide-react";
+import { Eye, Grid3X3, List, Trash2, UploadCloud } from "lucide-react";
 import { useRouter } from "next/navigation";
 import CohortAddStaff from "./CohortAddStaff";
 
@@ -62,7 +55,6 @@ export interface CohortStaffProps {
   isSubmitting?: boolean;
   currentCohortName?: string;
   effectiveProfile?: Profile | null; // Current user's effective profile
-  isEditMode?: boolean; // Whether we're in edit mode (not create mode)
 }
 
 export default function CohortStaff({
@@ -73,24 +65,16 @@ export default function CohortStaff({
   isLoading = false,
   currentCohortName,
   effectiveProfile,
-  isEditMode = false,
 }: CohortStaffProps) {
   const router = useRouter();
 
   // View mode state
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
 
-  // Leave cohort modal state
-  const [showLeaveModal, setShowLeaveModal] = useState(false);
-  const [profileToLeave, setProfileToLeave] = useState<EditableProfile | null>(
-    null
-  );
-
   // Table state for filtering and pagination
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
-    { id: "role", desc: true }, // Sort by role descending (instructional first)
-    { id: "firstName", desc: false },
+    { id: "role", desc: true }, // Sort by role using custom sorting function
   ]);
 
   // Role options for faceted filter
@@ -143,20 +127,6 @@ export default function CohortStaff({
     [router]
   );
 
-  // Handle leave cohort
-  const handleLeaveCohort = useCallback((profile: EditableProfile) => {
-    setProfileToLeave(profile);
-    setShowLeaveModal(true);
-  }, []);
-
-  const confirmLeaveCohort = useCallback(() => {
-    if (profileToLeave) {
-      stageProfileForDeletion(profileToLeave.id);
-      setShowLeaveModal(false);
-      setProfileToLeave(null);
-    }
-  }, [profileToLeave, stageProfileForDeletion]);
-
   // Check permissions for actions
   const canDeleteProfile = useCallback(
     (profile: EditableProfile) => {
@@ -177,18 +147,6 @@ export default function CohortStaff({
     return profile.role !== "instructional";
   }, []);
 
-  const shouldShowLeaveButton = useCallback(
-    (profile: EditableProfile) => {
-      // Show leave button if current user is instructional, viewing their own profile, and in edit mode
-      return (
-        isEditMode &&
-        effectiveProfile?.role === "instructional" &&
-        effectiveProfile?.id === profile.id
-      );
-    },
-    [effectiveProfile, isEditMode]
-  );
-
   // Define table columns for filtering and pagination
   const columns: ColumnDef<EditableProfile>[] = [
     {
@@ -198,6 +156,13 @@ export default function CohortStaff({
     {
       accessorKey: "role",
       header: "Role",
+      accessorFn: (row) => {
+        // Create a sortable value that prioritizes instructional > new > TA
+        const isNew = "isNew" in row && row.isNew;
+        if (row.role === "instructional") return "3";
+        if (isNew) return "2";
+        return "1"; // TA
+      },
     },
   ];
 
@@ -345,7 +310,7 @@ export default function CohortStaff({
                         {/* Role display in top left */}
                         <div className="absolute top-2 left-2 z-10">
                           {profile.role === "instructional" && (
-                            <Badge variant="secondary">👨‍🏫</Badge>
+                            <Badge variant="default">INSTRUCTIONAL</Badge>
                           )}
                         </div>
 
@@ -362,17 +327,7 @@ export default function CohortStaff({
                               <Eye className="h-3 w-3" />
                             </Button>
                           )}
-                          {shouldShowLeaveButton(profile) ? (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="h-7 w-7 p-0 text-orange-600 hover:text-orange-700 bg-white/90 backdrop-blur-sm"
-                              onClick={() => handleLeaveCohort(profile)}
-                            >
-                              <LogOut className="h-3 w-3" />
-                            </Button>
-                          ) : canDeleteProfile(profile) ? (
+                          {canDeleteProfile(profile) && (
                             <Button
                               type="button"
                               variant="outline"
@@ -385,7 +340,7 @@ export default function CohortStaff({
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
-                          ) : null}
+                          )}
                         </div>
 
                         {/* Profile area */}
@@ -437,8 +392,8 @@ export default function CohortStaff({
                               {profile.firstName} {profile.lastName}
                             </p>
                             {profile.role === "instructional" && (
-                              <Badge variant="secondary" className="text-xs">
-                                👨‍🏫 INSTRUCTIONAL
+                              <Badge variant="default" className="text-xs">
+                                INSTRUCTIONAL
                               </Badge>
                             )}
                             {isNewProfile && (
@@ -463,17 +418,7 @@ export default function CohortStaff({
                               <Eye className="h-4 w-4" />
                             </Button>
                           )}
-                          {shouldShowLeaveButton(profile) ? (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="text-orange-600 hover:text-orange-700"
-                              onClick={() => handleLeaveCohort(profile)}
-                            >
-                              <LogOut className="h-4 w-4" />
-                            </Button>
-                          ) : canDeleteProfile(profile) ? (
+                          {canDeleteProfile(profile) && (
                             <Button
                               type="button"
                               variant="outline"
@@ -486,7 +431,7 @@ export default function CohortStaff({
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
-                          ) : null}
+                          )}
                         </div>
                       </div>
                     );
@@ -500,32 +445,6 @@ export default function CohortStaff({
 
       {/* Pagination Footer */}
       {filteredProfiles.length > 0 && <DataTablePagination table={table} />}
-
-      {/* Leave Cohort Modal */}
-      <Dialog open={showLeaveModal} onOpenChange={setShowLeaveModal}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Leave Cohort</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to leave this cohort? This action cannot be
-              undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowLeaveModal(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmLeaveCohort}
-              className="flex items-center gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Leave Cohort
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

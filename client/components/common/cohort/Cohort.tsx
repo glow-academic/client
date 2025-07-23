@@ -25,8 +25,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 import { useProfile } from "@/contexts/profile-context";
@@ -455,6 +455,18 @@ export default function Cohort({ cohortId }: CohortProps) {
           />
         </div>
 
+        {/* Active/Inactive Switch */}
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="active" className="text-sm">
+            Cohort Active
+          </Label>
+          <Switch
+            id="active"
+            checked={formData.active ?? true}
+            onCheckedChange={(checked) => handleInputChange("active", checked)}
+          />
+        </div>
+
         {/* Simulations */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
@@ -596,7 +608,6 @@ export default function Cohort({ cohortId }: CohortProps) {
           isSubmitting={isSubmitting}
           currentCohortName={formData.title || ""}
           effectiveProfile={effectiveProfile}
-          isEditMode={isEditMode}
         />
 
         {/* Submit Button */}
