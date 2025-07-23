@@ -32,15 +32,15 @@ export const createTATourSteps = (
       id: "home-overview",
       title: "Welcome to GLOW! 🌟",
       content:
-        "This is your home dashboard where you can see your progress, overall completion status, and access your assigned simulations. You'll find your cohorts, practice simulations, and history here.",
+        "This is your home dashboard where you can see your assigned simulations and cohorts. Here you'll find all the training materials you need to complete.",
       isCompleted: false,
       requiresAction: false,
     },
     {
-      id: "cohorts-page",
-      title: "Your Cohorts 📚",
+      id: "cohort-leaderboard",
+      title: "Your Cohort Progress 📊",
       content:
-        "Let's check out your assigned cohorts. These are the simulations you need to complete for your training. Each cohort contains specific scenarios you'll be graded on.",
+        "Let's check your cohort's leaderboard to see how you and your peers are progressing. This shows everyone's completion status and scores.",
       action: () => {
         // Navigate to the first cohort the TA is assigned to
         // This will be handled by the tour component
@@ -49,10 +49,10 @@ export const createTATourSteps = (
       requiresAction: true,
     },
     {
-      id: "start-chat",
+      id: "practice-simulation",
       title: "Practice Simulation 💬",
       content:
-        "Let's start a practice simulation! This will help you get familiar with the chat interface. We'll start with a practice scenario so you can learn without pressure.",
+        "Now let's start a practice simulation! This will help you get familiar with the chat interface. We'll start with a practice scenario so you can learn without pressure.",
       action: () => {
         // Start the first practice simulation
         // This will be handled by the tour component
@@ -65,10 +65,6 @@ export const createTATourSteps = (
       title: "Send a Message 💬",
       content:
         "Great! Now let's send a message in the chat. Type something in the chat input and press Enter to send your first message.",
-      action: () => {
-        // Send a message
-        // This will be handled by the tour component
-      },
       isCompleted: false,
       requiresAction: true,
     },

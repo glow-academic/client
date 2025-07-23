@@ -223,6 +223,18 @@ export function WebSocketProvider({
             );
           }
 
+          // Dispatch messageSent event for tour progression when user sends a message
+          if (data.role === "user") {
+            window.dispatchEvent(
+              new CustomEvent("messageSent", {
+                detail: {
+                  messageId: data.message_id,
+                  chatId: data.chat_id,
+                },
+              })
+            );
+          }
+
           setTimeout(() => {
             queryClient.invalidateQueries({
               queryKey: ["simulationMessages", data.chat_id],
@@ -696,6 +708,15 @@ export function WebSocketProvider({
                   completedChatId: data.completed_chat_id,
                   nextChatId: data.next_chat_id,
                   isAttemptFinished: data.is_attempt_finished,
+                },
+              })
+            );
+
+            // Dispatch chatEnded event for tour progression
+            window.dispatchEvent(
+              new CustomEvent("chatEnded", {
+                detail: {
+                  chatId: data.completed_chat_id,
                 },
               })
             );

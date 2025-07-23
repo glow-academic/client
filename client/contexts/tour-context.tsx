@@ -71,12 +71,10 @@ function tourReducer(
       return {
         ...state,
         isOpen: false,
-        currentStep: 0,
-        steps: [],
-        profile: null,
         isNavigating: false,
         loadingSimulation: null,
-        showGuideButton: false,
+        showGuideButton: true, // Keep guide button visible after tour closes
+        // Keep steps and profile so tour can be reopened
       };
     case "NEXT":
       return {
@@ -134,6 +132,7 @@ interface TourContextValue {
   setShowGuideButton: (show: boolean) => void;
   openGuide: () => void;
   goBack: () => void;
+  getGuideButtonState: () => "start" | "resume" | "complete" | "hidden";
 }
 
 const TourContext = createContext<TourContextValue | undefined>(undefined);
@@ -197,21 +196,46 @@ export function TourProvider({ children }: TourProviderProps) {
     switch (state.currentStep) {
       case 0: // Home overview - stay on home
         break;
-      case 1: // Cohorts - go back to home
+      case 1: // Cohort leaderboard - go back to home
         window.history.back();
         break;
-      case 2: // Classes - go back to cohorts
+      case 2: // Practice simulation - go back to home
         window.history.back();
         break;
-      case 3: // Simulation - go back to home
-        window.history.back();
+      case 3: // Send message - stay in simulation
         break;
-      case 4: // Send message - stay in simulation
-        break;
-      case 5: // End chat - stay in simulation
+      case 4: // End chat - stay in simulation
         break;
     }
   }, [state.currentStep]);
+
+  // Get guide button state
+  const getGuideButtonState = useCallback(():
+    | "start"
+    | "resume"
+    | "complete"
+    | "hidden" => {
+    if (!state.profile) return "hidden";
+
+    // Check if we're on a simulation chat page
+    if (
+      typeof window !== "undefined" &&
+      window.location.pathname.includes("/practice/a/")
+    ) {
+      return "hidden";
+    }
+
+    // Check tour completion status
+    if (state.profile.viewedIntro && state.profile.viewedChat) {
+      return "complete";
+    }
+
+    if (state.isOpen) {
+      return "resume";
+    }
+
+    return "start";
+  }, [state.profile, state.isOpen]);
 
   // Context value
   const value = useMemo(
@@ -228,6 +252,7 @@ export function TourProvider({ children }: TourProviderProps) {
       setShowGuideButton,
       openGuide,
       goBack,
+      getGuideButtonState,
     }),
     [
       state,
@@ -242,6 +267,7 @@ export function TourProvider({ children }: TourProviderProps) {
       setShowGuideButton,
       openGuide,
       goBack,
+      getGuideButtonState,
     ]
   );
 

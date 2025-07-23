@@ -62,6 +62,19 @@ body.tour-open {
   border-radius: 9999px;
 }
 
+/* Guide button styles */
+.tour-guide-button {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 50;
+  transition: all 0.2s ease;
+}
+
+.tour-guide-button:hover {
+  transform: scale(1.05);
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .tour-sidebar {
@@ -71,6 +84,11 @@ body.tour-open {
   
   .tour-sidebar.open {
     transform: translateX(0);
+  }
+  
+  .tour-guide-button {
+    bottom: 0.5rem;
+    left: 0.5rem;
   }
 }
 

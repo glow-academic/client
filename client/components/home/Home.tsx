@@ -24,6 +24,7 @@ import { Cohort, CohortPicker } from "../common/cohort/CohortPicker";
 import SimulationProgress from "../common/cohort/SimulationProgress";
 import SimulationHistory from "../common/history/SimulationHistory";
 import SimulationCard from "../common/simulation/SimulationCard";
+import TATour from "./TATour";
 
 export default function Home() {
   const { effectiveProfile, activeProfile } = useProfile();
@@ -42,7 +43,7 @@ export default function Home() {
   const shouldShowAll =
     effectiveProfile?.role === "instructional" ||
     effectiveProfile?.role === "admin" ||
-    effectiveProfile?.role === "superadmin"
+    effectiveProfile?.role === "superadmin";
 
   // Check if user is a TA
   const isTA = effectiveProfile?.role === "ta";
@@ -202,7 +203,14 @@ export default function Home() {
     }
 
     return [];
-  }, [cohortsForPicker, shouldShowAll, isTA, effectiveProfile?.id, allCohorts, effectiveProfile?.defaultProfile]);
+  }, [
+    cohortsForPicker,
+    shouldShowAll,
+    isTA,
+    effectiveProfile?.id,
+    allCohorts,
+    effectiveProfile?.defaultProfile,
+  ]);
 
   // Set default selection to incomplete cohorts
   useEffect(() => {
@@ -789,6 +797,9 @@ export default function Home() {
           showExport={shouldShowAll}
         />
       </div>
+
+      {/* Tour Component - Only for TAs */}
+      <TATour />
     </div>
   );
 }
