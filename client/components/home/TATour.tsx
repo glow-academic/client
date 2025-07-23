@@ -554,30 +554,13 @@ export default function TATour() {
     if (initialStep >= 0 && initialStep < steps.length) {
       const targetStep = steps[initialStep];
       if (targetStep && targetStep.page && targetStep.page !== pathname) {
-        // Don't navigate to attempt pages during initialization - wait for attemptId
-        // UNLESS the tour is completed (both flags true), then show completion screen
-        if (
-          (initialStep === 3 || initialStep === 4) &&
-          !tourState.attemptId &&
-          !(effectiveProfile.viewedIntro && effectiveProfile.viewedChat)
-        ) {
-          logInfo(
-            "Skipping initial navigation to attempt page - no attemptId yet",
-            {
-              step: initialStep,
-              targetPage: targetStep.page,
-              attemptId: tourState.attemptId,
-            }
-          );
-        } else {
-          const targetPage = targetStep.page;
-          logInfo("Navigating to correct page for tour step", {
-            step: initialStep,
-            targetPage,
-            currentPath: pathname,
-          });
-          router.push(targetPage);
-        }
+        const targetPage = targetStep.page;
+        logInfo("Navigating to correct page for tour step", {
+          step: initialStep,
+          targetPage,
+          currentPath: pathname,
+        });
+        router.push(targetPage);
       }
     }
 
@@ -754,9 +737,6 @@ export default function TATour() {
       setAttemptId(attemptId);
       setLoadingSimulation(null);
 
-      // Navigate to the simulation
-      router.push(`/practice/a/${attemptId}`);
-
       // Let WebSocket events handle step completion - don't auto-advance here
     };
 
@@ -776,6 +756,8 @@ export default function TATour() {
         step3Completed: tourState.steps[3]?.isCompleted,
         messageId: event.detail?.messageId,
         chatId: event.detail?.chatId,
+        totalSteps: tourState.steps.length,
+        step3Exists: !!tourState.steps[3],
       });
 
       if (
@@ -786,6 +768,13 @@ export default function TATour() {
         logInfo("Message sent - marking tour step 3 complete");
         handleStepComplete(3);
         nextStep();
+      } else {
+        logInfo("Message sent - but not completing step 3", {
+          tourOpen: tourState.isOpen,
+          currentStep: tourState.currentStep,
+          step3Completed: tourState.steps[3]?.isCompleted,
+          expectedStep: 3,
+        });
       }
     };
 
