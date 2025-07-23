@@ -27,6 +27,7 @@ interface TourContextState {
   isNavigating: boolean;
   loadingSimulation: string | null;
   showGuideButton: boolean;
+  attemptId: string | null; // Store attemptId for persistence
 }
 
 // Tour actions
@@ -39,7 +40,8 @@ type TourAction =
   | { type: "COMPLETE_STEP"; payload: number }
   | { type: "SET_NAVIGATING"; payload: boolean }
   | { type: "SET_LOADING_SIMULATION"; payload: string | null }
-  | { type: "SET_SHOW_GUIDE_BUTTON"; payload: boolean };
+  | { type: "SET_SHOW_GUIDE_BUTTON"; payload: boolean }
+  | { type: "SET_ATTEMPT_ID"; payload: string | null };
 
 // Initial state
 const initialState: TourContextState = {
@@ -50,6 +52,7 @@ const initialState: TourContextState = {
   isNavigating: false,
   loadingSimulation: null,
   showGuideButton: false,
+  attemptId: null,
 };
 
 // Reducer
@@ -74,7 +77,7 @@ function tourReducer(
         isNavigating: false,
         loadingSimulation: null,
         showGuideButton: true, // Keep guide button visible after tour closes
-        // Keep steps and profile so tour can be reopened
+        // Keep steps, profile, and attemptId so tour can be reopened
       };
     case "NEXT":
       return {
@@ -113,6 +116,11 @@ function tourReducer(
         ...state,
         showGuideButton: action.payload,
       };
+    case "SET_ATTEMPT_ID":
+      return {
+        ...state,
+        attemptId: action.payload,
+      };
     default:
       return state;
   }
@@ -130,6 +138,7 @@ interface TourContextValue {
   setNavigating: (isNavigating: boolean) => void;
   setLoadingSimulation: (simulationId: string | null) => void;
   setShowGuideButton: (show: boolean) => void;
+  setAttemptId: (attemptId: string | null) => void;
   openGuide: () => void;
   goBack: () => void;
   getGuideButtonState: () => "start" | "resume" | "complete" | "hidden";
@@ -180,6 +189,10 @@ export function TourProvider({ children }: TourProviderProps) {
 
   const setShowGuideButton = useCallback((show: boolean) => {
     dispatch({ type: "SET_SHOW_GUIDE_BUTTON", payload: show });
+  }, []);
+
+  const setAttemptId = useCallback((attemptId: string | null) => {
+    dispatch({ type: "SET_ATTEMPT_ID", payload: attemptId });
   }, []);
 
   const openGuide = useCallback(() => {
@@ -250,6 +263,7 @@ export function TourProvider({ children }: TourProviderProps) {
       setNavigating,
       setLoadingSimulation,
       setShowGuideButton,
+      setAttemptId,
       openGuide,
       goBack,
       getGuideButtonState,
@@ -265,6 +279,7 @@ export function TourProvider({ children }: TourProviderProps) {
       setNavigating,
       setLoadingSimulation,
       setShowGuideButton,
+      setAttemptId,
       openGuide,
       goBack,
       getGuideButtonState,
@@ -302,25 +317,7 @@ export function TourProvider({ children }: TourProviderProps) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [state.isOpen, closeTour, nextStep, prevStep]);
 
-  // Handle click outside to close
-  useEffect(() => {
-    if (!state.isOpen) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (
-        !target.closest(".tour-sidebar") &&
-        !target.closest("[data-tour-step]")
-      ) {
-        closeTour();
-      }
-    };
-
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, [state.isOpen, closeTour]);
-
-  // Custom sidebar component
+  // Custom sidebar component with improved styling
   const TourSidebar = useMemo(() => {
     if (!state.isOpen || state.steps.length === 0) return null;
 
@@ -329,24 +326,58 @@ export function TourProvider({ children }: TourProviderProps) {
 
     return (
       <aside className="tour-sidebar">
-        <header className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold">{currentStep.title}</h3>
-          <button
-            onClick={closeTour}
-            className="close-btn p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-            aria-label="Close tour"
-          >
-            ✕
-          </button>
-        </header>
+        <div className="tour-sidebar-content">
+          <header className="tour-sidebar-header">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-foreground">
+                {currentStep.title}
+              </h3>
+              <button
+                onClick={closeTour}
+                className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground"
+                aria-label="Close tour"
+              >
+                ✕
+              </button>
+            </div>
+          </header>
 
-        <div className="flex-1 space-y-4">
-          <div className="prose dark:prose-invert text-sm">
-            {currentStep.content}
+          <div className="tour-sidebar-body">
+            <div className="text-sm text-muted-foreground leading-relaxed">
+              {currentStep.content}
+            </div>
           </div>
 
-          {currentStep.requiresAction && (
-            <div className="flex items-center gap-2 pt-4">
+          <footer className="tour-sidebar-footer">
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+              <span>
+                Step {state.currentStep + 1} of {state.steps.length}
+              </span>
+              <span>
+                {Math.round(
+                  ((state.currentStep + 1) / state.steps.length) * 100
+                )}
+                %
+              </span>
+            </div>
+
+            <div className="w-full bg-muted rounded-full h-1.5 mb-4">
+              <div
+                className="bg-primary h-1.5 rounded-full transition-all duration-300"
+                style={{
+                  width: `${((state.currentStep + 1) / state.steps.length) * 100}%`,
+                }}
+              />
+            </div>
+
+            <div className="flex justify-between gap-2">
+              <button
+                onClick={prevStep}
+                disabled={state.currentStep === 0}
+                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Back
+              </button>
               <button
                 onClick={() => {
                   // Dispatch custom event for tour action
@@ -355,79 +386,35 @@ export function TourProvider({ children }: TourProviderProps) {
                       detail: { stepIndex: state.currentStep },
                     })
                   );
-                  logInfo("Tour action triggered", {
+                  logInfo("Tour Next button clicked", {
                     stepIndex: state.currentStep,
                   });
                 }}
                 disabled={state.isNavigating || !!state.loadingSimulation}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 flex-1"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors flex-1"
               >
                 {state.isNavigating
                   ? "Navigating..."
                   : state.loadingSimulation
                     ? "Starting..."
-                    : "Continue"}
+                    : state.currentStep + 1 === state.steps.length
+                      ? "Finish"
+                      : "Next"}
               </button>
             </div>
-          )}
+          </footer>
         </div>
-
-        <footer className="mt-auto pt-6 space-y-3">
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>
-              Step {state.currentStep + 1} of {state.steps.length}
-            </span>
-            <span>
-              {Math.round(((state.currentStep + 1) / state.steps.length) * 100)}
-              %
-            </span>
-          </div>
-          <progress
-            value={state.currentStep + 1}
-            max={state.steps.length}
-            className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
-          >
-            <div className="h-full bg-primary rounded-full transition-all duration-300" />
-          </progress>
-          <div className="flex justify-between">
-            <button
-              onClick={goBack}
-              disabled={state.currentStep === 0}
-              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Go Back
-            </button>
-            <button
-              onClick={nextStep}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90"
-            >
-              {state.currentStep + 1 === state.steps.length ? "Finish" : "Next"}
-            </button>
-          </div>
-        </footer>
       </aside>
     );
-  }, [state, closeTour, nextStep, goBack]);
+  }, [state, closeTour, prevStep]);
 
   return (
     <TourContext.Provider value={value}>
       {children}
       {state.isOpen && state.steps.length > 0 && (
         <>
-          {/* Disable reactour overlay and just use our custom sidebar */}
-          <div
-            className="tour-mask"
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              zIndex: 1000,
-              pointerEvents: "auto",
-            }}
-          />
+          {/* Tour overlay that replaces/overlays the sidebar */}
+          <div className="tour-overlay" />
           {TourSidebar}
         </>
       )}
