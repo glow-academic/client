@@ -183,7 +183,7 @@ export default function CohortStaff({
     getFacetedUniqueValues: getFacetedUniqueValues(),
     initialState: {
       pagination: {
-        pageSize: 12, // Show 12 items per page for grid view
+        pageSize: 10, // Show 10 items per page for grid view
       },
     },
   });

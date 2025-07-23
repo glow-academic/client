@@ -10,6 +10,7 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -24,8 +25,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { CohortStaffDataTableToolbar } from "./CohortStaffDataTableToolbar";
 import { Profile } from "@/types";
+import { CohortStaffDataTableToolbar } from "./CohortStaffDataTableToolbar";
 
 export interface CohortStaffDataTableProps {
   columns: ColumnDef<Profile>[];
@@ -69,14 +70,17 @@ export function CohortStaffDataTable({
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
   });
 
   return (
     <div className="space-y-2">
-      <CohortStaffDataTableToolbar
-        table={table}
-        roleOptions={roleOptions}
-      />
+      <CohortStaffDataTableToolbar table={table} roleOptions={roleOptions} />
       <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
