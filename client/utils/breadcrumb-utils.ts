@@ -234,7 +234,7 @@ export const generateEnhancedBreadcrumbs = async (
         case "models":
           title = "Models";
           break;
-        
+
         // System subsections
         case "agents":
           title = "Agents";

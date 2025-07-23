@@ -143,59 +143,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/classes") {
-      return (
-        <Button onClick={() => router.push("/classes/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Class
-        </Button>
-      );
-    }
-
-    // Check for individual class page pattern: /classes/new/c/[classId]
-    const cohortsPageMatch = pathname.match(
-      /^\/create\/cohorts\/new\/c\/([^\/]+)(?:\/.*)?$/
-    );
-    if (
-      cohortsPageMatch &&
-      effectiveProfile?.role !== "guest" &&
-      effectiveProfile.role !== "ta"
-    ) {
-      const cohortId = cohortsPageMatch[1];
-      return (
-        <Button
-          onClick={() => router.push(`/cohorts/c/${cohortId}/edit`)}
-          size="sm"
-          variant="default"
-        >
-          <Pencil className="h-4 w-4 mr-2" />
-          Edit Cohort
-        </Button>
-      );
-    }
-
-    // Check for individual class page pattern: /classes/new/c/[classId]
-    const classPageMatch = pathname.match(
-      /^\/create\/classes\/new\/c\/([^\/]+)(?:\/.*)?$/
-    );
-    if (
-      classPageMatch &&
-      effectiveProfile?.role !== "guest" &&
-      effectiveProfile.role !== "ta"
-    ) {
-      const classId = classPageMatch[1];
-      return (
-        <Button
-          onClick={() => router.push(`/classes/c/${classId}/edit`)}
-          size="sm"
-          variant="default"
-        >
-          <Pencil className="h-4 w-4 mr-2" />
-          Edit Class
-        </Button>
-      );
-    }
-
     if (pathname === "/create/personas") {
       return (
         <Button onClick={() => router.push("/create/personas/new")} size="sm">

@@ -1,5 +1,5 @@
 /**
- * app/(main)/cohorts/c/[cohortId]/edit/page.tsx
+ * app/(main)/cohorts/e/[cohortId]/page.tsx
  * Cohort edit page for the cohort.
  * @AshokSaravanan222 & @siladiea
  * 07/20/2025
@@ -21,7 +21,7 @@ export async function generateMetadata(
   const cohort = await getCohort(cohortId);
 
   return {
-    title: `${cohort?.title || "Cohort"}`,
+    title: `${cohort?.title || "Cohort"} Edit`,
     description: `${cohort?.title + " " + cohort?.description || "Cohort"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
   };
 }

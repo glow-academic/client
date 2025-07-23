@@ -301,7 +301,7 @@ export default function Cohorts() {
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/cohorts/c/${id}/edit`);
+    router.push(`/cohorts/e/${id}`);
   };
 
   const handleCreateNew = () => {

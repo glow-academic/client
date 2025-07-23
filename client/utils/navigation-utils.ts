@@ -114,6 +114,11 @@ export const isSectionAvailableForRole = (
  * Main screens are those with 1 or 2 slashes (main sections and their direct children)
  */
 export const isMainScreen = (pathname: string): boolean => {
+  // Special case: allow /cohorts/new to be treated as a main screen
+  if (pathname === "/cohorts/new") {
+    return false;
+  }
+
   // Remove leading slash and count remaining slashes
   const pathWithoutLeadingSlash = pathname.startsWith("/")
     ? pathname.slice(1)
