@@ -934,14 +934,45 @@ export default function TATour() {
         }
       },
       3: () => {
-        // Step 3: User is now in the simulation - don't auto-complete, wait for actual message
-        // The step will be completed by the messageSent WebSocket event
-        logInfo("Step 3 action triggered - waiting for user to send message");
+        // Step 3: User is now in the simulation - click the first starter prompt
+        logInfo("Step 3 action triggered - clicking first starter prompt");
 
-        // If we have an attemptId, navigate to the attempt page
+        // If we have an attemptId, navigate to the attempt page first
         if (tourState.attemptId) {
           router.push(`/practice/a/${tourState.attemptId}`);
         }
+
+        // Click the first starter prompt button after a short delay to ensure page is loaded
+        setTimeout(() => {
+          // Look for starter prompt buttons - they are buttons with variant="outline" in the attempt messages
+          const starterPromptButtons = document.querySelectorAll(
+            'button[class*="outline"][class*="h-auto"][class*="p-4"]'
+          );
+
+          if (starterPromptButtons.length > 0) {
+            const firstButton = starterPromptButtons[0] as HTMLButtonElement;
+            if (firstButton && !firstButton.disabled) {
+              logInfo("Clicking first starter prompt button", {
+                buttonText: firstButton.textContent?.trim(),
+              });
+              firstButton.click();
+            } else {
+              logError("First starter prompt button is disabled or not found", {
+                buttonFound: !!firstButton,
+                buttonDisabled: firstButton?.disabled,
+                buttonText: firstButton?.textContent,
+              });
+              toast.error(
+                "Could not send message automatically. Please click a starter prompt manually."
+              );
+            }
+          } else {
+            logError("No starter prompt buttons found");
+            toast.error(
+              "No starter prompts available. Please type a message manually."
+            );
+          }
+        }, 1000); // Wait for page to load and messages to render
       },
       4: () => {
         // Step 4: Check if tour is completed
