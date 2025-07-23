@@ -899,9 +899,18 @@ export default function TATour() {
         } else {
           // If no attemptId, trigger the first practice simulation card click
           setTimeout(() => {
-            const practiceCards = document.querySelectorAll(
-              '[data-testid="simulation-card"]'
+            // Look for practice simulation cards (permanent-simulation-card) first
+            let practiceCards = document.querySelectorAll(
+              '[data-testid="permanent-simulation-card"]'
             );
+
+            // If no permanent cards found, try regular simulation cards as fallback
+            if (practiceCards.length === 0) {
+              practiceCards = document.querySelectorAll(
+                '[data-testid="simulation-card"]'
+              );
+            }
+
             if (practiceCards.length > 0) {
               const firstCard = practiceCards[0];
               if (firstCard) {
