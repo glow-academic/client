@@ -1,5 +1,5 @@
 /**
- * CohortDashboard.tsx
+ * Home.tsx
  * This is the cohort dashboard component for the home page
  * @AshokSaravanan222 & @siladiea
  * 07/20/2025
@@ -107,7 +107,10 @@ export default function Home() {
       return [];
     }
 
-    return allCohorts.map((cohort) => {
+    // Filter to only active cohorts
+    const activeCohorts = allCohorts.filter((cohort) => cohort.active);
+
+    return activeCohorts.map((cohort) => {
       // Get simulations for this cohort
       const cohortSimulations = allSimulations.filter((sim) =>
         cohort.simulationIds?.includes(sim.id)
@@ -191,10 +194,10 @@ export default function Home() {
     if (!cohortsForPicker) return [];
 
     if (shouldShowAll || effectiveProfile.defaultProfile) {
-      // Instructors see all cohorts
+      // Instructors see all active cohorts
       return cohortsForPicker;
     } else if (isTA && effectiveProfile?.id) {
-      // TAs see only their assigned cohorts
+      // TAs see only their assigned active cohorts
       return cohortsForPicker.filter((cohort) => {
         const originalCohort = allCohorts?.find((c) => c.id === cohort.id);
         return originalCohort?.profileIds?.includes(effectiveProfile.id);

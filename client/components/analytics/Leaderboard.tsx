@@ -125,7 +125,10 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       return [];
     }
 
-    return cohorts.map((cohort) => {
+    // Filter to only active cohorts
+    const activeCohorts = cohorts.filter((cohort) => cohort.active);
+
+    return activeCohorts.map((cohort) => {
       // Get simulations for this cohort
       const cohortSimulations = allSimulations.filter((sim) =>
         cohort.simulationIds?.includes(sim.id)
@@ -214,10 +217,10 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     }
 
     if (shouldShowAll) {
-      // Instructors see all cohorts
+      // Instructors see all active cohorts
       return cohortsForPicker;
     } else if (isTA && effectiveProfile?.id) {
-      // TAs see only their assigned cohorts
+      // TAs see only their assigned active cohorts
       return cohortsForPicker.filter((cohort) => {
         const originalCohort = cohorts?.find((c) => c.id === cohort.id);
         return originalCohort?.profileIds?.includes(effectiveProfile.id);
