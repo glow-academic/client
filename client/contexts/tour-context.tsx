@@ -262,6 +262,12 @@ export function TourProvider({ children }: TourProviderProps) {
 
     // Check tour completion status using latest profile data
     if (effectiveProfile.viewedIntro && effectiveProfile.viewedChat) {
+      // If both flags are true and attemptId is null, user has officially completed the tour
+      // and shouldn't see it again
+      if (!state.attemptId) {
+        return "hidden";
+      }
+      // If attemptId exists, they're in an active tour session, so show "complete"
       return "complete";
     }
 
@@ -270,7 +276,7 @@ export function TourProvider({ children }: TourProviderProps) {
     }
 
     return "start";
-  }, [effectiveProfile, state.isOpen]);
+  }, [effectiveProfile, state.isOpen, state.attemptId]);
 
   // Context value
   const value = useMemo(
@@ -460,8 +466,9 @@ export function TourProvider({ children }: TourProviderProps) {
               <div className="flex justify-center">
                 <button
                   onClick={() => {
+                    setAttemptId(null); // Reset attemptId since tour is complete
                     closeTour();
-                    // Navigate back to home
+                    // Navigate back to home using router
                     if (typeof window !== "undefined") {
                       window.location.href = "/home";
                     }
@@ -514,7 +521,7 @@ export function TourProvider({ children }: TourProviderProps) {
         </div>
       </aside>
     );
-  }, [state, closeTour, prevStep, effectiveProfile]);
+  }, [state, closeTour, prevStep, effectiveProfile, setAttemptId]);
 
   return (
     <TourContext.Provider value={value}>

@@ -477,6 +477,7 @@ export default function TATour() {
         isOpen: tourState.isOpen,
         viewedIntro: effectiveProfile.viewedIntro,
         viewedChat: effectiveProfile.viewedChat,
+        attemptId: tourState.attemptId,
       });
 
       // Check if tour should be closed based on completion status
@@ -495,6 +496,21 @@ export default function TATour() {
         );
         // Don't close - let the completion screen show
       }
+      return;
+    }
+
+    // Don't initialize tour if user has officially completed it (both flags true and no attemptId)
+    if (
+      effectiveProfile.viewedIntro &&
+      effectiveProfile.viewedChat &&
+      !tourState.attemptId
+    ) {
+      logInfo("TATour: User has officially completed tour, not initializing", {
+        profileId: effectiveProfile.id,
+        viewedIntro: effectiveProfile.viewedIntro,
+        viewedChat: effectiveProfile.viewedChat,
+        attemptId: tourState.attemptId,
+      });
       return;
     }
 
@@ -521,6 +537,7 @@ export default function TATour() {
       initialStep = 2; // Start at practice simulation step (step 2)
     } else if (effectiveProfile.viewedIntro && effectiveProfile.viewedChat) {
       // User has completed everything - show completion screen
+      // Always show completion screen when both flags are true, regardless of attemptId
       initialStep = 4; // Show the final step (end chat) as completion screen
     }
 
@@ -538,7 +555,12 @@ export default function TATour() {
       const targetStep = steps[initialStep];
       if (targetStep && targetStep.page && targetStep.page !== pathname) {
         // Don't navigate to attempt pages during initialization - wait for attemptId
-        if ((initialStep === 3 || initialStep === 4) && !tourState.attemptId) {
+        // UNLESS the tour is completed (both flags true), then show completion screen
+        if (
+          (initialStep === 3 || initialStep === 4) &&
+          !tourState.attemptId &&
+          !(effectiveProfile.viewedIntro && effectiveProfile.viewedChat)
+        ) {
           logInfo(
             "Skipping initial navigation to attempt page - no attemptId yet",
             {
@@ -940,10 +962,11 @@ export default function TATour() {
       4: () => {
         // Step 4: Check if tour is completed
         if (effectiveProfile?.viewedIntro && effectiveProfile?.viewedChat) {
-          // Tour is completed - close it and navigate home
+          // Tour is completed - close it, reset attemptId, and navigate home
           logInfo(
             "Step 4 action triggered - tour completed, closing and navigating home"
           );
+          setAttemptId(null); // Reset attemptId since tour is complete
           closeTour();
           router.push("/home");
         } else {
@@ -968,6 +991,7 @@ export default function TATour() {
     closeTour,
     effectiveProfile?.viewedIntro,
     effectiveProfile?.viewedChat,
+    setAttemptId,
   ]);
 
   // Set up global action handlers for the tour context
@@ -1008,11 +1032,20 @@ export default function TATour() {
   // Show guide button when appropriate
   useEffect(() => {
     if (effectiveProfile?.role === "ta") {
-      setShowGuideButton(true);
+      // Don't show guide button if user has officially completed the tour
+      if (
+        effectiveProfile.viewedIntro &&
+        effectiveProfile.viewedChat &&
+        !tourState.attemptId
+      ) {
+        setShowGuideButton(false);
+      } else {
+        setShowGuideButton(true);
+      }
     } else {
       setShowGuideButton(false);
     }
-  }, [effectiveProfile, setShowGuideButton]);
+  }, [effectiveProfile, setShowGuideButton, tourState.attemptId]);
 
   // Render the guide button
   return (
