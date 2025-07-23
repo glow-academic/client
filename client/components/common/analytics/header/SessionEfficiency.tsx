@@ -1,6 +1,6 @@
 /**
- * AverageScore.tsx
- * This component displays the average score for the agents.
+ * SessionEfficiency.tsx
+ * This component displays the session efficiency for the agents.
  * @AshokSaravanan222 & @siladiea
  * 07/23/2025
  */
@@ -24,16 +24,16 @@ import { eachDayOfInterval, format } from "date-fns";
 import { TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
-  Area,
-  AreaChart,
   CartesianGrid,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
-export interface AverageScoreProps {
+export interface SessionEfficiencyProps {
   dateStart: Date;
   dateEnd: Date;
   profileId?: string;
@@ -73,12 +73,12 @@ const COLOR_CONFIGS = {
   },
 };
 
-export default function AverageScore({
+export default function SessionEfficiency({
   dateStart,
   dateEnd,
   profileId,
   thresholds,
-}: AverageScoreProps) {
+}: SessionEfficiencyProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Fetch data
@@ -118,41 +118,38 @@ export default function AverageScore({
     queryFn: () => getAllRubrics(),
   });
 
-  // Calculate average score for the specified date range and profile
-  const averageScore = useMemo(() => {
+  // Calculate session efficiency for the specified date range and profile
+  const sessionEfficiency = useMemo(() => {
     if (!grades || !attempts || !chats || !simulations || !rubrics) return 0;
 
-    // Filter grades by date range
+    // Filter grades by date range and exclude practice simulations
     const filteredGrades = grades.filter((grade) => {
       const gradeDate = new Date(grade.createdAt);
-      return gradeDate >= dateStart && gradeDate <= dateEnd;
+      const chat = chats.find((c) => c.id === grade.simulationChatId);
+      const attempt = attempts.find((a) => a.id === chat?.attemptId);
+      const simulation = simulations.find(
+        (s) => s.id === attempt?.simulationId
+      );
+      return (
+        gradeDate >= dateStart &&
+        gradeDate <= dateEnd &&
+        !simulation?.practiceSimulation
+      );
     });
 
-    // Filter by profileId if provided and exclude practice simulations
+    // Filter by profileId if provided
     const profileFilteredGrades = profileId
       ? filteredGrades.filter((grade) => {
           const chat = chats.find((c) => c.id === grade.simulationChatId);
           const attempt = attempts.find((a) => a.id === chat?.attemptId);
-          const simulation = simulations.find(
-            (s) => s.id === attempt?.simulationId
-          );
-          return (
-            attempt?.profileId === profileId && !simulation?.practiceSimulation
-          );
+          return attempt?.profileId === profileId;
         })
-      : filteredGrades.filter((grade) => {
-          const chat = chats.find((c) => c.id === grade.simulationChatId);
-          const attempt = attempts.find((a) => a.id === chat?.attemptId);
-          const simulation = simulations.find(
-            (s) => s.id === attempt?.simulationId
-          );
-          return !simulation?.practiceSimulation;
-        });
+      : filteredGrades;
 
     if (profileFilteredGrades.length === 0) return 0;
 
-    // Calculate average score using rubric points
-    const scoreSum = profileFilteredGrades.reduce((sum, grade) => {
+    // Calculate average score percentage
+    const scores = profileFilteredGrades.map((grade) => {
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = simulations.find(
@@ -160,11 +157,26 @@ export default function AverageScore({
       );
       const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
       const rubricTotalPoints = rubric?.points || 100;
-      const scorePercent = Math.round((grade.score / rubricTotalPoints) * 100);
-      return sum + scorePercent;
-    }, 0);
+      return Math.round((grade.score / rubricTotalPoints) * 100);
+    });
 
-    return Math.round(scoreSum / profileFilteredGrades.length);
+    const averageScore =
+      scores.reduce((sum, score) => sum + score, 0) / scores.length;
+
+    // Calculate average time per session in minutes
+    const timesInMinutes = profileFilteredGrades.map((grade) => {
+      return grade.timeTaken / 60; // Convert seconds to minutes
+    });
+
+    const averageTimeInMinutes =
+      timesInMinutes.reduce((sum, time) => sum + time, 0) /
+      timesInMinutes.length;
+
+    // Avoid division by zero
+    if (averageTimeInMinutes === 0) return 0;
+
+    // Calculate efficiency: (Average Score %) / (Average Time per Session in minutes)
+    return Math.round((averageScore / averageTimeInMinutes) * 10) / 10;
   }, [
     grades,
     attempts,
@@ -176,8 +188,8 @@ export default function AverageScore({
     profileId,
   ]);
 
-  // Score trend data for the specified date range
-  const scoreTrend = useMemo(() => {
+  // Session efficiency trend data for the specified date range
+  const efficiencyTrend = useMemo(() => {
     if (!grades || !attempts || !chats || !simulations || !rubrics) return [];
 
     // Get all days in the date range
@@ -186,38 +198,31 @@ export default function AverageScore({
     return days.map((date) => {
       const dateStr = format(date, "yyyy-MM-dd");
 
-      // Filter grades for this specific day
+      // Filter grades for this specific day and exclude practice simulations
       const dayGrades = grades.filter((grade) => {
         const gradeDate = format(new Date(grade.createdAt), "yyyy-MM-dd");
-        return gradeDate === dateStr;
+        const chat = chats.find((c) => c.id === grade.simulationChatId);
+        const attempt = attempts.find((a) => a.id === chat?.attemptId);
+        const simulation = simulations.find(
+          (s) => s.id === attempt?.simulationId
+        );
+        return gradeDate === dateStr && !simulation?.practiceSimulation;
       });
 
-      // Filter by profileId if provided and exclude practice simulations
+      // Filter by profileId if provided
       const profileFilteredDayGrades = profileId
         ? dayGrades.filter((grade) => {
             const chat = chats.find((c) => c.id === grade.simulationChatId);
             const attempt = attempts.find((a) => a.id === chat?.attemptId);
-            const simulation = simulations.find(
-              (s) => s.id === attempt?.simulationId
-            );
-            return (
-              attempt?.profileId === profileId &&
-              !simulation?.practiceSimulation
-            );
+            return attempt?.profileId === profileId;
           })
-        : dayGrades.filter((grade) => {
-            const chat = chats.find((c) => c.id === grade.simulationChatId);
-            const attempt = attempts.find((a) => a.id === chat?.attemptId);
-            const simulation = simulations.find(
-              (s) => s.id === attempt?.simulationId
-            );
-            return !simulation?.practiceSimulation;
-          });
+        : dayGrades;
 
-      // Calculate average score for the day using rubric points
-      let avgScore = 0;
+      // Calculate efficiency for the day
+      let dayEfficiency = 0;
       if (profileFilteredDayGrades.length > 0) {
-        const dayScoreSum = profileFilteredDayGrades.reduce((sum, grade) => {
+        // Calculate average score percentage for the day
+        const dayScores = profileFilteredDayGrades.map((grade) => {
           const chat = chats.find((c) => c.id === grade.simulationChatId);
           const attempt = attempts.find((a) => a.id === chat?.attemptId);
           const simulation = simulations.find(
@@ -225,17 +230,31 @@ export default function AverageScore({
           );
           const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
           const rubricTotalPoints = rubric?.points || 100;
-          const scorePercent = Math.round(
-            (grade.score / rubricTotalPoints) * 100
-          );
-          return sum + scorePercent;
-        }, 0);
-        avgScore = Math.round(dayScoreSum / profileFilteredDayGrades.length);
+          return Math.round((grade.score / rubricTotalPoints) * 100);
+        });
+
+        const dayAverageScore =
+          dayScores.reduce((sum, score) => sum + score, 0) / dayScores.length;
+
+        // Calculate average time per session in minutes for the day
+        const dayTimesInMinutes = profileFilteredDayGrades.map((grade) => {
+          return grade.timeTaken / 60; // Convert seconds to minutes
+        });
+
+        const dayAverageTimeInMinutes =
+          dayTimesInMinutes.reduce((sum, time) => sum + time, 0) /
+          dayTimesInMinutes.length;
+
+        // Avoid division by zero
+        if (dayAverageTimeInMinutes > 0) {
+          dayEfficiency =
+            Math.round((dayAverageScore / dayAverageTimeInMinutes) * 10) / 10;
+        }
       }
 
       return {
         date: format(date, "MM/dd"),
-        score: avgScore,
+        efficiency: dayEfficiency,
         sessions: profileFilteredDayGrades.length,
       };
     });
@@ -250,21 +269,21 @@ export default function AverageScore({
     profileId,
   ]);
 
-  // Determine color based on score and thresholds
-  const getColorConfig = (score: number) => {
-    if (score < thresholds.danger) return COLOR_CONFIGS.danger;
-    if (score < thresholds.warning) return COLOR_CONFIGS.warning;
+  // Determine color based on efficiency and thresholds (higher is better)
+  const getColorConfig = (efficiency: number) => {
+    if (efficiency < thresholds.danger) return COLOR_CONFIGS.danger;
+    if (efficiency < thresholds.warning) return COLOR_CONFIGS.warning;
     return COLOR_CONFIGS.success;
   };
 
-  const colorConfig = getColorConfig(averageScore);
+  const colorConfig = getColorConfig(sessionEfficiency);
 
   const handleCardClick = () => {
     setIsDialogOpen(true);
   };
 
   // Check if we have data to display
-  const hasData = scoreTrend.some((day) => day.sessions > 0);
+  const hasData = efficiencyTrend.some((day) => day.sessions > 0);
 
   return (
     <>
@@ -273,12 +292,14 @@ export default function AverageScore({
         onClick={handleCardClick}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Average Score</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Session Efficiency
+          </CardTitle>
           <TrendingUp className={`h-4 w-4 ${colorConfig.icon}`} />
         </CardHeader>
         <CardContent>
           <div className={`text-2xl font-bold ${colorConfig.text}`}>
-            {hasData ? `${averageScore}%` : "No data"}
+            {hasData ? `${sessionEfficiency}` : "No data"}
           </div>
           <p className={`text-xs ${colorConfig.accent} mt-1`}>
             {format(dateStart, "MMM d")} - {format(dateEnd, "MMM d, yyyy")}
@@ -290,30 +311,29 @@ export default function AverageScore({
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Average Score Trend</DialogTitle>
+            <DialogTitle>Session Efficiency Trend</DialogTitle>
           </DialogHeader>
           <div className="h-64">
             {hasData ? (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={scoreTrend}>
+                <LineChart data={efficiencyTrend}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
-                  <YAxis domain={[0, 100]} />
+                  <YAxis />
                   <Tooltip
                     formatter={(value: number, name: string) => [
-                      name === "score" ? `${value}%` : value,
-                      name === "score" ? "Average Score" : "Sessions",
+                      name === "efficiency" ? value.toFixed(1) : value,
+                      name === "efficiency" ? "Efficiency" : "Sessions",
                     ]}
                   />
-                  <Area
+                  <Line
                     type="monotone"
-                    dataKey="score"
+                    dataKey="efficiency"
                     stroke={colorConfig.primary}
-                    fill={colorConfig.primary}
-                    fillOpacity={0.3}
-                    name="score"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
                   />
-                </AreaChart>
+                </LineChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">

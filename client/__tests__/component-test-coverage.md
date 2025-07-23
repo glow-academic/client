@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 129
-- **Tests Created**: 0
+- **Total Components**: 139
+- **Tests Created**: 28
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 129
+- **Tests Skipped** (already implemented): 111
 
 ## Component Coverage
 
@@ -23,25 +23,35 @@
 | NewCohort | cohorts/NewCohort.tsx | NewCohort.test.tsx | ✅ Implemented |
 | Persona | common/agent/Persona.tsx | Persona.test.tsx | ✅ Implemented |
 | SystemAgent | common/agent/SystemAgent.tsx | SystemAgent.test.tsx | ✅ Implemented |
-| CohortCompletion | common/analytics/footer/CohortCompletion.tsx | CohortCompletion.test.tsx | ✅ Implemented |
-| ScenarioData | common/analytics/footer/ScenarioData.tsx | ScenarioData.test.tsx | ✅ Implemented |
-| SimulationPerformance | common/analytics/footer/SimulationPerformance.tsx | SimulationPerformance.test.tsx | ✅ Implemented |
-| SkillGrowth | common/analytics/footer/SkillGrowth.tsx | SkillGrowth.test.tsx | ✅ Implemented |
-| ActiveCohorts | common/analytics/header/ActiveCohorts.tsx | ActiveCohorts.test.tsx | ✅ Implemented |
+| CohortCompletion | common/analytics/footer/old/CohortCompletion.tsx | CohortCompletion.test.tsx | ✅ Implemented |
+| ScenarioData | common/analytics/footer/old/ScenarioData.tsx | ScenarioData.test.tsx | ✅ Implemented |
+| SimulationPerformance | common/analytics/footer/old/SimulationPerformance.tsx | SimulationPerformance.test.tsx | ✅ Implemented |
+| SkillGrowth | common/analytics/footer/old/SkillGrowth.tsx | SkillGrowth.test.tsx | ✅ Implemented |
 | AverageScore | common/analytics/header/AverageScore.tsx | AverageScore.test.tsx | ✅ Implemented |
-| CompletionRate | common/analytics/header/CompletionRate.tsx | CompletionRate.test.tsx | ✅ Implemented |
-| NeedSupport | common/analytics/header/NeedSupport.tsx | NeedSupport.test.tsx | ✅ Implemented |
-| PassRate | common/analytics/header/PassRate.tsx | PassRate.test.tsx | ✅ Implemented |
-| TotalSessions | common/analytics/header/TotalSessions.tsx | TotalSessions.test.tsx | ✅ Implemented |
-| TotalTas | common/analytics/header/TotalTas.tsx | TotalTas.test.tsx | ✅ Implemented |
-| TrainingHours | common/analytics/header/TrainingHours.tsx | TrainingHours.test.tsx | ✅ Implemented |
-| TrainingSessions | common/analytics/header/TrainingSessions.tsx | TrainingSessions.test.tsx | ✅ Implemented |
-| PerformanceByPersonality | common/analytics/primary/PerformanceByPersonality.tsx | PerformanceByPersonality.test.tsx | ✅ Implemented |
-| PerformanceTrends | common/analytics/primary/PerformanceTrends.tsx | PerformanceTrends.test.tsx | ✅ Implemented |
-| SessionActivity | common/analytics/primary/SessionActivity.tsx | SessionActivity.test.tsx | ✅ Implemented |
-| CohortPerformance | common/analytics/secondary/CohortPerformance.tsx | CohortPerformance.test.tsx | ✅ Implemented |
-| SkillBreakdown | common/analytics/secondary/SkillBreakdown.tsx | SkillBreakdown.test.tsx | ✅ Implemented |
-| TrainingInsights | common/analytics/secondary/TrainingInsights.tsx | TrainingInsights.test.tsx | ✅ Implemented |
+| CompletionPercentage | common/analytics/header/CompletionPercentage.tsx | CompletionPercentage.test.tsx | ✅ Implemented |
+| FirstAttemptPassRate | common/analytics/header/FirstAttemptPassRate.tsx | FirstAttemptPassRate.test.tsx | ✅ Implemented |
+| HighestScore | common/analytics/header/HighestScore.tsx | HighestScore.test.tsx | ✅ Implemented |
+| MessagesPerSession | common/analytics/header/MessagesPerSession.tsx | MessagesPerSession.test.tsx | ✅ Implemented |
+| PersonaResponseTimes | common/analytics/header/PersonaResponseTimes.tsx | PersonaResponseTimes.test.tsx | ✅ Implemented |
+| SessionEfficiency | common/analytics/header/SessionEfficiency.tsx | SessionEfficiency.test.tsx | ✅ Implemented |
+| StagnationRate | common/analytics/header/StagnationRate.tsx | StagnationRate.test.tsx | ✅ Implemented |
+| TimeSpent | common/analytics/header/TimeSpent.tsx | TimeSpent.test.tsx | ✅ Implemented |
+| TotalAttempts | common/analytics/header/TotalAttempts.tsx | TotalAttempts.test.tsx | ✅ Implemented |
+| ActiveCohorts | common/analytics/header/old/ActiveCohorts.tsx | ActiveCohorts.test.tsx | ✅ Implemented |
+| AverageScore | common/analytics/header/old/AverageScore.tsx | AverageScore.test.tsx | ✅ Implemented |
+| CompletionRate | common/analytics/header/old/CompletionRate.tsx | CompletionRate.test.tsx | ✅ Implemented |
+| NeedSupport | common/analytics/header/old/NeedSupport.tsx | NeedSupport.test.tsx | ✅ Implemented |
+| PassRate | common/analytics/header/old/PassRate.tsx | PassRate.test.tsx | ✅ Implemented |
+| TotalSessions | common/analytics/header/old/TotalSessions.tsx | TotalSessions.test.tsx | ✅ Implemented |
+| TotalTas | common/analytics/header/old/TotalTas.tsx | TotalTas.test.tsx | ✅ Implemented |
+| TrainingHours | common/analytics/header/old/TrainingHours.tsx | TrainingHours.test.tsx | ✅ Implemented |
+| TrainingSessions | common/analytics/header/old/TrainingSessions.tsx | TrainingSessions.test.tsx | ✅ Implemented |
+| PerformanceByPersonality | common/analytics/primary/old/PerformanceByPersonality.tsx | PerformanceByPersonality.test.tsx | ✅ Implemented |
+| PerformanceTrends | common/analytics/primary/old/PerformanceTrends.tsx | PerformanceTrends.test.tsx | ✅ Implemented |
+| SessionActivity | common/analytics/primary/old/SessionActivity.tsx | SessionActivity.test.tsx | ✅ Implemented |
+| CohortPerformance | common/analytics/secondary/old/CohortPerformance.tsx | CohortPerformance.test.tsx | ✅ Implemented |
+| SkillBreakdown | common/analytics/secondary/old/SkillBreakdown.tsx | SkillBreakdown.test.tsx | ✅ Implemented |
+| TrainingInsights | common/analytics/secondary/old/TrainingInsights.tsx | TrainingInsights.test.tsx | ✅ Implemented |
 | DocumentSelect | common/chat/DocumentSelect.tsx | DocumentSelect.test.tsx | ✅ Implemented |
 | DocumentViewer | common/chat/DocumentViewer.tsx | DocumentViewer.test.tsx | ✅ Implemented |
 | Markdown | common/chat/Markdown.tsx | Markdown.test.tsx | ✅ Implemented |
@@ -164,28 +174,42 @@ __tests__/
 │   │   ├── SystemAgent.test.tsx
 │   ├── analytics/
 │   │   ├── footer/
-│   │   │   ├── CohortCompletion.test.tsx
-│   │   │   ├── ScenarioData.test.tsx
-│   │   │   ├── SimulationPerformance.test.tsx
-│   │   │   ├── SkillGrowth.test.tsx
+│   │   │   ├── old/
+│   │   │   │   ├── CohortCompletion.test.tsx
+│   │   │   │   ├── ScenarioData.test.tsx
+│   │   │   │   ├── SimulationPerformance.test.tsx
+│   │   │   │   ├── SkillGrowth.test.tsx
 │   │   ├── header/
-│   │   │   ├── ActiveCohorts.test.tsx
 │   │   │   ├── AverageScore.test.tsx
-│   │   │   ├── CompletionRate.test.tsx
-│   │   │   ├── NeedSupport.test.tsx
-│   │   │   ├── PassRate.test.tsx
-│   │   │   ├── TotalSessions.test.tsx
-│   │   │   ├── TotalTas.test.tsx
-│   │   │   ├── TrainingHours.test.tsx
-│   │   │   ├── TrainingSessions.test.tsx
+│   │   │   ├── CompletionPercentage.test.tsx
+│   │   │   ├── FirstAttemptPassRate.test.tsx
+│   │   │   ├── HighestScore.test.tsx
+│   │   │   ├── MessagesPerSession.test.tsx
+│   │   │   ├── PersonaResponseTimes.test.tsx
+│   │   │   ├── SessionEfficiency.test.tsx
+│   │   │   ├── StagnationRate.test.tsx
+│   │   │   ├── TimeSpent.test.tsx
+│   │   │   ├── TotalAttempts.test.tsx
+│   │   │   ├── old/
+│   │   │   │   ├── ActiveCohorts.test.tsx
+│   │   │   │   ├── AverageScore.test.tsx
+│   │   │   │   ├── CompletionRate.test.tsx
+│   │   │   │   ├── NeedSupport.test.tsx
+│   │   │   │   ├── PassRate.test.tsx
+│   │   │   │   ├── TotalSessions.test.tsx
+│   │   │   │   ├── TotalTas.test.tsx
+│   │   │   │   ├── TrainingHours.test.tsx
+│   │   │   │   ├── TrainingSessions.test.tsx
 │   │   ├── primary/
-│   │   │   ├── PerformanceByPersonality.test.tsx
-│   │   │   ├── PerformanceTrends.test.tsx
-│   │   │   ├── SessionActivity.test.tsx
+│   │   │   ├── old/
+│   │   │   │   ├── PerformanceByPersonality.test.tsx
+│   │   │   │   ├── PerformanceTrends.test.tsx
+│   │   │   │   ├── SessionActivity.test.tsx
 │   │   ├── secondary/
-│   │   │   ├── CohortPerformance.test.tsx
-│   │   │   ├── SkillBreakdown.test.tsx
-│   │   │   ├── TrainingInsights.test.tsx
+│   │   │   ├── old/
+│   │   │   │   ├── CohortPerformance.test.tsx
+│   │   │   │   ├── SkillBreakdown.test.tsx
+│   │   │   │   ├── TrainingInsights.test.tsx
 │   ├── chat/
 │   │   ├── DocumentSelect.test.tsx
 │   │   ├── DocumentViewer.test.tsx

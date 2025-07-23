@@ -1,11 +1,11 @@
 /**
- * CohortPerformance.tsx
- * This component displays the cohort performance for the personas.
+ * PersonaPerformance.tsx
+ * This component displays the performance for the personas.
  * @AshokSaravanan222 & @siladiea
  * 07/23/2025
  */
 
-export interface CohortPerformanceProps {
+export interface PersonaPerformanceProps {
     dateStart: Date;
     dateEnd: Date;
     profileId?: string;
@@ -16,6 +16,6 @@ export interface CohortPerformanceProps {
     }
 }
 
-export default function CohortPerformance({ dateStart, dateEnd, profileId, thresholds }: CohortPerformanceProps) {
+export default function PersonaPerformance({ dateStart, dateEnd, profileId, thresholds }: PersonaPerformanceProps) {
   return <div>{dateStart.toISOString()} - {dateEnd.toISOString()} {profileId ? `for ${profileId}` : ""} {thresholds.danger} {thresholds.warning} {thresholds.success}</div>;
 }

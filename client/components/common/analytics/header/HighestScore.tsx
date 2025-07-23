@@ -1,6 +1,6 @@
 /**
- * AverageScore.tsx
- * This component displays the average score for the agents.
+ * HighestScore.tsx
+ * This component displays the highest score for the agents.
  * @AshokSaravanan222 & @siladiea
  * 07/23/2025
  */
@@ -21,11 +21,11 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { eachDayOfInterval, format } from "date-fns";
-import { TrendingUp } from "lucide-react";
+import { Trophy } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
-  Area,
-  AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
   ResponsiveContainer,
   Tooltip,
@@ -33,7 +33,7 @@ import {
   YAxis,
 } from "recharts";
 
-export interface AverageScoreProps {
+export interface HighestScoreProps {
   dateStart: Date;
   dateEnd: Date;
   profileId?: string;
@@ -73,12 +73,12 @@ const COLOR_CONFIGS = {
   },
 };
 
-export default function AverageScore({
+export default function HighestScore({
   dateStart,
   dateEnd,
   profileId,
   thresholds,
-}: AverageScoreProps) {
+}: HighestScoreProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Fetch data
@@ -118,41 +118,38 @@ export default function AverageScore({
     queryFn: () => getAllRubrics(),
   });
 
-  // Calculate average score for the specified date range and profile
-  const averageScore = useMemo(() => {
+  // Calculate highest score for the specified date range and profile
+  const highestScore = useMemo(() => {
     if (!grades || !attempts || !chats || !simulations || !rubrics) return 0;
 
-    // Filter grades by date range
+    // Filter grades by date range and exclude practice simulations
     const filteredGrades = grades.filter((grade) => {
       const gradeDate = new Date(grade.createdAt);
-      return gradeDate >= dateStart && gradeDate <= dateEnd;
+      const chat = chats.find((c) => c.id === grade.simulationChatId);
+      const attempt = attempts.find((a) => a.id === chat?.attemptId);
+      const simulation = simulations.find(
+        (s) => s.id === attempt?.simulationId
+      );
+      return (
+        gradeDate >= dateStart &&
+        gradeDate <= dateEnd &&
+        !simulation?.practiceSimulation
+      );
     });
 
-    // Filter by profileId if provided and exclude practice simulations
+    // Filter by profileId if provided
     const profileFilteredGrades = profileId
       ? filteredGrades.filter((grade) => {
           const chat = chats.find((c) => c.id === grade.simulationChatId);
           const attempt = attempts.find((a) => a.id === chat?.attemptId);
-          const simulation = simulations.find(
-            (s) => s.id === attempt?.simulationId
-          );
-          return (
-            attempt?.profileId === profileId && !simulation?.practiceSimulation
-          );
+          return attempt?.profileId === profileId;
         })
-      : filteredGrades.filter((grade) => {
-          const chat = chats.find((c) => c.id === grade.simulationChatId);
-          const attempt = attempts.find((a) => a.id === chat?.attemptId);
-          const simulation = simulations.find(
-            (s) => s.id === attempt?.simulationId
-          );
-          return !simulation?.practiceSimulation;
-        });
+      : filteredGrades;
 
     if (profileFilteredGrades.length === 0) return 0;
 
-    // Calculate average score using rubric points
-    const scoreSum = profileFilteredGrades.reduce((sum, grade) => {
+    // Calculate scores using rubric points and find the highest
+    const scores = profileFilteredGrades.map((grade) => {
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = simulations.find(
@@ -160,11 +157,10 @@ export default function AverageScore({
       );
       const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
       const rubricTotalPoints = rubric?.points || 100;
-      const scorePercent = Math.round((grade.score / rubricTotalPoints) * 100);
-      return sum + scorePercent;
-    }, 0);
+      return Math.round((grade.score / rubricTotalPoints) * 100);
+    });
 
-    return Math.round(scoreSum / profileFilteredGrades.length);
+    return Math.max(...scores);
   }, [
     grades,
     attempts,
@@ -176,8 +172,8 @@ export default function AverageScore({
     profileId,
   ]);
 
-  // Score trend data for the specified date range
-  const scoreTrend = useMemo(() => {
+  // Highest score trend data for the specified date range
+  const highestScoreTrend = useMemo(() => {
     if (!grades || !attempts || !chats || !simulations || !rubrics) return [];
 
     // Get all days in the date range
@@ -186,38 +182,30 @@ export default function AverageScore({
     return days.map((date) => {
       const dateStr = format(date, "yyyy-MM-dd");
 
-      // Filter grades for this specific day
+      // Filter grades for this specific day and exclude practice simulations
       const dayGrades = grades.filter((grade) => {
         const gradeDate = format(new Date(grade.createdAt), "yyyy-MM-dd");
-        return gradeDate === dateStr;
+        const chat = chats.find((c) => c.id === grade.simulationChatId);
+        const attempt = attempts.find((a) => a.id === chat?.attemptId);
+        const simulation = simulations.find(
+          (s) => s.id === attempt?.simulationId
+        );
+        return gradeDate === dateStr && !simulation?.practiceSimulation;
       });
 
-      // Filter by profileId if provided and exclude practice simulations
+      // Filter by profileId if provided
       const profileFilteredDayGrades = profileId
         ? dayGrades.filter((grade) => {
             const chat = chats.find((c) => c.id === grade.simulationChatId);
             const attempt = attempts.find((a) => a.id === chat?.attemptId);
-            const simulation = simulations.find(
-              (s) => s.id === attempt?.simulationId
-            );
-            return (
-              attempt?.profileId === profileId &&
-              !simulation?.practiceSimulation
-            );
+            return attempt?.profileId === profileId;
           })
-        : dayGrades.filter((grade) => {
-            const chat = chats.find((c) => c.id === grade.simulationChatId);
-            const attempt = attempts.find((a) => a.id === chat?.attemptId);
-            const simulation = simulations.find(
-              (s) => s.id === attempt?.simulationId
-            );
-            return !simulation?.practiceSimulation;
-          });
+        : dayGrades;
 
-      // Calculate average score for the day using rubric points
-      let avgScore = 0;
+      // Calculate highest score for the day using rubric points
+      let dayHighestScore = 0;
       if (profileFilteredDayGrades.length > 0) {
-        const dayScoreSum = profileFilteredDayGrades.reduce((sum, grade) => {
+        const dayScores = profileFilteredDayGrades.map((grade) => {
           const chat = chats.find((c) => c.id === grade.simulationChatId);
           const attempt = attempts.find((a) => a.id === chat?.attemptId);
           const simulation = simulations.find(
@@ -225,17 +213,14 @@ export default function AverageScore({
           );
           const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
           const rubricTotalPoints = rubric?.points || 100;
-          const scorePercent = Math.round(
-            (grade.score / rubricTotalPoints) * 100
-          );
-          return sum + scorePercent;
-        }, 0);
-        avgScore = Math.round(dayScoreSum / profileFilteredDayGrades.length);
+          return Math.round((grade.score / rubricTotalPoints) * 100);
+        });
+        dayHighestScore = Math.max(...dayScores);
       }
 
       return {
         date: format(date, "MM/dd"),
-        score: avgScore,
+        score: dayHighestScore,
         sessions: profileFilteredDayGrades.length,
       };
     });
@@ -257,14 +242,14 @@ export default function AverageScore({
     return COLOR_CONFIGS.success;
   };
 
-  const colorConfig = getColorConfig(averageScore);
+  const colorConfig = getColorConfig(highestScore);
 
   const handleCardClick = () => {
     setIsDialogOpen(true);
   };
 
   // Check if we have data to display
-  const hasData = scoreTrend.some((day) => day.sessions > 0);
+  const hasData = highestScoreTrend.some((day) => day.sessions > 0);
 
   return (
     <>
@@ -273,12 +258,12 @@ export default function AverageScore({
         onClick={handleCardClick}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Average Score</CardTitle>
-          <TrendingUp className={`h-4 w-4 ${colorConfig.icon}`} />
+          <CardTitle className="text-sm font-medium">Highest Score</CardTitle>
+          <Trophy className={`h-4 w-4 ${colorConfig.icon}`} />
         </CardHeader>
         <CardContent>
           <div className={`text-2xl font-bold ${colorConfig.text}`}>
-            {hasData ? `${averageScore}%` : "No data"}
+            {hasData ? `${highestScore}%` : "No data"}
           </div>
           <p className={`text-xs ${colorConfig.accent} mt-1`}>
             {format(dateStart, "MMM d")} - {format(dateEnd, "MMM d, yyyy")}
@@ -290,30 +275,28 @@ export default function AverageScore({
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Average Score Trend</DialogTitle>
+            <DialogTitle>Highest Score Trend</DialogTitle>
           </DialogHeader>
           <div className="h-64">
             {hasData ? (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={scoreTrend}>
+                <BarChart data={highestScoreTrend}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis domain={[0, 100]} />
                   <Tooltip
                     formatter={(value: number, name: string) => [
                       name === "score" ? `${value}%` : value,
-                      name === "score" ? "Average Score" : "Sessions",
+                      name === "score" ? "Highest Score" : "Sessions",
                     ]}
                   />
-                  <Area
-                    type="monotone"
+                  <Bar
                     dataKey="score"
-                    stroke={colorConfig.primary}
                     fill={colorConfig.primary}
-                    fillOpacity={0.3}
                     name="score"
+                    radius={[4, 4, 0, 0]}
                   />
-                </AreaChart>
+                </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">

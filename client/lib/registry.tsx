@@ -4,25 +4,25 @@
 
 import React from "react";
 
-import ActiveCohorts from "@/components/common/analytics/header/ActiveCohorts";
-import AverageScore from "@/components/common/analytics/header/AverageScore";
-import CohortCompletion from "@/components/common/analytics/footer/CohortCompletion";
-import CohortPerformance from "@/components/common/analytics/secondary/CohortPerformance";
+import CohortCompletion from "@/components/common/analytics/footer/old/CohortCompletion";
+import ScenarioData from "@/components/common/analytics/footer/old/ScenarioData";
+import SimulationPerformance from "@/components/common/analytics/footer/old/SimulationPerformance";
+import SkillGrowth from "@/components/common/analytics/footer/old/SkillGrowth";
 import CompletionRate from "@/components/common/analytics/header/CompletionRate";
 import NeedSupport from "@/components/common/analytics/header/NeedSupport";
-import PassRate from "@/components/common/analytics/header/PassRate";
-import PerformanceByPersonality from "@/components/common/analytics/primary/PerformanceByPersonality";
-import PerformanceTrends from "@/components/common/analytics/primary/PerformanceTrends";
-import ScenarioData from "@/components/common/analytics/footer/ScenarioData";
-import SessionActivity from "@/components/common/analytics/primary/SessionActivity";
-import SimulationPerformance from "@/components/common/analytics/footer/SimulationPerformance";
+import ActiveCohorts from "@@/components/common/analytics/header/old/CompletionRatets";
+import AverageScore from @/components/common/analytics/header/old/NeedSupporteScore";
+import PassRate from "@/components/common/analytics/header/old/PassRate";
+import TotalSessions from "@/components/common/analytics/header/old/TotalSessions";
+import TotalTas from "@/components/common/analytics/header/old/TotalTas";
+import TrainingHours from "@/components/common/analytics/header/old/TrainingHours";
+import TrainingSessions from "@/components/common/analytics/header/old/TrainingSessions";
+import PerformanceByPersonality from "@/components/common/analytics/primary/old/PerformanceByPersonality";
+import PerformanceTrends from "@/components/common/analytics/primary/old/PerformanceTrends";
+import SessionActivity from "@/components/common/analytics/primary/old/SessionActivity";
+import CohortPerformance from "@/components/common/analytics/secondary/CohortPerformance";
 import SkillBreakdown from "@/components/common/analytics/secondary/SkillBreakdown";
-import SkillGrowth from "@/components/common/analytics/footer/SkillGrowth";
-import TotalSessions from "@/components/common/analytics/header/TotalSessions";
-import TotalTas from "@/components/common/analytics/header/TotalTas";
-import TrainingHours from "@/components/common/analytics/header/TrainingHours";
 import TrainingInsights from "@/components/common/analytics/secondary/TrainingInsights";
-import TrainingSessions from "@/components/common/analytics/header/TrainingSessions";
 
 export interface PropMetadata {
   type: "string" | "number" | "boolean" | "select";
@@ -37,34 +37,45 @@ export interface ComponentConfig {
 }
 
 export const registry: Record<string, ComponentConfig> = {
-  "49990ffa-5698-bd91-b379-6703a8cf4835": { component: CohortCompletion, props: {
-      "className": ""
-    }, metadata: {
-      "className": {
-        "type": "string"
-      }
-    } },
-  "d8e58a90-32e7-0b43-447c-fda790891cee": { component: ScenarioData, props: {
-      "className": ""
-    }, metadata: {
-      "className": {
-        "type": "string"
-      }
-    } },
-  "6b8684a8-cd06-6f6a-9a53-d57ad527041b": { component: SimulationPerformance, props: {
-      "className": "",
-      "color": "blue",
-      "defaultSelection": "all",
-      "chartType": "bar",
-      "title": "Simulation Performance",
-      "showSelector": true
-    }, metadata: {
-      "className": {
-        "type": "string"
+  "49990ffa-5698-bd91-b379-6703a8cf4835": {
+    component: CohortCompletion,
+    props: {
+      className: "",
+    },
+    metadata: {
+      className: {
+        type: "string",
       },
-      "color": {
-        "type": "select",
-        "options": [
+    },
+  },
+  "d8e58a90-32e7-0b43-447c-fda790891cee": {
+    component: ScenarioData,
+    props: {
+      className: "",
+    },
+    metadata: {
+      className: {
+        type: "string",
+      },
+    },
+  },
+  "6b8684a8-cd06-6f6a-9a53-d57ad527041b": {
+    component: SimulationPerformance,
+    props: {
+      className: "",
+      color: "blue",
+      defaultSelection: "all",
+      chartType: "bar",
+      title: "Simulation Performance",
+      showSelector: true,
+    },
+    metadata: {
+      className: {
+        type: "string",
+      },
+      color: {
+        type: "select",
+        options: [
           "blue",
           "green",
           "purple",
@@ -72,43 +83,49 @@ export const registry: Record<string, ComponentConfig> = {
           "teal",
           "red",
           "emerald",
-          "indigo"
+          "indigo",
         ],
-        "multiple": false
+        multiple: false,
       },
-      "defaultSelection": {
-        "type": "string"
+      defaultSelection: {
+        type: "string",
       },
-      "chartType": {
-        "type": "select",
-        "options": [
-          "bar"
-        ],
-        "multiple": false
+      chartType: {
+        type: "select",
+        options: ["bar"],
+        multiple: false,
       },
-      "title": {
-        "type": "string"
+      title: {
+        type: "string",
       },
-      "showSelector": {
-        "type": "boolean"
-      }
-    } },
-  "2e3380af-e6a2-6080-ceee-1c91b65121c4": { component: SkillGrowth, props: {
-      "className": ""
-    }, metadata: {
-      "className": {
-        "type": "string"
-      }
-    } },
-  "595e7002-360b-afce-83bd-3164dfc7a203": { component: ActiveCohorts, props: {
-      "color": "blue",
-      "timeRange": "30d",
-      "title": "Active Cohorts",
-      "showDialog": true
-    }, metadata: {
-      "color": {
-        "type": "select",
-        "options": [
+      showSelector: {
+        type: "boolean",
+      },
+    },
+  },
+  "2e3380af-e6a2-6080-ceee-1c91b65121c4": {
+    component: SkillGrowth,
+    props: {
+      className: "",
+    },
+    metadata: {
+      className: {
+        type: "string",
+      },
+    },
+  },
+  "595e7002-360b-afce-83bd-3164dfc7a203": {
+    component: ActiveCohorts,
+    props: {
+      color: "blue",
+      timeRange: "30d",
+      title: "Active Cohorts",
+      showDialog: true,
+    },
+    metadata: {
+      color: {
+        type: "select",
+        options: [
           "blue",
           "green",
           "purple",
@@ -116,35 +133,35 @@ export const registry: Record<string, ComponentConfig> = {
           "teal",
           "red",
           "emerald",
-          "indigo"
+          "indigo",
         ],
-        "multiple": false
+        multiple: false,
       },
-      "timeRange": {
-        "type": "select",
-        "options": [
-          "7d",
-          "30d",
-          "90d"
-        ],
-        "multiple": false
+      timeRange: {
+        type: "select",
+        options: ["7d", "30d", "90d"],
+        multiple: false,
       },
-      "title": {
-        "type": "string"
+      title: {
+        type: "string",
       },
-      "showDialog": {
-        "type": "boolean"
-      }
-    } },
-  "71c51fa2-e117-853b-4da5-2de4ee328c7d": { component: AverageScore, props: {
-      "color": "emerald",
-      "timeRange": "30d",
-      "title": "Average Score",
-      "showDialog": true
-    }, metadata: {
-      "color": {
-        "type": "select",
-        "options": [
+      showDialog: {
+        type: "boolean",
+      },
+    },
+  },
+  "71c51fa2-e117-853b-4da5-2de4ee328c7d": {
+    component: AverageScore,
+    props: {
+      color: "emerald",
+      timeRange: "30d",
+      title: "Average Score",
+      showDialog: true,
+    },
+    metadata: {
+      color: {
+        type: "select",
+        options: [
           "blue",
           "green",
           "purple",
@@ -152,35 +169,35 @@ export const registry: Record<string, ComponentConfig> = {
           "teal",
           "red",
           "emerald",
-          "indigo"
+          "indigo",
         ],
-        "multiple": false
+        multiple: false,
       },
-      "timeRange": {
-        "type": "select",
-        "options": [
-          "7d",
-          "30d",
-          "90d"
-        ],
-        "multiple": false
+      timeRange: {
+        type: "select",
+        options: ["7d", "30d", "90d"],
+        multiple: false,
       },
-      "title": {
-        "type": "string"
+      title: {
+        type: "string",
       },
-      "showDialog": {
-        "type": "boolean"
-      }
-    } },
-  "25c97e74-2e60-efeb-0277-b57c7ce720e1": { component: CompletionRate, props: {
-      "color": "teal",
-      "timeRange": "7d",
-      "title": "Completion Rate",
-      "showDialog": true
-    }, metadata: {
-      "color": {
-        "type": "select",
-        "options": [
+      showDialog: {
+        type: "boolean",
+      },
+    },
+  },
+  "25c97e74-2e60-efeb-0277-b57c7ce720e1": {
+    component: CompletionRate,
+    props: {
+      color: "teal",
+      timeRange: "7d",
+      title: "Completion Rate",
+      showDialog: true,
+    },
+    metadata: {
+      color: {
+        type: "select",
+        options: [
           "blue",
           "green",
           "purple",
@@ -188,35 +205,35 @@ export const registry: Record<string, ComponentConfig> = {
           "teal",
           "red",
           "emerald",
-          "indigo"
+          "indigo",
         ],
-        "multiple": false
+        multiple: false,
       },
-      "timeRange": {
-        "type": "select",
-        "options": [
-          "7d",
-          "30d",
-          "90d"
-        ],
-        "multiple": false
+      timeRange: {
+        type: "select",
+        options: ["7d", "30d", "90d"],
+        multiple: false,
       },
-      "title": {
-        "type": "string"
+      title: {
+        type: "string",
       },
-      "showDialog": {
-        "type": "boolean"
-      }
-    } },
-  "7b058d9e-2968-3e69-4ff7-8bc7a13e5cfc": { component: NeedSupport, props: {
-      "color": "red",
-      "timeRange": "30d",
-      "title": "Need Support",
-      "showDialog": true
-    }, metadata: {
-      "color": {
-        "type": "select",
-        "options": [
+      showDialog: {
+        type: "boolean",
+      },
+    },
+  },
+  "7b058d9e-2968-3e69-4ff7-8bc7a13e5cfc": {
+    component: NeedSupport,
+    props: {
+      color: "red",
+      timeRange: "30d",
+      title: "Need Support",
+      showDialog: true,
+    },
+    metadata: {
+      color: {
+        type: "select",
+        options: [
           "blue",
           "green",
           "purple",
@@ -224,35 +241,35 @@ export const registry: Record<string, ComponentConfig> = {
           "teal",
           "red",
           "emerald",
-          "indigo"
+          "indigo",
         ],
-        "multiple": false
+        multiple: false,
       },
-      "timeRange": {
-        "type": "select",
-        "options": [
-          "7d",
-          "30d",
-          "90d"
-        ],
-        "multiple": false
+      timeRange: {
+        type: "select",
+        options: ["7d", "30d", "90d"],
+        multiple: false,
       },
-      "title": {
-        "type": "string"
+      title: {
+        type: "string",
       },
-      "showDialog": {
-        "type": "boolean"
-      }
-    } },
-  "32aae137-f974-5b45-60eb-6b9b2eca6433": { component: PassRate, props: {
-      "color": "emerald",
-      "timeRange": "7d",
-      "title": "Pass Rate",
-      "showDialog": true
-    }, metadata: {
-      "color": {
-        "type": "select",
-        "options": [
+      showDialog: {
+        type: "boolean",
+      },
+    },
+  },
+  "32aae137-f974-5b45-60eb-6b9b2eca6433": {
+    component: PassRate,
+    props: {
+      color: "emerald",
+      timeRange: "7d",
+      title: "Pass Rate",
+      showDialog: true,
+    },
+    metadata: {
+      color: {
+        type: "select",
+        options: [
           "blue",
           "green",
           "purple",
@@ -260,35 +277,35 @@ export const registry: Record<string, ComponentConfig> = {
           "teal",
           "red",
           "emerald",
-          "indigo"
+          "indigo",
         ],
-        "multiple": false
+        multiple: false,
       },
-      "timeRange": {
-        "type": "select",
-        "options": [
-          "7d",
-          "30d",
-          "90d"
-        ],
-        "multiple": false
+      timeRange: {
+        type: "select",
+        options: ["7d", "30d", "90d"],
+        multiple: false,
       },
-      "title": {
-        "type": "string"
+      title: {
+        type: "string",
       },
-      "showDialog": {
-        "type": "boolean"
-      }
-    } },
-  "c3bebe15-6231-0b14-704a-67545389be60": { component: TotalSessions, props: {
-      "color": "teal",
-      "timeRange": "30d",
-      "title": "Total Sessions",
-      "showDialog": true
-    }, metadata: {
-      "color": {
-        "type": "select",
-        "options": [
+      showDialog: {
+        type: "boolean",
+      },
+    },
+  },
+  "c3bebe15-6231-0b14-704a-67545389be60": {
+    component: TotalSessions,
+    props: {
+      color: "teal",
+      timeRange: "30d",
+      title: "Total Sessions",
+      showDialog: true,
+    },
+    metadata: {
+      color: {
+        type: "select",
+        options: [
           "blue",
           "green",
           "purple",
@@ -296,35 +313,35 @@ export const registry: Record<string, ComponentConfig> = {
           "teal",
           "red",
           "emerald",
-          "indigo"
+          "indigo",
         ],
-        "multiple": false
+        multiple: false,
       },
-      "timeRange": {
-        "type": "select",
-        "options": [
-          "7d",
-          "30d",
-          "90d"
-        ],
-        "multiple": false
+      timeRange: {
+        type: "select",
+        options: ["7d", "30d", "90d"],
+        multiple: false,
       },
-      "title": {
-        "type": "string"
+      title: {
+        type: "string",
       },
-      "showDialog": {
-        "type": "boolean"
-      }
-    } },
-  "e412e43b-468c-489c-f262-1607bc64dc43": { component: TotalTas, props: {
-      "color": "purple",
-      "timeRange": "30d",
-      "title": "Total TAs",
-      "showDialog": true
-    }, metadata: {
-      "color": {
-        "type": "select",
-        "options": [
+      showDialog: {
+        type: "boolean",
+      },
+    },
+  },
+  "e412e43b-468c-489c-f262-1607bc64dc43": {
+    component: TotalTas,
+    props: {
+      color: "purple",
+      timeRange: "30d",
+      title: "Total TAs",
+      showDialog: true,
+    },
+    metadata: {
+      color: {
+        type: "select",
+        options: [
           "blue",
           "green",
           "purple",
@@ -332,35 +349,35 @@ export const registry: Record<string, ComponentConfig> = {
           "teal",
           "red",
           "emerald",
-          "indigo"
+          "indigo",
         ],
-        "multiple": false
+        multiple: false,
       },
-      "timeRange": {
-        "type": "select",
-        "options": [
-          "7d",
-          "30d",
-          "90d"
-        ],
-        "multiple": false
+      timeRange: {
+        type: "select",
+        options: ["7d", "30d", "90d"],
+        multiple: false,
       },
-      "title": {
-        "type": "string"
+      title: {
+        type: "string",
       },
-      "showDialog": {
-        "type": "boolean"
-      }
-    } },
-  "71724c23-ef68-189d-94b3-8ed2c8ffded3": { component: TrainingHours, props: {
-      "color": "orange",
-      "timeRange": "30d",
-      "title": "Training Hours",
-      "showDialog": true
-    }, metadata: {
-      "color": {
-        "type": "select",
-        "options": [
+      showDialog: {
+        type: "boolean",
+      },
+    },
+  },
+  "71724c23-ef68-189d-94b3-8ed2c8ffded3": {
+    component: TrainingHours,
+    props: {
+      color: "orange",
+      timeRange: "30d",
+      title: "Training Hours",
+      showDialog: true,
+    },
+    metadata: {
+      color: {
+        type: "select",
+        options: [
           "blue",
           "green",
           "purple",
@@ -368,35 +385,35 @@ export const registry: Record<string, ComponentConfig> = {
           "teal",
           "red",
           "emerald",
-          "indigo"
+          "indigo",
         ],
-        "multiple": false
+        multiple: false,
       },
-      "timeRange": {
-        "type": "select",
-        "options": [
-          "7d",
-          "30d",
-          "90d"
-        ],
-        "multiple": false
+      timeRange: {
+        type: "select",
+        options: ["7d", "30d", "90d"],
+        multiple: false,
       },
-      "title": {
-        "type": "string"
+      title: {
+        type: "string",
       },
-      "showDialog": {
-        "type": "boolean"
-      }
-    } },
-  "654ffdaa-be1f-8f87-c2ac-5a11b7076c8f": { component: TrainingSessions, props: {
-      "color": "green",
-      "timeRange": "7d",
-      "title": "Training Sessions",
-      "showDialog": true
-    }, metadata: {
-      "color": {
-        "type": "select",
-        "options": [
+      showDialog: {
+        type: "boolean",
+      },
+    },
+  },
+  "654ffdaa-be1f-8f87-c2ac-5a11b7076c8f": {
+    component: TrainingSessions,
+    props: {
+      color: "green",
+      timeRange: "7d",
+      title: "Training Sessions",
+      showDialog: true,
+    },
+    metadata: {
+      color: {
+        type: "select",
+        options: [
           "blue",
           "green",
           "purple",
@@ -404,36 +421,36 @@ export const registry: Record<string, ComponentConfig> = {
           "teal",
           "red",
           "emerald",
-          "indigo"
+          "indigo",
         ],
-        "multiple": false
+        multiple: false,
       },
-      "timeRange": {
-        "type": "select",
-        "options": [
-          "7d",
-          "30d",
-          "90d"
-        ],
-        "multiple": false
+      timeRange: {
+        type: "select",
+        options: ["7d", "30d", "90d"],
+        multiple: false,
       },
-      "title": {
-        "type": "string"
+      title: {
+        type: "string",
       },
-      "showDialog": {
-        "type": "boolean"
-      }
-    } },
-  "bab2e342-c823-2e94-a85a-816d9cb78bd2": { component: PerformanceByPersonality, props: {
-      "color": "blue",
-      "defaultTimeRange": "30d",
-      "chartType": "bar",
-      "title": "Performance by Personality",
-      "showTimeSelector": true
-    }, metadata: {
-      "color": {
-        "type": "select",
-        "options": [
+      showDialog: {
+        type: "boolean",
+      },
+    },
+  },
+  "bab2e342-c823-2e94-a85a-816d9cb78bd2": {
+    component: PerformanceByPersonality,
+    props: {
+      color: "blue",
+      defaultTimeRange: "30d",
+      chartType: "bar",
+      title: "Performance by Personality",
+      showTimeSelector: true,
+    },
+    metadata: {
+      color: {
+        type: "select",
+        options: [
           "blue",
           "green",
           "purple",
@@ -441,45 +458,41 @@ export const registry: Record<string, ComponentConfig> = {
           "teal",
           "red",
           "emerald",
-          "indigo"
+          "indigo",
         ],
-        "multiple": false
+        multiple: false,
       },
-      "defaultTimeRange": {
-        "type": "select",
-        "options": [
-          "7d",
-          "14d",
-          "30d",
-          "60d",
-          "90d"
-        ],
-        "multiple": false
+      defaultTimeRange: {
+        type: "select",
+        options: ["7d", "14d", "30d", "60d", "90d"],
+        multiple: false,
       },
-      "chartType": {
-        "type": "select",
-        "options": [
-          "bar"
-        ],
-        "multiple": false
+      chartType: {
+        type: "select",
+        options: ["bar"],
+        multiple: false,
       },
-      "title": {
-        "type": "string"
+      title: {
+        type: "string",
       },
-      "showTimeSelector": {
-        "type": "boolean"
-      }
-    } },
-  "a7e8e793-011f-b291-eec4-a74232db4491": { component: PerformanceTrends, props: {
-      "color": "blue",
-      "defaultTimeRange": "30d",
-      "chartType": "area",
-      "title": "Performance Trends",
-      "showTimeSelector": true
-    }, metadata: {
-      "color": {
-        "type": "select",
-        "options": [
+      showTimeSelector: {
+        type: "boolean",
+      },
+    },
+  },
+  "a7e8e793-011f-b291-eec4-a74232db4491": {
+    component: PerformanceTrends,
+    props: {
+      color: "blue",
+      defaultTimeRange: "30d",
+      chartType: "area",
+      title: "Performance Trends",
+      showTimeSelector: true,
+    },
+    metadata: {
+      color: {
+        type: "select",
+        options: [
           "blue",
           "green",
           "purple",
@@ -487,44 +500,41 @@ export const registry: Record<string, ComponentConfig> = {
           "teal",
           "red",
           "emerald",
-          "indigo"
+          "indigo",
         ],
-        "multiple": false
+        multiple: false,
       },
-      "defaultTimeRange": {
-        "type": "select",
-        "options": [
-          "7d",
-          "30d",
-          "90d"
-        ],
-        "multiple": false
+      defaultTimeRange: {
+        type: "select",
+        options: ["7d", "30d", "90d"],
+        multiple: false,
       },
-      "chartType": {
-        "type": "select",
-        "options": [
-          "area",
-          "line"
-        ],
-        "multiple": false
+      chartType: {
+        type: "select",
+        options: ["area", "line"],
+        multiple: false,
       },
-      "title": {
-        "type": "string"
+      title: {
+        type: "string",
       },
-      "showTimeSelector": {
-        "type": "boolean"
-      }
-    } },
-  "c2940e17-d668-43e3-ad76-9abf53d5b21f": { component: SessionActivity, props: {
-      "color": "blue",
-      "defaultTimeRange": "24h",
-      "chartType": "bar",
-      "title": "Session Activity",
-      "showTimeSelector": true
-    }, metadata: {
-      "color": {
-        "type": "select",
-        "options": [
+      showTimeSelector: {
+        type: "boolean",
+      },
+    },
+  },
+  "c2940e17-d668-43e3-ad76-9abf53d5b21f": {
+    component: SessionActivity,
+    props: {
+      color: "blue",
+      defaultTimeRange: "24h",
+      chartType: "bar",
+      title: "Session Activity",
+      showTimeSelector: true,
+    },
+    metadata: {
+      color: {
+        type: "select",
+        options: [
           "blue",
           "green",
           "purple",
@@ -532,51 +542,44 @@ export const registry: Record<string, ComponentConfig> = {
           "teal",
           "red",
           "emerald",
-          "indigo"
+          "indigo",
         ],
-        "multiple": false
+        multiple: false,
       },
-      "defaultTimeRange": {
-        "type": "select",
-        "options": [
-          "1h",
-          "12h",
-          "24h",
-          "1d",
-          "3d",
-          "7d",
-          "14d",
-          "30d"
-        ],
-        "multiple": false
+      defaultTimeRange: {
+        type: "select",
+        options: ["1h", "12h", "24h", "1d", "3d", "7d", "14d", "30d"],
+        multiple: false,
       },
-      "chartType": {
-        "type": "select",
-        "options": [
-          "bar"
-        ],
-        "multiple": false
+      chartType: {
+        type: "select",
+        options: ["bar"],
+        multiple: false,
       },
-      "title": {
-        "type": "string"
+      title: {
+        type: "string",
       },
-      "showTimeSelector": {
-        "type": "boolean"
-      }
-    } },
-  "c48dc235-023a-838d-680a-ff19b075ec44": { component: CohortPerformance, props: {
-      "className": "",
-      "color": "blue",
-      "maxItems": 5,
-      "title": "Cohort Performance",
-      "layout": "vertical"
-    }, metadata: {
-      "className": {
-        "type": "string"
+      showTimeSelector: {
+        type: "boolean",
       },
-      "color": {
-        "type": "select",
-        "options": [
+    },
+  },
+  "c48dc235-023a-838d-680a-ff19b075ec44": {
+    component: CohortPerformance,
+    props: {
+      className: "",
+      color: "blue",
+      maxItems: 5,
+      title: "Cohort Performance",
+      layout: "vertical",
+    },
+    metadata: {
+      className: {
+        type: "string",
+      },
+      color: {
+        type: "select",
+        options: [
           "blue",
           "green",
           "purple",
@@ -584,38 +587,39 @@ export const registry: Record<string, ComponentConfig> = {
           "teal",
           "red",
           "emerald",
-          "indigo"
+          "indigo",
         ],
-        "multiple": false
+        multiple: false,
       },
-      "maxItems": {
-        "type": "number"
+      maxItems: {
+        type: "number",
       },
-      "title": {
-        "type": "string"
+      title: {
+        type: "string",
       },
-      "layout": {
-        "type": "select",
-        "options": [
-          "vertical",
-          "horizontal"
-        ],
-        "multiple": false
-      }
-    } },
-  "ce392c42-3858-091d-cd39-3fc69bca92c2": { component: SkillBreakdown, props: {
-      "className": "",
-      "color": "blue",
-      "maxItems": 4,
-      "title": "Skill Breakdown",
-      "layout": "vertical"
-    }, metadata: {
-      "className": {
-        "type": "string"
+      layout: {
+        type: "select",
+        options: ["vertical", "horizontal"],
+        multiple: false,
       },
-      "color": {
-        "type": "select",
-        "options": [
+    },
+  },
+  "ce392c42-3858-091d-cd39-3fc69bca92c2": {
+    component: SkillBreakdown,
+    props: {
+      className: "",
+      color: "blue",
+      maxItems: 4,
+      title: "Skill Breakdown",
+      layout: "vertical",
+    },
+    metadata: {
+      className: {
+        type: "string",
+      },
+      color: {
+        type: "select",
+        options: [
           "blue",
           "green",
           "purple",
@@ -623,38 +627,39 @@ export const registry: Record<string, ComponentConfig> = {
           "teal",
           "red",
           "emerald",
-          "indigo"
+          "indigo",
         ],
-        "multiple": false
+        multiple: false,
       },
-      "maxItems": {
-        "type": "number"
+      maxItems: {
+        type: "number",
       },
-      "title": {
-        "type": "string"
+      title: {
+        type: "string",
       },
-      "layout": {
-        "type": "select",
-        "options": [
-          "vertical",
-          "horizontal"
-        ],
-        "multiple": false
-      }
-    } },
-  "e5fd9fa5-5da1-7262-f40a-c2300888e1ad": { component: TrainingInsights, props: {
-      "className": "",
-      "color": "blue",
-      "maxItems": 4,
-      "title": "Training Insights",
-      "layout": "vertical"
-    }, metadata: {
-      "className": {
-        "type": "string"
+      layout: {
+        type: "select",
+        options: ["vertical", "horizontal"],
+        multiple: false,
       },
-      "color": {
-        "type": "select",
-        "options": [
+    },
+  },
+  "e5fd9fa5-5da1-7262-f40a-c2300888e1ad": {
+    component: TrainingInsights,
+    props: {
+      className: "",
+      color: "blue",
+      maxItems: 4,
+      title: "Training Insights",
+      layout: "vertical",
+    },
+    metadata: {
+      className: {
+        type: "string",
+      },
+      color: {
+        type: "select",
+        options: [
           "blue",
           "green",
           "purple",
@@ -662,25 +667,23 @@ export const registry: Record<string, ComponentConfig> = {
           "teal",
           "red",
           "emerald",
-          "indigo"
+          "indigo",
         ],
-        "multiple": false
+        multiple: false,
       },
-      "maxItems": {
-        "type": "number"
+      maxItems: {
+        type: "number",
       },
-      "title": {
-        "type": "string"
+      title: {
+        type: "string",
       },
-      "layout": {
-        "type": "select",
-        "options": [
-          "vertical",
-          "horizontal"
-        ],
-        "multiple": false
-      }
-    } }
+      layout: {
+        type: "select",
+        options: ["vertical", "horizontal"],
+        multiple: false,
+      },
+    },
+  },
 };
 
 export default registry;
