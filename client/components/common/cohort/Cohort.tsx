@@ -35,6 +35,7 @@ import { createCohort } from "@/utils/mutations/cohorts/create-cohort";
 import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { Loader2, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -124,7 +125,13 @@ export default function Cohort({ cohortId }: CohortProps) {
     queryFn: () => getAllSimulations(),
   });
 
-  const isLoading = isLoadingProfiles || isLoadingSimulations;
+  const { data: scenarios = [], isLoading: isLoadingScenarios } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => getAllScenarios(),
+  });
+
+  const isLoading =
+    isLoadingProfiles || isLoadingSimulations || isLoadingScenarios;
 
   // Transform simulations to match SimulationPicker interface
   const transformedSimulations: SimulationPickerType[] = useMemo(() => {
@@ -432,13 +439,17 @@ export default function Cohort({ cohortId }: CohortProps) {
         {/* Basic Cohort Information */}
         <div className="space-y-2">
           <Label htmlFor="title">Title *</Label>
-          <Input
-            id="title"
-            value={formData.title}
-            onChange={(e) => handleInputChange("title", e.target.value)}
-            placeholder="Enter cohort title"
-            className={errors.title ? "border-destructive" : ""}
-          />
+          {formData.title !== undefined && !isLoading ? (
+            <Input
+              id="title"
+              value={formData.title}
+              onChange={(e) => handleInputChange("title", e.target.value)}
+              placeholder="Enter cohort title"
+              className={errors.title ? "border-destructive" : ""}
+            />
+          ) : (
+            <Skeleton className="h-10 w-full" />
+          )}
           {errors.title && (
             <p className="text-sm text-destructive">{errors.title}</p>
           )}
@@ -446,13 +457,17 @@ export default function Cohort({ cohortId }: CohortProps) {
 
         <div className="space-y-2">
           <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            value={formData.description || ""}
-            onChange={(e) => handleInputChange("description", e.target.value)}
-            placeholder="Enter cohort description (optional)"
-            rows={3}
-          />
+          {formData.description !== undefined && !isLoading ? (
+            <Textarea
+              id="description"
+              value={formData.description || ""}
+              onChange={(e) => handleInputChange("description", e.target.value)}
+              placeholder="Enter cohort description (optional)"
+              rows={3}
+            />
+          ) : (
+            <Skeleton className="h-20 w-full" />
+          )}
         </div>
 
         {/* Active/Inactive Switch */}
@@ -460,11 +475,17 @@ export default function Cohort({ cohortId }: CohortProps) {
           <Label htmlFor="active" className="text-sm">
             Cohort Active
           </Label>
-          <Switch
-            id="active"
-            checked={formData.active ?? true}
-            onCheckedChange={(checked) => handleInputChange("active", checked)}
-          />
+          {formData.active !== undefined && !isLoading ? (
+            <Switch
+              id="active"
+              checked={formData.active ?? true}
+              onCheckedChange={(checked) =>
+                handleInputChange("active", checked)
+              }
+            />
+          ) : (
+            <Skeleton className="h-6 w-11" />
+          )}
         </div>
 
         {/* Simulations */}
@@ -584,10 +605,41 @@ export default function Cohort({ cohortId }: CohortProps) {
                             <Badge variant="outline" className="text-xs">
                               Time: {simulation.timeLimit || "No limit"} min
                             </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {simulation.active ? "Active" : "Inactive"}
-                            </Badge>
                           </div>
+
+                          {/* Scenario Names */}
+                          {simulation.scenarioIds &&
+                            simulation.scenarioIds.length > 0 && (
+                              <div className="mt-2">
+                                <p className="text-xs font-medium text-muted-foreground mb-1">
+                                  Scenarios ({simulation.scenarioIds.length}):
+                                </p>
+                                <div className="space-y-1">
+                                  {simulation.scenarioIds
+                                    .slice(0, 3)
+                                    .map((scenarioId) => {
+                                      const scenario = scenarios.find(
+                                        (s) => s.id === scenarioId
+                                      );
+                                      return (
+                                        <div
+                                          key={scenarioId}
+                                          className="text-xs text-muted-foreground truncate"
+                                        >
+                                          •{" "}
+                                          {scenario?.name || "Unknown Scenario"}
+                                        </div>
+                                      );
+                                    })}
+                                  {simulation.scenarioIds.length > 3 && (
+                                    <div className="text-xs text-muted-foreground">
+                                      +{simulation.scenarioIds.length - 3}{" "}
+                                      more...
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                         </div>
                       </div>
                     </div>
@@ -612,25 +664,36 @@ export default function Cohort({ cohortId }: CohortProps) {
 
         {/* Submit Button */}
         <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => router.push("/cohorts")}>
-            Back
-          </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting || (isEditMode && !hasChanges)}
-            className="min-w-[120px]"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {cohortId || editingCohortId ? "Updating..." : "Creating..."}
-              </>
-            ) : cohortId || editingCohortId ? (
-              "Update Cohort"
-            ) : (
-              "Create Cohort"
-            )}
-          </Button>
+          {!isLoading ? (
+            <>
+              <Button variant="outline" onClick={() => router.push("/cohorts")}>
+                Back
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting || (isEditMode && !hasChanges)}
+                className="min-w-[120px]"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {cohortId || editingCohortId
+                      ? "Updating..."
+                      : "Creating..."}
+                  </>
+                ) : cohortId || editingCohortId ? (
+                  "Update Cohort"
+                ) : (
+                  "Create Cohort"
+                )}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Skeleton className="h-10 w-16" />
+              <Skeleton className="h-10 w-32" />
+            </>
+          )}
         </div>
       </form>
 
