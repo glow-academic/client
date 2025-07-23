@@ -1,31 +1,53 @@
-import { describe, it, vi } from 'vitest';
+import { describe, it, vi, afterEach } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import CohortStaff from '@/components/common/cohort/CohortStaff';
+import CohortAddStaff, { CohortAddStaffProps } from '@/components/common/cohort/staff/CohortAddStaff';
 
+
+
+// ✨ Import comprehensive mock data from our centralized mock system
+import '@/mocks/queries';
+import '@/mocks/mutations';
+import '@/mocks/api';
 
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { CohortStaffProps } from '@/components/common/cohort/CohortStaff';
-const mockProps: CohortStaffProps = {
-  profiles: [],
-  setProfiles: vi.fn(),
-  profilesToDelete: [],
-  setProfilesToDelete: vi.fn(),
-  isLoading: false,
-  isSubmitting: false,
+const mockProps: CohortAddStaffProps = {
+  onAddProfiles: vi.fn(),
+  // currentCohortName: 'test-currentCohortName', /* optional */
+  existingProfileIds: [],
 };
 // ------------------------------------------------------------------
-describe('CohortStaff', () => {
+describe('CohortAddStaff', () => {
   
+  /* ------------------------------------------------------------------ *
+   * 💡 Mock Data Usage Guide:
+   * 
+   * All API functions are automatically mocked via imports above.
+   * Use mockSchema.* for realistic test data:
+   * 
+   * Examples:
+   * - mockSchema.users[0] - First user object
+   * - mockSchema.classes - Array of class objects  
+   * - mockSchema.profiles - Array of profile objects
+   * 
+   * To override specific mocks in individual tests:
+   * - vi.mocked(queryFunction).mockResolvedValue(customData)
+   * - vi.mocked(mutationFunction).mockResolvedValue(customResponse)
+   * ------------------------------------------------------------------ */
+  
+  // ✨ Reset mocks after each test
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
 
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
-      
-      renderWithMocks(<CohortStaff {...mockProps} />);
+      // ✨ All mocks are automatically set up via imports above
+      renderWithMocks(<CohortAddStaff {...mockProps} />);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
@@ -33,7 +55,7 @@ describe('CohortStaff', () => {
 
     it.skip('should render with props', () => {
       // TODO: Test component with various props
-      // Props interface: CohortStaffProps
+      // Props interface: CohortAddStaffProps
       
       // TODO add props assertions
     });
@@ -64,7 +86,24 @@ describe('CohortStaff', () => {
     });
   });
 
-  
+  describe('API Integration', () => {
+    it.skip('should handle and display an API error state', async () => {
+      // Arrange: Override the default success mock with an error for this test.
+      // Example: vi.mocked(getAllProfiles).mockRejectedValue(new Error('API Error'));
+
+      renderWithMocks(<CohortAddStaff {...mockProps} />);
+      
+      // Assert: Check that your component shows an error message.
+      // TODO: Add specific error state assertions
+    });
+
+    it.skip('should handle loading states', () => {
+      // TODO: Test loading states
+      // Mock data is automatically loaded from @/mocks/schema
+      
+      // TODO: loading states assertions
+    });
+  });
 
   
 
@@ -85,18 +124,18 @@ describe('CohortStaff', () => {
 });
 
 /*
- * Component Analysis for CohortStaff:
- * Path: common/cohort/CohortStaff.tsx
+ * Component Analysis for CohortAddStaff:
+ * Path: common/cohort/staff/CohortAddStaff.tsx
  * 
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: CohortAddStaffProps
  * - Has props: true
- * - Props interface: CohortStaffProps
+ * - Props interface: CohortAddStaffProps
  * - Client component: true
- * - Uses hooks: useCallback, useRef, useState
+ * - Uses hooks: useCallback, useRef, useState, useQuery
  * - Uses router: false
- * - Has API calls: false
+ * - Has API calls: true
  * - Has form handling: false
  * - Uses state: true
  * - Uses effects: false
@@ -107,12 +146,12 @@ describe('CohortStaff', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<CohortStaff {...mockProps} />);
+ * render(<CohortAddStaff {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<CohortStaff {...props} />);
+ * render(<CohortAddStaff {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

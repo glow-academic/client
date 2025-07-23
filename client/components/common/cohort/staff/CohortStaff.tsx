@@ -8,6 +8,7 @@
 "use client";
 import { useCallback, useState } from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -212,6 +213,11 @@ export default function CohortStaff({
                         )}
                       >
                         {/* Role display in top left */}
+                        <div className="absolute top-2 left-2 z-10">
+                          {profile.role === "instructional" && (
+                            <Badge variant="secondary">👨‍🏫</Badge>
+                          )}
+                        </div>
 
                         {/* Action buttons in top right */}
                         <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -284,6 +290,11 @@ export default function CohortStaff({
                             <p className="font-medium truncate">
                               {profile.firstName} {profile.lastName}
                             </p>
+                            {profile.role === "instructional" && (
+                              <Badge variant="secondary" className="text-xs">
+                                👨‍🏫 INSTRUCTIONAL
+                              </Badge>
+                            )}
                             {isNewProfile && (
                               <span className="bg-blue-500 text-white text-xs px-1 py-0.5 rounded">
                                 NEW

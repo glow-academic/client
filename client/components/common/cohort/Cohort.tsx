@@ -25,13 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -43,7 +37,11 @@ import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { Loader2, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import CohortStaff from "./CohortStaff";
+import {
+  SimulationPicker,
+  Simulation as SimulationPickerType,
+} from "./SimulationPicker";
+import CohortStaff from "./staff/CohortStaff";
 
 export interface CohortProps {
   cohortId?: string;
@@ -126,6 +124,41 @@ export default function Cohort({ cohortId }: CohortProps) {
 
   const isLoading = isLoadingProfiles || isLoadingSimulations;
 
+  // Transform simulations to match SimulationPicker interface
+  const transformedSimulations: SimulationPickerType[] = useMemo(() => {
+    return simulations.map((sim) => ({
+      id: sim.id,
+      title: sim.title,
+      description: `Simulation with ${sim.scenarioIds?.length || 0} scenarios`,
+      timeLimit: sim.timeLimit || undefined,
+      active: sim.active,
+      defaultSimulation: sim.defaultSimulation,
+      practiceSimulation: sim.practiceSimulation,
+    }));
+  }, [simulations]);
+
+  // Compute selected simulations from formData
+  const selectedSimulations = useMemo(() => {
+    if (!formData.simulationIds || simulations.length === 0) {
+      return [];
+    }
+    return transformedSimulations.filter((sim) =>
+      formData.simulationIds?.includes(sim.id)
+    );
+  }, [formData.simulationIds, transformedSimulations, simulations.length]);
+
+  // Handle simulation selection from picker
+  const handleSimulationSelection = useCallback(
+    (selectedSims: SimulationPickerType[]) => {
+      const simulationIds = selectedSims.map((sim) => sim.id);
+      setFormData((prev) => ({
+        ...prev,
+        simulationIds,
+      }));
+    },
+    []
+  );
+
   // Load cohort data if editing
   useEffect(() => {
     const targetCohortId = cohortId || editingCohortId;
@@ -189,7 +222,14 @@ export default function Cohort({ cohortId }: CohortProps) {
         });
       }
     }
-  }, [cohortId, editingCohortId, cohorts, profiles, isEditMode]);
+  }, [
+    cohortId,
+    editingCohortId,
+    cohorts,
+    profiles,
+    simulations.length,
+    isEditMode,
+  ]);
 
   // Check if form has changes
   const hasChanges = useMemo(() => {
@@ -220,15 +260,6 @@ export default function Cohort({ cohortId }: CohortProps) {
   };
 
   // Simulation management handlers
-  const addSimulation = (simulationId: string) => {
-    if (!formData.simulationIds?.includes(simulationId)) {
-      setFormData((prev) => ({
-        ...prev,
-        simulationIds: [...(prev.simulationIds || []), simulationId],
-      }));
-    }
-  };
-
   const removeSimulation = (simulationId: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -401,28 +432,14 @@ export default function Cohort({ cohortId }: CohortProps) {
             </div>
             <div className="flex gap-2">
               {formData.simulationIds !== undefined && !isLoading ? (
-                <Select
-                  value=""
-                  onValueChange={(value: string) => {
-                    if (value) addSimulation(value);
-                  }}
-                >
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Add simulation" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {simulations
-                      .filter(
-                        (simulation: Simulation) =>
-                          !formData.simulationIds?.includes(simulation.id)
-                      )
-                      .map((simulation: Simulation) => (
-                        <SelectItem key={simulation.id} value={simulation.id}>
-                          {simulation.title}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                <SimulationPicker
+                  simulations={transformedSimulations}
+                  selectedSimulations={selectedSimulations}
+                  onSelect={handleSimulationSelection}
+                  placeholder="Add simulation"
+                  showLabel={false}
+                  buttonClassName="w-48"
+                />
               ) : (
                 <Skeleton className="h-10 w-48" />
               )}

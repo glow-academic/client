@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 125
+- **Total Components**: 129
 - **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 125
+- **Tests Skipped** (already implemented): 129
 
 ## Component Coverage
 
@@ -52,9 +52,13 @@
 | AccoladeCard | common/cohort/AccoladeCard.tsx | AccoladeCard.test.tsx | ✅ Implemented |
 | Cohort | common/cohort/Cohort.tsx | Cohort.test.tsx | ✅ Implemented |
 | CohortPicker | common/cohort/CohortPicker.tsx | CohortPicker.test.tsx | ✅ Implemented |
-| CohortStaff | common/cohort/CohortStaff.tsx | CohortStaff.test.tsx | ✅ Implemented |
 | LeaderboardTable | common/cohort/LeaderboardTable.tsx | LeaderboardTable.test.tsx | ✅ Implemented |
+| SimulationPicker | common/cohort/SimulationPicker.tsx | SimulationPicker.test.tsx | ✅ Implemented |
 | SimulationProgress | common/cohort/SimulationProgress.tsx | SimulationProgress.test.tsx | ✅ Implemented |
+| CohortAddStaff | common/cohort/staff/CohortAddStaff.tsx | CohortAddStaff.test.tsx | ✅ Implemented |
+| CohortStaff | common/cohort/staff/CohortStaff.tsx | CohortStaff.test.tsx | ✅ Implemented |
+| CohortStaffDataTable | common/cohort/staff/CohortStaffDataTable.tsx | CohortStaffDataTable.test.tsx | ✅ Implemented |
+| CohortStaffDataTableToolbar | common/cohort/staff/CohortStaffDataTableToolbar.tsx | CohortStaffDataTableToolbar.test.tsx | ✅ Implemented |
 | CarouselSection | common/dashboard/CarouselSection.tsx | CarouselSection.test.tsx | ✅ Implemented |
 | DashboardEdit | common/dashboard/DashboardEdit.tsx | DashboardEdit.test.tsx | ✅ Implemented |
 | DraggableComponent | common/dashboard/DraggableComponent.tsx | DraggableComponent.test.tsx | ✅ Implemented |
@@ -195,9 +199,14 @@ __tests__/
 │   │   ├── AccoladeCard.test.tsx
 │   │   ├── Cohort.test.tsx
 │   │   ├── CohortPicker.test.tsx
-│   │   ├── CohortStaff.test.tsx
 │   │   ├── LeaderboardTable.test.tsx
+│   │   ├── SimulationPicker.test.tsx
 │   │   ├── SimulationProgress.test.tsx
+│   │   ├── staff/
+│   │   │   ├── CohortAddStaff.test.tsx
+│   │   │   ├── CohortStaff.test.tsx
+│   │   │   ├── CohortStaffDataTable.test.tsx
+│   │   │   ├── CohortStaffDataTableToolbar.test.tsx
 │   ├── dashboard/
 │   │   ├── CarouselSection.test.tsx
 │   │   ├── DashboardEdit.test.tsx
