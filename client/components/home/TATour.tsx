@@ -281,14 +281,14 @@ export default function TATour() {
         index === stepIndex ? { ...step, isCompleted: true } : step
       );
 
-      // Steps 0-1 are tracked by viewedIntro (Home + Cohort Leaderboard)
+      // Steps 1-2 are tracked by viewedIntro (Cohort Leaderboard + Practice)
       const introStepsComplete = updatedSteps
-        .slice(0, 2)
+        .slice(1, 3)
         .every((step) => step.isCompleted);
 
-      // Steps 2-4 are tracked by viewedChat (Practice + Message + End Chat)
+      // Steps 3-4 are tracked by viewedChat (Message + End Chat)
       const chatStepsComplete = updatedSteps
-        .slice(2)
+        .slice(3)
         .every((step) => step.isCompleted);
 
       try {
