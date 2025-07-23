@@ -235,6 +235,7 @@ export default function SimulationCard({
           <button
             onClick={() => onStartSimulation(simulation.id)}
             disabled={loadingSimulation === simulation.id}
+            data-testid={`start-simulation-${simulation.id}`}
             className={`w-full text-center py-2 rounded-lg bg-gradient-to-r ${gradientClass} text-white font-medium text-sm hover:shadow-lg transition-all duration-300 ${
               loadingSimulation === simulation.id
                 ? "animate-pulse cursor-not-allowed"

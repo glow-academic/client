@@ -154,7 +154,7 @@ export default function Practice() {
       }
       const { attemptId } = event.detail;
       logInfo("Navigating to simulation attempt", { attemptId });
-      router.push(`/home/a/${attemptId}`);
+      router.push(`/practice/a/${attemptId}`);
       setLoadingSimulation(null);
     };
 

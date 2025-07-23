@@ -38,9 +38,8 @@ export const createTATourSteps = (
   const cohortPage = cohortId
     ? `/cohorts/c/${cohortId}`
     : "/cohorts/c/[cohortId]";
-  const attemptPage = attemptId
-    ? `/practice/a/${attemptId}`
-    : "/practice/a/[attemptId]";
+  // Use a placeholder page when attemptId is not available
+  const attemptPage = attemptId ? `/practice/a/${attemptId}` : "/practice"; // Stay on practice page until attemptId is available
 
   return [
     {

@@ -18,7 +18,6 @@ import { useTour } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { updateProfile } from "@/utils/mutations/profiles/update-profile";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { createTATourSteps } from "@/utils/tour-steps";
 
 // Debug Indicator Component
@@ -248,11 +247,6 @@ export default function TATour() {
     queryFn: () => getAllCohorts(),
   });
 
-  const { data: simulations = [] } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
-
   // Get TA's assigned cohorts
   const taCohorts = useMemo(() => {
     if (!effectiveProfile || !cohorts) return [];
@@ -260,11 +254,6 @@ export default function TATour() {
       cohort.profileIds?.includes(effectiveProfile.id)
     );
   }, [effectiveProfile, cohorts]);
-
-  // Get practice simulations (practiceSimulation = true)
-  const practiceSimulations = useMemo(() => {
-    return simulations.filter((sim) => sim.practiceSimulation);
-  }, [simulations]);
 
   // Handle step completion with proper profile updates
   const handleStepComplete = useCallback(
@@ -408,26 +397,11 @@ export default function TATour() {
     // Navigate to practice page
     router.push("/practice");
 
-    // Wait for navigation to complete, then auto-start simulation
+    // Wait for navigation to complete
     setTimeout(() => {
       setNavigating(false);
-      // Auto-start first practice simulation
-      if (practiceSimulations.length > 0 && practiceSimulations[0]) {
-        logInfo("Auto-starting first practice simulation", {
-          simulationId: practiceSimulations[0].id,
-        });
-        handleStartPracticeSimulation(practiceSimulations[0].id);
-      } else {
-        logError("No practice simulations available for tour");
-        toast.error("No practice simulations available.");
-      }
-    }, 2000); // Longer delay to ensure page loads
-  }, [
-    router,
-    practiceSimulations,
-    setNavigating,
-    handleStartPracticeSimulation,
-  ]);
+    }, 1500);
+  }, [router, setNavigating]);
 
   // Initialize tour steps and launch tour
   useEffect(() => {
@@ -490,7 +464,9 @@ export default function TATour() {
       (cohortId: string) => router.push(`/cohorts/c/${cohortId}`),
       (simulationId: string) => handleStartPracticeSimulation(simulationId),
       () => {}, // End chat is handled by WebSocket events
-      taCohorts && taCohorts.length > 0 ? taCohorts[0].id : undefined,
+      taCohorts && taCohorts.length > 0 && taCohorts[0]
+        ? taCohorts[0].id
+        : undefined,
       tourState.attemptId || undefined
     );
 
@@ -498,7 +474,7 @@ export default function TATour() {
     let initialStep = 0;
     if (effectiveProfile.viewedIntro && !effectiveProfile.viewedChat) {
       // User has completed intro steps (0-1) but not chat steps (2-4)
-      initialStep = 2; // Start at practice simulation step
+      initialStep = 2; // Start at practice simulation step (step 2)
     } else if (effectiveProfile.viewedIntro && effectiveProfile.viewedChat) {
       // User has completed everything, but we'll still show the tour
       initialStep = 0; // Start from beginning for review
@@ -517,13 +493,25 @@ export default function TATour() {
     if (initialStep >= 0 && initialStep < steps.length) {
       const targetStep = steps[initialStep];
       if (targetStep && targetStep.page && targetStep.page !== pathname) {
-        const targetPage = targetStep.page;
-        logInfo("Navigating to correct page for tour step", {
-          step: initialStep,
-          targetPage,
-          currentPath: pathname,
-        });
-        router.push(targetPage);
+        // Don't navigate to attempt pages during initialization - wait for attemptId
+        if ((initialStep === 3 || initialStep === 4) && !tourState.attemptId) {
+          logInfo(
+            "Skipping initial navigation to attempt page - no attemptId yet",
+            {
+              step: initialStep,
+              targetPage: targetStep.page,
+              attemptId: tourState.attemptId,
+            }
+          );
+        } else {
+          const targetPage = targetStep.page;
+          logInfo("Navigating to correct page for tour step", {
+            step: initialStep,
+            targetPage,
+            currentPath: pathname,
+          });
+          router.push(targetPage);
+        }
       }
     }
 
@@ -553,16 +541,36 @@ export default function TATour() {
       if (stepIndex >= 0 && stepIndex < tourState.steps.length) {
         const step = tourState.steps[stepIndex];
         if (step && step.page && step.page !== pathname) {
+          // For steps 3-4 (send-message and end-chat), check if we need to wait for attemptId
+          if ((stepIndex === 3 || stepIndex === 4) && !tourState.attemptId) {
+            logInfo("Skipping navigation to attempt page - no attemptId yet", {
+              stepIndex,
+              targetPage: step.page,
+              attemptId: tourState.attemptId,
+            });
+            return;
+          }
+
+          // If we have an attemptId and the step page is /practice, update it to the actual attempt page
+          let targetPage = step.page;
+          if (
+            tourState.attemptId &&
+            (stepIndex === 3 || stepIndex === 4) &&
+            step.page === "/practice"
+          ) {
+            targetPage = `/practice/a/${tourState.attemptId}`;
+          }
+
           logInfo("Navigating to page for tour step", {
             stepIndex,
-            targetPage: step.page,
+            targetPage,
             currentPath: pathname,
           });
-          router.push(step.page);
+          router.push(targetPage);
         }
       }
     },
-    [tourState.steps, pathname, router]
+    [tourState.steps, pathname, router, tourState.attemptId]
   );
 
   // Navigate to correct page when tour is opened
@@ -577,6 +585,39 @@ export default function TATour() {
     navigateToStepPage,
   ]);
 
+  // Navigate to attempt page when attemptId becomes available
+  useEffect(() => {
+    if (tourState.isOpen && tourState.attemptId && tourState.steps.length > 0) {
+      const currentStep = tourState.steps[tourState.currentStep];
+      logInfo("AttemptId available - checking if navigation needed", {
+        attemptId: tourState.attemptId,
+        currentStep: tourState.currentStep,
+        currentStepPage: currentStep?.page,
+        pathname,
+      });
+
+      if (
+        currentStep &&
+        (tourState.currentStep === 3 || tourState.currentStep === 4) &&
+        currentStep.page === "/practice"
+      ) {
+        logInfo("AttemptId available - navigating to attempt page", {
+          attemptId: tourState.attemptId,
+          currentStep: tourState.currentStep,
+          targetPage: `/practice/a/${tourState.attemptId}`,
+        });
+        router.push(`/practice/a/${tourState.attemptId}`);
+      }
+    }
+  }, [
+    tourState.attemptId,
+    tourState.isOpen,
+    tourState.currentStep,
+    tourState.steps,
+    router,
+    pathname,
+  ]);
+
   // Handle automatic step completion based on current location
   useEffect(() => {
     if (!tourState.isOpen || !effectiveProfile) return;
@@ -588,6 +629,8 @@ export default function TATour() {
       stepIndex: tourState.currentStep,
       pathname,
       stepId: currentStep.id,
+      stepPage: currentStep.page,
+      attemptId: tourState.attemptId,
     });
 
     // Step 0: Home overview - auto-complete when on home page
@@ -612,18 +655,32 @@ export default function TATour() {
       nextStep();
     }
 
-    // Step 2: Practice simulation - auto-complete when on simulation page
+    // Step 2: Practice simulation - don't auto-complete, wait for user action or next button
+    // This step requires the user to click Next or manually start a simulation
+
+    // Step 3: Send message - auto-complete when on simulation page
     if (
-      tourState.currentStep === 2 &&
+      tourState.currentStep === 3 &&
       pathname.includes("/practice/a/") &&
-      !tourState.steps[2]?.isCompleted
+      !tourState.steps[3]?.isCompleted
     ) {
-      logInfo("Auto-completing practice simulation step");
-      handleStepComplete(2);
+      logInfo("Auto-completing send message step - user is in simulation");
+      handleStepComplete(3);
       nextStep();
     }
 
-    // Steps 3-4 are handled by WebSocket events
+    // Step 4: End chat - auto-complete when on simulation page
+    if (
+      tourState.currentStep === 4 &&
+      pathname.includes("/practice/a/") &&
+      !tourState.steps[4]?.isCompleted
+    ) {
+      logInfo("Auto-completing end chat step - user is in simulation");
+      handleStepComplete(4);
+      nextStep();
+    }
+
+    // Steps 4-5 are handled by WebSocket events
   }, [
     tourState.currentStep,
     tourState.steps,
@@ -632,6 +689,7 @@ export default function TATour() {
     tourState.isOpen,
     handleStepComplete,
     nextStep,
+    tourState.attemptId,
   ]);
 
   // Set up WebSocket event listeners for tour progression
@@ -650,16 +708,25 @@ export default function TATour() {
       // Navigate to the simulation
       router.push(`/practice/a/${attemptId}`);
 
-      // Mark step 2 as complete when simulation starts
-      if (
-        tourState.isOpen &&
-        tourState.currentStep === 2 &&
-        !tourState.steps[2]?.isCompleted
-      ) {
-        setTimeout(() => {
-          handleStepComplete(2);
-          nextStep();
-        }, 1000);
+      // Handle step completion based on current step when simulation starts
+      if (tourState.isOpen) {
+        // If we're on step 2 and simulation starts, it means the user clicked manually or we triggered it
+        if (tourState.currentStep === 2 && !tourState.steps[2]?.isCompleted) {
+          setTimeout(() => {
+            handleStepComplete(2);
+            nextStep();
+          }, 1000);
+        }
+        // If we're on step 3 and simulation starts, it means we already completed step 2 and are now in simulation
+        else if (
+          tourState.currentStep === 3 &&
+          !tourState.steps[3]?.isCompleted
+        ) {
+          setTimeout(() => {
+            handleStepComplete(3);
+            nextStep();
+          }, 1000);
+        }
       }
     };
 
@@ -671,15 +738,15 @@ export default function TATour() {
       setLoadingSimulation(null);
     };
 
-    // Listen for message sent events (step 3)
+    // Listen for message sent events (step 4)
     const handleMessageSent = (_event: CustomEvent) => {
       if (
         tourState.isOpen &&
-        tourState.currentStep === 3 &&
-        !tourState.steps[3]?.isCompleted
+        tourState.currentStep === 4 &&
+        !tourState.steps[4]?.isCompleted
       ) {
         logInfo("Message sent - marking tour step complete");
-        handleStepComplete(3);
+        handleStepComplete(4);
         nextStep();
       }
     };
@@ -747,17 +814,88 @@ export default function TATour() {
         handleNavigateToPractice();
       },
       2: () => {
-        // Step 2: Complete current step and advance (simulation should already be started)
+        // Step 2: Handle practice simulation start based on attemptId availability
         handleStepComplete(2);
         nextStep();
+
+        // Check if we already have an attemptId
+        if (tourState.attemptId) {
+          // If we have an attemptId, navigate directly to the simulation
+          logInfo("Using existing attemptId for tour navigation", {
+            attemptId: tourState.attemptId,
+          });
+          router.push(`/practice/a/${tourState.attemptId}`);
+        } else {
+          // If no attemptId, trigger the first practice simulation card click
+          setTimeout(() => {
+            const practiceCards = document.querySelectorAll(
+              '[data-testid="simulation-card"]'
+            );
+            if (practiceCards.length > 0) {
+              const firstCard = practiceCards[0];
+              if (firstCard) {
+                // Look for the start button using data-testid
+                const startButton = firstCard.querySelector(
+                  '[data-testid^="start-simulation-"]'
+                ) as HTMLButtonElement;
+                if (startButton && !startButton.disabled) {
+                  logInfo(
+                    "Clicking first practice simulation card button on step 2",
+                    {
+                      buttonText: startButton.textContent,
+                      cardTitle: firstCard.querySelector(
+                        '[data-testid="simulation-title"]'
+                      )?.textContent,
+                      simulationId: startButton
+                        .getAttribute("data-testid")
+                        ?.replace("start-simulation-", ""),
+                    }
+                  );
+                  startButton.click();
+                } else {
+                  logError(
+                    "Could not find start button on first practice simulation card",
+                    {
+                      buttonFound: !!startButton,
+                      buttonText: startButton?.textContent,
+                      buttonDisabled: startButton?.disabled,
+                    }
+                  );
+                  toast.error(
+                    "Could not start simulation automatically. Please click the Start button manually."
+                  );
+                }
+              } else {
+                logError("First practice simulation card is null");
+                toast.error(
+                  "Could not start simulation automatically. Please click the Start button manually."
+                );
+              }
+            } else {
+              logError("No practice simulation cards found");
+              toast.error("No practice simulations available.");
+            }
+          }, 500); // Small delay to ensure page is loaded
+        }
       },
       3: () => {
-        // Step 3: User needs to send a message - just advance to show instruction
+        // Step 3: User is now in the simulation - just advance to show message instruction
+        handleStepComplete(3);
         nextStep();
+
+        // If we have an attemptId, navigate to the attempt page
+        if (tourState.attemptId) {
+          router.push(`/practice/a/${tourState.attemptId}`);
+        }
       },
       4: () => {
         // Step 4: User needs to end chat - just advance to show instruction
         nextStep();
+
+        // If we have an attemptId, navigate to the attempt page
+        if (tourState.attemptId) {
+          router.push(`/practice/a/${tourState.attemptId}`);
+        }
       },
     };
   }, [
@@ -765,6 +903,8 @@ export default function TATour() {
     nextStep,
     handleNavigateToCohortLeaderboard,
     handleNavigateToPractice,
+    router,
+    tourState.attemptId,
   ]);
 
   // Set up global action handlers for the tour context

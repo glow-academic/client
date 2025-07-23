@@ -299,7 +299,7 @@ export default function Home() {
       }
       const { attemptId } = event.detail;
       logInfo("Navigating to simulation attempt", { attemptId });
-      router.push(`/practice/a/${attemptId}`);
+      router.push(`/home/a/${attemptId}`);
       setLoadingSimulation(null);
     };
 
