@@ -165,6 +165,14 @@ export const getSectionRoute = (
       return "/analytics/leaderboard";
 
     case "cohorts":
+      // For TA users, redirect to their first cohort sub-item page
+      // For other roles, go to the main cohorts page
+      if (currentPathname && currentPathname.includes("/cohorts/c/")) {
+        // If we're already on a cohort page, stay there
+        return currentPathname;
+      }
+      // For TAs, this will be handled by the sidebar to redirect to first cohort
+      // For other roles, go to main cohorts page
       return "/cohorts";
 
     // Create routes
