@@ -21,6 +21,7 @@ import ChatFab from "@/components/common/home/ChatFab";
 import ChatWidget from "@/components/common/home/ChatWidget";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
+import TATour from "@/components/home/TATour";
 import { AssistantProvider } from "@/contexts/assistant-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
@@ -311,6 +312,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
           <ChatDialog />
         </>
       )}
+
+      {/* Tour Component - Available globally for TA users */}
+      <TATour />
     </AssistantProvider>
   );
 }

@@ -32,7 +32,10 @@ interface TourContextState {
 
 // Tour actions
 type TourAction =
-  | { type: "OPEN"; payload: { steps: TourStep[]; profile: Profile } }
+  | {
+      type: "OPEN";
+      payload: { steps: TourStep[]; profile: Profile; initialStep?: number };
+    }
   | { type: "CLOSE" }
   | { type: "NEXT" }
   | { type: "PREV" }
@@ -65,7 +68,7 @@ function tourReducer(
       return {
         ...state,
         isOpen: true,
-        currentStep: 0,
+        currentStep: action.payload.initialStep || 0,
         steps: action.payload.steps,
         profile: action.payload.profile,
         showGuideButton: true,
@@ -129,7 +132,7 @@ function tourReducer(
 // Context
 interface TourContextValue {
   state: TourContextState;
-  openTour: (steps: TourStep[], profile: Profile) => void;
+  openTour: (steps: TourStep[], profile: Profile, initialStep?: number) => void;
   closeTour: () => void;
   nextStep: () => void;
   prevStep: () => void;
@@ -155,9 +158,20 @@ export function TourProvider({ children }: TourProviderProps) {
   const [state, dispatch] = useReducer(tourReducer, initialState);
 
   // Actions
-  const openTour = useCallback((steps: TourStep[], profile: Profile) => {
-    dispatch({ type: "OPEN", payload: { steps, profile } });
-  }, []);
+  const openTour = useCallback(
+    (steps: TourStep[], profile: Profile, initialStep?: number) => {
+      const payload: {
+        steps: TourStep[];
+        profile: Profile;
+        initialStep?: number;
+      } = { steps, profile };
+      if (initialStep !== undefined) {
+        payload.initialStep = initialStep;
+      }
+      dispatch({ type: "OPEN", payload });
+    },
+    []
+  );
 
   const closeTour = useCallback(() => {
     dispatch({ type: "CLOSE" });
@@ -199,10 +213,14 @@ export function TourProvider({ children }: TourProviderProps) {
     if (!state.isOpen && state.steps.length > 0 && state.profile) {
       dispatch({
         type: "OPEN",
-        payload: { steps: state.steps, profile: state.profile },
+        payload: {
+          steps: state.steps,
+          profile: state.profile,
+          initialStep: state.currentStep,
+        },
       });
     }
-  }, [state.isOpen, state.steps, state.profile]);
+  }, [state.isOpen, state.steps, state.profile, state.currentStep]);
 
   const goBack = useCallback(() => {
     // Navigate back based on current step
@@ -228,7 +246,9 @@ export function TourProvider({ children }: TourProviderProps) {
     | "resume"
     | "complete"
     | "hidden" => {
-    if (!state.profile) return "hidden";
+    if (!state.profile) {
+      return "hidden";
+    }
 
     // Check if we're on a simulation chat page
     if (

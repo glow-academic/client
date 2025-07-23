@@ -8,7 +8,6 @@
 
 import { Badge } from "@/components/ui/badge";
 import { useProfile } from "@/contexts/profile-context";
-import { logInfo } from "@/utils/logger";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -408,14 +407,6 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
 
   const leaderboardData = useMemo(() => {
     if (!cohortProfiles || cohortProfiles.length === 0) {
-      logInfo("Leaderboard: No cohort profiles found", {
-        cohortProfilesLength: cohortProfiles?.length || 0,
-        cohorts: filteredCohorts?.map((c) => ({
-          id: c.id,
-          title: c.title,
-          profileCount: c.profileIds?.length || 0,
-        })),
-      });
       return [];
     }
 
@@ -496,7 +487,6 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     rubrics,
     safeAttempts,
     chats,
-    filteredCohorts,
   ]);
 
   const isLoading =

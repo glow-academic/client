@@ -24,7 +24,6 @@ import { Cohort, CohortPicker } from "../common/cohort/CohortPicker";
 import SimulationProgress from "../common/cohort/SimulationProgress";
 import SimulationHistory from "../common/history/SimulationHistory";
 import SimulationCard from "../common/simulation/SimulationCard";
-import TATour from "./TATour";
 
 export default function Home() {
   const { effectiveProfile, activeProfile } = useProfile();
@@ -408,15 +407,12 @@ export default function Home() {
   const processedCohortData = useMemo(() => {
     // Debug logging to help identify missing data
     if (!cohorts) {
-      logError("CohortDashboard: No cohorts data available");
       return [];
     }
     if (!allSimulations) {
-      logError("CohortDashboard: No simulations data available");
       return [];
     }
     if (!cohortProfiles) {
-      logError("CohortDashboard: No cohort profiles data available");
       return [];
     }
 
@@ -799,7 +795,7 @@ export default function Home() {
       </div>
 
       {/* Tour Component - Only for TAs */}
-      <TATour />
+      {/* TATour component is now handled in the layout */}
     </div>
   );
 }
