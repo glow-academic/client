@@ -61,13 +61,42 @@ export default function Cohorts() {
     return cohort.profileIds && cohort.profileIds.length > 0;
   };
 
-  // Check if user can edit (admin/superadmin or cohort not in use)
+  // Check if user can edit (admin/superadmin, cohort not in use, or user is in cohort)
   const canEditCohort = (cohortId: string) => {
     const isAdmin =
       effectiveProfile?.role === "admin" ||
       effectiveProfile?.role === "superadmin";
-    return isAdmin || !isCohortInUse(cohortId);
+
+    if (isAdmin) return true;
+
+    const cohort = cohorts.find((c) => c.id === cohortId);
+    if (!cohort) return false;
+
+    // Check if user's profile is in the cohort's profileIds
+    const isUserInCohort = cohort.profileIds?.includes(
+      effectiveProfile?.id || ""
+    );
+
+    return isUserInCohort || !isCohortInUse(cohortId);
   };
+
+  // Filter cohorts based on user role
+  const filteredCohorts = cohorts.filter((cohort) => {
+    const isAdmin =
+      effectiveProfile?.role === "admin" ||
+      effectiveProfile?.role === "superadmin";
+
+    // Admin/superadmin can see all cohorts
+    if (isAdmin) return true;
+
+    // Instructional users can only see cohorts they're in
+    if (effectiveProfile?.role === "instructional") {
+      return cohort.profileIds?.includes(effectiveProfile?.id || "");
+    }
+
+    // Other roles can see all cohorts
+    return true;
+  });
 
   // Get table columns and filter options
   const { columns, profileOptions, simulationOptions } = useCohortColumns();
@@ -111,6 +140,7 @@ export default function Cohorts() {
         createdAt: undefined,
         updatedAt: undefined,
         defaultCohort: false,
+        active: false,
         title: `${cohort.title} Copy`,
       });
       logInfo("Cohort duplicated successfully:", {
@@ -242,12 +272,12 @@ export default function Cohorts() {
 
   return (
     <div className="space-y-6">
-      {cohorts.length === 0 ? (
+      {filteredCohorts.length === 0 ? (
         renderEmptyState()
       ) : (
         <CohortsDataTable
           columns={columns}
-          data={cohorts}
+          data={filteredCohorts}
           profileOptions={profileOptions}
           simulationOptions={simulationOptions}
           renderCohortCard={renderCohortCard}

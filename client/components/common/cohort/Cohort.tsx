@@ -29,6 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 
+import { useProfile } from "@/contexts/profile-context";
 import { Cohort as CohortType, Profile, Simulation } from "@/types";
 import { createCohort } from "@/utils/mutations/cohorts/create-cohort";
 import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
@@ -66,6 +67,7 @@ type EditableProfile =
 export default function Cohort({ cohortId }: CohortProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { effectiveProfile } = useProfile();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingCohortId, setEditingCohortId] = useState<string | null>(null);
@@ -559,6 +561,7 @@ export default function Cohort({ cohortId }: CohortProps) {
           isLoading={isLoading}
           isSubmitting={isSubmitting}
           currentCohortName={formData.title || ""}
+          effectiveProfile={effectiveProfile}
         />
 
         {/* Submit Button */}
