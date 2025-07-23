@@ -6,7 +6,7 @@
  */
 "use client";
 import { logError, logInfo } from "@/utils/logger";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bug, CheckCircle, HelpCircle, Play } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -216,6 +216,7 @@ export default function TATour() {
   const pathname = usePathname();
   const { effectiveProfile } = useProfile();
   const { isConnected, emitStartSimulation } = useWebSocket();
+  const queryClient = useQueryClient();
 
   // Comprehensive debug logging on every render
   useEffect(() => {
@@ -291,20 +292,56 @@ export default function TATour() {
         .every((step) => step.isCompleted);
 
       try {
+        let profileUpdated = false;
+
         if (introStepsComplete && !effectiveProfile.viewedIntro) {
           await updateProfile(effectiveProfile.id, { viewedIntro: true });
           logInfo("Updated profile: viewedIntro = true");
+          profileUpdated = true;
         }
 
         if (chatStepsComplete && !effectiveProfile.viewedChat) {
           await updateProfile(effectiveProfile.id, { viewedChat: true });
           logInfo("Updated profile: viewedChat = true");
+          profileUpdated = true;
+        }
+
+        // Invalidate relevant profile queries to ensure UI updates
+        if (profileUpdated) {
+          // Invalidate the specific profile query
+          queryClient.invalidateQueries({
+            queryKey: ["profile", effectiveProfile.id],
+          });
+
+          // Invalidate the simulated profile query if this is a simulated profile
+          if (tourState.profile?.id === effectiveProfile.id) {
+            queryClient.invalidateQueries({
+              queryKey: ["simulatedProfile", effectiveProfile.id],
+            });
+          }
+
+          // Invalidate all profiles query to update any lists that show this profile
+          queryClient.invalidateQueries({
+            queryKey: ["profiles"],
+          });
+
+          logInfo("Invalidated profile queries after update", {
+            profileId: effectiveProfile.id,
+            viewedIntro: introStepsComplete,
+            viewedChat: chatStepsComplete,
+          });
         }
       } catch (error) {
         logError("Error updating profile for tour completion:", error);
       }
     },
-    [effectiveProfile, completeStep, tourState.steps] // Add tourState.steps dependency
+    [
+      effectiveProfile,
+      completeStep,
+      tourState.steps,
+      tourState.profile?.id,
+      queryClient,
+    ] // queryClient is stable and doesn't need to be in dependencies
   );
 
   // Navigation handlers with proper delays
