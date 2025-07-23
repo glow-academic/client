@@ -658,27 +658,11 @@ export default function TATour() {
     // Step 2: Practice simulation - don't auto-complete, wait for user action or next button
     // This step requires the user to click Next or manually start a simulation
 
-    // Step 3: Send message - auto-complete when on simulation page
-    if (
-      tourState.currentStep === 3 &&
-      pathname.includes("/practice/a/") &&
-      !tourState.steps[3]?.isCompleted
-    ) {
-      logInfo("Auto-completing send message step - user is in simulation");
-      handleStepComplete(3);
-      nextStep();
-    }
+    // Step 3: Send message - DON'T auto-complete, wait for actual message sent
+    // This step should only complete when the user actually sends a message via WebSocket events
 
-    // Step 4: End chat - auto-complete when on simulation page
-    if (
-      tourState.currentStep === 4 &&
-      pathname.includes("/practice/a/") &&
-      !tourState.steps[4]?.isCompleted
-    ) {
-      logInfo("Auto-completing end chat step - user is in simulation");
-      handleStepComplete(4);
-      nextStep();
-    }
+    // Step 4: End chat - DON'T auto-complete, wait for actual chat completion
+    // This step should only complete when the user actually ends the chat via WebSocket events
 
     // Steps 4-5 are handled by WebSocket events
   }, [
@@ -738,21 +722,36 @@ export default function TATour() {
       setLoadingSimulation(null);
     };
 
-    // Listen for message sent events (step 4)
-    const handleMessageSent = (_event: CustomEvent) => {
+    // Listen for message sent events (step 3) - when user sends their first message
+    const handleMessageSent = (event: CustomEvent) => {
+      logInfo("Message sent event received", {
+        tourOpen: tourState.isOpen,
+        currentStep: tourState.currentStep,
+        step3Completed: tourState.steps[3]?.isCompleted,
+        messageId: event.detail?.messageId,
+        chatId: event.detail?.chatId,
+      });
+
       if (
         tourState.isOpen &&
-        tourState.currentStep === 4 &&
-        !tourState.steps[4]?.isCompleted
+        tourState.currentStep === 3 &&
+        !tourState.steps[3]?.isCompleted
       ) {
-        logInfo("Message sent - marking tour step complete");
-        handleStepComplete(4);
+        logInfo("Message sent - marking tour step 3 complete");
+        handleStepComplete(3);
         nextStep();
       }
     };
 
     // Listen for chat ended events (step 4) - ONLY source of truth for final step
-    const handleChatEnded = (_event: CustomEvent) => {
+    const handleChatEnded = (event: CustomEvent) => {
+      logInfo("Chat ended event received", {
+        tourOpen: tourState.isOpen,
+        currentStep: tourState.currentStep,
+        step4Completed: tourState.steps[4]?.isCompleted,
+        chatId: event.detail?.chatId,
+      });
+
       if (
         tourState.isOpen &&
         tourState.currentStep === 4 &&
@@ -800,6 +799,7 @@ export default function TATour() {
 
   // Custom step actions mapping - handles Next button clicks
   const customStepActions = useMemo(() => {
+
     return {
       0: () => {
         // Step 0: Complete current step and navigate to cohort leaderboard
@@ -879,9 +879,9 @@ export default function TATour() {
         }
       },
       3: () => {
-        // Step 3: User is now in the simulation - just advance to show message instruction
-        handleStepComplete(3);
-        nextStep();
+        // Step 3: User is now in the simulation - don't auto-complete, wait for actual message
+        // The step will be completed by the messageSent WebSocket event
+        logInfo("Step 3 action triggered - waiting for user to send message");
 
         // If we have an attemptId, navigate to the attempt page
         if (tourState.attemptId) {
@@ -889,8 +889,9 @@ export default function TATour() {
         }
       },
       4: () => {
-        // Step 4: User needs to end chat - just advance to show instruction
-        nextStep();
+        // Step 4: User needs to end chat - don't auto-advance, wait for actual chat completion
+        // The step will be completed by the chatEnded WebSocket event
+        logInfo("Step 4 action triggered - waiting for user to end chat");
 
         // If we have an attemptId, navigate to the attempt page
         if (tourState.attemptId) {
@@ -911,12 +912,20 @@ export default function TATour() {
   useEffect(() => {
     const handleTourAction = (event: CustomEvent) => {
       const { stepIndex } = event.detail;
-      logInfo("Tour action triggered", { stepIndex });
+      logInfo("Tour action triggered", {
+        stepIndex,
+        currentStep: tourState.currentStep,
+        tourOpen: tourState.isOpen,
+        stepsLength: tourState.steps.length,
+      });
 
       const action =
         customStepActions[stepIndex as keyof typeof customStepActions];
       if (action) {
+        logInfo("Executing tour action for step", { stepIndex });
         action();
+      } else {
+        logError("No action found for tour step", { stepIndex });
       }
     };
 
@@ -927,7 +936,12 @@ export default function TATour() {
         handleTourAction as EventListener
       );
     };
-  }, [customStepActions]);
+  }, [
+    customStepActions,
+    tourState.currentStep,
+    tourState.isOpen,
+    tourState.steps.length,
+  ]);
 
   // Show guide button when appropriate
   useEffect(() => {
