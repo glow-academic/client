@@ -58,7 +58,7 @@ import {
   Users,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -108,6 +108,7 @@ export function UnifiedSidebar({
 }: UnifiedSidebarProps) {
   const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [profileSearchTerm, setProfileSearchTerm] = React.useState("");
@@ -254,7 +255,7 @@ export function UnifiedSidebar({
     // all users
     menu.push({
       title: "Practice",
-      url: "/practice",
+      url: "#",
       icon: Brain,
       section: "practice",
     });
@@ -417,7 +418,8 @@ export function UnifiedSidebar({
 
   const handleSectionChange = createFlexibleSectionChangeHandler(
     router,
-    onSectionChange
+    onSectionChange,
+    pathname
   );
 
   const handleItemClick = useCallback(

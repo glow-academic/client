@@ -5,19 +5,25 @@
  */
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { 
-  getFirstAvailableSectionForRole, 
-  getSectionRoute,
-  isSectionAvailableForRole 
-} from "@/utils/navigation-utils";
 import { profiles } from "@/utils/drizzle/schema";
+import {
+  getFirstAvailableSectionForRole,
+  getSectionRoute,
+  isSectionAvailableForRole,
+} from "@/utils/navigation-utils";
 import { getProfile } from "@/utils/queries/profiles/get-profile";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { usePathname, useRouter } from "next/navigation";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 type Profile = typeof profiles.$inferSelect;
-type ProfileRole = Profile['role'];
+type ProfileRole = Profile["role"];
 
 // A generic, fallback guest profile for when no user is logged in or during loading states.
 const GUEST_PROFILE: Profile = {
@@ -43,7 +49,10 @@ interface ProfileContextType {
   effectiveProfile: Profile;
   isSimulating: boolean;
   isLoading: boolean;
-  setSimulatedProfile: (profileId: string | null, shouldNavigate?: boolean) => void;
+  setSimulatedProfile: (
+    profileId: string | null,
+    shouldNavigate?: boolean
+  ) => void;
   clearSimulation: () => void;
   navigateToDefault: (role: ProfileRole) => void;
   isSectionAvailable: (section: string, role?: ProfileRole) => boolean;
@@ -64,11 +73,17 @@ interface ProfileProviderProps {
   activeProfile: Profile | null;
 }
 
-export function ProfileProvider({ children, activeProfile }: ProfileProviderProps) {
-  const [simulatedProfileId, setSimulatedProfileId] = useState<string | null>(null);
+export function ProfileProvider({
+  children,
+  activeProfile,
+}: ProfileProviderProps) {
+  const [simulatedProfileId, setSimulatedProfileId] = useState<string | null>(
+    null
+  );
   const [isClient, setIsClient] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     setIsClient(true);
@@ -78,68 +93,94 @@ export function ProfileProvider({ children, activeProfile }: ProfileProviderProp
     }
   }, []);
 
-  const { data: simulatedProfileData, isLoading: isSimulatingProfileLoading } = useQuery({
-    queryKey: ['simulatedProfile', simulatedProfileId],
-    queryFn: async () => {
-      if (!simulatedProfileId) return null;
-      return await getProfile(simulatedProfileId);
-    },
-    enabled: !!simulatedProfileId && isClient,
-  });
+  const { data: simulatedProfileData, isLoading: isSimulatingProfileLoading } =
+    useQuery({
+      queryKey: ["simulatedProfile", simulatedProfileId],
+      queryFn: async () => {
+        if (!simulatedProfileId) return null;
+        return await getProfile(simulatedProfileId);
+      },
+      enabled: !!simulatedProfileId && isClient,
+    });
 
   const { effectiveProfile, simulatedProfile, isLoading } = useMemo(() => {
     // During hydration or while fetching a simulation, the user is a generic guest.
     if (!isClient || isSimulatingProfileLoading) {
-      return { effectiveProfile: GUEST_PROFILE, simulatedProfile: null, isLoading: true };
+      return {
+        effectiveProfile: GUEST_PROFILE,
+        simulatedProfile: null,
+        isLoading: true,
+      };
     }
-    
+
     // If a simulation is active and loaded, it becomes the effective profile.
     if (simulatedProfileData) {
-      return { effectiveProfile: simulatedProfileData, simulatedProfile: simulatedProfileData, isLoading: false };
+      return {
+        effectiveProfile: simulatedProfileData,
+        simulatedProfile: simulatedProfileData,
+        isLoading: false,
+      };
     }
 
     // Otherwise, use the active logged-in profile from the auth layer.
     // This correctly handles users whose assigned role IS 'guest',
     // as well as falling back to the generic GUEST_PROFILE if no user is logged in at all.
     const finalProfile = activeProfile || GUEST_PROFILE;
-    return { effectiveProfile: finalProfile, simulatedProfile: null, isLoading: false };
+    return {
+      effectiveProfile: finalProfile,
+      simulatedProfile: null,
+      isLoading: false,
+    };
+  }, [
+    isClient,
+    isSimulatingProfileLoading,
+    simulatedProfileData,
+    activeProfile,
+  ]);
 
-  }, [isClient, isSimulatingProfileLoading, simulatedProfileData, activeProfile]);
+  const navigateToDefault = React.useCallback(
+    (role: ProfileRole) => {
+      const defaultSection = getFirstAvailableSectionForRole(role);
+      const route = getSectionRoute(defaultSection, pathname);
+      router.push(route);
+    },
+    [router, pathname]
+  );
 
-  const navigateToDefault = React.useCallback((role: ProfileRole) => {
-    const defaultSection = getFirstAvailableSectionForRole(role);
-    const route = getSectionRoute(defaultSection);
-    router.push(route);
-  }, [router]);
+  const setSimulatedProfile = React.useCallback(
+    (profileId: string | null, shouldNavigate: boolean = true) => {
+      if (!isClient) return;
 
-  const setSimulatedProfile = React.useCallback((profileId: string | null, shouldNavigate: boolean = true) => {
-    if (!isClient) return;
-    
-    setSimulatedProfileId(profileId);
+      setSimulatedProfileId(profileId);
 
-    if (profileId) {
-      localStorage.setItem("simulatedProfileId", profileId);
-    } else {
-      localStorage.removeItem("simulatedProfileId");
-    }
+      if (profileId) {
+        localStorage.setItem("simulatedProfileId", profileId);
+      } else {
+        localStorage.removeItem("simulatedProfileId");
+      }
 
-    queryClient.invalidateQueries();
+      queryClient.invalidateQueries();
 
-    // Optional: Handle navigation after state change
-    if (shouldNavigate && !profileId && activeProfile) {
+      // Optional: Handle navigation after state change
+      if (shouldNavigate && !profileId && activeProfile) {
         navigateToDefault(activeProfile.role);
-    }
-  }, [isClient, queryClient, navigateToDefault, activeProfile]);
+      }
+    },
+    [isClient, queryClient, navigateToDefault, activeProfile]
+  );
 
   const clearSimulation = React.useCallback(() => {
     setSimulatedProfile(null);
   }, [setSimulatedProfile]);
 
-  const isSectionAvailable = React.useCallback((section: string, role?: ProfileRole) => {
-    const targetRole = role || effectiveProfile.role;
-    return isSectionAvailableForRole(section, targetRole);
-  }, [effectiveProfile.role]);
-  
+  const isSectionAvailable = React.useCallback(
+    (section: string, role?: ProfileRole) => {
+      const targetRole = role || effectiveProfile.role;
+      return isSectionAvailableForRole(section, targetRole);
+    },
+    [effectiveProfile.role]
+  );
+
   const value: ProfileContextType = {
     activeProfile,
     simulatedProfile,
@@ -152,5 +193,7 @@ export function ProfileProvider({ children, activeProfile }: ProfileProviderProp
     isSectionAvailable,
   };
 
-  return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;
+  return (
+    <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>
+  );
 }

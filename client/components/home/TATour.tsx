@@ -63,14 +63,13 @@ function GuideButton() {
 
   const { icon, text, variant } = getButtonContent();
 
-  return (
+  return buttonState === "start" && (
     <div className="fixed bottom-4 right-4 z-50">
       <Button
         onClick={openGuide}
         variant={variant}
         size="sm"
         className="shadow-lg hover:shadow-xl transition-all duration-200"
-        disabled={buttonState === "complete"}
       >
         {icon}
         <span className="ml-2">{text}</span>

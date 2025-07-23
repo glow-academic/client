@@ -1,6 +1,51 @@
+import { Cohort } from "@/types";
 import { profileRole } from "@/utils/drizzle/schema";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { getAllCohorts } from "./queries/cohorts/get-all-cohorts";
+
 type ProfileRole = (typeof profileRole.enumValues)[number];
+
+/**
+ * Get the first available cohort for a given role and profile
+ * This determines which cohort users should be navigated to when clicking "Cohorts" breadcrumb
+ */
+export const getFirstAvailableCohort = async (
+  role: ProfileRole,
+  profileId?: string,
+  defaultProfile?: boolean
+): Promise<Cohort | null> => {
+  try {
+    const cohorts = await getAllCohorts();
+    if (!cohorts || cohorts.length === 0) return null;
+
+    let availableCohorts: Cohort[] = [];
+
+    switch (role) {
+      case "superadmin":
+      case "admin":
+        availableCohorts = cohorts;
+        break;
+      case "instructional":
+      case "ta":
+        if (defaultProfile) {
+          availableCohorts = cohorts;
+        } else if (profileId) {
+          availableCohorts = cohorts.filter((cohort) =>
+            cohort.profileIds?.includes(profileId)
+          );
+        }
+        break;
+      default:
+        return null;
+    }
+
+    // Return the first available cohort, or null if none available
+    return availableCohorts.length > 0 ? availableCohorts[0] || null : null;
+  } catch (error) {
+    console.error("Error getting first available cohort:", error);
+    return null;
+  }
+};
 
 /**
  * Get the first available section for a given role
@@ -142,10 +187,17 @@ export const isMainScreen = (pathname: string): boolean => {
 /**
  * Maps a section identifier to its corresponding route path
  */
-export const getSectionRoute = (section: string): string => {
+export const getSectionRoute = (
+  section: string,
+  currentPathname?: string
+): string => {
   switch (section) {
     case "home":
       return "/home";
+
+    // Practice route
+    case "practice":
+      return "/practice";
 
     // Analytics routes
     case "analytics":
@@ -211,6 +263,11 @@ export const getSectionRoute = (section: string): string => {
 
       if (section.startsWith("cohort-")) {
         const cohortId = section.replace("cohort-", "");
+        // Context-aware routing: if we're currently on a cohort editing page, route to editing
+        if (currentPathname && currentPathname.includes("/cohorts/e/")) {
+          return `/cohorts/e/${cohortId}`;
+        }
+        // Default to viewing context
         return `/cohorts/c/${cohortId}`;
       }
 
@@ -237,6 +294,11 @@ export const getSectionRoute = (section: string): string => {
       }
       if (section.startsWith("attempt-")) {
         const attemptId = section.replace("attempt-", "");
+        // Context-aware routing: if we're currently on a practice page, route to practice
+        if (currentPathname && currentPathname.startsWith("/practice")) {
+          return `/practice/a/${attemptId}`;
+        }
+        // Default to home context
         return `/home/a/${attemptId}`;
       }
 
@@ -268,20 +330,30 @@ export const getSectionRoute = (section: string): string => {
  * Maps a section identifier to its corresponding route path for breadcrumb navigation
  * This is different from getSectionRoute because breadcrumb "Classes" should go to first class, not management
  */
-export const getBreadcrumbSectionRoute = (section: string): string => {
+export const getBreadcrumbSectionRoute = (
+  section: string,
+  _currentPathname?: string
+): string => {
   switch (section) {
+    case "cohorts":
+      // Special case: return a special route that indicates we want the first available cohort
+      // This will be handled by the breadcrumb component
+      return "/cohorts/first";
     default:
       // Use the regular section route for everything else
-      return getSectionRoute(section);
+      return getSectionRoute(section, _currentPathname);
   }
 };
 
 /**
  * Creates a section change handler that navigates to the appropriate route
  */
-export const createSectionChangeHandler = (router: AppRouterInstance) => {
+export const createSectionChangeHandler = (
+  router: AppRouterInstance,
+  currentPathname?: string
+) => {
   return (section: string) => {
-    const route = getSectionRoute(section);
+    const route = getSectionRoute(section, currentPathname);
     router.push(route);
   };
 };
@@ -291,10 +363,11 @@ export const createSectionChangeHandler = (router: AppRouterInstance) => {
  * This handles the special case where "Classes" breadcrumb should go to first class, not management
  */
 export const createBreadcrumbSectionChangeHandler = (
-  router: AppRouterInstance
+  router: AppRouterInstance,
+  currentPathname?: string
 ) => {
   return (section: string) => {
-    const route = getBreadcrumbSectionRoute(section);
+    const route = getBreadcrumbSectionRoute(section, currentPathname);
     router.push(route);
   };
 };
@@ -305,7 +378,8 @@ export const createBreadcrumbSectionChangeHandler = (
 export const createRoleAwareSectionChangeHandler = (
   router: AppRouterInstance,
   currentRole: ProfileRole,
-  onSectionChange?: (section: string) => void
+  onSectionChange?: (section: string) => void,
+  currentPathname?: string
 ) => {
   return (section: string) => {
     // Check if the section is available for the current role
@@ -322,7 +396,7 @@ export const createRoleAwareSectionChangeHandler = (
     }
 
     // Otherwise, handle navigation internally
-    const route = getSectionRoute(section);
+    const route = getSectionRoute(section, currentPathname);
     router.push(route);
   };
 };
@@ -333,7 +407,8 @@ export const createRoleAwareSectionChangeHandler = (
  */
 export const createFlexibleSectionChangeHandler = (
   router: AppRouterInstance,
-  onSectionChange?: (section: string) => void
+  onSectionChange?: (section: string) => void,
+  currentPathname?: string
 ) => {
   return (section: string) => {
     // If onSectionChange prop is provided, use it (for layout components)
@@ -343,7 +418,7 @@ export const createFlexibleSectionChangeHandler = (
     }
 
     // Otherwise, handle navigation internally
-    const route = getSectionRoute(section);
+    const route = getSectionRoute(section, currentPathname);
     router.push(route);
   };
 };

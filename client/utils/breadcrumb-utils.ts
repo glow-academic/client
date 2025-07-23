@@ -136,9 +136,13 @@ export const generateEnhancedBreadcrumbs = async (
         context = "chat";
       } else if (prevSegment === "c" && segments.includes("cohorts")) {
         context = "cohort";
+      } else if (prevSegment === "e" && segments.includes("cohorts")) {
+        context = "cohort";
       } else if (prevSegment === "m" && segments.includes("models")) {
         context = "model";
       } else if (prevSegment === "a" && segments.includes("home")) {
+        context = "attempt";
+      } else if (prevSegment === "a" && segments.includes("practice")) {
         context = "attempt";
       } else if (prevSegment === "s" && segments.includes("simulations")) {
         context = "simulation";
@@ -167,6 +171,9 @@ export const generateEnhancedBreadcrumbs = async (
         // Main sections
         case "home":
           title = "Home";
+          break;
+        case "practice":
+          title = "Practice";
           break;
         case "progress":
           title = "Progress";
@@ -280,6 +287,12 @@ const getSectionFromSegments = (segments: string[]): string => {
     case "home":
       return "home";
 
+    case "practice":
+      if (second === "a" && third) {
+        return "practice";
+      }
+      return "practice";
+
     case "progress":
       return "progress";
 
@@ -291,6 +304,15 @@ const getSectionFromSegments = (segments: string[]): string => {
         return second; // dashboard, reports, history
       }
       return "analytics";
+
+    case "cohorts":
+      if (second === "c" && third) {
+        return `cohort-${third}`;
+      }
+      if (second === "e" && third) {
+        return `cohort-${third}`;
+      }
+      return "cohorts";
 
     case "create":
       if (second === "personas") {
@@ -391,6 +413,9 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
       // Main sections
       case "home":
         title = "Home";
+        break;
+      case "practice":
+        title = "Practice";
         break;
       case "progress":
         title = "Progress";

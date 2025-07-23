@@ -73,7 +73,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     loadBreadcrumbs();
   }, [pathname]);
 
-  const handleSectionChange = createSectionChangeHandler(router);
+  const handleSectionChange = createSectionChangeHandler(router, pathname);
 
   // Determine action button based on current path
   const getActionButton = () => {
