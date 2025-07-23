@@ -707,10 +707,7 @@ export default function TATour() {
     ) {
       logInfo("Auto-completing home step");
       handleStepComplete(0);
-      // Only auto-advance if user has already viewed intro (resuming tour)
-      if (effectiveProfile.viewedIntro) {
-        nextStep();
-      }
+      // Don't auto-advance - let user control progression
     }
 
     // Step 1: Cohort leaderboard - auto-complete when on cohort leaderboard page
@@ -721,10 +718,7 @@ export default function TATour() {
     ) {
       logInfo("Auto-completing cohort leaderboard step");
       handleStepComplete(1);
-      // Only auto-advance if user has already viewed intro (resuming tour)
-      if (effectiveProfile.viewedIntro) {
-        nextStep();
-      }
+      // Don't auto-advance - let user control progression
     }
 
     // Step 2: Practice simulation - don't auto-complete, wait for user action or next button
@@ -736,7 +730,7 @@ export default function TATour() {
     // Step 4: End chat - DON'T auto-complete, wait for actual chat completion
     // This step should only complete when the user actually ends the chat via WebSocket events
 
-    // Steps 4-5 are handled by WebSocket events
+    // Steps 3-4 are handled by WebSocket events
   }, [
     tourState.currentStep,
     tourState.steps,
@@ -744,7 +738,6 @@ export default function TATour() {
     effectiveProfile,
     tourState.isOpen,
     handleStepComplete,
-    nextStep,
     tourState.attemptId,
   ]);
 
@@ -764,26 +757,7 @@ export default function TATour() {
       // Navigate to the simulation
       router.push(`/practice/a/${attemptId}`);
 
-      // Handle step completion based on current step when simulation starts
-      if (tourState.isOpen) {
-        // If we're on step 2 and simulation starts, it means the user clicked manually or we triggered it
-        if (tourState.currentStep === 2 && !tourState.steps[2]?.isCompleted) {
-          setTimeout(() => {
-            handleStepComplete(2);
-            nextStep();
-          }, 1000);
-        }
-        // If we're on step 3 and simulation starts, it means we already completed step 2 and are now in simulation
-        else if (
-          tourState.currentStep === 3 &&
-          !tourState.steps[3]?.isCompleted
-        ) {
-          setTimeout(() => {
-            handleStepComplete(3);
-            nextStep();
-          }, 1000);
-        }
-      }
+      // Let WebSocket events handle step completion - don't auto-advance here
     };
 
     const handleSimulationError = () => {
@@ -885,7 +859,7 @@ export default function TATour() {
         handleNavigateToPractice();
       },
       2: () => {
-        // Step 2: Handle practice simulation start based on attemptId availability
+        // Step 2: Handle practice simulation start - just click the button and let WebSocket events handle progression
         handleStepComplete(2);
         nextStep();
 
@@ -932,6 +906,7 @@ export default function TATour() {
                     }
                   );
                   startButton.click();
+                  // Don't auto-advance - let WebSocket events handle progression
                 } else {
                   logError(
                     "Could not find start button on first practice simulation card",
