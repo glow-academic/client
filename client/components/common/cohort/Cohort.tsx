@@ -666,7 +666,11 @@ export default function Cohort({ cohortId }: CohortProps) {
         <div className="flex justify-end gap-3">
           {!isLoading ? (
             <>
-              <Button variant="outline" onClick={() => router.push("/cohorts")}>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => router.push("/cohorts")}
+              >
                 Back
               </Button>
               <Button

@@ -335,6 +335,17 @@ export default function Cohorts() {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            {canEditCohort(cohort.id) && (
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid={`edit-${cohort.id}`}
+                onClick={() => handleEdit(cohort.id)}
+                aria-label={`Edit ${cohort.title}`}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
             {canDuplicate(cohort) && (
               <Button
                 variant="outline"
@@ -348,17 +359,6 @@ export default function Cohorts() {
                 ) : (
                   <Copy className="h-4 w-4" />
                 )}
-              </Button>
-            )}
-            {canEditCohort(cohort.id) && (
-              <Button
-                variant="outline"
-                size="sm"
-                data-testid={`edit-${cohort.id}`}
-                onClick={() => handleEdit(cohort.id)}
-                aria-label={`Edit ${cohort.title}`}
-              >
-                <Edit className="h-4 w-4" />
               </Button>
             )}
             {canDeleteCohort(cohort.id) && (
