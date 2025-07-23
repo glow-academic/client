@@ -6,8 +6,7 @@
  */
 
 "use client";
-import { useCallback, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useCallback, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,19 +19,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-
 import { cn } from "@/lib/utils";
 import { Profile, ProfileRole } from "@/types";
-import { logInfo } from "@/utils/logger";
-import {
-  Eye,
-  Grid3X3,
-  List,
-  Search,
-  Trash2,
-  Upload,
-  UploadCloud,
-} from "lucide-react";
+import { Eye, Grid3X3, List, Search, Trash2, UploadCloud } from "lucide-react";
+import { useRouter } from "next/navigation";
+import CohortAddStaff from "./CohortAddStaff";
 
 // A new type to represent a profile that is either saved or new
 type EditableProfile =
@@ -53,6 +44,7 @@ export interface CohortStaffProps {
   setProfilesToDelete: (profileIds: string[]) => void;
   isLoading?: boolean;
   isSubmitting?: boolean;
+  currentCohortName?: string;
 }
 
 export default function CohortStaff({
@@ -61,35 +53,20 @@ export default function CohortStaff({
   profilesToDelete,
   setProfilesToDelete,
   isLoading = false,
-  isSubmitting = false,
+  currentCohortName,
 }: CohortStaffProps) {
   // Profile management state
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const router = useRouter();
 
-  // Upload state
-  const csvInputRef = useRef<HTMLInputElement>(null);
-
-  const handleCsvClick = useCallback(() => {
-    if (!isSubmitting) {
-      csvInputRef.current?.click();
-    }
-  }, [isSubmitting]);
-
-  const handleCsvInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files && e.target.files.length > 0) {
-        const file = e.target.files[0];
-        if (file) {
-          // For now, just show a toast - CSV processing would be implemented here
-          toast.info(
-            `CSV file "${file.name}" selected. CSV processing not yet implemented.`
-          );
-        }
-      }
+  // Handle adding new profiles from the upload component
+  const handleAddProfiles = useCallback(
+    (newProfiles: EditableProfile[]) => {
+      setProfiles([...newProfiles, ...profiles]);
     },
-    []
+    [profiles, setProfiles]
   );
 
   // Profile management handlers
@@ -106,14 +83,6 @@ export default function CohortStaff({
     setProfiles(profiles.filter((p) => p.id !== profileId));
   };
 
-  const handleProfileRoleChange = (profileId: string, newRole: ProfileRole) => {
-    setProfiles(
-      profiles.map((profile) =>
-        profile.id === profileId ? { ...profile, role: newRole } : profile
-      )
-    );
-  };
-
   const getProfileRoleIcon = (role: ProfileRole) => {
     switch (role) {
       case "instructional":
@@ -126,9 +95,8 @@ export default function CohortStaff({
   };
 
   const viewProfile = (profile: EditableProfile) => {
-    // For now, this function does nothing as requested
-    // In the future, this could open a profile details modal
-    logInfo("View profile:", profile);
+    // Navigate to the profile report page
+    router.push(`/analytics/reports/p/${profile.id}`);
   };
 
   // Filter profiles from the *edited* state for rendering
@@ -196,25 +164,11 @@ export default function CohortStaff({
             </Button>
           </div>
           <div className="flex items-center gap-2">
-            <input
-              ref={csvInputRef}
-              type="file"
-              data-testid="csv-input"
-              onChange={handleCsvInputChange}
-              disabled={isSubmitting}
-              accept=".csv"
-              className="hidden"
+            <CohortAddStaff
+              onAddProfiles={handleAddProfiles}
+              currentCohortName={currentCohortName || ""}
+              existingProfileIds={profiles.map((p) => p.id)}
             />
-            <Button
-              type="button"
-              variant="default"
-              onClick={handleCsvClick}
-              disabled={isSubmitting}
-              className="flex items-center gap-2"
-            >
-              <Upload className="h-4 w-4" />
-              {isSubmitting ? "Uploading..." : "Upload CSV"}
-            </Button>
           </div>
         </div>
       </div>
@@ -257,33 +211,7 @@ export default function CohortStaff({
                           isNewProfile && "border-blue-300 bg-blue-50/50"
                         )}
                       >
-                        {/* Role selector in top left */}
-                        <div className="absolute top-2 left-2 z-10">
-                          <Select
-                            value={profile.role}
-                            onValueChange={(value) =>
-                              handleProfileRoleChange(
-                                profile.id,
-                                value as ProfileRole
-                              )
-                            }
-                          >
-                            <SelectTrigger
-                              className="text-xs bg-white/90 backdrop-blur-sm border-0 shadow-sm justify-center"
-                              size="sm"
-                            >
-                              <span className="text-sm">
-                                {getProfileRoleIcon(profile.role)}
-                              </span>
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="instructional">
-                                👨‍🏫 Instructor
-                              </SelectItem>
-                              <SelectItem value="ta">👨‍🎓 TA</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
+                        {/* Role display in top left */}
 
                         {/* Action buttons in top right */}
                         <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -368,26 +296,6 @@ export default function CohortStaff({
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <Select
-                            value={profile.role}
-                            onValueChange={(value) =>
-                              handleProfileRoleChange(
-                                profile.id,
-                                value as ProfileRole
-                              )
-                            }
-                          >
-                            <SelectTrigger className="w-40 h-8">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="instructional">
-                                👨‍🏫 Instructor
-                              </SelectItem>
-                              <SelectItem value="ta">👨‍🎓 TA</SelectItem>
-                            </SelectContent>
-                          </Select>
-
                           <Button
                             type="button"
                             variant="outline"

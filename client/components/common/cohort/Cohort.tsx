@@ -6,7 +6,7 @@
  */
 "use client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 // UI Components
@@ -96,6 +96,18 @@ export default function Cohort({ cohortId }: CohortProps) {
   const [staffProfiles, setStaffProfiles] = useState<EditableProfile[]>([]);
   const [profilesToDelete, setProfilesToDelete] = useState<string[]>([]);
 
+  // Memoize callback functions to prevent unnecessary re-renders
+  const memoizedSetStaffProfiles = useCallback(
+    (profiles: EditableProfile[]) => {
+      setStaffProfiles(profiles);
+    },
+    []
+  );
+
+  const memoizedSetProfilesToDelete = useCallback((profileIds: string[]) => {
+    setProfilesToDelete(profileIds);
+  }, []);
+
   // Fetch cohorts for the list mode
   const { data: cohorts = [] } = useQuery({
     queryKey: ["cohorts"],
@@ -117,7 +129,12 @@ export default function Cohort({ cohortId }: CohortProps) {
   // Load cohort data if editing
   useEffect(() => {
     const targetCohortId = cohortId || editingCohortId;
-    if (targetCohortId) {
+    if (
+      targetCohortId &&
+      cohorts.length > 0 &&
+      profiles.length > 0 &&
+      isEditMode
+    ) {
       const cohortToEdit = cohorts.find(
         (c: CohortType) => c.id === targetCohortId
       );
@@ -129,17 +146,50 @@ export default function Cohort({ cohortId }: CohortProps) {
           simulationIds: cohortToEdit.simulationIds || [],
           active: cohortToEdit.active ?? true,
         };
-        setFormData(cohortData);
-        setOriginalFormData(cohortData); // Set original data for comparison
+
+        // Only update if the data has actually changed to prevent infinite loops
+        setFormData((prev) => {
+          const hasChanged =
+            prev.title !== cohortData.title ||
+            prev.description !== cohortData.description ||
+            JSON.stringify(prev.profileIds) !==
+              JSON.stringify(cohortData.profileIds) ||
+            JSON.stringify(prev.simulationIds) !==
+              JSON.stringify(cohortData.simulationIds) ||
+            prev.active !== cohortData.active;
+
+          return hasChanged ? cohortData : prev;
+        });
+
+        setOriginalFormData((prev) => {
+          const hasChanged =
+            prev.title !== cohortData.title ||
+            prev.description !== cohortData.description ||
+            JSON.stringify(prev.profileIds) !==
+              JSON.stringify(cohortData.profileIds) ||
+            JSON.stringify(prev.simulationIds) !==
+              JSON.stringify(cohortData.simulationIds) ||
+            prev.active !== cohortData.active;
+
+          return hasChanged ? cohortData : prev;
+        });
 
         // Load staff profiles
         const cohortProfiles = profiles.filter((profile: Profile) =>
           cohortToEdit.profileIds?.includes(profile.id)
         );
-        setStaffProfiles(cohortProfiles);
+
+        setStaffProfiles((prev) => {
+          const hasChanged =
+            prev.length !== cohortProfiles.length ||
+            JSON.stringify(prev.map((p) => p.id).sort()) !==
+              JSON.stringify(cohortProfiles.map((p) => p.id).sort());
+
+          return hasChanged ? cohortProfiles : prev;
+        });
       }
     }
-  }, [cohortId, editingCohortId, cohorts, profiles]);
+  }, [cohortId, editingCohortId, cohorts, profiles, isEditMode]);
 
   // Check if form has changes
   const hasChanges = useMemo(() => {
@@ -486,11 +536,12 @@ export default function Cohort({ cohortId }: CohortProps) {
         {/* Staff Management */}
         <CohortStaff
           profiles={staffProfiles}
-          setProfiles={setStaffProfiles}
+          setProfiles={memoizedSetStaffProfiles}
           profilesToDelete={profilesToDelete}
-          setProfilesToDelete={setProfilesToDelete}
+          setProfilesToDelete={memoizedSetProfilesToDelete}
           isLoading={isLoading}
           isSubmitting={isSubmitting}
+          currentCohortName={formData.title || ""}
         />
 
         {/* Submit Button */}

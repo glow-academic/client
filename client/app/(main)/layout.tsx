@@ -314,7 +314,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Tour Component - Available globally for TA users */}
-      <TATour />
+      {effectiveProfile?.role === "ta" && <TATour />}
     </AssistantProvider>
   );
 }
