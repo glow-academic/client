@@ -326,7 +326,7 @@ export default function MainLayout({
 }) {
   const pathname = usePathname();
   const attemptId = useMemo(() => {
-    const match = pathname?.match(/^\/home\/a\/([^\/]+)/);
+    const match = pathname?.match(/^\/(?:home|practice)\/a\/([^\/]+)/);
     return match ? match[1] : null;
   }, [pathname]);
 
