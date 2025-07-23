@@ -737,6 +737,13 @@ export default function TATour() {
       setAttemptId(attemptId);
       setLoadingSimulation(null);
 
+      // Advance to step 3 (send message) since we're now in the simulation
+      if (tourState.isOpen && tourState.currentStep === 2) {
+        logInfo("Simulation started - advancing to step 3 (send message)");
+        handleStepComplete(2); // Complete step 2
+        nextStep(); // Advance to step 3
+      }
+
       // Let WebSocket events handle step completion - don't auto-advance here
     };
 
