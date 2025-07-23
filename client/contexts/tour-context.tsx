@@ -326,16 +326,26 @@ export function TourProvider({ children }: TourProviderProps) {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         closeTour();
-      } else if (event.key === "ArrowRight") {
+      } else if (
+        event.key === "ArrowRight" &&
+        state.currentStep + 1 < state.steps.length
+      ) {
         nextStep();
-      } else if (event.key === "ArrowLeft") {
+      } else if (event.key === "ArrowLeft" && state.currentStep > 0) {
         prevStep();
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [state.isOpen, closeTour, nextStep, prevStep]);
+  }, [
+    state.isOpen,
+    state.currentStep,
+    state.steps.length,
+    closeTour,
+    nextStep,
+    prevStep,
+  ]);
 
   // Custom sidebar component with improved styling
   const TourSidebar = useMemo(() => {
@@ -349,9 +359,16 @@ export function TourProvider({ children }: TourProviderProps) {
         <div className="tour-sidebar-content">
           <header className="tour-sidebar-header">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-foreground">
-                {currentStep.title}
-              </h3>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-foreground">
+                  {currentStep.title}
+                </h3>
+                {state.currentStep + 1 === state.steps.length && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    🎉 Tour Complete! You're all set to use GLOW.
+                  </p>
+                )}
+              </div>
               <button
                 onClick={closeTour}
                 className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground"
@@ -371,13 +388,14 @@ export function TourProvider({ children }: TourProviderProps) {
           <footer className="tour-sidebar-footer">
             <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
               <span>
-                Step {state.currentStep + 1} of {state.steps.length}
+                {state.currentStep + 1 === state.steps.length
+                  ? "Tour Complete! 🎉"
+                  : `Step ${state.currentStep + 1} of ${state.steps.length}`}
               </span>
               <span>
-                {Math.round(
-                  ((state.currentStep + 1) / state.steps.length) * 100
-                )}
-                %
+                {state.currentStep + 1 === state.steps.length
+                  ? "100%"
+                  : `${Math.round(((state.currentStep + 1) / state.steps.length) * 100)}%`}
               </span>
             </div>
 
@@ -385,43 +403,63 @@ export function TourProvider({ children }: TourProviderProps) {
               <div
                 className="bg-primary h-1.5 rounded-full transition-all duration-300"
                 style={{
-                  width: `${((state.currentStep + 1) / state.steps.length) * 100}%`,
+                  width:
+                    state.currentStep + 1 === state.steps.length
+                      ? "100%"
+                      : `${((state.currentStep + 1) / state.steps.length) * 100}%`,
                 }}
               />
             </div>
 
-            <div className="flex justify-between gap-2">
-              <button
-                onClick={prevStep}
-                disabled={state.currentStep === 0}
-                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Back
-              </button>
-              <button
-                onClick={() => {
-                  // Dispatch custom event for tour action
-                  window.dispatchEvent(
-                    new CustomEvent("tourAction", {
-                      detail: { stepIndex: state.currentStep },
-                    })
-                  );
-                  logInfo("Tour Next button clicked", {
-                    stepIndex: state.currentStep,
-                  });
-                }}
-                disabled={state.isNavigating || !!state.loadingSimulation}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors flex-1"
-              >
-                {state.isNavigating
-                  ? "Navigating..."
-                  : state.loadingSimulation
-                    ? "Starting..."
-                    : state.currentStep + 1 === state.steps.length
-                      ? "Finish"
+            {state.currentStep + 1 === state.steps.length ? (
+              // Completion screen - show "Back Home" button
+              <div className="flex justify-center">
+                <button
+                  onClick={() => {
+                    closeTour();
+                    // Navigate back to home
+                    if (typeof window !== "undefined") {
+                      window.location.href = "/home";
+                    }
+                  }}
+                  className="px-6 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
+                >
+                  Back Home
+                </button>
+              </div>
+            ) : (
+              // Regular navigation - show Back and Next buttons
+              <div className="flex justify-between gap-2">
+                <button
+                  onClick={prevStep}
+                  disabled={state.currentStep === 0}
+                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={() => {
+                    // Dispatch custom event for tour action
+                    window.dispatchEvent(
+                      new CustomEvent("tourAction", {
+                        detail: { stepIndex: state.currentStep },
+                      })
+                    );
+                    logInfo("Tour Next button clicked", {
+                      stepIndex: state.currentStep,
+                    });
+                  }}
+                  disabled={state.isNavigating || !!state.loadingSimulation}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors flex-1"
+                >
+                  {state.isNavigating
+                    ? "Navigating..."
+                    : state.loadingSimulation
+                      ? "Starting..."
                       : "Next"}
-              </button>
-            </div>
+                </button>
+              </div>
+            )}
           </footer>
         </div>
       </aside>

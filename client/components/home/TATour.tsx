@@ -799,7 +799,6 @@ export default function TATour() {
 
   // Custom step actions mapping - handles Next button clicks
   const customStepActions = useMemo(() => {
-
     return {
       0: () => {
         // Step 0: Complete current step and navigate to cohort leaderboard

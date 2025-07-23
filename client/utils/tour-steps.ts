@@ -90,7 +90,7 @@ export const createTATourSteps = (
       id: "end-chat",
       title: "Complete the Chat ✅",
       content:
-        "Excellent! Now let's finish this simulation. Click the 'End Chat' button in the top right corner to complete this practice session.",
+        "Excellent! Now let's finish this simulation. Click the 'End Chat' button in the top right corner to complete this practice session. Once you've done that, you'll have completed your GLOW tour!",
       isCompleted: chatStepsComplete, // Step 4 completed if viewedChat is true
       requiresAction: true,
       page: attemptPage,
