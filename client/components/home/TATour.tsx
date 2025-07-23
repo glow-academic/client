@@ -386,9 +386,6 @@ export default function TATour() {
           attemptId: tourState.attemptId,
         });
         router.push(`/practice/a/${tourState.attemptId}`);
-        setTimeout(() => {
-          handleStepComplete(2);
-        }, 1000);
         return;
       }
 
@@ -423,7 +420,6 @@ export default function TATour() {
       setLoadingSimulation,
       tourState.attemptId,
       router,
-      handleStepComplete,
     ]
   );
 
@@ -856,7 +852,6 @@ export default function TATour() {
       },
       2: () => {
         // Step 2: Handle practice simulation start - just click the button and let WebSocket events handle progression
-        handleStepComplete(2);
         nextStep();
 
         // Check if we already have an attemptId
