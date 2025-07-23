@@ -354,6 +354,11 @@ export function TourProvider({ children }: TourProviderProps) {
     const currentStep = state.steps[state.currentStep];
     if (!currentStep) return null;
 
+    // Check if tour is actually completed based on profile status
+    const isTourCompleted =
+      state.profile?.viewedIntro && state.profile?.viewedChat;
+    const isLastStep = state.currentStep + 1 === state.steps.length;
+
     return (
       <aside className="tour-sidebar">
         <div className="tour-sidebar-content">
@@ -361,9 +366,9 @@ export function TourProvider({ children }: TourProviderProps) {
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-foreground">
-                  {currentStep.title}
+                  {isTourCompleted ? "Tour Complete! 🎉" : currentStep.title}
                 </h3>
-                {state.currentStep + 1 === state.steps.length && (
+                {isTourCompleted && (
                   <p className="text-sm text-muted-foreground mt-1">
                     🎉 Tour Complete! You're all set to use GLOW.
                   </p>
@@ -381,19 +386,54 @@ export function TourProvider({ children }: TourProviderProps) {
 
           <div className="tour-sidebar-body">
             <div className="text-sm text-muted-foreground leading-relaxed">
-              {currentStep.content}
+              {isTourCompleted ? (
+                <div className="space-y-3">
+                  <p>
+                    Congratulations! You've successfully completed the GLOW
+                    tour.
+                  </p>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div className="flex items-center space-x-2 text-green-800">
+                      <span className="text-lg">✅</span>
+                      <span className="font-medium">Home Overview</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-green-800 mt-2">
+                      <span className="text-lg">✅</span>
+                      <span className="font-medium">Cohort Leaderboard</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-green-800 mt-2">
+                      <span className="text-lg">✅</span>
+                      <span className="font-medium">Practice Simulation</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-green-800 mt-2">
+                      <span className="text-lg">✅</span>
+                      <span className="font-medium">Send Message</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-green-800 mt-2">
+                      <span className="text-lg">✅</span>
+                      <span className="font-medium">End Chat</span>
+                    </div>
+                  </div>
+                  <p className="text-sm">
+                    You now have access to all GLOW features. Feel free to
+                    explore and practice!
+                  </p>
+                </div>
+              ) : (
+                currentStep.content
+              )}
             </div>
           </div>
 
           <footer className="tour-sidebar-footer">
             <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
               <span>
-                {state.currentStep + 1 === state.steps.length
+                {isTourCompleted
                   ? "Tour Complete! 🎉"
                   : `Step ${state.currentStep + 1} of ${state.steps.length}`}
               </span>
               <span>
-                {state.currentStep + 1 === state.steps.length
+                {isTourCompleted
                   ? "100%"
                   : `${Math.round(((state.currentStep + 1) / state.steps.length) * 100)}%`}
               </span>
@@ -403,15 +443,14 @@ export function TourProvider({ children }: TourProviderProps) {
               <div
                 className="bg-primary h-1.5 rounded-full transition-all duration-300"
                 style={{
-                  width:
-                    state.currentStep + 1 === state.steps.length
-                      ? "100%"
-                      : `${((state.currentStep + 1) / state.steps.length) * 100}%`,
+                  width: isTourCompleted
+                    ? "100%"
+                    : `${((state.currentStep + 1) / state.steps.length) * 100}%`,
                 }}
               />
             </div>
 
-            {state.currentStep + 1 === state.steps.length ? (
+            {isTourCompleted ? (
               // Completion screen - show "Back Home" button
               <div className="flex justify-center">
                 <button
@@ -449,14 +488,20 @@ export function TourProvider({ children }: TourProviderProps) {
                       stepIndex: state.currentStep,
                     });
                   }}
-                  disabled={state.isNavigating || !!state.loadingSimulation}
+                  disabled={
+                    state.isNavigating ||
+                    !!state.loadingSimulation ||
+                    isLastStep
+                  }
                   className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors flex-1"
                 >
                   {state.isNavigating
                     ? "Navigating..."
                     : state.loadingSimulation
                       ? "Starting..."
-                      : "Next"}
+                      : isLastStep
+                        ? "Complete"
+                        : "Next"}
                 </button>
               </div>
             )}

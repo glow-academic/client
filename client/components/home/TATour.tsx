@@ -443,16 +443,20 @@ export default function TATour() {
       });
 
       // Check if tour should be closed based on completion status
+      // Note: We no longer auto-close completed tours - they show completion screen
       if (
         effectiveProfile.viewedIntro &&
         effectiveProfile.viewedChat &&
         tourState.isOpen
       ) {
-        logInfo("TATour: User completed tour, closing", {
-          viewedIntro: effectiveProfile.viewedIntro,
-          viewedChat: effectiveProfile.viewedChat,
-        });
-        closeTour();
+        logInfo(
+          "TATour: User completed tour, keeping open for completion screen",
+          {
+            viewedIntro: effectiveProfile.viewedIntro,
+            viewedChat: effectiveProfile.viewedChat,
+          }
+        );
+        // Don't close - let the completion screen show
       }
       return;
     }
@@ -479,8 +483,8 @@ export default function TATour() {
       // User has completed intro steps (0-1) but not chat steps (2-4)
       initialStep = 2; // Start at practice simulation step (step 2)
     } else if (effectiveProfile.viewedIntro && effectiveProfile.viewedChat) {
-      // User has completed everything, but we'll still show the tour
-      initialStep = 0; // Start from beginning for review
+      // User has completed everything - show completion screen
+      initialStep = 4; // Show the final step (end chat) as completion screen
     }
 
     logInfo("TATour: Created steps", {
@@ -518,10 +522,10 @@ export default function TATour() {
       }
     }
 
-    // If user has completed the tour, close it immediately but keep steps in state
+    // If user has completed the tour, show completion screen instead of closing
     if (effectiveProfile.viewedIntro && effectiveProfile.viewedChat) {
-      logInfo("TATour: User completed tour, closing");
-      closeTour();
+      logInfo("TATour: User completed tour, showing completion screen");
+      // Don't close the tour - let it show the completion screen
     }
   }, [
     effectiveProfile,
@@ -897,13 +901,23 @@ export default function TATour() {
         }
       },
       4: () => {
-        // Step 4: User needs to end chat - don't auto-advance, wait for actual chat completion
-        // The step will be completed by the chatEnded WebSocket event
-        logInfo("Step 4 action triggered - waiting for user to end chat");
+        // Step 4: Check if tour is completed
+        if (effectiveProfile?.viewedIntro && effectiveProfile?.viewedChat) {
+          // Tour is completed - close it and navigate home
+          logInfo(
+            "Step 4 action triggered - tour completed, closing and navigating home"
+          );
+          closeTour();
+          router.push("/home");
+        } else {
+          // Tour not completed - user needs to end chat
+          // The step will be completed by the chatEnded WebSocket event
+          logInfo("Step 4 action triggered - waiting for user to end chat");
 
-        // If we have an attemptId, navigate to the attempt page
-        if (tourState.attemptId) {
-          router.push(`/practice/a/${tourState.attemptId}`);
+          // If we have an attemptId, navigate to the attempt page
+          if (tourState.attemptId) {
+            router.push(`/practice/a/${tourState.attemptId}`);
+          }
         }
       },
     };
@@ -914,6 +928,9 @@ export default function TATour() {
     handleNavigateToPractice,
     router,
     tourState.attemptId,
+    closeTour,
+    effectiveProfile?.viewedIntro,
+    effectiveProfile?.viewedChat,
   ]);
 
   // Set up global action handlers for the tour context
