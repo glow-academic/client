@@ -7,9 +7,9 @@
 "use client";
 import { logError, logInfo } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bug, CheckCircle, HelpCircle, Play } from "lucide-react";
+import { CheckCircle, HelpCircle, Play } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -19,138 +19,6 @@ import { useWebSocket } from "@/contexts/websocket-context";
 import { updateProfile } from "@/utils/mutations/profiles/update-profile";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { createTATourSteps } from "@/utils/tour-steps";
-
-// Debug Indicator Component
-function DebugIndicator() {
-  const { effectiveProfile } = useProfile();
-  const { state: tourState, getGuideButtonState } = useTour();
-  const [isVisible, setIsVisible] = useState(false);
-
-  const buttonState = getGuideButtonState();
-
-  // Toggle debug visibility with Ctrl+Shift+D
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey && event.shiftKey && event.key === "D") {
-        setIsVisible((prev) => !prev);
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isVisible]);
-
-  if (!isVisible) return null;
-
-  const getStepStatus = (index: number) => {
-    const step = tourState.steps[index];
-    if (!step) return "N/A";
-    return step.isCompleted ? "✅" : "⏳";
-  };
-
-  const getProfileStatus = () => {
-    if (!effectiveProfile) return null;
-    return {
-      role: effectiveProfile.role,
-      viewedIntro: effectiveProfile.viewedIntro ? "✅" : "❌",
-      viewedChat: effectiveProfile.viewedChat ? "✅" : "❌",
-      id: effectiveProfile.id,
-    };
-  };
-
-  const profileStatus = getProfileStatus();
-
-  return (
-    <div
-      className="fixed top-4 right-4 z-[9999] bg-black/90 text-white p-4 rounded-lg shadow-lg max-w-md text-xs font-mono border-2 border-yellow-400"
-      style={{
-        marginRight: "20px",
-        zIndex: 9999,
-        position: "fixed",
-        top: "16px",
-        right: "16px",
-      }}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="font-bold text-yellow-400">🐛 Tour Debug</h3>
-        <button
-          onClick={() => setIsVisible(false)}
-          className="text-gray-400 hover:text-white"
-        >
-          ✕
-        </button>
-      </div>
-
-      <div className="space-y-2">
-        <div>
-          <strong>Profile:</strong>{" "}
-          {profileStatus
-            ? `${profileStatus.role} (ID: ${profileStatus.id})`
-            : "No Profile"}
-        </div>
-        <div>
-          <strong>Viewed Intro:</strong> {profileStatus?.viewedIntro || "N/A"}
-        </div>
-        <div>
-          <strong>Viewed Chat:</strong> {profileStatus?.viewedChat || "N/A"}
-        </div>
-        <div>
-          <strong>Tour Open:</strong> {tourState.isOpen ? "✅" : "❌"}
-        </div>
-        <div>
-          <strong>Current Step:</strong> {tourState.currentStep + 1}/
-          {tourState.steps.length}
-        </div>
-        <div>
-          <strong>Button State:</strong> {buttonState}
-        </div>
-        <div>
-          <strong>Steps Status:</strong>
-          <div className="ml-2 mt-1">
-            {tourState.steps.map((step, index) => (
-              <div key={index}>
-                {index + 1}. {step.title}: {getStepStatus(index)}
-              </div>
-            ))}
-          </div>
-        </div>
-        <div>
-          <strong>Attempt ID:</strong> {tourState.attemptId || "None"}
-        </div>
-        <div>
-          <strong>Loading:</strong> {tourState.loadingSimulation || "None"}
-        </div>
-        <div>
-          <strong>Navigating:</strong> {tourState.isNavigating ? "✅" : "❌"}
-        </div>
-      </div>
-
-      <div className="mt-3 pt-2 border-t border-gray-600 text-gray-400">
-        Press{" "}
-        <kbd className="px-1 py-0.5 bg-gray-700 rounded text-xs">
-          Ctrl+Shift+D
-        </kbd>{" "}
-        to toggle
-      </div>
-    </div>
-  );
-}
-
-// Small debug indicator that's always visible
-function DebugIndicatorSmall() {
-  return (
-    <div
-      className="fixed top-2 right-2 z-[9997] bg-yellow-400 text-black px-2 py-1 rounded text-xs font-mono border border-yellow-600 shadow-lg"
-      style={{
-        zIndex: 9997,
-        position: "fixed",
-        top: "8px",
-        right: "8px",
-      }}
-    >
-      🐛 Debug: Ctrl+Shift+D
-    </div>
-  );
-}
 
 // Guide Button Component
 function GuideButton() {
@@ -281,15 +149,11 @@ export default function TATour() {
         index === stepIndex ? { ...step, isCompleted: true } : step
       );
 
-      // Steps 1-2 are tracked by viewedIntro (Cohort Leaderboard + Practice)
-      const introStepsComplete = updatedSteps
-        .slice(1, 3)
-        .every((step) => step.isCompleted);
+      // Step 1 is tracked by viewedIntro (Cohort Leaderboard)
+      const introStepsComplete = updatedSteps[1]?.isCompleted;
 
-      // Steps 3-4 are tracked by viewedChat (Message + End Chat)
-      const chatStepsComplete = updatedSteps
-        .slice(3)
-        .every((step) => step.isCompleted);
+      // Step 4 is tracked by viewedChat (End Chat)
+      const chatStepsComplete = updatedSteps[4]?.isCompleted;
 
       try {
         let profileUpdated = false;
@@ -1081,34 +945,6 @@ export default function TATour() {
   return (
     <>
       <GuideButton />
-      <DebugIndicator />
-      <DebugIndicatorSmall />
-      {/* Always visible debug button for development */}
-      {process.env.NODE_ENV === "development" && (
-        <div className="fixed top-4 left-4 z-[9998]">
-          <Button
-            onClick={() => {
-              logInfo("Manual debug trigger", {
-                profile: effectiveProfile,
-                tourState: {
-                  isOpen: tourState.isOpen,
-                  currentStep: tourState.currentStep,
-                  stepsLength: tourState.steps.length,
-                  profileId: tourState.profile?.id,
-                  viewedIntro: effectiveProfile?.viewedIntro,
-                  viewedChat: effectiveProfile?.viewedChat,
-                },
-              });
-            }}
-            variant="outline"
-            size="sm"
-            className="bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200 shadow-lg"
-          >
-            <Bug className="h-4 w-4 mr-1" />
-            Debug
-          </Button>
-        </div>
-      )}
     </>
   );
 }
