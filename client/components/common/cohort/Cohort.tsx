@@ -233,6 +233,30 @@ export default function Cohort({ cohortId }: CohortProps) {
     isEditMode,
   ]);
 
+  // Auto-fill current user for instructional users when creating a new cohort
+  useEffect(() => {
+    if (
+      !isEditMode &&
+      effectiveProfile?.role === "instructional" &&
+      effectiveProfile?.id &&
+      profiles.length > 0 &&
+      staffProfiles.length === 0
+    ) {
+      const currentUserProfile = profiles.find(
+        (profile: Profile) => profile.id === effectiveProfile.id
+      );
+      if (currentUserProfile) {
+        setStaffProfiles([currentUserProfile]);
+      }
+    }
+  }, [
+    isEditMode,
+    effectiveProfile?.role,
+    effectiveProfile?.id,
+    profiles,
+    staffProfiles.length,
+  ]);
+
   // Check if form has changes
   const hasChanges = useMemo(() => {
     if (!isEditMode) return false;
@@ -307,6 +331,16 @@ export default function Cohort({ cohortId }: CohortProps) {
 
     if (!formData.title?.trim()) {
       newErrors.title = "Title is required";
+    }
+
+    // For instructional users, ensure they are always in the cohort
+    if (effectiveProfile?.role === "instructional" && !isEditMode) {
+      const isUserInCohort = staffProfiles.some(
+        (profile) => profile.id === effectiveProfile.id
+      );
+      if (!isUserInCohort) {
+        newErrors.title = "You must be included in the cohort to create it";
+      }
     }
 
     setErrors(newErrors);
@@ -562,6 +596,7 @@ export default function Cohort({ cohortId }: CohortProps) {
           isSubmitting={isSubmitting}
           currentCohortName={formData.title || ""}
           effectiveProfile={effectiveProfile}
+          isEditMode={isEditMode}
         />
 
         {/* Submit Button */}

@@ -10,7 +10,6 @@ import { useCallback, useState } from "react";
 
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,6 +62,7 @@ export interface CohortStaffProps {
   isSubmitting?: boolean;
   currentCohortName?: string;
   effectiveProfile?: Profile | null; // Current user's effective profile
+  isEditMode?: boolean; // Whether we're in edit mode (not create mode)
 }
 
 export default function CohortStaff({
@@ -73,6 +73,7 @@ export default function CohortStaff({
   isLoading = false,
   currentCohortName,
   effectiveProfile,
+  isEditMode = false,
 }: CohortStaffProps) {
   const router = useRouter();
 
@@ -178,13 +179,14 @@ export default function CohortStaff({
 
   const shouldShowLeaveButton = useCallback(
     (profile: EditableProfile) => {
-      // Show leave button if current user is instructional and viewing their own profile
+      // Show leave button if current user is instructional, viewing their own profile, and in edit mode
       return (
+        isEditMode &&
         effectiveProfile?.role === "instructional" &&
         effectiveProfile?.id === profile.id
       );
     },
-    [effectiveProfile]
+    [effectiveProfile, isEditMode]
   );
 
   // Define table columns for filtering and pagination
@@ -501,7 +503,7 @@ export default function CohortStaff({
 
       {/* Leave Cohort Modal */}
       <Dialog open={showLeaveModal} onOpenChange={setShowLeaveModal}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Leave Cohort</DialogTitle>
             <DialogDescription>
@@ -509,25 +511,6 @@ export default function CohortStaff({
               undone.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex items-center gap-3 py-4">
-            <Avatar className="h-10 w-10">
-              <AvatarFallback>
-                {profileToLeave
-                  ? `${profileToLeave.firstName.charAt(0)}${profileToLeave.lastName.charAt(0)}`
-                  : ""}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-medium">
-                {profileToLeave
-                  ? `${profileToLeave.firstName} ${profileToLeave.lastName}`
-                  : ""}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {profileToLeave?.alias}
-              </p>
-            </div>
-          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowLeaveModal(false)}>
               Cancel
