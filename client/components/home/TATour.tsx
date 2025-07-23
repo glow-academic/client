@@ -472,7 +472,10 @@ export default function TATour() {
 
     // Determine initial step based on profile completion status
     let initialStep = 0;
-    if (effectiveProfile.viewedIntro && !effectiveProfile.viewedChat) {
+    if (!effectiveProfile.viewedIntro) {
+      // User hasn't completed intro steps - start from beginning
+      initialStep = 0;
+    } else if (effectiveProfile.viewedIntro && !effectiveProfile.viewedChat) {
       // User has completed intro steps (0-1) but not chat steps (2-4)
       initialStep = 2; // Start at practice simulation step (step 2)
     } else if (effectiveProfile.viewedIntro && effectiveProfile.viewedChat) {
@@ -641,7 +644,10 @@ export default function TATour() {
     ) {
       logInfo("Auto-completing home step");
       handleStepComplete(0);
-      nextStep();
+      // Only auto-advance if user has already viewed intro (resuming tour)
+      if (effectiveProfile.viewedIntro) {
+        nextStep();
+      }
     }
 
     // Step 1: Cohort leaderboard - auto-complete when on cohort leaderboard page
@@ -652,7 +658,10 @@ export default function TATour() {
     ) {
       logInfo("Auto-completing cohort leaderboard step");
       handleStepComplete(1);
-      nextStep();
+      // Only auto-advance if user has already viewed intro (resuming tour)
+      if (effectiveProfile.viewedIntro) {
+        nextStep();
+      }
     }
 
     // Step 2: Practice simulation - don't auto-complete, wait for user action or next button
