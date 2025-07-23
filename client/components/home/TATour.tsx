@@ -985,14 +985,38 @@ export default function TATour() {
           closeTour();
           router.push("/home");
         } else {
-          // Tour not completed - user needs to end chat
-          // The step will be completed by the chatEnded WebSocket event
-          logInfo("Step 4 action triggered - waiting for user to end chat");
+          // Tour not completed - click the End Session/End Chat button
+          logInfo(
+            "Step 4 action triggered - clicking End Session/End Chat button"
+          );
 
-          // If we have an attemptId, navigate to the attempt page
+          // If we have an attemptId, navigate to the attempt page first
           if (tourState.attemptId) {
             router.push(`/practice/a/${tourState.attemptId}`);
           }
+
+          // Click the End Session/End Chat button after a short delay to ensure page is loaded
+          setTimeout(() => {
+            const endChatButton = document.querySelector(
+              "[data-tour-end-chat]"
+            ) as HTMLButtonElement;
+
+            if (endChatButton && !endChatButton.disabled) {
+              logInfo("Clicking End Session/End Chat button", {
+                buttonText: endChatButton.textContent?.trim(),
+              });
+              endChatButton.click();
+            } else {
+              logError("End Session/End Chat button is disabled or not found", {
+                buttonFound: !!endChatButton,
+                buttonDisabled: endChatButton?.disabled,
+                buttonText: endChatButton?.textContent,
+              });
+              toast.error(
+                "Could not end chat automatically. Please click the End Session button manually."
+              );
+            }
+          }, 1000); // Wait for page to load
         }
       },
     };
