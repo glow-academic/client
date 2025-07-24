@@ -22,7 +22,6 @@ import { RubricsDataTableToolbar } from "./RubricsDataTableToolbar";
 export interface RubricsDataTableProps {
   columns: ColumnDef<Rubric>[];
   data: Rubric[];
-  simulationOptions: { value: string; label: string }[];
   passPointsOptions: { value: string; label: string }[];
   totalPointsOptions: { value: string; label: string }[];
   passPercentageOptions: { value: string; label: string }[];
@@ -32,7 +31,6 @@ export interface RubricsDataTableProps {
 export function RubricsDataTable({
   columns,
   data,
-  simulationOptions,
   passPointsOptions,
   totalPointsOptions,
   passPercentageOptions,
@@ -79,7 +77,6 @@ export function RubricsDataTable({
     <div className="space-y-4">
       <RubricsDataTableToolbar
         table={table}
-        simulationOptions={simulationOptions}
         passPointsOptions={passPointsOptions}
         totalPointsOptions={totalPointsOptions}
         passPercentageOptions={passPercentageOptions}

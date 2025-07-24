@@ -1,123 +1,105 @@
-import { describe, it, vi } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
-import userEvent from '@testing-library/user-event';
-import type {  } from '@tanstack/react-table';
+import { RubricsDataTable } from "@/components/create/rubrics/RubricsDataTable";
+import { Rubric } from "@/types";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
-// ——————————————————————————————————————————
-import { RubricsDataTable, RubricsDataTableProps } from '@/components/create/rubrics/RubricsDataTable';
+// Mock the RubricsDataTableToolbar component
+vi.mock("@/components/create/rubrics/RubricsDataTableToolbar", () => ({
+  RubricsDataTableToolbar: ({ _table }: { _table: unknown }) => (
+    <div data-testid="rubrics-data-table-toolbar">Toolbar</div>
+  ),
+}));
 
+// Mock the DataTablePagination component
+vi.mock("@/components/common/history/DataTablePagination", () => ({
+  DataTablePagination: ({ _table }: { _table: unknown }) => (
+    <div data-testid="data-table-pagination">Pagination</div>
+  ),
+}));
 
+const mockColumns = [
+  {
+    id: "name",
+    accessorKey: "name",
+    header: "Name",
+    cell: ({ row }: { row: { getValue: (key: string) => string } }) => (
+      <div>{row.getValue("name")}</div>
+    ),
+  },
+];
 
-// ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
-const mockProps: RubricsDataTableProps = {
-  columns: [],
-  data: [],
-  simulationOptions: [],
-  passPointsOptions: [],
-  totalPointsOptions: [],
-  passPercentageOptions: [],
-  renderRubricCard: vi.fn(),
-};
-// ------------------------------------------------------------------
-describe('RubricsDataTable', () => {
-  
+const mockRubrics: Rubric[] = [
+  {
+    id: "1",
+    name: "Test Rubric 1",
+    description: "Test description 1",
+    points: 100,
+    passPoints: 70,
+    defaultRubric: false,
+    active: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "2",
+    name: "Test Rubric 2",
+    description: "Test description 2",
+    points: 50,
+    passPoints: 35,
+    defaultRubric: true,
+    active: false,
+    createdAt: "2024-01-02T00:00:00Z",
+    updatedAt: "2024-01-02T00:00:00Z",
+  },
+];
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<RubricsDataTable {...mockProps} />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-    });
+const mockRenderRubricCard = (rubric: Rubric) => (
+  <div key={rubric.id} data-testid={`rubric-card-${rubric.id}`}>
+    {rubric.name}
+  </div>
+);
 
-    it.skip('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: RubricsDataTableProps
-      
-      // TODO add props assertions
-    });
+describe("RubricsDataTable", () => {
+  const defaultProps = {
+    columns: mockColumns,
+    data: mockRubrics,
+    passPointsOptions: [
+      { value: "0-25", label: "0-25 points" },
+      { value: "26-50", label: "26-50 points" },
+    ],
+    totalPointsOptions: [
+      { value: "0-50", label: "0-50 points" },
+      { value: "51-100", label: "51-100 points" },
+    ],
+    passPercentageOptions: [
+      { value: "0-50", label: "0-50%" },
+      { value: "51-100", label: "51-100%" },
+    ],
+    renderRubricCard: mockRenderRubricCard,
+  };
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
-    });
+  it("renders the toolbar", () => {
+    render(<RubricsDataTable {...defaultProps} />);
+    expect(
+      screen.getByTestId("rubrics-data-table-toolbar")
+    ).toBeInTheDocument();
   });
 
-  describe('User Interactions', () => {
-    
-
-    it.skip('should handle state changes', async () => {
-      const user = userEvent.setup();
-      void user;
-      // TODO: state management assertions
-      // Mock data is available from @/mocks/schema for realistic testing
-    });
-
-    it.skip('should handle user events', async () => {
-      const user = userEvent.setup();
-      void user;
-      // TODO: interaction assertions
-
-    });
+  it("renders the pagination", () => {
+    render(<RubricsDataTable {...defaultProps} />);
+    expect(screen.getByTestId("data-table-pagination")).toBeInTheDocument();
   });
 
-  
+  it("renders rubric cards for each rubric", () => {
+    render(<RubricsDataTable {...defaultProps} />);
+    expect(screen.getByTestId("rubric-card-1")).toBeInTheDocument();
+    expect(screen.getByTestId("rubric-card-2")).toBeInTheDocument();
+  });
 
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
-    });
-
-    it.skip('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // TODO: invalid props assertions
-    });
+  it("shows no results message when no data", () => {
+    render(<RubricsDataTable {...defaultProps} data={[]} />);
+    expect(
+      screen.getByText("No rubrics match the current filters.")
+    ).toBeInTheDocument();
   });
 });
-
-/*
- * Component Analysis for RubricsDataTable:
- * Path: create/rubrics/RubricsDataTable.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: RubricsDataTable, RubricsDataTableProps
- * - Has props: true
- * - Props interface: RubricsDataTableProps
- * - Client component: true
- * - Uses hooks: useReactTable, useState
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: true
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<RubricsDataTable {...mockProps} />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<RubricsDataTable {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

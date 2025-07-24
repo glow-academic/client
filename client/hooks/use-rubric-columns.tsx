@@ -96,7 +96,7 @@ export function useRubricColumns() {
       },
       enableSorting: true,
       enableHiding: true,
-      filterFn: (row, id, value) => {
+      filterFn: (row, _, value) => {
         const points = row.original.points;
         const passPoints = row.original.passPoints;
         const percentage =
@@ -155,12 +155,6 @@ export function useRubricColumns() {
     },
   ];
 
-  // Generate filter options for simulations
-  const simulationOptions = [
-    { value: "used", label: "Used in Simulations" },
-    { value: "unused", label: "Not Used" },
-  ];
-
   // Generate filter options for pass points ranges
   const passPointsOptions = [
     { value: "0-25", label: "0-25 points" },
@@ -189,7 +183,6 @@ export function useRubricColumns() {
 
   return {
     columns,
-    simulationOptions,
     passPointsOptions,
     totalPointsOptions,
     passPercentageOptions,

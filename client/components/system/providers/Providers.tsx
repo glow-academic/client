@@ -14,7 +14,6 @@ import { toast } from "sonner";
 
 import { deleteModel } from "@/utils/mutations/models/delete-model";
 import { getAllModels } from "@/utils/queries/models/get-all-models";
-import { getAllProviders } from "@/utils/queries/providers/get-all-providers";
 
 import {
   AlertDialog,
@@ -38,13 +37,8 @@ import {
 } from "@/components/ui/card";
 
 import { useProviderColumns } from "@/hooks/use-provider-columns";
-import { Model, Provider } from "@/types";
+import { Model } from "@/types";
 import { ProvidersDataTable } from "./ProvidersDataTable";
-
-interface ProviderGroup {
-  provider: Provider;
-  models: Model[];
-}
 
 export default function Providers() {
   const router = useRouter();
@@ -56,28 +50,15 @@ export default function Providers() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Fetch models and providers data
+  // Fetch models data
   const { data: models = [], refetch: refetchModels } = useQuery({
     queryKey: ["models"],
     queryFn: () => getAllModels(),
   });
 
-  const { data: providers = [] } = useQuery({
-    queryKey: ["providers"],
-    queryFn: () => getAllProviders(),
-  });
-
   // Get table columns and filter options
   const { columns, providerOptions, customModelOptions, statusOptions } =
     useProviderColumns();
-
-  // Group models by provider for the original layout
-  const providerGroups: ProviderGroup[] = providers
-    .map((provider: Provider) => ({
-      provider,
-      models: models.filter((model: Model) => model.providerId === provider.id),
-    }))
-    .filter((group: ProviderGroup) => group.models.length > 0);
 
   const handleDelete = async () => {
     if (!deleteItem) return;
@@ -110,8 +91,6 @@ export default function Providers() {
   };
 
   const renderModelCard = (model: Model) => {
-    const provider = providers.find((p: Provider) => p.id === model.providerId);
-
     return (
       <Card key={model.id} className="hover:shadow-md transition-shadow">
         <CardHeader>

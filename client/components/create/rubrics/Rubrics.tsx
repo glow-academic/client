@@ -90,7 +90,6 @@ export default function Rubrics() {
   // Get table columns and filter options
   const {
     columns,
-    simulationOptions,
     passPointsOptions,
     totalPointsOptions,
     passPercentageOptions,
@@ -297,7 +296,6 @@ export default function Rubrics() {
         <RubricsDataTable
           columns={columns}
           data={rubrics}
-          simulationOptions={simulationOptions}
           passPointsOptions={passPointsOptions}
           totalPointsOptions={totalPointsOptions}
           passPercentageOptions={passPercentageOptions}
