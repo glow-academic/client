@@ -37,6 +37,11 @@ const columnMap = {
   totalAttempts: "Total Attempts",
   taCohorts: "Cohorts",
   isStruggling: "Status",
+  // Leaderboard page columns
+  rank: "Rank",
+  name: "User",
+  role: "Role",
+  simsCompleted: "Sims Completed",
 };
 
 export interface DataTableViewOptionsProps<TData> {

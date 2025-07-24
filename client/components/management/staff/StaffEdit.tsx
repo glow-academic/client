@@ -42,7 +42,13 @@ import { deleteProfile } from "@/utils/mutations/profiles/delete-profile";
 import { updateProfile } from "@/utils/mutations/profiles/update-profile";
 import { getProfile } from "@/utils/queries/profiles/get-profile";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Save, Shield, Trash2, User as UserIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  Save,
+  Shield,
+  Trash2,
+  User as UserIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -249,6 +255,15 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
               </div>
 
               <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push("/management/staff")}
+                  disabled={isSubmitting}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back
+                </Button>
                 <Button type="submit" disabled={isSubmitting || !hasChanges}>
                   <Save className="h-4 w-4 mr-2" />
                   {isSubmitting ? "Saving..." : "Save"}

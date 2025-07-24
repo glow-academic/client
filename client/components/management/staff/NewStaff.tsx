@@ -31,9 +31,9 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProfile } from "@/contexts/profile-context";
+import { profileRole } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 import { createProfile } from "@/utils/mutations/profiles/create-profile";
-import { profileRole } from "@/utils/drizzle/schema";
 type ProfileRole = (typeof profileRole.enumValues)[number];
 
 interface CSVUser {
@@ -356,7 +356,15 @@ export default function NewStaff() {
               </div>
             )}
 
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+                disabled={isSubmitting}
+              >
+                Back
+              </Button>
               <Button type="submit" disabled={isSubmitting || !formData.role}>
                 {isSubmitting
                   ? "Creating..."
