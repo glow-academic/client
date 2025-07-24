@@ -86,12 +86,6 @@ export function RubricPicker({
     }
   };
 
-  // Allow clearing selection
-  const handleClear = () => {
-    onSelect?.([]);
-    setOpen(false);
-  };
-
   // Remove individual item
   const handleRemoveItem = (rubricToRemove: Rubric, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -184,16 +178,7 @@ export function RubricPicker({
                 <CommandInput placeholder="Search rubrics..." />
                 <CommandEmpty>{getSearchNotFoundMessage()}</CommandEmpty>
                 <HoverCardTrigger />
-                {selectedRubrics.length > 0 && (
-                  <CommandGroup heading="Actions">
-                    <CommandItem
-                      onSelect={handleClear}
-                      className="text-muted-foreground"
-                    >
-                      Clear All
-                    </CommandItem>
-                  </CommandGroup>
-                )}
+
                 <CommandGroup heading="Rubrics">
                   {rubrics.map((rubric) => (
                     <RubricItem

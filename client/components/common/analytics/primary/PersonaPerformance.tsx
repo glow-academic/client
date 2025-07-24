@@ -7,6 +7,10 @@
 "use client";
 
 import {
+  SimulationPicker,
+  type Simulation,
+} from "@/components/common/cohort/SimulationPicker";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -34,7 +38,7 @@ import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulatio
 import { useQuery } from "@tanstack/react-query";
 import { format, isAfter, isBefore } from "date-fns";
 import { Users } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -65,6 +69,10 @@ export default function PersonaPerformance({
   profileId,
   thresholds,
 }: PersonaPerformanceProps) {
+  const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
+    []
+  );
+
   // Fetch data
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -112,6 +120,46 @@ export default function PersonaPerformance({
     queryFn: () => getAllRubrics(),
   });
 
+  // Filter simulations based on selection
+  const filteredSimulations = useMemo(() => {
+    if (!simulations) return [];
+    if (selectedSimulations.length === 0) return simulations;
+    return simulations.filter((s) =>
+      selectedSimulations.some((ss) => ss.id === s.id)
+    );
+  }, [simulations, selectedSimulations]);
+
+  // Get simulations that have scenarios with personas (excluding default simulations)
+  const simulationsWithData = useMemo(() => {
+    if (!simulations || !scenarios || !personas) return [];
+
+    // Get all simulation IDs that have scenarios with personas and are not default simulations
+    const simulationIdsWithPersonas = new Set<string>();
+
+    // For each simulation, check if it has scenarios with personas
+    simulations.forEach((simulation) => {
+      // Get scenarios for this simulation
+      const simulationScenarios = scenarios.filter((scenario) =>
+        simulation.scenarioIds.includes(scenario.id)
+      );
+
+      // Check if any of these scenarios have a persona
+      const hasPersonaScenarios = simulationScenarios.some(
+        (scenario) =>
+          scenario.personaId &&
+          personas.some((persona) => persona.id === scenario.personaId)
+      );
+
+      if (hasPersonaScenarios) {
+        simulationIdsWithPersonas.add(simulation.id);
+      }
+    });
+
+    return simulations.filter(
+      (s) => simulationIdsWithPersonas.has(s.id) && !s.defaultSimulation
+    );
+  }, [simulations, scenarios, personas]);
+
   // Calculate performance by persona
   const performanceData = useMemo(() => {
     if (
@@ -126,12 +174,12 @@ export default function PersonaPerformance({
       return [];
     }
 
-    // Filter data by date range and exclude practice simulations
+    // Filter data by date range, exclude practice simulations, and filter by selected simulations
     const filteredGrades = grades.filter((grade) => {
       const gradeDate = new Date(grade.createdAt);
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const simulation = simulations.find(
+      const simulation = filteredSimulations.find(
         (s) => s.id === attempt?.simulationId
       );
 
@@ -149,7 +197,15 @@ export default function PersonaPerformance({
       const profile = profiles?.find((p) => p.id === attempt?.profileId);
       const isTA = profile?.role === "ta";
 
-      return inDateRange && notPractice && profileMatch && isTA;
+      // Filter by selected simulations
+      const simulationMatch =
+        selectedSimulations.length === 0 ||
+        (simulation &&
+          selectedSimulations.some((ss) => ss.id === simulation.id));
+
+      return (
+        inDateRange && notPractice && profileMatch && isTA && simulationMatch
+      );
     });
 
     // Group by persona
@@ -231,6 +287,8 @@ export default function PersonaPerformance({
     dateStart,
     dateEnd,
     profileId,
+    selectedSimulations,
+    filteredSimulations,
   ]);
 
   // Get background color based on performance thresholds
@@ -290,13 +348,35 @@ export default function PersonaPerformance({
   return (
     <Card className="w-full h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          Persona Performance
-        </CardTitle>
-        <CardDescription>
-          Performance analysis by student persona type
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Persona Performance
+            </CardTitle>
+            <CardDescription>
+              Performance analysis by student persona type
+            </CardDescription>
+          </div>
+          {simulationsWithData && simulationsWithData.length > 0 && (
+            <SimulationPicker
+              simulations={simulationsWithData.map((s) => ({
+                id: s.id,
+                title: s.title,
+                timeLimit: s.timeLimit || undefined,
+                active: s.active,
+                defaultSimulation: s.defaultSimulation,
+                practiceSimulation: s.practiceSimulation,
+              }))}
+              placeholder="Filter by simulation..."
+              onSelect={setSelectedSimulations}
+              selectedSimulations={selectedSimulations}
+              hideSelectedChips={true}
+              showLabel={false}
+              buttonClassName="w-48"
+            />
+          )}
+        </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
         <div className="grid gap-6 md:grid-cols-2 h-full">

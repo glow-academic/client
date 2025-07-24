@@ -51,12 +51,20 @@ export default function SkillPerformance({
     queryFn: () => getAllRubrics(),
   });
 
+  // Set default selection to first rubric when rubrics are loaded
+  const defaultRubrics = useMemo(() => {
+    if (rubrics && rubrics.length > 0 && selectedRubrics.length === 0) {
+      return [rubrics[0]!];
+    }
+    return selectedRubrics;
+  }, [rubrics, selectedRubrics]);
+
   // Filter rubrics based on selection
   const filteredRubrics = useMemo(() => {
     if (!rubrics) return [];
-    if (selectedRubrics.length === 0) return rubrics;
-    return rubrics.filter((r) => selectedRubrics.some((sr) => sr.id === r.id));
-  }, [rubrics, selectedRubrics]);
+    if (defaultRubrics.length === 0) return rubrics;
+    return rubrics.filter((r) => defaultRubrics.some((sr) => sr.id === r.id));
+  }, [rubrics, defaultRubrics]);
 
   const { data: standardGroups, isLoading: standardGroupsLoading } = useQuery({
     queryKey: ["standardGroups", filteredRubrics?.map((r) => r.id) || []],
@@ -209,8 +217,7 @@ export default function SkillPerformance({
                 }))}
                 placeholder="Filter by rubric..."
                 onSelect={setSelectedRubrics}
-                selectedRubrics={selectedRubrics}
-                multiSelect={true}
+                selectedRubrics={defaultRubrics}
               />
             )}
           </div>
@@ -251,8 +258,7 @@ export default function SkillPerformance({
                 }))}
                 placeholder="Filter by rubric..."
                 onSelect={setSelectedRubrics}
-                selectedRubrics={selectedRubrics}
-                multiSelect={true}
+                selectedRubrics={defaultRubrics}
               />
             )}
           </div>
@@ -293,8 +299,7 @@ export default function SkillPerformance({
               }))}
               placeholder="Filter by rubric..."
               onSelect={setSelectedRubrics}
-              selectedRubrics={selectedRubrics}
-              multiSelect={true}
+              selectedRubrics={defaultRubrics}
             />
           )}
         </div>
