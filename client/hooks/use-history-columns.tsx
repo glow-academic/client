@@ -437,7 +437,7 @@ export function useHistoryColumns({
       {
         accessorKey: "personasTested",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Agents" />
+          <DataTableColumnHeader column={column} title="Personas" />
         ),
         cell: ({ row }) => {
           const personasTested = row.getValue("personasTested") as string[];
