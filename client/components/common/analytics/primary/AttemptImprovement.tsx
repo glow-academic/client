@@ -7,6 +7,10 @@
 "use client";
 
 import {
+  SimulationPicker,
+  type Simulation,
+} from "@/components/common/cohort/SimulationPicker";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -22,7 +26,7 @@ import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulatio
 import { useQuery } from "@tanstack/react-query";
 import { isAfter, isBefore } from "date-fns";
 import { TrendingUp } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -45,6 +49,10 @@ export default function AttemptImprovement({
   dateEnd,
   profileId,
 }: AttemptImprovementProps) {
+  const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
+    []
+  );
+
   // Fetch data
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -82,6 +90,41 @@ export default function AttemptImprovement({
     queryFn: () => getAllRubrics(),
   });
 
+  // Filter simulations based on selection
+  const filteredSimulations = useMemo(() => {
+    if (!simulations) return [];
+    if (selectedSimulations.length === 0) return simulations;
+    return simulations.filter((s) =>
+      selectedSimulations.some((ss) => ss.id === s.id)
+    );
+  }, [simulations, selectedSimulations]);
+
+  // Get simulations that have data available
+  const simulationsWithData = useMemo(() => {
+    if (!simulations || !grades || !chats || !attempts) return [];
+
+    // Get all simulation IDs that have grades in the date range
+    const simulationIdsWithData = new Set<string>();
+
+    grades.forEach((grade) => {
+      const gradeDate = new Date(grade.createdAt);
+      const chat = chats.find((c) => c.id === grade.simulationChatId);
+      const attempt = attempts.find((a) => a.id === chat?.attemptId);
+
+      if (!attempt) return;
+
+      // Check date range
+      const inDateRange =
+        isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
+
+      if (inDateRange) {
+        simulationIdsWithData.add(attempt.simulationId);
+      }
+    });
+
+    return simulations.filter((s) => simulationIdsWithData.has(s.id));
+  }, [simulations, grades, chats, attempts, dateStart, dateEnd]);
+
   // Calculate attempt improvement data
   const improvementData = useMemo(() => {
     if (
@@ -89,18 +132,18 @@ export default function AttemptImprovement({
       !chats ||
       !grades ||
       !attempts ||
-      !simulations ||
+      !filteredSimulations ||
       !rubrics
     ) {
       return [];
     }
 
-    // Filter data by date range, exclude practice simulations, and filter by TA role
+    // Filter data by date range, exclude practice simulations, filter by TA role, and filter by selected simulations
     const filteredGrades = grades.filter((grade) => {
       const gradeDate = new Date(grade.createdAt);
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const simulation = simulations.find(
+      const simulation = filteredSimulations.find(
         (s) => s.id === attempt?.simulationId
       );
       const profile = profiles?.find((p) => p.id === attempt?.profileId);
@@ -118,7 +161,15 @@ export default function AttemptImprovement({
       // Filter by profile if provided
       const profileMatch = profileId ? attempt?.profileId === profileId : true;
 
-      return inDateRange && notPractice && isTA && profileMatch;
+      // Filter by selected simulations
+      const simulationMatch =
+        selectedSimulations.length === 0 ||
+        (simulation &&
+          selectedSimulations.some((ss) => ss.id === simulation.id));
+
+      return (
+        inDateRange && notPractice && isTA && profileMatch && simulationMatch
+      );
     });
 
     if (filteredGrades.length === 0) return [];
@@ -147,7 +198,9 @@ export default function AttemptImprovement({
 
       if (!chat || !grade) return;
 
-      const simulation = simulations.find((s) => s.id === attempt.simulationId);
+      const simulation = filteredSimulations.find(
+        (s) => s.id === attempt.simulationId
+      );
       if (!simulation) return;
 
       const key = `${attempt.simulationId}-${attempt.profileId || "unknown"}`;
@@ -257,11 +310,12 @@ export default function AttemptImprovement({
     chats,
     grades,
     attempts,
-    simulations,
+    filteredSimulations,
     rubrics,
     dateStart,
     dateEnd,
     profileId,
+    selectedSimulations,
   ]);
 
   // Get actionable insights
@@ -288,13 +342,35 @@ export default function AttemptImprovement({
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Attempt Improvement
-          </CardTitle>
-          <CardDescription>
-            Performance improvement across multiple attempts
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Attempt Improvement
+              </CardTitle>
+              <CardDescription>
+                Performance improvement across multiple attempts
+              </CardDescription>
+            </div>
+            {simulationsWithData && simulationsWithData.length > 0 && (
+              <SimulationPicker
+                simulations={simulationsWithData.map((s) => ({
+                  id: s.id,
+                  title: s.title,
+                  timeLimit: s.timeLimit || undefined,
+                  active: s.active,
+                  defaultSimulation: s.defaultSimulation,
+                  practiceSimulation: s.practiceSimulation,
+                }))}
+                placeholder="Filter by simulation..."
+                onSelect={setSelectedSimulations}
+                selectedSimulations={selectedSimulations}
+                hideSelectedChips={true}
+                showLabel={false}
+                buttonClassName="w-48"
+              />
+            )}
+          </div>
         </CardHeader>
         <CardContent className="flex items-center justify-center flex-1">
           <p className="text-muted-foreground">
@@ -308,13 +384,35 @@ export default function AttemptImprovement({
   return (
     <Card className="w-full h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5" />
-          Attempt Improvement
-        </CardTitle>
-        <CardDescription>
-          Performance improvement across multiple attempts
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Attempt Improvement
+            </CardTitle>
+            <CardDescription>
+              Performance improvement across multiple attempts
+            </CardDescription>
+          </div>
+          {simulationsWithData && simulationsWithData.length > 0 && (
+            <SimulationPicker
+              simulations={simulationsWithData.map((s) => ({
+                id: s.id,
+                title: s.title,
+                timeLimit: s.timeLimit || undefined,
+                active: s.active,
+                defaultSimulation: s.defaultSimulation,
+                practiceSimulation: s.practiceSimulation,
+              }))}
+              placeholder="Filter by simulation..."
+              onSelect={setSelectedSimulations}
+              selectedSimulations={selectedSimulations}
+              hideSelectedChips={true}
+              showLabel={false}
+              buttonClassName="w-48"
+            />
+          )}
+        </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
         <div className="space-y-6">

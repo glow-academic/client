@@ -7,6 +7,10 @@
 "use client";
 
 import {
+  SimulationPicker,
+  type Simulation,
+} from "@/components/common/cohort/SimulationPicker";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -60,6 +64,9 @@ export default function CohortPerformance({
   thresholds,
 }: CohortPerformanceProps) {
   const [selectedCohort, setSelectedCohort] = useState<string | null>(null);
+  const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
+    []
+  );
 
   // Fetch data
   const { data: cohorts } = useQuery({
@@ -103,6 +110,41 @@ export default function CohortPerformance({
     queryFn: () => getAllRubrics(),
   });
 
+  // Filter simulations based on selection
+  const filteredSimulations = useMemo(() => {
+    if (!simulations) return [];
+    if (selectedSimulations.length === 0) return simulations;
+    return simulations.filter((s) =>
+      selectedSimulations.some((ss) => ss.id === s.id)
+    );
+  }, [simulations, selectedSimulations]);
+
+  // Get simulations that have data available
+  const simulationsWithData = useMemo(() => {
+    if (!simulations || !grades || !chats || !attempts) return [];
+
+    // Get all simulation IDs that have grades in the date range
+    const simulationIdsWithData = new Set<string>();
+
+    grades.forEach((grade) => {
+      const gradeDate = new Date(grade.createdAt);
+      const chat = chats.find((c) => c.id === grade.simulationChatId);
+      const attempt = attempts.find((a) => a.id === chat?.attemptId);
+
+      if (!attempt) return;
+
+      // Check date range
+      const inDateRange =
+        isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
+
+      if (inDateRange) {
+        simulationIdsWithData.add(attempt.simulationId);
+      }
+    });
+
+    return simulations.filter((s) => simulationIdsWithData.has(s.id));
+  }, [simulations, grades, chats, attempts, dateStart, dateEnd]);
+
   // Calculate cohort performance data
   const cohortData = useMemo(() => {
     if (
@@ -111,18 +153,18 @@ export default function CohortPerformance({
       !chats ||
       !grades ||
       !attempts ||
-      !simulations ||
+      !filteredSimulations ||
       !rubrics
     ) {
       return [];
     }
 
-    // Filter data by date range, exclude practice simulations, and filter by TA role
+    // Filter data by date range, exclude practice simulations, filter by TA role, and filter by selected simulations
     const filteredGrades = grades.filter((grade) => {
       const gradeDate = new Date(grade.createdAt);
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const simulation = simulations.find(
+      const simulation = filteredSimulations.find(
         (s) => s.id === attempt?.simulationId
       );
       const profile = profiles?.find((p) => p.id === attempt?.profileId);
@@ -140,7 +182,15 @@ export default function CohortPerformance({
       // Filter by profile if provided
       const profileMatch = profileId ? attempt?.profileId === profileId : true;
 
-      return inDateRange && notPractice && isTA && profileMatch;
+      // Filter by selected simulations
+      const simulationMatch =
+        selectedSimulations.length === 0 ||
+        (simulation &&
+          selectedSimulations.some((ss) => ss.id === simulation.id));
+
+      return (
+        inDateRange && notPractice && isTA && profileMatch && simulationMatch
+      );
     });
 
     if (filteredGrades.length === 0) return [];
@@ -158,6 +208,8 @@ export default function CohortPerformance({
         rubricPassPoints: number;
         // Track which simulations each student has passed
         studentSimulationPasses: Map<string, Set<string>>;
+        // Track which simulations are available for this cohort
+        availableSimulations: Set<string>;
       }
     >();
 
@@ -172,6 +224,7 @@ export default function CohortPerformance({
         rubricPoints: 0,
         rubricPassPoints: 0,
         studentSimulationPasses: new Map(),
+        availableSimulations: new Set(),
       });
     });
 
@@ -181,7 +234,7 @@ export default function CohortPerformance({
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const profile = profiles?.find((p) => p.id === attempt?.profileId);
       const rubric = rubrics?.find((r) => r.id === grade.rubricId);
-      const simulation = simulations.find(
+      const simulation = filteredSimulations.find(
         (s) => s.id === attempt?.simulationId
       );
 
@@ -198,6 +251,7 @@ export default function CohortPerformance({
           cohortData.totalScores.push(grade.score);
           cohortData.rubricPoints = rubric.points;
           cohortData.rubricPassPoints = rubric.passPoints;
+          cohortData.availableSimulations.add(simulation.id);
 
           // Check if this attempt passed based on rubric pass points
           const passed = grade.score >= rubric.passPoints;
@@ -221,14 +275,19 @@ export default function CohortPerformance({
       const cohort = cohorts.find((c) => c.id === cohortId);
       if (!cohort) return;
 
-      // For each student in this cohort, check if they've passed all assigned simulations
+      // Determine which simulations to check based on selection
+      const simulationsToCheck =
+        selectedSimulations.length > 0
+          ? selectedSimulations.map((s) => s.id)
+          : cohort.simulationIds; // Use the actual assigned simulations from the cohort
+
+      // For each student in this cohort, check if they've passed all relevant simulations
       cohort.profileIds.forEach((profileId) => {
         const studentPassedSimulations =
           cohortData.studentSimulationPasses.get(profileId) || new Set();
-        const assignedSimulations = new Set(cohort.simulationIds);
 
-        // Check if student has passed all assigned simulations
-        const hasPassedAll = Array.from(assignedSimulations).every((simId) =>
+        // Check if student has passed all relevant simulations
+        const hasPassedAll = simulationsToCheck.every((simId) =>
           studentPassedSimulations.has(simId)
         );
 
@@ -281,10 +340,18 @@ export default function CohortPerformance({
           passedAttempts: data.passedAttempts,
           rubricPoints: data.rubricPoints,
           rubricPassPoints: data.rubricPassPoints,
+          availableSimulations: data.availableSimulations.size,
           color,
         };
       })
       .filter((cohort) => cohort.totalStudents > 0) // Only show cohorts with data
+      .filter((cohort) => {
+        // If simulations are selected, only show cohorts that have those simulations
+        if (selectedSimulations.length > 0) {
+          return cohort.availableSimulations > 0;
+        }
+        return true;
+      })
       .sort((a, b) => b.passRate - a.passRate);
 
     return chartData;
@@ -294,12 +361,13 @@ export default function CohortPerformance({
     chats,
     grades,
     attempts,
-    simulations,
+    filteredSimulations,
     rubrics,
     dateStart,
     dateEnd,
     profileId,
     thresholds,
+    selectedSimulations,
   ]);
 
   // Get daily performance data for selected cohort
@@ -311,7 +379,7 @@ export default function CohortPerformance({
       !chats ||
       !grades ||
       !attempts ||
-      !simulations ||
+      !filteredSimulations ||
       !rubrics
     ) {
       return [];
@@ -330,7 +398,7 @@ export default function CohortPerformance({
       const gradeDate = new Date(grade.createdAt);
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const simulation = simulations.find(
+      const simulation = filteredSimulations.find(
         (s) => s.id === attempt?.simulationId
       );
       const profile = profiles?.find((p) => p.id === attempt?.profileId);
@@ -348,7 +416,19 @@ export default function CohortPerformance({
       // Filter by profile if provided
       const profileMatch = profileId ? attempt?.profileId === profileId : true;
 
-      return inCohort && inDateRange && notPractice && profileMatch;
+      // Filter by selected simulations
+      const simulationMatch =
+        selectedSimulations.length === 0 ||
+        (simulation &&
+          selectedSimulations.some((ss) => ss.id === simulation.id));
+
+      return (
+        inCohort &&
+        inDateRange &&
+        notPractice &&
+        profileMatch &&
+        simulationMatch
+      );
     });
 
     if (cohortGrades.length === 0) return [];
@@ -438,11 +518,12 @@ export default function CohortPerformance({
     chats,
     grades,
     attempts,
-    simulations,
+    filteredSimulations,
     rubrics,
     dateStart,
     dateEnd,
     profileId,
+    selectedSimulations,
   ]);
 
   // Get actionable insights for selected cohort
@@ -465,11 +546,33 @@ export default function CohortPerformance({
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Cohort Performance
-          </CardTitle>
-          <CardDescription>Pass rates by cohort</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Cohort Performance
+              </CardTitle>
+              <CardDescription>Pass rates by cohort</CardDescription>
+            </div>
+            {simulationsWithData && simulationsWithData.length > 0 && (
+              <SimulationPicker
+                simulations={simulationsWithData.map((s) => ({
+                  id: s.id,
+                  title: s.title,
+                  timeLimit: s.timeLimit || undefined,
+                  active: s.active,
+                  defaultSimulation: s.defaultSimulation,
+                  practiceSimulation: s.practiceSimulation,
+                }))}
+                placeholder="Filter by simulation..."
+                onSelect={setSelectedSimulations}
+                selectedSimulations={selectedSimulations}
+                hideSelectedChips={true}
+                showLabel={false}
+                buttonClassName="w-48"
+              />
+            )}
+          </div>
         </CardHeader>
         <CardContent className="flex items-center justify-center flex-1">
           <p className="text-muted-foreground">
@@ -483,11 +586,33 @@ export default function CohortPerformance({
   return (
     <Card className="w-full h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5" />
-          Cohort Performance
-        </CardTitle>
-        <CardDescription>Pass rates by cohort</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Cohort Performance
+            </CardTitle>
+            <CardDescription>Pass rates by cohort</CardDescription>
+          </div>
+          {simulationsWithData && simulationsWithData.length > 0 && (
+            <SimulationPicker
+              simulations={simulationsWithData.map((s) => ({
+                id: s.id,
+                title: s.title,
+                timeLimit: s.timeLimit || undefined,
+                active: s.active,
+                defaultSimulation: s.defaultSimulation,
+                practiceSimulation: s.practiceSimulation,
+              }))}
+              placeholder="Filter by simulation..."
+              onSelect={setSelectedSimulations}
+              selectedSimulations={selectedSimulations}
+              hideSelectedChips={true}
+              showLabel={false}
+              buttonClassName="w-48"
+            />
+          )}
+        </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
         <div className="space-y-6">
@@ -508,6 +633,13 @@ export default function CohortPerformance({
             } else {
               bgColor = "#ef4444"; // Red for danger
             }
+
+            // Get simulation count for display
+            const cohortObj = cohorts?.find((c) => c.id === cohort.id);
+            const simulationCount =
+              selectedSimulations.length > 0
+                ? selectedSimulations.length
+                : cohortObj?.simulationIds.length || 0; // Use actual assigned simulations count
 
             return (
               <Dialog key={cohort.id}>
@@ -535,10 +667,13 @@ export default function CohortPerformance({
                       <div className="flex-1">
                         <h4 className="font-medium">{cohort.name}</h4>
                         <p className="text-sm text-muted-foreground mb-2">
-                          {passRatePercentage}% of students pass all
-                          assigned quizzes with a{" "}
-                          {(cohort.rubricPassPoints / cohort.rubricPoints) *
-                            100}
+                          {passRatePercentage}% of students pass{" "}
+                          {simulationCount} quiz
+                          {simulationCount !== 1 ? "zes" : ""} with a{" "}
+                          {Math.round(
+                            (cohort.rubricPassPoints / cohort.rubricPoints) *
+                              100
+                          )}
                           % or better
                         </p>
                       </div>
