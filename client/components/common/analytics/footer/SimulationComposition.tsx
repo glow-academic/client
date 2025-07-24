@@ -22,18 +22,16 @@ import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulatio
 import { useQuery } from "@tanstack/react-query";
 import { isAfter, isBefore } from "date-fns";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import SimulationCompositionPicker, {
+  SimulationCompositionConfig,
+} from "./SimulationCompositionPicker";
 
 export interface SimulationCompositionProps {
   dateStart: Date;
   dateEnd: Date;
   profileId?: string;
-  thresholds: {
-    danger: number;
-    warning: number;
-    success: number;
-  };
 }
 
 interface SimulationAttribute {
@@ -50,8 +48,15 @@ export default function SimulationComposition({
   dateStart,
   dateEnd,
   profileId,
-  thresholds,
 }: SimulationCompositionProps) {
+  // Configuration state
+  const [config, setConfig] = useState<SimulationCompositionConfig>({
+    method: "percentile",
+    topPercentage: 25,
+    bottomPercentage: 25,
+    description: "Top 25% vs Bottom 25% - Best vs Worst",
+  });
+
   // Fetch data
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -182,22 +187,79 @@ export default function SimulationComposition({
       performance.totalAttempts = performance.chats.length;
     });
 
-    // Separate high and low performing simulations
-    const highPerformingSims = Array.from(simulationPerformance.values())
-      .filter(
-        (sim) =>
-          sim.avgScore >= thresholds.success &&
-          sim.completionRate >= thresholds.success
-      )
-      .slice(0, 5); // Top 5 high performers
+    // Calculate relative performance metrics
+    const allSimulations = Array.from(simulationPerformance.values());
 
-    const lowPerformingSims = Array.from(simulationPerformance.values())
-      .filter(
-        (sim) =>
-          sim.avgScore < thresholds.warning ||
-          sim.completionRate < thresholds.warning
-      )
-      .slice(0, 5); // Top 5 low performers
+    if (allSimulations.length === 0) {
+      return { highPerforming: [], lowPerforming: [], attributes: [] };
+    }
+
+    // Calculate combined performance score (weighted average of score and completion rate)
+    const simulationsWithScore = allSimulations.map((sim) => ({
+      ...sim,
+      combinedScore: sim.avgScore * 0.7 + sim.completionRate * 0.3, // Weight score more heavily
+    }));
+
+    // Sort by combined performance score
+    simulationsWithScore.sort((a, b) => b.combinedScore - a.combinedScore);
+
+    // Apply statistical method to determine high and low performers
+    let highPerformingSims: typeof simulationsWithScore = [];
+    let lowPerformingSims: typeof simulationsWithScore = [];
+
+    switch (config.method) {
+      case "percentile":
+        const topCount = Math.ceil(
+          (simulationsWithScore.length * config.topPercentage) / 100
+        );
+        const bottomCount = Math.ceil(
+          (simulationsWithScore.length * config.bottomPercentage) / 100
+        );
+        highPerformingSims = simulationsWithScore.slice(0, topCount);
+        lowPerformingSims = simulationsWithScore.slice(-bottomCount);
+        break;
+
+      case "quartile":
+        // For quartile, we use Q1 (top 25%) and Q4 (bottom 25%)
+        const q1Count = Math.ceil(simulationsWithScore.length * 0.25);
+        const q4Count = Math.ceil(simulationsWithScore.length * 0.25);
+        highPerformingSims = simulationsWithScore.slice(0, q1Count);
+        lowPerformingSims = simulationsWithScore.slice(-q4Count);
+        break;
+
+      case "standard_deviation":
+        // Calculate mean and standard deviation
+        const scores = simulationsWithScore.map((sim) => sim.combinedScore);
+        const mean =
+          scores.reduce((sum, score) => sum + score, 0) / scores.length;
+        const variance =
+          scores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) /
+          scores.length;
+        const stdDev = Math.sqrt(variance);
+
+        // Select simulations above mean + 1σ and below mean - 1σ
+        const upperThreshold = mean + stdDev;
+        const lowerThreshold = mean - stdDev;
+
+        highPerformingSims = simulationsWithScore.filter(
+          (sim) => sim.combinedScore >= upperThreshold
+        );
+        lowPerformingSims = simulationsWithScore.filter(
+          (sim) => sim.combinedScore <= lowerThreshold
+        );
+        break;
+
+      default:
+        // Fallback to percentile
+        const fallbackTopCount = Math.ceil(
+          (simulationsWithScore.length * 25) / 100
+        );
+        const fallbackBottomCount = Math.ceil(
+          (simulationsWithScore.length * 25) / 100
+        );
+        highPerformingSims = simulationsWithScore.slice(0, fallbackTopCount);
+        lowPerformingSims = simulationsWithScore.slice(-fallbackBottomCount);
+    }
 
     // Define simulation attributes to analyze
     const attributes: SimulationAttribute[] = [
@@ -376,7 +438,9 @@ export default function SimulationComposition({
     dateStart,
     dateEnd,
     profileId,
-    thresholds,
+    config.method,
+    config.topPercentage,
+    config.bottomPercentage,
   ]);
 
   if (
@@ -416,6 +480,12 @@ export default function SimulationComposition({
       </CardHeader>
 
       <CardContent className="space-y-6 flex-1 flex flex-col">
+        {/* Configuration Picker */}
+        <SimulationCompositionPicker
+          currentConfig={config}
+          onConfigChange={setConfig}
+        />
+
         {/* Performance Summary */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
@@ -436,7 +506,7 @@ export default function SimulationComposition({
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              Based on average scores and completion rates
+              {config.description}
             </p>
           </div>
         </div>
@@ -448,7 +518,11 @@ export default function SimulationComposition({
             <div className="text-center">
               <h3 className="font-semibold text-green-600 flex items-center justify-center gap-2">
                 <TrendingUp className="h-4 w-4" />
-                High-Performing Simulations
+                {config.method === "percentile" &&
+                  `Top ${config.topPercentage}%`}
+                {config.method === "quartile" && "Q1 (Top 25%)"}
+                {config.method === "standard_deviation" && "Above 1σ"}
+                Simulations
               </h3>
               <p className="text-xs text-muted-foreground">
                 Common characteristics of successful simulations
@@ -516,7 +590,11 @@ export default function SimulationComposition({
             <div className="text-center">
               <h3 className="font-semibold text-red-600 flex items-center justify-center gap-2">
                 <TrendingDown className="h-4 w-4" />
-                Low-Performing Simulations
+                {config.method === "percentile" &&
+                  `Bottom ${config.bottomPercentage}%`}
+                {config.method === "quartile" && "Q4 (Bottom 25%)"}
+                {config.method === "standard_deviation" && "Below 1σ"}
+                Simulations
               </h3>
               <p className="text-xs text-muted-foreground">
                 Common characteristics of struggling simulations
@@ -584,13 +662,40 @@ export default function SimulationComposition({
             {simulationComposition.highPerforming.length > 0 &&
               simulationComposition.lowPerforming.length > 0 && (
                 <>
-                  High-performing simulations tend to have more{" "}
-                  {simulationComposition.highPerforming[0]?.name.toLowerCase()},
-                  while low-performing simulations show higher rates of{" "}
-                  {simulationComposition.lowPerforming[0]?.name.toLowerCase()}.
-                  This suggests that{" "}
+                  {config.method === "percentile" && (
+                    <>
+                      Top {config.topPercentage}% performing simulations tend to
+                      have more{" "}
+                      {simulationComposition.highPerforming[0]?.name.toLowerCase()}
+                      , while bottom {config.bottomPercentage}% performing
+                      simulations show higher rates of{" "}
+                      {simulationComposition.lowPerforming[0]?.name.toLowerCase()}
+                      .
+                    </>
+                  )}
+                  {config.method === "quartile" && (
+                    <>
+                      Q1 (top 25%) performing simulations tend to have more{" "}
+                      {simulationComposition.highPerforming[0]?.name.toLowerCase()}
+                      , while Q4 (bottom 25%) performing simulations show higher
+                      rates of{" "}
+                      {simulationComposition.lowPerforming[0]?.name.toLowerCase()}
+                      .
+                    </>
+                  )}
+                  {config.method === "standard_deviation" && (
+                    <>
+                      Statistical outliers above 1σ tend to have more{" "}
+                      {simulationComposition.highPerforming[0]?.name.toLowerCase()}
+                      , while outliers below 1σ show higher rates of{" "}
+                      {simulationComposition.lowPerforming[0]?.name.toLowerCase()}
+                      .
+                    </>
+                  )}
+                  This analysis shows that{" "}
                   {simulationComposition.highPerforming[0]?.description.toLowerCase()}{" "}
-                  may contribute to better outcomes.
+                  may contribute to better outcomes compared to other
+                  simulations in this period.
                 </>
               )}
           </p>

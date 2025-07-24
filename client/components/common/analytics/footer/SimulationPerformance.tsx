@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
@@ -73,6 +74,7 @@ interface Simulation {
   scenarioIds: string[];
   active: boolean;
   practiceSimulation: boolean;
+  rubricId?: string;
 }
 
 export default function SimulationPerformance({
@@ -100,6 +102,11 @@ export default function SimulationPerformance({
   const { data: scenarios } = useQuery({
     queryKey: ["scenarios"],
     queryFn: () => getAllScenarios(),
+  });
+
+  const { data: rubrics } = useQuery({
+    queryKey: ["rubrics"],
+    queryFn: () => getAllRubrics(),
   });
 
   const { data: attempts } = useQuery({
@@ -137,6 +144,7 @@ export default function SimulationPerformance({
         scenarioIds: sim.scenarioIds || [],
         active: sim.active,
         practiceSimulation: sim.practiceSimulation,
+        rubricId: sim.rubricId,
       }));
 
     // Filter out simulations that don't have data in the selected date range
@@ -178,8 +186,8 @@ export default function SimulationPerformance({
         return inDateRange && isTA && profileMatch;
       });
 
-      // Only include simulations that have at least 2 grades (minimum for meaningful data)
-      return simulationGrades.length >= 2;
+      // Only include simulations that have at least 1 grade (reduced from 2 for better data visibility)
+      return simulationGrades.length >= 1;
     });
 
     return simulationsWithData;
@@ -226,10 +234,15 @@ export default function SimulationPerformance({
       !chats ||
       !grades ||
       !attempts ||
-      !profiles
+      !profiles ||
+      !rubrics
     ) {
       return [];
     }
+
+    // Get rubric for score calculation
+    const rubric = rubrics.find((r) => r.id === selectedSimulation.rubricId);
+    const rubricTotalPoints = rubric?.points || 100;
 
     // Filter data by date range, selected simulation, and filter by TA role
     const filteredGrades = grades.filter((grade) => {
@@ -279,9 +292,12 @@ export default function SimulationPerformance({
           (completedChats.length / scenarioChats.length) * 100
         );
 
+        // Calculate average score as percentage
         const avgScore = Math.round(
-          scenarioGrades.reduce((sum, grade) => sum + grade.score, 0) /
-            scenarioGrades.length
+          (scenarioGrades.reduce((sum, grade) => sum + grade.score, 0) /
+            scenarioGrades.length /
+            rubricTotalPoints) *
+            100
         );
 
         // Calculate performance trend (simple comparison with previous period)
@@ -303,7 +319,9 @@ export default function SimulationPerformance({
           const olderAvg =
             olderGrades.reduce((sum, grade) => sum + grade.score, 0) /
             olderGrades.length;
-          performanceChange = Math.round(recentAvg - olderAvg);
+          performanceChange = Math.round(
+            ((recentAvg - olderAvg) / rubricTotalPoints) * 100
+          );
         }
 
         return {
@@ -324,7 +342,7 @@ export default function SimulationPerformance({
       })
       .filter(
         (item): item is NonNullable<typeof item> =>
-          item !== null && item.totalAttempts >= 2
+          item !== null && item.totalAttempts >= 1 // Reduced from 2 to 1
       )
       .sort((a, b) => b.avgScore - a.avgScore);
 
@@ -336,6 +354,7 @@ export default function SimulationPerformance({
     grades,
     attempts,
     profiles,
+    rubrics,
     dateStart,
     dateEnd,
     profileId,
@@ -381,7 +400,7 @@ export default function SimulationPerformance({
             <ul className="text-xs text-muted-foreground text-left list-disc list-inside space-y-1">
               <li>No TA role profiles in the selected date range</li>
               <li>No completed simulation attempts</li>
-              <li>No simulations with sufficient data (≥2 grades)</li>
+              <li>No simulations with sufficient data (≥1 grade)</li>
               <li>Date range too restrictive</li>
             </ul>
           </div>
@@ -397,7 +416,7 @@ export default function SimulationPerformance({
           <div>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
-              Scenario Performance
+              Simulation Performance
             </CardTitle>
             <CardDescription>
               Performance trends for scenarios within simulations
@@ -514,7 +533,7 @@ export default function SimulationPerformance({
             </div>
 
             {/* Bar Chart */}
-            <div className="flex-1 min-h-[300px]">
+            <div className="flex-1 min-h-[300px] h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={scenarioPerformanceData}

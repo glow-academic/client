@@ -235,7 +235,6 @@ export default function Dashboard({ profileId }: DashboardProps) {
       key="simulation-composition"
       dateStart={startDate}
       dateEnd={endDate}
-      thresholds={thresholds}
       {...(profileId && { profileId })}
     />,
   ];
@@ -546,17 +545,19 @@ export default function Dashboard({ profileId }: DashboardProps) {
           <div className="grid gap-6 items-stretch grid-cols-1 lg:grid-cols-2">
             {/* Left Footer Section */}
             {leftFooterComponents.length > 0 && (
-              <div className="space-y-4">
+              <div className="flex flex-col space-y-4">
                 <div
                   className="relative group min-h-[500px] max-h-[500px]"
                   onMouseEnter={() => setIsLeftFooterHovered(true)}
                   onMouseLeave={() => setIsLeftFooterHovered(false)}
                 >
-                  <div className="h-full">
-                    {leftFooterComponents.length > 0 &&
-                      leftFooterComponents[
-                        leftFooterCarouselIndex % leftFooterComponents.length
-                      ]}
+                  <div className="transition-all duration-300 ease-in-out h-full">
+                    <div className="h-full">
+                      {leftFooterComponents.length > 0 &&
+                        leftFooterComponents[
+                          leftFooterCarouselIndex % leftFooterComponents.length
+                        ]}
+                    </div>
                   </div>
 
                   {/* Left Footer Navigation Arrows */}
@@ -607,17 +608,20 @@ export default function Dashboard({ profileId }: DashboardProps) {
 
             {/* Right Footer Section */}
             {rightFooterComponents.length > 0 && (
-              <div className="space-y-4">
+              <div className="flex flex-col space-y-4">
                 <div
                   className="relative group min-h-[500px] max-h-[500px]"
                   onMouseEnter={() => setIsRightFooterHovered(true)}
                   onMouseLeave={() => setIsRightFooterHovered(false)}
                 >
-                  <div className="h-full">
-                    {rightFooterComponents.length > 0 &&
-                      rightFooterComponents[
-                        rightFooterCarouselIndex % rightFooterComponents.length
-                      ]}
+                  <div className="transition-all duration-300 ease-in-out h-full">
+                    <div className="h-full">
+                      {rightFooterComponents.length > 0 &&
+                        rightFooterComponents[
+                          rightFooterCarouselIndex %
+                            rightFooterComponents.length
+                        ]}
+                    </div>
                   </div>
 
                   {/* Right Footer Navigation Arrows */}

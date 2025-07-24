@@ -1,6 +1,7 @@
 /**
  * ScenarioPerformance.tsx
- * This component displays scenario elements breakdown with performance metrics.
+ * This component displays scenario attribute breakdown with performance metrics.
+ * Shows what percentage of scenarios use each specific attribute and their performance.
  * @AshokSaravanan222 & @siladiea
  * 07/23/2025
  */
@@ -14,6 +15,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllScenarioClasses } from "@/utils/queries/scenario_classes/get-all-scenario-classes";
+import { getAllScenarioDeadlines } from "@/utils/queries/scenario_deadlines/get-all-scenario-deadlines";
+import { getAllScenarioLocations } from "@/utils/queries/scenario_locations/get-all-scenario-locations";
+import { getAllScenarioTimes } from "@/utils/queries/scenario_times/get-all-scenario-times";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
@@ -22,7 +27,7 @@ import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulatio
 import { useQuery } from "@tanstack/react-query";
 import { isAfter, isBefore } from "date-fns";
 import { BarChart3 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Cell,
   Legend,
@@ -31,6 +36,9 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import ScenarioAttributePicker, {
+  ScenarioAttributeType,
+} from "./ScenarioAttributePicker";
 
 export interface ScenarioPerformanceProps {
   dateStart: Date;
@@ -43,12 +51,13 @@ export interface ScenarioPerformanceProps {
   };
 }
 
-interface ScenarioElement {
+interface AttributeElement {
   id: string;
   name: string;
   icon: string;
   color: string;
   count: number;
+  percentage: number;
   avgScore: number;
   completionRate: number;
   totalAttempts: number;
@@ -59,6 +68,9 @@ export default function ScenarioPerformance({
   dateEnd,
   profileId,
 }: Omit<ScenarioPerformanceProps, "thresholds">) {
+  const [selectedAttribute, setSelectedAttribute] =
+    useState<ScenarioAttributeType>("classes");
+
   // Fetch data
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -73,6 +85,26 @@ export default function ScenarioPerformance({
   const { data: simulations } = useQuery({
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
+  });
+
+  const { data: scenarioClasses } = useQuery({
+    queryKey: ["scenarioClasses"],
+    queryFn: () => getAllScenarioClasses(),
+  });
+
+  const { data: scenarioLocations } = useQuery({
+    queryKey: ["scenarioLocations"],
+    queryFn: () => getAllScenarioLocations(),
+  });
+
+  const { data: scenarioDeadlines } = useQuery({
+    queryKey: ["scenarioDeadlines"],
+    queryFn: () => getAllScenarioDeadlines(),
+  });
+
+  const { data: scenarioTimes } = useQuery({
+    queryKey: ["scenarioTimes"],
+    queryFn: () => getAllScenarioTimes(),
   });
 
   const { data: attempts } = useQuery({
@@ -96,20 +128,24 @@ export default function ScenarioPerformance({
     enabled: !!chats && chats.length > 0,
   });
 
-  // Calculate scenario elements breakdown
-  const scenarioElements = useMemo(() => {
+  // Calculate attribute breakdown
+  const attributeElements = useMemo(() => {
     if (
       !scenarios ||
       !simulations ||
       !chats ||
       !grades ||
       !attempts ||
-      !profiles
+      !profiles ||
+      !scenarioClasses ||
+      !scenarioLocations ||
+      !scenarioDeadlines ||
+      !scenarioTimes
     ) {
       return [];
     }
 
-    // Filter data by date range, exclude practice simulations, and filter by TA role
+    // Filter data by date range, exclude practice simulations, and filter by profile
     const filteredGrades = grades.filter((grade) => {
       const gradeDate = new Date(grade.createdAt);
       const chat = chats.find((c) => c.id === grade.simulationChatId);
@@ -117,7 +153,6 @@ export default function ScenarioPerformance({
       const simulation = simulations.find(
         (s) => s.id === attempt?.simulationId
       );
-      const profile = profiles?.find((p) => p.id === attempt?.profileId);
 
       // Check date range
       const inDateRange =
@@ -126,168 +161,146 @@ export default function ScenarioPerformance({
       // Exclude practice simulations
       const notPractice = !simulation?.practiceSimulation;
 
-      // Filter by TA role
-      const isTA = profile?.role === "ta";
-
       // Filter by profile if provided
       const profileMatch = profileId ? attempt?.profileId === profileId : true;
 
-      return inDateRange && notPractice && isTA && profileMatch;
+      return inDateRange && notPractice && profileMatch;
     });
 
-    if (filteredGrades.length === 0) return [];
+    if (filteredGrades.length === 0) {
+      return [];
+    }
 
-    // Define scenario element categories
-    const elementCategories: { [key: string]: ScenarioElement } = {
-      class: {
-        id: "class",
-        name: "Class Management",
-        icon: "👨‍🏫",
-        color: "#3b82f6",
-        count: 0,
-        avgScore: 0,
-        completionRate: 0,
-        totalAttempts: 0,
-      },
-      deadlines: {
-        id: "deadlines",
-        name: "Deadlines & Time",
-        icon: "⏰",
-        color: "#ef4444",
-        count: 0,
-        avgScore: 0,
-        completionRate: 0,
-        totalAttempts: 0,
-      },
-      locations: {
-        id: "locations",
-        name: "Location & Space",
-        icon: "📍",
-        color: "#10b981",
-        count: 0,
-        completionRate: 0,
-        avgScore: 0,
-        totalAttempts: 0,
-      },
-      students: {
-        id: "students",
-        name: "Student Interactions",
-        icon: "👥",
-        color: "#f59e0b",
-        count: 0,
-        avgScore: 0,
-        completionRate: 0,
-        totalAttempts: 0,
-      },
-      content: {
-        id: "content",
-        name: "Content & Materials",
-        icon: "📚",
-        color: "#8b5cf6",
-        count: 0,
-        avgScore: 0,
-        completionRate: 0,
-        totalAttempts: 0,
-      },
-      objectives: {
-        id: "objectives",
-        name: "Learning Objectives",
-        icon: "🎯",
-        color: "#06b6d4",
-        count: 0,
-        avgScore: 0,
-        completionRate: 0,
-        totalAttempts: 0,
-      },
-    };
+    // Get the relevant attribute data based on selection
+    let attributeData:
+      | typeof scenarioClasses
+      | typeof scenarioLocations
+      | typeof scenarioDeadlines
+      | typeof scenarioTimes = [];
+    let attributeKey: string = "";
+    let nameKey: string = "";
+    let icon: string = "";
 
-    // Analyze scenarios and categorize them
-    const scenarioAnalysis = new Map<
-      string,
-      {
-        scenario: (typeof scenarios)[0];
-        grades: typeof grades;
-        chats: typeof chats;
-      }
-    >();
+    switch (selectedAttribute) {
+      case "classes":
+        attributeData = scenarioClasses;
+        attributeKey = "classId";
+        nameKey = "name";
+        icon = "👨‍🏫";
+        break;
+      case "locations":
+        attributeData = scenarioLocations;
+        attributeKey = "locationId";
+        nameKey = "name";
+        icon = "📍";
+        break;
+      case "deadlines":
+        attributeData = scenarioDeadlines;
+        attributeKey = "deadlineId";
+        nameKey = "deadline";
+        icon = "⏰";
+        break;
+      case "times":
+        attributeData = scenarioTimes;
+        attributeKey = "timeId";
+        nameKey = "description";
+        icon = "🕐";
+        break;
+    }
 
+    // Get all scenarios that were attempted in the filtered data
+    const attemptedScenarioIds = new Set<string>();
     filteredGrades.forEach((grade) => {
       const chat = chats.find((c) => c.id === grade.simulationChatId);
-      if (!chat) return;
-
-      const scenario = scenarios.find((s) => s.id === chat.scenarioId);
-      if (!scenario) return;
-
-      if (!scenarioAnalysis.has(scenario.id)) {
-        scenarioAnalysis.set(scenario.id, {
-          scenario,
-          grades: [],
-          chats: [],
-        });
-      }
-
-      const analysis = scenarioAnalysis.get(scenario.id)!;
-      analysis.grades.push(grade);
-      analysis.chats.push(chat);
-    });
-
-    // Categorize scenarios based on their characteristics
-    scenarioAnalysis.forEach(({ scenario, grades, chats }) => {
-      const completedChats = chats.filter((chat) => chat.completed);
-      const avgScore =
-        grades.reduce((sum, grade) => sum + grade.score, 0) / grades.length;
-      const completionRate = (completedChats.length / chats.length) * 100;
-
-      // Determine which category this scenario belongs to based on its characteristics
-      let primaryCategory = "class"; // default
-
-      // Class management scenarios (high intensity, multiple students)
-      if (
-        scenario.intensity &&
-        scenario.intensity >= 7 &&
-        scenario.crowdedness &&
-        scenario.crowdedness >= 7
-      ) {
-        primaryCategory = "class";
-      }
-      // Deadline/time pressure scenarios
-      else if (scenario.intensity && scenario.intensity >= 8) {
-        primaryCategory = "deadlines";
-      }
-      // Location/space management scenarios
-      else if (scenario.crowdedness && scenario.crowdedness >= 6) {
-        primaryCategory = "locations";
-      }
-      // Student interaction scenarios
-      else if (scenario.crowdedness && scenario.crowdedness >= 5) {
-        primaryCategory = "students";
-      }
-      // Content/material heavy scenarios
-      else if (scenario.documentIds && scenario.documentIds.length >= 3) {
-        primaryCategory = "content";
-      }
-      // Learning objective focused scenarios
-      else {
-        primaryCategory = "objectives";
-      }
-
-      const category = elementCategories[primaryCategory];
-      if (category) {
-        category.count++;
-        category.totalAttempts += chats.length;
-        category.avgScore =
-          (category.avgScore * (category.count - 1) + avgScore) /
-          category.count;
-        category.completionRate =
-          (category.completionRate * (category.count - 1) + completionRate) /
-          category.count;
+      if (chat) {
+        attemptedScenarioIds.add(chat.scenarioId);
       }
     });
 
-    // Convert to array and filter out categories with no data
-    return Object.values(elementCategories).filter(
-      (element) => element.count > 0
+    const attemptedScenarios = scenarios.filter((scenario) =>
+      attemptedScenarioIds.has(scenario.id)
     );
+
+    // Calculate total scenarios for percentage calculation
+    const totalScenarios = attemptedScenarios.length;
+
+    // Generate colors for each attribute
+    const colors = [
+      "#3b82f6",
+      "#ef4444",
+      "#10b981",
+      "#f59e0b",
+      "#8b5cf6",
+      "#06b6d4",
+      "#84cc16",
+      "#f97316",
+      "#ec4899",
+      "#6366f1",
+      "#14b8a6",
+      "#f43f5e",
+    ];
+
+    // Analyze each attribute
+    const elements: AttributeElement[] = attributeData.map((attr, index) => {
+      // Find scenarios that use this attribute
+      const scenariosWithAttribute = attemptedScenarios.filter(
+        (scenario) =>
+          scenario[attributeKey as keyof typeof scenario] === attr.id
+      );
+
+      const count = scenariosWithAttribute.length;
+      const percentage =
+        totalScenarios > 0 ? (count / totalScenarios) * 100 : 0;
+
+      // Calculate performance metrics for this attribute
+      let totalScore = 0;
+      let totalCompletion = 0;
+      let totalAttempts = 0;
+      let gradeCount = 0;
+
+      scenariosWithAttribute.forEach((scenario) => {
+        const scenarioChats = chats.filter(
+          (chat) => chat.scenarioId === scenario.id
+        );
+        const scenarioGrades = filteredGrades.filter((grade) => {
+          const chat = chats.find((c) => c.id === grade.simulationChatId);
+          return chat?.scenarioId === scenario.id;
+        });
+
+        scenarioGrades.forEach((grade) => {
+          totalScore += grade.score;
+          gradeCount++;
+        });
+
+        scenarioChats.forEach((chat) => {
+          if (chat.completed) {
+            totalCompletion++;
+          }
+          totalAttempts++;
+        });
+      });
+
+      const avgScore = gradeCount > 0 ? totalScore / gradeCount : 0;
+      const completionRate =
+        totalAttempts > 0 ? (totalCompletion / totalAttempts) * 100 : 0;
+
+      return {
+        id: attr.id,
+        name: attr[nameKey as keyof typeof attr] as string,
+        icon,
+        color: colors[index % colors.length] || "#3b82f6",
+        count,
+        percentage: Math.round(percentage * 10) / 10, // Round to 1 decimal place
+        avgScore: Math.round(avgScore),
+        completionRate: Math.round(completionRate),
+        totalAttempts,
+      };
+    });
+
+    // Filter out attributes with no usage and sort by percentage descending
+    return elements
+      .filter((element) => element.count > 0)
+      .sort((a, b) => b.percentage - a.percentage);
   }, [
     scenarios,
     simulations,
@@ -295,40 +308,47 @@ export default function ScenarioPerformance({
     grades,
     attempts,
     profiles,
+    scenarioClasses,
+    scenarioLocations,
+    scenarioDeadlines,
+    scenarioTimes,
     dateStart,
     dateEnd,
     profileId,
+    selectedAttribute,
   ]);
 
   // Calculate overall performance
   const overallPerformance = useMemo(() => {
-    if (!scenarioElements.length) return { avgScore: 0, completionRate: 0 };
+    if (!attributeElements.length) return { avgScore: 0, completionRate: 0 };
 
-    const totalAvgScore = scenarioElements.reduce(
+    const totalAvgScore = attributeElements.reduce(
       (sum, element) => sum + element.avgScore,
       0
     );
-    const totalCompletionRate = scenarioElements.reduce(
+    const totalCompletionRate = attributeElements.reduce(
       (sum, element) => sum + element.completionRate,
       0
     );
 
     return {
-      avgScore: Math.round(totalAvgScore / scenarioElements.length),
-      completionRate: Math.round(totalCompletionRate / scenarioElements.length),
+      avgScore: Math.round(totalAvgScore / attributeElements.length),
+      completionRate: Math.round(
+        totalCompletionRate / attributeElements.length
+      ),
     };
-  }, [scenarioElements]);
+  }, [attributeElements]);
 
-  if (!scenarioElements.length) {
+  if (!attributeElements.length) {
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
-            Scenario Elements Breakdown
+            Scenario Attribute Breakdown
           </CardTitle>
           <CardDescription>
-            Performance analysis by scenario element categories
+            Performance analysis by scenario attributes
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center flex-1">
@@ -343,13 +363,21 @@ export default function ScenarioPerformance({
   return (
     <Card className="w-full h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5" />
-          Scenario Elements Breakdown
-        </CardTitle>
-        <CardDescription>
-          Performance analysis by scenario element categories
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Scenario Attribute Breakdown
+            </CardTitle>
+            <CardDescription>
+              Performance analysis by scenario attributes
+            </CardDescription>
+          </div>
+          <ScenarioAttributePicker
+            selectedAttribute={selectedAttribute}
+            onAttributeChange={setSelectedAttribute}
+          />
+        </div>
       </CardHeader>
 
       <CardContent className="space-y-6 flex-1 flex flex-col">
@@ -371,13 +399,13 @@ export default function ScenarioPerformance({
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              Overall performance across all scenario elements
+              Overall performance across all {selectedAttribute}
             </p>
           </div>
 
           <div className="text-right">
             <div className="text-sm font-medium">
-              {scenarioElements.length} categories
+              {attributeElements.length} {selectedAttribute}
             </div>
             <div className="text-xs text-muted-foreground">
               with performance data
@@ -390,8 +418,8 @@ export default function ScenarioPerformance({
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={scenarioElements}
-                dataKey="count"
+                data={attributeElements}
+                dataKey="percentage"
                 nameKey="name"
                 cx="50%"
                 cy="50%"
@@ -399,7 +427,7 @@ export default function ScenarioPerformance({
                 innerRadius={60}
                 paddingAngle={2}
               >
-                {scenarioElements.map((entry, index) => (
+                {attributeElements.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
@@ -410,7 +438,9 @@ export default function ScenarioPerformance({
                   borderRadius: "6px",
                 }}
                 formatter={(value: number, name: string, _props: unknown) => {
-                  const element = scenarioElements.find((e) => e.name === name);
+                  const element = attributeElements.find(
+                    (e) => e.name === name
+                  );
                   if (!element) return [value, name];
 
                   return [
@@ -419,11 +449,10 @@ export default function ScenarioPerformance({
                         {element.icon} {element.name}
                       </div>
                       <div className="text-sm space-y-1">
+                        <div>Usage: {element.percentage}%</div>
                         <div>Scenarios: {element.count}</div>
-                        <div>Avg Score: {Math.round(element.avgScore)}%</div>
-                        <div>
-                          Completion: {Math.round(element.completionRate)}%
-                        </div>
+                        <div>Avg Score: {element.avgScore}%</div>
+                        <div>Completion: {element.completionRate}%</div>
                         <div>Attempts: {element.totalAttempts}</div>
                       </div>
                     </div>,
@@ -435,7 +464,7 @@ export default function ScenarioPerformance({
                 verticalAlign="bottom"
                 height={36}
                 formatter={(_, __, index) => {
-                  const element = scenarioElements[index];
+                  const element = attributeElements[index];
                   if (!element) return <span className="text-xs">Unknown</span>;
                   return (
                     <span className="text-xs">
@@ -448,9 +477,9 @@ export default function ScenarioPerformance({
           </ResponsiveContainer>
         </div>
 
-        {/* Element Details */}
+        {/* Attribute Details */}
         <div className="grid grid-cols-2 gap-4 text-xs">
-          {scenarioElements.map((element) => (
+          {attributeElements.map((element) => (
             <div
               key={element.id}
               className="flex items-center justify-between p-3 rounded-lg border"
@@ -461,14 +490,12 @@ export default function ScenarioPerformance({
                 <div>
                   <div className="font-medium">{element.name}</div>
                   <div className="text-muted-foreground">
-                    {element.count} scenarios
+                    {element.percentage}% usage
                   </div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-medium">
-                  {Math.round(element.avgScore)}%
-                </div>
+                <div className="font-medium">{element.avgScore}%</div>
                 <div className="text-muted-foreground">avg score</div>
               </div>
             </div>
@@ -478,20 +505,21 @@ export default function ScenarioPerformance({
         {/* Insights */}
         <div className="text-sm text-muted-foreground">
           <p className="leading-relaxed">
-            {scenarioElements.length > 0 && (
+            {attributeElements.length > 0 && (
               <>
-                {scenarioElements.find(
+                {attributeElements[0]?.name || "Some"} is the most commonly used{" "}
+                {selectedAttribute.slice(0, -1)} (
+                {attributeElements[0]?.percentage}% usage), while{" "}
+                {attributeElements[attributeElements.length - 1]?.name ||
+                  "others"}
+                are used less frequently. Performance varies across different{" "}
+                {selectedAttribute}, with{" "}
+                {attributeElements.find(
                   (e) =>
                     e.avgScore ===
-                    Math.max(...scenarioElements.map((e) => e.avgScore))
-                )?.name || "Some"}
-                scenarios show the best performance, while
-                {scenarioElements.find(
-                  (e) =>
-                    e.avgScore ===
-                    Math.min(...scenarioElements.map((e) => e.avgScore))
-                )?.name || "other"}
-                scenarios may need additional support.
+                    Math.max(...attributeElements.map((e) => e.avgScore))
+                )?.name || "some"}{" "}
+                showing the best results.
               </>
             )}
           </p>

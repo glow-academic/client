@@ -467,6 +467,14 @@ export default function ScenarioStats({
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis
                 type="number"
+                dataKey="avgScore"
+                name="Average Score"
+                fontSize={12}
+                domain={[0, 100]}
+                tickFormatter={(value) => `${value}%`}
+              />
+              <YAxis
+                type="number"
                 dataKey="metricValue"
                 name={selectedMetricOption?.name || "Metric"}
                 fontSize={12}
@@ -475,13 +483,6 @@ export default function ScenarioStats({
                     return value.toString();
                   return value.toString();
                 }}
-              />
-              <YAxis
-                type="number"
-                dataKey="avgScore"
-                name="Average Score"
-                fontSize={12}
-                domain={[0, 100]}
               />
               <Tooltip
                 contentStyle={{
@@ -497,7 +498,7 @@ export default function ScenarioStats({
                 ]}
                 labelFormatter={(label) => {
                   const dataPoint = scenarioPerformanceData.find(
-                    (item) => item.metricValue === label
+                    (item) => item.avgScore === label
                   );
                   return dataPoint ? dataPoint.scenarioName : label;
                 }}
@@ -505,9 +506,9 @@ export default function ScenarioStats({
               <Legend />
               <Scatter
                 data={scenarioPerformanceData}
-                dataKey="avgScore"
+                dataKey="metricValue"
                 fill="#3b82f6"
-                name="Average Score"
+                name={selectedMetricOption?.name || "Metric"}
               >
                 {scenarioPerformanceData.map((entry, index) => (
                   <Cell
