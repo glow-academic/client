@@ -443,15 +443,17 @@ export default function SimulationPerformance({
                   variant="outline"
                   role="combobox"
                   aria-expanded={pickerOpen}
-                  className="w-40 justify-between text-sm h-8"
+                  className="w-48 justify-between text-sm h-8"
                 >
-                  {selectedSimulation
-                    ? selectedSimulation.title
-                    : "Select simulation..."}
+                  <span className="truncate text-left">
+                    {selectedSimulation
+                      ? selectedSimulation.title
+                      : "Select simulation..."}
+                  </span>
                   <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-40 p-0">
+              <PopoverContent className="w-64 p-0">
                 <Command>
                   <CommandInput placeholder="Search simulations..." />
                   <CommandEmpty>No simulation found.</CommandEmpty>
@@ -467,17 +469,17 @@ export default function SimulationPerformance({
                       >
                         <Check
                           className={cn(
-                            "mr-2 h-4 w-4",
+                            "mr-2 h-4 w-4 shrink-0",
                             selectedSimulation?.id === simulation.id
                               ? "opacity-100"
                               : "opacity-0"
                           )}
                         />
-                        <div>
-                          <div className="font-medium text-sm">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate">
                             {simulation.title}
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-muted-foreground truncate">
                             {simulation.description}
                           </div>
                         </div>
@@ -522,8 +524,10 @@ export default function SimulationPerformance({
                     dataKey="scenarioName"
                     fontSize={10}
                     height={40}
+                    angle={-45}
+                    textAnchor="end"
                     tickFormatter={(name: string) =>
-                      name.length > 16 ? name.slice(0, 15) + "…" : name
+                      name.length > 12 ? name.slice(0, 11) + "…" : name
                     }
                   />
                   <YAxis domain={[0, 100]} fontSize={10} />
