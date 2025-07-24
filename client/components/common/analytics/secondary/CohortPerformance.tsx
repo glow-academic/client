@@ -571,7 +571,6 @@ export default function CohortPerformance({
                 selectedSimulations={selectedSimulations}
                 hideSelectedChips={true}
                 showLabel={false}
-                buttonClassName="w-40"
               />
             )}
           </div>
@@ -613,7 +612,6 @@ export default function CohortPerformance({
               selectedSimulations={selectedSimulations}
               hideSelectedChips={true}
               showLabel={false}
-              buttonClassName="w-40"
             />
           )}
         </div>

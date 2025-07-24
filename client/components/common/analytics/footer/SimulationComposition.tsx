@@ -579,11 +579,12 @@ export default function SimulationComposition({
         const lowRate = attr.lowPerforming / totalLow;
         const rateDiff = Math.abs(highRate - lowRate);
 
-        if (rateDiff > 0.3) {
+        // Lowered thresholds for better data visibility
+        if (rateDiff > 0.2) {
           attr.significance = "high";
-        } else if (rateDiff > 0.15) {
+        } else if (rateDiff > 0.1) {
           attr.significance = "medium";
-        } else if (rateDiff > 0.05) {
+        } else if (rateDiff > 0.02) {
           attr.significance = "low";
         } else {
           attr.significance = "none";
@@ -591,40 +592,60 @@ export default function SimulationComposition({
       }
     });
 
-    // Filter to show only meaningful differences
-    const meaningfulAttributes = attributes.filter(
-      (attr) =>
-        attr.significance !== "none" &&
-        (attr.highPerforming > 0 || attr.lowPerforming > 0)
-    );
-
-    // Convert to chart data format
-    const highPerformingData = meaningfulAttributes
+    // Create separate attribute lists for high and low performing simulations
+    const highPerformingAttributes = attributes
       .filter((attr) => attr.highPerforming > 0)
-      .map((attr) => ({
-        name: attr.name,
-        value: attr.highPerforming,
-        icon: attr.icon,
-        color: attr.color,
-        description: attr.description,
-        significance: attr.significance,
-      }));
+      .sort((a, b) => {
+        // Sort by significance first, then by high performing value
+        if (a.significance !== b.significance) {
+          const significanceOrder = { high: 3, medium: 2, low: 1, none: 0 };
+          return (
+            significanceOrder[b.significance] -
+            significanceOrder[a.significance]
+          );
+        }
+        return b.highPerforming - a.highPerforming;
+      })
+      .slice(0, 5); // Show top 5 for high performing
 
-    const lowPerformingData = meaningfulAttributes
+    const lowPerformingAttributes = attributes
       .filter((attr) => attr.lowPerforming > 0)
-      .map((attr) => ({
-        name: attr.name,
-        value: attr.lowPerforming,
-        icon: attr.icon,
-        color: attr.color,
-        description: attr.description,
-        significance: attr.significance,
-      }));
+      .sort((a, b) => {
+        // Sort by significance first, then by low performing value
+        if (a.significance !== b.significance) {
+          const significanceOrder = { high: 3, medium: 2, low: 1, none: 0 };
+          return (
+            significanceOrder[b.significance] -
+            significanceOrder[a.significance]
+          );
+        }
+        return b.lowPerforming - a.lowPerforming;
+      })
+      .slice(0, 5); // Show top 5 for low performing
+
+    // Convert to chart data format using the separate attribute lists
+    const highPerformingData = highPerformingAttributes.map((attr) => ({
+      name: attr.name,
+      value: attr.highPerforming,
+      icon: attr.icon,
+      color: attr.color,
+      description: attr.description,
+      significance: attr.significance,
+    }));
+
+    const lowPerformingData = lowPerformingAttributes.map((attr) => ({
+      name: attr.name,
+      value: attr.lowPerforming,
+      icon: attr.icon,
+      color: attr.color,
+      description: attr.description,
+      significance: attr.significance,
+    }));
 
     return {
       highPerforming: highPerformingData,
       lowPerforming: lowPerformingData,
-      attributes: meaningfulAttributes,
+      attributes: [...highPerformingAttributes, ...lowPerformingAttributes],
       highPerformingCount: highPerformingSims.length,
       lowPerformingCount: lowPerformingSims.length,
       highPerformingDetails,
@@ -678,6 +699,12 @@ export default function SimulationComposition({
     if (!topAttribute) return "No significant patterns identified.";
 
     const methodLabel = getMethodLabel(isHigh);
+
+    // Handle fallback case (no significant differences)
+    if (topAttribute.significance === "none" || !topAttribute.significance) {
+      return `${methodLabel} performing simulations show ${topAttribute.name.toLowerCase()} as one of the most common characteristics. This may indicate typical simulation composition rather than performance correlation.`;
+    }
+
     const significanceText =
       topAttribute.significance === "high"
         ? "strongly"
@@ -685,13 +712,21 @@ export default function SimulationComposition({
           ? "moderately"
           : "slightly";
 
-    return `${methodLabel} performing simulations ${significanceText} tend to have more ${topAttribute.name.toLowerCase()}, suggesting that ${topAttribute.description.toLowerCase()} may ${isHigh ? "contribute to" : "hinder"} better outcomes.`;
+    // For high performing simulations, the presence of these attributes suggests they contribute to success
+    // For low performing simulations, the presence of these attributes suggests they may hinder success
+    const impactDirection = isHigh ? "contribute to" : "hinder";
+
+    return `${methodLabel} performing simulations ${significanceText} tend to have more ${topAttribute.name.toLowerCase()}, suggesting that ${topAttribute.description.toLowerCase()} may ${impactDirection} better outcomes.`;
   };
 
-  if (
-    !simulationComposition.highPerforming.length &&
-    !simulationComposition.lowPerforming.length
-  ) {
+  // Check if we have any data at all
+  const hasAnyData =
+    simulationComposition.highPerforming.length > 0 ||
+    simulationComposition.lowPerforming.length > 0 ||
+    (simulationComposition.highPerformingCount ?? 0) > 0 ||
+    (simulationComposition.lowPerformingCount ?? 0) > 0;
+
+  if (!hasAnyData) {
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader className="pb-3">
@@ -702,9 +737,15 @@ export default function SimulationComposition({
           <CardDescription>High vs low performing simulations</CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center flex-1">
-          <p className="text-muted-foreground">
-            No simulation data available for the selected time period.
-          </p>
+          <div className="text-center space-y-2">
+            <p className="text-muted-foreground">
+              No simulation data available for the selected time period.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Try expanding the date range or check if simulations have been
+              completed.
+            </p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -731,6 +772,21 @@ export default function SimulationComposition({
       </CardHeader>
 
       <CardContent className="space-y-4 flex-1 flex flex-col">
+        {/* Show fallback message if no meaningful differences found */}
+        {simulationComposition.highPerforming.length === 0 &&
+          simulationComposition.lowPerforming.length === 0 &&
+          (simulationComposition.highPerformingCount ?? 0) > 0 && (
+            <div className="text-center p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground mb-2">
+                No significant differences found between high and low performing
+                simulations.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Showing top 3 most common attributes across all simulations.
+              </p>
+            </div>
+          )}
+
         {/* Compact Side-by-side Charts */}
         <div className="flex-1 min-h-[300px] grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* High Performing Simulations */}

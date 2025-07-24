@@ -48,6 +48,7 @@ export interface RubricPickerProps extends PopoverProps {
   selectedRubrics?: Rubric[];
   hideSelectedChips?: boolean;
   multiSelect?: boolean;
+  buttonClassName?: string;
 }
 
 export function RubricPicker({
@@ -57,6 +58,7 @@ export function RubricPicker({
   selectedRubrics = [],
   hideSelectedChips = true,
   multiSelect = false,
+  buttonClassName,
   ...props
 }: RubricPickerProps) {
   const [open, setOpen] = React.useState(false);
@@ -117,13 +119,13 @@ export function RubricPicker({
           {selectedRubrics.map((rubric) => (
             <div
               key={rubric.id}
-              className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
+              className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm max-w-full"
             >
-              <span>{rubric.name}</span>
+              <span className="truncate">{rubric.name}</span>
               <button
                 type="button"
                 onClick={(e) => handleRemoveItem(rubric, e)}
-                className="text-muted-foreground hover:text-destructive"
+                className="text-muted-foreground hover:text-destructive flex-shrink-0"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -139,11 +141,11 @@ export function RubricPicker({
             role="combobox"
             aria-expanded={open}
             aria-label="Select rubrics"
-            className="w-full justify-between"
+            className={cn("w-full justify-between", buttonClassName)}
             size="sm"
           >
-            {getButtonText()}
-            <ChevronsUpDown className="opacity-50" />
+            <span className="truncate text-left">{getButtonText()}</span>
+            <ChevronsUpDown className="opacity-50 flex-shrink-0 ml-2" />
           </Button>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-[300px] p-0">
@@ -231,16 +233,21 @@ function RubricItem({ rubric, isSelected, onSelect, onPeek }: RubricItemProps) {
       className="data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
     >
       <div className="flex items-center justify-between w-full">
-        <div className="flex items-center gap-2">
-          <span>{rubric.name}</span>
-          {rubric.points && (
-            <span className="text-xs text-muted-foreground">
-              ({rubric.points} pts)
-            </span>
-          )}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="flex-1 min-w-0">
+            <div className="truncate">{rubric.name}</div>
+            {rubric.points && (
+              <div className="text-xs text-muted-foreground mt-1">
+                {rubric.points} points
+              </div>
+            )}
+          </div>
         </div>
         <Check
-          className={cn("ml-auto", isSelected ? "opacity-100" : "opacity-0")}
+          className={cn(
+            "ml-auto flex-shrink-0",
+            isSelected ? "opacity-100" : "opacity-0"
+          )}
         />
       </div>
     </CommandItem>

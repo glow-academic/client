@@ -218,6 +218,7 @@ export default function SkillPerformance({
                 placeholder="Filter by rubric..."
                 onSelect={setSelectedRubrics}
                 selectedRubrics={defaultRubrics}
+                buttonClassName="w-48"
               />
             )}
           </div>
@@ -259,6 +260,7 @@ export default function SkillPerformance({
                 placeholder="Filter by rubric..."
                 onSelect={setSelectedRubrics}
                 selectedRubrics={defaultRubrics}
+                buttonClassName="w-48"
               />
             )}
           </div>
@@ -300,6 +302,7 @@ export default function SkillPerformance({
               placeholder="Filter by rubric..."
               onSelect={setSelectedRubrics}
               selectedRubrics={defaultRubrics}
+              buttonClassName="w-48"
             />
           )}
         </div>
