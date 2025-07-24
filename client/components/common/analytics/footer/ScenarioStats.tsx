@@ -469,34 +469,13 @@ export default function ScenarioStats({
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-6 flex-1 flex flex-col relative">
-          {/* Correlation Card */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="absolute top-2 right-2 z-10">
-                <div className="bg-background/90 backdrop-blur-sm border rounded-md px-2 py-1 shadow-sm">
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs font-medium">Correlation:</span>
-                    <span className="text-xs font-bold">
-                      {correlation > 0 ? "+" : ""}
-                      {correlation.toFixed(2)}
-                    </span>
-                    <Info className="h-3 w-3 text-muted-foreground" />
-                  </div>
-                </div>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent className="w-64 p-3">
-              <p className="text-sm">{getInsightText()}</p>
-            </TooltipContent>
-          </Tooltip>
-
+        <CardContent className="space-y-6 flex-1 flex flex-col">
           {/* Bar Chart */}
           <div className="flex-1 min-h-[300px] h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={aggregatedPerformanceData}
-                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                margin={{ top: 20, right: 20, bottom: 40, left: 20 }}
               >
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
@@ -540,6 +519,32 @@ export default function ScenarioStats({
                 />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+
+          {/* X-axis Label and Correlation */}
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground font-medium">
+              {selectedMetricOption?.name || "Metric Level"}
+            </div>
+
+            {/* Correlation Component */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="bg-background/90 backdrop-blur-sm border rounded-md px-2 py-1 shadow-sm">
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-medium">Correlation:</span>
+                    <span className="text-xs font-bold">
+                      {correlation > 0 ? "+" : ""}
+                      {correlation.toFixed(2)}
+                    </span>
+                    <Info className="h-3 w-3 text-muted-foreground" />
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="w-64 p-3">
+                <p className="text-sm">{getInsightText()}</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </CardContent>
       </Card>

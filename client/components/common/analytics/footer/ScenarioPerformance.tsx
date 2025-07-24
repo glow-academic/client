@@ -493,6 +493,7 @@ export default function ScenarioPerformance({
                         "",
                       ];
                     }}
+                    labelFormatter={() => ""}
                   />
                   <Legend
                     verticalAlign="bottom"
@@ -509,7 +510,7 @@ export default function ScenarioPerformance({
                                   <span style={{ color: element.color }}>
                                     ●
                                   </span>
-                                  {element.icon} {element.name}
+                                  {element.name}
                                 </span>
                               </DialogTrigger>
                               <DialogContent className="max-w-2xl">
