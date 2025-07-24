@@ -112,18 +112,20 @@ export default function SimulationCompositionPicker({
   };
 
   const handleTopPercentageChange = (value: number[]) => {
+    const newValue = value[0] ?? currentConfig.topPercentage;
     onConfigChange({
       ...currentConfig,
-      topPercentage: value[0],
-      description: `Top ${value[0]}% vs Bottom ${currentConfig.bottomPercentage}%`,
+      topPercentage: newValue,
+      description: `Top ${newValue}% vs Bottom ${currentConfig.bottomPercentage}%`,
     });
   };
 
   const handleBottomPercentageChange = (value: number[]) => {
+    const newValue = value[0] ?? currentConfig.bottomPercentage;
     onConfigChange({
       ...currentConfig,
-      bottomPercentage: value[0],
-      description: `Top ${currentConfig.topPercentage}% vs Bottom ${value[0]}%`,
+      bottomPercentage: newValue,
+      description: `Top ${currentConfig.topPercentage}% vs Bottom ${newValue}%`,
     });
   };
 

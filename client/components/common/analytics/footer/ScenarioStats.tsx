@@ -550,8 +550,8 @@ export default function ScenarioStats({
             {correlation > 0.3
               ? `Higher ${selectedMetricOption?.name.toLowerCase()} tends to correlate with ${correlation > 0 ? "better" : "worse"} performance.`
               : `No clear relationship between ${selectedMetricOption?.name.toLowerCase()} and performance.`}{" "}
-            Each point represents a scenario's average score vs{" "}
-            {selectedMetricOption?.name.toLowerCase()}.
+            Each point represents a scenario's{" "}
+            {selectedMetricOption?.name.toLowerCase()} vs average score.
           </p>
         </div>
       </CardContent>

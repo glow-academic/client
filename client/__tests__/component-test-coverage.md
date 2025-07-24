@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 147
-- **Tests Created**: 0
+- **Total Components**: 148
+- **Tests Created**: 2
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 147
+- **Tests Skipped** (already implemented): 146
 
 ## Component Coverage
 
@@ -25,11 +25,12 @@
 | SystemAgent | common/agent/SystemAgent.tsx | SystemAgent.test.tsx | ✅ Implemented |
 | AnalyticsFilters | common/analytics/AnalyticsFilters.tsx | AnalyticsFilters.test.tsx | ✅ Implemented |
 | GrowthPicker | common/analytics/GrowthPicker.tsx | GrowthPicker.test.tsx | ✅ Implemented |
+| ScenarioAttributePicker | common/analytics/footer/ScenarioAttributePicker.tsx | ScenarioAttributePicker.test.tsx | ✅ Implemented |
 | ScenarioPerformance | common/analytics/footer/ScenarioPerformance.tsx | ScenarioPerformance.test.tsx | ✅ Implemented |
 | ScenarioStats | common/analytics/footer/ScenarioStats.tsx | ScenarioStats.test.tsx | ✅ Implemented |
 | SimulationComposition | common/analytics/footer/SimulationComposition.tsx | SimulationComposition.test.tsx | ✅ Implemented |
+| SimulationCompositionPicker | common/analytics/footer/SimulationCompositionPicker.tsx | SimulationCompositionPicker.test.tsx | ✅ Implemented |
 | SimulationPerformance | common/analytics/footer/SimulationPerformance.tsx | SimulationPerformance.test.tsx | ✅ Implemented |
-| SimulationStats | common/analytics/footer/SimulationStats.tsx | SimulationStats.test.tsx | ✅ Implemented |
 | CohortCompletion | common/analytics/footer/old/CohortCompletion.tsx | CohortCompletion.test.tsx | ✅ Implemented |
 | ScenarioData | common/analytics/footer/old/ScenarioData.tsx | ScenarioData.test.tsx | ✅ Implemented |
 | SimulationPerformance | common/analytics/footer/old/SimulationPerformance.tsx | SimulationPerformance.test.tsx | ✅ Implemented |
@@ -184,11 +185,12 @@ __tests__/
 │   │   ├── AnalyticsFilters.test.tsx
 │   │   ├── GrowthPicker.test.tsx
 │   │   ├── footer/
+│   │   │   ├── ScenarioAttributePicker.test.tsx
 │   │   │   ├── ScenarioPerformance.test.tsx
 │   │   │   ├── ScenarioStats.test.tsx
 │   │   │   ├── SimulationComposition.test.tsx
+│   │   │   ├── SimulationCompositionPicker.test.tsx
 │   │   │   ├── SimulationPerformance.test.tsx
-│   │   │   ├── SimulationStats.test.tsx
 │   │   │   ├── old/
 │   │   │   │   ├── CohortCompletion.test.tsx
 │   │   │   │   ├── ScenarioData.test.tsx
