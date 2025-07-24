@@ -1,10 +1,15 @@
 "use client";
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useQuery } from "@tanstack/react-query";
 import { ColumnDef, Row, Table } from "@tanstack/react-table";
-import { Clock, MessageCircle, Target, Timer } from "lucide-react";
+import {
+  Clock,
+  ExternalLink,
+  MessageCircle,
+  Target,
+  Timer,
+} from "lucide-react";
 import { useMemo } from "react";
 
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
@@ -237,7 +242,11 @@ export function useReportColumns({
         cell: ({ row }) => {
           const ta = row.original;
           return (
-            <div className="flex items-center space-x-2">
+            <div
+              className="flex items-center space-x-2 cursor-pointer hover:text-primary hover:underline"
+              onClick={() => onViewReport(ta.id)}
+              title="Click to view detailed report"
+            >
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-medium">
                 {ta.initials}
               </div>
@@ -249,26 +258,7 @@ export function useReportColumns({
                   {ta.username}
                 </span>
               </div>
-            </div>
-          );
-        },
-        enableSorting: true,
-      },
-
-      // Alias column
-      {
-        accessorKey: "username",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Alias" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
-            <div
-              className="text-xs text-muted-foreground truncate text-center"
-              title={ta.username}
-            >
-              {ta.username}
+              <ExternalLink className="h-3 w-3 text-muted-foreground" />
             </div>
           );
         },
@@ -535,27 +525,6 @@ export function useReportColumns({
           );
         },
         enableSorting: true,
-      },
-
-      // Actions column
-      {
-        id: "actions",
-        header: "Action",
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-6 px-2 text-[10px]"
-              onClick={() => onViewReport(ta.id)}
-            >
-              View
-            </Button>
-          );
-        },
-        enableSorting: false,
-        enableHiding: false,
       },
 
       // Hidden columns for filtering

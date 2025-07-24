@@ -38,6 +38,7 @@ export interface ReportsDataTableProps {
   simulationOptions: { value: string; label: string }[];
   simulations: Array<{ id: string; title: string }>;
   showExport?: boolean;
+  onViewReport: (profileId: string) => void;
 }
 
 export function ReportsDataTable({
@@ -51,6 +52,7 @@ export function ReportsDataTable({
   simulationOptions,
   simulations,
   showExport = true,
+  onViewReport,
 }: ReportsDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -138,7 +140,8 @@ export function ReportsDataTable({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="h-8 hover:bg-muted/30 transition-colors"
+                  className="h-8 hover:bg-muted/30 transition-colors cursor-pointer"
+                  onClick={() => onViewReport(row.original.id)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell

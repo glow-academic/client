@@ -832,6 +832,7 @@ export default function Reports() {
         simulationOptions={simulationOptions}
         simulations={simulations || []}
         showExport={true}
+        onViewReport={handleViewReport}
       />
     </div>
   );
