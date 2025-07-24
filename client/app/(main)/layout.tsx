@@ -12,7 +12,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Pencil, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useMemo } from "react";
 
@@ -118,18 +118,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
           data-tour-end-chat
         >
           {endChatLoading ? "Ending..." : buttonLabel}
-        </Button>
-      );
-    }
-
-    if (pathname === "/analytics/dashboard") {
-      return (
-        <Button
-          onClick={() => router.push("/analytics/dashboard/edit")}
-          size="sm"
-        >
-          <Pencil className="h-4 w-4 mr-2" />
-          Edit Dashboard
         </Button>
       );
     }

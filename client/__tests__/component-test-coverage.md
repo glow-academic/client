@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 139
-- **Tests Created**: 28
+- **Total Components**: 149
+- **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 111
+- **Tests Skipped** (already implemented): 149
 
 ## Component Coverage
 
@@ -23,6 +23,10 @@
 | NewCohort | cohorts/NewCohort.tsx | NewCohort.test.tsx | ✅ Implemented |
 | Persona | common/agent/Persona.tsx | Persona.test.tsx | ✅ Implemented |
 | SystemAgent | common/agent/SystemAgent.tsx | SystemAgent.test.tsx | ✅ Implemented |
+| ScenarioPerformance | common/analytics/footer/ScenarioPerformance.tsx | ScenarioPerformance.test.tsx | ✅ Implemented |
+| ScenarioStats | common/analytics/footer/ScenarioStats.tsx | ScenarioStats.test.tsx | ✅ Implemented |
+| SimulationPerformance | common/analytics/footer/SimulationPerformance.tsx | SimulationPerformance.test.tsx | ✅ Implemented |
+| SimulationStats | common/analytics/footer/SimulationStats.tsx | SimulationStats.test.tsx | ✅ Implemented |
 | CohortCompletion | common/analytics/footer/old/CohortCompletion.tsx | CohortCompletion.test.tsx | ✅ Implemented |
 | ScenarioData | common/analytics/footer/old/ScenarioData.tsx | ScenarioData.test.tsx | ✅ Implemented |
 | SimulationPerformance | common/analytics/footer/old/SimulationPerformance.tsx | SimulationPerformance.test.tsx | ✅ Implemented |
@@ -46,9 +50,15 @@
 | TotalTas | common/analytics/header/old/TotalTas.tsx | TotalTas.test.tsx | ✅ Implemented |
 | TrainingHours | common/analytics/header/old/TrainingHours.tsx | TrainingHours.test.tsx | ✅ Implemented |
 | TrainingSessions | common/analytics/header/old/TrainingSessions.tsx | TrainingSessions.test.tsx | ✅ Implemented |
+| AttemptImprovement | common/analytics/primary/AttemptImprovement.tsx | AttemptImprovement.test.tsx | ✅ Implemented |
+| Growth | common/analytics/primary/Growth.tsx | Growth.test.tsx | ✅ Implemented |
+| PersonaPerformance | common/analytics/primary/PersonaPerformance.tsx | PersonaPerformance.test.tsx | ✅ Implemented |
 | PerformanceByPersonality | common/analytics/primary/old/PerformanceByPersonality.tsx | PerformanceByPersonality.test.tsx | ✅ Implemented |
 | PerformanceTrends | common/analytics/primary/old/PerformanceTrends.tsx | PerformanceTrends.test.tsx | ✅ Implemented |
 | SessionActivity | common/analytics/primary/old/SessionActivity.tsx | SessionActivity.test.tsx | ✅ Implemented |
+| CohortPerformance | common/analytics/secondary/CohortPerformance.tsx | CohortPerformance.test.tsx | ✅ Implemented |
+| RubricHeatmap | common/analytics/secondary/RubricHeatmap.tsx | RubricHeatmap.test.tsx | ✅ Implemented |
+| SkillPerformance | common/analytics/secondary/SkillPerformance.tsx | SkillPerformance.test.tsx | ✅ Implemented |
 | CohortPerformance | common/analytics/secondary/old/CohortPerformance.tsx | CohortPerformance.test.tsx | ✅ Implemented |
 | SkillBreakdown | common/analytics/secondary/old/SkillBreakdown.tsx | SkillBreakdown.test.tsx | ✅ Implemented |
 | TrainingInsights | common/analytics/secondary/old/TrainingInsights.tsx | TrainingInsights.test.tsx | ✅ Implemented |
@@ -174,6 +184,10 @@ __tests__/
 │   │   ├── SystemAgent.test.tsx
 │   ├── analytics/
 │   │   ├── footer/
+│   │   │   ├── ScenarioPerformance.test.tsx
+│   │   │   ├── ScenarioStats.test.tsx
+│   │   │   ├── SimulationPerformance.test.tsx
+│   │   │   ├── SimulationStats.test.tsx
 │   │   │   ├── old/
 │   │   │   │   ├── CohortCompletion.test.tsx
 │   │   │   │   ├── ScenarioData.test.tsx
@@ -201,11 +215,17 @@ __tests__/
 │   │   │   │   ├── TrainingHours.test.tsx
 │   │   │   │   ├── TrainingSessions.test.tsx
 │   │   ├── primary/
+│   │   │   ├── AttemptImprovement.test.tsx
+│   │   │   ├── Growth.test.tsx
+│   │   │   ├── PersonaPerformance.test.tsx
 │   │   │   ├── old/
 │   │   │   │   ├── PerformanceByPersonality.test.tsx
 │   │   │   │   ├── PerformanceTrends.test.tsx
 │   │   │   │   ├── SessionActivity.test.tsx
 │   │   ├── secondary/
+│   │   │   ├── CohortPerformance.test.tsx
+│   │   │   ├── RubricHeatmap.test.tsx
+│   │   │   ├── SkillPerformance.test.tsx
 │   │   │   ├── old/
 │   │   │   │   ├── CohortPerformance.test.tsx
 │   │   │   │   ├── SkillBreakdown.test.tsx

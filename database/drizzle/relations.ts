@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, profiles, rubrics, standardGroups, standards, appFeedback, assistantChats, assistantMessages, assistantToolCalls, dashboards, models, personas, systemAgents, scenarios, scenarioClasses, scenarioLocations, scenarioDeadlines, scenarioTimes, simulations, simulationAttempts, simulationChats, simulationMessages, simulationChatGrades, simulationChatFeedbacks } from "./schema";
+import { users, profiles, rubrics, standardGroups, standards, appFeedback, assistantChats, assistantMessages, assistantToolCalls, models, personas, systemAgents, scenarios, scenarioClasses, scenarioLocations, scenarioDeadlines, scenarioTimes, simulations, simulationAttempts, simulationChats, simulationMessages, simulationChatGrades, simulationChatFeedbacks } from "./schema";
 
 export const profilesRelations = relations(profiles, ({one, many}) => ({
 	user: one(users, {
@@ -8,7 +8,6 @@ export const profilesRelations = relations(profiles, ({one, many}) => ({
 	}),
 	appFeedbacks: many(appFeedback),
 	assistantChats: many(assistantChats),
-	dashboards: many(dashboards),
 	simulationAttempts: many(simulationAttempts),
 }));
 
@@ -65,13 +64,6 @@ export const assistantToolCallsRelations = relations(assistantToolCalls, ({one})
 	assistantChat: one(assistantChats, {
 		fields: [assistantToolCalls.chatId],
 		references: [assistantChats.id]
-	}),
-}));
-
-export const dashboardsRelations = relations(dashboards, ({one}) => ({
-	profile: one(profiles, {
-		fields: [dashboards.profileId],
-		references: [profiles.id]
 	}),
 }));
 

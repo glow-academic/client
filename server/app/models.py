@@ -59,22 +59,6 @@ class Cohorts(_Base, table=True):
     description: Optional[str] = Field(default=None, sa_column=Column('description', Text))
 
 
-class Components(_Base, table=True):
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='components_pkey'),
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-    file_name: str = Field(sa_column=Column('file_name', Text))
-    layout: Dict[str, Any] = Field(default_factory=dict, sa_column=Column('layout', JSONB))
-    stat: bool = Field(sa_column=Column('stat', Boolean, default=False))
-    default_component: bool = Field(sa_column=Column('default_component', Boolean, default=False))
-
-
 class Documents(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='documents_pkey'),
@@ -286,7 +270,6 @@ class Profiles(_Base, table=True):
     user: Optional['Users'] = Relationship(back_populates='profiles')
     app_feedback: List['AppFeedback'] = Relationship(back_populates='profile')
     assistant_chats: List['AssistantChats'] = Relationship(back_populates='profile')
-    dashboards: List['Dashboards'] = Relationship(back_populates='profile')
     simulation_attempts: List['SimulationAttempts'] = Relationship(back_populates='profile')
 
 
@@ -384,29 +367,6 @@ class AssistantChats(_Base, table=True):
     profile: Optional['Profiles'] = Relationship(back_populates='assistant_chats')
     assistant_messages: List['AssistantMessages'] = Relationship(back_populates='chat')
     assistant_tool_calls: List['AssistantToolCalls'] = Relationship(back_populates='chat')
-
-
-class Dashboards(_Base, table=True):
-    __table_args__ = (
-        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='dashboards_profile_id_fkey'),
-        PrimaryKeyConstraint('id', name='dashboards_pkey')
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    header_component_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('header_component_ids', ARRAY(Uuid(as_uuid=True))))
-    primary_component_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('primary_component_ids', ARRAY(Uuid(as_uuid=True))))
-    secondary_component_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('secondary_component_ids', ARRAY(Uuid(as_uuid=True))))
-    footer_component_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('footer_component_ids', ARRAY(Uuid(as_uuid=True))))
-    auto_scroll: bool = Field(sa_column=Column('auto_scroll', Boolean, default=False))
-    show_indicators: bool = Field(sa_column=Column('show_indicators', Boolean, default=True))
-    header_components: int = Field(sa_column=Column('header_components', Integer, default=3))
-    main_split: float = Field(sa_column=Column('main_split', Double(53), default=0.65))
-    footer_split: float = Field(sa_column=Column('footer_split', Double(53), default=0.5))
-    profile_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('profile_id', Uuid(as_uuid=True)))
-
-    profile: Optional['Profiles'] = Relationship(back_populates='dashboards')
 
 
 class Scenarios(_Base, table=True):

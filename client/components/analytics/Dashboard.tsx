@@ -8,40 +8,64 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useProfile } from "@/contexts/profile-context";
-import registry from "@/lib/registry";
-import { logError } from "@/utils/logger";
-import { getAllComponents } from "@/utils/queries/components/get-all-components";
-import { getAllDashboards } from "@/utils/queries/dashboards/get-all-dashboards";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllSimulationAttempts } from "@/utils/queries/simulation_attempts/get-all-simulation-attempts";
 import { getAllSimulationChatGrades } from "@/utils/queries/simulation_chat_grades/get-all-simulation-chat-grades";
 import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-simulation-chats";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-
-interface DashboardConfig {
-  id: string;
-  headerComponentIds: string[];
-  primaryComponentIds: string[];
-  secondaryComponentIds: string[];
-  footerComponentIds: string[];
-  autoScroll: boolean;
-  showIndicators: boolean;
-  headerComponents: number;
-  mainSplit: number;
-  footerSplit: number;
-}
+import { format } from "date-fns";
+import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import ScenarioPerformance from "../common/analytics/footer/ScenarioPerformance";
+import ScenarioStats from "../common/analytics/footer/ScenarioStats";
+import SimulationPerformance from "../common/analytics/footer/SimulationPerformance";
+import SimulationStats from "../common/analytics/footer/SimulationStats";
+import AverageScore from "../common/analytics/header/AverageScore";
+import CompletionPercentage from "../common/analytics/header/CompletionPercentage";
+import FirstAttemptPassRate from "../common/analytics/header/FirstAttemptPassRate";
+import HighestScore from "../common/analytics/header/HighestScore";
+import MessagesPerSession from "../common/analytics/header/MessagesPerSession";
+import PersonaResponseTimes from "../common/analytics/header/PersonaResponseTimes";
+import SessionEfficiency from "../common/analytics/header/SessionEfficiency";
+import StagnationRate from "../common/analytics/header/StagnationRate";
+import TimeSpent from "../common/analytics/header/TimeSpent";
+import TotalAttempts from "../common/analytics/header/TotalAttempts";
+import AttemptImprovement from "../common/analytics/primary/AttemptImprovement";
+import Growth from "../common/analytics/primary/Growth";
+import PersonaPerformance from "../common/analytics/primary/PersonaPerformance";
+import CohortPerformance from "../common/analytics/secondary/CohortPerformance";
+import RubricHeatmap from "../common/analytics/secondary/RubricHeatmap";
+import SkillPerformance from "../common/analytics/secondary/SkillPerformance";
 
 export default function Dashboard() {
+  // Date range state
+  const [dateStart, setDateStart] = useState<Date>(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30); // 30 days ago
+    return date;
+  });
+  const [dateEnd, setDateEnd] = useState<Date>(() => new Date());
+
+  // Threshold data
+  const thresholds = {
+    danger: 60,
+    warning: 75,
+    success: 85,
+  };
+
   // Carousel states
   const [headerCarouselIndex, setHeaderCarouselIndex] = useState(0);
   const [primaryCarouselIndex, setPrimaryCarouselIndex] = useState(0);
   const [secondaryCarouselIndex, setSecondaryCarouselIndex] = useState(0);
   const [leftFooterCarouselIndex, setLeftFooterCarouselIndex] = useState(0);
   const [rightFooterCarouselIndex, setRightFooterCarouselIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
 
   // Hover states for arrow visibility
   const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
@@ -50,17 +74,7 @@ export default function Dashboard() {
   const [isRightFooterHovered, setIsRightFooterHovered] = useState(false);
 
   // Data queries
-  const { effectiveProfile } = useProfile();
-
-  const { data: components, isLoading: isLoadingComponents } = useQuery({
-    queryKey: ["components"],
-    queryFn: () => getAllComponents(),
-  });
-
-  const { data: dashboards, isLoading: isLoadingDashboards } = useQuery({
-    queryKey: ["dashboards"],
-    queryFn: () => getAllDashboards(),
-  });
+  const { effectiveProfile: _effectiveProfile } = useProfile();
 
   // Background data loading (for component functionality)
   const { isLoading: isLoadingProfiles } = useQuery({
@@ -83,246 +97,187 @@ export default function Dashboard() {
     queryFn: () => getAllSimulationChatGrades(),
   });
 
-  // Memoized dashboard configuration
-  const dashboardConfig: DashboardConfig | null = useMemo(() => {
-    if (!dashboards || !effectiveProfile) return null;
+  const headerComponents = [
+    <AverageScore
+      key="average-score"
+      dateStart={dateStart}
+      dateEnd={dateEnd}
+      thresholds={thresholds}
+    />,
+    <CompletionPercentage
+      key="completion-percentage"
+      dateStart={dateStart}
+      dateEnd={dateEnd}
+      thresholds={thresholds}
+    />,
+    <FirstAttemptPassRate
+      key="first-attempt-pass-rate"
+      dateStart={dateStart}
+      dateEnd={dateEnd}
+      thresholds={thresholds}
+    />,
+    <HighestScore
+      key="highest-score"
+      dateStart={dateStart}
+      dateEnd={dateEnd}
+      thresholds={thresholds}
+    />,
+    <MessagesPerSession
+      key="messages-per-session"
+      dateStart={dateStart}
+      dateEnd={dateEnd}
+      thresholds={thresholds}
+    />,
+    <PersonaResponseTimes
+      key="persona-response-times"
+      dateStart={dateStart}
+      dateEnd={dateEnd}
+      thresholds={thresholds}
+    />,
+    <SessionEfficiency
+      key="session-efficiency"
+      dateStart={dateStart}
+      dateEnd={dateEnd}
+      thresholds={thresholds}
+    />,
+    <StagnationRate
+      key="stagnation-rate"
+      dateStart={dateStart}
+      dateEnd={dateEnd}
+      thresholds={thresholds}
+    />,
+    <TimeSpent
+      key="time-spent"
+      dateStart={dateStart}
+      dateEnd={dateEnd}
+      thresholds={thresholds}
+    />,
+    <TotalAttempts
+      key="total-attempts"
+      dateStart={dateStart}
+      dateEnd={dateEnd}
+      thresholds={thresholds}
+    />,
+  ];
 
-    // Try to find user's personal dashboard first
-    let dashboard = dashboards.find((d) => d.profileId === effectiveProfile.id);
+  const primaryComponents = [
+    <AttemptImprovement
+      key="attempt-improvement"
+      dateStart={dateStart}
+      dateEnd={dateEnd}
+    />,
+    <Growth key="growth" dateStart={dateStart} dateEnd={dateEnd} />,
+    <PersonaPerformance
+      key="persona-performance"
+      dateStart={dateStart}
+      dateEnd={dateEnd}
+      thresholds={thresholds}
+    />,
+  ];
 
-    // Fallback to global dashboard
-    if (!dashboard) {
-      dashboard = dashboards.find((d) => d.profileId === null);
-    }
+  const secondaryComponents = [
+    <CohortPerformance
+      key="cohort-performance"
+      dateStart={dateStart}
+      dateEnd={dateEnd}
+      thresholds={thresholds}
+    />,
+    <RubricHeatmap
+      key="rubric-heatmap"
+      dateStart={dateStart}
+      dateEnd={dateEnd}
+      _thresholds={thresholds}
+    />,
+    <SkillPerformance
+      key="skill-performance"
+      dateStart={dateStart}
+      dateEnd={dateEnd}
+      _thresholds={thresholds}
+    />,
+  ];
 
-    if (!dashboard) {
-      logError("No dashboard found for user or global fallback", undefined, {
-        userId: effectiveProfile.id,
-        availableDashboards: dashboards.length,
-      });
-      return null;
-    }
+  const leftFooterComponents = [
+    <ScenarioPerformance
+      key="scenario-performance"
+      dateStart={dateStart}
+      dateEnd={dateEnd}
+      thresholds={thresholds}
+    />,
+    <ScenarioStats
+      key="scenario-stats"
+      dateStart={dateStart}
+      dateEnd={dateEnd}
+      _thresholds={thresholds}
+    />,
+  ];
 
-    return {
-      id: dashboard.id,
-      headerComponentIds: dashboard.headerComponentIds || [],
-      primaryComponentIds: dashboard.primaryComponentIds || [],
-      secondaryComponentIds: dashboard.secondaryComponentIds || [],
-      footerComponentIds: dashboard.footerComponentIds || [],
-      autoScroll: dashboard.autoScroll || false,
-      showIndicators: dashboard.showIndicators || false,
-      headerComponents: dashboard.headerComponents || 4,
-      mainSplit: dashboard.mainSplit || 0.75,
-      footerSplit: dashboard.footerSplit || 0.5,
-    };
-  }, [dashboards, effectiveProfile]);
-
-  // Memoized components lookup
-  const componentsLookup = useMemo(() => {
-    if (!components) return new Map();
-
-    return new Map(
-      components.map((comp) => [
-        comp.id,
-        {
-          id: comp.id,
-          name: comp.name,
-          fileName: comp.fileName,
-          layout: (comp.layout as Record<string, unknown>) || {},
-        },
-      ])
-    );
-  }, [components]);
-
-  // Render a single component by UUID
-  const renderComponent = (componentId: string, key?: string) => {
-    const component = componentsLookup.get(componentId);
-    if (!component) {
-      logError("Component not found in registry", undefined, {
-        componentId,
-        availableComponents: Array.from(componentsLookup.keys()),
-      });
-      return null;
-    }
-
-    const registryEntry = registry[componentId];
-    if (!registryEntry) {
-      logError("Component not found in registry", undefined, {
-        componentId,
-        registryKeys: Object.keys(registry),
-      });
-      return null;
-    }
-
-    const Component = registryEntry.component;
-    const props = {
-      ...registryEntry.props,
-      ...component.layout,
-    };
-
-    return <Component key={key || componentId} {...props} />;
-  };
-
-  // Header pagination logic
-  const headerPages = useMemo(() => {
-    if (!dashboardConfig) return [];
-
-    const { headerComponentIds, headerComponents } = dashboardConfig;
-    const pages = [];
-    const totalPages = Math.ceil(headerComponentIds.length / headerComponents);
-
-    for (let i = 0; i < totalPages; i++) {
-      const start = i * headerComponents;
-      const end = start + headerComponents;
-      const pageComponents = headerComponentIds.slice(start, end);
-      pages.push(pageComponents);
-    }
-
-    return pages;
-  }, [dashboardConfig]);
-
-  // Auto-scroll effects
-  useEffect(() => {
-    if (!dashboardConfig?.autoScroll) return;
-
-    // Header carousel auto-scroll (4s interval)
-    const headerInterval = setInterval(() => {
-      setHeaderCarouselIndex((prev) => (prev + 1) % headerPages.length);
-    }, 4000);
-
-    return () => clearInterval(headerInterval);
-  }, [dashboardConfig?.autoScroll, headerPages.length]);
-
-  useEffect(() => {
-    if (!dashboardConfig?.autoScroll) return;
-
-    // Primary carousel auto-scroll (5s interval, paused on hover)
-    if (!isHovered) {
-      const primaryInterval = setInterval(() => {
-        setPrimaryCarouselIndex(
-          (prev) =>
-            (prev + 1) % (dashboardConfig.primaryComponentIds?.length || 1)
-        );
-      }, 5000);
-
-      return () => clearInterval(primaryInterval);
-    }
-    return () => {};
-  }, [
-    dashboardConfig?.autoScroll,
-    dashboardConfig?.primaryComponentIds?.length,
-    isHovered,
-  ]);
-
-  useEffect(() => {
-    if (!dashboardConfig?.autoScroll) return;
-
-    // Secondary carousel auto-scroll (4s interval)
-    const secondaryInterval = setInterval(() => {
-      setSecondaryCarouselIndex(
-        (prev) =>
-          (prev + 1) % (dashboardConfig.secondaryComponentIds?.length || 1)
-      );
-    }, 4000);
-
-    return () => clearInterval(secondaryInterval);
-  }, [
-    dashboardConfig?.autoScroll,
-    dashboardConfig?.secondaryComponentIds?.length,
-  ]);
-
-  useEffect(() => {
-    if (!dashboardConfig?.autoScroll) return;
-
-    // Left footer carousel auto-scroll (6s interval)
-    const leftFooterInterval = setInterval(() => {
-      setLeftFooterCarouselIndex((prev) => {
-        const leftFooterComponents = Math.ceil(
-          (dashboardConfig.footerComponentIds?.length || 0) / 2
-        );
-        return (prev + 1) % leftFooterComponents;
-      });
-    }, 6000);
-
-    return () => clearInterval(leftFooterInterval);
-  }, [
-    dashboardConfig?.autoScroll,
-    dashboardConfig?.footerComponentIds?.length,
-  ]);
-
-  useEffect(() => {
-    if (!dashboardConfig?.autoScroll) return;
-
-    // Right footer carousel auto-scroll (7s interval)
-    const rightFooterInterval = setInterval(() => {
-      setRightFooterCarouselIndex((prev) => {
-        const rightFooterComponents = Math.floor(
-          (dashboardConfig.footerComponentIds?.length || 0) / 2
-        );
-        return (prev + 1) % rightFooterComponents;
-      });
-    }, 7000);
-
-    return () => clearInterval(rightFooterInterval);
-  }, [
-    dashboardConfig?.autoScroll,
-    dashboardConfig?.footerComponentIds?.length,
-  ]);
+  const rightFooterComponents = [
+    <SimulationPerformance
+      key="simulation-performance"
+      dateStart={dateStart}
+      dateEnd={dateEnd}
+      thresholds={thresholds}
+    />,
+    <SimulationStats
+      key="simulation-stats"
+      dateStart={dateStart}
+      dateEnd={dateEnd}
+      _thresholds={thresholds}
+    />,
+  ];
 
   // Navigation functions
   const navigatePrimary = (direction: "prev" | "next") => {
-    const length = dashboardConfig?.primaryComponentIds?.length || 1;
+    const length = primaryComponents.length || 1;
     if (direction === "prev") {
-      setPrimaryCarouselIndex((prev) => (prev - 1 + length) % length);
+      setPrimaryCarouselIndex((prev: number) => (prev - 1 + length) % length);
     } else {
-      setPrimaryCarouselIndex((prev) => (prev + 1) % length);
+      setPrimaryCarouselIndex((prev: number) => (prev + 1) % length);
     }
   };
 
   const navigateSecondary = (direction: "prev" | "next") => {
-    const length = dashboardConfig?.secondaryComponentIds?.length || 1;
+    const length = secondaryComponents.length || 1;
     if (direction === "prev") {
-      setSecondaryCarouselIndex((prev) => (prev - 1 + length) % length);
+      setSecondaryCarouselIndex((prev: number) => (prev - 1 + length) % length);
     } else {
-      setSecondaryCarouselIndex((prev) => (prev + 1) % length);
+      setSecondaryCarouselIndex((prev: number) => (prev + 1) % length);
     }
   };
 
   const navigateLeftFooter = (direction: "prev" | "next") => {
-    const leftFooterComponents =
-      dashboardConfig?.footerComponentIds?.filter(
-        (_, index) => index % 2 === 0
-      ) || [];
-    const length = leftFooterComponents.length || 1;
+    const filteredComponents =
+      leftFooterComponents?.filter((_, index: number) => index % 2 === 0) || [];
+    const length = filteredComponents.length || 1;
     if (direction === "prev") {
-      setLeftFooterCarouselIndex((prev) => (prev - 1 + length) % length);
+      setLeftFooterCarouselIndex(
+        (prev: number) => (prev - 1 + length) % length
+      );
     } else {
-      setLeftFooterCarouselIndex((prev) => (prev + 1) % length);
+      setLeftFooterCarouselIndex((prev: number) => (prev + 1) % length);
     }
   };
 
   const navigateRightFooter = (direction: "prev" | "next") => {
-    const rightFooterComponents =
-      dashboardConfig?.footerComponentIds?.filter(
-        (_, index) => index % 2 === 1
-      ) || [];
-    const length = rightFooterComponents.length || 1;
+    const filteredComponents =
+      rightFooterComponents?.filter((_, index: number) => index % 2 === 1) ||
+      [];
+    const length = filteredComponents.length || 1;
     if (direction === "prev") {
-      setRightFooterCarouselIndex((prev) => (prev - 1 + length) % length);
+      setRightFooterCarouselIndex(
+        (prev: number) => (prev - 1 + length) % length
+      );
     } else {
-      setRightFooterCarouselIndex((prev) => (prev + 1) % length);
+      setRightFooterCarouselIndex((prev: number) => (prev + 1) % length);
     }
   };
 
   // Loading state
   if (
-    isLoadingComponents ||
-    isLoadingDashboards ||
     isLoadingProfiles ||
     isLoadingAttempts ||
     isLoadingChats ||
-    isLoadingGrades ||
-    !dashboardConfig
+    isLoadingGrades
   ) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -334,57 +289,66 @@ export default function Dashboard() {
     );
   }
 
-  const {
-    headerComponentIds,
-    primaryComponentIds,
-    secondaryComponentIds,
-    footerComponentIds,
-    showIndicators,
-    headerComponents,
-  } = dashboardConfig;
-
-  // Get current page components for header
-  const currentHeaderPage = headerPages[headerCarouselIndex] || [];
-
-  // Split footer components for left/right sections
-  const leftFooterComponents = footerComponentIds.filter(
-    (_, index) => index % 2 === 0
-  );
-  const rightFooterComponents = footerComponentIds.filter(
-    (_, index) => index % 2 === 1
-  );
-
   return (
     <div className="space-y-6">
+      {/* Date Range Picker */}
+      <div className="flex justify-center">
+        <div className="flex items-center gap-4 p-4 bg-card border rounded-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">Date Range:</span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-[200px] justify-start text-left font-normal"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {format(dateStart, "MMM dd, yyyy")} -{" "}
+                  {format(dateEnd, "MMM dd, yyyy")}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="center">
+                <Calendar
+                  mode="range"
+                  selected={{
+                    from: dateStart,
+                    to: dateEnd,
+                  }}
+                  onSelect={(range) => {
+                    if (range?.from) setDateStart(range.from);
+                    if (range?.to) setDateEnd(range.to);
+                  }}
+                  numberOfMonths={2}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+      </div>
+
       {/* Header Metrics with Dynamic Pagination */}
-      {headerComponentIds.length > 0 && (
+      {headerComponents.length > 0 && (
         <div className="space-y-4">
           <div
             className="grid gap-4"
             style={{
-              gridTemplateColumns: `repeat(${headerComponents}, 1fr)`,
+              gridTemplateColumns: `repeat(5, 1fr)`,
             }}
           >
-            {currentHeaderPage.map((componentId, index) => (
+            {headerComponents.map((component, _index) => (
               <div
-                key={`${componentId}-${headerCarouselIndex}-${index}`}
+                key={`${headerCarouselIndex}`}
                 className="transition-all duration-500 ease-in-out"
               >
-                {renderComponent(componentId)}
+                {component}
               </div>
-            ))}
-            {/* Fill remaining slots with empty divs for consistent spacing */}
-            {Array.from({
-              length: Math.max(0, headerComponents - currentHeaderPage.length),
-            }).map((_, index) => (
-              <div key={`empty-${index}`} className="invisible" />
             ))}
           </div>
 
           {/* Header carousel indicators */}
-          {showIndicators && headerPages.length > 1 && (
+          {headerComponents.length > 1 && (
             <div className="flex justify-center gap-2">
-              {headerPages.map((_, index) => (
+              {headerComponents.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setHeaderCarouselIndex(index)}
@@ -399,35 +363,30 @@ export default function Dashboard() {
       )}
 
       {/* Main Content Section with Responsive Layout */}
-      {(primaryComponentIds.length > 0 || secondaryComponentIds.length > 0) && (
+      {(primaryComponents.length > 0 || secondaryComponents.length > 0) && (
         <div
           className="grid gap-6 grid-cols-1 lg:grid-cols-[3fr_2fr] pb-2 items-stretch"
           style={{ gridAutoRows: "1fr" }}
         >
           {/* Primary Section */}
-          {primaryComponentIds.length > 0 && (
+          {primaryComponents.length > 0 && (
             <div className="flex flex-col space-y-4">
               <div
                 className="relative flex-1 group"
                 onMouseEnter={() => {
-                  setIsHovered(true);
                   setIsPrimaryHovered(true);
                 }}
                 onMouseLeave={() => {
-                  setIsHovered(false);
                   setIsPrimaryHovered(false);
                 }}
               >
-                {primaryComponentIds.length > 0 &&
-                  renderComponent(
-                    primaryComponentIds[
-                      primaryCarouselIndex % primaryComponentIds.length
-                    ]!,
-                    `primary-${primaryCarouselIndex}`
-                  )}
+                {primaryComponents.length > 0 &&
+                  primaryComponents[
+                    primaryCarouselIndex % primaryComponents.length
+                  ]}
 
                 {/* Primary Navigation Arrows */}
-                {primaryComponentIds.length > 1 && (
+                {primaryComponents.length > 1 && (
                   <>
                     <Button
                       variant="secondary"
@@ -454,15 +413,15 @@ export default function Dashboard() {
               </div>
 
               {/* Primary carousel indicators */}
-              {showIndicators && primaryComponentIds.length > 1 && (
+              {primaryComponents.length > 1 && (
                 <div className="flex justify-center gap-2">
-                  {primaryComponentIds.map((_, index) => (
+                  {primaryComponents.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setPrimaryCarouselIndex(index)}
                       className={`w-2 h-2 rounded-full transition-colors ${
                         index ===
-                        primaryCarouselIndex % primaryComponentIds.length
+                        primaryCarouselIndex % primaryComponents.length
                           ? "bg-primary"
                           : "bg-muted"
                       }`}
@@ -474,23 +433,20 @@ export default function Dashboard() {
           )}
 
           {/* Secondary Section */}
-          {secondaryComponentIds.length > 0 && (
+          {secondaryComponents.length > 0 && (
             <div className="flex flex-col space-y-4">
               <div
                 className="relative flex-1 group"
                 onMouseEnter={() => setIsSecondaryHovered(true)}
                 onMouseLeave={() => setIsSecondaryHovered(false)}
               >
-                {secondaryComponentIds.length > 0 &&
-                  renderComponent(
-                    secondaryComponentIds[
-                      secondaryCarouselIndex % secondaryComponentIds.length
-                    ]!,
-                    `secondary-${secondaryCarouselIndex}`
-                  )}
+                {secondaryComponents.length > 0 &&
+                  secondaryComponents[
+                    secondaryCarouselIndex % secondaryComponents.length
+                  ]}
 
                 {/* Secondary Navigation Arrows */}
-                {secondaryComponentIds.length > 1 && (
+                {secondaryComponents.length > 1 && (
                   <>
                     <Button
                       variant="secondary"
@@ -517,15 +473,15 @@ export default function Dashboard() {
               </div>
 
               {/* Secondary carousel indicators */}
-              {showIndicators && secondaryComponentIds.length > 1 && (
+              {secondaryComponents.length > 1 && (
                 <div className="flex justify-center gap-2">
-                  {secondaryComponentIds.map((_, index) => (
+                  {secondaryComponents.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setSecondaryCarouselIndex(index)}
                       className={`w-2 h-2 rounded-full transition-colors ${
                         index ===
-                        secondaryCarouselIndex % secondaryComponentIds.length
+                        secondaryCarouselIndex % secondaryComponents.length
                           ? "bg-primary"
                           : "bg-muted"
                       }`}
@@ -539,7 +495,8 @@ export default function Dashboard() {
       )}
 
       {/* Footer Section with Dynamic Column Count */}
-      {footerComponentIds.length > 0 && (
+      {[leftFooterComponents, rightFooterComponents].filter((c) => c.length > 0)
+        .length > 0 && (
         <div className="pb-8">
           {(() => {
             const footerCols =
@@ -564,13 +521,9 @@ export default function Dashboard() {
                       onMouseLeave={() => setIsLeftFooterHovered(false)}
                     >
                       {leftFooterComponents.length > 0 &&
-                        renderComponent(
-                          leftFooterComponents[
-                            leftFooterCarouselIndex %
-                              leftFooterComponents.length
-                          ]!,
-                          `left-footer-${leftFooterCarouselIndex}`
-                        )}
+                        leftFooterComponents[
+                          leftFooterCarouselIndex % leftFooterComponents.length
+                        ]}
 
                       {/* Left Footer Navigation Arrows */}
                       {leftFooterComponents.length > 1 && (
@@ -600,7 +553,7 @@ export default function Dashboard() {
                     </div>
 
                     {/* Left footer carousel indicators */}
-                    {showIndicators && leftFooterComponents.length > 1 && (
+                    {leftFooterComponents.length > 1 && (
                       <div className="flex justify-center gap-2">
                         {leftFooterComponents.map((_, index) => (
                           <button
@@ -629,13 +582,10 @@ export default function Dashboard() {
                       onMouseLeave={() => setIsRightFooterHovered(false)}
                     >
                       {rightFooterComponents.length > 0 &&
-                        renderComponent(
-                          rightFooterComponents[
-                            rightFooterCarouselIndex %
-                              rightFooterComponents.length
-                          ]!,
-                          `right-footer-${rightFooterCarouselIndex}`
-                        )}
+                        rightFooterComponents[
+                          rightFooterCarouselIndex %
+                            rightFooterComponents.length
+                        ]}
 
                       {/* Right Footer Navigation Arrows */}
                       {rightFooterComponents.length > 1 && (
@@ -665,7 +615,7 @@ export default function Dashboard() {
                     </div>
 
                     {/* Right footer carousel indicators */}
-                    {showIndicators && rightFooterComponents.length > 1 && (
+                    {rightFooterComponents.length > 1 && (
                       <div className="flex justify-center gap-2">
                         {rightFooterComponents.map((_, index) => (
                           <button
