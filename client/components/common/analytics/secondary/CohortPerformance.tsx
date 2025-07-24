@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
@@ -32,8 +33,6 @@ import { format, isAfter, isBefore, startOfDay } from "date-fns";
 import { BarChart3, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
   Line,
   LineChart,
@@ -99,6 +98,11 @@ export default function CohortPerformance({
     queryFn: () => getAllSimulations(),
   });
 
+  const { data: rubrics } = useQuery({
+    queryKey: ["rubrics"],
+    queryFn: () => getAllRubrics(),
+  });
+
   // Calculate cohort performance data
   const cohortData = useMemo(() => {
     if (
@@ -107,7 +111,8 @@ export default function CohortPerformance({
       !chats ||
       !grades ||
       !attempts ||
-      !simulations
+      !simulations ||
+      !rubrics
     ) {
       return [];
     }
@@ -140,61 +145,147 @@ export default function CohortPerformance({
 
     if (filteredGrades.length === 0) return [];
 
-    // Calculate average scores per cohort
-    const cohortScores = new Map<string, { scores: number[]; count: number }>();
+    // Calculate pass rates per cohort
+    const cohortStats = new Map<
+      string,
+      {
+        totalAttempts: number;
+        passedAttempts: number;
+        totalStudents: Set<string>;
+        passedStudents: Set<string>;
+        totalScores: number[];
+        rubricPoints: number;
+        rubricPassPoints: number;
+        // Track which simulations each student has passed
+        studentSimulationPasses: Map<string, Set<string>>;
+      }
+    >();
 
     // Initialize all cohorts
     cohorts.forEach((cohort) => {
-      cohortScores.set(cohort.id, { scores: [], count: 0 });
+      cohortStats.set(cohort.id, {
+        totalAttempts: 0,
+        passedAttempts: 0,
+        totalStudents: new Set(),
+        passedStudents: new Set(),
+        totalScores: [],
+        rubricPoints: 0,
+        rubricPassPoints: 0,
+        studentSimulationPasses: new Map(),
+      });
     });
 
-    // Aggregate scores by cohort
+    // Aggregate data by cohort
     filteredGrades.forEach((grade) => {
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const profile = profiles?.find((p) => p.id === attempt?.profileId);
+      const rubric = rubrics?.find((r) => r.id === grade.rubricId);
+      const simulation = simulations.find(
+        (s) => s.id === attempt?.simulationId
+      );
 
-      if (!profile) return;
+      if (!profile || !rubric || !simulation) return;
 
       // Find which cohort this profile belongs to
       const cohort = cohorts.find((c) => c.profileIds.includes(profile.id));
 
       if (cohort) {
-        const cohortData = cohortScores.get(cohort.id);
+        const cohortData = cohortStats.get(cohort.id);
         if (cohortData) {
-          cohortData.scores.push(grade.score);
-          cohortData.count++;
+          cohortData.totalAttempts++;
+          cohortData.totalStudents.add(profile.id);
+          cohortData.totalScores.push(grade.score);
+          cohortData.rubricPoints = rubric.points;
+          cohortData.rubricPassPoints = rubric.passPoints;
+
+          // Check if this attempt passed based on rubric pass points
+          const passed = grade.score >= rubric.passPoints;
+          if (passed) {
+            cohortData.passedAttempts++;
+
+            // Track which simulation this student passed
+            if (!cohortData.studentSimulationPasses.has(profile.id)) {
+              cohortData.studentSimulationPasses.set(profile.id, new Set());
+            }
+            cohortData.studentSimulationPasses
+              .get(profile.id)!
+              .add(simulation.id);
+          }
         }
       }
     });
 
-    // Calculate averages and create chart data
-    const chartData = Array.from(cohortScores.entries())
+    // Calculate which students have passed all simulations in their cohort
+    cohortStats.forEach((cohortData, cohortId) => {
+      const cohort = cohorts.find((c) => c.id === cohortId);
+      if (!cohort) return;
+
+      // For each student in this cohort, check if they've passed all assigned simulations
+      cohort.profileIds.forEach((profileId) => {
+        const studentPassedSimulations =
+          cohortData.studentSimulationPasses.get(profileId) || new Set();
+        const assignedSimulations = new Set(cohort.simulationIds);
+
+        // Check if student has passed all assigned simulations
+        const hasPassedAll = Array.from(assignedSimulations).every((simId) =>
+          studentPassedSimulations.has(simId)
+        );
+
+        if (hasPassedAll) {
+          cohortData.passedStudents.add(profileId);
+        }
+      });
+    });
+
+    // Calculate pass rates and create chart data
+    const chartData = Array.from(cohortStats.entries())
       .map(([cohortId, data]) => {
         const cohort = cohorts.find((c) => c.id === cohortId);
-        const avgScore =
-          data.count > 0
+        const passRate =
+          data.totalStudents.size > 0
             ? Math.round(
-                data.scores.reduce((sum, score) => sum + score, 0) /
-                  data.scores.length
+                (data.passedStudents.size / data.totalStudents.size) * 100
               )
             : 0;
+
+        // Calculate average percentage score (score out of rubric.points)
+        const avgPercentageScore =
+          data.totalScores.length > 0
+            ? Math.round(
+                (data.totalScores.reduce((sum, score) => sum + score, 0) /
+                  data.totalScores.length /
+                  data.rubricPoints) *
+                  100
+              )
+            : 0;
+
+        // Determine color based on pass rate and thresholds
+        let color: string;
+        if (passRate >= thresholds.success) {
+          color = "#10b981"; // Green
+        } else if (passRate >= thresholds.warning) {
+          color = "#f59e0b"; // Yellow
+        } else {
+          color = "#ef4444"; // Red
+        }
 
         return {
           id: cohortId,
           name: cohort?.title || "Unknown Cohort",
-          avgScore,
-          count: data.count,
-          color:
-            avgScore >= thresholds.success
-              ? "#10b981"
-              : avgScore >= thresholds.warning
-                ? "#f59e0b"
-                : "#ef4444",
+          passRate,
+          avgPercentageScore,
+          totalStudents: data.totalStudents.size,
+          passedStudents: data.passedStudents.size,
+          totalAttempts: data.totalAttempts,
+          passedAttempts: data.passedAttempts,
+          rubricPoints: data.rubricPoints,
+          rubricPassPoints: data.rubricPassPoints,
+          color,
         };
       })
-      .filter((cohort) => cohort.count > 0) // Only show cohorts with data
-      .sort((a, b) => b.avgScore - a.avgScore);
+      .filter((cohort) => cohort.totalStudents > 0) // Only show cohorts with data
+      .sort((a, b) => b.passRate - a.passRate);
 
     return chartData;
   }, [
@@ -204,6 +295,7 @@ export default function CohortPerformance({
     grades,
     attempts,
     simulations,
+    rubrics,
     dateStart,
     dateEnd,
     profileId,
@@ -219,7 +311,8 @@ export default function CohortPerformance({
       !chats ||
       !grades ||
       !attempts ||
-      !simulations
+      !simulations ||
+      !rubrics
     ) {
       return [];
     }
@@ -260,32 +353,81 @@ export default function CohortPerformance({
 
     if (cohortGrades.length === 0) return [];
 
-    // Group by day and calculate daily averages
-    const dailyScores = new Map<string, { scores: number[]; count: number }>();
+    // Group by day and calculate daily average scores
+    const dailyStats = new Map<
+      string,
+      {
+        totalAttempts: number;
+        passedAttempts: number;
+        totalStudents: Set<string>;
+        passedStudents: Set<string>;
+        scores: number[];
+        rubricPoints: number;
+      }
+    >();
 
     cohortGrades.forEach((grade) => {
       const gradeDate = new Date(grade.createdAt);
       const dayKey = format(startOfDay(gradeDate), "yyyy-MM-dd");
+      const chat = chats.find((c) => c.id === grade.simulationChatId);
+      const attempt = attempts.find((a) => a.id === chat?.attemptId);
+      const profile = profiles?.find((p) => p.id === attempt?.profileId);
+      const rubric = rubrics?.find((r) => r.id === grade.rubricId);
 
-      if (!dailyScores.has(dayKey)) {
-        dailyScores.set(dayKey, { scores: [], count: 0 });
+      if (!profile || !rubric) return;
+
+      if (!dailyStats.has(dayKey)) {
+        dailyStats.set(dayKey, {
+          totalAttempts: 0,
+          passedAttempts: 0,
+          totalStudents: new Set(),
+          passedStudents: new Set(),
+          scores: [],
+          rubricPoints: rubric.points,
+        });
       }
 
-      const dayData = dailyScores.get(dayKey)!;
+      const dayData = dailyStats.get(dayKey)!;
+      dayData.totalAttempts++;
+      dayData.totalStudents.add(profile.id);
       dayData.scores.push(grade.score);
-      dayData.count++;
+
+      // Check if this attempt passed based on rubric pass points
+      const passed = grade.score >= rubric.passPoints;
+      if (passed) {
+        dayData.passedAttempts++;
+        dayData.passedStudents.add(profile.id);
+      }
     });
 
     // Convert to chart data
-    const chartData = Array.from(dailyScores.entries())
-      .map(([day, data]) => ({
-        date: format(new Date(day), "MMM dd"),
-        avgScore: Math.round(
-          data.scores.reduce((sum, score) => sum + score, 0) /
-            data.scores.length
-        ),
-        count: data.count,
-      }))
+    const chartData = Array.from(dailyStats.entries())
+      .map(([day, data]) => {
+        const avgScore =
+          data.scores.length > 0
+            ? Math.round(
+                (data.scores.reduce((sum, score) => sum + score, 0) /
+                  data.scores.length /
+                  data.rubricPoints) *
+                  100
+              )
+            : 0;
+
+        const passRate =
+          data.totalStudents.size > 0
+            ? Math.round(
+                (data.passedStudents.size / data.totalStudents.size) * 100
+              )
+            : 0;
+
+        return {
+          date: format(new Date(day), "MMM dd"),
+          avgScore,
+          passRate,
+          totalAttempts: data.totalAttempts,
+          passedAttempts: data.passedAttempts,
+        };
+      })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     return chartData;
@@ -297,6 +439,7 @@ export default function CohortPerformance({
     grades,
     attempts,
     simulations,
+    rubrics,
     dateStart,
     dateEnd,
     profileId,
@@ -310,12 +453,12 @@ export default function CohortPerformance({
       dailyData.reduce((sum, day) => sum + day.avgScore, 0) / dailyData.length;
 
     if (avgScore < thresholds.warning) {
-      return `This cohort is performing below expectations (${avgScore}% average). Consider additional training sessions or one-on-one support.`;
+      return `This cohort is performing below expectations (${avgScore.toFixed(2)}% average score). Consider additional training sessions or one-on-one support.`;
     } else if (avgScore >= thresholds.success) {
-      return `This cohort is performing excellently (${avgScore}% average). Consider advancing to more challenging scenarios.`;
+      return `This cohort is performing excellently (${avgScore.toFixed(2)}% average score). Consider advancing to more challenging scenarios.`;
     }
 
-    return `This cohort is performing adequately (${avgScore}% average). Monitor progress and provide targeted feedback.`;
+    return `This cohort is performing adequately (${avgScore.toFixed(2)}% average score). Monitor progress and provide targeted feedback.`;
   };
 
   if (!cohortData.length) {
@@ -326,7 +469,7 @@ export default function CohortPerformance({
             <BarChart3 className="h-5 w-5" />
             Cohort Performance
           </CardTitle>
-          <CardDescription>Average scores by cohort</CardDescription>
+          <CardDescription>Pass rates by cohort</CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center flex-1">
           <p className="text-muted-foreground">
@@ -344,108 +487,120 @@ export default function CohortPerformance({
           <BarChart3 className="h-5 w-5" />
           Cohort Performance
         </CardTitle>
-        <CardDescription>Average scores by cohort</CardDescription>
+        <CardDescription>Pass rates by cohort</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
         <div className="space-y-6">
-          {/* Bar Chart */}
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={cohortData} layout="horizontal">
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis type="number" domain={[0, 100]} className="text-xs" />
-                <YAxis
-                  dataKey="name"
-                  type="category"
-                  width={120}
-                  className="text-xs"
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--background))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "6px",
-                  }}
-                  formatter={(value: number) => [`${value}%`, "Average Score"]}
-                />
-                <Bar dataKey="avgScore" fill="#3b82f6" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
           {/* Cohort Details Dialog */}
-          {cohortData.map((cohort) => (
-            <Dialog key={cohort.id}>
-              <DialogTrigger asChild>
-                <div
-                  className="p-4 border rounded-lg cursor-pointer hover:bg-muted transition-colors"
-                  onClick={() => setSelectedCohort(cohort.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">{cohort.name}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {cohort.count} attempts • {cohort.avgScore}% average
-                      </p>
-                    </div>
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </div>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>{cohort.name} Performance Details</DialogTitle>
-                  <DialogDescription>
-                    Daily performance trends and insights
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-6">
-                  {/* Daily Performance Line Chart */}
-                  {dailyData.length > 0 && (
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={dailyData}>
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            className="stroke-muted"
-                          />
-                          <XAxis dataKey="date" className="text-xs" />
-                          <YAxis domain={[0, 100]} className="text-xs" />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: "hsl(var(--background))",
-                              border: "1px solid hsl(var(--border))",
-                              borderRadius: "6px",
-                            }}
-                            formatter={(value: number) => [
-                              `${value}%`,
-                              "Average Score",
-                            ]}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="avgScore"
-                            stroke="#3b82f6"
-                            strokeWidth={2}
-                            dot={{ r: 4 }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
+          {cohortData.map((cohort) => {
+            // Calculate pass rate percentage
+            const passRatePercentage =
+              (cohort.passedStudents / cohort.totalStudents) * 100;
 
-                  {/* Actionable Insights */}
-                  {getCohortInsights() && (
-                    <div className="p-4 bg-muted rounded-lg">
-                      <p className="text-sm text-muted-foreground">
-                        {getCohortInsights()}
-                      </p>
+            // Determine background color based on pass rate
+            let bgColor: string;
+            if (passRatePercentage === 0) {
+              bgColor = "#ef4444"; // Red for 0%
+            } else if (passRatePercentage >= thresholds.success) {
+              bgColor = "#22c55e"; // Green for success
+            } else if (passRatePercentage >= thresholds.warning) {
+              bgColor = "#eab308"; // Yellow for warning
+            } else {
+              bgColor = "#ef4444"; // Red for danger
+            }
+
+            return (
+              <Dialog key={cohort.id}>
+                <DialogTrigger asChild>
+                  <div
+                    className="p-4 border rounded-lg cursor-pointer hover:bg-muted transition-colors relative overflow-hidden"
+                    onClick={() => setSelectedCohort(cohort.id)}
+                  >
+                    {/* Progress bar background */}
+                    <div
+                      className="absolute inset-0 opacity-10"
+                      style={{ backgroundColor: bgColor }}
+                    />
+
+                    {/* Progress bar fill */}
+                    <div
+                      className="absolute inset-y-0 left-0 opacity-20 transition-all duration-300"
+                      style={{
+                        backgroundColor: bgColor,
+                        width: `${Math.max(passRatePercentage, 1)}%`, // Minimum 1% width for visibility
+                      }}
+                    />
+
+                    <div className="flex items-center justify-between relative z-10">
+                      <div className="flex-1">
+                        <h4 className="font-medium">{cohort.name}</h4>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {passRatePercentage}% of students pass all
+                          assigned quizzes with a{" "}
+                          {(cohort.rubricPassPoints / cohort.rubricPoints) *
+                            100}
+                          % or better
+                        </p>
+                      </div>
+                      <TrendingUp className="h-4 w-4 text-muted-foreground ml-4" />
                     </div>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
-          ))}
+                  </div>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>{cohort.name} Performance Details</DialogTitle>
+                    <DialogDescription>
+                      Daily pass rate trends and insights
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-6">
+                    {/* Daily Performance Line Chart */}
+                    {dailyData.length > 0 && (
+                      <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={dailyData}>
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              className="stroke-muted"
+                            />
+                            <XAxis dataKey="date" className="text-xs" />
+                            <YAxis domain={[0, 100]} className="text-xs" />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: "hsl(var(--background))",
+                                border: "1px solid hsl(var(--border))",
+                                borderRadius: "6px",
+                              }}
+                              formatter={(value: number) => [
+                                `${value}%`,
+                                "Average Score",
+                              ]}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="avgScore"
+                              stroke="#3b82f6"
+                              strokeWidth={2}
+                              dot={{ r: 4 }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+
+                    {/* Actionable Insights */}
+                    {getCohortInsights() && (
+                      <div className="p-4 bg-muted rounded-lg">
+                        <p className="text-sm text-muted-foreground">
+                          {getCohortInsights()}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            );
+          })}
         </div>
       </CardContent>
     </Card>

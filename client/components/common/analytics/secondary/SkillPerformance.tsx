@@ -7,6 +7,10 @@
 "use client";
 
 import {
+  RubricPicker,
+  type Rubric,
+} from "@/components/common/rubric/RubricPicker";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -21,7 +25,7 @@ import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-stan
 import { useQuery } from "@tanstack/react-query";
 import { isAfter, isBefore } from "date-fns";
 import { GraduationCap, Loader2 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -39,16 +43,26 @@ export default function SkillPerformance({
   dateStart,
   dateEnd,
 }: SkillPerformanceProps) {
+  const [selectedRubrics, setSelectedRubrics] = useState<Rubric[]>([]);
+
   // Fetch data
   const { data: rubrics, isLoading: rubricsLoading } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
   });
 
+  // Filter rubrics based on selection
+  const filteredRubrics = useMemo(() => {
+    if (!rubrics) return [];
+    if (selectedRubrics.length === 0) return rubrics;
+    return rubrics.filter((r) => selectedRubrics.some((sr) => sr.id === r.id));
+  }, [rubrics, selectedRubrics]);
+
   const { data: standardGroups, isLoading: standardGroupsLoading } = useQuery({
-    queryKey: ["standardGroups", rubrics?.map((r) => r.id) || []],
-    queryFn: () => getStandardGroupsByRubrics(rubrics?.map((r) => r.id) || []),
-    enabled: !!rubrics && rubrics.length > 0,
+    queryKey: ["standardGroups", filteredRubrics?.map((r) => r.id) || []],
+    queryFn: () =>
+      getStandardGroupsByRubrics(filteredRubrics?.map((r) => r.id) || []),
+    enabled: !!filteredRubrics && filteredRubrics.length > 0,
   });
 
   const { data: standards, isLoading: standardsLoading } = useQuery({
@@ -59,10 +73,10 @@ export default function SkillPerformance({
   });
 
   const { data: grades, isLoading: gradesLoading } = useQuery({
-    queryKey: ["grades", rubrics?.map((r) => r.id) || []],
+    queryKey: ["grades", filteredRubrics?.map((r) => r.id) || []],
     queryFn: () =>
-      getSimulationChatGradesByRubrics(rubrics?.map((r) => r.id) || []),
-    enabled: !!rubrics && rubrics.length > 0,
+      getSimulationChatGradesByRubrics(filteredRubrics?.map((r) => r.id) || []),
+    enabled: !!filteredRubrics && filteredRubrics.length > 0,
   });
 
   const { data: feedbacks, isLoading: feedbacksLoading } = useQuery({
@@ -74,9 +88,15 @@ export default function SkillPerformance({
     enabled: !!grades && grades.length > 0,
   });
 
-  // Calculate radar chart data (skill development) - filtered by date range
+  // Calculate radar chart data (skill development) - filtered by date range and selected rubrics
   const radarData = useMemo(() => {
-    if (!grades || !feedbacks || !standards || !standardGroups || !rubrics) {
+    if (
+      !grades ||
+      !feedbacks ||
+      !standards ||
+      !standardGroups ||
+      !filteredRubrics
+    ) {
       return [];
     }
 
@@ -109,7 +129,7 @@ export default function SkillPerformance({
 
         if (groupFeedbacks.length > 0) {
           // Get the rubric for this standard group
-          const rubric = rubrics.find((r) => r.id === group.rubricId);
+          const rubric = filteredRubrics.find((r) => r.id === group.rubricId);
           const rubricTotalPoints = rubric?.points || 100;
 
           const avgScore = Math.round(
@@ -118,7 +138,7 @@ export default function SkillPerformance({
               rubricTotalPoints) *
               100
           );
-          acc[group.name.toLowerCase().replace(/\s+/g, "")] = avgScore;
+          acc[group.shortName || group.name] = avgScore;
         }
 
         return acc;
@@ -126,7 +146,7 @@ export default function SkillPerformance({
       {} as Record<string, number>
     );
 
-    // Create metrics based on standard groups
+    // Create metrics based on standard groups using shortName
     const dynamicMetrics: Array<{
       metric: string;
       value: number;
@@ -135,10 +155,10 @@ export default function SkillPerformance({
 
     // Add skill scores based on standard groups
     standardGroups.forEach((group) => {
-      const skillKey = group.name.toLowerCase().replace(/\s+/g, "");
+      const skillKey = group.shortName || group.name;
       const skillValue = skillScores[skillKey] || 0;
       dynamicMetrics.push({
-        metric: group.shortName || group.name,
+        metric: skillKey,
         value: skillValue,
         fullMark: 100,
       });
@@ -150,7 +170,7 @@ export default function SkillPerformance({
     feedbacks,
     standards,
     standardGroups,
-    rubrics,
+    filteredRubrics,
     dateStart,
     dateEnd,
   ]);
@@ -168,13 +188,32 @@ export default function SkillPerformance({
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <GraduationCap className="h-5 w-5" />
-            Skill Performance
-          </CardTitle>
-          <CardDescription>
-            Performance across key teaching competencies
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5" />
+                Skill Performance
+              </CardTitle>
+              <CardDescription>
+                Performance across key teaching competencies
+              </CardDescription>
+            </div>
+            {rubrics && rubrics.length > 0 && (
+              <RubricPicker
+                rubrics={rubrics.map((r) => ({
+                  id: r.id,
+                  name: r.name,
+                  description: r.description,
+                  points: r.points,
+                  active: r.active,
+                }))}
+                placeholder="Filter by rubric..."
+                onSelect={setSelectedRubrics}
+                selectedRubrics={selectedRubrics}
+                multiSelect={true}
+              />
+            )}
+          </div>
         </CardHeader>
         <CardContent className="flex items-center justify-center flex-1">
           <div className="flex items-center gap-2 text-muted-foreground">
@@ -191,13 +230,32 @@ export default function SkillPerformance({
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <GraduationCap className="h-5 w-5" />
-            Skill Performance
-          </CardTitle>
-          <CardDescription>
-            Performance across key teaching competencies
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5" />
+                Skill Performance
+              </CardTitle>
+              <CardDescription>
+                Performance across key teaching competencies
+              </CardDescription>
+            </div>
+            {rubrics && rubrics.length > 0 && (
+              <RubricPicker
+                rubrics={rubrics.map((r) => ({
+                  id: r.id,
+                  name: r.name,
+                  description: r.description,
+                  points: r.points,
+                  active: r.active,
+                }))}
+                placeholder="Filter by rubric..."
+                onSelect={setSelectedRubrics}
+                selectedRubrics={selectedRubrics}
+                multiSelect={true}
+              />
+            )}
+          </div>
         </CardHeader>
         <CardContent className="flex items-center justify-center flex-1">
           <div className="text-center text-muted-foreground">
@@ -214,13 +272,32 @@ export default function SkillPerformance({
   return (
     <Card className="w-full h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <GraduationCap className="h-5 w-5" />
-          Skill Performance
-        </CardTitle>
-        <CardDescription>
-          Performance across key teaching competencies
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <GraduationCap className="h-5 w-5" />
+              Skill Performance
+            </CardTitle>
+            <CardDescription>
+              Performance across key teaching competencies
+            </CardDescription>
+          </div>
+          {rubrics && rubrics.length > 0 && (
+            <RubricPicker
+              rubrics={rubrics.map((r) => ({
+                id: r.id,
+                name: r.name,
+                description: r.description,
+                points: r.points,
+                active: r.active,
+              }))}
+              placeholder="Filter by rubric..."
+              onSelect={setSelectedRubrics}
+              selectedRubrics={selectedRubrics}
+              multiSelect={true}
+            />
+          )}
+        </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
         <div className="h-80">

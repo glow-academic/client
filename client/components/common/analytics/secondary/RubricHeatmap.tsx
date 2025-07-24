@@ -7,12 +7,24 @@
 "use client";
 
 import {
+  RubricPicker,
+  type Rubric,
+} from "@/components/common/rubric/RubricPicker";
+import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationChatGradesByRubrics } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-rubrics";
@@ -21,7 +33,7 @@ import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-stan
 import { useQuery } from "@tanstack/react-query";
 import { isAfter, isBefore } from "date-fns";
 import { Loader2, TrendingUp } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 export interface RubricHeatmapProps {
   dateStart: Date;
@@ -51,16 +63,26 @@ export default function RubricHeatmap({
   dateStart,
   dateEnd,
 }: RubricHeatmapProps) {
+  const [selectedRubrics, setSelectedRubrics] = useState<Rubric[]>([]);
+
   // Fetch data
   const { data: rubrics, isLoading: rubricsLoading } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
   });
 
+  // Filter rubrics based on selection
+  const filteredRubrics = useMemo(() => {
+    if (!rubrics) return [];
+    if (selectedRubrics.length === 0) return rubrics;
+    return rubrics.filter((r) => selectedRubrics.some((sr) => sr.id === r.id));
+  }, [rubrics, selectedRubrics]);
+
   const { data: standardGroups, isLoading: standardGroupsLoading } = useQuery({
-    queryKey: ["standardGroups", rubrics?.map((r) => r.id) || []],
-    queryFn: () => getStandardGroupsByRubrics(rubrics?.map((r) => r.id) || []),
-    enabled: !!rubrics && rubrics.length > 0,
+    queryKey: ["standardGroups", filteredRubrics?.map((r) => r.id) || []],
+    queryFn: () =>
+      getStandardGroupsByRubrics(filteredRubrics?.map((r) => r.id) || []),
+    enabled: !!filteredRubrics && filteredRubrics.length > 0,
   });
 
   const { data: standards, isLoading: standardsLoading } = useQuery({
@@ -71,10 +93,10 @@ export default function RubricHeatmap({
   });
 
   const { data: grades, isLoading: gradesLoading } = useQuery({
-    queryKey: ["grades", rubrics?.map((r) => r.id) || []],
+    queryKey: ["grades", filteredRubrics?.map((r) => r.id) || []],
     queryFn: () =>
-      getSimulationChatGradesByRubrics(rubrics?.map((r) => r.id) || []),
-    enabled: !!rubrics && rubrics.length > 0,
+      getSimulationChatGradesByRubrics(filteredRubrics?.map((r) => r.id) || []),
+    enabled: !!filteredRubrics && filteredRubrics.length > 0,
   });
 
   const { data: feedbacks, isLoading: feedbacksLoading } = useQuery({
@@ -86,9 +108,15 @@ export default function RubricHeatmap({
     enabled: !!grades && grades.length > 0,
   });
 
-  // Calculate correlation matrix
+  // Calculate correlation matrix for standard groups
   const correlationMatrix = useMemo(() => {
-    if (!grades || !feedbacks || !standards || !standardGroups || !rubrics) {
+    if (
+      !grades ||
+      !feedbacks ||
+      !standards ||
+      !standardGroups ||
+      !filteredRubrics
+    ) {
       return { matrix: [], insights: null };
     }
 
@@ -109,64 +137,111 @@ export default function RubricHeatmap({
       )
     );
 
-    // Get all standards that have feedback data
-    const standardsWithData = standards.filter((standard) =>
-      filteredFeedbacks.some((feedback) => feedback.standardId === standard.id)
+    // Get all standard groups that have feedback data
+    const standardGroupsWithData = standardGroups.filter((group) =>
+      filteredFeedbacks.some((feedback) => {
+        const standard = standards.find((s) => s.id === feedback.standardId);
+        return standard && standard.standardGroupId === group.id;
+      })
     );
 
-    if (standardsWithData.length < 2) return { matrix: [], insights: null };
+    if (standardGroupsWithData.length < 2)
+      return { matrix: [], insights: null };
 
-    // Create correlation matrix
-    const matrix: Array<{
-      standard1: string;
-      standard2: string;
-      correlation: number;
-      color: string;
-    }> = [];
+    // Create n x n correlation matrix
+    const matrix: Array<
+      Array<{
+        correlation: number;
+        color: string;
+        strength: string;
+        dataPoints: number;
+      }>
+    > = [];
 
-    // Calculate correlations between all pairs of standards
-    for (let i = 0; i < standardsWithData.length; i++) {
-      for (let j = i + 1; j < standardsWithData.length; j++) {
-        const standard1 = standardsWithData[i];
-        const standard2 = standardsWithData[j];
+    // Initialize matrix with zeros
+    for (let i = 0; i < standardGroupsWithData.length; i++) {
+      matrix[i] = [];
+      for (let j = 0; j < standardGroupsWithData.length; j++) {
+        if (matrix[i]) {
+          matrix[i]![j] = {
+            correlation: 0,
+            color: "#e5e7eb",
+            strength: "No Data",
+            dataPoints: 0,
+          };
+        }
+      }
+    }
 
-        if (!standard1 || !standard2) continue;
+    // Calculate correlations between all pairs of standard groups
+    for (let i = 0; i < standardGroupsWithData.length; i++) {
+      for (let j = 0; j < standardGroupsWithData.length; j++) {
+        const group1 = standardGroupsWithData[i];
+        const group2 = standardGroupsWithData[j];
 
-        // Get all grades that have feedback for both standards
-        const gradesWithBothStandards = filteredGrades.filter((grade) => {
+        if (!group1 || !group2) continue;
+
+        // Get all grades that have feedback for both standard groups
+        const gradesWithBothGroups = filteredGrades.filter((grade) => {
           const gradeFeedbacks = filteredFeedbacks.filter(
             (f) => f.simulationChatGradeId === grade.id
           );
-          return (
-            gradeFeedbacks.some((f) => f.standardId === standard1.id) &&
-            gradeFeedbacks.some((f) => f.standardId === standard2.id)
-          );
+
+          const hasGroup1 = gradeFeedbacks.some((f) => {
+            const standard = standards.find((s) => s.id === f.standardId);
+            return standard && standard.standardGroupId === group1.id;
+          });
+
+          const hasGroup2 = gradeFeedbacks.some((f) => {
+            const standard = standards.find((s) => s.id === f.standardId);
+            return standard && standard.standardGroupId === group2.id;
+          });
+
+          return hasGroup1 && hasGroup2;
         });
 
-        if (gradesWithBothStandards.length < 3) continue; // Need at least 3 data points
+        if (gradesWithBothGroups.length < 3) continue; // Need at least 3 data points
 
-        // Extract scores for both standards
+        // Extract scores for both standard groups
         const scores1: number[] = [];
         const scores2: number[] = [];
 
-        gradesWithBothStandards.forEach((grade) => {
-          const feedback1 = filteredFeedbacks.find(
-            (f) =>
+        gradesWithBothGroups.forEach((grade) => {
+          // Get average score for group1
+          const group1Feedbacks = filteredFeedbacks.filter((f) => {
+            const standard = standards.find((s) => s.id === f.standardId);
+            return (
               f.simulationChatGradeId === grade.id &&
-              f.standardId === standard1.id
-          );
-          const feedback2 = filteredFeedbacks.find(
-            (f) =>
-              f.simulationChatGradeId === grade.id &&
-              f.standardId === standard2.id
-          );
+              standard &&
+              standard.standardGroupId === group1.id
+            );
+          });
 
-          if (feedback1 && feedback2) {
-            // Normalize scores to percentage
-            const rubric = rubrics.find((r) => r.id === grade.rubricId);
+          // Get average score for group2
+          const group2Feedbacks = filteredFeedbacks.filter((f) => {
+            const standard = standards.find((s) => s.id === f.standardId);
+            return (
+              f.simulationChatGradeId === grade.id &&
+              standard &&
+              standard.standardGroupId === group2.id
+            );
+          });
+
+          if (group1Feedbacks.length > 0 && group2Feedbacks.length > 0) {
+            // Calculate average scores for each group
+            const rubric = filteredRubrics.find((r) => r.id === grade.rubricId);
             const rubricTotalPoints = rubric?.points || 100;
-            scores1.push((feedback1.total / rubricTotalPoints) * 100);
-            scores2.push((feedback2.total / rubricTotalPoints) * 100);
+
+            const avgScore1 =
+              group1Feedbacks.reduce((sum, f) => sum + f.total, 0) /
+              group1Feedbacks.length;
+            const avgScore2 =
+              group2Feedbacks.reduce((sum, f) => sum + f.total, 0) /
+              group2Feedbacks.length;
+
+            // Normalize to percentage
+            scores1.push((avgScore1 / rubricTotalPoints) * 100);
+            scores2.push((avgScore2 / rubricTotalPoints) * 100);
           }
         });
 
@@ -174,52 +249,85 @@ export default function RubricHeatmap({
           const correlation = calculateCorrelation(scores1, scores2);
           const absCorrelation = Math.abs(correlation);
 
-          // Determine color based on correlation strength
+          // Determine color and strength based on correlation strength
           let color = "#e5e7eb"; // Light gray for weak correlation
+          let strength = "Weak";
+
           if (absCorrelation >= 0.7) {
             color = correlation > 0 ? "#10b981" : "#ef4444"; // Green for positive, red for negative
+            strength = "Strong";
           } else if (absCorrelation >= 0.5) {
             color = correlation > 0 ? "#34d399" : "#f87171"; // Lighter green/red
+            strength = "Moderate";
           } else if (absCorrelation >= 0.3) {
             color = correlation > 0 ? "#6ee7b7" : "#fca5a5"; // Even lighter
+            strength = "Weak";
           }
 
-          matrix.push({
-            standard1: standard1.name,
-            standard2: standard2.name,
-            correlation: Math.round(correlation * 100) / 100,
-            color,
-          });
+          if (matrix[i]) {
+            matrix[i]![j] = {
+              correlation: Math.round(correlation * 100) / 100,
+              color,
+              strength,
+              dataPoints: scores1.length,
+            };
+          }
         }
       }
     }
 
-    // Sort by absolute correlation strength
-    matrix.sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation));
-
     // Generate insights
     let insights = null;
-    if (matrix.length > 0) {
-      const strongestPositive = matrix.find((m) => m.correlation > 0.5);
-      const strongestNegative = matrix.find((m) => m.correlation < -0.5);
+    if (standardGroupsWithData.length > 0) {
+      // Find strongest correlations
+      let strongestPositive = { correlation: 0, group1: "", group2: "" };
+      let strongestNegative = { correlation: 0, group1: "", group2: "" };
 
-      if (strongestPositive) {
-        insights = `Strong positive correlation (${strongestPositive.correlation}) between "${strongestPositive.standard1}" and "${strongestPositive.standard2}". Students who excel in one tend to excel in the other.`;
-      } else if (strongestNegative) {
-        insights = `Strong negative correlation (${strongestNegative.correlation}) between "${strongestNegative.standard1}" and "${strongestNegative.standard2}". Consider if these skills are competing for attention.`;
+      for (let i = 0; i < standardGroupsWithData.length; i++) {
+        for (let j = i + 1; j < standardGroupsWithData.length; j++) {
+          const cell = matrix[i]?.[j];
+          if (cell && cell.correlation > strongestPositive.correlation) {
+            const group1 = standardGroupsWithData[i];
+            const group2 = standardGroupsWithData[j];
+            if (group1 && group2) {
+              strongestPositive = {
+                correlation: cell.correlation,
+                group1: group1.shortName,
+                group2: group2.shortName,
+              };
+            }
+          }
+          if (cell && cell.correlation < strongestNegative.correlation) {
+            const group1 = standardGroupsWithData[i];
+            const group2 = standardGroupsWithData[j];
+            if (group1 && group2) {
+              strongestNegative = {
+                correlation: cell.correlation,
+                group1: group1.shortName,
+                group2: group2.shortName,
+              };
+            }
+          }
+        }
+      }
+
+      if (strongestPositive.correlation > 0.5) {
+        insights = `Strong positive correlation (${strongestPositive.correlation}) between "${strongestPositive.group1}" and "${strongestPositive.group2}". Students who excel in one skill area tend to excel in the other.`;
+      } else if (strongestNegative.correlation < -0.5) {
+        insights = `Strong negative correlation (${strongestNegative.correlation}) between "${strongestNegative.group1}" and "${strongestNegative.group2}". Consider if these skill areas are competing for attention.`;
       } else {
         insights =
-          "Most skill correlations are moderate. Skills appear to be relatively independent.";
+          "Most skill area correlations are moderate. Skill areas appear to be relatively independent.";
       }
     }
 
-    return { matrix, insights };
+    return { matrix, insights, standardGroups: standardGroupsWithData };
   }, [
     grades,
     feedbacks,
     standards,
     standardGroups,
-    rubrics,
+    filteredRubrics,
     dateStart,
     dateEnd,
   ]);
@@ -239,10 +347,10 @@ export default function RubricHeatmap({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Rubric Correlation Matrix
+            Skill Area Correlation Matrix
           </CardTitle>
           <CardDescription>
-            Statistical correlation between rubric standards
+            Statistical correlation between skill areas (standard groups)
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center flex-1">
@@ -256,23 +364,23 @@ export default function RubricHeatmap({
   }
 
   // Show empty state if no data
-  if (!correlationMatrix.matrix.length) {
+  if (!correlationMatrix.matrix.length || !correlationMatrix.standardGroups) {
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Rubric Correlation Matrix
+            Skill Area Correlation Matrix
           </CardTitle>
           <CardDescription>
-            Statistical correlation between rubric standards
+            Statistical correlation between skill areas (standard groups)
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center flex-1">
           <div className="text-center text-muted-foreground">
             <p>No correlation data available for the selected time period</p>
             <p className="text-sm">
-              Need more training sessions with multiple standards to calculate
+              Need more training sessions with multiple skill areas to calculate
               correlations
             </p>
           </div>
@@ -284,40 +392,89 @@ export default function RubricHeatmap({
   return (
     <Card className="w-full h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5" />
-          Rubric Correlation Matrix
-        </CardTitle>
-        <CardDescription>
-          Statistical correlation between rubric standards
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Skill Area Correlation Matrix
+            </CardTitle>
+            <CardDescription>
+              Statistical correlation between skill areas (standard groups)
+            </CardDescription>
+          </div>
+          {rubrics && rubrics.length > 0 && (
+            <RubricPicker
+              rubrics={rubrics.map((r) => ({
+                id: r.id,
+                name: r.name,
+                description: r.description,
+                points: r.points,
+                active: r.active,
+              }))}
+              placeholder="Filter by rubric..."
+              onSelect={setSelectedRubrics}
+              selectedRubrics={selectedRubrics}
+              multiSelect={true}
+            />
+          )}
+        </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
         <div className="space-y-6">
-          {/* Correlation Matrix */}
-          <div className="grid gap-2">
-            {correlationMatrix.matrix.slice(0, 10).map((item, index) => (
-              <div
-                key={index}
-                className="p-3 border rounded-lg"
-                style={{ borderLeftColor: item.color, borderLeftWidth: "4px" }}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">
-                      {item.standard1} ↔ {item.standard2}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Correlation: {item.correlation}
-                    </p>
-                  </div>
-                  <div
-                    className="w-4 h-4 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                </div>
-              </div>
-            ))}
+          {/* Correlation Matrix Table */}
+          <div className="overflow-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-32">Skill Areas</TableHead>
+                  {correlationMatrix.standardGroups.map((group) => (
+                    <TableHead key={group.id} className="text-center w-24">
+                      {group.shortName}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {correlationMatrix.standardGroups.map((group, rowIndex) => (
+                  <TableRow key={group.id}>
+                    <TableCell className="font-medium">
+                      {group.shortName}
+                    </TableCell>
+                    {correlationMatrix.standardGroups.map((_, colIndex) => {
+                      const cell =
+                        correlationMatrix.matrix[rowIndex]?.[colIndex];
+                      const colGroup =
+                        correlationMatrix.standardGroups[colIndex];
+                      if (!cell || !colGroup)
+                        return <TableCell key={colIndex} />;
+
+                      return (
+                        <TableCell key={colIndex} className="text-center p-1">
+                          <div
+                            className="w-full h-12 rounded-md flex items-center justify-center text-xs font-mono relative"
+                            style={{ backgroundColor: cell.color }}
+                            title={`${group.shortName} ↔ ${colGroup.shortName}: ${cell.correlation} (${cell.dataPoints} data points)`}
+                          >
+                            <span
+                              className={`${
+                                cell.correlation > 0
+                                  ? "text-green-900"
+                                  : cell.correlation < 0
+                                    ? "text-red-900"
+                                    : "text-gray-600"
+                              }`}
+                            >
+                              {cell.correlation > 0 ? "+" : ""}
+                              {cell.correlation}
+                            </span>
+                          </div>
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
 
           {/* Legend */}
