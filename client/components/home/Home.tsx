@@ -214,28 +214,43 @@ export default function Home() {
     effectiveProfile?.defaultProfile,
   ]);
 
-  // Set default selection to incomplete cohorts
-  useEffect(() => {
-    if (availableCohorts.length > 0 && selectedCohorts.length === 0) {
-      const incompleteCohorts = availableCohorts.filter(
-        (cohort) => !cohort.isCompleted
-      );
-      setSelectedCohorts(
-        incompleteCohorts.length > 0 ? incompleteCohorts : availableCohorts
-      );
-    }
-  }, [availableCohorts, selectedCohorts.length]);
-
   // Get selected cohort IDs
   const selectedCohortIds = useMemo(() => {
     return selectedCohorts.map((cohort) => cohort.id);
   }, [selectedCohorts]);
 
-  // Filter cohorts to only selected ones
+  // Filter cohorts to only selected ones, or show all available cohorts if none selected
+  // This ensures users always see data by default, similar to analytics filters
   const cohorts = useMemo(() => {
     if (!allCohorts) return [];
+
+    // If no cohorts are selected, show all available cohorts for the user
+    if (selectedCohortIds.length === 0) {
+      return allCohorts.filter((cohort) => {
+        // For instructors/admins, show all active cohorts
+        if (shouldShowAll || effectiveProfile?.defaultProfile) {
+          return cohort.active;
+        }
+        // For TAs, show only their assigned active cohorts
+        if (isTA && effectiveProfile?.id) {
+          return (
+            cohort.active && cohort.profileIds?.includes(effectiveProfile.id)
+          );
+        }
+        return false;
+      });
+    }
+
+    // Otherwise, filter to only selected cohorts
     return allCohorts.filter((cohort) => selectedCohortIds.includes(cohort.id));
-  }, [allCohorts, selectedCohortIds]);
+  }, [
+    allCohorts,
+    selectedCohortIds,
+    shouldShowAll,
+    effectiveProfile?.defaultProfile,
+    isTA,
+    effectiveProfile?.id,
+  ]);
 
   // Note: cohortMemberIds is no longer needed since we fetch all data upfront
 
@@ -653,25 +668,6 @@ export default function Home() {
     );
   }
 
-  if (!processedCohortData.length) {
-    return (
-      <div className="container mx-auto p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">No Simulations Available</h1>
-          <p className="text-gray-600 mb-4">
-            {!cohorts || cohorts.length === 0
-              ? "No cohorts selected."
-              : !allSimulations || allSimulations.length === 0
-                ? "No simulations available."
-                : !cohortProfiles || cohortProfiles.length === 0
-                  ? "No profile data available."
-                  : "The selected cohorts have no simulations assigned to them."}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto p-4 space-y-8">
       {/* Header with title and cohort picker */}
@@ -696,7 +692,9 @@ export default function Home() {
               cohort.title
             ),
           }))}
-          placeholder="Select cohorts..."
+          placeholder={
+            selectedCohorts.length === 0 ? "All cohorts" : "Select cohorts..."
+          }
           onSelect={setSelectedCohorts}
           selectedCohorts={selectedCohorts}
           hideSelectedChips={true}
