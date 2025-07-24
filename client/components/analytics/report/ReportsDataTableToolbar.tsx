@@ -3,9 +3,9 @@
 import { Table } from "@tanstack/react-table";
 import { X } from "lucide-react";
 
+import { BrightspaceExportButton } from "@/components/common/history/BrightspaceExportButton";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
-import { ExportButton } from "@/components/common/history/ExportButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TAPerformanceData } from "@/hooks/use-report-columns";
@@ -17,6 +17,7 @@ export interface ReportsDataTableToolbarProps {
   personaOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
   simulationOptions: { value: string; label: string }[];
+  simulations: Array<{ id: string; title: string }>;
   showExport?: boolean;
 }
 
@@ -27,6 +28,7 @@ export function ReportsDataTableToolbar({
   personaOptions,
   scenarioOptions,
   simulationOptions,
+  simulations,
   showExport = true,
 }: ReportsDataTableToolbarProps) {
   // Check if any filters are active
@@ -111,10 +113,7 @@ export function ReportsDataTableToolbar({
 
       <div className="flex items-center space-x-2 mb-2">
         {showExport && (
-          <ExportButton
-            table={table}
-            profileOptions={[]} // Will be populated from the data
-          />
+          <BrightspaceExportButton table={table} simulations={simulations} />
         )}
 
         <DataTableViewOptions table={table} />

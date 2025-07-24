@@ -35,6 +35,7 @@ export interface ReportsDataTableProps {
   personaOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
   simulationOptions: { value: string; label: string }[];
+  simulations: Array<{ id: string; title: string }>;
   showExport?: boolean;
 }
 
@@ -46,6 +47,7 @@ export function ReportsDataTable({
   personaOptions,
   scenarioOptions,
   simulationOptions,
+  simulations,
   showExport = true,
 }: ReportsDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
@@ -65,7 +67,7 @@ export function ReportsDataTable({
     []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
-    { id: "avgScore", desc: true }, // Default sort by score descending
+    { id: "averageScore", desc: true }, // Default sort by score descending
   ]);
 
   const table = useReactTable({
@@ -98,6 +100,7 @@ export function ReportsDataTable({
         personaOptions={personaOptions}
         scenarioOptions={scenarioOptions}
         simulationOptions={simulationOptions}
+        simulations={simulations}
         showExport={showExport}
       />
       <div className="rounded-md border overflow-x-auto">
@@ -133,9 +136,11 @@ export function ReportsDataTable({
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                   className={`h-8 ${
-                    row.original.isStruggling
-                      ? "bg-orange-50/50 border-orange-200"
-                      : "hover:bg-muted/30"
+                    row.original.riskLevel === "danger"
+                      ? "bg-red-50/50 border-red-200"
+                      : row.original.riskLevel === "warning"
+                        ? "bg-orange-50/50 border-orange-200"
+                        : "hover:bg-muted/30"
                   } transition-colors`}
                 >
                   {row.getVisibleCells().map((cell) => (

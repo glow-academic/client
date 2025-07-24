@@ -38,18 +38,12 @@ export interface SimulationStatsProps {
   dateStart: Date;
   dateEnd: Date;
   profileId?: string;
-  _thresholds: {
-    danger: number;
-    warning: number;
-    success: number;
-  };
 }
 
 export default function SimulationStats({
   dateStart,
   dateEnd,
   profileId,
-  _thresholds,
 }: SimulationStatsProps) {
   // Fetch data
   const { data: profiles } = useQuery({

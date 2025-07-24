@@ -7,28 +7,44 @@ import { useQuery } from "@tanstack/react-query";
 import { ColumnDef, Row, Table } from "@tanstack/react-table";
 import {
   AlertTriangle,
-  ArrowUp,
   Clock,
   MessageCircle,
   Target,
-  TrendingDown,
-  TrendingUp,
-  Users,
+  Timer,
 } from "lucide-react";
 import { useMemo } from "react";
 
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 
-// Enhanced types for the TA performance data
+// Enhanced types for the TA performance data with the 10 metrics
 export interface TAPerformanceData {
   id: string;
   firstName: string;
   lastName: string;
   username: string;
+  // The 10 metrics from header components
+  averageScore: number;
+  completionPercentage: number;
+  firstAttemptPassRate: number;
+  highestScore: number;
+  messagesPerSession: number;
+  personaResponseTimes: number; // in minutes
+  sessionEfficiency: number; // percentage
+  stagnationRate: number; // percentage
+  timeSpent: number; // in minutes
+  totalAttempts: number;
+  // Risk assessment
+  riskLevel: "good" | "warning" | "danger";
+  riskDetails: {
+    dangerCount: number;
+    warningCount: number;
+    goodCount: number;
+  };
+  // Legacy fields for compatibility
   avgScore: number;
   completedSessions: number;
   totalSessions: number;
@@ -56,8 +72,6 @@ export interface TAPerformanceData {
   hasNoSessions: boolean;
   lastActivity: Date | null;
   scenariosCompleted: number;
-  messagesPerSession: number;
-  totalAttempts: number;
   taCohorts: string[];
   activeCohorts: number;
   cohortComparison: Array<{
@@ -90,7 +104,6 @@ export function useReportColumns({
     queryFn: () => getAllProfiles(),
   });
 
-
   const { data: cohorts } = useQuery({
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
@@ -119,12 +132,16 @@ export function useReportColumns({
         label: "All TAs",
       },
       {
-        value: "struggling",
-        label: "Struggling",
+        value: "danger",
+        label: "At Risk",
       },
       {
-        value: "performing-well",
-        label: "Performing Well",
+        value: "warning",
+        label: "Warning",
+      },
+      {
+        value: "good",
+        label: "Good",
       },
     ],
     []
@@ -218,7 +235,10 @@ export function useReportColumns({
               >
                 {ta.firstName} {ta.lastName}
               </div>
-              {ta.isStruggling && (
+              {ta.riskLevel === "danger" && (
+                <AlertTriangle className="h-2.5 w-2.5 text-red-600 flex-shrink-0" />
+              )}
+              {ta.riskLevel === "warning" && (
                 <AlertTriangle className="h-2.5 w-2.5 text-orange-600 flex-shrink-0" />
               )}
             </div>
@@ -235,6 +255,7 @@ export function useReportColumns({
         },
         enableSorting: true,
       },
+
       // Alias column
       {
         accessorKey: "username",
@@ -254,11 +275,12 @@ export function useReportColumns({
         },
         enableSorting: true,
       },
-      // Score column
+
+      // Average Score column
       {
-        accessorKey: "avgScore",
+        accessorKey: "averageScore",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Score" />
+          <DataTableColumnHeader column={column} title="Avg Score" />
         ),
         cell: ({ row }) => {
           const ta = row.original;
@@ -266,173 +288,106 @@ export function useReportColumns({
             <div className="text-center">
               <Badge
                 variant={
-                  ta.avgScore >= 80
+                  ta.averageScore >= 85
                     ? "default"
-                    : ta.avgScore >= 70
+                    : ta.averageScore >= 75
                       ? "secondary"
                       : "destructive"
                 }
                 className="text-[10px] font-medium px-1 py-0 h-4"
               >
-                {ta.hasNoSessions ? "N/A" : `${ta.avgScore}%`}
+                {ta.hasNoSessions ? "N/A" : `${ta.averageScore}%`}
               </Badge>
             </div>
           );
         },
-        filterFn: (row, _, value) => {
-          const ta = row.original;
-          if (value.includes("all")) return true;
-          if (value.includes("struggling")) return ta.isStruggling;
-          if (value.includes("performing-well")) return !ta.isStruggling;
-          return true;
-        },
         enableSorting: true,
       },
-      // Sessions column
+
+      // Completion Percentage column
       {
-        accessorKey: "totalSessions",
+        accessorKey: "completionPercentage",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Sessions" />
+          <DataTableColumnHeader column={column} title="Completion" />
         ),
         cell: ({ row }) => {
           const ta = row.original;
           return (
             <div className="text-center">
-              <div className="text-[10px] font-medium">
-                {ta.completedSessions}/{ta.totalSessions}
-              </div>
+              <Badge
+                variant={
+                  ta.completionPercentage >= 85
+                    ? "default"
+                    : ta.completionPercentage >= 75
+                      ? "secondary"
+                      : "destructive"
+                }
+                className="text-[10px] font-medium px-1 py-0 h-4"
+              >
+                {ta.hasNoSessions ? "N/A" : `${ta.completionPercentage}%`}
+              </Badge>
             </div>
           );
         },
         enableSorting: true,
       },
-      // Pass Rate column
+
+      // First Attempt Pass Rate column
       {
-        accessorKey: "passRate",
+        accessorKey: "firstAttemptPassRate",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Pass" />
+          <DataTableColumnHeader column={column} title="First Pass" />
         ),
         cell: ({ row }) => {
           const ta = row.original;
           return (
             <div className="text-center">
-              <div className="text-[10px] font-medium">
-                {ta.hasNoSessions ? "N/A" : `${ta.passRate}%`}
-              </div>
+              <Badge
+                variant={
+                  ta.firstAttemptPassRate >= 85
+                    ? "default"
+                    : ta.firstAttemptPassRate >= 75
+                      ? "secondary"
+                      : "destructive"
+                }
+                className="text-[10px] font-medium px-1 py-0 h-4"
+              >
+                {ta.hasNoSessions ? "N/A" : `${ta.firstAttemptPassRate}%`}
+              </Badge>
             </div>
           );
         },
         enableSorting: true,
       },
-      // Avg Time column
+
+      // Highest Score column
       {
-        accessorKey: "avgTimeMinutes",
+        accessorKey: "highestScore",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Time" />
+          <DataTableColumnHeader column={column} title="Highest" />
         ),
         cell: ({ row }) => {
           const ta = row.original;
           return (
             <div className="text-center">
-              <div className="text-[10px] font-medium">
-                {ta.hasNoSessions ? "N/A" : `${ta.avgTimeMinutes}m`}
-              </div>
+              <Badge
+                variant={
+                  ta.highestScore >= 90
+                    ? "default"
+                    : ta.highestScore >= 80
+                      ? "secondary"
+                      : "destructive"
+                }
+                className="text-[10px] font-medium px-1 py-0 h-4"
+              >
+                {ta.hasNoSessions ? "N/A" : `${ta.highestScore}%`}
+              </Badge>
             </div>
           );
         },
         enableSorting: true,
       },
-      // Completion Rate column
-      {
-        accessorKey: "completionRate",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Complete" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
-            <div className="text-center">
-              <div className="text-[10px] font-medium">
-                {ta.completionRate}%
-              </div>
-            </div>
-          );
-        },
-        enableSorting: true,
-      },
-      // Trend column
-      {
-        accessorKey: "trend",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Trend" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
-            <div className="text-center">
-              {ta.trend === "improving" ? (
-                <div className="flex items-center justify-center text-green-600">
-                  <TrendingUp className="h-2.5 w-2.5" />
-                </div>
-              ) : ta.trend === "declining" ? (
-                <div className="flex items-center justify-center text-red-600">
-                  <TrendingDown className="h-2.5 w-2.5" />
-                </div>
-              ) : (
-                <div className="flex items-center justify-center text-gray-600">
-                  <ArrowUp className="h-2.5 w-2.5 rotate-90" />
-                </div>
-              )}
-            </div>
-          );
-        },
-        enableSorting: true,
-      },
-      // Last Activity column
-      {
-        accessorKey: "lastActivity",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Last Activity" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
-            <div className="text-center">
-              <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
-                <Clock className="h-2.5 w-2.5" />
-                <span className="truncate">
-                  {ta.lastActivity
-                    ? new Date(ta.lastActivity).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })
-                    : "Never"}
-                </span>
-              </div>
-            </div>
-          );
-        },
-        enableSorting: true,
-      },
-      // Scenarios Completed column
-      {
-        accessorKey: "scenariosCompleted",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Scenarios" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
-            <div className="text-center">
-              <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
-                <Target className="h-2.5 w-2.5" />
-                {ta.scenariosCompleted}
-              </div>
-            </div>
-          );
-        },
-        enableSorting: true,
-      },
+
       // Messages Per Session column
       {
         accessorKey: "messagesPerSession",
@@ -452,56 +407,128 @@ export function useReportColumns({
         },
         enableSorting: true,
       },
-      // Total Attempts column
+
+      // Persona Response Times column
       {
-        accessorKey: "totalAttempts",
+        accessorKey: "personaResponseTimes",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Total Attempts" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
-            <div className="text-center">
-              <div className="text-[10px] font-medium">{ta.totalAttempts}</div>
-            </div>
-          );
-        },
-        enableSorting: true,
-      },
-      // Cohorts column
-      {
-        accessorKey: "taCohorts",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Cohorts" />
+          <DataTableColumnHeader column={column} title="Response Time" />
         ),
         cell: ({ row }) => {
           const ta = row.original;
           return (
             <div className="text-center">
               <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
-                <Users className="h-2.5 w-2.5" />
-                <span title={ta.taCohorts.join(", ")}>
-                  {ta.taCohorts.length}
-                </span>
+                <Clock className="h-2.5 w-2.5" />
+                {ta.hasNoSessions ? "N/A" : `${ta.personaResponseTimes}m`}
               </div>
             </div>
-          );
-        },
-        filterFn: (row, _, value) => {
-          const ta = row.original;
-          if (!value || value.length === 0) return true;
-          return ta.cohortComparison.some((comparison) =>
-            value.includes(comparison.cohortId)
           );
         },
         enableSorting: true,
       },
 
-      // Status column
+      // Session Efficiency column
       {
-        accessorKey: "isStruggling",
+        accessorKey: "sessionEfficiency",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Status" />
+          <DataTableColumnHeader column={column} title="Efficiency" />
+        ),
+        cell: ({ row }) => {
+          const ta = row.original;
+          return (
+            <div className="text-center">
+              <Badge
+                variant={
+                  ta.sessionEfficiency >= 85
+                    ? "default"
+                    : ta.sessionEfficiency >= 75
+                      ? "secondary"
+                      : "destructive"
+                }
+                className="text-[10px] font-medium px-1 py-0 h-4"
+              >
+                {ta.hasNoSessions ? "N/A" : `${ta.sessionEfficiency}%`}
+              </Badge>
+            </div>
+          );
+        },
+        enableSorting: true,
+      },
+
+      // Stagnation Rate column
+      {
+        accessorKey: "stagnationRate",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Stagnation" />
+        ),
+        cell: ({ row }) => {
+          const ta = row.original;
+          return (
+            <div className="text-center">
+              <Badge
+                variant={
+                  ta.stagnationRate <= 15
+                    ? "default"
+                    : ta.stagnationRate <= 25
+                      ? "secondary"
+                      : "destructive"
+                }
+                className="text-[10px] font-medium px-1 py-0 h-4"
+              >
+                {ta.hasNoSessions ? "N/A" : `${ta.stagnationRate}%`}
+              </Badge>
+            </div>
+          );
+        },
+        enableSorting: true,
+      },
+
+      // Time Spent column
+      {
+        accessorKey: "timeSpent",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Time Spent" />
+        ),
+        cell: ({ row }) => {
+          const ta = row.original;
+          return (
+            <div className="text-center">
+              <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
+                <Timer className="h-2.5 w-2.5" />
+                {ta.hasNoSessions ? "N/A" : `${ta.timeSpent}m`}
+              </div>
+            </div>
+          );
+        },
+        enableSorting: true,
+      },
+
+      // Total Attempts column
+      {
+        accessorKey: "totalAttempts",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Attempts" />
+        ),
+        cell: ({ row }) => {
+          const ta = row.original;
+          return (
+            <div className="text-center">
+              <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
+                <Target className="h-2.5 w-2.5" />
+                {ta.totalAttempts}
+              </div>
+            </div>
+          );
+        },
+        enableSorting: true,
+      },
+
+      // Risk Level column
+      {
+        accessorKey: "riskLevel",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Risk Level" />
         ),
         cell: ({ row }) => {
           const ta = row.original;
@@ -512,14 +539,21 @@ export function useReportColumns({
                   variant="destructive"
                   className="text-[10px] px-1 py-0 h-4"
                 >
-                  None
+                  No Data
                 </Badge>
-              ) : ta.isStruggling ? (
+              ) : ta.riskLevel === "danger" ? (
+                <Badge
+                  variant="destructive"
+                  className="text-[10px] px-1 py-0 h-4"
+                >
+                  At Risk
+                </Badge>
+              ) : ta.riskLevel === "warning" ? (
                 <Badge
                   variant="secondary"
                   className="text-[10px] bg-orange-100 text-orange-800 px-1 py-0 h-4"
                 >
-                  Risk
+                  Warning
                 </Badge>
               ) : (
                 <Badge
@@ -532,8 +566,17 @@ export function useReportColumns({
             </div>
           );
         },
+        filterFn: (row, _, value) => {
+          const ta = row.original;
+          if (value.includes("all")) return true;
+          if (value.includes("danger")) return ta.riskLevel === "danger";
+          if (value.includes("warning")) return ta.riskLevel === "warning";
+          if (value.includes("good")) return ta.riskLevel === "good";
+          return true;
+        },
         enableSorting: true,
       },
+
       // Actions column
       {
         id: "actions",
@@ -554,6 +597,8 @@ export function useReportColumns({
         enableSorting: false,
         enableHiding: false,
       },
+
+      // Hidden columns for filtering
       {
         accessorKey: "personasTested",
         header: "Personas Tested",
@@ -564,7 +609,9 @@ export function useReportColumns({
         filterFn: (row, _, value) => {
           const ta = row.original;
           if (!value || value.length === 0) return true;
-          return ta.personasTested.some((personaId) => value.includes(personaId));
+          return ta.personasTested.some((personaId) =>
+            value.includes(personaId)
+          );
         },
       },
       {

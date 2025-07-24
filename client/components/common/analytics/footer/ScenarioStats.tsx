@@ -41,18 +41,12 @@ export interface ScenarioStatsProps {
   dateStart: Date;
   dateEnd: Date;
   profileId?: string;
-  _thresholds: {
-    danger: number;
-    warning: number;
-    success: number;
-  };
 }
 
 export default function ScenarioStats({
   dateStart,
   dateEnd,
   profileId,
-  _thresholds,
 }: ScenarioStatsProps) {
   // Fetch data
   const { data: scenarios } = useQuery({

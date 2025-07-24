@@ -1,8 +1,8 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 143
-- **Tests Created**: 0
+- **Total Components**: 144
+- **Tests Created**: 1
 - **Tests Updated**: 0
 - **Tests Skipped** (already implemented): 143
 
@@ -80,6 +80,7 @@
 | CohortStaff | common/cohort/staff/CohortStaff.tsx | CohortStaff.test.tsx | ✅ Implemented |
 | CohortStaffDataTable | common/cohort/staff/CohortStaffDataTable.tsx | CohortStaffDataTable.test.tsx | ✅ Implemented |
 | CohortStaffDataTableToolbar | common/cohort/staff/CohortStaffDataTableToolbar.tsx | CohortStaffDataTableToolbar.test.tsx | ✅ Implemented |
+| BrightspaceExportButton | common/history/BrightspaceExportButton.tsx | BrightspaceExportButton.test.tsx | ✅ Implemented |
 | DataTable | common/history/DataTable.tsx | DataTable.test.tsx | ✅ Implemented |
 | DataTableColumnHeader | common/history/DataTableColumnHeader.tsx | DataTableColumnHeader.test.tsx | ✅ Implemented |
 | DataTableFacetedFilter | common/history/DataTableFacetedFilter.tsx | DataTableFacetedFilter.test.tsx | ✅ Implemented |
@@ -247,6 +248,7 @@ __tests__/
 │   │   │   ├── CohortStaffDataTable.test.tsx
 │   │   │   ├── CohortStaffDataTableToolbar.test.tsx
 │   ├── history/
+│   │   ├── BrightspaceExportButton.test.tsx
 │   │   ├── DataTable.test.tsx
 │   │   ├── DataTableColumnHeader.test.tsx
 │   │   ├── DataTableFacetedFilter.test.tsx

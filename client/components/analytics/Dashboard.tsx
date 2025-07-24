@@ -196,7 +196,6 @@ export default function Dashboard() {
       key="scenario-stats"
       dateStart={startDate}
       dateEnd={endDate}
-      _thresholds={thresholds}
     />,
   ];
 
@@ -211,7 +210,6 @@ export default function Dashboard() {
       key="simulation-stats"
       dateStart={startDate}
       dateEnd={endDate}
-      _thresholds={thresholds}
     />,
   ];
 

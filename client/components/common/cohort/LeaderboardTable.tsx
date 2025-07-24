@@ -104,7 +104,7 @@ export default function LeaderboardTable({
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Rank" />
         ),
-        cell: ({ row }) => {
+        cell: () => {
           // Since we can't access the table instance here, we'll calculate rank based on original data order
           // The ranking will be handled by the default sorting
           return <div className="font-bold text-lg w-[80px]">-</div>;
