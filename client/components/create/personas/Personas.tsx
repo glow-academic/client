@@ -12,7 +12,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { usePersonaColumns } from "@/hooks/use-persona-columns";
 import { deletePersona } from "@/utils/mutations/personas/delete-persona";
+import { getPersonaConfig } from "@/utils/personas";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 
@@ -38,6 +40,7 @@ import {
 import { useProfile } from "@/contexts/profile-context";
 import { Persona } from "@/types";
 import { createPersona } from "@/utils/mutations/personas/create-persona";
+import { PersonasDataTable } from "./PersonasDataTable";
 
 export default function Personas() {
   const router = useRouter();
@@ -61,6 +64,15 @@ export default function Personas() {
     queryKey: ["scenarios"],
     queryFn: () => getAllScenarios(),
   });
+
+  // Get table columns and filter options
+  const {
+    columns,
+    scenarioOptions,
+    reasoningOptions,
+    modelOptions,
+    temperatureOptions,
+  } = usePersonaColumns();
 
   // Check if a persona is being used by any scenarios
   const isPersonaInUse = (personaId: string) => {
@@ -139,110 +151,123 @@ export default function Personas() {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const renderPersonaCard = (persona: Persona) => (
-    <Card key={persona.id} className="hover:shadow-md transition-shadow">
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div className="space-y-2 flex-1">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-base">
-                {persona.name || "Unnamed Persona"}
-              </CardTitle>
-              <div className="flex gap-1">
-                {persona.reasoning && (
+  const renderPersonaCard = (persona: Persona) => {
+    const personaConfig = getPersonaConfig(persona.name);
+    const IconComponent = personaConfig.icon;
+
+    return (
+      <Card key={persona.id} className="hover:shadow-md transition-shadow">
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div className="space-y-2 flex-1">
+              <div className="flex items-center gap-2">
+                <div
+                  className={`p-2 rounded-lg ${personaConfig.colors.bgColor} bg-opacity-10`}
+                >
+                  <IconComponent
+                    className={`h-4 w-4 ${personaConfig.colors.iconColor}`}
+                  />
+                </div>
+                <CardTitle className="text-base">
+                  {persona.name || "Unnamed Persona"}
+                </CardTitle>
+                <div className="flex gap-1">
+                  {persona.reasoning && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          variant="outline"
+                          className="text-xs cursor-help"
+                        >
+                          <Brain className="h-3 w-3 mr-1" />
+                          {persona.reasoning}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Reasoning Level</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Badge variant="outline" className="text-xs cursor-help">
-                        <Brain className="h-3 w-3 mr-1" />
-                        {persona.reasoning}
+                        <Thermometer className="h-3 w-3 mr-1" />
+                        {formatTemperature(persona.temperature)}
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Reasoning Level</p>
+                      <p>Randomness Level</p>
                     </TooltipContent>
                   </Tooltip>
-                )}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge variant="outline" className="text-xs cursor-help">
-                      <Thermometer className="h-3 w-3 mr-1" />
-                      {formatTemperature(persona.temperature)}
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Randomness Level</p>
-                  </TooltipContent>
-                </Tooltip>
+                </div>
               </div>
+              <p className="text-sm text-muted-foreground">
+                {persona.description || "No description available"}
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {persona.description || "No description available"}
-            </p>
+            <div className="flex gap-2 items-center">
+              {persona.defaultPersona && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDuplicate(persona)}
+                  disabled={isDuplicating === persona.id}
+                >
+                  <Copy className="h-4 w-4" />
+                  {isDuplicating === persona.id ? "..." : ""}
+                </Button>
+              )}
+              {canEditPersona(persona.id) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEdit(persona.id)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              )}
+              {!isPersonaInUse(persona.id) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    handleDeleteClick(
+                      persona.id,
+                      persona.name || "Unnamed Persona"
+                    )
+                  }
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
-          <div className="flex gap-2 items-center">
-            {persona.defaultPersona && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDuplicate(persona)}
-                disabled={isDuplicating === persona.id}
-              >
-                <Copy className="h-4 w-4" />
-                {isDuplicating === persona.id ? "..." : ""}
-              </Button>
-            )}
-            {canEditPersona(persona.id) && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleEdit(persona.id)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            )}
-            {!isPersonaInUse(persona.id) && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  handleDeleteClick(
-                    persona.id,
-                    persona.name || "Unnamed Persona"
-                  )
-                }
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm">
+            <span className="text-muted-foreground">Updated:</span>
+            <span className="font-medium ml-2">
+              {formatDate(persona.updatedAt)}
+            </span>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-sm">
-          <span className="text-muted-foreground">Updated:</span>
-          <span className="font-medium ml-2">
-            {formatDate(persona.updatedAt)}
-          </span>
-        </div>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <TooltipProvider>
       <div className="space-y-8">
-        <div className="space-y-4">
-          <div className="grid gap-4">
-            {personas
-              .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-              .map(renderPersonaCard)}
-            {personas.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                No personas found. Create your first persona to get started.
-              </div>
-            )}
-          </div>
-        </div>
+        <PersonasDataTable
+          columns={columns}
+          data={personas}
+          scenarios={scenarios}
+          scenarioOptions={scenarioOptions}
+          reasoningOptions={reasoningOptions}
+          modelOptions={modelOptions}
+          temperatureOptions={temperatureOptions}
+          renderPersonaCard={renderPersonaCard}
+        />
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

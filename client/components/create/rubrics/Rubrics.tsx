@@ -1,8 +1,8 @@
 /**
  * Rubrics.tsx
- * Used to display the rubrics page with all created rubrics and management functionality.
+ * Used to display the rubrics page with table-based filtering and card layout.
  * @AshokSaravanan222 & @siladiea
- * 06/07/2025
+ * 06/18/2025
  */
 "use client";
 import { logError, logInfo } from "@/utils/logger";
@@ -24,6 +24,7 @@ import { createRubric } from "@/utils/mutations/rubrics/create-rubric";
 import { deleteRubric } from "@/utils/mutations/rubrics/delete-rubric";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 
 import TableRubric from "@/components/common/rubric/TableRubric";
 import {
@@ -40,6 +41,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
+import { useRubricColumns } from "@/hooks/use-rubric-columns";
 import { Rubric } from "@/types";
 
 export default function Rubrics() {
@@ -65,6 +67,13 @@ export default function Rubrics() {
     queryFn: () => getAllSimulations(),
   });
 
+  // Fetch standard groups for all rubrics
+  const { data: standardGroups = [] } = useQuery({
+    queryKey: ["standardGroups", rubrics.map((r) => r.id)],
+    queryFn: () => getStandardGroupsByRubrics(rubrics.map((r) => r.id)),
+    enabled: rubrics.length > 0,
+  });
+
   // Check if a rubric is being used by any simulations
   const isRubricInUse = (rubricId: string) => {
     return simulations.some((sim) => sim.rubricId === rubricId);
@@ -76,6 +85,25 @@ export default function Rubrics() {
       effectiveProfile?.role === "admin" ||
       effectiveProfile?.role === "superadmin";
     return isAdmin || !isRubricInUse(rubricId);
+  };
+
+  // Get table columns and filter options
+  const {
+    columns,
+    simulationOptions,
+    passPointsOptions,
+    totalPointsOptions,
+    passPercentageOptions,
+  } = useRubricColumns();
+
+  // Helper function to get standard groups count for a rubric
+  const getStandardGroupsCount = (rubricId: string) => {
+    return standardGroups.filter((sg) => sg.rubricId === rubricId).length;
+  };
+
+  // Helper function to get simulations count for a rubric
+  const getSimulationsCount = (rubricId: string) => {
+    return simulations.filter((sim) => sim.rubricId === rubricId).length;
   };
 
   const handleDelete = async () => {
