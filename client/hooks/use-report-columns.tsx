@@ -84,6 +84,7 @@ export interface TAPerformanceData {
   bestCohortRank: number;
   avgVsCohort: number;
   // Additional fields for filtering
+  role: string;
   personasTested: string[];
   scenarioIds: string[];
   simulationIds: string[];
@@ -142,6 +143,24 @@ export function useReportColumns({
       {
         value: "good",
         label: "Good",
+      },
+    ],
+    []
+  );
+
+  const roleOptions = useMemo(
+    () => [
+      {
+        value: "ta",
+        label: "Teaching Assistant",
+      },
+      {
+        value: "instructor",
+        label: "Instructor",
+      },
+      {
+        value: "admin",
+        label: "Administrator",
       },
     ],
     []
@@ -600,6 +619,19 @@ export function useReportColumns({
 
       // Hidden columns for filtering
       {
+        accessorKey: "role",
+        header: "Role",
+        cell: () => null,
+        enableSorting: false,
+        enableHiding: true,
+        enableColumnFilter: true,
+        filterFn: (row, _, value) => {
+          const ta = row.original;
+          if (!value || value.length === 0) return true;
+          return value.includes(ta.role);
+        },
+      },
+      {
         accessorKey: "personasTested",
         header: "Personas Tested",
         cell: () => null,
@@ -652,6 +684,7 @@ export function useReportColumns({
   return {
     columns,
     performanceOptions,
+    roleOptions,
     cohortOptions,
     personaOptions,
     scenarioOptions,

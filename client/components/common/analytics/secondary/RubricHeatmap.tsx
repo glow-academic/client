@@ -26,12 +26,6 @@ import { useMemo } from "react";
 export interface RubricHeatmapProps {
   dateStart: Date;
   dateEnd: Date;
-  _profileId?: string;
-  _thresholds: {
-    danger: number;
-    warning: number;
-    success: number;
-  };
 }
 
 // Calculate Pearson correlation coefficient
@@ -56,8 +50,6 @@ function calculateCorrelation(x: number[], y: number[]): number {
 export default function RubricHeatmap({
   dateStart,
   dateEnd,
-  _profileId,
-  _thresholds,
 }: RubricHeatmapProps) {
   // Fetch data
   const { data: rubrics, isLoading: rubricsLoading } = useQuery({

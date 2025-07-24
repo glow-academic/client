@@ -37,6 +37,7 @@ export default function Reports() {
   const {
     columns,
     performanceOptions,
+    roleOptions,
     cohortOptions,
     personaOptions,
     scenarioOptions,
@@ -51,6 +52,12 @@ export default function Reports() {
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
   });
+
+  // Filter out default profiles and only include non-default profiles
+  const filteredProfiles = useMemo(() => {
+    if (!profiles) return [];
+    return profiles.filter((profile) => !profile.defaultProfile);
+  }, [profiles]);
 
   const { data: simulations, isLoading: isLoadingSimulations } = useQuery({
     queryKey: ["simulations"],
@@ -141,7 +148,7 @@ export default function Reports() {
     )
       return [];
 
-    const tas = profiles; // Show all profiles, not just TAs
+    const tas = filteredProfiles; // Show filtered profiles, not just TAs
 
     // Calculate cohort performance averages
     const cohortPerformance = cohorts.reduce(
@@ -763,6 +770,7 @@ export default function Reports() {
             : 0,
         avgVsCohort: bestCohortPerformance,
         // Additional fields for filtering
+        role: user.role,
         personasTested: userPersonaIds,
         scenarioIds: userScenarioIds,
         simulationIds: userSimulationIds,
@@ -772,6 +780,7 @@ export default function Reports() {
     return taPerformance;
   }, [
     profiles,
+    filteredProfiles,
     chats,
     grades,
     feedbacks,
@@ -816,6 +825,7 @@ export default function Reports() {
         columns={columns}
         data={taPerformanceData}
         performanceOptions={performanceOptions}
+        roleOptions={roleOptions}
         cohortOptions={cohortOptions}
         personaOptions={personaOptions}
         scenarioOptions={scenarioOptions}

@@ -31,6 +31,7 @@ export interface ReportsDataTableProps {
   columns: ColumnDef<TAPerformanceData>[];
   data: TAPerformanceData[];
   performanceOptions: { value: string; label: string }[];
+  roleOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
   personaOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
@@ -43,6 +44,7 @@ export function ReportsDataTable({
   columns,
   data,
   performanceOptions,
+  roleOptions,
   cohortOptions,
   personaOptions,
   scenarioOptions,
@@ -96,6 +98,7 @@ export function ReportsDataTable({
       <ReportsDataTableToolbar
         table={table}
         performanceOptions={performanceOptions}
+        roleOptions={roleOptions}
         cohortOptions={cohortOptions}
         personaOptions={personaOptions}
         scenarioOptions={scenarioOptions}

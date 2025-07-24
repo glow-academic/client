@@ -175,13 +175,11 @@ export default function Dashboard() {
       key="rubric-heatmap"
       dateStart={startDate}
       dateEnd={endDate}
-      _thresholds={thresholds}
     />,
     <SkillPerformance
       key="skill-performance"
       dateStart={startDate}
       dateEnd={endDate}
-      _thresholds={thresholds}
     />,
   ];
 

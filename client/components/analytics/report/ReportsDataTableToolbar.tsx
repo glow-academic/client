@@ -9,10 +9,12 @@ import { DataTableViewOptions } from "@/components/common/history/DataTableViewO
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TAPerformanceData } from "@/hooks/use-report-columns";
+import React from "react";
 
 export interface ReportsDataTableToolbarProps {
   table: Table<TAPerformanceData>;
   performanceOptions: { value: string; label: string }[];
+  roleOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
   personaOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
@@ -24,6 +26,7 @@ export interface ReportsDataTableToolbarProps {
 export function ReportsDataTableToolbar({
   table,
   performanceOptions,
+  roleOptions,
   cohortOptions,
   personaOptions,
   scenarioOptions,
@@ -37,6 +40,14 @@ export function ReportsDataTableToolbar({
   const firstNameColumn = table.getColumn("firstName");
   const avgScoreColumn = table.getColumn("avgScore");
   const taCohortsColumn = table.getColumn("taCohorts");
+  const roleColumn = table.getColumn("role");
+
+  // Set default role filter to "ta" if no filter is applied
+  React.useEffect(() => {
+    if (!roleColumn?.getFilterValue()) {
+      roleColumn?.setFilterValue(["ta"]);
+    }
+  }, [roleColumn]);
 
   return (
     <div className="flex items-center justify-between">
@@ -53,6 +64,15 @@ export function ReportsDataTableToolbar({
         </div>
 
         <div className="flex items-center space-x-2 flex-wrap mb-2">
+          {/* Role Filter */}
+          {roleColumn && roleOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={roleColumn}
+              title="Role"
+              options={roleOptions}
+            />
+          )}
+
           {/* Performance Filter */}
           {avgScoreColumn && performanceOptions.length > 0 && (
             <DataTableFacetedFilter

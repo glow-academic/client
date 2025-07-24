@@ -33,19 +33,11 @@ import {
 export interface SkillPerformanceProps {
   dateStart: Date;
   dateEnd: Date;
-  _profileId?: string;
-  _thresholds: {
-    danger: number;
-    warning: number;
-    success: number;
-  };
 }
 
 export default function SkillPerformance({
   dateStart,
   dateEnd,
-  _profileId,
-  _thresholds,
 }: SkillPerformanceProps) {
   // Fetch data
   const { data: rubrics, isLoading: rubricsLoading } = useQuery({
