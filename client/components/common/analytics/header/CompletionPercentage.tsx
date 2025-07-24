@@ -223,10 +223,43 @@ export default function CompletionPercentage({
   // Check if we have data to display
   const hasData = completionTrend.some((day) => day.total > 0);
 
+  // Calculate actual trend from data
+  const getTrendAnalysis = () => {
+    if (!hasData || completionTrend.length < 2) return null;
+
+    // Get recent data (last 3 days, 1 week, or 1 month depending on data availability)
+    const recentData = completionTrend.slice(-3);
+    const earlierData = completionTrend.slice(0, 3);
+
+    if (recentData.length === 0 || earlierData.length === 0) return null;
+
+    const recentAvg =
+      recentData.reduce((sum, day) => sum + day.rate, 0) / recentData.length;
+    const earlierAvg =
+      earlierData.reduce((sum, day) => sum + day.rate, 0) / earlierData.length;
+    const change = recentAvg - earlierAvg;
+    const changePercent =
+      earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
+
+    if (Math.abs(changePercent) < 1) return null;
+
+    const period =
+      completionTrend.length <= 7
+        ? "3 days"
+        : completionTrend.length <= 14
+          ? "1 week"
+          : "1 month";
+    const direction = changePercent > 0 ? "increased" : "decreased";
+
+    return `Completion percentage ${direction} ${Math.abs(changePercent)}% over the past ${period}`;
+  };
+
+  const trendAnalysis = getTrendAnalysis();
+
   return (
     <>
       <Card
-        className={`bg-gradient-to-br ${colorConfig.gradient} ${colorConfig.border} cursor-pointer hover:shadow-md transition-shadow`}
+        className={`bg-gradient-to-br ${colorConfig.gradient} ${colorConfig.border} cursor-pointer hover:shadow-md transition-shadow h-full flex flex-col`}
         onClick={handleCardClick}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -235,14 +268,10 @@ export default function CompletionPercentage({
           </CardTitle>
           <Target className={`h-4 w-4 ${colorConfig.icon}`} />
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 flex flex-col justify-center">
           <div className={`text-2xl font-bold ${colorConfig.text}`}>
             {hasData ? `${completionPercentage}%` : "No data"}
           </div>
-          <p className={`text-xs ${colorConfig.accent} mt-1`}>
-            {format(dateStart, "MMM d")} - {format(dateEnd, "MMM d, yyyy")}
-            {profileId && " • Individual"}
-          </p>
         </CardContent>
       </Card>
 
@@ -280,6 +309,15 @@ export default function CompletionPercentage({
               </div>
             )}
           </div>
+
+          {/* Dynamic Trend Analysis */}
+          {trendAnalysis && (
+            <div className="p-3 bg-gray-50 dark:bg-gray-950 rounded-lg">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {trendAnalysis}
+              </p>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>

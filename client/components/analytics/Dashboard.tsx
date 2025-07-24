@@ -38,7 +38,11 @@ import CohortPerformance from "../common/analytics/secondary/CohortPerformance";
 import RubricHeatmap from "../common/analytics/secondary/RubricHeatmap";
 import SkillPerformance from "../common/analytics/secondary/SkillPerformance";
 
-export default function Dashboard() {
+interface DashboardProps {
+  profileId?: string;
+}
+
+export default function Dashboard({ profileId }: DashboardProps) {
   // Use analytics context for date range
   const { startDate, endDate } = useAnalytics();
 
@@ -57,6 +61,7 @@ export default function Dashboard() {
   const [rightFooterCarouselIndex, setRightFooterCarouselIndex] = useState(0);
 
   // Hover states for arrow visibility
+  const [isHeaderHovered, setIsHeaderHovered] = useState(false);
   const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
   const [isSecondaryHovered, setIsSecondaryHovered] = useState(false);
   const [isLeftFooterHovered, setIsLeftFooterHovered] = useState(false);
@@ -92,60 +97,70 @@ export default function Dashboard() {
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
+      {...(profileId && { profileId })}
     />,
     <CompletionPercentage
       key="completion-percentage"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
+      {...(profileId && { profileId })}
     />,
     <FirstAttemptPassRate
       key="first-attempt-pass-rate"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
+      {...(profileId && { profileId })}
     />,
     <HighestScore
       key="highest-score"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
+      {...(profileId && { profileId })}
     />,
     <MessagesPerSession
       key="messages-per-session"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
+      {...(profileId && { profileId })}
     />,
     <PersonaResponseTimes
       key="persona-response-times"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
+      {...(profileId && { profileId })}
     />,
     <SessionEfficiency
       key="session-efficiency"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
+      {...(profileId && { profileId })}
     />,
     <StagnationRate
       key="stagnation-rate"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
+      {...(profileId && { profileId })}
     />,
     <TimeSpent
       key="time-spent"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
+      {...(profileId && { profileId })}
     />,
     <TotalAttempts
       key="total-attempts"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
+      {...(profileId && { profileId })}
     />,
   ];
 
@@ -154,13 +169,20 @@ export default function Dashboard() {
       key="attempt-improvement"
       dateStart={startDate}
       dateEnd={endDate}
+      {...(profileId && { profileId })}
     />,
-    <Growth key="growth" dateStart={startDate} dateEnd={endDate} />,
+    <Growth
+      key="growth"
+      dateStart={startDate}
+      dateEnd={endDate}
+      {...(profileId && { profileId })}
+    />,
     <PersonaPerformance
       key="persona-performance"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
+      {...(profileId && { profileId })}
     />,
   ];
 
@@ -170,16 +192,19 @@ export default function Dashboard() {
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
+      {...(profileId && { profileId })}
     />,
     <RubricHeatmap
       key="rubric-heatmap"
       dateStart={startDate}
       dateEnd={endDate}
+      {...(profileId && { profileId })}
     />,
     <SkillPerformance
       key="skill-performance"
       dateStart={startDate}
       dateEnd={endDate}
+      {...(profileId && { profileId })}
     />,
   ];
 
@@ -189,11 +214,13 @@ export default function Dashboard() {
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
+      {...(profileId && { profileId })}
     />,
     <ScenarioStats
       key="scenario-stats"
       dateStart={startDate}
       dateEnd={endDate}
+      {...(profileId && { profileId })}
     />,
   ];
 
@@ -203,15 +230,41 @@ export default function Dashboard() {
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
+      {...(profileId && { profileId })}
     />,
     <SimulationStats
       key="simulation-stats"
       dateStart={startDate}
       dateEnd={endDate}
+      {...(profileId && { profileId })}
     />,
   ];
 
+  // Header pagination logic
+  const HEADER_CARDS_PER_PAGE = 5;
+  const totalHeaderPages = Math.ceil(
+    headerComponents.length / HEADER_CARDS_PER_PAGE
+  );
+
+  const getVisibleHeaderComponents = () => {
+    const startIndex = headerCarouselIndex * HEADER_CARDS_PER_PAGE;
+    return headerComponents.slice(
+      startIndex,
+      startIndex + HEADER_CARDS_PER_PAGE
+    );
+  };
+
   // Navigation functions
+  const navigateHeader = (direction: "prev" | "next") => {
+    if (direction === "prev") {
+      setHeaderCarouselIndex(
+        (prev: number) => (prev - 1 + totalHeaderPages) % totalHeaderPages
+      );
+    } else {
+      setHeaderCarouselIndex((prev: number) => (prev + 1) % totalHeaderPages);
+    }
+  };
+
   const navigatePrimary = (direction: "prev" | "next") => {
     const length = primaryComponents.length || 1;
     if (direction === "prev") {
@@ -280,25 +333,58 @@ export default function Dashboard() {
       {headerComponents.length > 0 && (
         <div className="space-y-4">
           <div
-            className="grid gap-4"
-            style={{
-              gridTemplateColumns: `repeat(5, 1fr)`,
-            }}
+            className="relative group"
+            onMouseEnter={() => setIsHeaderHovered(true)}
+            onMouseLeave={() => setIsHeaderHovered(false)}
           >
-            {headerComponents.map((component, _index) => (
-              <div
-                key={`${headerCarouselIndex}`}
-                className="transition-all duration-500 ease-in-out"
-              >
-                {component}
-              </div>
-            ))}
+            <div
+              className="grid gap-4"
+              style={{
+                gridTemplateColumns: `repeat(${Math.min(HEADER_CARDS_PER_PAGE, headerComponents.length)}, 1fr)`,
+                gridAutoRows: "1fr",
+              }}
+            >
+              {getVisibleHeaderComponents().map((component, index) => (
+                <div
+                  key={`header-${headerCarouselIndex}-${index}`}
+                  className="transition-all duration-500 ease-in-out"
+                >
+                  {component}
+                </div>
+              ))}
+            </div>
+
+            {/* Header Navigation Arrows */}
+            {totalHeaderPages > 1 && (
+              <>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
+                    isHeaderHovered ? "opacity-100" : "opacity-0"
+                  } hover:opacity-100`}
+                  onClick={() => navigateHeader("prev")}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className={`absolute right-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
+                    isHeaderHovered ? "opacity-100" : "opacity-0"
+                  } hover:opacity-100`}
+                  onClick={() => navigateHeader("next")}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Header carousel indicators */}
-          {headerComponents.length > 1 && (
+          {totalHeaderPages > 1 && (
             <div className="flex justify-center gap-2">
-              {headerComponents.map((_, index) => (
+              {Array.from({ length: totalHeaderPages }, (_, index) => (
                 <button
                   key={index}
                   onClick={() => setHeaderCarouselIndex(index)}
