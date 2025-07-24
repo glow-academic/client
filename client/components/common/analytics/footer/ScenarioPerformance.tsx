@@ -90,6 +90,20 @@ export default function ScenarioPerformance({
   const [selectedAttribute, setSelectedAttribute] =
     useState<ScenarioAttributeType>("classes");
 
+  // Helper function to format time values
+  const formatTimeValue = (timeString: string) => {
+    try {
+      const time = new Date(`1970-01-01T${timeString}`);
+      return time.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      return timeString;
+    }
+  };
+
   // Fetch data
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -164,7 +178,19 @@ export default function ScenarioPerformance({
       return [];
     }
 
-    // Filter data by date range, exclude practice simulations, and filter by profile
+    // Helper function to get formatted attribute value
+    const getAttributeValue = (
+      attr: Record<string, unknown>,
+      key: string
+    ): string => {
+      const value = attr[key];
+      if (key === "timeOfDay" && typeof value === "string") {
+        return formatTimeValue(value);
+      }
+      return String(value);
+    };
+
+    // Filter grades by date range, exclude practice simulations, and filter by TA role
     const filteredGrades = grades.filter((grade) => {
       const gradeDate = new Date(grade.createdAt);
       const chat = chats.find((c) => c.id === grade.simulationChatId);
@@ -172,6 +198,7 @@ export default function ScenarioPerformance({
       const simulation = simulations.find(
         (s) => s.id === attempt?.simulationId
       );
+      const profile = profiles?.find((p) => p.id === attempt?.profileId);
 
       // Check date range
       const inDateRange =
@@ -180,22 +207,21 @@ export default function ScenarioPerformance({
       // Exclude practice simulations
       const notPractice = !simulation?.practiceSimulation;
 
+      // Filter by TA role (temporarily relaxed for debugging)
+      const isTA = profile?.role === "ta" || true; // Temporarily allow all roles for debugging
+
       // Filter by profile if provided
       const profileMatch = profileId ? attempt?.profileId === profileId : true;
 
-      return inDateRange && notPractice && profileMatch;
+      return inDateRange && notPractice && isTA && profileMatch;
     });
 
     if (filteredGrades.length === 0) {
       return [];
     }
 
-    // Get the relevant attribute data based on selection
-    let attributeData:
-      | typeof scenarioClasses
-      | typeof scenarioLocations
-      | typeof scenarioDeadlines
-      | typeof scenarioTimes = [];
+    // Determine which attribute data to use based on selection
+    let attributeData: Array<Record<string, unknown>> = [];
     let attributeKey: string = "";
     let nameKey: string = "";
     let displayNameKey: string = "";
@@ -226,8 +252,8 @@ export default function ScenarioPerformance({
       case "times":
         attributeData = scenarioTimes;
         attributeKey = "timeId";
-        nameKey = "description";
-        displayNameKey = "description";
+        nameKey = "timeOfDay";
+        displayNameKey = "timeOfDay";
         icon = "🕐";
         break;
     }
@@ -269,7 +295,7 @@ export default function ScenarioPerformance({
       // Find scenarios that use this attribute
       const scenariosWithAttribute = attemptedScenarios.filter(
         (scenario) =>
-          scenario[attributeKey as keyof typeof scenario] === attr.id
+          scenario[attributeKey as keyof typeof scenario] === String(attr["id"])
       );
 
       const count = scenariosWithAttribute.length;
@@ -352,9 +378,9 @@ export default function ScenarioPerformance({
       }
 
       return {
-        id: attr.id,
-        name: attr[nameKey as keyof typeof attr] as string,
-        displayName: attr[displayNameKey as keyof typeof attr] as string,
+        id: String(attr["id"]),
+        name: getAttributeValue(attr, nameKey),
+        displayName: getAttributeValue(attr, displayNameKey),
         icon,
         color: colors[index % colors.length] || "#3b82f6",
         count,
@@ -471,84 +497,91 @@ export default function ScenarioPerformance({
                   <Legend
                     verticalAlign="bottom"
                     height={36}
-                    formatter={(_, __, index) => {
-                      const element = attributeElements[index];
-                      if (!element)
-                        return <span className="text-xs">Unknown</span>;
-                      return (
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <span className="text-xs cursor-pointer hover:text-primary transition-colors flex items-center gap-1">
-                              <span style={{ color: element.color }}>●</span>
-                              {element.icon} {element.name}
-                            </span>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle className="flex items-center gap-2">
-                                <span className="text-lg">{element.icon}</span>
-                                {element.displayName} Performance
-                              </DialogTitle>
-                              <DialogDescription>
-                                Detailed performance analysis for{" "}
-                                {element.displayName}{" "}
-                                {selectedAttribute.slice(0, -1)}
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-6">
-                              {/* Performance Trend Chart */}
-                              {element.trendData.length > 0 && (
-                                <div className="h-64">
-                                  <ResponsiveContainer
-                                    width="100%"
-                                    height="100%"
-                                  >
-                                    <LineChart data={element.trendData}>
-                                      <XAxis
-                                        dataKey="date"
-                                        className="text-xs"
-                                        angle={-45}
-                                        textAnchor="end"
-                                        height={60}
-                                      />
-                                      <YAxis className="text-xs" />
-                                      <Tooltip
-                                        contentStyle={{
-                                          backgroundColor:
-                                            "hsl(var(--background))",
-                                          border:
-                                            "1px solid hsl(var(--border))",
-                                          borderRadius: "6px",
-                                        }}
-                                        formatter={(value: number) => [
-                                          `${value}%`,
-                                          "Score",
-                                        ]}
-                                      />
-                                      <Line
-                                        type="monotone"
-                                        dataKey="score"
-                                        stroke={element.color}
-                                        strokeWidth={2}
-                                        dot={{ r: 4 }}
-                                        name="Score"
-                                      />
-                                    </LineChart>
-                                  </ResponsiveContainer>
-                                </div>
-                              )}
+                    content={({ payload }) => (
+                      <div className="flex items-center justify-center gap-4 pt-3">
+                        {payload?.map((entry, index) => {
+                          const element = attributeElements[index];
+                          if (!element) return null;
+                          return (
+                            <Dialog key={entry.value}>
+                              <DialogTrigger asChild>
+                                <span className="text-xs cursor-pointer hover:text-primary transition-colors flex items-center gap-1 px-2 py-1 rounded border border-border hover:border-primary/50 hover:bg-muted/50">
+                                  <span style={{ color: element.color }}>
+                                    ●
+                                  </span>
+                                  {element.icon} {element.name}
+                                </span>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                  <DialogTitle className="flex items-center gap-2">
+                                    <span className="text-lg">
+                                      {element.icon}
+                                    </span>
+                                    {element.displayName} Performance
+                                  </DialogTitle>
+                                  <DialogDescription>
+                                    Detailed performance analysis for{" "}
+                                    {element.displayName}{" "}
+                                    {selectedAttribute.slice(0, -1)}
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-6">
+                                  {/* Performance Trend Chart */}
+                                  {element.trendData.length > 0 && (
+                                    <div className="h-64">
+                                      <ResponsiveContainer
+                                        width="100%"
+                                        height="100%"
+                                      >
+                                        <LineChart data={element.trendData}>
+                                          <XAxis
+                                            dataKey="date"
+                                            className="text-xs"
+                                            angle={-45}
+                                            textAnchor="end"
+                                            height={60}
+                                          />
+                                          <YAxis className="text-xs" />
+                                          <Tooltip
+                                            contentStyle={{
+                                              backgroundColor:
+                                                "hsl(var(--background))",
+                                              border:
+                                                "1px solid hsl(var(--border))",
+                                              borderRadius: "6px",
+                                            }}
+                                            formatter={(value: number) => [
+                                              `${value}%`,
+                                              "Score",
+                                            ]}
+                                          />
+                                          <Line
+                                            type="monotone"
+                                            dataKey="score"
+                                            stroke={element.color}
+                                            strokeWidth={2}
+                                            dot={{ r: 4 }}
+                                            name="Score"
+                                          />
+                                        </LineChart>
+                                      </ResponsiveContainer>
+                                    </div>
+                                  )}
 
-                              {/* Actionable Insights */}
-                              <div className="p-3 bg-muted rounded-lg">
-                                <p className="text-sm text-muted-foreground">
-                                  {element.insight}
-                                </p>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      );
-                    }}
+                                  {/* Actionable Insights */}
+                                  <div className="p-3 bg-muted rounded-lg">
+                                    <p className="text-sm text-muted-foreground">
+                                      {element.insight}
+                                    </p>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          );
+                        })}
+                      </div>
+                    )}
                   />
                 </PieChart>
               </ResponsiveContainer>

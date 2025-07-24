@@ -26,10 +26,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
@@ -43,8 +50,8 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
@@ -119,6 +126,11 @@ export default function ScenarioStats({
     queryFn: () => getAllSimulations(),
   });
 
+  const { data: rubrics, isLoading: rubricsLoading } = useQuery({
+    queryKey: ["rubrics"],
+    queryFn: () => getAllRubrics(),
+  });
+
   const { data: attempts, isLoading: attemptsLoading } = useQuery({
     queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
     queryFn: () =>
@@ -147,6 +159,7 @@ export default function ScenarioStats({
     documentsLoading ||
     profilesLoading ||
     simulationsLoading ||
+    rubricsLoading ||
     attemptsLoading ||
     chatsLoading ||
     gradesLoading;
@@ -161,7 +174,8 @@ export default function ScenarioStats({
       !chats ||
       !grades ||
       !simulations ||
-      !profiles
+      !profiles ||
+      !rubrics
     ) {
       return [];
     }
@@ -197,8 +211,9 @@ export default function ScenarioStats({
     }
 
     // Group scenarios by metric level and calculate average performance
-    const metricGroups: { [key: number]: { scores: number[]; count: number } } =
-      {};
+    const metricGroups: {
+      [key: number]: { scores: number[]; count: number; rubricPoints: number };
+    } = {};
 
     scenarios.forEach((scenario) => {
       const scenarioChats = chats.filter(
@@ -225,16 +240,37 @@ export default function ScenarioStats({
       }
 
       if (metricValue > 0) {
+        // Calculate percentage scores based on rubric points
+        const percentageScores = scenarioGrades.map((grade) => {
+          const rubric = rubrics.find((r) => r.id === grade.rubricId);
+          if (!rubric || rubric.points === 0) return 0;
+
+          // Calculate percentage score (score out of rubric.points)
+          return Math.round((grade.score / rubric.points) * 100);
+        });
+
         const avgScore = Math.round(
-          scenarioGrades.reduce((sum, grade) => sum + grade.score, 0) /
-            scenarioGrades.length
+          percentageScores.reduce((sum, score) => sum + score, 0) /
+            percentageScores.length
         );
 
         if (!metricGroups[metricValue]) {
-          metricGroups[metricValue] = { scores: [], count: 0 };
+          metricGroups[metricValue] = { scores: [], count: 0, rubricPoints: 0 };
         }
-        metricGroups[metricValue].scores.push(avgScore);
-        metricGroups[metricValue].count += scenarioChats.length;
+        const group = metricGroups[metricValue];
+        if (group) {
+          group.scores.push(avgScore);
+          group.count += scenarioChats.length;
+
+          // Store rubric points for reference (use the first one found)
+          if (group.rubricPoints === 0) {
+            const firstGrade = scenarioGrades[0];
+            if (firstGrade) {
+              const rubric = rubrics.find((r) => r.id === firstGrade.rubricId);
+              group.rubricPoints = rubric?.points || 0;
+            }
+          }
+        }
       }
     });
 
@@ -248,6 +284,7 @@ export default function ScenarioStats({
         ),
         scenarioCount: data.scores.length,
         totalAttempts: data.count,
+        rubricPoints: data.rubricPoints,
       }))
       .sort((a, b) => a.metricLevel - b.metricLevel)
       .filter((item) => item.scenarioCount >= 1); // Show all levels with at least 1 scenario
@@ -262,6 +299,7 @@ export default function ScenarioStats({
     grades,
     simulations,
     profiles,
+    rubrics,
     dateStart,
     dateEnd,
     profileId,
@@ -359,152 +397,152 @@ export default function ScenarioStats({
   }
 
   return (
-    <Card className="w-full h-full flex flex-col">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Scenario Performance Analysis
-            </CardTitle>
-            <CardDescription>
-              Performance correlation with scenario characteristics
-            </CardDescription>
-          </div>
+    <TooltipProvider>
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Scenario Performance Analysis
+              </CardTitle>
+              <CardDescription>
+                Performance correlation with scenario characteristics
+              </CardDescription>
+            </div>
 
-          {/* Metric Picker */}
-          <div className="flex items-center gap-2">
-            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={pickerOpen}
-                  className="w-48 justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <span>{selectedMetricOption?.icon || "📊"}</span>
-                    <span>{selectedMetricOption?.name || "Metric"}</span>
-                  </div>
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-48 p-0">
-                <Command>
-                  <CommandInput placeholder="Search metrics..." />
-                  <CommandEmpty>No metric found.</CommandEmpty>
-                  <CommandGroup>
-                    {METRIC_OPTIONS.map((metric) => (
-                      <CommandItem
-                        key={metric.id}
-                        value={metric.id}
-                        onSelect={() => {
-                          setSelectedMetric(metric.id);
-                          setPickerOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedMetric === metric.id
-                              ? "opacity-100"
-                              : "opacity-0"
-                          )}
-                        />
-                        <div className="flex items-center gap-2">
-                          <span>{metric.icon}</span>
-                          <div>
-                            <div className="font-medium">{metric.name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {metric.description}
-                            </div>
-                          </div>
-                        </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-6 flex-1 flex flex-col relative">
-        {/* Correlation Card */}
-        <div className="absolute top-0 right-0 z-10">
-          <div className="bg-background/80 backdrop-blur-sm border rounded-lg p-3 shadow-sm">
+            {/* Metric Picker */}
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Correlation:</span>
-              <span className="text-sm font-bold">
-                {correlation > 0 ? "+" : ""}
-                {correlation.toFixed(2)}
-              </span>
-              <Popover>
+              <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-4 w-4 p-0">
-                    <Info className="h-3 w-3" />
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={pickerOpen}
+                    className="w-48 justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>{selectedMetricOption?.icon || "📊"}</span>
+                      <span>{selectedMetricOption?.name || "Metric"}</span>
+                    </div>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-64 p-3">
-                  <p className="text-sm">{getInsightText()}</p>
+                <PopoverContent className="w-48 p-0">
+                  <Command>
+                    <CommandInput placeholder="Search metrics..." />
+                    <CommandEmpty>No metric found.</CommandEmpty>
+                    <CommandGroup>
+                      {METRIC_OPTIONS.map((metric) => (
+                        <CommandItem
+                          key={metric.id}
+                          value={metric.id}
+                          onSelect={() => {
+                            setSelectedMetric(metric.id);
+                            setPickerOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedMetric === metric.id
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          <div className="flex items-center gap-2">
+                            <span>{metric.icon}</span>
+                            <div>
+                              <div className="font-medium">{metric.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {metric.description}
+                              </div>
+                            </div>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
                 </PopoverContent>
               </Popover>
             </div>
           </div>
-        </div>
+        </CardHeader>
 
-        {/* Bar Chart */}
-        <div className="flex-1 min-h-[300px] h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={aggregatedPerformanceData}
-              margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis
-                dataKey="metricLevel"
-                name={selectedMetricOption?.name || "Metric Level"}
-                fontSize={12}
-                tickFormatter={(value) => {
-                  if (selectedMetric === "documentCount")
+        <CardContent className="space-y-6 flex-1 flex flex-col relative">
+          {/* Correlation Card */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="absolute top-2 right-2 z-10">
+                <div className="bg-background/90 backdrop-blur-sm border rounded-md px-2 py-1 shadow-sm">
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-medium">Correlation:</span>
+                    <span className="text-xs font-bold">
+                      {correlation > 0 ? "+" : ""}
+                      {correlation.toFixed(2)}
+                    </span>
+                    <Info className="h-3 w-3 text-muted-foreground" />
+                  </div>
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="w-64 p-3">
+              <p className="text-sm">{getInsightText()}</p>
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Bar Chart */}
+          <div className="flex-1 min-h-[300px] h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={aggregatedPerformanceData}
+                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis
+                  dataKey="metricLevel"
+                  name={selectedMetricOption?.name || "Metric Level"}
+                  fontSize={12}
+                  tickFormatter={(value) => {
+                    if (selectedMetric === "documentCount")
+                      return value.toString();
                     return value.toString();
-                  return value.toString();
-                }}
-              />
-              <YAxis
-                fontSize={12}
-                domain={[0, 100]}
-                tickFormatter={(value) => `${value}%`}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--background))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "6px",
-                }}
-                formatter={(value: number, _name: string) => [
-                  `${value}%`,
-                  "Average Score",
-                ]}
-                labelFormatter={(label) => {
-                  const dataPoint = aggregatedPerformanceData.find(
-                    (item) => item.metricLevel === label
-                  );
-                  const metricName = selectedMetricOption?.name || "Metric";
-                  return `${metricName} Level ${label} (${dataPoint?.scenarioCount || 0} scenarios)`;
-                }}
-              />
-              <Bar
-                dataKey="avgScore"
-                fill="#3b82f6"
-                name="Average Score"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
+                  }}
+                />
+                <YAxis
+                  fontSize={12}
+                  domain={[0, 100]}
+                  tickFormatter={(value) => `${value}%`}
+                />
+                <RechartsTooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--background))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "6px",
+                  }}
+                  formatter={(value: number, _name: string) => [
+                    `${value}%`,
+                    "Average Score",
+                  ]}
+                  labelFormatter={(label) => {
+                    const dataPoint = aggregatedPerformanceData.find(
+                      (item) => item.metricLevel === label
+                    );
+                    const metricName = selectedMetricOption?.name || "Metric";
+                    return `${metricName} Level ${label} (${dataPoint?.scenarioCount || 0} scenarios)`;
+                  }}
+                />
+                <Bar
+                  dataKey="avgScore"
+                  fill="#3b82f6"
+                  name="Average Score"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+    </TooltipProvider>
   );
 }
