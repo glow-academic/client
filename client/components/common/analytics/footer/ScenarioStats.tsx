@@ -168,27 +168,8 @@ export default function ScenarioStats({
       !simulations ||
       !profiles
     ) {
-      console.log("ScenarioStats: Missing required data", {
-        scenarios: !!scenarios,
-        personas: !!personas,
-        documents: !!documents,
-        attempts: !!attempts,
-        chats: !!chats,
-        grades: !!grades,
-        simulations: !!simulations,
-        profiles: !!profiles,
-      });
       return [];
     }
-
-    console.log("ScenarioStats: Data available", {
-      scenariosCount: scenarios.length,
-      attemptsCount: attempts.length,
-      chatsCount: chats.length,
-      gradesCount: grades.length,
-      dateStart,
-      dateEnd,
-    });
 
     // Filter data by date range, exclude practice simulations, and filter by TA role
     const filteredGrades = grades.filter((grade) => {
@@ -207,18 +188,13 @@ export default function ScenarioStats({
       // Exclude practice simulations
       const notPractice = !simulation?.practiceSimulation;
 
-      // Filter by TA role
+      // Filter by TA role (temporarily relaxed for debugging)
       const isTA = profile?.role === "ta";
 
       // Filter by profile if provided
       const profileMatch = profileId ? attempt?.profileId === profileId : true;
 
       return inDateRange && notPractice && isTA && profileMatch;
-    });
-
-    console.log("ScenarioStats: Filtered grades", {
-      originalGrades: grades.length,
-      filteredGrades: filteredGrades.length,
     });
 
     if (filteredGrades.length === 0) return [];
@@ -271,17 +247,8 @@ export default function ScenarioStats({
       })
       .filter(
         (item): item is NonNullable<typeof item> =>
-          item !== null && item.totalAttempts >= 1 && item.metricValue >= 0
+          item !== null && item.totalAttempts >= 3 && item.metricValue > 0
       );
-
-    console.log("ScenarioStats: Final scenario data", {
-      scenariosWithData: scenarioData.length,
-      scenarios: scenarioData.map((s) => ({
-        name: s.scenarioName,
-        attempts: s.totalAttempts,
-        metricValue: s.metricValue,
-      })),
-    });
 
     return scenarioData;
   }, [
@@ -369,23 +336,9 @@ export default function ScenarioStats({
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center flex-1">
-          <div className="text-center space-y-2">
-            <p className="text-muted-foreground">
-              No scenario data available for the selected time period.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              This could be due to:
-            </p>
-            <ul className="text-xs text-muted-foreground text-left list-disc list-inside space-y-1">
-              <li>No TA role profiles in the selected date range</li>
-              <li>No completed simulation attempts</li>
-              <li>No scenarios with sufficient data (≥1 attempt)</li>
-              <li>Date range too restrictive</li>
-            </ul>
-            <p className="text-xs text-muted-foreground mt-2">
-              Check the browser console for detailed debugging information.
-            </p>
-          </div>
+          <p className="text-muted-foreground">
+            No scenario data available for the selected time period.
+          </p>
         </CardContent>
       </Card>
     );

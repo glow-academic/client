@@ -285,24 +285,53 @@ export default function AttemptImprovement({
     });
 
     // Calculate averages and create chart data
-    const chartData = Array.from(attemptMetrics.values())
-      .filter((metrics) => metrics.count > 0)
-      .map((metrics) => ({
-        attempt: `Attempt ${metrics.attemptNumber}`,
-        avgScore: Math.round(
-          metrics.scores.reduce((sum, score) => sum + score, 0) /
-            metrics.scores.length
-        ),
-        avgTime: Math.round(
-          metrics.times.reduce((sum, time) => sum + time, 0) /
-            metrics.times.length
-        ),
-        passRate: Math.round(
-          metrics.passRates.reduce((sum, rate) => sum + rate, 0) /
-            metrics.passRates.length
-        ),
-        count: metrics.count,
-      }));
+    const chartData = [
+      {
+        metric: "Average Score",
+        ...Array.from(attemptMetrics.values())
+          .filter((metrics) => metrics.count > 0)
+          .reduce(
+            (acc, metrics) => {
+              acc[`Attempt ${metrics.attemptNumber}`] = Math.round(
+                metrics.scores.reduce((sum, score) => sum + score, 0) /
+                  metrics.scores.length
+              );
+              return acc;
+            },
+            {} as Record<string, number>
+          ),
+      },
+      {
+        metric: "Average Time",
+        ...Array.from(attemptMetrics.values())
+          .filter((metrics) => metrics.count > 0)
+          .reduce(
+            (acc, metrics) => {
+              acc[`Attempt ${metrics.attemptNumber}`] = Math.round(
+                metrics.times.reduce((sum, time) => sum + time, 0) /
+                  metrics.times.length
+              );
+              return acc;
+            },
+            {} as Record<string, number>
+          ),
+      },
+      {
+        metric: "Pass Rate",
+        ...Array.from(attemptMetrics.values())
+          .filter((metrics) => metrics.count > 0)
+          .reduce(
+            (acc, metrics) => {
+              acc[`Attempt ${metrics.attemptNumber}`] = Math.round(
+                metrics.passRates.reduce((sum, rate) => sum + rate, 0) /
+                  metrics.passRates.length
+              );
+              return acc;
+            },
+            {} as Record<string, number>
+          ),
+      },
+    ];
 
     return chartData;
   }, [
@@ -322,12 +351,30 @@ export default function AttemptImprovement({
   const getActionableInsights = () => {
     if (improvementData.length < 2) return null;
 
-    const firstAttempt = improvementData[0];
-    const lastAttempt = improvementData[improvementData.length - 1];
+    // Get the Average Score data to check improvement
+    const scoreData = improvementData.find(
+      (item) => item.metric === "Average Score"
+    );
+    if (!scoreData) return null;
+
+    // Get attempt keys (excluding 'metric')
+    const attemptKeys = Object.keys(scoreData).filter(
+      (key) => key !== "metric"
+    );
+    if (attemptKeys.length < 2) return null;
+
+    const firstAttempt = attemptKeys[0];
+    const lastAttempt = attemptKeys[attemptKeys.length - 1];
 
     if (!firstAttempt || !lastAttempt) return null;
 
-    const scoreImprovement = lastAttempt.avgScore - firstAttempt.avgScore;
+    const firstScore = (scoreData as any)[firstAttempt];
+    const lastScore = (scoreData as any)[lastAttempt];
+
+    if (typeof firstScore !== "number" || typeof lastScore !== "number")
+      return null;
+
+    const scoreImprovement = lastScore - firstScore;
 
     if (scoreImprovement > 5) {
       return `Users improve by ${scoreImprovement}% on average between attempts. Consider advancing to more challenging scenarios.`;
@@ -421,7 +468,7 @@ export default function AttemptImprovement({
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={improvementData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="attempt" className="text-xs" />
+                <XAxis dataKey="metric" className="text-xs" />
                 <YAxis className="text-xs" />
                 <Tooltip
                   contentStyle={{
@@ -430,37 +477,28 @@ export default function AttemptImprovement({
                     borderRadius: "6px",
                   }}
                   formatter={(value: number, name: string) => [
-                    name === "avgScore"
-                      ? `${value}%`
-                      : name === "avgTime"
+                    name.includes("Attempt")
+                      ? name.includes("Time")
                         ? `${value} min`
-                        : `${value}%`,
-                    name === "avgScore"
-                      ? "Average Score"
-                      : name === "avgTime"
-                        ? "Average Time"
-                        : "Pass Rate",
+                        : `${value}%`
+                      : `${value}`,
+                    name,
                   ]}
                 />
                 <Legend />
-                <Bar
-                  dataKey="avgScore"
-                  fill="#3b82f6"
-                  name="Average Score"
-                  radius={[4, 4, 0, 0]}
-                />
-                <Bar
-                  dataKey="avgTime"
-                  fill="#f97316"
-                  name="Average Time"
-                  radius={[4, 4, 0, 0]}
-                />
-                <Bar
-                  dataKey="passRate"
-                  fill="#10b981"
-                  name="Pass Rate"
-                  radius={[4, 4, 0, 0]}
-                />
+                {improvementData.length > 0 &&
+                  improvementData[0] &&
+                  Object.keys(improvementData[0])
+                    .filter((key) => key !== "metric")
+                    .map((attemptKey, index) => (
+                      <Bar
+                        key={attemptKey}
+                        dataKey={attemptKey}
+                        fill={`hsl(${120 + index * 60}, 70%, 50%)`}
+                        name={attemptKey}
+                        radius={[4, 4, 0, 0]}
+                      />
+                    ))}
               </BarChart>
             </ResponsiveContainer>
           </div>

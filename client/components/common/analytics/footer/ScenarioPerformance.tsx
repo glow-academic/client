@@ -1,6 +1,6 @@
 /**
  * ScenarioPerformance.tsx
- * This component displays the scenario performance for the personas.
+ * This component displays scenario elements breakdown with performance metrics.
  * @AshokSaravanan222 & @siladiea
  * 07/23/2025
  */
@@ -21,16 +21,15 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { isAfter, isBefore } from "date-fns";
-import { BarChart3, TrendingUp } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import { useMemo } from "react";
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
-  XAxis,
-  YAxis,
 } from "recharts";
 
 export interface ScenarioPerformanceProps {
@@ -44,12 +43,22 @@ export interface ScenarioPerformanceProps {
   };
 }
 
+interface ScenarioElement {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  count: number;
+  avgScore: number;
+  completionRate: number;
+  totalAttempts: number;
+}
+
 export default function ScenarioPerformance({
   dateStart,
   dateEnd,
   profileId,
-  thresholds,
-}: ScenarioPerformanceProps) {
+}: Omit<ScenarioPerformanceProps, "thresholds">) {
   // Fetch data
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -87,8 +96,8 @@ export default function ScenarioPerformance({
     enabled: !!chats && chats.length > 0,
   });
 
-  // Calculate scenario performance data
-  const scenarioData = useMemo(() => {
+  // Calculate scenario elements breakdown
+  const scenarioElements = useMemo(() => {
     if (
       !scenarios ||
       !simulations ||
@@ -128,16 +137,77 @@ export default function ScenarioPerformance({
 
     if (filteredGrades.length === 0) return [];
 
-    // Group by scenario and calculate metrics
-    const scenarioMetrics = new Map<
+    // Define scenario element categories
+    const elementCategories: { [key: string]: ScenarioElement } = {
+      class: {
+        id: "class",
+        name: "Class Management",
+        icon: "👨‍🏫",
+        color: "#3b82f6",
+        count: 0,
+        avgScore: 0,
+        completionRate: 0,
+        totalAttempts: 0,
+      },
+      deadlines: {
+        id: "deadlines",
+        name: "Deadlines & Time",
+        icon: "⏰",
+        color: "#ef4444",
+        count: 0,
+        avgScore: 0,
+        completionRate: 0,
+        totalAttempts: 0,
+      },
+      locations: {
+        id: "locations",
+        name: "Location & Space",
+        icon: "📍",
+        color: "#10b981",
+        count: 0,
+        completionRate: 0,
+        avgScore: 0,
+        totalAttempts: 0,
+      },
+      students: {
+        id: "students",
+        name: "Student Interactions",
+        icon: "👥",
+        color: "#f59e0b",
+        count: 0,
+        avgScore: 0,
+        completionRate: 0,
+        totalAttempts: 0,
+      },
+      content: {
+        id: "content",
+        name: "Content & Materials",
+        icon: "📚",
+        color: "#8b5cf6",
+        count: 0,
+        avgScore: 0,
+        completionRate: 0,
+        totalAttempts: 0,
+      },
+      objectives: {
+        id: "objectives",
+        name: "Learning Objectives",
+        icon: "🎯",
+        color: "#06b6d4",
+        count: 0,
+        avgScore: 0,
+        completionRate: 0,
+        totalAttempts: 0,
+      },
+    };
+
+    // Analyze scenarios and categorize them
+    const scenarioAnalysis = new Map<
       string,
       {
-        scenarioId: string;
-        scenarioName: string;
-        attempts: number;
-        completed: number;
-        scores: number[];
-        timeTaken: number[];
+        scenario: (typeof scenarios)[0];
+        grades: typeof grades;
+        chats: typeof chats;
       }
     >();
 
@@ -145,69 +215,79 @@ export default function ScenarioPerformance({
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       if (!chat) return;
 
-      const scenarioId = chat.scenarioId;
-      const scenario = scenarios.find((s) => s.id === scenarioId);
+      const scenario = scenarios.find((s) => s.id === chat.scenarioId);
       if (!scenario) return;
 
-      if (!scenarioMetrics.has(scenarioId)) {
-        scenarioMetrics.set(scenarioId, {
-          scenarioId,
-          scenarioName: scenario.name,
-          attempts: 0,
-          completed: 0,
-          scores: [],
-          timeTaken: [],
+      if (!scenarioAnalysis.has(scenario.id)) {
+        scenarioAnalysis.set(scenario.id, {
+          scenario,
+          grades: [],
+          chats: [],
         });
       }
 
-      const metrics = scenarioMetrics.get(scenarioId)!;
-      metrics.attempts++;
-      metrics.scores.push(grade.score);
-      metrics.timeTaken.push(grade.timeTaken);
+      const analysis = scenarioAnalysis.get(scenario.id)!;
+      analysis.grades.push(grade);
+      analysis.chats.push(chat);
+    });
 
-      if (chat.completed) {
-        metrics.completed++;
+    // Categorize scenarios based on their characteristics
+    scenarioAnalysis.forEach(({ scenario, grades, chats }) => {
+      const completedChats = chats.filter((chat) => chat.completed);
+      const avgScore =
+        grades.reduce((sum, grade) => sum + grade.score, 0) / grades.length;
+      const completionRate = (completedChats.length / chats.length) * 100;
+
+      // Determine which category this scenario belongs to based on its characteristics
+      let primaryCategory = "class"; // default
+
+      // Class management scenarios (high intensity, multiple students)
+      if (
+        scenario.intensity &&
+        scenario.intensity >= 7 &&
+        scenario.crowdedness &&
+        scenario.crowdedness >= 7
+      ) {
+        primaryCategory = "class";
+      }
+      // Deadline/time pressure scenarios
+      else if (scenario.intensity && scenario.intensity >= 8) {
+        primaryCategory = "deadlines";
+      }
+      // Location/space management scenarios
+      else if (scenario.crowdedness && scenario.crowdedness >= 6) {
+        primaryCategory = "locations";
+      }
+      // Student interaction scenarios
+      else if (scenario.crowdedness && scenario.crowdedness >= 5) {
+        primaryCategory = "students";
+      }
+      // Content/material heavy scenarios
+      else if (scenario.documentIds && scenario.documentIds.length >= 3) {
+        primaryCategory = "content";
+      }
+      // Learning objective focused scenarios
+      else {
+        primaryCategory = "objectives";
+      }
+
+      const category = elementCategories[primaryCategory];
+      if (category) {
+        category.count++;
+        category.totalAttempts += chats.length;
+        category.avgScore =
+          (category.avgScore * (category.count - 1) + avgScore) /
+          category.count;
+        category.completionRate =
+          (category.completionRate * (category.count - 1) + completionRate) /
+          category.count;
       }
     });
 
-    // Convert to chart data
-    const chartData = Array.from(scenarioMetrics.values())
-      .map((metrics) => {
-        const completionRate = Math.round(
-          (metrics.completed / metrics.attempts) * 100
-        );
-        const avgScore = Math.round(
-          metrics.scores.reduce((sum, score) => sum + score, 0) /
-            metrics.scores.length
-        );
-        const avgTime = Math.round(
-          metrics.timeTaken.reduce((sum, time) => sum + time, 0) /
-            metrics.timeTaken.length /
-            60
-        ); // Convert to minutes
-
-        return {
-          name:
-            metrics.scenarioName.length > 20
-              ? metrics.scenarioName.substring(0, 20) + "..."
-              : metrics.scenarioName,
-          completionRate,
-          avgScore,
-          avgTime,
-          attempts: metrics.attempts,
-          color:
-            completionRate >= thresholds.success
-              ? "#10b981"
-              : completionRate >= thresholds.warning
-                ? "#f59e0b"
-                : "#ef4444",
-        };
-      })
-      .filter((scenario) => scenario.attempts >= 3) // Only show scenarios with sufficient data
-      .sort((a, b) => b.completionRate - a.completionRate)
-      .slice(0, 10); // Show top 10 scenarios
-
-    return chartData;
+    // Convert to array and filter out categories with no data
+    return Object.values(elementCategories).filter(
+      (element) => element.count > 0
+    );
   }, [
     scenarios,
     simulations,
@@ -218,37 +298,37 @@ export default function ScenarioPerformance({
     dateStart,
     dateEnd,
     profileId,
-    thresholds,
   ]);
 
-  // Calculate overall performance trend
-  const performanceTrend = useMemo(() => {
-    if (!scenarioData.length) return { value: 0, isPositive: true };
+  // Calculate overall performance
+  const overallPerformance = useMemo(() => {
+    if (!scenarioElements.length) return { avgScore: 0, completionRate: 0 };
 
-    const avgCompletion =
-      scenarioData.reduce((sum, scenario) => sum + scenario.completionRate, 0) /
-      scenarioData.length;
-    const avgScore =
-      scenarioData.reduce((sum, scenario) => sum + scenario.avgScore, 0) /
-      scenarioData.length;
+    const totalAvgScore = scenarioElements.reduce(
+      (sum, element) => sum + element.avgScore,
+      0
+    );
+    const totalCompletionRate = scenarioElements.reduce(
+      (sum, element) => sum + element.completionRate,
+      0
+    );
 
-    const overallPerformance = (avgCompletion + avgScore) / 2;
     return {
-      value: Math.round(overallPerformance),
-      isPositive: overallPerformance >= 70,
+      avgScore: Math.round(totalAvgScore / scenarioElements.length),
+      completionRate: Math.round(totalCompletionRate / scenarioElements.length),
     };
-  }, [scenarioData]);
+  }, [scenarioElements]);
 
-  if (!scenarioData.length) {
+  if (!scenarioElements.length) {
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
-            Scenario Performance
+            Scenario Elements Breakdown
           </CardTitle>
           <CardDescription>
-            Performance metrics across different scenarios
+            Performance analysis by scenario element categories
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center flex-1">
@@ -265,70 +345,156 @@ export default function ScenarioPerformance({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <BarChart3 className="h-5 w-5" />
-          Scenario Performance
+          Scenario Elements Breakdown
         </CardTitle>
         <CardDescription>
-          Performance metrics across different scenarios
+          Performance analysis by scenario element categories
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col justify-end items-start pb-0">
-        <div className="h-72 w-full max-w-[90%] self-start">
+
+      <CardContent className="space-y-6 flex-1 flex flex-col">
+        {/* Performance Summary */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Avg Score:</span>
+                <span className="text-sm text-muted-foreground">
+                  {overallPerformance.avgScore}%
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Completion:</span>
+                <span className="text-sm text-muted-foreground">
+                  {overallPerformance.completionRate}%
+                </span>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Overall performance across all scenario elements
+            </p>
+          </div>
+
+          <div className="text-right">
+            <div className="text-sm font-medium">
+              {scenarioElements.length} categories
+            </div>
+            <div className="text-xs text-muted-foreground">
+              with performance data
+            </div>
+          </div>
+        </div>
+
+        {/* Pie Chart */}
+        <div className="flex-1 min-h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={scenarioData}
-              layout="vertical"
-              margin={{ left: 80, right: 30, top: 20, bottom: 20 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis type="number" domain={[0, 100]} className="text-xs" />
-              <YAxis
-                type="category"
-                dataKey="name"
-                tickLine={false}
-                axisLine={false}
-                width={80}
-                className="text-xs"
-              />
+            <PieChart>
+              <Pie
+                data={scenarioElements}
+                dataKey="count"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={120}
+                innerRadius={60}
+                paddingAngle={2}
+              >
+                {scenarioElements.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
               <Tooltip
                 contentStyle={{
                   backgroundColor: "hsl(var(--background))",
                   border: "1px solid hsl(var(--border))",
                   borderRadius: "6px",
                 }}
-                formatter={(value: number, name: string) => [
-                  name === "completionRate"
-                    ? `${value}%`
-                    : name === "avgScore"
-                      ? `${value}%`
-                      : `${value} min`,
-                  name === "completionRate"
-                    ? "Completion Rate"
-                    : name === "avgScore"
-                      ? "Average Score"
-                      : "Average Time",
-                ]}
+                formatter={(value: number, name: string, _props: unknown) => {
+                  const element = scenarioElements.find((e) => e.name === name);
+                  if (!element) return [value, name];
+
+                  return [
+                    <div key="tooltip" className="space-y-2">
+                      <div className="font-medium">
+                        {element.icon} {element.name}
+                      </div>
+                      <div className="text-sm space-y-1">
+                        <div>Scenarios: {element.count}</div>
+                        <div>Avg Score: {Math.round(element.avgScore)}%</div>
+                        <div>
+                          Completion: {Math.round(element.completionRate)}%
+                        </div>
+                        <div>Attempts: {element.totalAttempts}</div>
+                      </div>
+                    </div>,
+                    "",
+                  ];
+                }}
               />
-              <Bar
-                dataKey="completionRate"
-                fill="#3b82f6"
-                radius={[0, 4, 4, 0]}
+              <Legend
+                verticalAlign="bottom"
+                height={36}
+                formatter={(value, entry, index) => {
+                  const element = scenarioElements[index];
+                  if (!element) return <span className="text-xs">Unknown</span>;
+                  return (
+                    <span className="text-xs">
+                      {element.icon} {element.name}
+                    </span>
+                  );
+                }}
               />
-              <Bar dataKey="avgScore" fill="#10b981" radius={[0, 4, 4, 0]} />
-            </BarChart>
+            </PieChart>
           </ResponsiveContainer>
         </div>
-      </CardContent>
-      <CardContent className="flex-col gap-2 text-sm">
-        <div className="flex items-center gap-2 leading-none font-medium">
-          Overall Performance: {performanceTrend.value}%
-          <TrendingUp
-            className={`h-4 w-4 ${
-              performanceTrend.isPositive ? "" : "rotate-180"
-            }`}
-          />
+
+        {/* Element Details */}
+        <div className="grid grid-cols-2 gap-4 text-xs">
+          {scenarioElements.map((element) => (
+            <div
+              key={element.id}
+              className="flex items-center justify-between p-3 rounded-lg border"
+              style={{ borderLeftColor: element.color, borderLeftWidth: "4px" }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{element.icon}</span>
+                <div>
+                  <div className="font-medium">{element.name}</div>
+                  <div className="text-muted-foreground">
+                    {element.count} scenarios
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="font-medium">
+                  {Math.round(element.avgScore)}%
+                </div>
+                <div className="text-muted-foreground">avg score</div>
+              </div>
+            </div>
+          ))}
         </div>
-        <div className="text-muted-foreground leading-none">
-          Based on completion rates and average scores
+
+        {/* Insights */}
+        <div className="text-sm text-muted-foreground">
+          <p className="leading-relaxed">
+            {scenarioElements.length > 0 && (
+              <>
+                {scenarioElements.find(
+                  (e) =>
+                    e.avgScore ===
+                    Math.max(...scenarioElements.map((e) => e.avgScore))
+                )?.name || "Some"}
+                scenarios show the best performance, while
+                {scenarioElements.find(
+                  (e) =>
+                    e.avgScore ===
+                    Math.min(...scenarioElements.map((e) => e.avgScore))
+                )?.name || "other"}
+                scenarios may need additional support.
+              </>
+            )}
+          </p>
         </div>
       </CardContent>
     </Card>
