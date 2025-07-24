@@ -352,17 +352,17 @@ export default function RubricHeatmap({
   if (isLoading) {
     return (
       <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <TrendingUp className="h-4 w-4" />
             Skill Area Correlation Matrix
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-xs">
             Statistical correlation between skill areas (standard groups)
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1">
-          <div className="flex items-center gap-2 text-muted-foreground">
+        <CardContent className="flex items-center justify-center flex-1 p-3">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading correlation data...
           </div>
@@ -375,19 +375,19 @@ export default function RubricHeatmap({
   if (!correlationMatrix.matrix.length || !correlationMatrix.standardGroups) {
     return (
       <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <TrendingUp className="h-4 w-4" />
             Skill Area Correlation Matrix
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-xs">
             Statistical correlation between skill areas (standard groups)
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1">
-          <div className="text-center text-muted-foreground">
+        <CardContent className="flex items-center justify-center flex-1 p-3">
+          <div className="text-center text-muted-foreground text-sm">
             <p>No correlation data available for the selected time period</p>
-            <p className="text-sm">
+            <p className="text-xs mt-1">
               Need more training sessions with multiple skill areas to calculate
               correlations
             </p>
@@ -399,14 +399,14 @@ export default function RubricHeatmap({
 
   return (
     <Card className="w-full h-full flex flex-col">
-      <CardHeader>
-        <div className="flex items-center justify-between">
+      <CardHeader className="pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-base">
+              <TrendingUp className="h-4 w-4" />
               Skill Area Correlation Matrix
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs">
               Statistical correlation between skill areas (standard groups)
             </CardDescription>
           </div>
@@ -426,16 +426,21 @@ export default function RubricHeatmap({
           )}
         </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden">
-        <div className="space-y-6">
+      <CardContent className="flex-1 p-3">
+        <div className="space-y-3">
           {/* Correlation Matrix Table */}
-          <div className="overflow-auto">
-            <Table>
+          <div className="overflow-x-auto">
+            <Table className="min-w-fit">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-32">Skill Areas</TableHead>
+                  <TableHead className="w-16 text-xs p-1">
+                    Skill Areas
+                  </TableHead>
                   {correlationMatrix.standardGroups.map((group) => (
-                    <TableHead key={group.id} className="text-center w-24">
+                    <TableHead
+                      key={group.id}
+                      className="text-center w-12 text-xs p-1"
+                    >
                       {group.shortName}
                     </TableHead>
                   ))}
@@ -444,7 +449,7 @@ export default function RubricHeatmap({
               <TableBody>
                 {correlationMatrix.standardGroups.map((group, rowIndex) => (
                   <TableRow key={group.id}>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium text-xs p-1">
                       {group.shortName}
                     </TableCell>
                     {correlationMatrix.standardGroups.map((_, colIndex) => {
@@ -453,12 +458,12 @@ export default function RubricHeatmap({
                       const colGroup =
                         correlationMatrix.standardGroups[colIndex];
                       if (!cell || !colGroup)
-                        return <TableCell key={colIndex} />;
+                        return <TableCell key={colIndex} className="p-1" />;
 
                       return (
                         <TableCell key={colIndex} className="text-center p-1">
                           <div
-                            className="w-full h-12 rounded-md flex items-center justify-center text-xs font-mono relative"
+                            className="w-10 h-6 rounded-sm flex items-center justify-center text-xs font-mono relative"
                             style={{ backgroundColor: cell.color }}
                             title={`${group.shortName} ↔ ${colGroup.shortName}: ${cell.correlation} (${cell.dataPoints} data points)`}
                           >
@@ -485,25 +490,25 @@ export default function RubricHeatmap({
           </div>
 
           {/* Legend */}
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500" />
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-green-500" />
               <span>Strong Positive</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500" />
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-red-500" />
               <span>Strong Negative</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-gray-300" />
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-gray-300" />
               <span>Weak/No Correlation</span>
             </div>
           </div>
 
           {/* Actionable Insights */}
           {correlationMatrix.insights && (
-            <div className="p-4 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground">
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-xs text-muted-foreground">
                 {correlationMatrix.insights}
               </p>
             </div>

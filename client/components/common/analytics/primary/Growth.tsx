@@ -563,16 +563,13 @@ export default function Growth({ dateStart, dateEnd, profileId }: GrowthProps) {
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "6px",
                   }}
-                  formatter={(value: number, name: string) => [
-                    `${value}%`,
-                    name === "avgScore"
-                      ? "Average Score"
-                      : name === "passRate"
-                        ? "Pass Rate"
-                        : name === "completionRate"
-                          ? "Completion Rate"
-                          : "Efficiency Index",
-                  ]}
+                  formatter={(value: number, name: string) => {
+                    const metric = availableMetrics.find((m) => m.id === name);
+                    const formattedValue = metric?.formatter
+                      ? metric.formatter(value)
+                      : `${value}%`;
+                    return [formattedValue, metric?.name || name];
+                  }}
                 />
                 <Legend />
                 {selectedMetricObjects.map((metric) => (

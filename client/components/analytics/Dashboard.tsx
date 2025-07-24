@@ -19,8 +19,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import ScenarioPerformance from "../common/analytics/footer/ScenarioPerformance";
 import ScenarioStats from "../common/analytics/footer/ScenarioStats";
-import SimulationPerformance from "../common/analytics/footer/SimulationPerformance";
 import SimulationComposition from "../common/analytics/footer/SimulationComposition";
+import SimulationPerformance from "../common/analytics/footer/SimulationPerformance";
 import AverageScore from "../common/analytics/header/AverageScore";
 import CompletionPercentage from "../common/analytics/header/CompletionPercentage";
 import FirstAttemptPassRate from "../common/analytics/header/FirstAttemptPassRate";
@@ -165,12 +165,6 @@ export default function Dashboard({ profileId }: DashboardProps) {
   ];
 
   const primaryComponents = [
-    <AttemptImprovement
-      key="attempt-improvement"
-      dateStart={startDate}
-      dateEnd={endDate}
-      {...(profileId && { profileId })}
-    />,
     <Growth
       key="growth"
       dateStart={startDate}
@@ -184,6 +178,12 @@ export default function Dashboard({ profileId }: DashboardProps) {
       thresholds={thresholds}
       {...(profileId && { profileId })}
     />,
+    <RubricHeatmap
+      key="rubric-heatmap"
+      dateStart={startDate}
+      dateEnd={endDate}
+      {...(profileId && { profileId })}
+    />,
   ];
 
   const secondaryComponents = [
@@ -194,8 +194,8 @@ export default function Dashboard({ profileId }: DashboardProps) {
       thresholds={thresholds}
       {...(profileId && { profileId })}
     />,
-    <RubricHeatmap
-      key="rubric-heatmap"
+    <AttemptImprovement
+      key="attempt-improvement"
       dateStart={startDate}
       dateEnd={endDate}
       {...(profileId && { profileId })}
@@ -266,7 +266,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
   };
 
   const navigatePrimary = (direction: "prev" | "next") => {
-    const length = primaryComponents.length || 1;
+    const length = primaryComponents.length;
+    if (length === 0) return;
+
     if (direction === "prev") {
       setPrimaryCarouselIndex((prev: number) => (prev - 1 + length) % length);
     } else {
@@ -275,7 +277,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
   };
 
   const navigateSecondary = (direction: "prev" | "next") => {
-    const length = secondaryComponents.length || 1;
+    const length = secondaryComponents.length;
+    if (length === 0) return;
+
     if (direction === "prev") {
       setSecondaryCarouselIndex((prev: number) => (prev - 1 + length) % length);
     } else {
@@ -284,7 +288,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
   };
 
   const navigateLeftFooter = (direction: "prev" | "next") => {
-    const length = leftFooterComponents.length || 1;
+    const length = leftFooterComponents.length;
+    if (length === 0) return;
+
     if (direction === "prev") {
       setLeftFooterCarouselIndex(
         (prev: number) => (prev - 1 + length) % length
@@ -295,7 +301,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
   };
 
   const navigateRightFooter = (direction: "prev" | "next") => {
-    const length = rightFooterComponents.length || 1;
+    const length = rightFooterComponents.length;
+    if (length === 0) return;
+
     if (direction === "prev") {
       setRightFooterCarouselIndex(
         (prev: number) => (prev - 1 + length) % length
@@ -403,7 +411,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
           {primaryComponents.length > 0 && (
             <div className="flex flex-col space-y-4">
               <div
-                className="relative flex-1 group max-h-[500px] overflow-auto"
+                className="relative group min-h-[500px] max-h-[500px]"
                 onMouseEnter={() => {
                   setIsPrimaryHovered(true);
                 }}
@@ -411,10 +419,14 @@ export default function Dashboard({ profileId }: DashboardProps) {
                   setIsPrimaryHovered(false);
                 }}
               >
-                {primaryComponents.length > 0 &&
-                  primaryComponents[
-                    primaryCarouselIndex % primaryComponents.length
-                  ]}
+                <div className="transition-all duration-300 ease-in-out h-full">
+                  <div className="h-full">
+                    {primaryComponents.length > 0 &&
+                      primaryComponents[
+                        primaryCarouselIndex % primaryComponents.length
+                      ]}
+                  </div>
+                </div>
 
                 {/* Primary Navigation Arrows */}
                 {primaryComponents.length > 1 && (
@@ -451,8 +463,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
                       key={index}
                       onClick={() => setPrimaryCarouselIndex(index)}
                       className={`w-2 h-2 rounded-full transition-colors ${
-                        index ===
-                        primaryCarouselIndex % primaryComponents.length
+                        index === primaryCarouselIndex
                           ? "bg-primary"
                           : "bg-muted"
                       }`}
@@ -467,14 +478,18 @@ export default function Dashboard({ profileId }: DashboardProps) {
           {secondaryComponents.length > 0 && (
             <div className="flex flex-col space-y-4">
               <div
-                className="relative flex-1 group max-h-[500px] overflow-auto"
+                className="relative group min-h-[500px] max-h-[500px]"
                 onMouseEnter={() => setIsSecondaryHovered(true)}
                 onMouseLeave={() => setIsSecondaryHovered(false)}
               >
-                {secondaryComponents.length > 0 &&
-                  secondaryComponents[
-                    secondaryCarouselIndex % secondaryComponents.length
-                  ]}
+                <div className="transition-all duration-300 ease-in-out h-full">
+                  <div className="h-full">
+                    {secondaryComponents.length > 0 &&
+                      secondaryComponents[
+                        secondaryCarouselIndex % secondaryComponents.length
+                      ]}
+                  </div>
+                </div>
 
                 {/* Secondary Navigation Arrows */}
                 {secondaryComponents.length > 1 && (
@@ -511,8 +526,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
                       key={index}
                       onClick={() => setSecondaryCarouselIndex(index)}
                       className={`w-2 h-2 rounded-full transition-colors ${
-                        index ===
-                        secondaryCarouselIndex % secondaryComponents.length
+                        index === secondaryCarouselIndex
                           ? "bg-primary"
                           : "bg-muted"
                       }`}
@@ -534,7 +548,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
             {leftFooterComponents.length > 0 && (
               <div className="space-y-4">
                 <div
-                  className="relative group max-h-[500px] overflow-auto"
+                  className="relative group"
                   onMouseEnter={() => setIsLeftFooterHovered(true)}
                   onMouseLeave={() => setIsLeftFooterHovered(false)}
                 >
@@ -578,8 +592,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
                         key={index}
                         onClick={() => setLeftFooterCarouselIndex(index)}
                         className={`w-2 h-2 rounded-full transition-colors ${
-                          index ===
-                          leftFooterCarouselIndex % leftFooterComponents.length
+                          index === leftFooterCarouselIndex
                             ? "bg-primary"
                             : "bg-muted"
                         }`}
@@ -594,7 +607,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
             {rightFooterComponents.length > 0 && (
               <div className="space-y-4">
                 <div
-                  className="relative group max-h-[500px] overflow-auto"
+                  className="relative group"
                   onMouseEnter={() => setIsRightFooterHovered(true)}
                   onMouseLeave={() => setIsRightFooterHovered(false)}
                 >
@@ -638,9 +651,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
                         key={index}
                         onClick={() => setRightFooterCarouselIndex(index)}
                         className={`w-2 h-2 rounded-full transition-colors ${
-                          index ===
-                          rightFooterCarouselIndex %
-                            rightFooterComponents.length
+                          index === rightFooterCarouselIndex
                             ? "bg-primary"
                             : "bg-muted"
                         }`}

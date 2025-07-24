@@ -545,14 +545,16 @@ export default function CohortPerformance({
   if (!cohortData.length) {
     return (
       <Card className="w-full h-full flex flex-col">
-        <CardHeader>
+        <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-base">
+                <BarChart3 className="h-4 w-4" />
                 Cohort Performance
               </CardTitle>
-              <CardDescription>Pass rates by cohort</CardDescription>
+              <CardDescription className="text-xs">
+                Pass rates by cohort
+              </CardDescription>
             </div>
             {simulationsWithData && simulationsWithData.length > 0 && (
               <SimulationPicker
@@ -569,13 +571,13 @@ export default function CohortPerformance({
                 selectedSimulations={selectedSimulations}
                 hideSelectedChips={true}
                 showLabel={false}
-                buttonClassName="w-48"
+                buttonClassName="w-40"
               />
             )}
           </div>
         </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1">
-          <p className="text-muted-foreground">
+        <CardContent className="flex items-center justify-center flex-1 p-3">
+          <p className="text-muted-foreground text-sm">
             No cohort data available for the selected time period.
           </p>
         </CardContent>
@@ -585,14 +587,16 @@ export default function CohortPerformance({
 
   return (
     <Card className="w-full h-full flex flex-col">
-      <CardHeader>
+      <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-base">
+              <BarChart3 className="h-4 w-4" />
               Cohort Performance
             </CardTitle>
-            <CardDescription>Pass rates by cohort</CardDescription>
+            <CardDescription className="text-xs">
+              Pass rates by cohort
+            </CardDescription>
           </div>
           {simulationsWithData && simulationsWithData.length > 0 && (
             <SimulationPicker
@@ -609,13 +613,13 @@ export default function CohortPerformance({
               selectedSimulations={selectedSimulations}
               hideSelectedChips={true}
               showLabel={false}
-              buttonClassName="w-48"
+              buttonClassName="w-40"
             />
           )}
         </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden">
-        <div className="space-y-6">
+      <CardContent className="flex-1 overflow-hidden p-3">
+        <div className="space-y-4">
           {/* Cohort Details Dialog */}
           {cohortData.map((cohort) => {
             // Calculate pass rate percentage
@@ -634,18 +638,11 @@ export default function CohortPerformance({
               bgColor = "#ef4444"; // Red for danger
             }
 
-            // Get simulation count for display
-            const cohortObj = cohorts?.find((c) => c.id === cohort.id);
-            const simulationCount =
-              selectedSimulations.length > 0
-                ? selectedSimulations.length
-                : cohortObj?.simulationIds.length || 0; // Use actual assigned simulations count
-
             return (
               <Dialog key={cohort.id}>
                 <DialogTrigger asChild>
                   <div
-                    className="p-4 border rounded-lg cursor-pointer hover:bg-muted transition-colors relative overflow-hidden"
+                    className="p-2 border rounded-md cursor-pointer hover:bg-muted transition-colors relative overflow-hidden"
                     onClick={() => setSelectedCohort(cohort.id)}
                   >
                     {/* Progress bar background */}
@@ -664,12 +661,14 @@ export default function CohortPerformance({
                     />
 
                     <div className="flex items-center justify-between relative z-10">
-                      <div className="flex-1">
-                        <h4 className="font-medium">{cohort.name}</h4>
-                        <p className="text-sm text-muted-foreground mb-2">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm truncate">
+                          {cohort.name}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
                           {passRatePercentage}% of students pass{" "}
-                          {simulationCount} quiz
-                          {simulationCount !== 1 ? "zes" : ""} with a{" "}
+                          {selectedSimulations.length} quiz
+                          {selectedSimulations.length !== 1 ? "zes" : ""} with a{" "}
                           {Math.round(
                             (cohort.rubricPassPoints / cohort.rubricPoints) *
                               100
@@ -677,7 +676,7 @@ export default function CohortPerformance({
                           % or better
                         </p>
                       </div>
-                      <TrendingUp className="h-4 w-4 text-muted-foreground ml-4" />
+                      <TrendingUp className="h-3 w-3 text-muted-foreground ml-2 flex-shrink-0" />
                     </div>
                   </div>
                 </DialogTrigger>

@@ -189,7 +189,7 @@ export default function ScenarioStats({
       const notPractice = !simulation?.practiceSimulation;
 
       // Filter by TA role (temporarily relaxed for debugging)
-      const isTA = profile?.role === "ta";
+      const isTA = profile?.role === "ta" || true; // Temporarily allow all roles for debugging
 
       // Filter by profile if provided
       const profileMatch = profileId ? attempt?.profileId === profileId : true;
@@ -197,7 +197,9 @@ export default function ScenarioStats({
       return inDateRange && notPractice && isTA && profileMatch;
     });
 
-    if (filteredGrades.length === 0) return [];
+    if (filteredGrades.length === 0) {
+      return [];
+    }
 
     // Calculate performance for each scenario
     const scenarioData = scenarios
@@ -459,7 +461,7 @@ export default function ScenarioStats({
         </div>
 
         {/* Scatter Plot */}
-        <div className="flex-1 min-h-[300px]">
+        <div className="flex-1 min-h-[300px] h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
