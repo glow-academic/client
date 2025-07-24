@@ -243,14 +243,11 @@ export function useReportColumns({
           const ta = row.original;
           return (
             <div
-              className="flex items-center space-x-2 cursor-pointer hover:text-primary hover:underline"
+              className="flex items-center space-x-2 cursor-pointer hover:text-primary hover:underline justify-start pl-2 py-0"
               onClick={() => onViewReport(ta.id)}
               title="Click to view detailed report"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                {ta.initials}
-              </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col items-start">
                 <span className="text-sm font-medium">
                   {ta.firstName} {ta.lastName}
                 </span>
