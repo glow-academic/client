@@ -1,17 +1,10 @@
 "use client";
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useQuery } from "@tanstack/react-query";
 import { ColumnDef, Row, Table } from "@tanstack/react-table";
-import {
-  AlertTriangle,
-  Clock,
-  MessageCircle,
-  Target,
-  Timer,
-} from "lucide-react";
+import { Clock, MessageCircle, Target, Timer } from "lucide-react";
 import { useMemo } from "react";
 
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
@@ -133,16 +126,16 @@ export function useReportColumns({
         label: "All TAs",
       },
       {
-        value: "danger",
-        label: "At Risk",
+        value: "high",
+        label: "High Performers (≥85%)",
       },
       {
-        value: "warning",
-        label: "Warning",
+        value: "medium",
+        label: "Medium Performers (75-84%)",
       },
       {
-        value: "good",
-        label: "Good",
+        value: "low",
+        label: "Low Performers (<75%)",
       },
     ],
     []
@@ -237,39 +230,26 @@ export function useReportColumns({
           ]
         : []),
 
-      // Name column
+      // Name column with risk indicator
       {
         accessorKey: "firstName",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Name" />
-        ),
+        header: "Name",
         cell: ({ row }) => {
           const ta = row.original;
           return (
-            <div className="flex items-center justify-center gap-1">
-              <div
-                className="font-medium text-xs cursor-pointer hover:text-primary hover:underline truncate"
-                onClick={() => onViewReport(ta.id)}
-                title={`${ta.firstName} ${ta.lastName}`}
-              >
-                {ta.firstName} {ta.lastName}
+            <div className="flex items-center space-x-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                {ta.initials}
               </div>
-              {ta.riskLevel === "danger" && (
-                <AlertTriangle className="h-2.5 w-2.5 text-red-600 flex-shrink-0" />
-              )}
-              {ta.riskLevel === "warning" && (
-                <AlertTriangle className="h-2.5 w-2.5 text-orange-600 flex-shrink-0" />
-              )}
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">
+                  {ta.firstName} {ta.lastName}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {ta.username}
+                </span>
+              </div>
             </div>
-          );
-        },
-        filterFn: (row, _, value) => {
-          const ta = row.original;
-          const searchTerm = value.toLowerCase();
-          return (
-            ta.firstName.toLowerCase().includes(searchTerm) ||
-            ta.lastName.toLowerCase().includes(searchTerm) ||
-            ta.username.toLowerCase().includes(searchTerm)
           );
         },
         enableSorting: true,
@@ -303,22 +283,28 @@ export function useReportColumns({
         ),
         cell: ({ row }) => {
           const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
+            if (ta.averageScore >= 85) return "bg-green-50";
+            if (ta.averageScore >= 75) return "bg-yellow-50";
+            return "bg-red-50";
+          };
           return (
-            <div className="text-center">
-              <Badge
-                variant={
-                  ta.averageScore >= 85
-                    ? "default"
-                    : ta.averageScore >= 75
-                      ? "secondary"
-                      : "destructive"
-                }
-                className="text-[10px] font-medium px-1 py-0 h-4"
-              >
-                {ta.hasNoSessions ? "N/A" : `${ta.averageScore}%`}
-              </Badge>
+            <div
+              className={`text-center px-2 py-1 rounded text-xs font-medium ${getBackgroundColor()}`}
+            >
+              {ta.hasNoSessions ? "N/A" : `${ta.averageScore}%`}
             </div>
           );
+        },
+        filterFn: (row, _, value) => {
+          const ta = row.original;
+          if (value.includes("all")) return true;
+          if (value.includes("high")) return ta.averageScore >= 85;
+          if (value.includes("medium"))
+            return ta.averageScore >= 75 && ta.averageScore < 85;
+          if (value.includes("low")) return ta.averageScore < 75;
+          return true;
         },
         enableSorting: true,
       },
@@ -331,20 +317,17 @@ export function useReportColumns({
         ),
         cell: ({ row }) => {
           const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
+            if (ta.completionPercentage >= 85) return "bg-green-50";
+            if (ta.completionPercentage >= 75) return "bg-yellow-50";
+            return "bg-red-50";
+          };
           return (
-            <div className="text-center">
-              <Badge
-                variant={
-                  ta.completionPercentage >= 85
-                    ? "default"
-                    : ta.completionPercentage >= 75
-                      ? "secondary"
-                      : "destructive"
-                }
-                className="text-[10px] font-medium px-1 py-0 h-4"
-              >
-                {ta.hasNoSessions ? "N/A" : `${ta.completionPercentage}%`}
-              </Badge>
+            <div
+              className={`text-center px-2 py-1 rounded text-xs font-medium ${getBackgroundColor()}`}
+            >
+              {ta.hasNoSessions ? "N/A" : `${ta.completionPercentage}%`}
             </div>
           );
         },
@@ -359,20 +342,17 @@ export function useReportColumns({
         ),
         cell: ({ row }) => {
           const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
+            if (ta.firstAttemptPassRate >= 85) return "bg-green-50";
+            if (ta.firstAttemptPassRate >= 75) return "bg-yellow-50";
+            return "bg-red-50";
+          };
           return (
-            <div className="text-center">
-              <Badge
-                variant={
-                  ta.firstAttemptPassRate >= 85
-                    ? "default"
-                    : ta.firstAttemptPassRate >= 75
-                      ? "secondary"
-                      : "destructive"
-                }
-                className="text-[10px] font-medium px-1 py-0 h-4"
-              >
-                {ta.hasNoSessions ? "N/A" : `${ta.firstAttemptPassRate}%`}
-              </Badge>
+            <div
+              className={`text-center px-2 py-1 rounded text-xs font-medium ${getBackgroundColor()}`}
+            >
+              {ta.hasNoSessions ? "N/A" : `${ta.firstAttemptPassRate}%`}
             </div>
           );
         },
@@ -387,20 +367,17 @@ export function useReportColumns({
         ),
         cell: ({ row }) => {
           const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
+            if (ta.highestScore >= 90) return "bg-green-50";
+            if (ta.highestScore >= 80) return "bg-yellow-50";
+            return "bg-red-50";
+          };
           return (
-            <div className="text-center">
-              <Badge
-                variant={
-                  ta.highestScore >= 90
-                    ? "default"
-                    : ta.highestScore >= 80
-                      ? "secondary"
-                      : "destructive"
-                }
-                className="text-[10px] font-medium px-1 py-0 h-4"
-              >
-                {ta.hasNoSessions ? "N/A" : `${ta.highestScore}%`}
-              </Badge>
+            <div
+              className={`text-center px-2 py-1 rounded text-xs font-medium ${getBackgroundColor()}`}
+            >
+              {ta.hasNoSessions ? "N/A" : `${ta.highestScore}%`}
             </div>
           );
         },
@@ -415,12 +392,18 @@ export function useReportColumns({
         ),
         cell: ({ row }) => {
           const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
+            if (ta.messagesPerSession >= 12) return "bg-green-50";
+            if (ta.messagesPerSession >= 8) return "bg-yellow-50";
+            return "bg-red-50";
+          };
           return (
-            <div className="text-center">
-              <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
-                <MessageCircle className="h-2.5 w-2.5" />
-                {ta.hasNoSessions ? "N/A" : ta.messagesPerSession}
-              </div>
+            <div
+              className={`text-center px-2 py-1 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
+            >
+              <MessageCircle className="h-2.5 w-2.5" />
+              {ta.hasNoSessions ? "N/A" : ta.messagesPerSession}
             </div>
           );
         },
@@ -435,12 +418,18 @@ export function useReportColumns({
         ),
         cell: ({ row }) => {
           const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
+            if (ta.personaResponseTimes <= 3) return "bg-green-50";
+            if (ta.personaResponseTimes <= 5) return "bg-yellow-50";
+            return "bg-red-50";
+          };
           return (
-            <div className="text-center">
-              <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
-                <Clock className="h-2.5 w-2.5" />
-                {ta.hasNoSessions ? "N/A" : `${ta.personaResponseTimes}m`}
-              </div>
+            <div
+              className={`text-center px-2 py-1 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
+            >
+              <Clock className="h-2.5 w-2.5" />
+              {ta.hasNoSessions ? "N/A" : `${ta.personaResponseTimes}m`}
             </div>
           );
         },
@@ -455,20 +444,17 @@ export function useReportColumns({
         ),
         cell: ({ row }) => {
           const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
+            if (ta.sessionEfficiency >= 85) return "bg-green-50";
+            if (ta.sessionEfficiency >= 75) return "bg-yellow-50";
+            return "bg-red-50";
+          };
           return (
-            <div className="text-center">
-              <Badge
-                variant={
-                  ta.sessionEfficiency >= 85
-                    ? "default"
-                    : ta.sessionEfficiency >= 75
-                      ? "secondary"
-                      : "destructive"
-                }
-                className="text-[10px] font-medium px-1 py-0 h-4"
-              >
-                {ta.hasNoSessions ? "N/A" : `${ta.sessionEfficiency}%`}
-              </Badge>
+            <div
+              className={`text-center px-2 py-1 rounded text-xs font-medium ${getBackgroundColor()}`}
+            >
+              {ta.hasNoSessions ? "N/A" : `${ta.sessionEfficiency}%`}
             </div>
           );
         },
@@ -483,20 +469,17 @@ export function useReportColumns({
         ),
         cell: ({ row }) => {
           const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
+            if (ta.stagnationRate <= 15) return "bg-green-50";
+            if (ta.stagnationRate <= 25) return "bg-yellow-50";
+            return "bg-red-50";
+          };
           return (
-            <div className="text-center">
-              <Badge
-                variant={
-                  ta.stagnationRate <= 15
-                    ? "default"
-                    : ta.stagnationRate <= 25
-                      ? "secondary"
-                      : "destructive"
-                }
-                className="text-[10px] font-medium px-1 py-0 h-4"
-              >
-                {ta.hasNoSessions ? "N/A" : `${ta.stagnationRate}%`}
-              </Badge>
+            <div
+              className={`text-center px-2 py-1 rounded text-xs font-medium ${getBackgroundColor()}`}
+            >
+              {ta.hasNoSessions ? "N/A" : `${ta.stagnationRate}%`}
             </div>
           );
         },
@@ -511,12 +494,18 @@ export function useReportColumns({
         ),
         cell: ({ row }) => {
           const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
+            if (ta.timeSpent <= 60) return "bg-green-50";
+            if (ta.timeSpent <= 90) return "bg-yellow-50";
+            return "bg-red-50";
+          };
           return (
-            <div className="text-center">
-              <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
-                <Timer className="h-2.5 w-2.5" />
-                {ta.hasNoSessions ? "N/A" : `${ta.timeSpent}m`}
-              </div>
+            <div
+              className={`text-center px-2 py-1 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
+            >
+              <Timer className="h-2.5 w-2.5" />
+              {ta.hasNoSessions ? "N/A" : `${ta.timeSpent}m`}
             </div>
           );
         },
@@ -531,67 +520,19 @@ export function useReportColumns({
         ),
         cell: ({ row }) => {
           const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.totalAttempts >= 8) return "bg-green-50";
+            if (ta.totalAttempts >= 5) return "bg-yellow-50";
+            return "bg-red-50";
+          };
           return (
-            <div className="text-center">
-              <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
-                <Target className="h-2.5 w-2.5" />
-                {ta.totalAttempts}
-              </div>
+            <div
+              className={`text-center px-2 py-1 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
+            >
+              <Target className="h-2.5 w-2.5" />
+              {ta.totalAttempts}
             </div>
           );
-        },
-        enableSorting: true,
-      },
-
-      // Risk Level column
-      {
-        accessorKey: "riskLevel",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Risk Level" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
-            <div className="text-center">
-              {ta.hasNoSessions ? (
-                <Badge
-                  variant="destructive"
-                  className="text-[10px] px-1 py-0 h-4"
-                >
-                  No Data
-                </Badge>
-              ) : ta.riskLevel === "danger" ? (
-                <Badge
-                  variant="destructive"
-                  className="text-[10px] px-1 py-0 h-4"
-                >
-                  At Risk
-                </Badge>
-              ) : ta.riskLevel === "warning" ? (
-                <Badge
-                  variant="secondary"
-                  className="text-[10px] bg-orange-100 text-orange-800 px-1 py-0 h-4"
-                >
-                  Warning
-                </Badge>
-              ) : (
-                <Badge
-                  variant="default"
-                  className="text-[10px] bg-green-100 text-green-800 px-1 py-0 h-4"
-                >
-                  Good
-                </Badge>
-              )}
-            </div>
-          );
-        },
-        filterFn: (row, _, value) => {
-          const ta = row.original;
-          if (value.includes("all")) return true;
-          if (value.includes("danger")) return ta.riskLevel === "danger";
-          if (value.includes("warning")) return ta.riskLevel === "warning";
-          if (value.includes("good")) return ta.riskLevel === "good";
-          return true;
         },
         enableSorting: true,
       },

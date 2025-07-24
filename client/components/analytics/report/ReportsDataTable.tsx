@@ -138,13 +138,7 @@ export function ReportsDataTable({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className={`h-8 ${
-                    row.original.riskLevel === "danger"
-                      ? "bg-red-50/50 border-red-200"
-                      : row.original.riskLevel === "warning"
-                        ? "bg-orange-50/50 border-orange-200"
-                        : "hover:bg-muted/30"
-                  } transition-colors`}
+                  className="h-8 hover:bg-muted/30 transition-colors"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell

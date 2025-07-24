@@ -38,7 +38,7 @@ export function ReportsDataTableToolbar({
   const isFiltered = table.getState().columnFilters.length > 0;
 
   const firstNameColumn = table.getColumn("firstName");
-  const avgScoreColumn = table.getColumn("avgScore");
+  const averageScoreColumn = table.getColumn("averageScore");
   const taCohortsColumn = table.getColumn("taCohorts");
   const roleColumn = table.getColumn("role");
 
@@ -74,9 +74,9 @@ export function ReportsDataTableToolbar({
           )}
 
           {/* Performance Filter */}
-          {avgScoreColumn && performanceOptions.length > 0 && (
+          {averageScoreColumn && performanceOptions.length > 0 && (
             <DataTableFacetedFilter
-              column={avgScoreColumn}
+              column={averageScoreColumn}
               title="Performance"
               options={performanceOptions}
             />
