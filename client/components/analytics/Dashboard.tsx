@@ -548,14 +548,16 @@ export default function Dashboard({ profileId }: DashboardProps) {
             {leftFooterComponents.length > 0 && (
               <div className="space-y-4">
                 <div
-                  className="relative group"
+                  className="relative group min-h-[500px] max-h-[500px]"
                   onMouseEnter={() => setIsLeftFooterHovered(true)}
                   onMouseLeave={() => setIsLeftFooterHovered(false)}
                 >
-                  {leftFooterComponents.length > 0 &&
-                    leftFooterComponents[
-                      leftFooterCarouselIndex % leftFooterComponents.length
-                    ]}
+                  <div className="h-full">
+                    {leftFooterComponents.length > 0 &&
+                      leftFooterComponents[
+                        leftFooterCarouselIndex % leftFooterComponents.length
+                      ]}
+                  </div>
 
                   {/* Left Footer Navigation Arrows */}
                   {leftFooterComponents.length > 1 && (
@@ -607,14 +609,16 @@ export default function Dashboard({ profileId }: DashboardProps) {
             {rightFooterComponents.length > 0 && (
               <div className="space-y-4">
                 <div
-                  className="relative group"
+                  className="relative group min-h-[500px] max-h-[500px]"
                   onMouseEnter={() => setIsRightFooterHovered(true)}
                   onMouseLeave={() => setIsRightFooterHovered(false)}
                 >
-                  {rightFooterComponents.length > 0 &&
-                    rightFooterComponents[
-                      rightFooterCarouselIndex % rightFooterComponents.length
-                    ]}
+                  <div className="h-full">
+                    {rightFooterComponents.length > 0 &&
+                      rightFooterComponents[
+                        rightFooterCarouselIndex % rightFooterComponents.length
+                      ]}
+                  </div>
 
                   {/* Right Footer Navigation Arrows */}
                   {rightFooterComponents.length > 1 && (
