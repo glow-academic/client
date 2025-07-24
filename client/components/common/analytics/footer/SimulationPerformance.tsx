@@ -21,7 +21,6 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
-import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -37,13 +36,7 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { isAfter, isBefore } from "date-fns";
-import {
-  BarChart3,
-  Check,
-  ChevronsUpDown,
-  TrendingDown,
-  TrendingUp,
-} from "lucide-react";
+import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   Bar,
@@ -361,9 +354,11 @@ export default function SimulationPerformance({
     thresholds,
   ]);
 
-  // Calculate overall performance trend
-  const overallTrend = useMemo(() => {
-    if (!scenarioPerformanceData.length) return { value: 0, isPositive: true };
+  // Calculate insights
+  const insights = useMemo(() => {
+    if (!scenarioPerformanceData.length) {
+      return "No scenario data available for analysis.";
+    }
 
     const totalChange = scenarioPerformanceData.reduce(
       (sum, scenario) => sum + scenario.performanceChange,
@@ -371,27 +366,44 @@ export default function SimulationPerformance({
     );
     const avgChange = Math.round(totalChange / scenarioPerformanceData.length);
 
-    return {
-      value: avgChange,
-      isPositive: avgChange >= 0,
-    };
+    // Generate insights
+    const topPerformer = scenarioPerformanceData[0];
+    const bottomPerformer =
+      scenarioPerformanceData[scenarioPerformanceData.length - 1];
+    const avgScore = Math.round(
+      scenarioPerformanceData.reduce(
+        (sum, scenario) => sum + scenario.avgScore,
+        0
+      ) / scenarioPerformanceData.length
+    );
+
+    let insightText = "";
+    if (avgChange > 5) {
+      insightText = `Scenarios show strong improvement (+${avgChange}%). ${topPerformer?.scenarioName || "Unknown"} leads with ${topPerformer?.avgScore || 0}% average score.`;
+    } else if (avgChange < -5) {
+      insightText = `Performance declined by ${Math.abs(avgChange)}%. Focus on ${bottomPerformer?.scenarioName || "Unknown"} (${bottomPerformer?.avgScore || 0}%) for improvement.`;
+    } else {
+      insightText = `Stable performance with ${avgScore}% average. ${topPerformer?.scenarioName || "Unknown"} excels at ${topPerformer?.avgScore || 0}%.`;
+    }
+
+    return insightText;
   }, [scenarioPerformanceData]);
 
   if (!availableSimulations.length) {
     return (
       <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <BarChart3 className="h-4 w-4" />
             Scenario Performance
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-sm">
             Performance trends for scenarios within simulations
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center flex-1">
           <div className="text-center space-y-2">
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               No simulations with data available for the selected time period.
             </p>
             <p className="text-xs text-muted-foreground">
@@ -411,36 +423,35 @@ export default function SimulationPerformance({
 
   return (
     <Card className="w-full h-full flex flex-col">
-      <CardHeader>
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <BarChart3 className="h-4 w-4" />
               Simulation Performance
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm">
               Performance trends for scenarios within simulations
             </CardDescription>
           </div>
 
           {/* Simulation Picker */}
           <div className="flex items-center gap-2">
-            <Label className="text-sm font-medium">Simulation:</Label>
             <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   role="combobox"
                   aria-expanded={pickerOpen}
-                  className="w-48 justify-between"
+                  className="w-40 justify-between text-sm h-8"
                 >
                   {selectedSimulation
                     ? selectedSimulation.title
                     : "Select simulation..."}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-48 p-0">
+              <PopoverContent className="w-40 p-0">
                 <Command>
                   <CommandInput placeholder="Search simulations..." />
                   <CommandEmpty>No simulation found.</CommandEmpty>
@@ -463,7 +474,9 @@ export default function SimulationPerformance({
                           )}
                         />
                         <div>
-                          <div className="font-medium">{simulation.title}</div>
+                          <div className="font-medium text-sm">
+                            {simulation.title}
+                          </div>
                           <div className="text-xs text-muted-foreground">
                             {simulation.description}
                           </div>
@@ -478,66 +491,28 @@ export default function SimulationPerformance({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6 flex-1 flex flex-col">
+      <CardContent className="space-y-4 flex-1 flex flex-col">
         {!selectedSimulation ? (
           <div className="flex items-center justify-center flex-1">
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Please select a simulation to view scenario performance.
             </p>
           </div>
         ) : !scenarioPerformanceData.length ? (
           <div className="flex items-center justify-center flex-1">
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               No scenario data available for the selected simulation and time
               period.
             </p>
           </div>
         ) : (
           <>
-            {/* Performance Summary */}
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">Overall Trend:</span>
-                  <div className="flex items-center gap-1">
-                    {overallTrend.isPositive ? (
-                      <TrendingUp className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4 text-red-600" />
-                    )}
-                    <span
-                      className={`text-sm font-medium ${
-                        overallTrend.isPositive
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {overallTrend.isPositive ? "+" : ""}
-                      {overallTrend.value}%
-                    </span>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Average performance change across all scenarios
-                </p>
-              </div>
-
-              <div className="text-right">
-                <div className="text-sm font-medium">
-                  {scenarioPerformanceData.length} scenarios
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  with sufficient data
-                </div>
-              </div>
-            </div>
-
             {/* Bar Chart */}
-            <div className="flex-1 min-h-[300px] h-[300px]">
+            <div className="flex-1 min-h-[200px] h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={scenarioPerformanceData}
-                  margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                  margin={{ top: 10, right: 10, bottom: 30, left: 10 }}
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
@@ -545,12 +520,13 @@ export default function SimulationPerformance({
                   />
                   <XAxis
                     dataKey="scenarioName"
-                    fontSize={12}
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
+                    fontSize={10}
+                    height={40}
+                    tickFormatter={(name: string) =>
+                      name.length > 16 ? name.slice(0, 15) + "…" : name
+                    }
                   />
-                  <YAxis domain={[0, 100]} fontSize={12} />
+                  <YAxis domain={[0, 100]} fontSize={10} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "hsl(var(--background))",
@@ -566,37 +542,34 @@ export default function SimulationPerformance({
                     dataKey="avgScore"
                     fill="#3b82f6"
                     name="Average Score"
-                    radius={[4, 4, 0, 0]}
+                    radius={[2, 2, 0, 0]}
                   />
                   <Bar
                     dataKey="successRate"
                     fill="#10b981"
                     name="Success Rate"
-                    radius={[4, 4, 0, 0]}
+                    radius={[2, 2, 0, 0]}
                   />
                 </BarChart>
               </ResponsiveContainer>
             </div>
 
             {/* Legend */}
-            <div className="flex items-center justify-center gap-6 text-xs">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-blue-500"></div>
+            <div className="flex items-center justify-center gap-4 text-xs">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded bg-blue-500"></div>
                 <span>Average Score</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-green-500"></div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded bg-green-500"></div>
                 <span>Success Rate</span>
               </div>
             </div>
 
-            {/* Insights */}
-            <div className="text-sm text-muted-foreground">
-              <p className="leading-relaxed">
-                {overallTrend.isPositive
-                  ? `Scenarios in ${selectedSimulation.title} show an average improvement of ${overallTrend.value}%.`
-                  : `Scenarios in ${selectedSimulation.title} show an average decline of ${Math.abs(overallTrend.value)}%.`}{" "}
-                Each bar represents a scenario's performance metrics.
+            {/* Data-Driven Insights */}
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {insights}
               </p>
             </div>
           </>

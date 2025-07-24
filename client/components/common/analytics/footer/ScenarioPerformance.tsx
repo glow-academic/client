@@ -14,6 +14,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllScenarioClasses } from "@/utils/queries/scenario_classes/get-all-scenario-classes";
 import { getAllScenarioDeadlines } from "@/utils/queries/scenario_deadlines/get-all-scenario-deadlines";
@@ -25,16 +33,20 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
-import { isAfter, isBefore } from "date-fns";
+import { format, isAfter, isBefore } from "date-fns";
 import { BarChart3 } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   Cell,
   Legend,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
   Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
 import ScenarioAttributePicker, {
   ScenarioAttributeType,
@@ -61,6 +73,11 @@ interface AttributeElement {
   avgScore: number;
   completionRate: number;
   totalAttempts: number;
+  trendData: Array<{
+    date: string;
+    score: number;
+    timestamp: number;
+  }>;
 }
 
 export default function ScenarioPerformance({
@@ -258,6 +275,9 @@ export default function ScenarioPerformance({
       let totalAttempts = 0;
       let gradeCount = 0;
 
+      // Collect grades for trend data
+      const attributeGrades: Array<{ score: number; createdAt: string }> = [];
+
       scenariosWithAttribute.forEach((scenario) => {
         const scenarioChats = chats.filter(
           (chat) => chat.scenarioId === scenario.id
@@ -270,6 +290,10 @@ export default function ScenarioPerformance({
         scenarioGrades.forEach((grade) => {
           totalScore += grade.score;
           gradeCount++;
+          attributeGrades.push({
+            score: grade.score,
+            createdAt: grade.createdAt,
+          });
         });
 
         scenarioChats.forEach((chat) => {
@@ -284,6 +308,15 @@ export default function ScenarioPerformance({
       const completionRate =
         totalAttempts > 0 ? (totalCompletion / totalAttempts) * 100 : 0;
 
+      // Calculate trend data for line chart
+      const trendData = attributeGrades
+        .map((grade) => ({
+          date: format(new Date(grade.createdAt), "MMM dd"),
+          score: Math.round(grade.score),
+          timestamp: new Date(grade.createdAt).getTime(),
+        }))
+        .sort((a, b) => a.timestamp - b.timestamp);
+
       return {
         id: attr.id,
         name: attr[nameKey as keyof typeof attr] as string,
@@ -294,6 +327,7 @@ export default function ScenarioPerformance({
         avgScore: Math.round(avgScore),
         completionRate: Math.round(completionRate),
         totalAttempts,
+        trendData,
       };
     });
 
@@ -318,26 +352,31 @@ export default function ScenarioPerformance({
     selectedAttribute,
   ]);
 
-  // Calculate overall performance
-  const overallPerformance = useMemo(() => {
-    if (!attributeElements.length) return { avgScore: 0, completionRate: 0 };
+  // Get actionable insights
+  const getActionableInsights = (element: AttributeElement) => {
+    if (element.trendData.length < 2) return null;
 
-    const totalAvgScore = attributeElements.reduce(
-      (sum, element) => sum + element.avgScore,
-      0
-    );
-    const totalCompletionRate = attributeElements.reduce(
-      (sum, element) => sum + element.completionRate,
-      0
-    );
+    const recentScores = element.trendData.slice(-3);
+    const earlierScores = element.trendData.slice(0, 3);
 
-    return {
-      avgScore: Math.round(totalAvgScore / attributeElements.length),
-      completionRate: Math.round(
-        totalCompletionRate / attributeElements.length
-      ),
-    };
-  }, [attributeElements]);
+    if (recentScores.length === 0 || earlierScores.length === 0) return null;
+
+    const recentAvg =
+      recentScores.reduce((sum, item) => sum + item.score, 0) /
+      recentScores.length;
+    const earlierAvg =
+      earlierScores.reduce((sum, item) => sum + item.score, 0) /
+      earlierScores.length;
+    const improvement = recentAvg - earlierAvg;
+
+    if (improvement > 5) {
+      return `Performance with ${element.name} ${selectedAttribute.slice(0, -1)} has improved significantly. Consider using this attribute more frequently.`;
+    } else if (improvement < -5) {
+      return `Performance with ${element.name} ${selectedAttribute.slice(0, -1)} has declined. Review training approach for this attribute.`;
+    }
+
+    return null;
+  };
 
   if (!attributeElements.length) {
     return (
@@ -381,38 +420,6 @@ export default function ScenarioPerformance({
       </CardHeader>
 
       <CardContent className="space-y-6 flex-1 flex flex-col">
-        {/* Performance Summary */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Avg Score:</span>
-                <span className="text-sm text-muted-foreground">
-                  {overallPerformance.avgScore}%
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Completion:</span>
-                <span className="text-sm text-muted-foreground">
-                  {overallPerformance.completionRate}%
-                </span>
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Overall performance across all {selectedAttribute}
-            </p>
-          </div>
-
-          <div className="text-right">
-            <div className="text-sm font-medium">
-              {attributeElements.length} {selectedAttribute}
-            </div>
-            <div className="text-xs text-muted-foreground">
-              with performance data
-            </div>
-          </div>
-        </div>
-
         {/* Pie Chart */}
         <div className="flex-1 min-h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
@@ -467,39 +474,113 @@ export default function ScenarioPerformance({
                   const element = attributeElements[index];
                   if (!element) return <span className="text-xs">Unknown</span>;
                   return (
-                    <span className="text-xs">
-                      {element.icon} {element.name}
-                    </span>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <span className="text-xs cursor-pointer hover:text-primary transition-colors">
+                          {element.icon} {element.name}
+                        </span>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center gap-2">
+                            <span className="text-lg">{element.icon}</span>
+                            {element.name} Performance
+                          </DialogTitle>
+                          <DialogDescription>
+                            Detailed performance analysis for {element.name}{" "}
+                            {selectedAttribute.slice(0, -1)}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-6">
+                          {/* Performance Metrics */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="p-4 rounded-lg border">
+                              <div className="text-2xl font-bold">
+                                {element.avgScore}%
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                Average Score
+                              </div>
+                            </div>
+                            <div className="p-4 rounded-lg border">
+                              <div className="text-2xl font-bold">
+                                {element.completionRate}%
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                Completion Rate
+                              </div>
+                            </div>
+                            <div className="p-4 rounded-lg border">
+                              <div className="text-2xl font-bold">
+                                {element.count}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                Scenarios Used
+                              </div>
+                            </div>
+                            <div className="p-4 rounded-lg border">
+                              <div className="text-2xl font-bold">
+                                {element.totalAttempts}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                Total Attempts
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Performance Trend Chart */}
+                          {element.trendData.length > 0 && (
+                            <div className="h-64">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={element.trendData}>
+                                  <XAxis
+                                    dataKey="date"
+                                    className="text-xs"
+                                    angle={-45}
+                                    textAnchor="end"
+                                    height={60}
+                                  />
+                                  <YAxis className="text-xs" />
+                                  <Tooltip
+                                    contentStyle={{
+                                      backgroundColor: "hsl(var(--background))",
+                                      border: "1px solid hsl(var(--border))",
+                                      borderRadius: "6px",
+                                    }}
+                                    formatter={(value: number) => [
+                                      `${value}%`,
+                                      "Score",
+                                    ]}
+                                  />
+                                  <Line
+                                    type="monotone"
+                                    dataKey="score"
+                                    stroke={element.color}
+                                    strokeWidth={2}
+                                    dot={{ r: 4 }}
+                                    name="Score"
+                                  />
+                                </LineChart>
+                              </ResponsiveContainer>
+                            </div>
+                          )}
+
+                          {/* Actionable Insights */}
+                          {getActionableInsights(element) && (
+                            <div className="p-3 bg-muted rounded-lg">
+                              <p className="text-sm text-muted-foreground">
+                                {getActionableInsights(element)}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   );
                 }}
               />
             </PieChart>
           </ResponsiveContainer>
-        </div>
-
-        {/* Attribute Details */}
-        <div className="grid grid-cols-2 gap-4 text-xs">
-          {attributeElements.map((element) => (
-            <div
-              key={element.id}
-              className="flex items-center justify-between p-3 rounded-lg border"
-              style={{ borderLeftColor: element.color, borderLeftWidth: "4px" }}
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-lg">{element.icon}</span>
-                <div>
-                  <div className="font-medium">{element.name}</div>
-                  <div className="text-muted-foreground">
-                    {element.percentage}% usage
-                  </div>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="font-medium">{element.avgScore}%</div>
-                <div className="text-muted-foreground">avg score</div>
-              </div>
-            </div>
-          ))}
         </div>
 
         {/* Insights */}

@@ -13,6 +13,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -42,6 +50,15 @@ interface SimulationAttribute {
   highPerforming: number;
   lowPerforming: number;
   description: string;
+}
+
+interface SimulationDetail {
+  id: string;
+  title: string;
+  avgScore: number;
+  completionRate: number;
+  totalAttempts: number;
+  combinedScore: number;
 }
 
 export default function SimulationComposition({
@@ -104,7 +121,13 @@ export default function SimulationComposition({
       !attempts ||
       !profiles
     ) {
-      return { highPerforming: [], lowPerforming: [], attributes: [] };
+      return {
+        highPerforming: [],
+        lowPerforming: [],
+        attributes: [],
+        highPerformingDetails: [],
+        lowPerformingDetails: [],
+      };
     }
 
     // Filter data by date range, exclude practice simulations, and filter by TA role
@@ -134,7 +157,13 @@ export default function SimulationComposition({
     });
 
     if (filteredGrades.length === 0) {
-      return { highPerforming: [], lowPerforming: [], attributes: [] };
+      return {
+        highPerforming: [],
+        lowPerforming: [],
+        attributes: [],
+        highPerformingDetails: [],
+        lowPerformingDetails: [],
+      };
     }
 
     // Group by simulation and calculate performance
@@ -191,7 +220,13 @@ export default function SimulationComposition({
     const allSimulations = Array.from(simulationPerformance.values());
 
     if (allSimulations.length === 0) {
-      return { highPerforming: [], lowPerforming: [], attributes: [] };
+      return {
+        highPerforming: [],
+        lowPerforming: [],
+        attributes: [],
+        highPerformingDetails: [],
+        lowPerformingDetails: [],
+      };
     }
 
     // Calculate combined performance score (weighted average of score and completion rate)
@@ -260,6 +295,29 @@ export default function SimulationComposition({
         highPerformingSims = simulationsWithScore.slice(0, fallbackTopCount);
         lowPerformingSims = simulationsWithScore.slice(-fallbackBottomCount);
     }
+
+    // Create detailed simulation lists for dialog
+    const highPerformingDetails: SimulationDetail[] = highPerformingSims.map(
+      (sim) => ({
+        id: sim.simulation.id,
+        title: sim.simulation.title,
+        avgScore: Math.round(sim.avgScore),
+        completionRate: Math.round(sim.completionRate),
+        totalAttempts: sim.totalAttempts,
+        combinedScore: Math.round(sim.combinedScore),
+      })
+    );
+
+    const lowPerformingDetails: SimulationDetail[] = lowPerformingSims.map(
+      (sim) => ({
+        id: sim.simulation.id,
+        title: sim.simulation.title,
+        avgScore: Math.round(sim.avgScore),
+        completionRate: Math.round(sim.completionRate),
+        totalAttempts: sim.totalAttempts,
+        combinedScore: Math.round(sim.combinedScore),
+      })
+    );
 
     // Define simulation attributes to analyze
     const attributes: SimulationAttribute[] = [
@@ -427,6 +485,8 @@ export default function SimulationComposition({
       attributes,
       highPerformingCount: highPerformingSims.length,
       lowPerformingCount: lowPerformingSims.length,
+      highPerformingDetails,
+      lowPerformingDetails,
     };
   }, [
     scenarios,
@@ -443,6 +503,37 @@ export default function SimulationComposition({
     config.bottomPercentage,
   ]);
 
+  // Get method label for dialog titles
+  const getMethodLabel = (isHigh: boolean) => {
+    switch (config.method) {
+      case "percentile":
+        return isHigh
+          ? `Top ${config.topPercentage}%`
+          : `Bottom ${config.bottomPercentage}%`;
+      case "quartile":
+        return isHigh ? "Q1 (Top 25%)" : "Q4 (Bottom 25%)";
+      case "standard_deviation":
+        return isHigh ? "Above 1σ" : "Below 1σ";
+      default:
+        return isHigh ? "Top 25%" : "Bottom 25%";
+    }
+  };
+
+  // Get insight text
+  const getInsightText = (isHigh: boolean) => {
+    const data = isHigh
+      ? simulationComposition.highPerforming
+      : simulationComposition.lowPerforming;
+    if (data.length === 0) return "No significant patterns identified.";
+
+    const topAttribute = data[0];
+    if (!topAttribute) return "No significant patterns identified.";
+
+    const methodLabel = getMethodLabel(isHigh);
+
+    return `${methodLabel} performing simulations tend to have more ${topAttribute.name.toLowerCase()}, suggesting that ${topAttribute.description.toLowerCase()} may ${isHigh ? "contribute to" : "hinder"} better outcomes.`;
+  };
+
   if (
     !simulationComposition.highPerforming.length &&
     !simulationComposition.lowPerforming.length
@@ -454,9 +545,7 @@ export default function SimulationComposition({
             <BarChart3 className="h-5 w-5" />
             Simulation Composition
           </CardTitle>
-          <CardDescription>
-            Anatomy of high vs low performing simulations
-          </CardDescription>
+          <CardDescription>High vs low performing simulations</CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center flex-1">
           <p className="text-muted-foreground">
@@ -470,64 +559,95 @@ export default function SimulationComposition({
   return (
     <Card className="w-full h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5" />
-          Simulation Composition
-        </CardTitle>
-        <CardDescription>
-          Anatomy of high vs low performing simulations
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Simulation Composition
+            </CardTitle>
+            <CardDescription>
+              High vs low performing simulations
+            </CardDescription>
+          </div>
+          <SimulationCompositionPicker
+            currentConfig={config}
+            onConfigChange={setConfig}
+          />
+        </div>
       </CardHeader>
 
       <CardContent className="space-y-6 flex-1 flex flex-col">
-        {/* Configuration Picker */}
-        <SimulationCompositionPicker
-          currentConfig={config}
-          onConfigChange={setConfig}
-        />
-
-        {/* Performance Summary */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium">High Performers:</span>
-                <span className="text-sm text-muted-foreground">
-                  {simulationComposition.highPerformingCount} simulations
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <TrendingDown className="h-4 w-4 text-red-600" />
-                <span className="text-sm font-medium">Low Performers:</span>
-                <span className="text-sm text-muted-foreground">
-                  {simulationComposition.lowPerformingCount} simulations
-                </span>
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {config.description}
-            </p>
-          </div>
-        </div>
-
         {/* Side-by-side Donut Charts */}
         <div className="flex-1 min-h-[400px] grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* High Performing Simulations */}
           <div className="space-y-4">
-            <div className="text-center">
-              <h3 className="font-semibold text-green-600 flex items-center justify-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                {config.method === "percentile" &&
-                  `Top ${config.topPercentage}%`}
-                {config.method === "quartile" && "Q1 (Top 25%)"}
-                {config.method === "standard_deviation" && "Above 1σ"}
-                Simulations
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Common characteristics of successful simulations
-              </p>
-            </div>
+            <Dialog>
+              <DialogTrigger asChild>
+                <div className="text-center cursor-pointer hover:bg-muted/50 rounded-lg p-2 transition-colors">
+                  <h3 className="font-semibold text-green-600 flex items-center justify-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    {getMethodLabel(true)}
+                    Simulations
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Common characteristics of successful simulations
+                  </p>
+                </div>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-green-600" />
+                    {getMethodLabel(true)} Performing Simulations
+                  </DialogTitle>
+                  <DialogDescription>
+                    Detailed breakdown of top performing simulations and their
+                    characteristics
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-6">
+                  {/* Simulation List */}
+                  <div className="space-y-3">
+                    <h4 className="font-medium">
+                      Simulations (
+                      {simulationComposition.highPerformingDetails.length})
+                    </h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {simulationComposition.highPerformingDetails.map(
+                        (sim) => (
+                          <div
+                            key={sim.id}
+                            className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                          >
+                            <div>
+                              <p className="font-medium text-sm">{sim.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {sim.totalAttempts} attempts
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-medium">
+                                {sim.avgScore}% avg
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {sim.completionRate}% completion
+                              </p>
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Insight */}
+                  <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                    <p className="text-sm text-green-800 dark:text-green-200">
+                      {getInsightText(true)}
+                    </p>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -587,19 +707,71 @@ export default function SimulationComposition({
 
           {/* Low Performing Simulations */}
           <div className="space-y-4">
-            <div className="text-center">
-              <h3 className="font-semibold text-red-600 flex items-center justify-center gap-2">
-                <TrendingDown className="h-4 w-4" />
-                {config.method === "percentile" &&
-                  `Bottom ${config.bottomPercentage}%`}
-                {config.method === "quartile" && "Q4 (Bottom 25%)"}
-                {config.method === "standard_deviation" && "Below 1σ"}
-                Simulations
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Common characteristics of struggling simulations
-              </p>
-            </div>
+            <Dialog>
+              <DialogTrigger asChild>
+                <div className="text-center cursor-pointer hover:bg-muted/50 rounded-lg p-2 transition-colors">
+                  <h3 className="font-semibold text-red-600 flex items-center justify-center gap-2">
+                    <TrendingDown className="h-4 w-4" />
+                    {getMethodLabel(false)}
+                    Simulations
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Common characteristics of struggling simulations
+                  </p>
+                </div>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <TrendingDown className="h-5 w-5 text-red-600" />
+                    {getMethodLabel(false)} Performing Simulations
+                  </DialogTitle>
+                  <DialogDescription>
+                    Detailed breakdown of low performing simulations and their
+                    characteristics
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-6">
+                  {/* Simulation List */}
+                  <div className="space-y-3">
+                    <h4 className="font-medium">
+                      Simulations (
+                      {simulationComposition.lowPerformingDetails.length})
+                    </h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {simulationComposition.lowPerformingDetails.map((sim) => (
+                        <div
+                          key={sim.id}
+                          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                        >
+                          <div>
+                            <p className="font-medium text-sm">{sim.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {sim.totalAttempts} attempts
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium">
+                              {sim.avgScore}% avg
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {sim.completionRate}% completion
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Insight */}
+                  <div className="p-3 bg-red-50 dark:bg-red-950 rounded-lg">
+                    <p className="text-sm text-red-800 dark:text-red-200">
+                      {getInsightText(false)}
+                    </p>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -654,51 +826,6 @@ export default function SimulationComposition({
               ))}
             </div>
           </div>
-        </div>
-
-        {/* Insights */}
-        <div className="text-sm text-muted-foreground">
-          <p className="leading-relaxed">
-            {simulationComposition.highPerforming.length > 0 &&
-              simulationComposition.lowPerforming.length > 0 && (
-                <>
-                  {config.method === "percentile" && (
-                    <>
-                      Top {config.topPercentage}% performing simulations tend to
-                      have more{" "}
-                      {simulationComposition.highPerforming[0]?.name.toLowerCase()}
-                      , while bottom {config.bottomPercentage}% performing
-                      simulations show higher rates of{" "}
-                      {simulationComposition.lowPerforming[0]?.name.toLowerCase()}
-                      .
-                    </>
-                  )}
-                  {config.method === "quartile" && (
-                    <>
-                      Q1 (top 25%) performing simulations tend to have more{" "}
-                      {simulationComposition.highPerforming[0]?.name.toLowerCase()}
-                      , while Q4 (bottom 25%) performing simulations show higher
-                      rates of{" "}
-                      {simulationComposition.lowPerforming[0]?.name.toLowerCase()}
-                      .
-                    </>
-                  )}
-                  {config.method === "standard_deviation" && (
-                    <>
-                      Statistical outliers above 1σ tend to have more{" "}
-                      {simulationComposition.highPerforming[0]?.name.toLowerCase()}
-                      , while outliers below 1σ show higher rates of{" "}
-                      {simulationComposition.lowPerforming[0]?.name.toLowerCase()}
-                      .
-                    </>
-                  )}
-                  This analysis shows that{" "}
-                  {simulationComposition.highPerforming[0]?.description.toLowerCase()}{" "}
-                  may contribute to better outcomes compared to other
-                  simulations in this period.
-                </>
-              )}
-          </p>
         </div>
       </CardContent>
     </Card>

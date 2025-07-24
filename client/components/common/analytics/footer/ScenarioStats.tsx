@@ -1,12 +1,10 @@
 /**
  * ScenarioStats.tsx
- * This component displays the scenario stats for the personas with scatter plots.
+ * This component displays the scenario stats for the personas with bar charts.
  * @AshokSaravanan222 & @siladiea
  * 07/23/2025
  */
 "use client";
-
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,7 +21,6 @@ import {
   CommandItem,
 } from "@/components/ui/command";
 
-import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -40,15 +37,13 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { isAfter, isBefore } from "date-fns";
-import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
+import { BarChart3, Check, ChevronsUpDown, Info } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
-  Cell,
-  Legend,
   ResponsiveContainer,
-  Scatter,
-  ScatterChart,
   Tooltip,
   XAxis,
   YAxis,
@@ -156,8 +151,8 @@ export default function ScenarioStats({
     chatsLoading ||
     gradesLoading;
 
-  // Calculate scenario performance data for scatter plots
-  const scenarioPerformanceData = useMemo(() => {
+  // Calculate aggregated performance data by metric level
+  const aggregatedPerformanceData = useMemo(() => {
     if (
       !scenarios ||
       !personas ||
@@ -201,58 +196,63 @@ export default function ScenarioStats({
       return [];
     }
 
-    // Calculate performance for each scenario
-    const scenarioData = scenarios
-      .map((scenario) => {
-        const scenarioChats = chats.filter(
-          (chat) => chat.scenarioId === scenario.id
-        );
-        const scenarioGrades = filteredGrades.filter((grade) =>
-          scenarioChats.some((chat) => chat.id === grade.simulationChatId)
-        );
+    // Group scenarios by metric level and calculate average performance
+    const metricGroups: { [key: number]: { scores: number[]; count: number } } =
+      {};
 
-        if (scenarioGrades.length === 0) return null;
+    scenarios.forEach((scenario) => {
+      const scenarioChats = chats.filter(
+        (chat) => chat.scenarioId === scenario.id
+      );
+      const scenarioGrades = filteredGrades.filter((grade) =>
+        scenarioChats.some((chat) => chat.id === grade.simulationChatId)
+      );
 
-        const completedChats = scenarioChats.filter((chat) => chat.completed);
-        const successRate = Math.round(
-          (completedChats.length / scenarioChats.length) * 100
-        );
+      if (scenarioGrades.length === 0) return;
 
+      // Get metric value based on selected metric
+      let metricValue = 0;
+      switch (selectedMetric) {
+        case "intensity":
+          metricValue = scenario.intensity || 0;
+          break;
+        case "crowdedness":
+          metricValue = scenario.crowdedness || 0;
+          break;
+        case "documentCount":
+          metricValue = scenario.documentIds?.length || 0;
+          break;
+      }
+
+      if (metricValue > 0) {
         const avgScore = Math.round(
           scenarioGrades.reduce((sum, grade) => sum + grade.score, 0) /
             scenarioGrades.length
         );
 
-        // Get metric value based on selected metric
-        let metricValue = 0;
-        switch (selectedMetric) {
-          case "intensity":
-            metricValue = scenario.intensity || 0;
-            break;
-          case "crowdedness":
-            metricValue = scenario.crowdedness || 0;
-            break;
-          case "documentCount":
-            metricValue = scenario.documentIds?.length || 0;
-            break;
+        if (!metricGroups[metricValue]) {
+          metricGroups[metricValue] = { scores: [], count: 0 };
         }
+        metricGroups[metricValue].scores.push(avgScore);
+        metricGroups[metricValue].count += scenarioChats.length;
+      }
+    });
 
-        return {
-          scenarioId: scenario.id,
-          scenarioName: scenario.name,
-          metricValue,
-          avgScore,
-          successRate,
-          totalAttempts: scenarioChats.length,
-          completedAttempts: completedChats.length,
-        };
-      })
-      .filter(
-        (item): item is NonNullable<typeof item> =>
-          item !== null && item.totalAttempts >= 3 && item.metricValue > 0
-      );
+    // Convert to array format for chart
+    const chartData = Object.entries(metricGroups)
+      .map(([metricLevel, data]) => ({
+        metricLevel: parseInt(metricLevel),
+        avgScore: Math.round(
+          data.scores.reduce((sum, score) => sum + score, 0) /
+            data.scores.length
+        ),
+        scenarioCount: data.scores.length,
+        totalAttempts: data.count,
+      }))
+      .sort((a, b) => a.metricLevel - b.metricLevel)
+      .filter((item) => item.scenarioCount >= 1); // Show all levels with at least 1 scenario
 
-    return scenarioData;
+    return chartData;
   }, [
     scenarios,
     personas,
@@ -270,26 +270,26 @@ export default function ScenarioStats({
 
   // Calculate correlation coefficient
   const correlation = useMemo(() => {
-    if (scenarioPerformanceData.length < 2) return 0;
+    if (aggregatedPerformanceData.length < 2) return 0;
 
-    const n = scenarioPerformanceData.length;
-    const sumX = scenarioPerformanceData.reduce(
-      (sum, item) => sum + item.metricValue,
+    const n = aggregatedPerformanceData.length;
+    const sumX = aggregatedPerformanceData.reduce(
+      (sum, item) => sum + item.metricLevel,
       0
     );
-    const sumY = scenarioPerformanceData.reduce(
+    const sumY = aggregatedPerformanceData.reduce(
       (sum, item) => sum + item.avgScore,
       0
     );
-    const sumXY = scenarioPerformanceData.reduce(
-      (sum, item) => sum + item.metricValue * item.avgScore,
+    const sumXY = aggregatedPerformanceData.reduce(
+      (sum, item) => sum + item.metricLevel * item.avgScore,
       0
     );
-    const sumX2 = scenarioPerformanceData.reduce(
-      (sum, item) => sum + item.metricValue * item.metricValue,
+    const sumX2 = aggregatedPerformanceData.reduce(
+      (sum, item) => sum + item.metricLevel * item.metricLevel,
       0
     );
-    const sumY2 = scenarioPerformanceData.reduce(
+    const sumY2 = aggregatedPerformanceData.reduce(
       (sum, item) => sum + item.avgScore * item.avgScore,
       0
     );
@@ -300,11 +300,22 @@ export default function ScenarioStats({
     );
 
     return denominator === 0 ? 0 : numerator / denominator;
-  }, [scenarioPerformanceData]);
+  }, [aggregatedPerformanceData]);
 
   const selectedMetricOption = METRIC_OPTIONS.find(
     (m) => m.id === selectedMetric
   );
+
+  // Generate insight text
+  const getInsightText = () => {
+    if (correlation > 0.3) {
+      return `Higher ${selectedMetricOption?.name.toLowerCase()} tends to correlate with better performance.`;
+    } else if (correlation < -0.3) {
+      return `Higher ${selectedMetricOption?.name.toLowerCase()} tends to correlate with worse performance.`;
+    } else {
+      return `No clear relationship between ${selectedMetricOption?.name.toLowerCase()} and performance.`;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -325,7 +336,7 @@ export default function ScenarioStats({
     );
   }
 
-  if (!scenarioPerformanceData.length) {
+  if (!aggregatedPerformanceData.length) {
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
@@ -362,7 +373,6 @@ export default function ScenarioStats({
 
           {/* Metric Picker */}
           <div className="flex items-center gap-2">
-            <Label className="text-sm font-medium">Metric:</Label>
             <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -419,70 +429,52 @@ export default function ScenarioStats({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6 flex-1 flex flex-col">
-        {/* Correlation Summary */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
+      <CardContent className="space-y-6 flex-1 flex flex-col relative">
+        {/* Correlation Card */}
+        <div className="absolute top-0 right-0 z-10">
+          <div className="bg-background/80 backdrop-blur-sm border rounded-lg p-3 shadow-sm">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium">Correlation:</span>
-              <Badge
-                variant={Math.abs(correlation) > 0.5 ? "default" : "secondary"}
-                className={cn(
-                  Math.abs(correlation) > 0.7
-                    ? "bg-green-100 text-green-800"
-                    : Math.abs(correlation) > 0.5
-                      ? "bg-yellow-100 text-yellow-800"
-                      : "bg-gray-100 text-gray-800"
-                )}
-              >
-                {correlation.toFixed(3)}
-              </Badge>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {Math.abs(correlation) > 0.7
-                ? "Strong correlation"
-                : Math.abs(correlation) > 0.5
-                  ? "Moderate correlation"
-                  : Math.abs(correlation) > 0.3
-                    ? "Weak correlation"
-                    : "No significant correlation"}{" "}
-              between {selectedMetricOption?.name.toLowerCase()} and performance
-            </p>
-          </div>
-
-          <div className="text-right">
-            <div className="text-sm font-medium">
-              {scenarioPerformanceData.length} scenarios
-            </div>
-            <div className="text-xs text-muted-foreground">
-              with sufficient data
+              <span className="text-sm font-bold">
+                {correlation > 0 ? "+" : ""}
+                {correlation.toFixed(2)}
+              </span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-4 w-4 p-0">
+                    <Info className="h-3 w-3" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-3">
+                  <p className="text-sm">{getInsightText()}</p>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </div>
 
-        {/* Scatter Plot */}
+        {/* Bar Chart */}
         <div className="flex-1 min-h-[300px] h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+            <BarChart
+              data={aggregatedPerformanceData}
+              margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+            >
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis
-                type="number"
-                dataKey="avgScore"
-                name="Average Score"
-                fontSize={12}
-                domain={[0, 100]}
-                tickFormatter={(value) => `${value}%`}
-              />
-              <YAxis
-                type="number"
-                dataKey="metricValue"
-                name={selectedMetricOption?.name || "Metric"}
+                dataKey="metricLevel"
+                name={selectedMetricOption?.name || "Metric Level"}
                 fontSize={12}
                 tickFormatter={(value) => {
                   if (selectedMetric === "documentCount")
                     return value.toString();
                   return value.toString();
                 }}
+              />
+              <YAxis
+                fontSize={12}
+                domain={[0, 100]}
+                tickFormatter={(value) => `${value}%`}
               />
               <Tooltip
                 contentStyle={{
@@ -491,68 +483,24 @@ export default function ScenarioStats({
                   borderRadius: "6px",
                 }}
                 formatter={(value: number, name: string) => [
-                  name === "avgScore" ? `${value}%` : value,
-                  name === "avgScore"
-                    ? "Average Score"
-                    : selectedMetricOption?.name,
+                  `${value}%`,
+                  "Average Score",
                 ]}
                 labelFormatter={(label) => {
-                  const dataPoint = scenarioPerformanceData.find(
-                    (item) => item.avgScore === label
+                  const dataPoint = aggregatedPerformanceData.find(
+                    (item) => item.metricLevel === label
                   );
-                  return dataPoint ? dataPoint.scenarioName : label;
+                  return `${selectedMetricOption?.name} Level ${label} (${dataPoint?.scenarioCount} scenarios)`;
                 }}
               />
-              <Legend />
-              <Scatter
-                data={scenarioPerformanceData}
-                dataKey="metricValue"
+              <Bar
+                dataKey="avgScore"
                 fill="#3b82f6"
-                name={selectedMetricOption?.name || "Metric"}
-              >
-                {scenarioPerformanceData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={
-                      entry.successRate > 80
-                        ? "#10b981"
-                        : entry.successRate > 60
-                          ? "#f59e0b"
-                          : "#ef4444"
-                    }
-                    opacity={0.8}
-                  />
-                ))}
-              </Scatter>
-            </ScatterChart>
+                name="Average Score"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
           </ResponsiveContainer>
-        </div>
-
-        {/* Legend */}
-        <div className="flex items-center justify-center gap-6 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-green-500 opacity-80"></div>
-            <span>High Success Rate (&gt;80%)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-yellow-500 opacity-80"></div>
-            <span>Medium Success Rate (60-80%)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500 opacity-80"></div>
-            <span>Low Success Rate (&lt;60%)</span>
-          </div>
-        </div>
-
-        {/* Insights */}
-        <div className="text-sm text-muted-foreground">
-          <p className="leading-relaxed">
-            {correlation > 0.3
-              ? `Higher ${selectedMetricOption?.name.toLowerCase()} tends to correlate with ${correlation > 0 ? "better" : "worse"} performance.`
-              : `No clear relationship between ${selectedMetricOption?.name.toLowerCase()} and performance.`}{" "}
-            Each point represents a scenario's{" "}
-            {selectedMetricOption?.name.toLowerCase()} vs average score.
-          </p>
         </div>
       </CardContent>
     </Card>
