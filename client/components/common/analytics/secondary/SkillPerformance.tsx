@@ -129,25 +129,58 @@ export default function SkillPerformance({
     // Calculate skill-based scores from feedbacks and standards
     const skillScores = standardGroups.reduce(
       (acc, group) => {
+        // Find all standards that belong to this standard group
         const groupStandards = standards.filter(
           (s) => s.standardGroupId === group.id
         );
-        const groupFeedbacks = filteredFeedbacks.filter((f) =>
-          groupStandards.some((s) => s.id === f.standardId)
+
+        // Find all feedbacks that correspond to standards in this group
+        const groupFeedbacks = filteredFeedbacks.filter((feedback) =>
+          groupStandards.some((standard) => standard.id === feedback.standardId)
         );
 
         if (groupFeedbacks.length > 0) {
-          // Get the rubric for this standard group
-          const rubric = filteredRubrics.find((r) => r.id === group.rubricId);
-          const rubricTotalPoints = rubric?.points || 100;
+          // Group feedbacks by grade (user session) to calculate per-user performance
+          const feedbacksByGrade = new Map<string, typeof groupFeedbacks>();
 
-          const avgScore = Math.round(
-            (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
-              groupFeedbacks.length /
-              rubricTotalPoints) *
-              100
-          );
-          acc[group.shortName || group.name] = avgScore;
+          groupFeedbacks.forEach((feedback) => {
+            const gradeId = feedback.simulationChatGradeId;
+            if (!feedbacksByGrade.has(gradeId)) {
+              feedbacksByGrade.set(gradeId, []);
+            }
+            feedbacksByGrade.get(gradeId)!.push(feedback);
+          });
+
+          // Calculate performance for each user session
+          const userPerformances: number[] = [];
+
+          feedbacksByGrade.forEach((userFeedbacks) => {
+            // Sum up all feedback totals for this user in this standard group
+            const userTotalPoints = userFeedbacks.reduce(
+              (sum, feedback) => sum + feedback.total,
+              0
+            );
+
+            // Calculate user's percentage for this standard group
+            const userPercentage =
+              group.points > 0 ? (userTotalPoints / group.points) * 100 : 0;
+
+            userPerformances.push(userPercentage);
+          });
+
+          // Calculate average performance across all users for this standard group
+          const averagePerformance =
+            userPerformances.length > 0
+              ? Math.round(
+                  userPerformances.reduce((sum, perf) => sum + perf, 0) /
+                    userPerformances.length
+                )
+              : 0;
+
+          acc[group.shortName || group.name] = averagePerformance;
+        } else {
+          // No feedback for this standard group, set to 0
+          acc[group.shortName || group.name] = 0;
         }
 
         return acc;
