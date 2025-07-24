@@ -278,7 +278,7 @@ export function useReportColumns({
           };
           return (
             <div
-              className={`text-center px-2 py-1 rounded text-xs font-medium ${getBackgroundColor()}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
             >
               {ta.hasNoSessions ? "N/A" : `${ta.averageScore}%`}
             </div>
@@ -312,7 +312,7 @@ export function useReportColumns({
           };
           return (
             <div
-              className={`text-center px-2 py-1 rounded text-xs font-medium ${getBackgroundColor()}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
             >
               {ta.hasNoSessions ? "N/A" : `${ta.completionPercentage}%`}
             </div>
@@ -337,7 +337,7 @@ export function useReportColumns({
           };
           return (
             <div
-              className={`text-center px-2 py-1 rounded text-xs font-medium ${getBackgroundColor()}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
             >
               {ta.hasNoSessions ? "N/A" : `${ta.firstAttemptPassRate}%`}
             </div>
@@ -362,7 +362,7 @@ export function useReportColumns({
           };
           return (
             <div
-              className={`text-center px-2 py-1 rounded text-xs font-medium ${getBackgroundColor()}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
             >
               {ta.hasNoSessions ? "N/A" : `${ta.highestScore}%`}
             </div>
@@ -387,7 +387,7 @@ export function useReportColumns({
           };
           return (
             <div
-              className={`text-center px-2 py-1 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
             >
               <MessageCircle className="h-2.5 w-2.5" />
               {ta.hasNoSessions ? "N/A" : ta.messagesPerSession}
@@ -413,7 +413,7 @@ export function useReportColumns({
           };
           return (
             <div
-              className={`text-center px-2 py-1 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
             >
               <Clock className="h-2.5 w-2.5" />
               {ta.hasNoSessions ? "N/A" : `${ta.personaResponseTimes}m`}
@@ -439,7 +439,7 @@ export function useReportColumns({
           };
           return (
             <div
-              className={`text-center px-2 py-1 rounded text-xs font-medium ${getBackgroundColor()}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
             >
               {ta.hasNoSessions ? "N/A" : `${ta.sessionEfficiency}%`}
             </div>
@@ -464,7 +464,7 @@ export function useReportColumns({
           };
           return (
             <div
-              className={`text-center px-2 py-1 rounded text-xs font-medium ${getBackgroundColor()}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
             >
               {ta.hasNoSessions ? "N/A" : `${ta.stagnationRate}%`}
             </div>
@@ -489,7 +489,7 @@ export function useReportColumns({
           };
           return (
             <div
-              className={`text-center px-2 py-1 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
             >
               <Timer className="h-2.5 w-2.5" />
               {ta.hasNoSessions ? "N/A" : `${ta.timeSpent}m`}
@@ -514,7 +514,7 @@ export function useReportColumns({
           };
           return (
             <div
-              className={`text-center px-2 py-1 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
             >
               <Target className="h-2.5 w-2.5" />
               {ta.totalAttempts}
@@ -530,7 +530,7 @@ export function useReportColumns({
         header: "Role",
         cell: () => null,
         enableSorting: false,
-        enableHiding: true,
+        enableHiding: false,
         enableColumnFilter: true,
         filterFn: (row, _, value) => {
           const ta = row.original;
@@ -543,7 +543,7 @@ export function useReportColumns({
         header: "Personas Tested",
         cell: () => null,
         enableSorting: false,
-        enableHiding: true,
+        enableHiding: false,
         enableColumnFilter: true,
         filterFn: (row, _, value) => {
           const ta = row.original;
@@ -558,7 +558,7 @@ export function useReportColumns({
         header: "Scenario IDs",
         cell: () => null,
         enableSorting: false,
-        enableHiding: true,
+        enableHiding: false,
         enableColumnFilter: true,
         filterFn: (row, _, value) => {
           const ta = row.original;
@@ -573,7 +573,7 @@ export function useReportColumns({
         header: "Simulation IDs",
         cell: () => null,
         enableSorting: false,
-        enableHiding: true,
+        enableHiding: false,
         enableColumnFilter: true,
         filterFn: (row, _, value) => {
           const ta = row.original;

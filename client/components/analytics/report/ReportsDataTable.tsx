@@ -140,7 +140,7 @@ export function ReportsDataTable({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="h-8 hover:bg-muted/30 transition-colors cursor-pointer"
+                  className="h-6 hover:bg-muted/30 transition-colors cursor-pointer"
                   onClick={() => onViewReport(row.original.id)}
                 >
                   {row.getVisibleCells().map((cell) => (
