@@ -16,12 +16,14 @@ import { Plus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useMemo } from "react";
 
+import { AnalyticsFilters } from "@/components/common/analytics/AnalyticsFilters";
 import ChatDialog from "@/components/common/home/ChatDialog";
 import ChatFab from "@/components/common/home/ChatFab";
 import ChatWidget from "@/components/common/home/ChatWidget";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import TATour from "@/components/home/TATour";
+import { AnalyticsProvider } from "@/contexts/analytics-context";
 import { AssistantProvider } from "@/contexts/assistant-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
@@ -63,6 +65,21 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       effectiveProfile?.role && allowedRoles.includes(effectiveProfile.role)
     );
   }, [effectiveProfile?.role]);
+
+  // Check if we're on an analytics page and should show filters
+  const isAnalyticsPage = useMemo(() => {
+    return pathname.startsWith("/analytics");
+  }, [pathname]);
+
+  const canShowAnalyticsFilters = useMemo(() => {
+    const allowedRoles = ["instructional", "admin", "superadmin"];
+    return (
+      effectiveProfile?.role &&
+      allowedRoles.includes(effectiveProfile.role) &&
+      isAnalyticsPage &&
+      !pathname.includes("/edit")
+    );
+  }, [effectiveProfile?.role, isAnalyticsPage, pathname]);
 
   // Load enhanced breadcrumbs with async ID resolution
   React.useEffect(() => {
@@ -233,6 +250,13 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
               />
             </div>
 
+            {/* Analytics Filters - Show in top right for analytics pages */}
+            {canShowAnalyticsFilters && (
+              <div className="px-4">
+                <AnalyticsFilters />
+              </div>
+            )}
+
             {actionButton && <div className="px-4">{actionButton}</div>}
           </header>
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
@@ -269,13 +293,15 @@ export default function MainLayout({
   // Otherwise, render the content directly.
   return (
     <TourProvider>
-      {attemptId ? (
-        <SimulationProvider attemptId={attemptId}>
+      <AnalyticsProvider>
+        {attemptId ? (
+          <SimulationProvider attemptId={attemptId}>
+            <MainLayoutContent>{children}</MainLayoutContent>
+          </SimulationProvider>
+        ) : (
           <MainLayoutContent>{children}</MainLayoutContent>
-        </SimulationProvider>
-      ) : (
-        <MainLayoutContent>{children}</MainLayoutContent>
-      )}
+        )}
+      </AnalyticsProvider>
     </TourProvider>
   );
 }

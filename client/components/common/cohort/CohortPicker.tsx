@@ -25,7 +25,6 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -43,9 +42,7 @@ export interface Cohort {
 
 export interface CohortPickerProps extends PopoverProps {
   cohorts: Cohort[];
-  label?: string;
   placeholder?: string;
-  description?: string;
   onSelect?: (cohorts: Cohort[]) => void;
   selectedCohorts?: Cohort[];
   hideSelectedChips?: boolean;
@@ -53,12 +50,10 @@ export interface CohortPickerProps extends PopoverProps {
 
 export function CohortPicker({
   cohorts,
-  label = "Cohorts",
   placeholder = "Select cohorts...",
-  description = "Select one or more cohorts to filter the progress view.",
   onSelect,
   selectedCohorts = [],
-  hideSelectedChips = true, // Changed default to true
+  hideSelectedChips = true,
   ...props
 }: CohortPickerProps) {
   const [open, setOpen] = React.useState(false);
@@ -109,24 +104,11 @@ export function CohortPicker({
   };
 
   const getSearchNotFoundMessage = () => {
-    return `No ${label} found.`;
+    return `No cohorts found.`;
   };
 
   return (
-    <div className="grid gap-2">
-      <HoverCard openDelay={200}>
-        <HoverCardTrigger asChild>
-          <Label htmlFor="cohorts">{label}</Label>
-        </HoverCardTrigger>
-        <HoverCardContent
-          align="start"
-          className="w-[260px] text-sm"
-          side="left"
-        >
-          {description}
-        </HoverCardContent>
-      </HoverCard>
-
+    <div>
       {/* Show selected items */}
       {selectedCohorts.length > 0 && !hideSelectedChips && (
         <div className="flex flex-wrap gap-1 mb-2">
@@ -156,6 +138,7 @@ export function CohortPicker({
             aria-expanded={open}
             aria-label="Select cohorts"
             className="w-full justify-between"
+            size="sm"
           >
             {getButtonText()}
             <ChevronsUpDown className="opacity-50" />
@@ -187,7 +170,7 @@ export function CohortPicker({
               </div>
             </HoverCardContent>
             <Command loop>
-              <CommandList className="h-[var(--cmdk-list-height)] max-h-[400px]">
+              <CommandList className="h-[var(--cmdk-list-height)] max-h-[250px]">
                 <CommandInput placeholder="Search cohorts..." />
                 <CommandEmpty>{getSearchNotFoundMessage()}</CommandEmpty>
                 <HoverCardTrigger />

@@ -696,9 +696,7 @@ export default function Home() {
               cohort.title
             ),
           }))}
-          label="Filter Cohorts"
           placeholder="Select cohorts..."
-          description="Select one or more cohorts to filter the progress view."
           onSelect={setSelectedCohorts}
           selectedCohorts={selectedCohorts}
           hideSelectedChips={true}

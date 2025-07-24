@@ -8,20 +8,14 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllSimulationAttempts } from "@/utils/queries/simulation_attempts/get-all-simulation-attempts";
 import { getAllSimulationChatGrades } from "@/utils/queries/simulation_chat_grades/get-all-simulation-chat-grades";
 import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-simulation-chats";
 import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import ScenarioPerformance from "../common/analytics/footer/ScenarioPerformance";
 import ScenarioStats from "../common/analytics/footer/ScenarioStats";
@@ -45,13 +39,8 @@ import RubricHeatmap from "../common/analytics/secondary/RubricHeatmap";
 import SkillPerformance from "../common/analytics/secondary/SkillPerformance";
 
 export default function Dashboard() {
-  // Date range state
-  const [dateStart, setDateStart] = useState<Date>(() => {
-    const date = new Date();
-    date.setDate(date.getDate() - 30); // 30 days ago
-    return date;
-  });
-  const [dateEnd, setDateEnd] = useState<Date>(() => new Date());
+  // Use analytics context for date range
+  const { startDate, endDate } = useAnalytics();
 
   // Threshold data
   const thresholds = {
@@ -100,62 +89,62 @@ export default function Dashboard() {
   const headerComponents = [
     <AverageScore
       key="average-score"
-      dateStart={dateStart}
-      dateEnd={dateEnd}
+      dateStart={startDate}
+      dateEnd={endDate}
       thresholds={thresholds}
     />,
     <CompletionPercentage
       key="completion-percentage"
-      dateStart={dateStart}
-      dateEnd={dateEnd}
+      dateStart={startDate}
+      dateEnd={endDate}
       thresholds={thresholds}
     />,
     <FirstAttemptPassRate
       key="first-attempt-pass-rate"
-      dateStart={dateStart}
-      dateEnd={dateEnd}
+      dateStart={startDate}
+      dateEnd={endDate}
       thresholds={thresholds}
     />,
     <HighestScore
       key="highest-score"
-      dateStart={dateStart}
-      dateEnd={dateEnd}
+      dateStart={startDate}
+      dateEnd={endDate}
       thresholds={thresholds}
     />,
     <MessagesPerSession
       key="messages-per-session"
-      dateStart={dateStart}
-      dateEnd={dateEnd}
+      dateStart={startDate}
+      dateEnd={endDate}
       thresholds={thresholds}
     />,
     <PersonaResponseTimes
       key="persona-response-times"
-      dateStart={dateStart}
-      dateEnd={dateEnd}
+      dateStart={startDate}
+      dateEnd={endDate}
       thresholds={thresholds}
     />,
     <SessionEfficiency
       key="session-efficiency"
-      dateStart={dateStart}
-      dateEnd={dateEnd}
+      dateStart={startDate}
+      dateEnd={endDate}
       thresholds={thresholds}
     />,
     <StagnationRate
       key="stagnation-rate"
-      dateStart={dateStart}
-      dateEnd={dateEnd}
+      dateStart={startDate}
+      dateEnd={endDate}
       thresholds={thresholds}
     />,
     <TimeSpent
       key="time-spent"
-      dateStart={dateStart}
-      dateEnd={dateEnd}
+      dateStart={startDate}
+      dateEnd={endDate}
       thresholds={thresholds}
     />,
     <TotalAttempts
       key="total-attempts"
-      dateStart={dateStart}
-      dateEnd={dateEnd}
+      dateStart={startDate}
+      dateEnd={endDate}
       thresholds={thresholds}
     />,
   ];
@@ -163,14 +152,14 @@ export default function Dashboard() {
   const primaryComponents = [
     <AttemptImprovement
       key="attempt-improvement"
-      dateStart={dateStart}
-      dateEnd={dateEnd}
+      dateStart={startDate}
+      dateEnd={endDate}
     />,
-    <Growth key="growth" dateStart={dateStart} dateEnd={dateEnd} />,
+    <Growth key="growth" dateStart={startDate} dateEnd={endDate} />,
     <PersonaPerformance
       key="persona-performance"
-      dateStart={dateStart}
-      dateEnd={dateEnd}
+      dateStart={startDate}
+      dateEnd={endDate}
       thresholds={thresholds}
     />,
   ];
@@ -178,20 +167,20 @@ export default function Dashboard() {
   const secondaryComponents = [
     <CohortPerformance
       key="cohort-performance"
-      dateStart={dateStart}
-      dateEnd={dateEnd}
+      dateStart={startDate}
+      dateEnd={endDate}
       thresholds={thresholds}
     />,
     <RubricHeatmap
       key="rubric-heatmap"
-      dateStart={dateStart}
-      dateEnd={dateEnd}
+      dateStart={startDate}
+      dateEnd={endDate}
       _thresholds={thresholds}
     />,
     <SkillPerformance
       key="skill-performance"
-      dateStart={dateStart}
-      dateEnd={dateEnd}
+      dateStart={startDate}
+      dateEnd={endDate}
       _thresholds={thresholds}
     />,
   ];
@@ -199,14 +188,14 @@ export default function Dashboard() {
   const leftFooterComponents = [
     <ScenarioPerformance
       key="scenario-performance"
-      dateStart={dateStart}
-      dateEnd={dateEnd}
+      dateStart={startDate}
+      dateEnd={endDate}
       thresholds={thresholds}
     />,
     <ScenarioStats
       key="scenario-stats"
-      dateStart={dateStart}
-      dateEnd={dateEnd}
+      dateStart={startDate}
+      dateEnd={endDate}
       _thresholds={thresholds}
     />,
   ];
@@ -214,14 +203,14 @@ export default function Dashboard() {
   const rightFooterComponents = [
     <SimulationPerformance
       key="simulation-performance"
-      dateStart={dateStart}
-      dateEnd={dateEnd}
+      dateStart={startDate}
+      dateEnd={endDate}
       thresholds={thresholds}
     />,
     <SimulationStats
       key="simulation-stats"
-      dateStart={dateStart}
-      dateEnd={dateEnd}
+      dateStart={startDate}
+      dateEnd={endDate}
       _thresholds={thresholds}
     />,
   ];
@@ -291,41 +280,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Date Range Picker */}
-      <div className="flex justify-center">
-        <div className="flex items-center gap-4 p-4 bg-card border rounded-lg">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Date Range:</span>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-[200px] justify-start text-left font-normal"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {format(dateStart, "MMM dd, yyyy")} -{" "}
-                  {format(dateEnd, "MMM dd, yyyy")}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="center">
-                <Calendar
-                  mode="range"
-                  selected={{
-                    from: dateStart,
-                    to: dateEnd,
-                  }}
-                  onSelect={(range) => {
-                    if (range?.from) setDateStart(range.from);
-                    if (range?.to) setDateEnd(range.to);
-                  }}
-                  numberOfMonths={2}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-      </div>
-
       {/* Header Metrics with Dynamic Pagination */}
       {headerComponents.length > 0 && (
         <div className="space-y-4">
