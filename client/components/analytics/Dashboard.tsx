@@ -284,9 +284,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
   };
 
   const navigateLeftFooter = (direction: "prev" | "next") => {
-    const filteredComponents =
-      leftFooterComponents?.filter((_, index: number) => index % 2 === 0) || [];
-    const length = filteredComponents.length || 1;
+    const length = leftFooterComponents.length || 1;
     if (direction === "prev") {
       setLeftFooterCarouselIndex(
         (prev: number) => (prev - 1 + length) % length
@@ -297,10 +295,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
   };
 
   const navigateRightFooter = (direction: "prev" | "next") => {
-    const filteredComponents =
-      rightFooterComponents?.filter((_, index: number) => index % 2 === 1) ||
-      [];
-    const length = filteredComponents.length || 1;
+    const length = rightFooterComponents.length || 1;
     if (direction === "prev") {
       setRightFooterCarouselIndex(
         (prev: number) => (prev - 1 + length) % length
@@ -408,7 +403,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
           {primaryComponents.length > 0 && (
             <div className="flex flex-col space-y-4">
               <div
-                className="relative flex-1 group"
+                className="relative flex-1 group max-h-[500px] overflow-auto"
                 onMouseEnter={() => {
                   setIsPrimaryHovered(true);
                 }}
@@ -472,7 +467,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
           {secondaryComponents.length > 0 && (
             <div className="flex flex-col space-y-4">
               <div
-                className="relative flex-1 group"
+                className="relative flex-1 group max-h-[500px] overflow-auto"
                 onMouseEnter={() => setIsSecondaryHovered(true)}
                 onMouseLeave={() => setIsSecondaryHovered(false)}
               >
@@ -534,145 +529,128 @@ export default function Dashboard({ profileId }: DashboardProps) {
       {[leftFooterComponents, rightFooterComponents].filter((c) => c.length > 0)
         .length > 0 && (
         <div className="pb-8">
-          {(() => {
-            const footerCols =
-              [leftFooterComponents, rightFooterComponents].filter(
-                (c) => c.length > 0
-              ).length || 1;
+          <div className="grid gap-6 items-stretch grid-cols-1 lg:grid-cols-2">
+            {/* Left Footer Section */}
+            {leftFooterComponents.length > 0 && (
+              <div className="space-y-4">
+                <div
+                  className="relative group max-h-[500px] overflow-auto"
+                  onMouseEnter={() => setIsLeftFooterHovered(true)}
+                  onMouseLeave={() => setIsLeftFooterHovered(false)}
+                >
+                  {leftFooterComponents.length > 0 &&
+                    leftFooterComponents[
+                      leftFooterCarouselIndex % leftFooterComponents.length
+                    ]}
 
-            return (
-              <div
-                className="grid gap-6 items-stretch"
-                style={{
-                  gridTemplateColumns: `repeat(${footerCols}, 1fr)`,
-                  gridAutoRows: "1fr",
-                }}
-              >
-                {/* Left Footer Section */}
-                {leftFooterComponents.length > 0 && (
-                  <div className="space-y-4">
-                    <div
-                      className="relative group"
-                      onMouseEnter={() => setIsLeftFooterHovered(true)}
-                      onMouseLeave={() => setIsLeftFooterHovered(false)}
-                    >
-                      {leftFooterComponents.length > 0 &&
-                        leftFooterComponents[
+                  {/* Left Footer Navigation Arrows */}
+                  {leftFooterComponents.length > 1 && (
+                    <>
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
+                          isLeftFooterHovered ? "opacity-100" : "opacity-0"
+                        } hover:opacity-100`}
+                        onClick={() => navigateLeftFooter("prev")}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className={`absolute right-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
+                          isLeftFooterHovered ? "opacity-100" : "opacity-0"
+                        } hover:opacity-100`}
+                        onClick={() => navigateLeftFooter("next")}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+
+                {/* Left footer carousel indicators */}
+                {leftFooterComponents.length > 1 && (
+                  <div className="flex justify-center gap-2">
+                    {leftFooterComponents.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setLeftFooterCarouselIndex(index)}
+                        className={`w-2 h-2 rounded-full transition-colors ${
+                          index ===
                           leftFooterCarouselIndex % leftFooterComponents.length
-                        ]}
-
-                      {/* Left Footer Navigation Arrows */}
-                      {leftFooterComponents.length > 1 && (
-                        <>
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
-                              isLeftFooterHovered ? "opacity-100" : "opacity-0"
-                            } hover:opacity-100`}
-                            onClick={() => navigateLeftFooter("prev")}
-                          >
-                            <ChevronLeft className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            className={`absolute right-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
-                              isLeftFooterHovered ? "opacity-100" : "opacity-0"
-                            } hover:opacity-100`}
-                            onClick={() => navigateLeftFooter("next")}
-                          >
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Left footer carousel indicators */}
-                    {leftFooterComponents.length > 1 && (
-                      <div className="flex justify-center gap-2">
-                        {leftFooterComponents.map((_, index) => (
-                          <button
-                            key={index}
-                            onClick={() => setLeftFooterCarouselIndex(index)}
-                            className={`w-2 h-2 rounded-full transition-colors ${
-                              index ===
-                              leftFooterCarouselIndex %
-                                leftFooterComponents.length
-                                ? "bg-primary"
-                                : "bg-muted"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Right Footer Section */}
-                {rightFooterComponents.length > 0 && (
-                  <div className="space-y-4">
-                    <div
-                      className="relative group"
-                      onMouseEnter={() => setIsRightFooterHovered(true)}
-                      onMouseLeave={() => setIsRightFooterHovered(false)}
-                    >
-                      {rightFooterComponents.length > 0 &&
-                        rightFooterComponents[
-                          rightFooterCarouselIndex %
-                            rightFooterComponents.length
-                        ]}
-
-                      {/* Right Footer Navigation Arrows */}
-                      {rightFooterComponents.length > 1 && (
-                        <>
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
-                              isRightFooterHovered ? "opacity-100" : "opacity-0"
-                            } hover:opacity-100`}
-                            onClick={() => navigateRightFooter("prev")}
-                          >
-                            <ChevronLeft className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            className={`absolute right-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
-                              isRightFooterHovered ? "opacity-100" : "opacity-0"
-                            } hover:opacity-100`}
-                            onClick={() => navigateRightFooter("next")}
-                          >
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Right footer carousel indicators */}
-                    {rightFooterComponents.length > 1 && (
-                      <div className="flex justify-center gap-2">
-                        {rightFooterComponents.map((_, index) => (
-                          <button
-                            key={index}
-                            onClick={() => setRightFooterCarouselIndex(index)}
-                            className={`w-2 h-2 rounded-full transition-colors ${
-                              index ===
-                              rightFooterCarouselIndex %
-                                rightFooterComponents.length
-                                ? "bg-primary"
-                                : "bg-muted"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    )}
+                            ? "bg-primary"
+                            : "bg-muted"
+                        }`}
+                      />
+                    ))}
                   </div>
                 )}
               </div>
-            );
-          })()}
+            )}
+
+            {/* Right Footer Section */}
+            {rightFooterComponents.length > 0 && (
+              <div className="space-y-4">
+                <div
+                  className="relative group max-h-[500px] overflow-auto"
+                  onMouseEnter={() => setIsRightFooterHovered(true)}
+                  onMouseLeave={() => setIsRightFooterHovered(false)}
+                >
+                  {rightFooterComponents.length > 0 &&
+                    rightFooterComponents[
+                      rightFooterCarouselIndex % rightFooterComponents.length
+                    ]}
+
+                  {/* Right Footer Navigation Arrows */}
+                  {rightFooterComponents.length > 1 && (
+                    <>
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
+                          isRightFooterHovered ? "opacity-100" : "opacity-0"
+                        } hover:opacity-100`}
+                        onClick={() => navigateRightFooter("prev")}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className={`absolute right-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
+                          isRightFooterHovered ? "opacity-100" : "opacity-0"
+                        } hover:opacity-100`}
+                        onClick={() => navigateRightFooter("next")}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+
+                {/* Right footer carousel indicators */}
+                {rightFooterComponents.length > 1 && (
+                  <div className="flex justify-center gap-2">
+                    {rightFooterComponents.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setRightFooterCarouselIndex(index)}
+                        className={`w-2 h-2 rounded-full transition-colors ${
+                          index ===
+                          rightFooterCarouselIndex %
+                            rightFooterComponents.length
+                            ? "bg-primary"
+                            : "bg-muted"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -22,7 +22,7 @@ import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulatio
 import { useQuery } from "@tanstack/react-query";
 import { format, isAfter, isBefore } from "date-fns";
 import { TrendingUp } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CartesianGrid,
   Legend,
@@ -33,6 +33,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import GrowthPicker, { type GrowthMetric } from "../GrowthPicker";
 
 export interface GrowthProps {
   dateStart: Date;
@@ -40,11 +41,116 @@ export interface GrowthProps {
   profileId?: string;
 }
 
-export default function Growth({
-  dateStart,
-  dateEnd,
-  profileId,
-}: GrowthProps) {
+export default function Growth({ dateStart, dateEnd, profileId }: GrowthProps) {
+  const [selectedMetrics, setSelectedMetrics] = useState<string[]>([
+    "averageScore",
+  ]);
+
+  // Define all available metrics (expandable to all 10 header metrics)
+  const availableMetrics: GrowthMetric[] = useMemo(
+    () => [
+      {
+        id: "averageScore",
+        name: "Average Score",
+        color: "#3b82f6",
+        description: "Average performance score across all sessions",
+        unit: "%",
+        formatter: (value: number) => `${value}%`,
+      },
+      {
+        id: "passRate",
+        name: "Pass Rate",
+        color: "#10b981",
+        description: "Percentage of sessions that meet passing criteria",
+        unit: "%",
+        formatter: (value: number) => `${value}%`,
+      },
+      {
+        id: "completionRate",
+        name: "Completion Rate",
+        color: "#8b5cf6",
+        description: "Percentage of sessions that were completed",
+        unit: "%",
+        formatter: (value: number) => `${value}%`,
+      },
+      {
+        id: "efficiencyIndex",
+        name: "Efficiency Index",
+        color: "#f97316",
+        description: "Performance efficiency relative to time spent",
+        unit: "%",
+        formatter: (value: number) => `${value}%`,
+      },
+      {
+        id: "messagesPerSession",
+        name: "Messages Per Session",
+        color: "#06b6d4",
+        description: "Average number of messages per session",
+        unit: "msgs",
+        formatter: (value: number) => `${value} msgs`,
+      },
+      {
+        id: "personaResponseTimes",
+        name: "Response Times",
+        color: "#84cc16",
+        description: "Average response time to persona interactions",
+        unit: "min",
+        formatter: (value: number) => `${value}m`,
+      },
+      {
+        id: "sessionEfficiency",
+        name: "Session Efficiency",
+        color: "#ec4899",
+        description: "Overall session efficiency rating",
+        unit: "%",
+        formatter: (value: number) => `${value}%`,
+      },
+      {
+        id: "stagnationRate",
+        name: "Stagnation Rate",
+        color: "#ef4444",
+        description: "Rate of performance stagnation",
+        unit: "%",
+        formatter: (value: number) => `${value}%`,
+      },
+      {
+        id: "timeSpent",
+        name: "Time Spent",
+        color: "#a855f7",
+        description: "Average time spent per session",
+        unit: "min",
+        formatter: (value: number) => `${value}m`,
+      },
+      {
+        id: "totalAttempts",
+        name: "Total Attempts",
+        color: "#f59e0b",
+        description: "Total number of simulation attempts",
+        unit: "attempts",
+        formatter: (value: number) => `${value} attempts`,
+      },
+    ],
+    []
+  );
+
+  // Ensure at least one metric is always selected
+  useEffect(() => {
+    if (
+      selectedMetrics.length === 0 &&
+      availableMetrics.length > 0 &&
+      availableMetrics[0]
+    ) {
+      setSelectedMetrics([availableMetrics[0].id]);
+    }
+  }, [selectedMetrics.length, availableMetrics]);
+
+  // Get selected metric objects
+  const selectedMetricObjects = useMemo(() => {
+    return availableMetrics.filter((metric) =>
+      selectedMetrics.includes(metric.id)
+    );
+  }, [availableMetrics, selectedMetrics]);
+
   // Fetch data
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -133,6 +239,10 @@ export default function Growth({
         total: number;
         completed: number;
         timeTaken: number[];
+        messages: number[];
+        responseTimes: number[];
+        attempts: number[];
+        firstAttemptPassed: number[];
       }
     >();
 
@@ -149,6 +259,10 @@ export default function Growth({
           total: 0,
           completed: 0,
           timeTaken: [],
+          messages: [],
+          responseTimes: [],
+          attempts: [],
+          firstAttemptPassed: [],
         });
       }
 
@@ -174,6 +288,32 @@ export default function Growth({
       if (chat?.completed) {
         dayData.completed++;
       }
+
+      // Calculate additional metrics
+      // Messages per session (estimated from chat data)
+      const messageCount = 0; // TODO: Get actual message count from chat data
+      dayData.messages.push(messageCount);
+
+      // Response times (estimated from time taken and message count)
+      const avgResponseTime =
+        messageCount > 0 ? grade.timeTaken / messageCount / 60 : 0;
+      dayData.responseTimes.push(avgResponseTime);
+
+      // Track attempts
+      dayData.attempts.push(1);
+
+      // First attempt pass rate (simplified - assuming first attempt if no previous attempts)
+      const isFirstAttempt = !attempts.some(
+        (a) =>
+          a.profileId === attempt?.profileId &&
+          a.simulationId === attempt?.simulationId &&
+          new Date(a.createdAt) < new Date(attempt.createdAt)
+      );
+      if (isFirstAttempt && grade.passed) {
+        dayData.firstAttemptPassed.push(1);
+      } else if (isFirstAttempt) {
+        dayData.firstAttemptPassed.push(0);
+      }
     });
 
     // Convert to array and calculate metrics
@@ -187,14 +327,40 @@ export default function Growth({
               )
             : 0;
 
-        const passRate =
-          dayData.total > 0
-            ? Math.round((dayData.passed / dayData.total) * 100)
-            : 0;
-
-        const completionRate =
+        const completionPercentage =
           dayData.total > 0
             ? Math.round((dayData.completed / dayData.total) * 100)
+            : 0;
+
+        const firstAttemptPassRate =
+          dayData.firstAttemptPassed.length > 0
+            ? Math.round(
+                (dayData.firstAttemptPassed.reduce(
+                  (sum, passed) => sum + passed,
+                  0
+                ) /
+                  dayData.firstAttemptPassed.length) *
+                  100
+              )
+            : 0;
+
+        const highestScore =
+          dayData.scores.length > 0 ? Math.max(...dayData.scores) : 0;
+
+        const messagesPerSession =
+          dayData.messages.length > 0
+            ? Math.round(
+                dayData.messages.reduce((sum, msg) => sum + msg, 0) /
+                  dayData.messages.length
+              )
+            : 0;
+
+        const personaResponseTimes =
+          dayData.responseTimes.length > 0
+            ? Math.round(
+                dayData.responseTimes.reduce((sum, time) => sum + time, 0) /
+                  dayData.responseTimes.length
+              )
             : 0;
 
         const avgTimeMinutes =
@@ -205,17 +371,48 @@ export default function Growth({
             : 1; // Avoid division by zero
 
         // Session Efficiency Index: (Average Score %) / (Average Time per Session in minutes)
-        const efficiencyIndex =
+        const sessionEfficiency =
           avgTimeMinutes > 0
             ? Math.round((avgScore / avgTimeMinutes) * 10) // Scale factor of 10 for better visibility
             : 0;
 
+        // Stagnation Rate (simplified - based on score variance)
+        const scoreVariance =
+          dayData.scores.length > 1
+            ? Math.sqrt(
+                dayData.scores.reduce(
+                  (sum, score) => sum + Math.pow(score - avgScore, 2),
+                  0
+                ) /
+                  (dayData.scores.length - 1)
+              )
+            : 0;
+        const stagnationRate = Math.round(Math.min(scoreVariance / 10, 100));
+
+        const timeSpent = Math.round(avgTimeMinutes);
+
+        const totalAttempts = dayData.attempts.reduce(
+          (sum, attempt) => sum + attempt,
+          0
+        );
+
         return {
           date: dayData.date,
+          averageScore: avgScore,
+          completionPercentage,
+          firstAttemptPassRate,
+          highestScore,
+          messagesPerSession,
+          personaResponseTimes,
+          sessionEfficiency,
+          stagnationRate,
+          timeSpent,
+          totalAttempts,
+          // Legacy fields for backward compatibility
           avgScore,
-          passRate,
-          completionRate,
-          efficiencyIndex,
+          passRate: firstAttemptPassRate,
+          completionRate: completionPercentage,
+          efficiencyIndex: sessionEfficiency,
         };
       })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -223,18 +420,19 @@ export default function Growth({
     // Scale efficiency index to 0-100 range relative to the dataset
     if (growthMetrics.length > 0) {
       const maxEfficiency = Math.max(
-        ...growthMetrics.map((m) => m.efficiencyIndex)
+        ...growthMetrics.map((m) => m.sessionEfficiency)
       );
       const minEfficiency = Math.min(
-        ...growthMetrics.map((m) => m.efficiencyIndex)
+        ...growthMetrics.map((m) => m.sessionEfficiency)
       );
       const efficiencyRange = maxEfficiency - minEfficiency;
 
       if (efficiencyRange > 0) {
         growthMetrics.forEach((metric) => {
-          metric.efficiencyIndex = Math.round(
-            ((metric.efficiencyIndex - minEfficiency) / efficiencyRange) * 100
+          metric.sessionEfficiency = Math.round(
+            ((metric.sessionEfficiency - minEfficiency) / efficiencyRange) * 100
           );
+          metric.efficiencyIndex = metric.sessionEfficiency; // Keep legacy field in sync
         });
       }
     }
@@ -261,39 +459,21 @@ export default function Growth({
 
     if (!latest || !previous) return null;
 
-    const metrics = [
-      {
-        name: "Average Score",
-        current: latest.avgScore,
-        previous: previous.avgScore,
-        color: "#3b82f6",
-      },
-      {
-        name: "Pass Rate",
-        current: latest.passRate,
-        previous: previous.passRate,
-        color: "#10b981",
-      },
-      {
-        name: "Completion Rate",
-        current: latest.completionRate,
-        previous: previous.completionRate,
-        color: "#8b5cf6",
-      },
-      {
-        name: "Efficiency Index",
-        current: latest.efficiencyIndex,
-        previous: previous.efficiencyIndex,
-        color: "#f97316",
-      },
-    ];
+    const metrics = selectedMetricObjects.map((metric) => ({
+      name: metric.name,
+      current: latest[metric.id as keyof typeof latest] as number,
+      previous: previous[metric.id as keyof typeof previous] as number,
+      color: metric.color,
+    }));
 
     // Find the metric with the biggest decline
     const worstMetric = metrics.reduce((worst, metric) => {
       const change = metric.current - metric.previous;
       const worstChange = worst.current - worst.previous;
       return change < worstChange ? metric : worst;
-    });
+    }, metrics[0]!); // Use non-null assertion since we already checked metrics.length > 0
+
+    if (!worstMetric) return null;
 
     const change = worstMetric.current - worstMetric.previous;
 
@@ -316,13 +496,22 @@ export default function Growth({
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Platform Growth
-          </CardTitle>
-          <CardDescription>
-            Platform-wide performance metrics over time
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Platform Growth
+              </CardTitle>
+              <CardDescription>
+                Platform-wide performance metrics over time
+              </CardDescription>
+            </div>
+            <GrowthPicker
+              availableMetrics={availableMetrics}
+              selectedMetrics={selectedMetrics}
+              onMetricsChange={setSelectedMetrics}
+            />
+          </div>
         </CardHeader>
         <CardContent className="flex items-center justify-center flex-1">
           <p className="text-muted-foreground">
@@ -336,13 +525,22 @@ export default function Growth({
   return (
     <Card className="w-full h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5" />
-          Platform Growth
-        </CardTitle>
-        <CardDescription>
-          Platform-wide performance metrics over time
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Platform Growth
+            </CardTitle>
+            <CardDescription>
+              Platform-wide performance metrics over time
+            </CardDescription>
+          </div>
+          <GrowthPicker
+            availableMetrics={availableMetrics}
+            selectedMetrics={selectedMetrics}
+            onMetricsChange={setSelectedMetrics}
+          />
+        </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
         <div className="space-y-6">
@@ -377,38 +575,17 @@ export default function Growth({
                   ]}
                 />
                 <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="avgScore"
-                  stroke="#3b82f6"
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                  name="Average Score"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="passRate"
-                  stroke="#10b981"
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                  name="Pass Rate"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="completionRate"
-                  stroke="#8b5cf6"
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                  name="Completion Rate"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="efficiencyIndex"
-                  stroke="#f97316"
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                  name="Efficiency Index"
-                />
+                {selectedMetricObjects.map((metric) => (
+                  <Line
+                    key={metric.id}
+                    type="monotone"
+                    dataKey={metric.id}
+                    stroke={metric.color}
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    name={metric.name}
+                  />
+                ))}
               </LineChart>
             </ResponsiveContainer>
           </div>

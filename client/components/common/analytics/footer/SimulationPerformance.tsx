@@ -1,11 +1,12 @@
 /**
  * SimulationPerformance.tsx
- * This component displays the simulation performance for the personas.
+ * This component displays scenario performance within a selected simulation.
  * @AshokSaravanan222 & @siladiea
  * 07/23/2025
  */
 "use client";
 
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -13,15 +14,36 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { isAfter, isBefore } from "date-fns";
-import { BarChart3, TrendingUp } from "lucide-react";
-import { useMemo } from "react";
+import {
+  BarChart3,
+  Check,
+  ChevronsUpDown,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
+import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -43,12 +65,25 @@ export interface SimulationPerformanceProps {
   };
 }
 
+interface Simulation {
+  id: string;
+  title: string;
+  description?: string;
+  scenarioIds: string[];
+  active: boolean;
+  practiceSimulation: boolean;
+}
+
 export default function SimulationPerformance({
   dateStart,
   dateEnd,
   profileId,
   thresholds,
 }: SimulationPerformanceProps) {
+  const [selectedSimulation, setSelectedSimulation] =
+    useState<Simulation | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
   // Fetch data
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -58,6 +93,11 @@ export default function SimulationPerformance({
   const { data: simulations } = useQuery({
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
+  });
+
+  const { data: scenarios } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => getAllScenarios(),
   });
 
   const { data: attempts } = useQuery({
@@ -81,28 +121,48 @@ export default function SimulationPerformance({
     enabled: !!chats && chats.length > 0,
   });
 
-  // Calculate simulation performance data
-  const simulationData = useMemo(() => {
-    if (!simulations || !chats || !grades || !attempts || !profiles) {
+  // Filter simulations to exclude practice simulations
+  const availableSimulations = useMemo(() => {
+    if (!simulations) return [];
+    return simulations
+      .filter((sim) => !sim.practiceSimulation && sim.active)
+      .map((sim) => ({
+        id: sim.id,
+        title: sim.title,
+        description: `Simulation with ${sim.scenarioIds?.length || 0} scenarios`,
+        scenarioIds: sim.scenarioIds || [],
+        active: sim.active,
+        practiceSimulation: sim.practiceSimulation,
+      }));
+  }, [simulations]);
+
+  // Calculate scenario performance data for selected simulation
+  const scenarioPerformanceData = useMemo(() => {
+    if (
+      !selectedSimulation ||
+      !scenarios ||
+      !chats ||
+      !grades ||
+      !attempts ||
+      !profiles
+    ) {
       return [];
     }
 
-    // Filter data by date range, exclude practice simulations, and filter by TA role
+    // Filter data by date range, selected simulation, and filter by TA role
     const filteredGrades = grades.filter((grade) => {
       const gradeDate = new Date(grade.createdAt);
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId
-      );
       const profile = profiles?.find((p) => p.id === attempt?.profileId);
 
       // Check date range
       const inDateRange =
         isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
 
-      // Exclude practice simulations
-      const notPractice = !simulation?.practiceSimulation;
+      // Check if it's from the selected simulation
+      const isSelectedSimulation =
+        attempt?.simulationId === selectedSimulation.id;
 
       // Filter by TA role
       const isTA = profile?.role === "ta";
@@ -110,99 +170,86 @@ export default function SimulationPerformance({
       // Filter by profile if provided
       const profileMatch = profileId ? attempt?.profileId === profileId : true;
 
-      return inDateRange && notPractice && isTA && profileMatch;
+      return inDateRange && isSelectedSimulation && isTA && profileMatch;
     });
 
     if (filteredGrades.length === 0) return [];
 
-    // Group by simulation and calculate metrics
-    const simulationMetrics = new Map<
-      string,
-      {
-        simulationId: string;
-        simulationName: string;
-        attempts: number;
-        completed: number;
-        scores: number[];
-        timeTaken: number[];
-        scenarioCount: number;
-      }
-    >();
+    // Get scenarios for the selected simulation
+    const simulationScenarios = scenarios.filter((scenario) =>
+      selectedSimulation.scenarioIds.includes(scenario.id)
+    );
 
-    filteredGrades.forEach((grade) => {
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      if (!chat) return;
-
-      const attempt = attempts.find((a) => a.id === chat.attemptId);
-      if (!attempt) return;
-
-      const simulationId = attempt.simulationId;
-      const simulation = simulations.find((s) => s.id === simulationId);
-      if (!simulation) return;
-
-      if (!simulationMetrics.has(simulationId)) {
-        simulationMetrics.set(simulationId, {
-          simulationId,
-          simulationName: simulation.title,
-          attempts: 0,
-          completed: 0,
-          scores: [],
-          timeTaken: [],
-          scenarioCount: simulation.scenarioIds?.length || 0,
-        });
-      }
-
-      const metrics = simulationMetrics.get(simulationId)!;
-      metrics.attempts++;
-      metrics.scores.push(grade.score);
-      metrics.timeTaken.push(grade.timeTaken);
-
-      if (chat.completed) {
-        metrics.completed++;
-      }
-    });
-
-    // Convert to chart data
-    const chartData = Array.from(simulationMetrics.values())
-      .map((metrics) => {
-        const completionRate = Math.round(
-          (metrics.completed / metrics.attempts) * 100
+    // Calculate performance for each scenario
+    const scenarioData = simulationScenarios
+      .map((scenario) => {
+        const scenarioChats = chats.filter(
+          (chat) => chat.scenarioId === scenario.id
         );
+        const scenarioGrades = filteredGrades.filter((grade) =>
+          scenarioChats.some((chat) => chat.id === grade.simulationChatId)
+        );
+
+        if (scenarioGrades.length === 0) return null;
+
+        const completedChats = scenarioChats.filter((chat) => chat.completed);
+        const successRate = Math.round(
+          (completedChats.length / scenarioChats.length) * 100
+        );
+
         const avgScore = Math.round(
-          metrics.scores.reduce((sum, score) => sum + score, 0) /
-            metrics.scores.length
+          scenarioGrades.reduce((sum, grade) => sum + grade.score, 0) /
+            scenarioGrades.length
         );
-        const avgTime = Math.round(
-          metrics.timeTaken.reduce((sum, time) => sum + time, 0) /
-            metrics.timeTaken.length /
-            60
-        ); // Convert to minutes
+
+        // Calculate performance trend (simple comparison with previous period)
+        const midPoint = new Date(
+          (dateStart.getTime() + dateEnd.getTime()) / 2
+        );
+        const recentGrades = scenarioGrades.filter(
+          (grade) => new Date(grade.createdAt) >= midPoint
+        );
+        const olderGrades = scenarioGrades.filter(
+          (grade) => new Date(grade.createdAt) < midPoint
+        );
+
+        let performanceChange = 0;
+        if (recentGrades.length > 0 && olderGrades.length > 0) {
+          const recentAvg =
+            recentGrades.reduce((sum, grade) => sum + grade.score, 0) /
+            recentGrades.length;
+          const olderAvg =
+            olderGrades.reduce((sum, grade) => sum + grade.score, 0) /
+            olderGrades.length;
+          performanceChange = Math.round(recentAvg - olderAvg);
+        }
 
         return {
-          name:
-            metrics.simulationName.length > 20
-              ? metrics.simulationName.substring(0, 20) + "..."
-              : metrics.simulationName,
-          completionRate,
+          scenarioId: scenario.id,
+          scenarioName: scenario.name,
           avgScore,
-          avgTime,
-          scenarioCount: metrics.scenarioCount,
-          attempts: metrics.attempts,
+          successRate,
+          performanceChange,
+          totalAttempts: scenarioChats.length,
+          completedAttempts: completedChats.length,
           color:
-            completionRate >= thresholds.success
+            avgScore >= thresholds.success
               ? "#10b981"
-              : completionRate >= thresholds.warning
+              : avgScore >= thresholds.warning
                 ? "#f59e0b"
                 : "#ef4444",
         };
       })
-      .filter((simulation) => simulation.attempts >= 3) // Only show simulations with sufficient data
-      .sort((a, b) => b.completionRate - a.completionRate)
-      .slice(0, 10); // Show top 10 simulations
+      .filter(
+        (item): item is NonNullable<typeof item> =>
+          item !== null && item.totalAttempts >= 2
+      )
+      .sort((a, b) => b.avgScore - a.avgScore);
 
-    return chartData;
+    return scenarioData;
   }, [
-    simulations,
+    selectedSimulation,
+    scenarios,
     chats,
     grades,
     attempts,
@@ -214,40 +261,36 @@ export default function SimulationPerformance({
   ]);
 
   // Calculate overall performance trend
-  const performanceTrend = useMemo(() => {
-    if (!simulationData.length) return { value: 0, isPositive: true };
+  const overallTrend = useMemo(() => {
+    if (!scenarioPerformanceData.length) return { value: 0, isPositive: true };
 
-    const avgCompletion =
-      simulationData.reduce(
-        (sum, simulation) => sum + simulation.completionRate,
-        0
-      ) / simulationData.length;
-    const avgScore =
-      simulationData.reduce((sum, simulation) => sum + simulation.avgScore, 0) /
-      simulationData.length;
+    const totalChange = scenarioPerformanceData.reduce(
+      (sum, scenario) => sum + scenario.performanceChange,
+      0
+    );
+    const avgChange = Math.round(totalChange / scenarioPerformanceData.length);
 
-    const overallPerformance = (avgCompletion + avgScore) / 2;
     return {
-      value: Math.round(overallPerformance),
-      isPositive: overallPerformance >= 70,
+      value: avgChange,
+      isPositive: avgChange >= 0,
     };
-  }, [simulationData]);
+  }, [scenarioPerformanceData]);
 
-  if (!simulationData.length) {
+  if (!availableSimulations.length) {
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
-            Simulation Performance
+            Scenario Performance
           </CardTitle>
           <CardDescription>
-            Performance metrics across different simulations
+            Performance trends for scenarios within simulations
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center flex-1">
           <p className="text-muted-foreground">
-            No simulation data available for the selected time period.
+            No simulations available for analysis.
           </p>
         </CardContent>
       </Card>
@@ -257,73 +300,195 @@ export default function SimulationPerformance({
   return (
     <Card className="w-full h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5" />
-          Simulation Performance
-        </CardTitle>
-        <CardDescription>
-          Performance metrics across different simulations
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Scenario Performance
+            </CardTitle>
+            <CardDescription>
+              Performance trends for scenarios within simulations
+            </CardDescription>
+          </div>
+
+          {/* Simulation Picker */}
+          <div className="flex items-center gap-2">
+            <Label className="text-sm font-medium">Simulation:</Label>
+            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={pickerOpen}
+                  className="w-48 justify-between"
+                >
+                  {selectedSimulation
+                    ? selectedSimulation.title
+                    : "Select simulation..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-0">
+                <Command>
+                  <CommandInput placeholder="Search simulations..." />
+                  <CommandEmpty>No simulation found.</CommandEmpty>
+                  <CommandGroup>
+                    {availableSimulations.map((simulation) => (
+                      <CommandItem
+                        key={simulation.id}
+                        value={simulation.id}
+                        onSelect={() => {
+                          setSelectedSimulation(simulation);
+                          setPickerOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedSimulation?.id === simulation.id
+                              ? "opacity-100"
+                              : "opacity-0"
+                          )}
+                        />
+                        <div>
+                          <div className="font-medium">{simulation.title}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {simulation.description}
+                          </div>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col justify-end items-start pb-0">
-        <div className="h-72 w-full max-w-[90%] self-start">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={simulationData}
-              layout="vertical"
-              margin={{ left: 80, right: 30, top: 20, bottom: 20 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis type="number" domain={[0, 100]} className="text-xs" />
-              <YAxis
-                type="category"
-                dataKey="name"
-                tickLine={false}
-                axisLine={false}
-                width={80}
-                className="text-xs"
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--background))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "6px",
-                }}
-                formatter={(value: number, name: string) => [
-                  name === "completionRate"
-                    ? `${value}%`
-                    : name === "avgScore"
-                      ? `${value}%`
-                      : `${value} min`,
-                  name === "completionRate"
-                    ? "Completion Rate"
-                    : name === "avgScore"
-                      ? "Average Score"
-                      : "Average Time",
-                ]}
-              />
-              <Bar
-                dataKey="completionRate"
-                fill="#3b82f6"
-                radius={[0, 4, 4, 0]}
-              />
-              <Bar dataKey="avgScore" fill="#10b981" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-      <CardContent className="flex-col gap-2 text-sm">
-        <div className="flex items-center gap-2 leading-none font-medium">
-          Overall Performance: {performanceTrend.value}%
-          <TrendingUp
-            className={`h-4 w-4 ${
-              performanceTrend.isPositive ? "" : "rotate-180"
-            }`}
-          />
-        </div>
-        <div className="text-muted-foreground leading-none">
-          Based on completion rates and average scores
-        </div>
+
+      <CardContent className="space-y-6 flex-1 flex flex-col">
+        {!selectedSimulation ? (
+          <div className="flex items-center justify-center flex-1">
+            <p className="text-muted-foreground">
+              Please select a simulation to view scenario performance.
+            </p>
+          </div>
+        ) : !scenarioPerformanceData.length ? (
+          <div className="flex items-center justify-center flex-1">
+            <p className="text-muted-foreground">
+              No scenario data available for the selected simulation and time
+              period.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Performance Summary */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Overall Trend:</span>
+                  <div className="flex items-center gap-1">
+                    {overallTrend.isPositive ? (
+                      <TrendingUp className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4 text-red-600" />
+                    )}
+                    <span
+                      className={`text-sm font-medium ${
+                        overallTrend.isPositive
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {overallTrend.isPositive ? "+" : ""}
+                      {overallTrend.value}%
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Average performance change across all scenarios
+                </p>
+              </div>
+
+              <div className="text-right">
+                <div className="text-sm font-medium">
+                  {scenarioPerformanceData.length} scenarios
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  with sufficient data
+                </div>
+              </div>
+            </div>
+
+            {/* Bar Chart */}
+            <div className="flex-1 min-h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={scenarioPerformanceData}
+                  margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    className="stroke-muted"
+                  />
+                  <XAxis
+                    dataKey="scenarioName"
+                    fontSize={12}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis domain={[0, 100]} fontSize={12} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--background))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "6px",
+                    }}
+                    formatter={(value: number, name: string) => [
+                      `${value}%`,
+                      name === "avgScore" ? "Average Score" : "Success Rate",
+                    ]}
+                  />
+                  <Bar
+                    dataKey="avgScore"
+                    fill="#3b82f6"
+                    name="Average Score"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="successRate"
+                    fill="#10b981"
+                    name="Success Rate"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Legend */}
+            <div className="flex items-center justify-center gap-6 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-blue-500"></div>
+                <span>Average Score</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-green-500"></div>
+                <span>Success Rate</span>
+              </div>
+            </div>
+
+            {/* Insights */}
+            <div className="text-sm text-muted-foreground">
+              <p className="leading-relaxed">
+                {overallTrend.isPositive
+                  ? `Scenarios in ${selectedSimulation.title} show an average improvement of ${overallTrend.value}%.`
+                  : `Scenarios in ${selectedSimulation.title} show an average decline of ${Math.abs(overallTrend.value)}%.`}{" "}
+                Each bar represents a scenario's performance metrics.
+              </p>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );

@@ -1,5 +1,6 @@
 // helpers/testing/renderWithMocks.tsx
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { AnalyticsProvider } from "@/contexts/analytics-context";
 import { AssistantProvider } from "@/contexts/assistant-context";
 import { ProfileProvider } from "@/contexts/profile-context";
 import { TourProvider } from "@/contexts/tour-context";
@@ -39,13 +40,15 @@ export function renderWithMocks(ui: React.ReactElement) {
   return render(
     <QueryClientProvider client={queryClient}>
       <ProfileProvider activeProfile={mockProfile}>
-        <AssistantProvider>
-          <WebSocketProvider profileId={mockProfile.id}>
-            <TourProvider>
-              <SidebarProvider>{ui}</SidebarProvider>
-            </TourProvider>
-          </WebSocketProvider>
-        </AssistantProvider>
+        <AnalyticsProvider>
+          <AssistantProvider>
+            <WebSocketProvider profileId={mockProfile.id}>
+              <TourProvider>
+                <SidebarProvider>{ui}</SidebarProvider>
+              </TourProvider>
+            </WebSocketProvider>
+          </AssistantProvider>
+        </AnalyticsProvider>
       </ProfileProvider>
     </QueryClientProvider>
   );

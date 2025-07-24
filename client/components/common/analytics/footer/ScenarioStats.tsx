@@ -1,12 +1,13 @@
 /**
  * ScenarioStats.tsx
- * This component displays the scenario stats for the personas.
+ * This component displays the scenario stats for the personas with scatter plots.
  * @AshokSaravanan222 & @siladiea
  * 07/23/2025
  */
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -14,6 +15,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
@@ -24,14 +40,15 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { isAfter, isBefore } from "date-fns";
-import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
-import { useMemo } from "react";
+import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
+import { useMemo, useState } from "react";
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
+  Cell,
   Legend,
   ResponsiveContainer,
+  Scatter,
+  ScatterChart,
   Tooltip,
   XAxis,
   YAxis,
@@ -43,60 +60,104 @@ export interface ScenarioStatsProps {
   profileId?: string;
 }
 
+type MetricType = "intensity" | "crowdedness" | "documentCount";
+
+interface MetricOption {
+  id: MetricType;
+  name: string;
+  description: string;
+  icon: string;
+}
+
+const METRIC_OPTIONS: MetricOption[] = [
+  {
+    id: "intensity",
+    name: "Intensity Level",
+    description: "Scenario intensity rating (1-10)",
+    icon: "🔥",
+  },
+  {
+    id: "crowdedness",
+    name: "Crowdedness",
+    description: "Number of students in scenario (1-10)",
+    icon: "👥",
+  },
+  {
+    id: "documentCount",
+    name: "Document Count",
+    description: "Number of documents available",
+    icon: "📄",
+  },
+];
+
 export default function ScenarioStats({
   dateStart,
   dateEnd,
   profileId,
 }: ScenarioStatsProps) {
+  const [selectedMetric, setSelectedMetric] = useState<MetricType>("intensity");
+  const [pickerOpen, setPickerOpen] = useState(false);
+
   // Fetch data
-  const { data: scenarios } = useQuery({
+  const { data: scenarios, isLoading: scenariosLoading } = useQuery({
     queryKey: ["scenarios"],
     queryFn: () => getAllScenarios(),
   });
 
-  const { data: personas } = useQuery({
+  const { data: personas, isLoading: personasLoading } = useQuery({
     queryKey: ["personas"],
     queryFn: () => getAllPersonas(),
   });
 
-  const { data: documents } = useQuery({
+  const { data: documents, isLoading: documentsLoading } = useQuery({
     queryKey: ["documents"],
     queryFn: () => getAllDocuments(),
   });
 
-  const { data: profiles } = useQuery({
+  const { data: profiles, isLoading: profilesLoading } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
   });
 
-  const { data: simulations } = useQuery({
+  const { data: simulations, isLoading: simulationsLoading } = useQuery({
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
   });
 
-  const { data: attempts } = useQuery({
+  const { data: attempts, isLoading: attemptsLoading } = useQuery({
     queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
     queryFn: () =>
       getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
     enabled: !!profiles && profiles.length > 0,
   });
 
-  const { data: chats } = useQuery({
+  const { data: chats, isLoading: chatsLoading } = useQuery({
     queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
     queryFn: () =>
       getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
     enabled: !!attempts && attempts.length > 0,
   });
 
-  const { data: grades } = useQuery({
+  const { data: grades, isLoading: gradesLoading } = useQuery({
     queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
     queryFn: () =>
       getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
     enabled: !!chats && chats.length > 0,
   });
 
-  // Calculate scenario analysis data
-  const scenarioAnalysis = useMemo(() => {
+  // Check if any data is still loading
+  const isLoading =
+    scenariosLoading ||
+    personasLoading ||
+    documentsLoading ||
+    profilesLoading ||
+    simulationsLoading ||
+    attemptsLoading ||
+    chatsLoading ||
+    gradesLoading;
+
+  // Calculate scenario performance data for scatter plots
+  const scenarioPerformanceData = useMemo(() => {
     if (
       !scenarios ||
       !personas ||
@@ -107,8 +168,27 @@ export default function ScenarioStats({
       !simulations ||
       !profiles
     ) {
-      return { highPerforming: [], lowPerforming: [], chartData: [] };
+      console.log("ScenarioStats: Missing required data", {
+        scenarios: !!scenarios,
+        personas: !!personas,
+        documents: !!documents,
+        attempts: !!attempts,
+        chats: !!chats,
+        grades: !!grades,
+        simulations: !!simulations,
+        profiles: !!profiles,
+      });
+      return [];
     }
+
+    console.log("ScenarioStats: Data available", {
+      scenariosCount: scenarios.length,
+      attemptsCount: attempts.length,
+      chatsCount: chats.length,
+      gradesCount: grades.length,
+      dateStart,
+      dateEnd,
+    });
 
     // Filter data by date range, exclude practice simulations, and filter by TA role
     const filteredGrades = grades.filter((grade) => {
@@ -136,11 +216,15 @@ export default function ScenarioStats({
       return inDateRange && notPractice && isTA && profileMatch;
     });
 
-    if (filteredGrades.length === 0)
-      return { highPerforming: [], lowPerforming: [], chartData: [] };
+    console.log("ScenarioStats: Filtered grades", {
+      originalGrades: grades.length,
+      filteredGrades: filteredGrades.length,
+    });
+
+    if (filteredGrades.length === 0) return [];
 
     // Calculate performance for each scenario
-    const scenarioPerformance = scenarios
+    const scenarioData = scenarios
       .map((scenario) => {
         const scenarioChats = chats.filter(
           (chat) => chat.scenarioId === scenario.id
@@ -161,92 +245,45 @@ export default function ScenarioStats({
             scenarioGrades.length
         );
 
+        // Get metric value based on selected metric
+        let metricValue = 0;
+        switch (selectedMetric) {
+          case "intensity":
+            metricValue = scenario.intensity || 0;
+            break;
+          case "crowdedness":
+            metricValue = scenario.crowdedness || 0;
+            break;
+          case "documentCount":
+            metricValue = scenario.documentIds?.length || 0;
+            break;
+        }
+
         return {
-          scenario,
-          successRate,
+          scenarioId: scenario.id,
+          scenarioName: scenario.name,
+          metricValue,
           avgScore,
+          successRate,
           totalAttempts: scenarioChats.length,
           completedAttempts: completedChats.length,
         };
       })
       .filter(
         (item): item is NonNullable<typeof item> =>
-          item !== null && item.totalAttempts >= 3
+          item !== null && item.totalAttempts >= 1 && item.metricValue >= 0
       );
 
-    // Sort by success rate
-    const sortedScenarios = [...scenarioPerformance].sort(
-      (a, b) => b.successRate - a.successRate
-    );
+    console.log("ScenarioStats: Final scenario data", {
+      scenariosWithData: scenarioData.length,
+      scenarios: scenarioData.map((s) => ({
+        name: s.scenarioName,
+        attempts: s.totalAttempts,
+        metricValue: s.metricValue,
+      })),
+    });
 
-    // Get top 3 high performing and bottom 3 low performing
-    const highPerforming = sortedScenarios.slice(0, 3);
-    const lowPerforming = sortedScenarios.slice(-3).reverse();
-
-    // Analyze traits for high vs low performing scenarios
-    const analyzeTraits = (scenarioList: typeof highPerforming) => {
-      const traitCounts = {
-        personaVariety: 0,
-        documentCount: 0,
-        intensityLevel: 0,
-        crowdedness: 0,
-      };
-
-      scenarioList.forEach((item) => {
-        const scenario = item.scenario;
-
-        // Count unique personas
-        if (scenario.personaId) traitCounts.personaVariety++;
-
-        // Count documents
-        if (scenario.documentIds && scenario.documentIds.length > 0) {
-          traitCounts.documentCount += scenario.documentIds.length;
-        }
-
-        // Average intensity and crowdedness
-        if (scenario.intensity)
-          traitCounts.intensityLevel += scenario.intensity;
-        if (scenario.crowdedness)
-          traitCounts.crowdedness += scenario.crowdedness;
-      });
-
-      const count = scenarioList.length;
-      return {
-        personaVariety: Math.round(traitCounts.personaVariety / count),
-        documentCount: Math.round(traitCounts.documentCount / count),
-        intensityLevel: Math.round(traitCounts.intensityLevel / count),
-        crowdedness: Math.round(traitCounts.crowdedness / count),
-      };
-    };
-
-    const highTraits = analyzeTraits(highPerforming);
-    const lowTraits = analyzeTraits(lowPerforming);
-
-    // Create chart data for visualization
-    const chartData = [
-      {
-        category: "Persona Variety",
-        highPerforming: highTraits.personaVariety,
-        lowPerforming: lowTraits.personaVariety,
-      },
-      {
-        category: "Document Count",
-        highPerforming: highTraits.documentCount,
-        lowPerforming: lowTraits.documentCount,
-      },
-      {
-        category: "Intensity Level",
-        highPerforming: highTraits.intensityLevel,
-        lowPerforming: lowTraits.intensityLevel,
-      },
-      {
-        category: "Crowdedness",
-        highPerforming: highTraits.crowdedness,
-        lowPerforming: lowTraits.crowdedness,
-      },
-    ];
-
-    return { highPerforming, lowPerforming, chartData };
+    return scenarioData;
   }, [
     scenarios,
     personas,
@@ -259,24 +296,96 @@ export default function ScenarioStats({
     dateStart,
     dateEnd,
     profileId,
+    selectedMetric,
   ]);
 
-  if (!scenarioAnalysis.chartData.length) {
+  // Calculate correlation coefficient
+  const correlation = useMemo(() => {
+    if (scenarioPerformanceData.length < 2) return 0;
+
+    const n = scenarioPerformanceData.length;
+    const sumX = scenarioPerformanceData.reduce(
+      (sum, item) => sum + item.metricValue,
+      0
+    );
+    const sumY = scenarioPerformanceData.reduce(
+      (sum, item) => sum + item.avgScore,
+      0
+    );
+    const sumXY = scenarioPerformanceData.reduce(
+      (sum, item) => sum + item.metricValue * item.avgScore,
+      0
+    );
+    const sumX2 = scenarioPerformanceData.reduce(
+      (sum, item) => sum + item.metricValue * item.metricValue,
+      0
+    );
+    const sumY2 = scenarioPerformanceData.reduce(
+      (sum, item) => sum + item.avgScore * item.avgScore,
+      0
+    );
+
+    const numerator = n * sumXY - sumX * sumY;
+    const denominator = Math.sqrt(
+      (n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY)
+    );
+
+    return denominator === 0 ? 0 : numerator / denominator;
+  }, [scenarioPerformanceData]);
+
+  const selectedMetricOption = METRIC_OPTIONS.find(
+    (m) => m.id === selectedMetric
+  );
+
+  if (isLoading) {
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
-            Scenario Analysis
+            Scenario Performance Analysis
           </CardTitle>
           <CardDescription>
-            Performance trends across scenario characteristics
+            Performance correlation with scenario characteristics
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center flex-1">
-          <p className="text-muted-foreground">
-            No scenario data available for the selected time period.
-          </p>
+          <p className="text-muted-foreground">Loading scenario data...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!scenarioPerformanceData.length) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Scenario Performance Analysis
+          </CardTitle>
+          <CardDescription>
+            Performance correlation with scenario characteristics
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center flex-1">
+          <div className="text-center space-y-2">
+            <p className="text-muted-foreground">
+              No scenario data available for the selected time period.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              This could be due to:
+            </p>
+            <ul className="text-xs text-muted-foreground text-left list-disc list-inside space-y-1">
+              <li>No TA role profiles in the selected date range</li>
+              <li>No completed simulation attempts</li>
+              <li>No scenarios with sufficient data (≥1 attempt)</li>
+              <li>Date range too restrictive</li>
+            </ul>
+            <p className="text-xs text-muted-foreground mt-2">
+              Check the browser console for detailed debugging information.
+            </p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -285,83 +394,208 @@ export default function ScenarioStats({
   return (
     <Card className="w-full h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5" />
-          Scenario Analysis
-        </CardTitle>
-        <CardDescription>
-          Performance trends across scenario characteristics
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6 flex-1 flex flex-col">
-        {/* Performance Summary */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-medium">High Performing</span>
-            </div>
-            <div className="space-y-1">
-              {scenarioAnalysis.highPerforming.map((item, index) => (
-                <Badge key={index} variant="outline" className="text-xs">
-                  {item.scenario.name.substring(0, 15)}... ({item.successRate}%)
-                </Badge>
-              ))}
-            </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Scenario Performance Analysis
+            </CardTitle>
+            <CardDescription>
+              Performance correlation with scenario characteristics
+            </CardDescription>
           </div>
-          <div className="space-y-2">
+
+          {/* Metric Picker */}
+          <div className="flex items-center gap-2">
+            <Label className="text-sm font-medium">Metric:</Label>
+            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={pickerOpen}
+                  className="w-48 justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <span>{selectedMetricOption?.icon}</span>
+                    <span>{selectedMetricOption?.name}</span>
+                  </div>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-0">
+                <Command>
+                  <CommandInput placeholder="Search metrics..." />
+                  <CommandEmpty>No metric found.</CommandEmpty>
+                  <CommandGroup>
+                    {METRIC_OPTIONS.map((metric) => (
+                      <CommandItem
+                        key={metric.id}
+                        value={metric.id}
+                        onSelect={() => {
+                          setSelectedMetric(metric.id);
+                          setPickerOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedMetric === metric.id
+                              ? "opacity-100"
+                              : "opacity-0"
+                          )}
+                        />
+                        <div className="flex items-center gap-2">
+                          <span>{metric.icon}</span>
+                          <div>
+                            <div className="font-medium">{metric.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {metric.description}
+                            </div>
+                          </div>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-6 flex-1 flex flex-col">
+        {/* Correlation Summary */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <TrendingDown className="h-4 w-4 text-red-600" />
-              <span className="text-sm font-medium">Needs Attention</span>
+              <span className="text-sm font-medium">Correlation:</span>
+              <Badge
+                variant={Math.abs(correlation) > 0.5 ? "default" : "secondary"}
+                className={cn(
+                  Math.abs(correlation) > 0.7
+                    ? "bg-green-100 text-green-800"
+                    : Math.abs(correlation) > 0.5
+                      ? "bg-yellow-100 text-yellow-800"
+                      : "bg-gray-100 text-gray-800"
+                )}
+              >
+                {correlation.toFixed(3)}
+              </Badge>
             </div>
-            <div className="space-y-1">
-              {scenarioAnalysis.lowPerforming.map((item, index) => (
-                <Badge key={index} variant="outline" className="text-xs">
-                  {item.scenario.name.substring(0, 15)}... ({item.successRate}%)
-                </Badge>
-              ))}
+            <p className="text-xs text-muted-foreground">
+              {Math.abs(correlation) > 0.7
+                ? "Strong correlation"
+                : Math.abs(correlation) > 0.5
+                  ? "Moderate correlation"
+                  : Math.abs(correlation) > 0.3
+                    ? "Weak correlation"
+                    : "No significant correlation"}{" "}
+              between {selectedMetricOption?.name.toLowerCase()} and performance
+            </p>
+          </div>
+
+          <div className="text-right">
+            <div className="text-sm font-medium">
+              {scenarioPerformanceData.length} scenarios
+            </div>
+            <div className="text-xs text-muted-foreground">
+              with sufficient data
             </div>
           </div>
         </div>
 
-        {/* Chart */}
-        <div className="flex-1">
+        {/* Scatter Plot */}
+        <div className="flex-1 min-h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={scenarioAnalysis.chartData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-            >
+            <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis dataKey="category" fontSize={12} />
-              <YAxis fontSize={12} />
+              <XAxis
+                type="number"
+                dataKey="metricValue"
+                name={selectedMetricOption?.name || "Metric"}
+                fontSize={12}
+                tickFormatter={(value) => {
+                  if (selectedMetric === "documentCount")
+                    return value.toString();
+                  return value.toString();
+                }}
+              />
+              <YAxis
+                type="number"
+                dataKey="avgScore"
+                name="Average Score"
+                fontSize={12}
+                domain={[0, 100]}
+              />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "hsl(var(--background))",
                   border: "1px solid hsl(var(--border))",
                   borderRadius: "6px",
                 }}
+                formatter={(value: number, name: string) => [
+                  name === "avgScore" ? `${value}%` : value,
+                  name === "avgScore"
+                    ? "Average Score"
+                    : selectedMetricOption?.name,
+                ]}
+                labelFormatter={(label) => {
+                  const dataPoint = scenarioPerformanceData.find(
+                    (item) => item.metricValue === label
+                  );
+                  return dataPoint ? dataPoint.scenarioName : label;
+                }}
               />
               <Legend />
-              <Bar
-                dataKey="highPerforming"
-                fill="#10b981"
-                name="High Performing"
-                radius={[4, 4, 0, 0]}
-              />
-              <Bar
-                dataKey="lowPerforming"
-                fill="#ef4444"
-                name="Low Performing"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
+              <Scatter
+                data={scenarioPerformanceData}
+                dataKey="avgScore"
+                fill="#3b82f6"
+                name="Average Score"
+              >
+                {scenarioPerformanceData.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={
+                      entry.successRate > 80
+                        ? "#10b981"
+                        : entry.successRate > 60
+                          ? "#f59e0b"
+                          : "#ef4444"
+                    }
+                    opacity={0.8}
+                  />
+                ))}
+              </Scatter>
+            </ScatterChart>
           </ResponsiveContainer>
+        </div>
+
+        {/* Legend */}
+        <div className="flex items-center justify-center gap-6 text-xs">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-green-500 opacity-80"></div>
+            <span>High Success Rate (&gt;80%)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-yellow-500 opacity-80"></div>
+            <span>Medium Success Rate (60-80%)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-red-500 opacity-80"></div>
+            <span>Low Success Rate (&lt;60%)</span>
+          </div>
         </div>
 
         {/* Insights */}
         <div className="text-sm text-muted-foreground">
-          <p className="leading-none">
-            Analysis based on scenario complexity factors and completion rates
+          <p className="leading-relaxed">
+            {correlation > 0.3
+              ? `Higher ${selectedMetricOption?.name.toLowerCase()} tends to correlate with ${correlation > 0 ? "better" : "worse"} performance.`
+              : `No clear relationship between ${selectedMetricOption?.name.toLowerCase()} and performance.`}{" "}
+            Each point represents a scenario's average score vs{" "}
+            {selectedMetricOption?.name.toLowerCase()}.
           </p>
         </div>
       </CardContent>

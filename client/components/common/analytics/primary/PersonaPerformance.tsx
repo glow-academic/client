@@ -129,36 +129,13 @@ export default function PersonaPerformance({
     );
   }, [simulations, selectedSimulations]);
 
-  // Get simulations that have scenarios with personas (excluding default simulations)
+  // Get simulations that have data (simplified logic)
   const simulationsWithData = useMemo(() => {
-    if (!simulations || !scenarios || !personas) return [];
+    if (!simulations) return [];
 
-    // Get all simulation IDs that have scenarios with personas and are not default simulations
-    const simulationIdsWithPersonas = new Set<string>();
-
-    // For each simulation, check if it has scenarios with personas
-    simulations.forEach((simulation) => {
-      // Get scenarios for this simulation
-      const simulationScenarios = scenarios.filter((scenario) =>
-        simulation.scenarioIds.includes(scenario.id)
-      );
-
-      // Check if any of these scenarios have a persona
-      const hasPersonaScenarios = simulationScenarios.some(
-        (scenario) =>
-          scenario.personaId &&
-          personas.some((persona) => persona.id === scenario.personaId)
-      );
-
-      if (hasPersonaScenarios) {
-        simulationIdsWithPersonas.add(simulation.id);
-      }
-    });
-
-    return simulations.filter(
-      (s) => simulationIdsWithPersonas.has(s.id) && !s.defaultSimulation
-    );
-  }, [simulations, scenarios, personas]);
+    // Return all simulations that are not practice simulations
+    return simulations.filter((s) => !s.practiceSimulation);
+  }, [simulations]);
 
   // Calculate performance by persona
   const performanceData = useMemo(() => {
@@ -358,9 +335,12 @@ export default function PersonaPerformance({
               Performance analysis by student persona type
             </CardDescription>
           </div>
-          {simulationsWithData && simulationsWithData.length > 0 && (
+          {simulations && simulations.length > 0 && (
             <SimulationPicker
-              simulations={simulationsWithData.map((s) => ({
+              simulations={(simulationsWithData.length > 0
+                ? simulationsWithData
+                : simulations
+              ).map((s) => ({
                 id: s.id,
                 title: s.title,
                 timeLimit: s.timeLimit || undefined,

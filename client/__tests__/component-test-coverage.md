@@ -1,8 +1,8 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 144
-- **Tests Created**: 0
+- **Total Components**: 146
+- **Tests Created**: 2
 - **Tests Updated**: 0
 - **Tests Skipped** (already implemented): 144
 
@@ -24,6 +24,7 @@
 | Persona | common/agent/Persona.tsx | Persona.test.tsx | ✅ Implemented |
 | SystemAgent | common/agent/SystemAgent.tsx | SystemAgent.test.tsx | ✅ Implemented |
 | AnalyticsFilters | common/analytics/AnalyticsFilters.tsx | AnalyticsFilters.test.tsx | ✅ Implemented |
+| GrowthPicker | common/analytics/GrowthPicker.tsx | GrowthPicker.test.tsx | ✅ Implemented |
 | ScenarioPerformance | common/analytics/footer/ScenarioPerformance.tsx | ScenarioPerformance.test.tsx | ✅ Implemented |
 | ScenarioStats | common/analytics/footer/ScenarioStats.tsx | ScenarioStats.test.tsx | ✅ Implemented |
 | SimulationPerformance | common/analytics/footer/SimulationPerformance.tsx | SimulationPerformance.test.tsx | ✅ Implemented |
@@ -106,6 +107,7 @@
 | Provider | common/provider/Provider.tsx | Provider.test.tsx | ✅ Implemented |
 | Rubric | common/rubric/Rubric.tsx | Rubric.test.tsx | ✅ Implemented |
 | RubricDetails | common/rubric/RubricDetails.tsx | RubricDetails.test.tsx | ✅ Implemented |
+| RubricPicker | common/rubric/RubricPicker.tsx | RubricPicker.test.tsx | ✅ Implemented |
 | RubricStandardGroup | common/rubric/RubricStandardGroup.tsx | RubricStandardGroup.test.tsx | ✅ Implemented |
 | TableRubric | common/rubric/TableRubric.tsx | TableRubric.test.tsx | ✅ Implemented |
 | Scenario | common/scenario/Scenario.tsx | Scenario.test.tsx | ✅ Implemented |
@@ -179,6 +181,7 @@ __tests__/
 │   │   ├── SystemAgent.test.tsx
 │   ├── analytics/
 │   │   ├── AnalyticsFilters.test.tsx
+│   │   ├── GrowthPicker.test.tsx
 │   │   ├── footer/
 │   │   │   ├── ScenarioPerformance.test.tsx
 │   │   │   ├── ScenarioStats.test.tsx
@@ -281,6 +284,7 @@ __tests__/
 │   ├── rubric/
 │   │   ├── Rubric.test.tsx
 │   │   ├── RubricDetails.test.tsx
+│   │   ├── RubricPicker.test.tsx
 │   │   ├── RubricStandardGroup.test.tsx
 │   │   ├── TableRubric.test.tsx
 │   ├── scenario/
