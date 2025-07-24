@@ -6,14 +6,16 @@
  */
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { Brain, Edit, Thermometer } from "lucide-react";
+import { Bot, Brain, Edit, Thermometer } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSystemAgentColumns } from "@/hooks/use-system-agent-columns";
 import { SystemAgent } from "@/types";
 import { getAllSystemAgents } from "@/utils/queries/system_agents/get-all-system-agents";
+import { SystemAgentsDataTable } from "./SystemAgentsDataTable";
 
 export default function SystemAgents() {
   const router = useRouter();
@@ -23,6 +25,10 @@ export default function SystemAgents() {
     queryKey: ["systemAgents"],
     queryFn: () => getAllSystemAgents(),
   });
+
+  // Get table columns and filter options
+  const { columns, reasoningOptions, modelOptions, temperatureOptions } =
+    useSystemAgentColumns();
 
   const handleEdit = (id: string) => {
     router.push(`/system/agents/a/${id}`);
@@ -42,6 +48,9 @@ export default function SystemAgents() {
         <div className="flex justify-between items-start">
           <div className="space-y-2 flex-1">
             <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-blue-500 bg-opacity-10">
+                <Bot className="h-4 w-4 text-blue-500" />
+              </div>
               <CardTitle className="text-base">
                 {agent.name || "Unnamed Agent"}
               </CardTitle>
@@ -86,18 +95,14 @@ export default function SystemAgents() {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-4">
-        <div className="grid gap-4">
-          {agents
-            .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-            .map(renderAgentCard)}
-          {agents.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No agents found. Create your first agent to get started.
-            </div>
-          )}
-        </div>
-      </div>
+      <SystemAgentsDataTable
+        columns={columns}
+        data={agents}
+        reasoningOptions={reasoningOptions}
+        modelOptions={modelOptions}
+        temperatureOptions={temperatureOptions}
+        renderAgentCard={renderAgentCard}
+      />
     </div>
   );
 }

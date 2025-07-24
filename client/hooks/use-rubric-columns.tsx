@@ -53,6 +53,14 @@ export function useRubricColumns() {
       },
       enableSorting: true,
       enableHiding: true,
+      filterFn: (row, id, value) => {
+        const points = row.getValue(id) as number;
+        if (value.includes("100+")) {
+          return points >= 100;
+        }
+        const [min, max] = value.split("-").map(Number);
+        return points >= min && points <= max;
+      },
     },
     {
       accessorKey: "passPoints",
@@ -65,6 +73,14 @@ export function useRubricColumns() {
       },
       enableSorting: true,
       enableHiding: true,
+      filterFn: (row, id, value) => {
+        const passPoints = row.getValue(id) as number;
+        if (value.includes("100+")) {
+          return passPoints >= 100;
+        }
+        const [min, max] = value.split("-").map(Number);
+        return passPoints >= min && passPoints <= max;
+      },
     },
     {
       accessorKey: "passPercentage",
@@ -80,6 +96,14 @@ export function useRubricColumns() {
       },
       enableSorting: true,
       enableHiding: true,
+      filterFn: (row, id, value) => {
+        const points = row.original.points;
+        const passPoints = row.original.passPoints;
+        const percentage =
+          points > 0 ? Math.round((passPoints / points) * 100) : 0;
+        const [min, max] = value.split("-").map(Number);
+        return percentage >= min && percentage <= max;
+      },
     },
     {
       accessorKey: "active",

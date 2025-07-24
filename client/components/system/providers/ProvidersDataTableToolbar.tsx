@@ -6,35 +6,35 @@ import { X } from "lucide-react";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Rubric } from "@/types";
+import { Model } from "@/types";
 
-export interface RubricsDataTableToolbarProps {
-  table: Table<Rubric>;
-  passPointsOptions: { value: string; label: string }[];
-  totalPointsOptions: { value: string; label: string }[];
-  passPercentageOptions: { value: string; label: string }[];
+export interface ProvidersDataTableToolbarProps {
+  table: Table<Model>;
+  providerOptions: { value: string; label: string }[];
+  customModelOptions: { value: string; label: string }[];
+  statusOptions: { value: string; label: string }[];
 }
 
-export function RubricsDataTableToolbar({
+export function ProvidersDataTableToolbar({
   table,
-  passPointsOptions,
-  totalPointsOptions,
-  passPercentageOptions,
-}: RubricsDataTableToolbarProps) {
+  providerOptions,
+  customModelOptions,
+  statusOptions,
+}: ProvidersDataTableToolbarProps) {
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
 
   const nameColumn = table.getColumn("name");
-  const pointsColumn = table.getColumn("points");
-  const passPointsColumn = table.getColumn("passPoints");
-  const passPercentageColumn = table.getColumn("passPercentage");
+  const providerColumn = table.getColumn("providerId");
+  const customModelColumn = table.getColumn("isCustom");
+  const statusColumn = table.getColumn("active");
 
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-1 items-center space-x-2 flex-wrap">
         <div className="mb-2">
           <Input
-            placeholder="Search rubrics..."
+            placeholder="Search models..."
             value={(nameColumn?.getFilterValue() as string) ?? ""}
             onChange={(event) => nameColumn?.setFilterValue(event.target.value)}
             className="h-8 w-[150px] lg:w-[250px]"
@@ -42,30 +42,30 @@ export function RubricsDataTableToolbar({
         </div>
 
         <div className="flex items-center space-x-2 flex-wrap mb-2">
-          {/* Total Points Filter */}
-          {pointsColumn && totalPointsOptions.length > 0 && (
+          {/* Provider Filter */}
+          {providerColumn && providerOptions.length > 0 && (
             <DataTableFacetedFilter
-              column={pointsColumn}
-              title="Total Points"
-              options={totalPointsOptions}
+              column={providerColumn}
+              title="Provider"
+              options={providerOptions}
             />
           )}
 
-          {/* Pass Points Filter */}
-          {passPointsColumn && passPointsOptions.length > 0 && (
+          {/* Custom Model Filter */}
+          {customModelColumn && customModelOptions.length > 0 && (
             <DataTableFacetedFilter
-              column={passPointsColumn}
-              title="Pass Points"
-              options={passPointsOptions}
+              column={customModelColumn}
+              title="Model Type"
+              options={customModelOptions}
             />
           )}
 
-          {/* Pass Percentage Filter */}
-          {passPercentageColumn && passPercentageOptions.length > 0 && (
+          {/* Status Filter */}
+          {statusColumn && statusOptions.length > 0 && (
             <DataTableFacetedFilter
-              column={passPercentageColumn}
-              title="Pass %"
-              options={passPercentageOptions}
+              column={statusColumn}
+              title="Status"
+              options={statusOptions}
             />
           )}
 

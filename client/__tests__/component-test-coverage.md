@@ -1,8 +1,8 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 148
-- **Tests Created**: 0
+- **Total Components**: 158
+- **Tests Created**: 10
 - **Tests Updated**: 0
 - **Tests Skipped** (already implemented): 148
 
@@ -120,9 +120,13 @@
 | NewPersona | create/personas/NewPersona.tsx | NewPersona.test.tsx | ✅ Implemented |
 | PersonaEdit | create/personas/PersonaEdit.tsx | PersonaEdit.test.tsx | ✅ Implemented |
 | Personas | create/personas/Personas.tsx | Personas.test.tsx | ✅ Implemented |
+| PersonasDataTable | create/personas/PersonasDataTable.tsx | PersonasDataTable.test.tsx | ✅ Implemented |
+| PersonasDataTableToolbar | create/personas/PersonasDataTableToolbar.tsx | PersonasDataTableToolbar.test.tsx | ✅ Implemented |
 | NewRubric | create/rubrics/NewRubric.tsx | NewRubric.test.tsx | ✅ Implemented |
 | RubricEdit | create/rubrics/RubricEdit.tsx | RubricEdit.test.tsx | ✅ Implemented |
 | Rubrics | create/rubrics/Rubrics.tsx | Rubrics.test.tsx | ✅ Implemented |
+| RubricsDataTable | create/rubrics/RubricsDataTable.tsx | RubricsDataTable.test.tsx | ✅ Implemented |
+| RubricsDataTableToolbar | create/rubrics/RubricsDataTableToolbar.tsx | RubricsDataTableToolbar.test.tsx | ✅ Implemented |
 | NewScenario | create/scenarios/NewScenario.tsx | NewScenario.test.tsx | ✅ Implemented |
 | ScenarioEdit | create/scenarios/ScenarioEdit.tsx | ScenarioEdit.test.tsx | ✅ Implemented |
 | Scenarios | create/scenarios/Scenarios.tsx | Scenarios.test.tsx | ✅ Implemented |
@@ -151,13 +155,19 @@
 | Profile | profile/Profile.tsx | Profile.test.tsx | ✅ Implemented |
 | EditSystemAgent | system/agents/EditSystemAgent.tsx | EditSystemAgent.test.tsx | ✅ Implemented |
 | SystemAgents | system/agents/SystemAgents.tsx | SystemAgents.test.tsx | ✅ Implemented |
+| SystemAgentsDataTable | system/agents/SystemAgentsDataTable.tsx | SystemAgentsDataTable.test.tsx | ✅ Implemented |
+| SystemAgentsDataTableToolbar | system/agents/SystemAgentsDataTableToolbar.tsx | SystemAgentsDataTableToolbar.test.tsx | ✅ Implemented |
 | Health | system/health/Health.tsx | Health.test.tsx | ✅ Implemented |
 | Logs | system/logs/Logs.tsx | Logs.test.tsx | ✅ Implemented |
+| LogsDataTable | system/logs/LogsDataTable.tsx | LogsDataTable.test.tsx | ✅ Implemented |
+| LogsDataTableToolbar | system/logs/LogsDataTableToolbar.tsx | LogsDataTableToolbar.test.tsx | ✅ Implemented |
 | ModelEdit | system/providers/ModelEdit.tsx | ModelEdit.test.tsx | ✅ Implemented |
 | NewModel | system/providers/NewModel.tsx | NewModel.test.tsx | ✅ Implemented |
 | NewProvider | system/providers/NewProvider.tsx | NewProvider.test.tsx | ✅ Implemented |
 | ProviderEdit | system/providers/ProviderEdit.tsx | ProviderEdit.test.tsx | ✅ Implemented |
 | Providers | system/providers/Providers.tsx | Providers.test.tsx | ✅ Implemented |
+| ProvidersDataTable | system/providers/ProvidersDataTable.tsx | ProvidersDataTable.test.tsx | ✅ Implemented |
+| ProvidersDataTableToolbar | system/providers/ProvidersDataTableToolbar.tsx | ProvidersDataTableToolbar.test.tsx | ✅ Implemented |
 
 ## Directory Structure
 
@@ -303,10 +313,14 @@ __tests__/
 │   │   ├── NewPersona.test.tsx
 │   │   ├── PersonaEdit.test.tsx
 │   │   ├── Personas.test.tsx
+│   │   ├── PersonasDataTable.test.tsx
+│   │   ├── PersonasDataTableToolbar.test.tsx
 │   ├── rubrics/
 │   │   ├── NewRubric.test.tsx
 │   │   ├── RubricEdit.test.tsx
 │   │   ├── Rubrics.test.tsx
+│   │   ├── RubricsDataTable.test.tsx
+│   │   ├── RubricsDataTableToolbar.test.tsx
 │   ├── scenarios/
 │   │   ├── NewScenario.test.tsx
 │   │   ├── ScenarioEdit.test.tsx
@@ -347,16 +361,22 @@ __tests__/
 │   ├── agents/
 │   │   ├── EditSystemAgent.test.tsx
 │   │   ├── SystemAgents.test.tsx
+│   │   ├── SystemAgentsDataTable.test.tsx
+│   │   ├── SystemAgentsDataTableToolbar.test.tsx
 │   ├── health/
 │   │   ├── Health.test.tsx
 │   ├── logs/
 │   │   ├── Logs.test.tsx
+│   │   ├── LogsDataTable.test.tsx
+│   │   ├── LogsDataTableToolbar.test.tsx
 │   ├── providers/
 │   │   ├── ModelEdit.test.tsx
 │   │   ├── NewModel.test.tsx
 │   │   ├── NewProvider.test.tsx
 │   │   ├── ProviderEdit.test.tsx
 │   │   ├── Providers.test.tsx
+│   │   ├── ProvidersDataTable.test.tsx
+│   │   ├── ProvidersDataTableToolbar.test.tsx
 
 ```
 
