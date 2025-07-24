@@ -730,8 +730,8 @@ export default function SimulationComposition({
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <BarChart3 className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
             Simulation Composition
           </CardTitle>
           <CardDescription>High vs low performing simulations</CardDescription>
@@ -756,8 +756,8 @@ export default function SimulationComposition({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <BarChart3 className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
               Simulation Composition
             </CardTitle>
             <CardDescription>

@@ -393,7 +393,7 @@ export default function SimulationPerformance({
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
+          <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Scenario Performance
           </CardTitle>
@@ -426,7 +426,7 @@ export default function SimulationPerformance({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2 text-lg">
+            <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Simulation Performance
             </CardTitle>
