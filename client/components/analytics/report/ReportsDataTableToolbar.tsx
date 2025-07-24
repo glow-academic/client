@@ -13,7 +13,6 @@ import React from "react";
 
 export interface ReportsDataTableToolbarProps {
   table: Table<TAPerformanceData>;
-  performanceOptions: { value: string; label: string }[];
   roleOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
   personaOptions: { value: string; label: string }[];
@@ -25,7 +24,6 @@ export interface ReportsDataTableToolbarProps {
 
 export function ReportsDataTableToolbar({
   table,
-  performanceOptions,
   roleOptions,
   cohortOptions,
   personaOptions,
@@ -38,7 +36,6 @@ export function ReportsDataTableToolbar({
   const isFiltered = table.getState().columnFilters.length > 0;
 
   const firstNameColumn = table.getColumn("firstName");
-  const averageScoreColumn = table.getColumn("averageScore");
   const taCohortsColumn = table.getColumn("taCohorts");
   const roleColumn = table.getColumn("role");
 
@@ -70,15 +67,6 @@ export function ReportsDataTableToolbar({
               column={roleColumn}
               title="Role"
               options={roleOptions}
-            />
-          )}
-
-          {/* Performance Filter */}
-          {averageScoreColumn && performanceOptions.length > 0 && (
-            <DataTableFacetedFilter
-              column={averageScoreColumn}
-              title="Performance"
-              options={performanceOptions}
             />
           )}
 

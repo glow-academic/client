@@ -3,13 +3,7 @@ import { DataTableColumnHeader } from "@/components/common/history/DataTableColu
 import { Checkbox } from "@/components/ui/checkbox";
 import { useQuery } from "@tanstack/react-query";
 import { ColumnDef, Row, Table } from "@tanstack/react-table";
-import {
-  Clock,
-  ExternalLink,
-  MessageCircle,
-  Target,
-  Timer,
-} from "lucide-react";
+import { Clock, MessageCircle, Target, Timer } from "lucide-react";
 import { useMemo } from "react";
 
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
@@ -124,28 +118,6 @@ export function useReportColumns({
   });
 
   // Create filter options
-  const performanceOptions = useMemo(
-    () => [
-      {
-        value: "all",
-        label: "All TAs",
-      },
-      {
-        value: "high",
-        label: "High Performers (≥85%)",
-      },
-      {
-        value: "medium",
-        label: "Medium Performers (75-84%)",
-      },
-      {
-        value: "low",
-        label: "Low Performers (<75%)",
-      },
-    ],
-    []
-  );
-
   const roleOptions = useMemo(
     () => [
       {
@@ -216,7 +188,7 @@ export function useReportColumns({
                     table.toggleAllPageRowsSelected(!!value)
                   }
                   aria-label="Select all"
-                  className="translate-y-[2px]"
+                  className="mr-2"
                 />
               ),
               cell: ({ row }: { row: Row<TAPerformanceData> }) => (
@@ -226,7 +198,7 @@ export function useReportColumns({
                     row.toggleSelected(!!value)
                   }
                   aria-label="Select row"
-                  className="translate-y-[2px]"
+                  className="mr-2"
                 />
               ),
               enableSorting: false,
@@ -238,24 +210,25 @@ export function useReportColumns({
       // Name column with risk indicator
       {
         accessorKey: "firstName",
-        header: "Name",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Name" />
+        ),
         cell: ({ row }) => {
           const ta = row.original;
           return (
             <div
-              className="flex items-center space-x-2 cursor-pointer hover:text-primary hover:underline justify-start pl-2 py-0"
+              className="flex items-center space-x-1 cursor-pointer hover:text-primary hover:underline justify-start pl-1 py-0"
               onClick={() => onViewReport(ta.id)}
               title="Click to view detailed report"
             >
               <div className="flex flex-col items-start">
-                <span className="text-sm font-medium">
+                <span className="text-xs font-medium">
                   {ta.firstName} {ta.lastName}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {ta.username}
                 </span>
               </div>
-              <ExternalLink className="h-3 w-3 text-muted-foreground" />
             </div>
           );
         },
@@ -283,15 +256,6 @@ export function useReportColumns({
               {ta.hasNoSessions ? "N/A" : `${ta.averageScore}%`}
             </div>
           );
-        },
-        filterFn: (row, _, value) => {
-          const ta = row.original;
-          if (value.includes("all")) return true;
-          if (value.includes("high")) return ta.averageScore >= 85;
-          if (value.includes("medium"))
-            return ta.averageScore >= 75 && ta.averageScore < 85;
-          if (value.includes("low")) return ta.averageScore < 75;
-          return true;
         },
         enableSorting: true,
       },
@@ -590,7 +554,6 @@ export function useReportColumns({
 
   return {
     columns,
-    performanceOptions,
     roleOptions,
     cohortOptions,
     personaOptions,

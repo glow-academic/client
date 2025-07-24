@@ -36,7 +36,6 @@ export default function Reports() {
 
   const {
     columns,
-    performanceOptions,
     roleOptions,
     cohortOptions,
     personaOptions,
@@ -824,7 +823,6 @@ export default function Reports() {
       <ReportsDataTable
         columns={columns}
         data={taPerformanceData}
-        performanceOptions={performanceOptions}
         roleOptions={roleOptions}
         cohortOptions={cohortOptions}
         personaOptions={personaOptions}

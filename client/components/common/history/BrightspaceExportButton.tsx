@@ -173,7 +173,7 @@ export function BrightspaceExportButton<TData>({
   return (
     <Popover open={exportPopoverOpen} onOpenChange={setExportPopoverOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="default" size="sm">
           <Download className="mr-2 h-4 w-4" />
           Brightspace Export {selectedRows > 0 ? `(${selectedRows})` : ""}
         </Button>

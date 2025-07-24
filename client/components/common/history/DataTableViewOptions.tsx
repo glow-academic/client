@@ -42,6 +42,13 @@ const columnMap = {
   name: "User",
   role: "Role",
   simsCompleted: "Sims Completed",
+  completionPercentage: "Completion",
+  firstAttemptPassRate: "First Pass",
+  highestScore: "Highest Score",
+  personaResponseTimes: "Response Time",
+  sessionEfficiency: "Efficiency",
+  stagnationRate: "Stagnation",
+  timeSpent: "Time Spent",
 };
 
 export interface DataTableViewOptionsProps<TData> {

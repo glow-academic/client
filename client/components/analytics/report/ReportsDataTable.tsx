@@ -30,7 +30,6 @@ import { ReportsDataTableToolbar } from "./ReportsDataTableToolbar";
 export interface ReportsDataTableProps {
   columns: ColumnDef<TAPerformanceData>[];
   data: TAPerformanceData[];
-  performanceOptions: { value: string; label: string }[];
   roleOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
   personaOptions: { value: string; label: string }[];
@@ -44,7 +43,6 @@ export interface ReportsDataTableProps {
 export function ReportsDataTable({
   columns,
   data,
-  performanceOptions,
   roleOptions,
   cohortOptions,
   personaOptions,
@@ -60,12 +58,9 @@ export function ReportsDataTable({
       personasTested: false,
       scenarioIds: false,
       simulationIds: false,
-      // Hide these columns by default
-      totalAttempts: false,
-      lastActivity: false,
-      completionRate: false,
-      avgTimeMinutes: false,
-      passRate: false,
+      role: false, // Hide role column from toggle view
+      personaResponseTimes: false,
+      stagnationRate: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -99,7 +94,6 @@ export function ReportsDataTable({
     <div className="space-y-2">
       <ReportsDataTableToolbar
         table={table}
-        performanceOptions={performanceOptions}
         roleOptions={roleOptions}
         cohortOptions={cohortOptions}
         personaOptions={personaOptions}
