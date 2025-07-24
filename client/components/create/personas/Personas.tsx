@@ -29,6 +29,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { Persona } from "@/types";
 import { createPersona } from "@/utils/mutations/personas/create-persona";
@@ -144,15 +150,29 @@ export default function Personas() {
               </CardTitle>
               <div className="flex gap-1">
                 {persona.reasoning && (
-                  <Badge variant="outline" className="text-xs">
-                    <Brain className="h-3 w-3 mr-1" />
-                    {persona.reasoning}
-                  </Badge>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="outline" className="text-xs cursor-help">
+                        <Brain className="h-3 w-3 mr-1" />
+                        {persona.reasoning}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Reasoning Level</p>
+                    </TooltipContent>
+                  </Tooltip>
                 )}
-                <Badge variant="outline" className="text-xs">
-                  <Thermometer className="h-3 w-3 mr-1" />
-                  {formatTemperature(persona.temperature)}
-                </Badge>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="text-xs cursor-help">
+                      <Thermometer className="h-3 w-3 mr-1" />
+                      {formatTemperature(persona.temperature)}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Randomness Level</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -209,44 +229,49 @@ export default function Personas() {
   );
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-4">
-        <div className="grid gap-4">
-          {personas
-            .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-            .map(renderPersonaCard)}
-          {personas.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No personas found. Create your first persona to get started.
-            </div>
-          )}
+    <TooltipProvider>
+      <div className="space-y-8">
+        <div className="space-y-4">
+          <div className="grid gap-4">
+            {personas
+              .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+              .map(renderPersonaCard)}
+            {personas.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No personas found. Create your first persona to get started.
+              </div>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Persona</AlertDialogTitle>
-            <AlertDialogDescription>
-              <p>
-                Are you sure you want to delete the persona "{deleteItem?.name}
-                "? This action cannot be undone.
-              </p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Persona</AlertDialogTitle>
+              <AlertDialogDescription>
+                <p>
+                  Are you sure you want to delete the persona "
+                  {deleteItem?.name}
+                  "? This action cannot be undone.
+                </p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </TooltipProvider>
   );
 }

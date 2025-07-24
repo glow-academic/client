@@ -196,8 +196,6 @@ export const getSectionRoute = (
       return "/management/staff";
     case "providers":
       return "/system/providers";
-    case "activity":
-      return "/management/activity";
     case "feedback":
       return "/management/feedback";
     case "system":

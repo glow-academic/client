@@ -301,6 +301,14 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
           </div>
 
           <div className="flex gap-2 justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+              disabled={isSubmitting}
+            >
+              Back
+            </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Updating..." : "Update Agent"}
             </Button>

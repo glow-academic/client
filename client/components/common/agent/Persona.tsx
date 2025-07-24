@@ -25,9 +25,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { createPersona } from "@/utils/mutations/personas/create-persona";
-import { getPersona } from "@/utils/queries/personas/get-persona";
-import { getAllModels } from "@/utils/queries/models/get-all-models";
 import { updatePersona } from "@/utils/mutations/personas/update-persona";
+import { getAllModels } from "@/utils/queries/models/get-all-models";
+import { getPersona } from "@/utils/queries/personas/get-persona";
 
 interface FormData {
   name?: string;
@@ -145,7 +145,9 @@ export default function Persona({
           color: "#000000",
         });
         queryClient.invalidateQueries({ queryKey: ["personas"] });
-        queryClient.invalidateQueries({ queryKey: ["persona", newPersona?.id] });
+        queryClient.invalidateQueries({
+          queryKey: ["persona", newPersona?.id],
+        });
         toast.success("Persona created successfully!");
       }
 
@@ -326,6 +328,14 @@ export default function Persona({
           </div>
 
           <div className="flex gap-2 justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push("/create/personas")}
+              disabled={isSubmitting}
+            >
+              Back
+            </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting
                 ? isEditMode

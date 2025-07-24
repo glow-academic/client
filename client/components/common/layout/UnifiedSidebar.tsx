@@ -345,12 +345,6 @@ export function UnifiedSidebar({
       });
 
       managementItems.push({
-        title: "Activity",
-        url: "#",
-        section: "activity",
-      });
-
-      managementItems.push({
         title: "Feedback",
         url: "#",
         section: "feedback",

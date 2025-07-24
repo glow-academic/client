@@ -28,7 +28,15 @@ import {
 import { Profile } from "@/types";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { useQuery } from "@tanstack/react-query";
-import { Pencil, Search, Shield, User as UserIcon } from "lucide-react";
+import {
+  Activity,
+  Clock,
+  Pencil,
+  RefreshCw,
+  Search,
+  Shield,
+  User as UserIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
 
@@ -82,10 +90,32 @@ const getRoleDisplayName = (role: string) => {
   }
 };
 
+const formatLastActive = (timestamp: string) => {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffInMinutes = Math.floor(
+    (now.getTime() - date.getTime()) / (1000 * 60)
+  );
+
+  if (diffInMinutes < 1) return "Just now";
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 30) return `${diffInDays}d ago`;
+
+  const diffInMonths = Math.floor(diffInDays / 30);
+  return `${diffInMonths}mo ago`;
+};
+
 export default function Staff() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [roleFilter, setRoleFilter] = React.useState<string>("all");
+  const [activityFilter, setActivityFilter] = React.useState<string>("all");
   const [sortBy, setSortBy] = React.useState<string>("name");
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   const router = useRouter();
 
@@ -93,6 +123,7 @@ export default function Staff() {
   const { data: allProfiles = [], isLoading } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 
   // Filter staff users (include admin, instructional, ta)
@@ -110,6 +141,13 @@ export default function Staff() {
     if (roleFilter !== "all") {
       filtered = filtered.filter(
         (profile: Profile) => profile.role === roleFilter
+      );
+    }
+
+    // Activity filter
+    if (activityFilter !== "all") {
+      filtered = filtered.filter((profile: Profile) =>
+        activityFilter === "active" ? profile.active : !profile.active
       );
     }
 
@@ -133,18 +171,33 @@ export default function Staff() {
           return a.role.localeCompare(b.role);
         case "email":
           return a.alias.localeCompare(b.alias);
+        case "activity":
+          // Sort by active status first, then by lastActive timestamp
+          if (a.active !== b.active) {
+            return a.active ? -1 : 1; // Active users first
+          }
+          return (
+            new Date(b.lastActive).getTime() - new Date(a.lastActive).getTime()
+          );
         default:
           return 0;
       }
     });
 
     return filtered;
-  }, [staffUsers, roleFilter, searchTerm, sortBy]);
+  }, [staffUsers, roleFilter, activityFilter, searchTerm, sortBy]);
 
-  // Get role counts for summary
-  const roleCounts = React.useMemo(() => {
+  // Get role and activity counts for summary
+  const counts = React.useMemo(() => {
+    const activeStaff = staffUsers.filter((profile: Profile) => profile.active);
+    const inactiveStaff = staffUsers.filter(
+      (profile: Profile) => !profile.active
+    );
+
     return {
       total: staffUsers.length,
+      active: activeStaff.length,
+      inactive: inactiveStaff.length,
       admin: staffUsers.filter((profile: Profile) => profile.role === "admin")
         .length,
       instructional: staffUsers.filter(
@@ -156,6 +209,16 @@ export default function Staff() {
 
   const handleEditUser = (profileId: string) => {
     router.push(`/management/staff/p/${profileId}`);
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // Force refetch of profiles data
+      await new Promise((resolve) => setTimeout(resolve, 500)); // Small delay for UX
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   if (isLoading) {
@@ -173,14 +236,36 @@ export default function Staff() {
   return (
     <div className="space-y-6">
       {/* Header with summary stats */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <UserIcon className="h-4 w-4 text-muted-foreground" />
               <div>
-                <p className="text-2xl font-bold">{roleCounts.total}</p>
+                <p className="text-2xl font-bold">{counts.total}</p>
                 <p className="text-sm text-muted-foreground">Total Staff</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-green-600" />
+              <div>
+                <p className="text-2xl font-bold">{counts.active}</p>
+                <p className="text-sm text-muted-foreground">Active</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-gray-400 rounded-full"></div>
+              <div>
+                <p className="text-2xl font-bold">{counts.inactive}</p>
+                <p className="text-sm text-muted-foreground">Inactive</p>
               </div>
             </div>
           </CardContent>
@@ -190,8 +275,8 @@ export default function Staff() {
             <div className="flex items-center gap-2">
               <Shield className="h-4 w-4 text-red-600" />
               <div>
-                <p className="text-2xl font-bold">{roleCounts.admin}</p>
-                <p className="text-sm text-muted-foreground">Administrators</p>
+                <p className="text-2xl font-bold">{counts.admin}</p>
+                <p className="text-sm text-muted-foreground">Admins</p>
               </div>
             </div>
           </CardContent>
@@ -201,7 +286,7 @@ export default function Staff() {
             <div className="flex items-center gap-2">
               <Shield className="h-4 w-4 text-blue-600" />
               <div>
-                <p className="text-2xl font-bold">{roleCounts.instructional}</p>
+                <p className="text-2xl font-bold">{counts.instructional}</p>
                 <p className="text-sm text-muted-foreground">Instructional</p>
               </div>
             </div>
@@ -212,7 +297,7 @@ export default function Staff() {
             <div className="flex items-center gap-2">
               <UserIcon className="h-4 w-4 text-purple-600" />
               <div>
-                <p className="text-2xl font-bold">{roleCounts.ta}</p>
+                <p className="text-2xl font-bold">{counts.ta}</p>
                 <p className="text-sm text-muted-foreground">TAs</p>
               </div>
             </div>
@@ -242,6 +327,16 @@ export default function Staff() {
             <SelectItem value="ta">Teaching Assistants</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={activityFilter} onValueChange={setActivityFilter}>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="Filter by activity" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="active">Active Only</SelectItem>
+            <SelectItem value="inactive">Inactive Only</SelectItem>
+          </SelectContent>
+        </Select>
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="Sort by" />
@@ -250,8 +345,19 @@ export default function Staff() {
             <SelectItem value="name">Name</SelectItem>
             <SelectItem value="role">Role</SelectItem>
             <SelectItem value="email">Email</SelectItem>
+            <SelectItem value="activity">Activity</SelectItem>
           </SelectContent>
         </Select>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+        >
+          <RefreshCw
+            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+          />
+        </Button>
       </div>
 
       {/* Staff Table */}
@@ -262,6 +368,8 @@ export default function Staff() {
               <TableHead>Staff Member</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Email</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-[120px]">Last Active</TableHead>
               <TableHead className="w-[100px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -269,10 +377,12 @@ export default function Staff() {
             {filteredUsers.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={4}
+                  colSpan={6}
                   className="text-center py-8 text-muted-foreground"
                 >
-                  {searchTerm || roleFilter !== "all"
+                  {searchTerm ||
+                  roleFilter !== "all" ||
+                  activityFilter !== "all"
                     ? "No staff members match your filters"
                     : "No staff members found"}
                 </TableCell>
@@ -311,6 +421,28 @@ export default function Staff() {
                     </TableCell>
                     <TableCell className="text-sm">
                       {profile.alias}@{process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            profile.active ? "bg-green-500" : "bg-gray-400"
+                          }`}
+                        ></div>
+                        <span
+                          className={`text-sm font-medium ${
+                            profile.active ? "text-green-700" : "text-gray-600"
+                          }`}
+                        >
+                          {profile.active ? "Active" : "Inactive"}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {formatLastActive(profile.lastActive)}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Button

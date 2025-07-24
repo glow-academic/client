@@ -390,6 +390,14 @@ export default function Provider({ providerId }: ProviderProps) {
         {/* Submit Button */}
         <div className="flex justify-end gap-4">
           <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.back()}
+            disabled={isSubmitting || isLoading}
+          >
+            Back
+          </Button>
+          <Button
             type="submit"
             disabled={isSubmitting || isLoading}
             className="min-w-[120px]"
