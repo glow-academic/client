@@ -63,6 +63,7 @@ export interface SimulationPerformanceProps {
     warning: number;
     success: number;
   };
+  autoSelectSimulation?: boolean; // New prop to control auto-selection
 }
 
 interface Simulation {
@@ -79,6 +80,7 @@ export default function SimulationPerformance({
   dateEnd,
   profileId,
   thresholds,
+  autoSelectSimulation = true,
 }: SimulationPerformanceProps) {
   const [selectedSimulation, setSelectedSimulation] =
     useState<Simulation | null>(null);
@@ -121,10 +123,12 @@ export default function SimulationPerformance({
     enabled: !!chats && chats.length > 0,
   });
 
-  // Filter simulations to exclude practice simulations
+  // Filter simulations to exclude practice simulations and those without data
   const availableSimulations = useMemo(() => {
-    if (!simulations) return [];
-    return simulations
+    if (!simulations || !chats || !grades || !attempts || !profiles) return [];
+
+    // First, get all non-practice, active simulations
+    const activeSimulations = simulations
       .filter((sim) => !sim.practiceSimulation && sim.active)
       .map((sim) => ({
         id: sim.id,
@@ -134,7 +138,85 @@ export default function SimulationPerformance({
         active: sim.active,
         practiceSimulation: sim.practiceSimulation,
       }));
-  }, [simulations]);
+
+    // Filter out simulations that don't have data in the selected date range
+    const simulationsWithData = activeSimulations.filter((sim) => {
+      // Check if this simulation has any attempts in the date range
+      const simulationAttempts = attempts.filter(
+        (attempt) => attempt.simulationId === sim.id
+      );
+
+      if (simulationAttempts.length === 0) return false;
+
+      // Check if any of these attempts have grades in the date range
+      const simulationChats = chats.filter((chat) =>
+        simulationAttempts.some((attempt) => attempt.id === chat.attemptId)
+      );
+
+      const simulationGrades = grades.filter((grade) => {
+        const gradeDate = new Date(grade.createdAt);
+        const chat = simulationChats.find(
+          (c) => c.id === grade.simulationChatId
+        );
+        if (!chat) return false;
+
+        const attempt = attempts.find((a) => a.id === chat.attemptId);
+        const profile = profiles?.find((p) => p.id === attempt?.profileId);
+
+        // Check date range
+        const inDateRange =
+          isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
+
+        // Filter by TA role
+        const isTA = profile?.role === "ta";
+
+        // Filter by profile if provided
+        const profileMatch = profileId
+          ? attempt?.profileId === profileId
+          : true;
+
+        return inDateRange && isTA && profileMatch;
+      });
+
+      // Only include simulations that have at least 2 grades (minimum for meaningful data)
+      return simulationGrades.length >= 2;
+    });
+
+    return simulationsWithData;
+  }, [
+    simulations,
+    chats,
+    grades,
+    attempts,
+    profiles,
+    dateStart,
+    dateEnd,
+    profileId,
+  ]);
+
+  // Auto-select simulation if enabled and available
+  useMemo(() => {
+    if (autoSelectSimulation && availableSimulations.length > 0) {
+      // If no simulation is selected, select the first one
+      if (!selectedSimulation) {
+        const firstSimulation = availableSimulations[0];
+        if (firstSimulation) {
+          setSelectedSimulation(firstSimulation);
+        }
+      } else {
+        // If selected simulation is no longer available, select the first available one
+        const isStillAvailable = availableSimulations.some(
+          (sim) => sim.id === selectedSimulation.id
+        );
+        if (!isStillAvailable) {
+          const firstSimulation = availableSimulations[0];
+          if (firstSimulation) {
+            setSelectedSimulation(firstSimulation);
+          }
+        }
+      }
+    }
+  }, [autoSelectSimulation, availableSimulations, selectedSimulation]);
 
   // Calculate scenario performance data for selected simulation
   const scenarioPerformanceData = useMemo(() => {
@@ -289,9 +371,20 @@ export default function SimulationPerformance({
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center flex-1">
-          <p className="text-muted-foreground">
-            No simulations available for analysis.
-          </p>
+          <div className="text-center space-y-2">
+            <p className="text-muted-foreground">
+              No simulations with data available for the selected time period.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              This could be due to:
+            </p>
+            <ul className="text-xs text-muted-foreground text-left list-disc list-inside space-y-1">
+              <li>No TA role profiles in the selected date range</li>
+              <li>No completed simulation attempts</li>
+              <li>No simulations with sufficient data (≥2 grades)</li>
+              <li>Date range too restrictive</li>
+            </ul>
+          </div>
         </CardContent>
       </Card>
     );

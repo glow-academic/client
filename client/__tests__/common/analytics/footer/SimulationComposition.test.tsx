@@ -8,7 +8,7 @@
 import SimulationComposition from "@/components/common/analytics/footer/SimulationComposition";
 import { renderWithMocks } from "@/test/renderWithMocks";
 import { screen } from "@testing-library/react";
-import { afterEach, describe, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Mock the queries
 vi.mock("@/utils/queries/profiles/get-all-profiles");

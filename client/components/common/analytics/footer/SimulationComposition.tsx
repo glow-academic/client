@@ -258,26 +258,26 @@ export default function SimulationComposition({
       const highIntensity = simScenarios.filter(
         (s) => s.intensity && s.intensity >= 7
       ).length;
-      attributes[0].highPerforming += highIntensity;
+      if (attributes[0]) attributes[0].highPerforming += highIntensity;
 
       // Count high crowdedness scenarios
       const highCrowdedness = simScenarios.filter(
         (s) => s.crowdedness && s.crowdedness >= 6
       ).length;
-      attributes[1].highPerforming += highCrowdedness;
+      if (attributes[1]) attributes[1].highPerforming += highCrowdedness;
 
       // Count document heavy scenarios
       const documentHeavy = simScenarios.filter(
         (s) => s.documentIds && s.documentIds.length >= 3
       ).length;
-      attributes[2].highPerforming += documentHeavy;
+      if (attributes[2]) attributes[2].highPerforming += documentHeavy;
 
       // Check if multi-scenario
       if (
         sim.simulation.scenarioIds &&
         sim.simulation.scenarioIds.length >= 3
       ) {
-        attributes[3].highPerforming += 1;
+        if (attributes[3]) attributes[3].highPerforming += 1;
       }
 
       // Check complexity (combination of factors)
@@ -290,7 +290,7 @@ export default function SimulationComposition({
           s.documentIds &&
           s.documentIds.length >= 2
       ).length;
-      attributes[4].highPerforming += complexScenarios;
+      if (attributes[4]) attributes[4].highPerforming += complexScenarios;
     });
 
     // Analyze low performing simulations
@@ -303,26 +303,26 @@ export default function SimulationComposition({
       const highIntensity = simScenarios.filter(
         (s) => s.intensity && s.intensity >= 7
       ).length;
-      attributes[0].lowPerforming += highIntensity;
+      if (attributes[0]) attributes[0].lowPerforming += highIntensity;
 
       // Count high crowdedness scenarios
       const highCrowdedness = simScenarios.filter(
         (s) => s.crowdedness && s.crowdedness >= 6
       ).length;
-      attributes[1].lowPerforming += highCrowdedness;
+      if (attributes[1]) attributes[1].lowPerforming += highCrowdedness;
 
       // Count document heavy scenarios
       const documentHeavy = simScenarios.filter(
         (s) => s.documentIds && s.documentIds.length >= 3
       ).length;
-      attributes[2].lowPerforming += documentHeavy;
+      if (attributes[2]) attributes[2].lowPerforming += documentHeavy;
 
       // Check if multi-scenario
       if (
         sim.simulation.scenarioIds &&
         sim.simulation.scenarioIds.length >= 3
       ) {
-        attributes[3].lowPerforming += 1;
+        if (attributes[3]) attributes[3].lowPerforming += 1;
       }
 
       // Check complexity (combination of factors)
@@ -335,7 +335,7 @@ export default function SimulationComposition({
           s.documentIds &&
           s.documentIds.length >= 2
       ).length;
-      attributes[4].lowPerforming += complexScenarios;
+      if (attributes[4]) attributes[4].lowPerforming += complexScenarios;
     });
 
     // Convert to chart data format

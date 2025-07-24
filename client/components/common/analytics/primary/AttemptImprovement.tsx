@@ -368,8 +368,8 @@ export default function AttemptImprovement({
 
     if (!firstAttempt || !lastAttempt) return null;
 
-    const firstScore = (scoreData as any)[firstAttempt];
-    const lastScore = (scoreData as any)[lastAttempt];
+    const firstScore = scoreData[firstAttempt as keyof typeof scoreData];
+    const lastScore = scoreData[lastAttempt as keyof typeof scoreData];
 
     if (typeof firstScore !== "number" || typeof lastScore !== "number")
       return null;

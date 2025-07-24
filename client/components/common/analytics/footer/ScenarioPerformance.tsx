@@ -434,7 +434,7 @@ export default function ScenarioPerformance({
               <Legend
                 verticalAlign="bottom"
                 height={36}
-                formatter={(value, entry, index) => {
+                formatter={(_, __, index) => {
                   const element = scenarioElements[index];
                   if (!element) return <span className="text-xs">Unknown</span>;
                   return (

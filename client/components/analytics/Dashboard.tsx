@@ -20,7 +20,7 @@ import { useState } from "react";
 import ScenarioPerformance from "../common/analytics/footer/ScenarioPerformance";
 import ScenarioStats from "../common/analytics/footer/ScenarioStats";
 import SimulationPerformance from "../common/analytics/footer/SimulationPerformance";
-import SimulationStats from "../common/analytics/footer/SimulationStats";
+import SimulationComposition from "../common/analytics/footer/SimulationComposition";
 import AverageScore from "../common/analytics/header/AverageScore";
 import CompletionPercentage from "../common/analytics/header/CompletionPercentage";
 import FirstAttemptPassRate from "../common/analytics/header/FirstAttemptPassRate";
@@ -213,7 +213,6 @@ export default function Dashboard({ profileId }: DashboardProps) {
       key="scenario-performance"
       dateStart={startDate}
       dateEnd={endDate}
-      thresholds={thresholds}
       {...(profileId && { profileId })}
     />,
     <ScenarioStats
@@ -232,10 +231,11 @@ export default function Dashboard({ profileId }: DashboardProps) {
       thresholds={thresholds}
       {...(profileId && { profileId })}
     />,
-    <SimulationStats
-      key="simulation-stats"
+    <SimulationComposition
+      key="simulation-composition"
       dateStart={startDate}
       dateEnd={endDate}
+      thresholds={thresholds}
       {...(profileId && { profileId })}
     />,
   ];
