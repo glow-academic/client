@@ -545,9 +545,9 @@ export default function Growth({ dateStart, dateEnd, profileId }: GrowthProps) {
       <CardContent className="flex-1 overflow-hidden">
         <div className="space-y-6">
           {/* Multi-line Chart */}
-          <div className="h-80">
+          <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={growthData}>
+              <LineChart data={growthData} margin={{ bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="date"
@@ -589,7 +589,7 @@ export default function Growth({ dateStart, dateEnd, profileId }: GrowthProps) {
 
           {/* Actionable Insights */}
           {getActionableInsights() && (
-            <div className="p-4 bg-muted rounded-lg">
+            <div className="p-3 bg-muted rounded-lg mt-2">
               <p className="text-sm text-muted-foreground">
                 {getActionableInsights()}
               </p>

@@ -32,6 +32,7 @@ import {
   Radar,
   RadarChart,
   ResponsiveContainer,
+  Tooltip,
 } from "recharts";
 
 export interface SkillPerformanceProps {
@@ -313,6 +314,18 @@ export default function SkillPerformance({
             <RadarChart data={radarData}>
               <PolarAngleAxis dataKey="metric" />
               <PolarGrid />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "hsl(var(--background))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: "6px",
+                }}
+                formatter={(value: number, name: string) => [
+                  `${value}%`,
+                  name === "value" ? "Score" : name,
+                ]}
+                labelFormatter={(label: string) => `Skill: ${label}`}
+              />
               <Radar
                 dataKey="value"
                 fill="#3b82f6"
