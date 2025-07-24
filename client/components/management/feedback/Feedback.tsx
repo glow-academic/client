@@ -8,7 +8,6 @@
 
 import { logError, logInfo } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { MessageSquare, RefreshCw } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -18,14 +17,6 @@ import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { FeedbackDataTable } from "./FeedbackDataTable";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface Profile {
@@ -42,7 +33,7 @@ export default function Feedback() {
   );
   const queryClient = useQueryClient();
 
-  const { data: feedbackData, isLoading: loadingFeedback } = useQuery({
+  const { data: feedbackData } = useQuery({
     queryKey: ["app_feedback"],
     queryFn: () => getAllAppFeedback(),
     refetchInterval: 60000, // Refetch every minute
@@ -184,115 +175,15 @@ export default function Feedback() {
   // Get table columns and filter options
   const { columns, typeOptions } = useFeedbackColumns(handleViewDetails);
 
-  if (loadingFeedback) {
-    return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                User Feedback
-              </CardTitle>
-              <CardDescription>
-                Feedback and suggestions from users
-              </CardDescription>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-              />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-64">
-            <div className="text-lg">Loading feedback...</div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!feedbackData || feedbackData.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                User Feedback
-              </CardTitle>
-              <CardDescription>
-                Feedback and suggestions from users
-              </CardDescription>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-              />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <MessageSquare className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <div className="text-lg text-muted-foreground">
-                No feedback found
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                User Feedback
-              </CardTitle>
-              <CardDescription>
-                Feedback and suggestions from users ({feedbackData.length}{" "}
-                total)
-              </CardDescription>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-              />
-            </Button>
-          </div>
-        </CardHeader>
-      </Card>
-
       <FeedbackDataTable
         columns={columns}
         data={tableData}
         typeOptions={typeOptions}
         profileOptions={profileOptions}
+        isRefreshing={isRefreshing}
+        onRefresh={handleRefresh}
       />
 
       {/* Detail Dialog */}

@@ -1,7 +1,8 @@
 "use client";
 
 import { Table } from "@tanstack/react-table";
-import { X } from "lucide-react";
+import { RefreshCw, X } from "lucide-react";
+import { useMemo } from "react";
 
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
@@ -13,12 +14,16 @@ export interface FeedbackDataTableToolbarProps {
   table: Table<FeedbackData>;
   typeOptions: { value: string; label: string }[];
   profileOptions: { value: string; label: string }[];
+  isRefreshing: boolean;
+  onRefresh: () => void;
 }
 
 export function FeedbackDataTableToolbar({
   table,
   typeOptions,
   profileOptions,
+  isRefreshing,
+  onRefresh,
 }: FeedbackDataTableToolbarProps) {
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -26,6 +31,21 @@ export function FeedbackDataTableToolbar({
   const messageColumn = table.getColumn("message");
   const typeColumn = table.getColumn("type");
   const authorColumn = table.getColumn("authorName");
+  const idColumn = table.getColumn("id");
+
+  // Generate ID options for filtering
+  const idOptions = useMemo(() => {
+    const uniqueIds = new Set<number>();
+    table.getFilteredRowModel().rows.forEach((row) => {
+      uniqueIds.add(row.original.id);
+    });
+    return Array.from(uniqueIds)
+      .sort((a, b) => a - b)
+      .map((id) => ({
+        value: id.toString(),
+        label: `ID: ${id}`,
+      }));
+  }, [table]);
 
   return (
     <div className="flex items-center justify-between">
@@ -42,6 +62,15 @@ export function FeedbackDataTableToolbar({
         </div>
 
         <div className="flex items-center space-x-2 flex-wrap mb-2">
+          {/* ID Filter */}
+          {idColumn && idOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={idColumn}
+              title="ID"
+              options={idOptions}
+            />
+          )}
+
           {/* Type Filter */}
           {typeColumn && typeOptions.length > 0 && (
             <DataTableFacetedFilter
@@ -74,6 +103,17 @@ export function FeedbackDataTableToolbar({
       </div>
 
       <div className="flex items-center space-x-2 mb-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onRefresh}
+          disabled={isRefreshing}
+        >
+          <RefreshCw
+            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+          />
+        </Button>
+
         <DataTableViewOptions table={table} />
       </div>
     </div>

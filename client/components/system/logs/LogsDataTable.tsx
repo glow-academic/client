@@ -23,12 +23,16 @@ export interface LogsDataTableProps {
   columns: ColumnDef<AppLog>[];
   data: AppLog[];
   levelOptions: { value: string; label: string }[];
+  onRefresh: () => void;
+  isRefreshing: boolean;
 }
 
 export function LogsDataTable({
   columns,
   data,
   levelOptions,
+  onRefresh,
+  isRefreshing,
 }: LogsDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -62,17 +66,22 @@ export function LogsDataTable({
     getFacetedUniqueValues: getFacetedUniqueValues(),
     initialState: {
       pagination: {
-        pageSize: 25,
+        pageSize: 10,
       },
     },
   });
 
   return (
     <div className="space-y-4">
-      <LogsDataTableToolbar table={table} levelOptions={levelOptions} />
-      <div className="border rounded-lg overflow-auto max-h-96">
+      <LogsDataTableToolbar
+        table={table}
+        levelOptions={levelOptions}
+        onRefresh={onRefresh}
+        isRefreshing={isRefreshing}
+      />
+      <div className="border rounded-lg">
         <table className="w-full">
-          <thead className="bg-muted/50 sticky top-0">
+          <thead className="bg-muted/50">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (

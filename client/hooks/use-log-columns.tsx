@@ -1,5 +1,6 @@
 "use client";
 
+import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,14 +27,19 @@ export function useLogColumns({ onViewLog }: UseLogColumnsProps) {
   const columns: ColumnDef<AppLog>[] = [
     {
       accessorKey: "id",
-      header: "ID",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="ID" />
+      ),
       cell: ({ row }) => (
         <div className="font-medium">{row.getValue("id")}</div>
       ),
+      enableSorting: true,
     },
     {
       accessorKey: "level",
-      header: "Level",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Level" />
+      ),
       cell: ({ row }) => {
         const level = row.getValue("level") as string;
         return (
@@ -45,10 +51,13 @@ export function useLogColumns({ onViewLog }: UseLogColumnsProps) {
       filterFn: (row, id, value) => {
         return value.includes(row.getValue(id));
       },
+      enableSorting: true,
     },
     {
       accessorKey: "message",
-      header: "Message",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Message" />
+      ),
       cell: ({ row }) => {
         const message = row.getValue("message") as string | null;
         const truncated = truncateText(message);
@@ -75,10 +84,13 @@ export function useLogColumns({ onViewLog }: UseLogColumnsProps) {
         if (!message) return false;
         return message.toLowerCase().includes(value.toLowerCase());
       },
+      enableSorting: true,
     },
     {
       accessorKey: "context",
-      header: "Context",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Context" />
+      ),
       cell: ({ row }) => {
         const context = row.getValue("context");
         return context ? (
@@ -95,15 +107,19 @@ export function useLogColumns({ onViewLog }: UseLogColumnsProps) {
           <span className="text-muted-foreground">None</span>
         );
       },
+      enableSorting: true,
     },
     {
       accessorKey: "createdAt",
-      header: "Created At",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Created At" />
+      ),
       cell: ({ row }) => (
         <div className="text-sm">
           {formatTimestamp(row.getValue("createdAt"))}
         </div>
       ),
+      enableSorting: true,
     },
   ];
 

@@ -1,3 +1,4 @@
+import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ColumnDef } from "@tanstack/react-table";
@@ -57,16 +58,25 @@ export function useFeedbackColumns(
   const columns: ColumnDef<FeedbackData>[] = [
     {
       accessorKey: "id",
-      header: "ID",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="ID" />
+      ),
       cell: ({ row }) => (
         <div className="font-medium text-center">{row.getValue("id")}</div>
       ),
       enableSorting: true,
       enableHiding: false,
+      enableColumnFilter: true,
+      filterFn: (row, _, value) => {
+        if (!value || value.length === 0) return true;
+        return value.includes(row.getValue("id"));
+      },
     },
     {
       accessorKey: "type",
-      header: "Type",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Type" />
+      ),
       cell: ({ row }) => {
         const type = row.getValue("type") as string;
         return (
@@ -79,10 +89,17 @@ export function useFeedbackColumns(
       },
       enableSorting: true,
       enableHiding: false,
+      enableColumnFilter: true,
+      filterFn: (row, _, value) => {
+        if (!value || value.length === 0) return true;
+        return value.includes(row.getValue("type"));
+      },
     },
     {
       accessorKey: "message",
-      header: "Message",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Message" />
+      ),
       cell: ({ row }) => (
         <div className="max-w-md">
           <span className="truncate">
@@ -90,12 +107,20 @@ export function useFeedbackColumns(
           </span>
         </div>
       ),
-      enableSorting: false,
+      enableSorting: true,
       enableHiding: false,
+      enableColumnFilter: true,
+      filterFn: (row, _, value) => {
+        if (!value || value.length === 0) return true;
+        const message = row.getValue("message") as string;
+        return message.toLowerCase().includes(value.toLowerCase());
+      },
     },
     {
       accessorKey: "authorName",
-      header: "Author",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Author" />
+      ),
       cell: ({ row }) => (
         <div className="flex flex-col">
           <span className="font-medium text-sm">
@@ -110,15 +135,27 @@ export function useFeedbackColumns(
       ),
       enableSorting: true,
       enableHiding: false,
+      enableColumnFilter: true,
+      filterFn: (row, _, value) => {
+        if (!value || value.length === 0) return true;
+        return value.includes(row.getValue("authorName"));
+      },
     },
     {
       accessorKey: "createdAt",
-      header: "Created At",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Created At" />
+      ),
       cell: ({ row }) => (
         <div className="text-sm text-center">{row.original.formattedDate}</div>
       ),
       enableSorting: true,
       enableHiding: false,
+      enableColumnFilter: true,
+      filterFn: (row, _, value) => {
+        if (!value || value.length === 0) return true;
+        return value.includes(row.original.formattedDate);
+      },
     },
     {
       id: "actions",

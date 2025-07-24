@@ -1,9 +1,10 @@
 "use client";
 
 import { Table } from "@tanstack/react-table";
-import { X } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AppLog } from "@/hooks/use-log-columns";
@@ -11,11 +12,15 @@ import { AppLog } from "@/hooks/use-log-columns";
 export interface LogsDataTableToolbarProps {
   table: Table<AppLog>;
   levelOptions: { value: string; label: string }[];
+  onRefresh: () => void;
+  isRefreshing: boolean;
 }
 
 export function LogsDataTableToolbar({
   table,
   levelOptions,
+  onRefresh,
+  isRefreshing,
 }: LogsDataTableToolbarProps) {
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -54,10 +59,27 @@ export function LogsDataTableToolbar({
               className="h-8 px-2 lg:px-3"
             >
               Reset
-              <X className="ml-2 h-4 w-4" />
             </Button>
           )}
         </div>
+      </div>
+
+      <div className="flex items-center space-x-2">
+        {/* Refresh Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onRefresh}
+          disabled={isRefreshing}
+          className="h-8 px-2"
+        >
+          <RefreshCw
+            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+          />
+        </Button>
+
+        {/* Column Visibility */}
+        <DataTableViewOptions table={table} />
       </div>
     </div>
   );

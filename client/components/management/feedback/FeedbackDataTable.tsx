@@ -34,6 +34,8 @@ export interface FeedbackDataTableProps {
   data: FeedbackData[];
   typeOptions: { value: string; label: string }[];
   profileOptions: { value: string; label: string }[];
+  isRefreshing: boolean;
+  onRefresh: () => void;
 }
 
 export function FeedbackDataTable({
@@ -41,6 +43,8 @@ export function FeedbackDataTable({
   data,
   typeOptions,
   profileOptions,
+  isRefreshing,
+  onRefresh,
 }: FeedbackDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -85,6 +89,8 @@ export function FeedbackDataTable({
         table={table}
         typeOptions={typeOptions}
         profileOptions={profileOptions}
+        isRefreshing={isRefreshing}
+        onRefresh={onRefresh}
       />
       <div className="rounded-md border overflow-x-auto">
         <Table>
