@@ -308,12 +308,13 @@ export default function ScenarioStats({
 
   // Generate insight text
   const getInsightText = () => {
+    const metricName = selectedMetricOption?.name.toLowerCase() || "metric";
     if (correlation > 0.3) {
-      return `Higher ${selectedMetricOption?.name.toLowerCase()} tends to correlate with better performance.`;
+      return `Higher ${metricName} tends to correlate with better performance.`;
     } else if (correlation < -0.3) {
-      return `Higher ${selectedMetricOption?.name.toLowerCase()} tends to correlate with worse performance.`;
+      return `Higher ${metricName} tends to correlate with worse performance.`;
     } else {
-      return `No clear relationship between ${selectedMetricOption?.name.toLowerCase()} and performance.`;
+      return `No clear relationship between ${metricName} and performance.`;
     }
   };
 
@@ -382,8 +383,8 @@ export default function ScenarioStats({
                   className="w-48 justify-between"
                 >
                   <div className="flex items-center gap-2">
-                    <span>{selectedMetricOption?.icon}</span>
-                    <span>{selectedMetricOption?.name}</span>
+                    <span>{selectedMetricOption?.icon || "📊"}</span>
+                    <span>{selectedMetricOption?.name || "Metric"}</span>
                   </div>
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -482,7 +483,7 @@ export default function ScenarioStats({
                   border: "1px solid hsl(var(--border))",
                   borderRadius: "6px",
                 }}
-                formatter={(value: number, name: string) => [
+                formatter={(value: number, _name: string) => [
                   `${value}%`,
                   "Average Score",
                 ]}
@@ -490,7 +491,8 @@ export default function ScenarioStats({
                   const dataPoint = aggregatedPerformanceData.find(
                     (item) => item.metricLevel === label
                   );
-                  return `${selectedMetricOption?.name} Level ${label} (${dataPoint?.scenarioCount} scenarios)`;
+                  const metricName = selectedMetricOption?.name || "Metric";
+                  return `${metricName} Level ${label} (${dataPoint?.scenarioCount || 0} scenarios)`;
                 }}
               />
               <Bar

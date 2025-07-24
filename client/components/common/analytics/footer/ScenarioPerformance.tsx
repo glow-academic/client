@@ -66,6 +66,7 @@ export interface ScenarioPerformanceProps {
 interface AttributeElement {
   id: string;
   name: string;
+  displayName: string;
   icon: string;
   color: string;
   count: number;
@@ -78,6 +79,7 @@ interface AttributeElement {
     score: number;
     timestamp: number;
   }>;
+  insight: string;
 }
 
 export default function ScenarioPerformance({
@@ -196,31 +198,36 @@ export default function ScenarioPerformance({
       | typeof scenarioTimes = [];
     let attributeKey: string = "";
     let nameKey: string = "";
+    let displayNameKey: string = "";
     let icon: string = "";
 
     switch (selectedAttribute) {
       case "classes":
         attributeData = scenarioClasses;
         attributeKey = "classId";
-        nameKey = "name";
+        nameKey = "classCode";
+        displayNameKey = "name";
         icon = "👨‍🏫";
         break;
       case "locations":
         attributeData = scenarioLocations;
         attributeKey = "locationId";
         nameKey = "name";
+        displayNameKey = "name";
         icon = "📍";
         break;
       case "deadlines":
         attributeData = scenarioDeadlines;
         attributeKey = "deadlineId";
         nameKey = "deadline";
+        displayNameKey = "deadline";
         icon = "⏰";
         break;
       case "times":
         attributeData = scenarioTimes;
         attributeKey = "timeId";
         nameKey = "description";
+        displayNameKey = "description";
         icon = "🕐";
         break;
     }
@@ -317,9 +324,37 @@ export default function ScenarioPerformance({
         }))
         .sort((a, b) => a.timestamp - b.timestamp);
 
+      // Generate insight for this attribute
+      let insight = "";
+      if (trendData.length >= 2) {
+        const recentScores = trendData.slice(-3);
+        const earlierScores = trendData.slice(0, 3);
+
+        if (recentScores.length > 0 && earlierScores.length > 0) {
+          const recentAvg =
+            recentScores.reduce((sum, item) => sum + item.score, 0) /
+            recentScores.length;
+          const earlierAvg =
+            earlierScores.reduce((sum, item) => sum + item.score, 0) /
+            earlierScores.length;
+          const improvement = recentAvg - earlierAvg;
+
+          if (improvement > 5) {
+            insight = `Performance has improved by ${Math.round(improvement)}% recently. Consider using this ${selectedAttribute.slice(0, -1)} more frequently.`;
+          } else if (improvement < -5) {
+            insight = `Performance has declined by ${Math.round(Math.abs(improvement))}% recently. Review training approach for this ${selectedAttribute.slice(0, -1)}.`;
+          } else {
+            insight = `Performance has remained stable. Current average score is ${Math.round(avgScore)}% with ${Math.round(completionRate)}% completion rate.`;
+          }
+        }
+      } else {
+        insight = `Limited data available. Current average score is ${Math.round(avgScore)}% with ${Math.round(completionRate)}% completion rate.`;
+      }
+
       return {
         id: attr.id,
         name: attr[nameKey as keyof typeof attr] as string,
+        displayName: attr[displayNameKey as keyof typeof attr] as string,
         icon,
         color: colors[index % colors.length] || "#3b82f6",
         count,
@@ -328,6 +363,7 @@ export default function ScenarioPerformance({
         completionRate: Math.round(completionRate),
         totalAttempts,
         trendData,
+        insight,
       };
     });
 
@@ -352,53 +388,6 @@ export default function ScenarioPerformance({
     selectedAttribute,
   ]);
 
-  // Get actionable insights
-  const getActionableInsights = (element: AttributeElement) => {
-    if (element.trendData.length < 2) return null;
-
-    const recentScores = element.trendData.slice(-3);
-    const earlierScores = element.trendData.slice(0, 3);
-
-    if (recentScores.length === 0 || earlierScores.length === 0) return null;
-
-    const recentAvg =
-      recentScores.reduce((sum, item) => sum + item.score, 0) /
-      recentScores.length;
-    const earlierAvg =
-      earlierScores.reduce((sum, item) => sum + item.score, 0) /
-      earlierScores.length;
-    const improvement = recentAvg - earlierAvg;
-
-    if (improvement > 5) {
-      return `Performance with ${element.name} ${selectedAttribute.slice(0, -1)} has improved significantly. Consider using this attribute more frequently.`;
-    } else if (improvement < -5) {
-      return `Performance with ${element.name} ${selectedAttribute.slice(0, -1)} has declined. Review training approach for this attribute.`;
-    }
-
-    return null;
-  };
-
-  if (!attributeElements.length) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Scenario Attribute Breakdown
-          </CardTitle>
-          <CardDescription>
-            Performance analysis by scenario attributes
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1">
-          <p className="text-muted-foreground">
-            No scenario data available for the selected time period.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className="w-full h-full flex flex-col">
       <CardHeader>
@@ -420,191 +409,152 @@ export default function ScenarioPerformance({
       </CardHeader>
 
       <CardContent className="space-y-6 flex-1 flex flex-col">
-        {/* Pie Chart */}
-        <div className="flex-1 min-h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={attributeElements}
-                dataKey="percentage"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={120}
-                innerRadius={60}
-                paddingAngle={2}
-              >
-                {attributeElements.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--background))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "6px",
-                }}
-                formatter={(value: number, name: string, _props: unknown) => {
-                  const element = attributeElements.find(
-                    (e) => e.name === name
-                  );
-                  if (!element) return [value, name];
+        {attributeElements.length === 0 ? (
+          <div className="flex items-center justify-center flex-1">
+            <p className="text-muted-foreground">
+              No scenario data available for the selected time period.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Pie Chart */}
+            <div className="flex-1 min-h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={attributeElements}
+                    dataKey="percentage"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={120}
+                    innerRadius={60}
+                    paddingAngle={2}
+                  >
+                    {attributeElements.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--background))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "6px",
+                    }}
+                    formatter={(
+                      value: number,
+                      name: string,
+                      _props: unknown
+                    ) => {
+                      const element = attributeElements.find(
+                        (e) => e.name === name
+                      );
+                      if (!element) return [value, name];
 
-                  return [
-                    <div key="tooltip" className="space-y-2">
-                      <div className="font-medium">
-                        {element.icon} {element.name}
-                      </div>
-                      <div className="text-sm space-y-1">
-                        <div>Usage: {element.percentage}%</div>
-                        <div>Scenarios: {element.count}</div>
-                        <div>Avg Score: {element.avgScore}%</div>
-                        <div>Completion: {element.completionRate}%</div>
-                        <div>Attempts: {element.totalAttempts}</div>
-                      </div>
-                    </div>,
-                    "",
-                  ];
-                }}
-              />
-              <Legend
-                verticalAlign="bottom"
-                height={36}
-                formatter={(_, __, index) => {
-                  const element = attributeElements[index];
-                  if (!element) return <span className="text-xs">Unknown</span>;
-                  return (
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <span className="text-xs cursor-pointer hover:text-primary transition-colors">
-                          {element.icon} {element.name}
-                        </span>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                          <DialogTitle className="flex items-center gap-2">
-                            <span className="text-lg">{element.icon}</span>
-                            {element.name} Performance
-                          </DialogTitle>
-                          <DialogDescription>
-                            Detailed performance analysis for {element.name}{" "}
-                            {selectedAttribute.slice(0, -1)}
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-6">
-                          {/* Performance Metrics */}
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="p-4 rounded-lg border">
-                              <div className="text-2xl font-bold">
-                                {element.avgScore}%
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                Average Score
-                              </div>
-                            </div>
-                            <div className="p-4 rounded-lg border">
-                              <div className="text-2xl font-bold">
-                                {element.completionRate}%
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                Completion Rate
-                              </div>
-                            </div>
-                            <div className="p-4 rounded-lg border">
-                              <div className="text-2xl font-bold">
-                                {element.count}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                Scenarios Used
-                              </div>
-                            </div>
-                            <div className="p-4 rounded-lg border">
-                              <div className="text-2xl font-bold">
-                                {element.totalAttempts}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                Total Attempts
-                              </div>
-                            </div>
+                      return [
+                        <div key="tooltip" className="space-y-2">
+                          <div className="font-medium">
+                            {element.icon} {element.displayName}
                           </div>
+                          <div className="text-sm space-y-1">
+                            <div>Usage: {element.percentage}%</div>
+                            <div>Scenarios: {element.count}</div>
+                            <div>Avg Score: {element.avgScore}%</div>
+                            <div>Completion: {element.completionRate}%</div>
+                            <div>Attempts: {element.totalAttempts}</div>
+                          </div>
+                        </div>,
+                        "",
+                      ];
+                    }}
+                  />
+                  <Legend
+                    verticalAlign="bottom"
+                    height={36}
+                    formatter={(_, __, index) => {
+                      const element = attributeElements[index];
+                      if (!element)
+                        return <span className="text-xs">Unknown</span>;
+                      return (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <span className="text-xs cursor-pointer hover:text-primary transition-colors flex items-center gap-1">
+                              <span style={{ color: element.color }}>●</span>
+                              {element.icon} {element.name}
+                            </span>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                              <DialogTitle className="flex items-center gap-2">
+                                <span className="text-lg">{element.icon}</span>
+                                {element.displayName} Performance
+                              </DialogTitle>
+                              <DialogDescription>
+                                Detailed performance analysis for{" "}
+                                {element.displayName}{" "}
+                                {selectedAttribute.slice(0, -1)}
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-6">
+                              {/* Performance Trend Chart */}
+                              {element.trendData.length > 0 && (
+                                <div className="h-64">
+                                  <ResponsiveContainer
+                                    width="100%"
+                                    height="100%"
+                                  >
+                                    <LineChart data={element.trendData}>
+                                      <XAxis
+                                        dataKey="date"
+                                        className="text-xs"
+                                        angle={-45}
+                                        textAnchor="end"
+                                        height={60}
+                                      />
+                                      <YAxis className="text-xs" />
+                                      <Tooltip
+                                        contentStyle={{
+                                          backgroundColor:
+                                            "hsl(var(--background))",
+                                          border:
+                                            "1px solid hsl(var(--border))",
+                                          borderRadius: "6px",
+                                        }}
+                                        formatter={(value: number) => [
+                                          `${value}%`,
+                                          "Score",
+                                        ]}
+                                      />
+                                      <Line
+                                        type="monotone"
+                                        dataKey="score"
+                                        stroke={element.color}
+                                        strokeWidth={2}
+                                        dot={{ r: 4 }}
+                                        name="Score"
+                                      />
+                                    </LineChart>
+                                  </ResponsiveContainer>
+                                </div>
+                              )}
 
-                          {/* Performance Trend Chart */}
-                          {element.trendData.length > 0 && (
-                            <div className="h-64">
-                              <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={element.trendData}>
-                                  <XAxis
-                                    dataKey="date"
-                                    className="text-xs"
-                                    angle={-45}
-                                    textAnchor="end"
-                                    height={60}
-                                  />
-                                  <YAxis className="text-xs" />
-                                  <Tooltip
-                                    contentStyle={{
-                                      backgroundColor: "hsl(var(--background))",
-                                      border: "1px solid hsl(var(--border))",
-                                      borderRadius: "6px",
-                                    }}
-                                    formatter={(value: number) => [
-                                      `${value}%`,
-                                      "Score",
-                                    ]}
-                                  />
-                                  <Line
-                                    type="monotone"
-                                    dataKey="score"
-                                    stroke={element.color}
-                                    strokeWidth={2}
-                                    dot={{ r: 4 }}
-                                    name="Score"
-                                  />
-                                </LineChart>
-                              </ResponsiveContainer>
+                              {/* Actionable Insights */}
+                              <div className="p-3 bg-muted rounded-lg">
+                                <p className="text-sm text-muted-foreground">
+                                  {element.insight}
+                                </p>
+                              </div>
                             </div>
-                          )}
-
-                          {/* Actionable Insights */}
-                          {getActionableInsights(element) && (
-                            <div className="p-3 bg-muted rounded-lg">
-                              <p className="text-sm text-muted-foreground">
-                                {getActionableInsights(element)}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  );
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Insights */}
-        <div className="text-sm text-muted-foreground">
-          <p className="leading-relaxed">
-            {attributeElements.length > 0 && (
-              <>
-                {attributeElements[0]?.name || "Some"} is the most commonly used{" "}
-                {selectedAttribute.slice(0, -1)} (
-                {attributeElements[0]?.percentage}% usage), while{" "}
-                {attributeElements[attributeElements.length - 1]?.name ||
-                  "others"}
-                are used less frequently. Performance varies across different{" "}
-                {selectedAttribute}, with{" "}
-                {attributeElements.find(
-                  (e) =>
-                    e.avgScore ===
-                    Math.max(...attributeElements.map((e) => e.avgScore))
-                )?.name || "some"}{" "}
-                showing the best results.
-              </>
-            )}
-          </p>
-        </div>
+                          </DialogContent>
+                        </Dialog>
+                      );
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );
