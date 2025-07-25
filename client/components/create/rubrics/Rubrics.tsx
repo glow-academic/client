@@ -24,8 +24,8 @@ import { createRubric } from "@/utils/mutations/rubrics/create-rubric";
 import { deleteRubric } from "@/utils/mutations/rubrics/delete-rubric";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 
+import TableRubric from "@/components/common/rubric/TableRubric";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,13 +67,6 @@ export default function Rubrics() {
     queryFn: () => getAllSimulations(),
   });
 
-  // Fetch standard groups for all rubrics
-  const { data: standardGroups = [] } = useQuery({
-    queryKey: ["standardGroups", rubrics.map((r) => r.id)],
-    queryFn: () => getStandardGroupsByRubrics(rubrics.map((r) => r.id)),
-    enabled: rubrics.length > 0,
-  });
-
   // Check if a rubric is being used by any simulations
   const isRubricInUse = (rubricId: string) => {
     return simulations.some((sim) => sim.rubricId === rubricId);
@@ -94,16 +87,6 @@ export default function Rubrics() {
     totalPointsOptions,
     passPercentageOptions,
   } = useRubricColumns();
-
-  // Helper function to get standard groups count for a rubric
-  const getStandardGroupsCount = (rubricId: string) => {
-    return standardGroups.filter((sg) => sg.rubricId === rubricId).length;
-  };
-
-  // Helper function to get simulations count for a rubric
-  const getSimulationsCount = (rubricId: string) => {
-    return simulations.filter((sim) => sim.rubricId === rubricId).length;
-  };
 
   const handleDelete = async () => {
     if (!deleteItem) return;
@@ -187,84 +170,72 @@ export default function Rubrics() {
 
   const renderRubricCard = (rubric: Rubric) => {
     const passPercentage = getPassPercentage(rubric);
-    const standardGroupsCount = getStandardGroupsCount(rubric.id);
-    const simulationsCount = getSimulationsCount(rubric.id);
 
     return (
-      <Card
-        key={rubric.id}
-        aria-label={rubric.name}
-        data-testid={`card-${rubric.id}`}
-        className="relative flex flex-col h-full"
-      >
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <CardTitle className="text-lg">{rubric.name}</CardTitle>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline">
-                  <Star className="h-3 w-3 mr-1" />
+      <Card key={rubric.id} className="w-full">
+        {/* Header */}
+        <CardHeader className="border-b">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <CardTitle className="text-2xl font-bold">
+                {rubric.name}
+              </CardTitle>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4" />
                   {rubric.points} total points
-                </Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <FileCheck className="h-4 w-4" />
+                  Pass: {rubric.passPoints} pts ({passPercentage}%)
+                </div>
                 <Badge variant={rubric.active ? "default" : "secondary"}>
                   {rubric.active ? "Active" : "Inactive"}
                 </Badge>
-                <Badge variant={rubric.defaultRubric ? "outline" : "secondary"}>
-                  {rubric.defaultRubric ? "Default" : "Custom"}
-                </Badge>
               </div>
+              {rubric.description && (
+                <p className="text-sm text-muted-foreground max-w-2xl">
+                  {rubric.description}
+                </p>
+              )}
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               {canEditRubric(rubric.id) && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  data-testid={`edit-${rubric.id}`}
-                  onClick={() => handleEdit(rubric.id)}
-                  aria-label={`Edit ${rubric.name}`}
-                >
-                  <Edit className="h-4 w-4" />
+                <Button variant="outline" onClick={() => handleEdit(rubric.id)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
                 </Button>
               )}
               {canDuplicate(rubric) && (
                 <Button
                   variant="outline"
-                  size="sm"
                   onClick={() => handleDuplicate(rubric)}
                   disabled={isDuplicating === rubric.id}
-                  aria-label={`Duplicate ${rubric.name}`}
                 >
                   {isDuplicating === rubric.id ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
                   ) : (
-                    <Copy className="h-4 w-4" />
+                    <Copy className="h-4 w-4 mr-2" />
                   )}
+                  Duplicate
                 </Button>
               )}
               {!isRubricInUse(rubric.id) && (
                 <Button
                   variant="outline"
-                  size="sm"
-                  data-testid={`delete-${rubric.id}`}
                   onClick={() => handleDeleteClick(rubric.id, rubric.name)}
-                  aria-label={`Delete ${rubric.name}`}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
                 </Button>
               )}
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-0 flex-grow flex flex-col">
-          <p className="text-sm text-muted-foreground line-clamp-2 flex-grow">
-            {rubric.description || "No description available"}
-          </p>
-          <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
-            <FileCheck className="h-3 w-3" />
-            Pass: {rubric.passPoints} pts ({passPercentage}%) •{" "}
-            {standardGroupsCount} standard groups • {simulationsCount}{" "}
-            simulations
-          </div>
+
+        {/* Rubric Table */}
+        <CardContent className="p-6">
+          <TableRubric rubricId={rubric.id} />
         </CardContent>
       </Card>
     );

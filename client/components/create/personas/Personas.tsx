@@ -155,51 +155,78 @@ export default function Personas() {
     const personaConfig = getPersonaConfig(persona.name);
     const IconComponent = personaConfig.icon;
 
+    // Extract color from the iconColor class and create explicit color classes
+    const colorMatch = personaConfig.colors.iconColor.match(/text-(\w+)-500/);
+    const colorName = colorMatch?.[1] || "slate";
+
+    // Explicit color mapping to ensure Tailwind recognizes the classes
+    const getColorClasses = (color: string) => {
+      switch (color) {
+        case "blue":
+          return { bg: "bg-blue-500", text: "text-blue-500" };
+        case "green":
+          return { bg: "bg-green-500", text: "text-green-500" };
+        case "red":
+          return { bg: "bg-red-500", text: "text-red-500" };
+        case "yellow":
+          return { bg: "bg-yellow-500", text: "text-yellow-500" };
+        case "purple":
+          return { bg: "bg-purple-500", text: "text-purple-500" };
+        case "pink":
+          return { bg: "bg-pink-500", text: "text-pink-500" };
+        case "indigo":
+          return { bg: "bg-indigo-500", text: "text-indigo-500" };
+        case "orange":
+          return { bg: "bg-orange-500", text: "text-orange-500" };
+        case "emerald":
+          return { bg: "bg-emerald-500", text: "text-emerald-500" };
+        case "amber":
+          return { bg: "bg-amber-500", text: "text-amber-500" };
+        default:
+          return { bg: "bg-slate-500", text: "text-slate-500" };
+      }
+    };
+
+    const colors = getColorClasses(colorName);
+
     return (
       <Card key={persona.id} className="hover:shadow-md transition-shadow">
         <CardHeader>
           <div className="flex justify-between items-start">
             <div className="space-y-2 flex-1">
               <div className="flex items-center gap-2">
-                <div
-                  className={`p-2 rounded-lg ${personaConfig.colors.bgColor} bg-opacity-10`}
-                >
-                  <IconComponent
-                    className={`h-4 w-4 ${personaConfig.colors.iconColor}`}
-                  />
+                <div className={`p-2 rounded-lg ${colors.bg} bg-opacity-10`}>
+                  <IconComponent className={`h-4 w-4 ${colors.text}`} />
                 </div>
                 <CardTitle className="text-base">
                   {persona.name || "Unnamed Persona"}
                 </CardTitle>
-                <div className="flex gap-1">
-                  {persona.reasoning && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge
-                          variant="outline"
-                          className="text-xs cursor-help"
-                        >
-                          <Brain className="h-3 w-3 mr-1" />
-                          {persona.reasoning}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Reasoning Level</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
+              </div>
+              <div className="flex gap-1">
+                {persona.reasoning && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Badge variant="outline" className="text-xs cursor-help">
-                        <Thermometer className="h-3 w-3 mr-1" />
-                        {formatTemperature(persona.temperature)}
+                        <Brain className="h-3 w-3 mr-1" />
+                        {persona.reasoning}
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Randomness Level</p>
+                      <p>Reasoning Level</p>
                     </TooltipContent>
                   </Tooltip>
-                </div>
+                )}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="text-xs cursor-help">
+                      <Thermometer className="h-3 w-3 mr-1" />
+                      {formatTemperature(persona.temperature)}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Randomness Level</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <p className="text-sm text-muted-foreground">
                 {persona.description || "No description available"}

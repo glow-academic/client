@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, varchar, text, bigint, timestamp, uuid, boolean, foreignKey, jsonb, doublePrecision, time, primaryKey, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, serial, integer, varchar, text, bigint, timestamp, uuid, boolean, foreignKey, jsonb, time, primaryKey, pgEnum } from "drizzle-orm/pg-core"
 export const assistantMessageType = pgEnum("assistant_message_type", ['user', 'assistant'])
 export const assistantToolType = pgEnum("assistant_tool_type", ['create', 'read', 'update', 'delete'])
 export const documentType = pgEnum("document_type", ['homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus'])
@@ -194,38 +194,6 @@ export const assistantToolCalls = pgTable("assistant_tool_calls", {
 			foreignColumns: [assistantChats.id],
 			name: "assistant_tool_calls_chat_id_fkey"
 		}),
-]);
-
-export const components = pgTable("components", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	description: text().notNull(),
-	fileName: text("file_name").notNull(),
-	layout: jsonb().default({}).notNull(),
-	stat: boolean().default(false).notNull(),
-	defaultComponent: boolean("default_component").default(false).notNull()});
-
-export const dashboards = pgTable("dashboards", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	profileId: uuid("profile_id"),
-	headerComponentIds: uuid("header_component_ids").array().default(["RAY"]).notNull(),
-	primaryComponentIds: uuid("primary_component_ids").array().default(["RAY"]).notNull(),
-	secondaryComponentIds: uuid("secondary_component_ids").array().default(["RAY"]).notNull(),
-	footerComponentIds: uuid("footer_component_ids").array().default(["RAY"]).notNull(),
-	autoScroll: boolean("auto_scroll").default(false).notNull(),
-	showIndicators: boolean("show_indicators").default(true).notNull(),
-	headerComponents: integer("header_components").default(3).notNull(),
-	mainSplit: doublePrecision("main_split").default(0.65).notNull(),
-	footerSplit: doublePrecision("footer_split").default(0.5).notNull()}, (table) => [
-	foreignKey({
-			columns: [table.profileId],
-			foreignColumns: [profiles.id],
-			name: "dashboards_profile_id_fkey"
-		}).onDelete("cascade"),
 ]);
 
 export const personas = pgTable("personas", {

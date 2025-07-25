@@ -83,6 +83,28 @@ vi.mock('@/utils/queries/cohorts/get-cohort', () => ({
   getCohort: vi.fn(() => mockSchema.cohorts?.[0] || null),
 }));
 
+// COMPONENTS QUERIES
+vi.mock('@/utils/queries/components/get-all-components', () => ({
+  getAllComponents: vi.fn(() => mockSchema.components || []),
+}));
+vi.mock('@/utils/queries/components/get-component', () => ({
+  getComponent: vi.fn(() => mockSchema.components?.[0] || null),
+}));
+
+// DASHBOARDS QUERIES
+vi.mock('@/utils/queries/dashboards/get-all-dashboards', () => ({
+  getAllDashboards: vi.fn(() => mockSchema.dashboards || []),
+}));
+vi.mock('@/utils/queries/dashboards/get-dashboard', () => ({
+  getDashboard: vi.fn(() => mockSchema.dashboards?.[0] || null),
+}));
+vi.mock('@/utils/queries/dashboards/get-dashboards-by-profile', () => ({
+  getDashboardsByProfile: vi.fn(() => mockSchema.dashboards || []),
+}));
+vi.mock('@/utils/queries/dashboards/get-dashboards-by-profiles', () => ({
+  getDashboardsByProfiles: vi.fn(() => mockSchema.dashboards || []),
+}));
+
 // DOCUMENTS QUERIES
 vi.mock('@/utils/queries/documents/get-all-documents', () => ({
   getAllDocuments: vi.fn(() => mockSchema.documents || []),

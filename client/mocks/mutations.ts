@@ -102,6 +102,36 @@ vi.mock('@/utils/mutations/cohorts/delete-cohorts', () => ({ deleteCohorts: dele
 vi.mock('@/utils/mutations/cohorts/update-cohort', () => ({ updateCohort: updateCohortMock }));
 vi.mock('@/utils/mutations/cohorts/update-cohorts', () => ({ updateCohorts: updateCohortsMock }));
 
+// COMPONENTS MUTATIONS
+export const createComponentMock = vi.fn(() => mockSchema.components?.[0] || {});
+export const createComponentsMock = vi.fn(() => mockSchema.components || []);
+export const deleteComponentMock = vi.fn(() => mockSchema.components?.[0] || {});
+export const deleteComponentsMock = vi.fn(() => mockSchema.components || []);
+export const updateComponentMock = vi.fn(() => mockSchema.components?.[0] || {});
+export const updateComponentsMock = vi.fn(() => mockSchema.components || []);
+
+vi.mock('@/utils/mutations/components/create-component', () => ({ createComponent: createComponentMock }));
+vi.mock('@/utils/mutations/components/create-components', () => ({ createComponents: createComponentsMock }));
+vi.mock('@/utils/mutations/components/delete-component', () => ({ deleteComponent: deleteComponentMock }));
+vi.mock('@/utils/mutations/components/delete-components', () => ({ deleteComponents: deleteComponentsMock }));
+vi.mock('@/utils/mutations/components/update-component', () => ({ updateComponent: updateComponentMock }));
+vi.mock('@/utils/mutations/components/update-components', () => ({ updateComponents: updateComponentsMock }));
+
+// DASHBOARDS MUTATIONS
+export const createDashboardMock = vi.fn(() => mockSchema.dashboards?.[0] || {});
+export const createDashboardsMock = vi.fn(() => mockSchema.dashboards || []);
+export const deleteDashboardMock = vi.fn(() => mockSchema.dashboards?.[0] || {});
+export const deleteDashboardsMock = vi.fn(() => mockSchema.dashboards || []);
+export const updateDashboardMock = vi.fn(() => mockSchema.dashboards?.[0] || {});
+export const updateDashboardsMock = vi.fn(() => mockSchema.dashboards || []);
+
+vi.mock('@/utils/mutations/dashboards/create-dashboard', () => ({ createDashboard: createDashboardMock }));
+vi.mock('@/utils/mutations/dashboards/create-dashboards', () => ({ createDashboards: createDashboardsMock }));
+vi.mock('@/utils/mutations/dashboards/delete-dashboard', () => ({ deleteDashboard: deleteDashboardMock }));
+vi.mock('@/utils/mutations/dashboards/delete-dashboards', () => ({ deleteDashboards: deleteDashboardsMock }));
+vi.mock('@/utils/mutations/dashboards/update-dashboard', () => ({ updateDashboard: updateDashboardMock }));
+vi.mock('@/utils/mutations/dashboards/update-dashboards', () => ({ updateDashboards: updateDashboardsMock }));
+
 // DOCUMENTS MUTATIONS
 export const createDocumentMock = vi.fn(() => mockSchema.documents?.[0] || {});
 export const createDocumentsMock = vi.fn(() => mockSchema.documents || []);

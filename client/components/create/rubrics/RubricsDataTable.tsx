@@ -81,11 +81,11 @@ export function RubricsDataTable({
         totalPointsOptions={totalPointsOptions}
         passPercentageOptions={passPercentageOptions}
       />
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-6">
         {table.getRowModel().rows.length ? (
           table.getRowModel().rows.map((row) => renderRubricCard(row.original))
         ) : (
-          <div className="col-span-full text-center py-8 text-muted-foreground">
+          <div className="text-center py-8 text-muted-foreground">
             No rubrics match the current filters.
           </div>
         )}
