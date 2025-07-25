@@ -41,11 +41,16 @@ import { useMemo, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import SimulationCompositionPicker, {
   SimulationCompositionConfig,
-} from "./SimulationCompositionPicker";
+} from "../SimulationCompositionPicker";
 
 export interface SimulationCompositionProps {
   dateStart: Date;
   dateEnd: Date;
+  thresholds: {
+    danger: number;
+    warning: number;
+    success: number;
+  };
   profileId?: string;
 }
 
@@ -79,6 +84,7 @@ export default function SimulationComposition({
   dateStart,
   dateEnd,
   profileId,
+  thresholds,
 }: SimulationCompositionProps) {
   // Configuration state
   const [config, setConfig] = useState<SimulationCompositionConfig>({
@@ -726,6 +732,41 @@ export default function SimulationComposition({
     (simulationComposition.highPerformingCount ?? 0) > 0 ||
     (simulationComposition.lowPerformingCount ?? 0) > 0;
 
+  // Calculate threshold status based on performance differences
+  const getThresholdStatus = () => {
+    if (!hasAnyData) return "neutral";
+
+    // Calculate average performance of high vs low performing simulations
+    const highPerformingAvg =
+      simulationComposition.highPerformingDetails.reduce(
+        (sum, sim) => sum + sim.avgScore,
+        0
+      ) / Math.max(simulationComposition.highPerformingDetails.length, 1);
+
+    const lowPerformingAvg =
+      simulationComposition.lowPerformingDetails.reduce(
+        (sum, sim) => sum + sim.avgScore,
+        0
+      ) / Math.max(simulationComposition.lowPerformingDetails.length, 1);
+
+    const performanceGap = highPerformingAvg - lowPerformingAvg;
+
+    // Determine status based on performance gap and overall performance
+    if (
+      performanceGap >= thresholds.success &&
+      highPerformingAvg >= thresholds.success
+    )
+      return "success";
+    if (
+      performanceGap >= thresholds.warning ||
+      highPerformingAvg >= thresholds.warning
+    )
+      return "warning";
+    return "danger";
+  };
+
+  const thresholdStatus = getThresholdStatus();
+
   if (!hasAnyData) {
     return (
       <Card className="w-full h-full flex flex-col">
@@ -752,7 +793,18 @@ export default function SimulationComposition({
   }
 
   return (
-    <Card className="w-full h-full flex flex-col">
+    <Card className="w-full h-full flex flex-col relative">
+      <div
+        className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+          thresholdStatus === "success"
+            ? "bg-green-500"
+            : thresholdStatus === "warning"
+              ? "bg-yellow-500"
+              : thresholdStatus === "danger"
+                ? "bg-red-500"
+                : "bg-gray-400"
+        }`}
+      />
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>

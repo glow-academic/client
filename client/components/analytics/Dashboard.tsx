@@ -169,6 +169,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       key="growth"
       dateStart={startDate}
       dateEnd={endDate}
+      thresholds={thresholds}
       {...(profileId && { profileId })}
     />,
     <PersonaPerformance
@@ -182,6 +183,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       key="rubric-heatmap"
       dateStart={startDate}
       dateEnd={endDate}
+      thresholds={thresholds}
       {...(profileId && { profileId })}
     />,
   ];
@@ -198,12 +200,14 @@ export default function Dashboard({ profileId }: DashboardProps) {
       key="attempt-improvement"
       dateStart={startDate}
       dateEnd={endDate}
+      thresholds={thresholds}
       {...(profileId && { profileId })}
     />,
     <SkillPerformance
       key="skill-performance"
       dateStart={startDate}
       dateEnd={endDate}
+      thresholds={thresholds}
       {...(profileId && { profileId })}
     />,
   ];
@@ -213,12 +217,14 @@ export default function Dashboard({ profileId }: DashboardProps) {
       key="scenario-performance"
       dateStart={startDate}
       dateEnd={endDate}
+      thresholds={thresholds}
       {...(profileId && { profileId })}
     />,
     <ScenarioStats
       key="scenario-stats"
       dateStart={startDate}
       dateEnd={endDate}
+      thresholds={thresholds}
       {...(profileId && { profileId })}
     />,
   ];
@@ -235,6 +241,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       key="simulation-composition"
       dateStart={startDate}
       dateEnd={endDate}
+      thresholds={thresholds}
       {...(profileId && { profileId })}
     />,
   ];

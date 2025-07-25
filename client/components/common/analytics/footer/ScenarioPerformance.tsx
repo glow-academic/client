@@ -50,17 +50,17 @@ import {
 } from "recharts";
 import ScenarioAttributePicker, {
   ScenarioAttributeType,
-} from "./ScenarioAttributePicker";
+} from "../ScenarioAttributePicker";
 
 export interface ScenarioPerformanceProps {
   dateStart: Date;
   dateEnd: Date;
-  profileId?: string;
   thresholds: {
     danger: number;
     warning: number;
     success: number;
   };
+  profileId?: string;
 }
 
 interface AttributeElement {
@@ -86,7 +86,8 @@ export default function ScenarioPerformance({
   dateStart,
   dateEnd,
   profileId,
-}: Omit<ScenarioPerformanceProps, "thresholds">) {
+  thresholds,
+}: ScenarioPerformanceProps) {
   const [selectedAttribute, setSelectedAttribute] =
     useState<ScenarioAttributeType>("classes");
 
@@ -414,8 +415,35 @@ export default function ScenarioPerformance({
     selectedAttribute,
   ]);
 
+  // Calculate threshold status based on attribute performance
+  const getThresholdStatus = () => {
+    if (attributeElements.length === 0) return "neutral";
+
+    // Calculate average performance across all attributes
+    const avgPerformance =
+      attributeElements.reduce((sum, element) => sum + element.avgScore, 0) /
+      attributeElements.length;
+
+    if (avgPerformance >= thresholds.success) return "success";
+    if (avgPerformance >= thresholds.warning) return "warning";
+    return "danger";
+  };
+
+  const thresholdStatus = getThresholdStatus();
+
   return (
-    <Card className="w-full h-full flex flex-col">
+    <Card className="w-full h-full flex flex-col relative">
+      <div
+        className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+          thresholdStatus === "success"
+            ? "bg-green-500"
+            : thresholdStatus === "warning"
+              ? "bg-yellow-500"
+              : thresholdStatus === "danger"
+                ? "bg-red-500"
+                : "bg-gray-400"
+        }`}
+      />
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

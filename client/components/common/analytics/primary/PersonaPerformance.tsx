@@ -55,12 +55,12 @@ import {
 export interface PersonaPerformanceProps {
   dateStart: Date;
   dateEnd: Date;
-  profileId?: string;
   thresholds: {
     danger: number;
     warning: number;
     success: number;
   };
+  profileId?: string;
 }
 
 export default function PersonaPerformance({
@@ -268,6 +268,22 @@ export default function PersonaPerformance({
     filteredSimulations,
   ]);
 
+  // Calculate threshold status based on persona performance data
+  const getThresholdStatus = () => {
+    if (performanceData.length === 0) return "neutral";
+
+    // Calculate average score across all personas
+    const avgScore =
+      performanceData.reduce((sum, persona) => sum + persona.score, 0) /
+      performanceData.length;
+
+    if (avgScore >= thresholds.success) return "success";
+    if (avgScore >= thresholds.warning) return "warning";
+    return "danger";
+  };
+
+  const thresholdStatus = getThresholdStatus();
+
   // Get background color based on performance thresholds
   const getBackgroundColor = (score: number) => {
     if (score >= thresholds.success) return "bg-green-50 dark:bg-green-950";
@@ -303,7 +319,18 @@ export default function PersonaPerformance({
 
   if (!performanceData.length) {
     return (
-      <Card className="w-full h-full flex flex-col">
+      <Card className="w-full h-full flex flex-col relative">
+        <div
+          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+            thresholdStatus === "success"
+              ? "bg-green-500"
+              : thresholdStatus === "warning"
+                ? "bg-yellow-500"
+                : thresholdStatus === "danger"
+                  ? "bg-red-500"
+                  : "bg-gray-400"
+          }`}
+        />
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
@@ -323,7 +350,18 @@ export default function PersonaPerformance({
   }
 
   return (
-    <Card className="w-full h-full flex flex-col">
+    <Card className="w-full h-full flex flex-col relative">
+      <div
+        className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+          thresholdStatus === "success"
+            ? "bg-green-500"
+            : thresholdStatus === "warning"
+              ? "bg-yellow-500"
+              : thresholdStatus === "danger"
+                ? "bg-red-500"
+                : "bg-gray-400"
+        }`}
+      />
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

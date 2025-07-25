@@ -25,9 +25,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationChatGradesByRubrics } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-rubrics";
+import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useQuery } from "@tanstack/react-query";
@@ -38,6 +41,12 @@ import { useMemo, useState } from "react";
 export interface RubricHeatmapProps {
   dateStart: Date;
   dateEnd: Date;
+  thresholds: {
+    danger: number;
+    warning: number;
+    success: number;
+  };
+  profileId?: string;
 }
 
 // Calculate Pearson correlation coefficient
@@ -62,6 +71,8 @@ function calculateCorrelation(x: number[], y: number[]): number {
 export default function RubricHeatmap({
   dateStart,
   dateEnd,
+  thresholds,
+  profileId,
 }: RubricHeatmapProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<Rubric[]>([]);
 
@@ -116,6 +127,26 @@ export default function RubricHeatmap({
     enabled: !!grades && grades.length > 0,
   });
 
+  // Fetch chats and attempts for profile filtering
+  const { data: profiles } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getAllProfiles(),
+  });
+
+  const { data: attempts } = useQuery({
+    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
+    queryFn: () =>
+      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
+    enabled: !!profiles && profiles.length > 0,
+  });
+
+  const { data: chats } = useQuery({
+    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
+    queryFn: () =>
+      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
+    enabled: !!attempts && attempts.length > 0,
+  });
+
   // Calculate correlation matrix for standard groups
   const correlationMatrix = useMemo(() => {
     if (
@@ -130,10 +161,27 @@ export default function RubricHeatmap({
 
     if (grades.length === 0) return { matrix: [], insights: null };
 
-    // Filter grades by date range
+    // Filter grades by date range and profile
     const filteredGrades = grades.filter((grade) => {
       const gradeDate = new Date(grade.createdAt);
-      return isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
+      const inDateRange =
+        isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
+
+      // Filter by profile if provided - need to get profile through chat -> attempt
+      let profileMatch = true;
+      if (profileId) {
+        // Find the chat for this grade
+        const chat = chats?.find((c) => c.id === grade.simulationChatId);
+        if (chat) {
+          // Find the attempt for this chat
+          const attempt = attempts?.find((a) => a.id === chat.attemptId);
+          profileMatch = attempt?.profileId === profileId;
+        } else {
+          profileMatch = false;
+        }
+      }
+
+      return inDateRange && profileMatch;
     });
 
     if (filteredGrades.length === 0) return { matrix: [], insights: null };
@@ -338,7 +386,46 @@ export default function RubricHeatmap({
     filteredRubrics,
     dateStart,
     dateEnd,
+    profileId,
+    attempts,
+    chats,
   ]);
+
+  // Calculate threshold status based on correlation matrix data
+  const getThresholdStatus = () => {
+    if (!correlationMatrix.matrix.length || !correlationMatrix.standardGroups)
+      return "neutral";
+
+    // Calculate average correlation strength across all non-diagonal cells
+    let totalCorrelation = 0;
+    let correlationCount = 0;
+
+    for (let i = 0; i < correlationMatrix.matrix.length; i++) {
+      for (let j = 0; j < correlationMatrix.matrix[i]!.length; j++) {
+        if (i !== j) {
+          // Skip diagonal cells (self-correlation)
+          const cell = correlationMatrix.matrix[i]![j];
+          if (cell && cell.dataPoints > 0) {
+            totalCorrelation += Math.abs(cell.correlation);
+            correlationCount++;
+          }
+        }
+      }
+    }
+
+    if (correlationCount === 0) return "neutral";
+
+    const avgCorrelationStrength = totalCorrelation / correlationCount;
+
+    // Convert correlation strength to a 0-100 scale for threshold comparison
+    const correlationScore = avgCorrelationStrength * 100;
+
+    if (correlationScore >= thresholds.success) return "success";
+    if (correlationScore >= thresholds.warning) return "warning";
+    return "danger";
+  };
+
+  const thresholdStatus = getThresholdStatus();
 
   // Check if any critical data is still loading
   const isLoading =
@@ -351,7 +438,18 @@ export default function RubricHeatmap({
   // Show loading state
   if (isLoading) {
     return (
-      <Card className="w-full h-full flex flex-col">
+      <Card className="w-full h-full flex flex-col relative">
+        <div
+          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+            thresholdStatus === "success"
+              ? "bg-green-500"
+              : thresholdStatus === "warning"
+                ? "bg-yellow-500"
+                : thresholdStatus === "danger"
+                  ? "bg-red-500"
+                  : "bg-gray-400"
+          }`}
+        />
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <TrendingUp className="h-4 w-4" />
@@ -374,7 +472,18 @@ export default function RubricHeatmap({
   // Show empty state if no data
   if (!correlationMatrix.matrix.length || !correlationMatrix.standardGroups) {
     return (
-      <Card className="w-full h-full flex flex-col">
+      <Card className="w-full h-full flex flex-col relative">
+        <div
+          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+            thresholdStatus === "success"
+              ? "bg-green-500"
+              : thresholdStatus === "warning"
+                ? "bg-yellow-500"
+                : thresholdStatus === "danger"
+                  ? "bg-red-500"
+                  : "bg-gray-400"
+          }`}
+        />
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <TrendingUp className="h-4 w-4" />
@@ -398,7 +507,18 @@ export default function RubricHeatmap({
   }
 
   return (
-    <Card className="w-full h-full flex flex-col">
+    <Card className="w-full h-full flex flex-col relative">
+      <div
+        className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+          thresholdStatus === "success"
+            ? "bg-green-500"
+            : thresholdStatus === "warning"
+              ? "bg-yellow-500"
+              : thresholdStatus === "danger"
+                ? "bg-red-500"
+                : "bg-gray-400"
+        }`}
+      />
       <CardHeader className="pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>

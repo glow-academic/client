@@ -49,12 +49,12 @@ import {
 export interface CohortPerformanceProps {
   dateStart: Date;
   dateEnd: Date;
-  profileId?: string;
   thresholds: {
     danger: number;
     warning: number;
     success: number;
   };
+  profileId?: string;
 }
 
 export default function CohortPerformance({
@@ -542,9 +542,36 @@ export default function CohortPerformance({
     return `This cohort is performing adequately (${avgScore.toFixed(2)}% average score). Monitor progress and provide targeted feedback.`;
   };
 
+  // Calculate threshold status based on cohort performance data
+  const getThresholdStatus = () => {
+    if (cohortData.length === 0) return "neutral";
+
+    // Calculate average pass rate across all cohorts
+    const avgPassRate =
+      cohortData.reduce((sum, cohort) => sum + cohort.passRate, 0) /
+      cohortData.length;
+
+    if (avgPassRate >= thresholds.success) return "success";
+    if (avgPassRate >= thresholds.warning) return "warning";
+    return "danger";
+  };
+
+  const thresholdStatus = getThresholdStatus();
+
   if (!cohortData.length) {
     return (
-      <Card className="w-full h-full flex flex-col">
+      <Card className="w-full h-full flex flex-col relative">
+        <div
+          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+            thresholdStatus === "success"
+              ? "bg-green-500"
+              : thresholdStatus === "warning"
+                ? "bg-yellow-500"
+                : thresholdStatus === "danger"
+                  ? "bg-red-500"
+                  : "bg-gray-400"
+          }`}
+        />
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div>
@@ -585,7 +612,18 @@ export default function CohortPerformance({
   }
 
   return (
-    <Card className="w-full h-full flex flex-col">
+    <Card className="w-full h-full flex flex-col relative">
+      <div
+        className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+          thresholdStatus === "success"
+            ? "bg-green-500"
+            : thresholdStatus === "warning"
+              ? "bg-yellow-500"
+              : thresholdStatus === "danger"
+                ? "bg-red-500"
+                : "bg-gray-400"
+        }`}
+      />
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div>

@@ -27,6 +27,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { Simulation } from "@/types";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
@@ -51,23 +52,12 @@ import {
 export interface SimulationPerformanceProps {
   dateStart: Date;
   dateEnd: Date;
-  profileId?: string;
   thresholds: {
     danger: number;
     warning: number;
     success: number;
   };
-  autoSelectSimulation?: boolean; // New prop to control auto-selection
-}
-
-interface Simulation {
-  id: string;
-  title: string;
-  description?: string;
-  scenarioIds: string[];
-  active: boolean;
-  practiceSimulation: boolean;
-  rubricId?: string;
+  profileId?: string;
 }
 
 export default function SimulationPerformance({
@@ -75,7 +65,6 @@ export default function SimulationPerformance({
   dateEnd,
   profileId,
   thresholds,
-  autoSelectSimulation = true,
 }: SimulationPerformanceProps) {
   const [selectedSimulation, setSelectedSimulation] =
     useState<Simulation | null>(null);
@@ -131,6 +120,7 @@ export default function SimulationPerformance({
     const activeSimulations = simulations
       .filter((sim) => !sim.practiceSimulation && sim.active)
       .map((sim) => ({
+        ...sim,
         id: sim.id,
         title: sim.title,
         description: `Simulation with ${sim.scenarioIds?.length || 0} scenarios`,
@@ -197,7 +187,7 @@ export default function SimulationPerformance({
 
   // Auto-select simulation if enabled and available
   useMemo(() => {
-    if (autoSelectSimulation && availableSimulations.length > 0) {
+    if (availableSimulations.length > 0) {
       // If no simulation is selected, select the first one
       if (!selectedSimulation) {
         const firstSimulation = availableSimulations[0];
@@ -217,7 +207,7 @@ export default function SimulationPerformance({
         }
       }
     }
-  }, [autoSelectSimulation, availableSimulations, selectedSimulation]);
+  }, [availableSimulations, selectedSimulation]);
 
   // Calculate scenario performance data for selected simulation
   const scenarioPerformanceData = useMemo(() => {
@@ -389,6 +379,33 @@ export default function SimulationPerformance({
     return insightText;
   }, [scenarioPerformanceData]);
 
+  // Calculate threshold status based on scenario performance
+  const getThresholdStatus = () => {
+    if (!scenarioPerformanceData.length) return "neutral";
+
+    // Calculate average performance across all scenarios
+    const avgPerformance =
+      scenarioPerformanceData.reduce(
+        (sum, scenario) => sum + scenario.avgScore,
+        0
+      ) / scenarioPerformanceData.length;
+
+    // Consider both average score and success rate
+    const avgSuccessRate =
+      scenarioPerformanceData.reduce(
+        (sum, scenario) => sum + scenario.successRate,
+        0
+      ) / scenarioPerformanceData.length;
+
+    const combinedScore = avgPerformance * 0.7 + avgSuccessRate * 0.3;
+
+    if (combinedScore >= thresholds.success) return "success";
+    if (combinedScore >= thresholds.warning) return "warning";
+    return "danger";
+  };
+
+  const thresholdStatus = getThresholdStatus();
+
   if (!availableSimulations.length) {
     return (
       <Card className="w-full h-full flex flex-col">
@@ -422,7 +439,18 @@ export default function SimulationPerformance({
   }
 
   return (
-    <Card className="w-full h-full flex flex-col">
+    <Card className="w-full h-full flex flex-col relative">
+      <div
+        className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+          thresholdStatus === "success"
+            ? "bg-green-500"
+            : thresholdStatus === "warning"
+              ? "bg-yellow-500"
+              : thresholdStatus === "danger"
+                ? "bg-red-500"
+                : "bg-gray-400"
+        }`}
+      />
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>

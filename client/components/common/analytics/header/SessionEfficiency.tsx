@@ -36,12 +36,12 @@ import {
 export interface SessionEfficiencyProps {
   dateStart: Date;
   dateEnd: Date;
-  profileId?: string;
   thresholds: {
     danger: number;
     warning: number;
     success: number;
   };
+  profileId?: string;
 }
 
 const COLOR_CONFIGS = {

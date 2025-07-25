@@ -17,9 +17,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationChatGradesByRubrics } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-rubrics";
+import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useQuery } from "@tanstack/react-query";
@@ -38,11 +41,19 @@ import {
 export interface SkillPerformanceProps {
   dateStart: Date;
   dateEnd: Date;
+  thresholds: {
+    danger: number;
+    warning: number;
+    success: number;
+  };
+  profileId?: string;
 }
 
 export default function SkillPerformance({
   dateStart,
   dateEnd,
+  thresholds,
+  profileId,
 }: SkillPerformanceProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<Rubric[]>([]);
 
@@ -97,6 +108,26 @@ export default function SkillPerformance({
     enabled: !!grades && grades.length > 0,
   });
 
+  // Fetch chats and attempts for profile filtering
+  const { data: profiles } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getAllProfiles(),
+  });
+
+  const { data: attempts } = useQuery({
+    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
+    queryFn: () =>
+      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
+    enabled: !!profiles && profiles.length > 0,
+  });
+
+  const { data: chats } = useQuery({
+    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
+    queryFn: () =>
+      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
+    enabled: !!attempts && attempts.length > 0,
+  });
+
   // Calculate radar chart data (skill development) - filtered by date range and selected rubrics
   const radarData = useMemo(() => {
     if (
@@ -111,10 +142,27 @@ export default function SkillPerformance({
 
     if (grades.length === 0) return [];
 
-    // Filter grades by date range
+    // Filter grades by date range and profile
     const filteredGrades = grades.filter((grade) => {
       const gradeDate = new Date(grade.createdAt);
-      return isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
+      const inDateRange =
+        isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
+
+      // Filter by profile if provided - need to get profile through chat -> attempt
+      let profileMatch = true;
+      if (profileId) {
+        // Find the chat for this grade
+        const chat = chats?.find((c) => c.id === grade.simulationChatId);
+        if (chat) {
+          // Find the attempt for this chat
+          const attempt = attempts?.find((a) => a.id === chat.attemptId);
+          profileMatch = attempt?.profileId === profileId;
+        } else {
+          profileMatch = false;
+        }
+      }
+
+      return inDateRange && profileMatch;
     });
 
     if (filteredGrades.length === 0) return [];
@@ -215,7 +263,25 @@ export default function SkillPerformance({
     filteredRubrics,
     dateStart,
     dateEnd,
+    profileId,
+    chats,
+    attempts,
   ]);
+
+  // Calculate threshold status based on skill performance data
+  const getThresholdStatus = () => {
+    if (radarData.length === 0) return "neutral";
+
+    // Calculate average skill performance across all skills
+    const avgSkillPerformance =
+      radarData.reduce((sum, skill) => sum + skill.value, 0) / radarData.length;
+
+    if (avgSkillPerformance >= thresholds.success) return "success";
+    if (avgSkillPerformance >= thresholds.warning) return "warning";
+    return "danger";
+  };
+
+  const thresholdStatus = getThresholdStatus();
 
   // Check if any critical data is still loading
   const isLoading =
@@ -228,7 +294,18 @@ export default function SkillPerformance({
   // Show loading state
   if (isLoading) {
     return (
-      <Card className="w-full h-full flex flex-col">
+      <Card className="w-full h-full flex flex-col relative">
+        <div
+          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+            thresholdStatus === "success"
+              ? "bg-green-500"
+              : thresholdStatus === "warning"
+                ? "bg-yellow-500"
+                : thresholdStatus === "danger"
+                  ? "bg-red-500"
+                  : "bg-gray-400"
+          }`}
+        />
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -270,7 +347,18 @@ export default function SkillPerformance({
   // Show empty state if no data
   if (!radarData.length) {
     return (
-      <Card className="w-full h-full flex flex-col">
+      <Card className="w-full h-full flex flex-col relative">
+        <div
+          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+            thresholdStatus === "success"
+              ? "bg-green-500"
+              : thresholdStatus === "warning"
+                ? "bg-yellow-500"
+                : thresholdStatus === "danger"
+                  ? "bg-red-500"
+                  : "bg-gray-400"
+          }`}
+        />
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -312,7 +400,18 @@ export default function SkillPerformance({
   }
 
   return (
-    <Card className="w-full h-full flex flex-col">
+    <Card className="w-full h-full flex flex-col relative">
+      <div
+        className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+          thresholdStatus === "success"
+            ? "bg-green-500"
+            : thresholdStatus === "warning"
+              ? "bg-yellow-500"
+              : thresholdStatus === "danger"
+                ? "bg-red-500"
+                : "bg-gray-400"
+        }`}
+      />
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

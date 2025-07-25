@@ -38,10 +38,20 @@ import GrowthPicker, { type GrowthMetric } from "../GrowthPicker";
 export interface GrowthProps {
   dateStart: Date;
   dateEnd: Date;
+  thresholds: {
+    danger: number;
+    warning: number;
+    success: number;
+  };
   profileId?: string;
 }
 
-export default function Growth({ dateStart, dateEnd, profileId }: GrowthProps) {
+export default function Growth({
+  dateStart,
+  dateEnd,
+  profileId,
+  thresholds,
+}: GrowthProps) {
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([
     "averageScore",
   ]);
@@ -450,6 +460,32 @@ export default function Growth({ dateStart, dateEnd, profileId }: GrowthProps) {
     profileId,
   ]);
 
+  // Calculate threshold status based on growth data
+  const getThresholdStatus = () => {
+    if (growthData.length < 2) return "neutral";
+
+    const latest = growthData[growthData.length - 1];
+    const previous = growthData[Math.floor(growthData.length / 2)]; // Mid-point for comparison
+
+    if (!latest || !previous) return "neutral";
+
+    // Calculate average improvement across selected metrics
+    const improvements = selectedMetricObjects.map((metric) => {
+      const current = latest[metric.id as keyof typeof latest] as number;
+      const prev = previous[metric.id as keyof typeof previous] as number;
+      return current - prev;
+    });
+
+    const avgImprovement =
+      improvements.reduce((sum, imp) => sum + imp, 0) / improvements.length;
+
+    if (avgImprovement >= thresholds.success) return "success";
+    if (avgImprovement >= thresholds.warning) return "warning";
+    return "danger";
+  };
+
+  const thresholdStatus = getThresholdStatus();
+
   // Get actionable insights
   const getActionableInsights = () => {
     if (growthData.length < 2) return null;
@@ -494,7 +530,18 @@ export default function Growth({ dateStart, dateEnd, profileId }: GrowthProps) {
 
   if (!growthData.length) {
     return (
-      <Card className="w-full h-full flex flex-col">
+      <Card className="w-full h-full flex flex-col relative">
+        <div
+          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+            thresholdStatus === "success"
+              ? "bg-green-500"
+              : thresholdStatus === "warning"
+                ? "bg-yellow-500"
+                : thresholdStatus === "danger"
+                  ? "bg-red-500"
+                  : "bg-gray-400"
+          }`}
+        />
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -523,7 +570,18 @@ export default function Growth({ dateStart, dateEnd, profileId }: GrowthProps) {
   }
 
   return (
-    <Card className="w-full h-full flex flex-col">
+    <Card className="w-full h-full flex flex-col relative">
+      <div
+        className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+          thresholdStatus === "success"
+            ? "bg-green-500"
+            : thresholdStatus === "warning"
+              ? "bg-yellow-500"
+              : thresholdStatus === "danger"
+                ? "bg-red-500"
+                : "bg-gray-400"
+        }`}
+      />
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

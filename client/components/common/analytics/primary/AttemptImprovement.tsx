@@ -41,6 +41,11 @@ import {
 export interface AttemptImprovementProps {
   dateStart: Date;
   dateEnd: Date;
+  thresholds: {
+    danger: number;
+    warning: number;
+    success: number;
+  };
   profileId?: string;
 }
 
@@ -48,6 +53,7 @@ export default function AttemptImprovement({
   dateStart,
   dateEnd,
   profileId,
+  thresholds,
 }: AttemptImprovementProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
     []
@@ -350,9 +356,44 @@ export default function AttemptImprovement({
     return null;
   };
 
+  // Calculate threshold status based on improvement data
+  const getThresholdStatus = () => {
+    if (improvementData.length < 2) return "neutral";
+
+    const firstAttempt = improvementData[0];
+    const lastAttempt = improvementData[improvementData.length - 1];
+
+    if (!firstAttempt || !lastAttempt) return "neutral";
+
+    const firstScore = firstAttempt["Average Score"];
+    const lastScore = lastAttempt["Average Score"];
+
+    if (typeof firstScore !== "number" || typeof lastScore !== "number")
+      return "neutral";
+
+    const scoreImprovement = lastScore - firstScore;
+
+    if (scoreImprovement >= thresholds.success) return "success";
+    if (scoreImprovement >= thresholds.warning) return "warning";
+    return "danger";
+  };
+
+  const thresholdStatus = getThresholdStatus();
+
   if (!improvementData.length) {
     return (
-      <Card className="w-full h-full flex flex-col">
+      <Card className="w-full h-full flex flex-col relative">
+        <div
+          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+            thresholdStatus === "success"
+              ? "bg-green-500"
+              : thresholdStatus === "warning"
+                ? "bg-yellow-500"
+                : thresholdStatus === "danger"
+                  ? "bg-red-500"
+                  : "bg-gray-400"
+          }`}
+        />
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -394,7 +435,18 @@ export default function AttemptImprovement({
   }
 
   return (
-    <Card className="w-full h-full flex flex-col">
+    <Card className="w-full h-full flex flex-col relative">
+      <div
+        className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+          thresholdStatus === "success"
+            ? "bg-green-500"
+            : thresholdStatus === "warning"
+              ? "bg-yellow-500"
+              : thresholdStatus === "danger"
+                ? "bg-red-500"
+                : "bg-gray-400"
+        }`}
+      />
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

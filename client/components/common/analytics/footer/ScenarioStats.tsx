@@ -59,6 +59,11 @@ import {
 export interface ScenarioStatsProps {
   dateStart: Date;
   dateEnd: Date;
+  thresholds: {
+    danger: number;
+    warning: number;
+    success: number;
+  };
   profileId?: string;
 }
 
@@ -96,6 +101,7 @@ export default function ScenarioStats({
   dateStart,
   dateEnd,
   profileId,
+  thresholds,
 }: ScenarioStatsProps) {
   const [selectedMetric, setSelectedMetric] = useState<MetricType>("intensity");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -356,6 +362,27 @@ export default function ScenarioStats({
     }
   };
 
+  // Calculate threshold status based on correlation and performance
+  const getThresholdStatus = () => {
+    if (aggregatedPerformanceData.length === 0) return "neutral";
+
+    // Calculate average performance across all metric levels
+    const avgPerformance =
+      aggregatedPerformanceData.reduce((sum, item) => sum + item.avgScore, 0) /
+      aggregatedPerformanceData.length;
+
+    // Consider both average performance and correlation strength
+    const performanceThreshold = avgPerformance >= thresholds.success;
+    const correlationThreshold = Math.abs(correlation) >= 0.3;
+
+    if (performanceThreshold && correlationThreshold) return "success";
+    if (avgPerformance >= thresholds.warning || Math.abs(correlation) >= 0.2)
+      return "warning";
+    return "danger";
+  };
+
+  const thresholdStatus = getThresholdStatus();
+
   if (isLoading) {
     return (
       <Card className="w-full h-full flex flex-col">
@@ -398,7 +425,18 @@ export default function ScenarioStats({
 
   return (
     <TooltipProvider>
-      <Card className="w-full h-full flex flex-col">
+      <Card className="w-full h-full flex flex-col relative">
+        <div
+          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+            thresholdStatus === "success"
+              ? "bg-green-500"
+              : thresholdStatus === "warning"
+                ? "bg-yellow-500"
+                : thresholdStatus === "danger"
+                  ? "bg-red-500"
+                  : "bg-gray-400"
+          }`}
+        />
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
