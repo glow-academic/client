@@ -12,9 +12,13 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Plus } from "lucide-react";
+import { logError } from "@/utils/logger";
+import { Plus, Upload } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import React, { useMemo } from "react";
+import React, { useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { Upload as TusUpload } from "tus-js-client";
+import { v4 as uuidv4 } from "uuid";
 
 import { AnalyticsFilters } from "@/components/common/analytics/AnalyticsFilters";
 import ChatDialog from "@/components/common/home/ChatDialog";
@@ -52,6 +56,100 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     Array<{ title: string; section?: string }>
   >([]);
   const simulationContext = useSimulation();
+
+  // Upload state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [_uploadProgress, setUploadProgress] = useState(0);
+  const [_uploadToastId, setUploadToastId] = useState<string | null>(null);
+
+  // Upload functions
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0 && files[0]) {
+      uploadFile(files[0]);
+    }
+  };
+
+  const uploadFile = async (file: File) => {
+    if (isUploading) return;
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    // Create a unique file ID
+    const fileId = uuidv4();
+
+    // Show progress toast
+    const toastId = toast.loading("Preparing upload...", {
+      description: "0% complete",
+    });
+    setUploadToastId(toastId as string);
+
+    try {
+      // Create TUS upload
+      const upload = new TusUpload(file, {
+        endpoint: "/api/upload",
+        retryDelays: [0, 3000, 5000, 10000, 20000],
+        metadata: {
+          filename: file.name,
+          filetype: file.type,
+          fileId: fileId,
+        },
+        onError: (error) => {
+          logError("Upload failed:", error);
+          toast.error("Upload failed", {
+            description: error.message || "An error occurred during upload",
+            id: toastId,
+          });
+          setIsUploading(false);
+          setUploadToastId(null);
+        },
+        onProgress: (bytesUploaded, bytesTotal) => {
+          const progress = Math.round((bytesUploaded / bytesTotal) * 100);
+          setUploadProgress(progress);
+          toast.loading(`Uploading... ${progress}%`, {
+            description: `${Math.round((bytesUploaded / 1024 / 1024) * 100) / 100} MB / ${Math.round((bytesTotal / 1024 / 1024) * 100) / 100} MB`,
+            id: toastId,
+          });
+        },
+        onSuccess: () => {
+          toast.success("Upload completed!", {
+            description: "File uploaded successfully",
+            id: toastId,
+          });
+          setIsUploading(false);
+          setUploadProgress(0);
+          setUploadToastId(null);
+
+          // Clear the file input
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+        },
+      });
+
+      // Start the upload
+      await upload.start();
+    } catch (error) {
+      logError("Upload error:", error);
+      toast.error("Upload failed", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "An error occurred during upload",
+        id: toastId,
+      });
+      setIsUploading(false);
+      setUploadToastId(null);
+    }
+  };
+
+  const handleUploadClick = () => {
+    if (!isUploading) {
+      fileInputRef.current?.click();
+    }
+  };
 
   // Check if we're on a main screen that should show chat components
   const shouldShowChatComponents = useMemo(() => {
@@ -157,6 +255,25 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
           <Plus className="h-4 w-4 mr-2" />
           Create Persona
         </Button>
+      );
+    }
+
+    if (pathname === "/create/documents") {
+      return (
+        <>
+          <input
+            ref={fileInputRef}
+            type="file"
+            onChange={handleFileSelect}
+            disabled={isUploading}
+            accept="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/zip"
+            className="hidden"
+          />
+          <Button onClick={handleUploadClick} size="sm" disabled={isUploading}>
+            <Upload className="h-4 w-4 mr-2" />
+            {isUploading ? "Uploading..." : "Upload Document"}
+          </Button>
+        </>
       );
     }
 

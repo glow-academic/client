@@ -156,7 +156,7 @@ export function useDocumentColumns() {
             </Badge>
           );
         },
-        filterFn: (row, id, value) => {
+        filterFn: (row, _id, value) => {
           const document = row.original;
           const extension = getFileExtension(document.name);
           return value.length === 0 || value.includes(extension);
