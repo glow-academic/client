@@ -165,11 +165,26 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
           // Finalize the upload after TUS upload completes
           try {
-            const result = await finalizeDocumentUpload(fileId);
+            // Check if this is a ZIP file
+            const isZipFile = file.name.toLowerCase().endsWith(".zip");
+
+            // Auto-classify ZIP files by default
+            const shouldAutoClassify = isZipFile;
+
+            const result = await finalizeDocumentUpload(
+              fileId,
+              isZipFile, // zip parameter
+              shouldAutoClassify // autoClassify parameter
+            );
 
             if (result.success) {
+              const isZipFile = file.name.toLowerCase().endsWith(".zip");
+              const description = isZipFile
+                ? `Extracted ${result.extracted_count || 0} documents${result.classification_result?.success ? " and auto-classified" : ""}`
+                : "File uploaded and processed successfully";
+
               toast.success(`Upload completed: ${file.name}!`, {
-                description: "File uploaded and processed successfully",
+                description,
                 id: toastId,
               });
 
@@ -393,7 +408,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             disabled={activeUploads.size > 0}
           >
             <Upload className="h-4 w-4 mr-2" />
-            {activeUploads.size > 0 ? "Uploading..." : "Upload Document"}
+            {activeUploads.size > 0 ? "Uploading..." : "Upload Document(s)"}
           </Button>
         </>
       );
