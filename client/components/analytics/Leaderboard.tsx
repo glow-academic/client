@@ -14,6 +14,8 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { useQuery } from "@tanstack/react-query";
 import { Award, Crown, MessageSquareText, Zap } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import AccoladeCard from "../common/cohort/AccoladeCard";
 import LeaderboardTable from "../common/cohort/LeaderboardTable";
@@ -24,7 +26,12 @@ export interface LeaderboardProps {
 
 export default function Leaderboard({ cohortId }: LeaderboardProps) {
   const { effectiveProfile } = useProfile();
-  const { selectedCohortIds, cohorts } = useAnalytics();
+  const { startDate, endDate, selectedCohortIds, cohorts } = useAnalytics();
+  const router = useRouter();
+
+  const handleViewReport = (profileId: string) => {
+    router.push(`/analytics/reports/p/${profileId}`);
+  };
 
   // Determine if we should show all data (instructor view) or filtered (TA view)
   const shouldShowAll =
@@ -150,7 +157,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     return filteredProfiles;
   }, [allProfiles, filteredCohorts]);
 
-  // Filter attempts to only include those from selected cohorts
+  // Filter attempts to only include those from selected cohorts and date range
   const attempts = useMemo(() => {
     if (!allAttempts || !filteredCohorts) return [];
 
@@ -159,10 +166,21 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       cohort.profileIds?.forEach((id) => cohortProfileIds.add(id));
     });
 
-    return allAttempts.filter(
-      (attempt) => attempt.profileId && cohortProfileIds.has(attempt.profileId)
-    );
-  }, [allAttempts, filteredCohorts]);
+    return allAttempts.filter((attempt) => {
+      // Filter by cohort membership
+      if (!attempt.profileId || !cohortProfileIds.has(attempt.profileId)) {
+        return false;
+      }
+
+      // Filter by date range if dates are provided
+      if (startDate && endDate && attempt.createdAt) {
+        const attemptDate = new Date(attempt.createdAt);
+        return attemptDate >= startDate && attemptDate <= endDate;
+      }
+
+      return true;
+    });
+  }, [allAttempts, filteredCohorts, startDate, endDate]);
 
   // Filter chats to only include those from selected cohort attempts
   const chats = useMemo(() => {
@@ -389,45 +407,97 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header with title */}
-      <div className="flex items-center justify-between">
-        {!cohortId && <h2 className="text-2xl font-bold">Leaderboard</h2>}
-      </div>
-
       {/* Dashboard Content */}
       {filteredCohorts.length > 0 ? (
         <div className="container mx-auto p-4 space-y-8">
           {/* Accolades Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <AccoladeCard
-              icon={<Award className="h-4 w-4" />}
-              title="Perfect Score"
-              user={accolades.perfectScore?.holder}
-              details={accolades.perfectScore?.details || ""}
-            />
-            <AccoladeCard
-              icon={<MessageSquareText className="h-4 w-4" />}
-              title="Longest Convo"
-              user={accolades.longestConvo?.holder}
-              details={accolades.longestConvo?.details || ""}
-            />
-            <AccoladeCard
-              icon={<Zap className="h-4 w-4" />}
-              title="Most Improved"
-              user={accolades.mostImproved?.holder}
-              details={accolades.mostImproved?.details || ""}
-            />
-            <AccoladeCard
-              icon={<Crown className="h-4 w-4" />}
-              title="Quickest Pass"
-              user={accolades.quickestPass?.holder}
-              details={accolades.quickestPass?.details || ""}
-            />
+            {accolades.perfectScore?.holder ? (
+              <Link
+                href={`/analytics/reports/p/${accolades.perfectScore.holder.id}`}
+                className="block h-full"
+              >
+                <AccoladeCard
+                  icon={<Award className="h-4 w-4" />}
+                  title="Perfect Score"
+                  user={accolades.perfectScore.holder}
+                  details={accolades.perfectScore.details || ""}
+                />
+              </Link>
+            ) : (
+              <AccoladeCard
+                icon={<Award className="h-4 w-4" />}
+                title="Perfect Score"
+                user={accolades.perfectScore?.holder}
+                details={accolades.perfectScore?.details || ""}
+              />
+            )}
+            {accolades.longestConvo?.holder ? (
+              <Link
+                href={`/analytics/reports/p/${accolades.longestConvo.holder.id}`}
+                className="block h-full"
+              >
+                <AccoladeCard
+                  icon={<MessageSquareText className="h-4 w-4" />}
+                  title="Longest Convo"
+                  user={accolades.longestConvo.holder}
+                  details={accolades.longestConvo.details || ""}
+                />
+              </Link>
+            ) : (
+              <AccoladeCard
+                icon={<MessageSquareText className="h-4 w-4" />}
+                title="Longest Convo"
+                user={accolades.longestConvo?.holder}
+                details={accolades.longestConvo?.details || ""}
+              />
+            )}
+            {accolades.mostImproved?.holder ? (
+              <Link
+                href={`/analytics/reports/p/${accolades.mostImproved.holder.id}`}
+                className="block h-full"
+              >
+                <AccoladeCard
+                  icon={<Zap className="h-4 w-4" />}
+                  title="Most Improved"
+                  user={accolades.mostImproved.holder}
+                  details={accolades.mostImproved.details || ""}
+                />
+              </Link>
+            ) : (
+              <AccoladeCard
+                icon={<Zap className="h-4 w-4" />}
+                title="Most Improved"
+                user={accolades.mostImproved?.holder}
+                details={accolades.mostImproved?.details || ""}
+              />
+            )}
+            {accolades.quickestPass?.holder ? (
+              <Link
+                href={`/analytics/reports/p/${accolades.quickestPass.holder.id}`}
+                className="block h-full"
+              >
+                <AccoladeCard
+                  icon={<Crown className="h-4 w-4" />}
+                  title="Quickest Pass"
+                  user={accolades.quickestPass.holder}
+                  details={accolades.quickestPass.details || ""}
+                />
+              </Link>
+            ) : (
+              <AccoladeCard
+                icon={<Crown className="h-4 w-4" />}
+                title="Quickest Pass"
+                user={accolades.quickestPass?.holder}
+                details={accolades.quickestPass?.details || ""}
+              />
+            )}
           </div>
           <div>
             <LeaderboardTable
               data={leaderboardData}
               currentUserId={effectiveProfile?.id || ""}
+              onViewReport={handleViewReport}
             />
           </div>
         </div>

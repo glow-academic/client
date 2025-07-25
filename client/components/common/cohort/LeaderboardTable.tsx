@@ -34,7 +34,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { X } from "lucide-react";
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 
 export interface LeaderboardData {
   id: string;
@@ -48,6 +48,7 @@ export interface LeaderboardData {
 export interface LeaderboardTableProps {
   data: LeaderboardData[];
   currentUserId: string;
+  onViewReport?: (profileId: string) => void;
 }
 
 const getInitials = (name: string) =>
@@ -60,6 +61,7 @@ const getInitials = (name: string) =>
 export default function LeaderboardTable({
   data,
   currentUserId,
+  onViewReport,
 }: LeaderboardTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -240,6 +242,13 @@ export default function LeaderboardTable({
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
+  // Set default role filter to "ta" if no filter is applied
+  React.useEffect(() => {
+    if (!table.getColumn("role")?.getFilterValue()) {
+      table.getColumn("role")?.setFilterValue(["ta"]);
+    }
+  }, [table]);
+
   if (data.length === 0) {
     return (
       <div className="rounded-md border p-8 text-center">
@@ -253,6 +262,7 @@ export default function LeaderboardTable({
 
   const nameColumn = table.getColumn("name");
   const roleColumn = table.getColumn("role");
+
   const avgScoreColumn = table.getColumn("avgScore");
 
   return (
@@ -332,9 +342,10 @@ export default function LeaderboardTable({
               table.getRowModel().rows.map((row, index) => (
                 <TableRow
                   key={row.id}
-                  className={
+                  className={`${
                     row.original.id === currentUserId ? "bg-muted/50" : ""
-                  }
+                  } ${onViewReport ? "hover:bg-muted/30 transition-colors cursor-pointer" : ""}`}
+                  onClick={() => onViewReport?.(row.original.id)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

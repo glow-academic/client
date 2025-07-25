@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 
+import { useAnalytics } from "@/contexts/analytics-context";
 import {
   TAPerformanceData,
   useReportColumns,
@@ -29,6 +30,7 @@ import { ReportsDataTable } from "./ReportsDataTable";
 
 export default function Reports() {
   const router = useRouter();
+  const { startDate, endDate, selectedCohortIds } = useAnalytics();
 
   const handleViewReport = (profileId: string) => {
     router.push(`/analytics/reports/p/${profileId}`);
@@ -46,17 +48,11 @@ export default function Reports() {
     onViewReport: handleViewReport,
   });
 
-  // Fetch data
+  // Filter out default profiles and only include non-default profiles
   const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
   });
-
-  // Filter out default profiles and only include non-default profiles
-  const filteredProfiles = useMemo(() => {
-    if (!profiles) return [];
-    return profiles.filter((profile) => !profile.defaultProfile);
-  }, [profiles]);
 
   const { data: simulations, isLoading: isLoadingSimulations } = useQuery({
     queryKey: ["simulations"],
@@ -72,6 +68,24 @@ export default function Reports() {
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
   });
+
+  // Filter out default profiles and only include non-default profiles
+  const tas = useMemo(() => {
+    if (!profiles) return [];
+    let tas = profiles.filter((profile) => !profile.defaultProfile);
+
+    if (selectedCohortIds.length > 0 && cohorts) {
+      const selectedCohorts = cohorts.filter((cohort) =>
+        selectedCohortIds.includes(cohort.id)
+      );
+      const cohortProfileIds = new Set<string>();
+      selectedCohorts.forEach((cohort) => {
+        cohort.profileIds.forEach((id) => cohortProfileIds.add(id));
+      });
+      tas = tas.filter((profile) => cohortProfileIds.has(profile.id));
+    }
+    return tas;
+  }, [profiles, selectedCohortIds, cohorts]);
 
   const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
     queryKey: ["rubrics"],
@@ -147,7 +161,66 @@ export default function Reports() {
     )
       return [];
 
-    const tas = filteredProfiles; // Show filtered profiles, not just TAs
+    // Filter simulations based on selected cohorts
+    let filteredSimulations = simulations;
+    if (selectedCohortIds.length > 0) {
+      const selectedCohorts = cohorts.filter((cohort) =>
+        selectedCohortIds.includes(cohort.id)
+      );
+      const cohortSimulationIds = new Set<string>();
+      selectedCohorts.forEach((cohort) => {
+        cohort.simulationIds.forEach((id) => cohortSimulationIds.add(id));
+      });
+      filteredSimulations = simulations.filter((simulation) =>
+        cohortSimulationIds.has(simulation.id)
+      );
+    }
+
+    // Filter data by date range and selected simulations
+    const dateFilteredGrades = grades.filter((grade) => {
+      const gradeDate = new Date(grade.createdAt);
+      return gradeDate >= startDate && gradeDate <= endDate;
+    });
+
+    const dateFilteredChats = chats.filter((chat) => {
+      const chatDate = new Date(chat.createdAt);
+      return chatDate >= startDate && chatDate <= endDate;
+    });
+
+    const dateFilteredAttempts =
+      attempts?.filter((attempt) => {
+        const attemptDate = new Date(attempt.createdAt);
+        return attemptDate >= startDate && attemptDate <= endDate;
+      }) || [];
+
+    const dateFilteredMessages = messages.filter((message) => {
+      const messageDate = new Date(message.createdAt);
+      return messageDate >= startDate && messageDate <= endDate;
+    });
+
+    // Filter attempts by selected simulations
+    const simulationFilteredAttempts = dateFilteredAttempts.filter((attempt) =>
+      filteredSimulations.some(
+        (simulation) => simulation.id === attempt.simulationId
+      )
+    );
+
+    // Filter chats by filtered attempts
+    const simulationFilteredChats = dateFilteredChats.filter((chat) =>
+      simulationFilteredAttempts.some(
+        (attempt) => attempt.id === chat.attemptId
+      )
+    );
+
+    // Filter grades by filtered chats
+    const simulationFilteredGrades = dateFilteredGrades.filter((grade) =>
+      simulationFilteredChats.some((chat) => chat.id === grade.simulationChatId)
+    );
+
+    // Filter messages by filtered chats
+    const simulationFilteredMessages = dateFilteredMessages.filter((message) =>
+      simulationFilteredChats.some((chat) => chat.id === message.chatId)
+    );
 
     // Calculate cohort performance averages
     const cohortPerformance = cohorts.reduce(
@@ -155,9 +228,13 @@ export default function Reports() {
         const cohortMembers = tas.filter((member) =>
           cohort.profileIds.includes(member.id)
         );
-        const cohortGrades = grades.filter((grade) => {
-          const chat = chats.find((c) => c.id === grade.simulationChatId);
-          const attempt = attempts?.find((a) => a.id === chat?.attemptId);
+        const cohortGrades = simulationFilteredGrades.filter((grade) => {
+          const chat = simulationFilteredChats.find(
+            (c) => c.id === grade.simulationChatId
+          );
+          const attempt = simulationFilteredAttempts?.find(
+            (a) => a.id === chat?.attemptId
+          );
           return (
             attempt &&
             cohortMembers.some((member) => member.id === attempt.profileId)
@@ -168,9 +245,13 @@ export default function Reports() {
         let cohortAvgScore = 0;
         if (cohortGrades.length > 0) {
           const cohortScoreSum = cohortGrades.reduce((sum, grade) => {
-            const chat = chats.find((c) => c.id === grade.simulationChatId);
-            const attempt = attempts?.find((a) => a.id === chat?.attemptId);
-            const simulation = simulations?.find(
+            const chat = simulationFilteredChats.find(
+              (c) => c.id === grade.simulationChatId
+            );
+            const attempt = simulationFilteredAttempts?.find(
+              (a) => a.id === chat?.attemptId
+            );
+            const simulation = filteredSimulations?.find(
               (s) => s.id === attempt?.simulationId
             );
             const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
@@ -195,21 +276,23 @@ export default function Reports() {
     // User performance based on the 10 metrics from header components
     const taPerformance = tas.map((user): TAPerformanceData => {
       const userAttempts =
-        attempts?.filter((attempt) => attempt.profileId === user.id) || [];
-      const userChats = chats.filter((chat) =>
+        simulationFilteredAttempts?.filter(
+          (attempt) => attempt.profileId === user.id
+        ) || [];
+      const userChats = simulationFilteredChats.filter((chat) =>
         userAttempts.some((attempt) => attempt.id === chat.attemptId)
       );
-      const userGrades = grades.filter((grade) =>
+      const userGrades = simulationFilteredGrades.filter((grade) =>
         userChats.some((chat) => chat.id === grade.simulationChatId)
       );
-      const userMessages = messages.filter((message) =>
+      const userMessages = simulationFilteredMessages.filter((message) =>
         userChats.some((chat) => chat.id === message.chatId)
       );
 
       // Filter out practice simulations
       const nonPracticeChats = userChats.filter((chat) => {
         const attempt = userAttempts.find((a) => a.id === chat.attemptId);
-        const simulation = simulations?.find(
+        const simulation = filteredSimulations?.find(
           (s) => s.id === attempt?.simulationId
         );
         return !simulation?.practiceSimulation;
@@ -218,7 +301,7 @@ export default function Reports() {
       const nonPracticeGrades = userGrades.filter((grade) => {
         const chat = chats.find((c) => c.id === grade.simulationChatId);
         const attempt = userAttempts.find((a) => a.id === chat?.attemptId);
-        const simulation = simulations?.find(
+        const simulation = filteredSimulations?.find(
           (s) => s.id === attempt?.simulationId
         );
         return !simulation?.practiceSimulation;
@@ -230,7 +313,7 @@ export default function Reports() {
         const scoreSum = nonPracticeGrades.reduce((sum, grade) => {
           const chat = chats.find((c) => c.id === grade.simulationChatId);
           const attempt = userAttempts.find((a) => a.id === chat?.attemptId);
-          const simulation = simulations?.find(
+          const simulation = filteredSimulations?.find(
             (s) => s.id === attempt?.simulationId
           );
           const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
@@ -278,7 +361,7 @@ export default function Reports() {
         const scores = nonPracticeGrades.map((grade) => {
           const chat = chats.find((c) => c.id === grade.simulationChatId);
           const attempt = userAttempts.find((a) => a.id === chat?.attemptId);
-          const simulation = simulations?.find(
+          const simulation = filteredSimulations?.find(
             (s) => s.id === attempt?.simulationId
           );
           const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
@@ -581,7 +664,7 @@ export default function Reports() {
           firstThree.reduce((sum, grade) => {
             const chat = chats.find((c) => c.id === grade.simulationChatId);
             const attempt = userAttempts.find((a) => a.id === chat?.attemptId);
-            const simulation = simulations?.find(
+            const simulation = filteredSimulations?.find(
               (s) => s.id === attempt?.simulationId
             );
             const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
@@ -597,7 +680,7 @@ export default function Reports() {
           lastThree.reduce((sum, grade) => {
             const chat = chats.find((c) => c.id === grade.simulationChatId);
             const attempt = userAttempts.find((a) => a.id === chat?.attemptId);
-            const simulation = simulations?.find(
+            const simulation = filteredSimulations?.find(
               (s) => s.id === attempt?.simulationId
             );
             const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
@@ -667,7 +750,7 @@ export default function Reports() {
             const taScoreSum = taGrades.reduce((sum, grade) => {
               const chat = chats.find((c) => c.id === grade.simulationChatId);
               const attempt = attempts?.find((a) => a.id === chat?.attemptId);
-              const simulation = simulations?.find(
+              const simulation = filteredSimulations?.find(
                 (s) => s.id === attempt?.simulationId
               );
               const rubric = rubrics?.find(
@@ -779,7 +862,6 @@ export default function Reports() {
     return taPerformance;
   }, [
     profiles,
-    filteredProfiles,
     chats,
     grades,
     feedbacks,
@@ -791,6 +873,10 @@ export default function Reports() {
     scenarios,
     messages,
     cohorts,
+    startDate,
+    endDate,
+    selectedCohortIds,
+    tas,
   ]);
 
   // Loading state

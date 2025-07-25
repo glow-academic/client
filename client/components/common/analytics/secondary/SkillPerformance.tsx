@@ -18,7 +18,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getCohortsByProfile } from "@/utils/queries/cohorts/get-cohorts-by-profile";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -118,22 +117,17 @@ export default function SkillPerformance({
     queryFn: () => getAllCohorts(),
   });
 
-  // Get cohorts by profile if profileId is provided
-  const { data: profileCohorts } = useQuery({
-    queryKey: ["cohortsByProfile", profileId],
-    queryFn: () => getCohortsByProfile(profileId!),
-    enabled: !!profileId,
-  });
-
   // Filter cohorts based on cohortIds and profileId
   const filteredCohorts = useMemo(() => {
     if (!allCohorts) return [];
 
     let availableCohorts = allCohorts;
 
-    // If profileId is provided, get cohorts that contain this profile
-    if (profileId && profileCohorts) {
-      availableCohorts = profileCohorts;
+    // If profileId is provided, filter to cohorts that contain this profile
+    if (profileId) {
+      availableCohorts = availableCohorts.filter((cohort) =>
+        cohort.profileIds.includes(profileId)
+      );
     }
 
     // If cohortIds are provided, filter to only those cohorts
@@ -144,7 +138,7 @@ export default function SkillPerformance({
     }
 
     return availableCohorts;
-  }, [allCohorts, profileCohorts, profileId, cohortIds]);
+  }, [allCohorts, profileId, cohortIds]);
 
   // Check if user has access to any cohorts
   const hasCohortAccess = useMemo(() => {
