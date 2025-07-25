@@ -202,7 +202,7 @@ class TestTusProtocol:
         mock_session,
     ):
         """Tests the finalization call that moves a TUS upload into the system."""
-        payload = {"fileId": "test-id", "classId": str(uuid4())}
+        payload = {"fileId": "test-id"}
         response = client.post("/documents/tus/finalize", json=payload)
 
         assert response.status_code == 200
@@ -411,6 +411,7 @@ class TestDelete_Document:
         assert False, "IMPLEMENT: Error test for delete_document"
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `documents_health_check`")
 class TestDocuments_Health_Check:

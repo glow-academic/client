@@ -10,7 +10,6 @@ import { logError } from "@/utils/logger";
 
 export interface FinalizeDocumentUploadParams {
   fileId: string;
-  classId: string;
   zip?: boolean;
   autoClassify?: boolean;
   csv?: boolean;
@@ -58,17 +57,15 @@ export interface FinalizeDocumentUploadResponse {
 
 export async function finalizeDocumentUpload(
   fileId: string,
-  classId: string,
   zip?: boolean,
   autoClassify?: boolean,
   csv?: boolean,
   profile?: string,
-  test?: boolean,
+  test?: boolean
 ): Promise<FinalizeDocumentUploadResponse> {
   try {
     const payload: FinalizeDocumentUploadParams = {
       fileId,
-      classId,
       ...(zip !== undefined && { zip }),
       ...(autoClassify !== undefined && { autoClassify }),
       ...(csv !== undefined && { csv }),

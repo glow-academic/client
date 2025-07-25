@@ -35,6 +35,7 @@ import {
   useSimulation,
 } from "@/contexts/simulation-context";
 import { TourProvider } from "@/contexts/tour-context";
+import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
 import {
   generateEnhancedBreadcrumbs,
   getActiveSectionFromPath,
@@ -113,11 +114,31 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             id: toastId,
           });
         },
-        onSuccess: () => {
-          toast.success("Upload completed!", {
-            description: "File uploaded successfully",
-            id: toastId,
-          });
+        onSuccess: async () => {
+          // Finalize the upload after TUS upload completes
+          try {
+            const result = await finalizeDocumentUpload(fileId);
+
+            if (result.success) {
+              toast.success("Upload completed!", {
+                description: "File uploaded and processed successfully",
+                id: toastId,
+              });
+            } else {
+              toast.error("Upload processing failed", {
+                description:
+                  result.message || "Failed to process uploaded file",
+                id: toastId,
+              });
+            }
+          } catch (finalizeError) {
+            logError("Finalization failed:", finalizeError);
+            toast.error("Upload processing failed", {
+              description: "Failed to process uploaded file",
+              id: toastId,
+            });
+          }
+
           setIsUploading(false);
           setUploadProgress(0);
           setUploadToastId(null);
