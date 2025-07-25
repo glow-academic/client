@@ -42,10 +42,12 @@ export function useHistoryColumns({
   showAll = false,
   showExport = true,
   cohortIds = undefined,
+  showPractice = false,
 }: {
   showAll?: boolean;
   showExport?: boolean;
   cohortIds: string[] | undefined;
+  showPractice?: boolean;
 }) {
   const { effectiveProfile } = useProfile();
 
@@ -666,6 +668,18 @@ export function useHistoryColumns({
       // No matching cohorts, show empty data
       data = [];
     }
+  }
+
+  // Apply practice simulation filtering
+  if (!showPractice) {
+    // Filter out practice simulations when showPractice is false
+    data = data.filter((attempt: unknown) => {
+      const attemptData = attempt as Record<string, unknown>;
+      const simulation = simulations?.find(
+        (s) => s.id === attemptData["simulationId"]
+      );
+      return !simulation?.practiceSimulation;
+    });
   }
 
   // Apply filtering based on showAll parameter

@@ -12,18 +12,21 @@ export interface SimulationHistoryProps {
   showAll: boolean;
   cohortIds?: string[];
   showExport?: boolean;
+  showPractice?: boolean;
 }
 
 export default function SimulationHistory({
   showAll,
   showExport = true,
   cohortIds = undefined,
+  showPractice = false,
 }: SimulationHistoryProps) {
   const { columns, data, profileOptions, scoreRangeOptions } =
     useHistoryColumns({
       showAll,
       showExport,
       cohortIds,
+      showPractice,
     });
 
   return (

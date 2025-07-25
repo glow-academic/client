@@ -790,6 +790,7 @@ export default function Home() {
           showAll={shouldShowAll}
           cohortIds={selectedCohortIds}
           showExport={!shouldShowAll}
+          showPractice={false}
         />
       </div>
 

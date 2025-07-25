@@ -44,7 +44,7 @@ export function DataTable<TData, TValue>({
   profileOptions,
   scoreRangeOptions,
   showExport = true,
-  showAll = false,
+  showAll = false
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
