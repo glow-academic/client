@@ -5,12 +5,12 @@ import { X } from "lucide-react";
 import { DateRange } from "react-day-picker";
 
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
-import { ExportButton } from "@/components/common/history/ExportButton";
 import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { Input } from "@/components/ui/input";
 
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { SingleProfileBrightspaceExportButton } from "./SingleProfileBrightspaceExportButton";
 
 export interface DataTableToolbarProps<TData> {
   table: Table<TData>;
@@ -98,7 +98,7 @@ export function DataTableToolbar<TData>({
           )}
 
           {showExport && (
-            <ExportButton
+            <SingleProfileBrightspaceExportButton
               table={table}
               profileOptions={profileOptions}
             />

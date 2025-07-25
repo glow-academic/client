@@ -789,7 +789,7 @@ export default function Home() {
         <SimulationHistory
           showAll={shouldShowAll}
           cohortIds={selectedCohortIds}
-          showExport={shouldShowAll}
+          showExport={!shouldShowAll}
         />
       </div>
 
