@@ -13,6 +13,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Document } from "@/types";
+import { TooltipProvider } from "@radix-ui/react-tooltip";
 
 export interface DocumentsDataTableToolbarProps {
   table: Table<Document>;
@@ -97,25 +98,26 @@ export function DocumentsDataTableToolbar({
         {/* Bulk delete button */}
         {selectedCount > 0 &&
           (deletableCount === 0 ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={true}
-                  className="h-8"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete {deletableCount} of {selectedCount}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  All selected documents are currently in use by active
-                  scenarios
-                </p>
-              </TooltipContent>
-            </Tooltip>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild={deletableCount !== 0}>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="h-8"
+                    disabled={true}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete {deletableCount} of {selectedCount}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    All documents are currently in use
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           ) : (
             <Button
               variant="destructive"

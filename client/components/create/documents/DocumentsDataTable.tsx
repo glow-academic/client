@@ -176,7 +176,15 @@ export function DocumentsDataTable({
       columnFilters,
       columnVisibility,
     },
+    initialState: {
+      pagination: {
+        pageSize: 10, // Show 10 items per page for grid view
+      },
+    },
   });
+
+  // Get filtered and paginated data for both views
+  const filteredDocuments = table.getRowModel().rows.map((row) => row.original);
 
   return (
     <div className="space-y-4">
@@ -248,8 +256,17 @@ export function DocumentsDataTable({
           <DataTablePagination table={table} />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {data.map((document) => renderDocumentCard(document))}
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredDocuments.length > 0 ? (
+              filteredDocuments.map((document) => renderDocumentCard(document))
+            ) : (
+              <div className="col-span-full text-center py-8 text-muted-foreground">
+                No documents match the current filters.
+              </div>
+            )}
+          </div>
+          <DataTablePagination table={table} />
         </div>
       )}
     </div>
