@@ -48,11 +48,11 @@ import { Edit, Trash2, UploadCloud } from "lucide-react";
 
 import { useDocumentColumns } from "@/hooks/use-document-columns";
 import { logError, logInfo } from "@/utils/logger";
-import { deleteDocument } from "@/utils/mutations/documents/delete-document";
 import { updateDocument } from "@/utils/mutations/documents/update-document";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { DocumentsDataTable } from "./DocumentsDataTable";
+import { deleteDocument } from "@/utils/api/documents/delete-document";
 
 // Helper function to truncate text
 const truncateText = (text: string, maxLength: number = 30): string => {

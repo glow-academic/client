@@ -60,34 +60,49 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   >([]);
   const simulationContext = useSimulation();
 
-  // Upload state
+  // Upload state - track multiple uploads
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [_uploadProgress, setUploadProgress] = useState(0);
-  const [_uploadToastId, setUploadToastId] = useState<string | null>(null);
+  const [activeUploads, setActiveUploads] = useState<
+    Map<
+      string,
+      {
+        file: File;
+        progress: number;
+        toastId: string;
+        status: "uploading" | "finalizing" | "completed" | "error";
+      }
+    >
+  >(new Map());
 
   // Upload functions
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (files && files.length > 0 && files[0]) {
-      uploadFile(files[0]);
+    if (files && files.length > 0) {
+      // Process all selected files in parallel
+      Array.from(files).forEach((file) => {
+        uploadFile(file);
+      });
     }
   };
 
   const uploadFile = async (file: File) => {
-    if (isUploading) return;
-
-    setIsUploading(true);
-    setUploadProgress(0);
-
-    // Create a unique file ID
+    // Create a unique file ID for this upload
     const fileId = uuidv4();
 
-    // Show progress toast
-    const toastId = toast.loading("Preparing upload...", {
+    // Show progress toast for this specific file
+    const toastId = toast.loading(`Preparing upload: ${file.name}`, {
       description: "0% complete",
     });
-    setUploadToastId(toastId as string);
+
+    // Add to active uploads
+    setActiveUploads((prev) =>
+      new Map(prev).set(fileId, {
+        file,
+        progress: 0,
+        toastId: toastId as string,
+        status: "uploading",
+      })
+    );
 
     try {
       // Create TUS upload
@@ -101,30 +116,74 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         },
         onError: (error) => {
           logError("Upload failed:", error);
-          toast.error("Upload failed", {
+          toast.error(`Upload failed: ${file.name}`, {
             description: error.message || "An error occurred during upload",
             id: toastId,
           });
-          setIsUploading(false);
-          setUploadToastId(null);
+
+          // Remove from active uploads
+          setActiveUploads((prev) => {
+            const newMap = new Map(prev);
+            newMap.delete(fileId);
+            return newMap;
+          });
         },
         onProgress: (bytesUploaded, bytesTotal) => {
           const progress = Math.round((bytesUploaded / bytesTotal) * 100);
-          setUploadProgress(progress);
-          toast.loading(`Uploading... ${progress}%`, {
+
+          // Update progress for this specific upload
+          setActiveUploads((prev) => {
+            const newMap = new Map(prev);
+            const upload = newMap.get(fileId);
+            if (upload) {
+              newMap.set(fileId, {
+                ...upload,
+                progress,
+              });
+            }
+            return newMap;
+          });
+
+          toast.loading(`Uploading ${file.name}... ${progress}%`, {
             description: `${Math.round((bytesUploaded / 1024 / 1024) * 100) / 100} MB / ${Math.round((bytesTotal / 1024 / 1024) * 100) / 100} MB`,
             id: toastId,
           });
         },
         onSuccess: async () => {
+          // Update status to finalizing
+          setActiveUploads((prev) => {
+            const newMap = new Map(prev);
+            const upload = newMap.get(fileId);
+            if (upload) {
+              newMap.set(fileId, {
+                ...upload,
+                status: "finalizing",
+              });
+            }
+            return newMap;
+          });
+
           // Finalize the upload after TUS upload completes
           try {
             const result = await finalizeDocumentUpload(fileId);
 
             if (result.success) {
-              toast.success("Upload completed!", {
+              toast.success(`Upload completed: ${file.name}!`, {
                 description: "File uploaded and processed successfully",
                 id: toastId,
+              });
+
+              // Update status to completed
+              setActiveUploads((prev) => {
+                const newMap = new Map(prev);
+                const upload = newMap.get(fileId);
+                if (upload) {
+                  newMap.set(fileId, {
+                    ...upload,
+                    status: "completed",
+                  });
+                }
+                return newMap;
               });
 
               // Invalidate documents queries to refresh the UI
@@ -137,24 +196,43 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                   exact: false,
                 });
               }
+
+              // Remove from active uploads after a delay to show completion
+              setTimeout(() => {
+                setActiveUploads((prev) => {
+                  const newMap = new Map(prev);
+                  newMap.delete(fileId);
+                  return newMap;
+                });
+              }, 2000);
             } else {
-              toast.error("Upload processing failed", {
+              toast.error(`Upload processing failed: ${file.name}`, {
                 description:
                   result.message || "Failed to process uploaded file",
                 id: toastId,
               });
+
+              // Remove from active uploads
+              setActiveUploads((prev) => {
+                const newMap = new Map(prev);
+                newMap.delete(fileId);
+                return newMap;
+              });
             }
           } catch (finalizeError) {
             logError("Finalization failed:", finalizeError);
-            toast.error("Upload processing failed", {
+            toast.error(`Upload processing failed: ${file.name}`, {
               description: "Failed to process uploaded file",
               id: toastId,
             });
-          }
 
-          setIsUploading(false);
-          setUploadProgress(0);
-          setUploadToastId(null);
+            // Remove from active uploads
+            setActiveUploads((prev) => {
+              const newMap = new Map(prev);
+              newMap.delete(fileId);
+              return newMap;
+            });
+          }
 
           // Clear the file input
           if (fileInputRef.current) {
@@ -167,20 +245,25 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       await upload.start();
     } catch (error) {
       logError("Upload error:", error);
-      toast.error("Upload failed", {
+      toast.error(`Upload failed: ${file.name}`, {
         description:
           error instanceof Error
             ? error.message
             : "An error occurred during upload",
         id: toastId,
       });
-      setIsUploading(false);
-      setUploadToastId(null);
+
+      // Remove from active uploads
+      setActiveUploads((prev) => {
+        const newMap = new Map(prev);
+        newMap.delete(fileId);
+        return newMap;
+      });
     }
   };
 
   const handleUploadClick = () => {
-    if (!isUploading) {
+    if (activeUploads.size === 0) {
       fileInputRef.current?.click();
     }
   };
@@ -298,14 +381,19 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
           <input
             ref={fileInputRef}
             type="file"
+            multiple
             onChange={handleFileSelect}
-            disabled={isUploading}
+            disabled={activeUploads.size > 0}
             accept="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/zip"
             className="hidden"
           />
-          <Button onClick={handleUploadClick} size="sm" disabled={isUploading}>
+          <Button
+            onClick={handleUploadClick}
+            size="sm"
+            disabled={activeUploads.size > 0}
+          >
             <Upload className="h-4 w-4 mr-2" />
-            {isUploading ? "Uploading..." : "Upload Document"}
+            {activeUploads.size > 0 ? "Uploading..." : "Upload Document"}
           </Button>
         </>
       );
