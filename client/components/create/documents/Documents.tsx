@@ -165,16 +165,32 @@ export default function Documents() {
   const handleDelete = async () => {
     if (!selectedDocuments.length) return;
 
+    // Filter to only deletable documents
+    const deletableDocuments = selectedDocuments.filter((documentId) =>
+      canDeleteDocument(documentId)
+    );
+
+    if (deletableDocuments.length === 0) {
+      toast.error("No documents can be deleted");
+      setShowDeleteDialog(false);
+      return;
+    }
+
     setIsDeleting(true);
     try {
-      for (const documentId of selectedDocuments) {
+      for (const documentId of deletableDocuments) {
         await deleteDocument(documentId);
         logInfo("Document deleted:", { id: documentId });
       }
 
-      toast.success(
-        `${selectedDocuments.length} document(s) deleted successfully`
-      );
+      const nonDeletableCount =
+        selectedDocuments.length - deletableDocuments.length;
+      const message =
+        nonDeletableCount > 0
+          ? `${deletableDocuments.length} of ${selectedDocuments.length} document(s) deleted successfully. ${nonDeletableCount} document(s) could not be deleted as they are used in active scenarios.`
+          : `${deletableDocuments.length} document(s) deleted successfully`;
+
+      toast.success(message);
       setSelectedDocuments([]);
       setShowDeleteDialog(false);
       queryClient.invalidateQueries({ queryKey: ["documents"] });
@@ -213,7 +229,6 @@ export default function Documents() {
   // Render document card for grid view
   const renderDocumentCard = (document: DocumentObject) => {
     const canDelete = canDeleteDocument(document.id);
-    const scenariosUsing = getScenariosUsingDocument(document.id);
 
     return (
       <div
@@ -230,15 +245,8 @@ export default function Documents() {
           />
         </div>
 
-        {/* Type badge */}
-        <div className="absolute top-2 right-2 z-10">
-          <Badge variant="outline" className="text-xs">
-            {getDocumentTypeIcon(document.type)}
-          </Badge>
-        </div>
-
-        {/* Action buttons */}
-        <div className="absolute bottom-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Action buttons - moved to top right */}
+        <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button
             type="button"
             variant="outline"
@@ -279,17 +287,18 @@ export default function Documents() {
                 INACTIVE
               </Badge>
             )}
-            {scenariosUsing.length > 0 && (
-              <Badge variant="outline" className="text-xs">
-                {scenariosUsing.length} SCENARIO
-                {scenariosUsing.length > 1 ? "S" : ""}
-              </Badge>
-            )}
           </div>
 
           {/* Document name */}
           <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded max-w-[calc(100%-1rem)]">
             <span title={document.name}>{truncateText(document.name, 25)}</span>
+          </div>
+
+          {/* Type badge - moved to bottom right */}
+          <div className="absolute bottom-2 right-2 z-10">
+            <Badge variant="outline" className="text-xs">
+              {getDocumentTypeIcon(document.type)}
+            </Badge>
           </div>
         </div>
       </div>
@@ -442,19 +451,109 @@ export default function Documents() {
                   })()}
                 </>
               ) : (
-                `Are you sure you want to delete ${selectedDocuments.length} document${selectedDocuments.length > 1 ? "s" : ""}?`
+                <div className="space-y-4">
+                  <p>
+                    You have selected {selectedDocuments.length} document
+                    {selectedDocuments.length > 1 ? "s" : ""}.
+                  </p>
+
+                  {(() => {
+                    const deletableDocuments = selectedDocuments.filter(
+                      (documentId) => canDeleteDocument(documentId)
+                    );
+                    const nonDeletableDocuments = selectedDocuments.filter(
+                      (documentId) => !canDeleteDocument(documentId)
+                    );
+
+                    return (
+                      <div className="space-y-3">
+                        {deletableDocuments.length > 0 && (
+                          <div>
+                            <p className="font-medium text-green-700 dark:text-green-400">
+                              Documents that can be deleted (
+                              {deletableDocuments.length}):
+                            </p>
+                            <ul className="mt-1 ml-4 text-sm space-y-1">
+                              {deletableDocuments.map((documentId) => {
+                                const doc = documents.find(
+                                  (d) => d.id === documentId
+                                );
+                                return (
+                                  <li
+                                    key={documentId}
+                                    className="text-green-600 dark:text-green-300"
+                                  >
+                                    • {doc?.name}
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        )}
+
+                        {nonDeletableDocuments.length > 0 && (
+                          <div>
+                            <p className="font-medium text-red-700 dark:text-red-400">
+                              Documents that cannot be deleted (
+                              {nonDeletableDocuments.length}):
+                            </p>
+                            <ul className="mt-1 ml-4 text-sm space-y-1">
+                              {nonDeletableDocuments.map((documentId) => {
+                                const doc = documents.find(
+                                  (d) => d.id === documentId
+                                );
+                                const scenariosUsing = doc
+                                  ? getScenariosUsingDocument(doc.id)
+                                  : [];
+                                return (
+                                  <li
+                                    key={documentId}
+                                    className="text-red-600 dark:text-red-300"
+                                  >
+                                    • {doc?.name} (used in{" "}
+                                    {scenariosUsing.length} scenario
+                                    {scenariosUsing.length > 1 ? "s" : ""})
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        )}
+
+                        {deletableDocuments.length > 0 && (
+                          <p className="text-sm text-muted-foreground">
+                            Would you like to delete the{" "}
+                            {deletableDocuments.length} document
+                            {deletableDocuments.length > 1 ? "s" : ""} that can
+                            be deleted?
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  <p className="text-sm text-muted-foreground">
+                    This action cannot be undone.
+                  </p>
+                </div>
               )}
-              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={isDeleting}
+              disabled={
+                isDeleting ||
+                selectedDocuments.filter((documentId) =>
+                  canDeleteDocument(documentId)
+                ).length === 0
+              }
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              {isDeleting ? "Deleting..." : "Delete"}
+              {isDeleting
+                ? "Deleting..."
+                : `Delete ${selectedDocuments.filter((documentId) => canDeleteDocument(documentId)).length} of ${selectedDocuments.length}`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

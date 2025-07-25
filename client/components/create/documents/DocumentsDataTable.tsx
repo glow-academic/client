@@ -189,6 +189,8 @@ export function DocumentsDataTable({
         onViewModeChange={onViewModeChange}
         selectedCount={selectedDocuments.length}
         onBulkDelete={onBulkDelete}
+        canDeleteDocument={canDelete}
+        selectedDocuments={selectedDocuments}
       />
 
       {viewMode === "list" ? (

@@ -36,6 +36,20 @@ export function useDocumentColumns() {
     queryFn: () => getAllScenarios(),
   });
 
+  // Filter options
+  const typeOptions = useMemo(
+    () => [
+      { value: "homework", label: "📚 Homework" },
+      { value: "project", label: "🎯 Project" },
+      { value: "quiz", label: "❓ Quiz" },
+      { value: "midterm", label: "📝 Midterm" },
+      { value: "lab", label: "🧪 Lab" },
+      { value: "lecture", label: "📖 Lecture" },
+      { value: "syllabus", label: "📋 Syllabus" },
+    ],
+    []
+  );
+
   const columns = useMemo<ColumnDef<Document>[]>(
     () => [
       {
@@ -85,17 +99,18 @@ export function useDocumentColumns() {
           <DataTableColumnHeader column={column} title="Name" />
         ),
         cell: ({ row }) => {
-          const document = row.original;
           const name = row.getValue("name") as string;
           return (
             <div className="flex items-center gap-3 max-w-[300px]">
               {/* Document preview */}
               <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
-                <DocumentViewer
-                  document={document}
-                  bare={true}
-                  isFormDocument={false}
-                />
+                <div className="w-full h-full flex items-center justify-center scale-75 transform object-contain">
+                  <DocumentViewer
+                    document={row.original}
+                    bare={true}
+                    isFormDocument={false}
+                  />
+                </div>
               </div>
               {/* Document name */}
               <div className="flex-1 min-w-0">
@@ -134,8 +149,7 @@ export function useDocumentColumns() {
           <DataTableColumnHeader column={column} title="Extension" />
         ),
         cell: ({ row }) => {
-          const document = row.original;
-          const extension = getFileExtension(document.name);
+          const extension = getFileExtension(row.original.name);
           return (
             <Badge variant="secondary" className="text-xs">
               {extension}
@@ -203,8 +217,7 @@ export function useDocumentColumns() {
       {
         id: "actions",
         header: "Actions",
-        cell: ({ row }) => {
-          const document = row.original;
+        cell: ({ row: _row }) => {
           return (
             <div className="flex items-center justify-center gap-1">
               <Button
@@ -230,21 +243,7 @@ export function useDocumentColumns() {
         enableHiding: false,
       },
     ],
-    [scenarios]
-  );
-
-  // Filter options
-  const typeOptions = useMemo(
-    () => [
-      { value: "homework", label: "📚 Homework" },
-      { value: "project", label: "🎯 Project" },
-      { value: "quiz", label: "❓ Quiz" },
-      { value: "midterm", label: "📝 Midterm" },
-      { value: "lab", label: "🧪 Lab" },
-      { value: "lecture", label: "📖 Lecture" },
-      { value: "syllabus", label: "📋 Syllabus" },
-    ],
-    []
+    [scenarios, typeOptions]
   );
 
   const scenarioOptions = useMemo(
