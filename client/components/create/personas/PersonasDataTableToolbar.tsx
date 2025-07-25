@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Persona, Scenario } from "@/types";
+import { Persona } from "@/types";
 
 export interface PersonasDataTableToolbarProps {
   table: Table<Persona>;
@@ -14,7 +14,6 @@ export interface PersonasDataTableToolbarProps {
   reasoningOptions: { value: string; label: string }[];
   modelOptions: { value: string; label: string }[];
   temperatureOptions: { value: string; label: string }[];
-  scenarios: Scenario[];
 }
 
 export function PersonasDataTableToolbar({
@@ -23,7 +22,6 @@ export function PersonasDataTableToolbar({
   reasoningOptions,
   modelOptions,
   temperatureOptions,
-  scenarios,
 }: PersonasDataTableToolbarProps) {
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;

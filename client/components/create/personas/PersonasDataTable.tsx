@@ -33,7 +33,6 @@ export interface PersonasDataTableProps {
 export function PersonasDataTable({
   columns,
   data,
-  scenarios,
   scenarioOptions,
   reasoningOptions,
   modelOptions,
@@ -82,7 +81,6 @@ export function PersonasDataTable({
       <PersonasDataTableToolbar
         table={table}
         scenarioOptions={scenarioOptions}
-        scenarios={scenarios}
         reasoningOptions={reasoningOptions}
         modelOptions={modelOptions}
         temperatureOptions={temperatureOptions}
