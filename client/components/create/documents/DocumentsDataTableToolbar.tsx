@@ -95,8 +95,9 @@ export function DocumentsDataTableToolbar({
         )}
       </div>
       <div className="flex items-center space-x-2">
-        {/* Bulk delete button */}
-        {selectedCount > 0 &&
+        {/* Bulk delete button - only show in list view where selection is available */}
+        {viewMode === "list" &&
+          selectedCount > 0 &&
           (deletableCount === 0 ? (
             <TooltipProvider>
               <Tooltip>
@@ -112,9 +113,7 @@ export function DocumentsDataTableToolbar({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>
-                    All documents are currently in use
-                  </p>
+                  <p>All documents are currently in use</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

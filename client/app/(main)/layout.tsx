@@ -13,6 +13,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { logError } from "@/utils/logger";
+import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Upload } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useMemo, useRef, useState } from "react";
@@ -50,6 +51,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "/";
   const router = useRouter();
   const { effectiveProfile } = useProfile();
+  const queryClient = useQueryClient();
 
   // Role context is available for child components
   const activeSection = getActiveSectionFromPath(pathname);
@@ -124,6 +126,17 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                 description: "File uploaded and processed successfully",
                 id: toastId,
               });
+
+              // Invalidate documents queries to refresh the UI
+              await queryClient.invalidateQueries({ queryKey: ["documents"] });
+
+              // If we're on the documents page, also invalidate any filtered queries
+              if (pathname === "/create/documents") {
+                await queryClient.invalidateQueries({
+                  queryKey: ["documents"],
+                  exact: false,
+                });
+              }
             } else {
               toast.error("Upload processing failed", {
                 description:
