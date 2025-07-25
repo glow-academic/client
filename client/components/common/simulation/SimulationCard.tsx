@@ -36,7 +36,13 @@ interface AttemptData {
 }
 
 export interface SimulationCardProps {
-  simulation: Simulation;
+  simulation: Simulation & {
+    cohort?: { title: string };
+    rubric?: { points: number; passPoints: number } | undefined;
+    passRate?: number;
+    hasPassed?: boolean;
+    highestScore?: number;
+  };
   type: "default" | "cohort";
   onStartSimulation: (id: string) => void;
   loadingSimulation: string | null;
@@ -73,15 +79,24 @@ export default function SimulationCard({
   const IconComponent =
     type === "default" ? personaConfig?.icon || User : Users;
 
-  const gradientClass =
-    type === "default"
+  // Determine gradient class based on completion status
+  const getGradientClass = () => {
+    if (simulation.hasPassed && type !== "default") {
+      return "from-green-500 to-green-600";
+    }
+    return type === "default"
       ? personaConfig?.colors?.gradient || "from-gray-500 to-gray-600"
       : "from-blue-500 to-purple-600";
+  };
+
+  const gradientClass = getGradientClass();
 
   const backgroundGradient =
     type === "default"
       ? "from-gray-900 to-gray-600"
-      : "from-blue-900 to-purple-600";
+      : simulation.hasPassed
+        ? "from-green-900 to-green-600"
+        : "from-blue-900 to-purple-600";
 
   // Make the card fill available height and stretch the header to create space
   return (
@@ -141,6 +156,9 @@ export default function SimulationCard({
                     <DialogHeader>
                       <DialogTitle>
                         Grading Rubric: {simulation.title}
+                        {simulation.passRate &&
+                          simulation.passRate > 0 &&
+                          ` (${simulation.passRate}% to pass)`}
                       </DialogTitle>
                     </DialogHeader>
                     {simulation.rubricId ? (
@@ -246,7 +264,9 @@ export default function SimulationCard({
               ? "Starting..."
               : type === "default"
                 ? "Start Simulation"
-                : "Start Simulations"}
+                : simulation.hasPassed
+                  ? "Completed Simulations"
+                  : "Start Simulations"}
           </button>
         </CardFooter>
       </Card>
