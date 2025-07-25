@@ -1,36 +1,53 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { describe, it } from "vitest";
+import { describe, it } from 'vitest';
+import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import NewProvider from "@/components/management/providers/NewProvider";
+import NewProvider from '@/components/management/providers/NewProvider';
 
-describe("NewProvider", () => {
-  describe("basic render smoke-test", () => {
-    it("renders without crashing", async () => {
-      renderWithMocks(<NewProvider />);
+describe('NewProvider', () => {
+  
 
+  describe('basic render smoke-test', () => {
+    it('renders without crashing', async () => {
+      
+      renderWithMocks(<NewProvider  />);
+      
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
     });
 
-    it.skip("should have correct accessibility attributes", () => {
+    
+
+    it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
+      
       // TODO add accessibility assertions
+
     });
   });
 
-  describe("Edge Cases", () => {
-    it.skip("should handle edge cases gracefully", () => {
+  
+
+  
+
+  
+
+  describe('Edge Cases', () => {
+    it.skip('should handle edge cases gracefully', () => {
       // TODO: Test edge cases and error scenarios
+      
       // TODO: edge-case assertions
+
     });
+
+    
   });
 });
 
 /*
  * Component Analysis for NewProvider:
- * Path: system/providers/NewProvider.tsx
- *
+ * Path: management/providers/NewProvider.tsx
+ * 
  * Features detected:
  * - Default export: true
  * - Named exports: None
@@ -44,20 +61,20 @@ describe("NewProvider", () => {
  * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
- *
+ * 
  * TODO: Implement the failing tests above with actual test logic
- *
+ * 
  * Example implementations:
- *
+ * 
  * Basic rendering:
  * render(<NewProvider />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
- *
+ * 
  * Props testing:
  * const props = { ... };
  * render(<NewProvider {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
- *
+ * 
  * User interaction:
  * const button = screen.getByRole('button');
  * await user.click(button);

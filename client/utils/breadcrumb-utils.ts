@@ -11,6 +11,7 @@ import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getCohort } from "./queries/cohorts/get-cohort";
 import { getModel } from "./queries/models/get-model";
 import { getProfile } from "./queries/profiles/get-profile";
+import { getProvider } from "./queries/providers/get-provider";
 import { getRubric } from "./queries/rubrics/get-rubric";
 import { getSimulationAttempt } from "./queries/simulation_attempts/get-simulation-attempt";
 import { getSimulationChat } from "./queries/simulation_chats/get-simulation-chat";
@@ -87,8 +88,8 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         );
 
       case "provider":
-        // For now, return a generic provider name since we don't have a getProvider function
-        return `Provider ${id.substring(0, 8)}...`;
+        const providerData = await getProvider(id);
+        return providerData?.name || `Provider ${id.substring(0, 8)}...`;
 
       default:
         return id.length > 10 ? `${id.substring(0, 8)}...` : id;
@@ -138,7 +139,7 @@ export const generateEnhancedBreadcrumbs = async (
         context = "cohort";
       } else if (prevSegment === "e" && segments.includes("cohorts")) {
         context = "cohort";
-      } else if (prevSegment === "m" && segments.includes("models")) {
+      } else if (prevSegment === "m" && segments.includes("providers")) {
         context = "model";
       } else if (prevSegment === "a" && segments.includes("home")) {
         context = "attempt";
@@ -227,6 +228,9 @@ export const generateEnhancedBreadcrumbs = async (
         case "simulations":
           title = "Simulations";
           break;
+        case "documents":
+          title = "Documents";
+          break;
 
         // Management subsections
         case "staff":
@@ -234,6 +238,9 @@ export const generateEnhancedBreadcrumbs = async (
           break;
         case "context":
           title = "Context";
+          break;
+        case "providers":
+          title = "Providers";
           break;
         case "logs":
           title = "Logs";
@@ -246,8 +253,11 @@ export const generateEnhancedBreadcrumbs = async (
         case "agents":
           title = "Agents";
           break;
-        case "providers":
-          title = "Providers";
+        case "feedback":
+          title = "Feedback";
+          break;
+        case "logs":
+          title = "Logs";
           break;
         case "health":
           title = "Health";
@@ -339,6 +349,12 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "rubrics";
       }
+      if (second === "documents") {
+        if (third === "d" && fourth) {
+          return `document-${fourth}`;
+        }
+        return "documents";
+      }
       return "create";
 
     case "management":
@@ -348,8 +364,14 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "staff";
       }
+      if (second === "providers") {
+        if (third === "p" && fourth) {
+          return `provider-${fourth}`;
+        }
+        return "providers";
+      }
       if (second) {
-        return second; // staff, personas, logs, models, rubrics
+        return second; // staff, context, logs, models, rubrics
       }
       return "management";
 
@@ -360,11 +382,8 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "agents";
       }
-      if (second === "providers") {
-        if (third === "p" && fourth) {
-          return `provider-${fourth}`;
-        }
-        return "providers";
+      if (second === "feedback") {
+        return "feedback";
       }
       if (second === "logs") {
         return "logs";
@@ -472,6 +491,9 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
         break;
       case "providers":
         title = "Providers";
+        break;
+      case "documents":
+        title = "Documents";
         break;
       case "logs":
         title = "Logs";

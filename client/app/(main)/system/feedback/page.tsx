@@ -1,5 +1,5 @@
 /**
- * app/(main)/management/feedback/page.tsx
+ * app/(main)/system/feedback/page.tsx
  * Feedback list page - redirects to home with feedback section
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025

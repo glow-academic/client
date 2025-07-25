@@ -98,7 +98,7 @@ export default function Providers() {
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/system/providers/p/${id}/m/${id}`);
+    router.push(`/management/providers/p/${id}/m/${id}`);
   };
 
   const renderEmptyState = () => (
@@ -130,7 +130,7 @@ export default function Providers() {
           variant="default"
           size="sm"
           onClick={() =>
-            router.push(`/system/providers/p/${providerGroup.provider.id}`)
+            router.push(`/management/providers/p/${providerGroup.provider.id}`)
           }
         >
           <Settings className="h-4 w-4" />
@@ -181,7 +181,9 @@ export default function Providers() {
         <Card
           className="border-dashed border-2 hover:border-dashed hover:border-primary/50 transition-colors cursor-pointer"
           onClick={() =>
-            router.push(`/system/providers/p/${providerGroup.provider.id}/new`)
+            router.push(
+              `/management/providers/p/${providerGroup.provider.id}/new`
+            )
           }
         >
           <CardContent className="flex flex-col items-center justify-center py-12">

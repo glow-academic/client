@@ -350,9 +350,9 @@ export function UnifiedSidebar({
       });
 
       managementItems.push({
-        title: "Feedback",
+        title: "Providers",
         url: "#",
-        section: "feedback",
+        section: "providers",
       });
     }
 
@@ -373,11 +373,11 @@ export function UnifiedSidebar({
         section: "agents",
       });
 
-      // Providers - available for admin
+      // Feedback - moved from management
       systemItems.push({
-        title: "Providers",
+        title: "Feedback",
         url: "#",
-        section: "providers",
+        section: "feedback",
       });
 
       // Logs - available for admin

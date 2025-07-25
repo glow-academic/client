@@ -194,7 +194,7 @@ export default function Provider({ providerId }: ProviderProps) {
           ? "Provider updated successfully!"
           : "Provider created successfully!"
       );
-      router.push(`/system/providers`);
+      router.push(`/management/providers`);
     } catch (error) {
       logError(
         `Error ${isEditMode ? "updating" : "creating"} provider:`,

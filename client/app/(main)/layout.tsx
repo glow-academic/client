@@ -124,19 +124,21 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         buttonLabel = "End & Next Chat";
       }
 
-      return !showResults && (
-        <Button
-          type="button"
-          variant="outline"
-          onClick={endChat}
-          disabled={
-            endChatLoading || (simulation?.timeLimit ? !isActive : false)
-          }
-          className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
-          data-tour-end-chat
-        >
-          {endChatLoading ? "Ending..." : buttonLabel}
-        </Button>
+      return (
+        !showResults && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={endChat}
+            disabled={
+              endChatLoading || (simulation?.timeLimit ? !isActive : false)
+            }
+            className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
+            data-tour-end-chat
+          >
+            {endChatLoading ? "Ending..." : buttonLabel}
+          </Button>
+        )
       );
     }
 
@@ -209,9 +211,12 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/system/providers") {
+    if (pathname === "/management/providers") {
       return (
-        <Button onClick={() => router.push("/system/providers/new")} size="sm">
+        <Button
+          onClick={() => router.push("/management/providers/new")}
+          size="sm"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Provider
         </Button>

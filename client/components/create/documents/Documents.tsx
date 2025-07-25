@@ -7,7 +7,6 @@
 
 "use client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -101,7 +100,6 @@ const DOCUMENT_TYPE_OPTIONS = [
 ];
 
 export default function Documents() {
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   // State management
@@ -374,14 +372,16 @@ export default function Documents() {
 
             {/* Scenario Filter */}
             <Select
-              value={scenarioFilter[0] || ""}
-              onValueChange={(value) => setScenarioFilter(value ? [value] : [])}
+              value={scenarioFilter[0] || "all"}
+              onValueChange={(value) =>
+                setScenarioFilter(value === "all" ? [] : [value])
+              }
             >
               <SelectTrigger className="w-40 h-8">
                 <SelectValue placeholder="Filter by scenario" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Scenarios</SelectItem>
+                <SelectItem value="all">All Scenarios</SelectItem>
                 {scenarioOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
@@ -392,16 +392,16 @@ export default function Documents() {
 
             {/* Extension Filter */}
             <Select
-              value={extensionFilter[0] || ""}
+              value={extensionFilter[0] || "all"}
               onValueChange={(value) =>
-                setExtensionFilter(value ? [value] : [])
+                setExtensionFilter(value === "all" ? [] : [value])
               }
             >
               <SelectTrigger className="w-40 h-8">
                 <SelectValue placeholder="Filter by extension" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Extensions</SelectItem>
+                <SelectItem value="all">All Extensions</SelectItem>
                 {extensionOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}

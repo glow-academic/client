@@ -42,6 +42,7 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
         "scenarios",
         "simulations",
         "rubrics", // Create
+        "documents", // Create
         "cohorts" // Classes (all)
       );
       break;
@@ -53,6 +54,7 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
         "scenarios",
         "simulations",
         "rubrics", // Create
+        "documents", // Create
         "cohorts", // Classes (all)
         "personas",
         "logs",
@@ -71,6 +73,7 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
         "scenarios",
         "simulations",
         "rubrics", // Create
+        "documents", // Create
         "classes",
         "cohorts", // Classes (all)
         "departments",
@@ -186,6 +189,8 @@ export const getSectionRoute = (
       return "/create/rubrics";
     case "personas":
       return "/create/personas";
+    case "documents":
+      return "/create/documents";
 
     // Management routes
     case "management":
@@ -195,17 +200,15 @@ export const getSectionRoute = (
     case "staff":
       return "/management/staff";
     case "providers":
-      return "/system/providers";
-    case "feedback":
-      return "/management/feedback";
+      return "/management/providers";
     case "system":
       return "/management/system";
 
     // System routes
     case "agents":
       return "/system/agents";
-    case "providers":
-      return "/system/providers";
+    case "feedback":
+      return "/system/feedback";
     case "logs":
       return "/system/logs";
     case "health":
@@ -248,6 +251,10 @@ export const getSectionRoute = (
         const rubricId = section.replace("rubric-", "");
         return `/create/rubrics/r/${rubricId}`;
       }
+      if (section.startsWith("document-")) {
+        const documentId = section.replace("document-", "");
+        return `/create/documents/d/${documentId}`;
+      }
 
       if (section.startsWith("chat-")) {
         const chatId = section.replace("chat-", "");
@@ -265,12 +272,12 @@ export const getSectionRoute = (
 
       if (section.startsWith("provider-")) {
         const providerId = section.replace("provider-", "");
-        return `/system/providers/p/${providerId}`;
+        return `/management/providers/p/${providerId}`;
       }
       if (section.startsWith("model-")) {
         const providerId = section.replace("provider-", "");
         const modelId = section.replace("model-", "");
-        return `/system/providers/p/${providerId}/m/${modelId}`;
+        return `/management/providers/p/${providerId}/m/${modelId}`;
       }
       if (section.startsWith("report-")) {
         const profileId = section.replace("report-", "");
