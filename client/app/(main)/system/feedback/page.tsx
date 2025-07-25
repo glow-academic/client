@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
-import Feedback from "@/components/management/feedback/Feedback";
+import Feedback from "@/components/system/feedback/Feedback";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

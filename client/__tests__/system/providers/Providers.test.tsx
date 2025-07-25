@@ -1,4 +1,4 @@
-import Providers from "@/components/system/providers/Providers";
+import Providers from "@/components/management/providers/Providers";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";

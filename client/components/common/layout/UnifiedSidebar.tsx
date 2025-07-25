@@ -303,9 +303,9 @@ export function UnifiedSidebar({
             section: "personas",
           },
           {
-            title: "Rubrics",
+            title: "Documents",
             url: "#",
-            section: "rubrics",
+            section: "documents",
           },
           {
             title: "Scenarios",
@@ -316,6 +316,11 @@ export function UnifiedSidebar({
             title: "Simulations",
             url: "#",
             section: "simulations",
+          },
+          {
+            title: "Rubrics",
+            url: "#",
+            section: "rubrics",
           },
         ],
       });

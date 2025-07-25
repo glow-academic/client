@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import NewModel from "@/components/system/providers/NewModel";
+import NewModel from "@/components/management/providers/NewModel";
 import { getProvider } from "@/utils/queries/providers/get-provider";
 
 import type { Metadata, ResolvingMetadata } from "next";

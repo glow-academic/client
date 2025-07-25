@@ -6,7 +6,7 @@
  */
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { Book, Calendar, Clock, Edit, FileText, MapPin } from "lucide-react";
+import { Book, Calendar, Clock, Edit, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
@@ -15,13 +15,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import {
-  Document,
   ScenarioClasse,
   ScenarioDeadline,
   ScenarioLocation,
   ScenarioTime,
 } from "@/types";
-import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllScenarioClasses } from "@/utils/queries/scenario_classes/get-all-scenario-classes";
 import { getAllScenarioDeadlines } from "@/utils/queries/scenario_deadlines/get-all-scenario-deadlines";
 import { getAllScenarioLocations } from "@/utils/queries/scenario_locations/get-all-scenario-locations";
@@ -49,11 +47,6 @@ export default function Context() {
   const { data: times = [], isLoading: timesLoading } = useQuery({
     queryKey: ["scenario-times"],
     queryFn: () => getAllScenarioTimes(),
-  });
-
-  const { data: documents = [], isLoading: documentsLoading } = useQuery({
-    queryKey: ["documents"],
-    queryFn: () => getAllDocuments(),
   });
 
   const formatTime = (timeString: string) => {
@@ -239,36 +232,6 @@ export default function Context() {
                     <p className="text-xs text-muted-foreground line-clamp-1">
                       {item.description}
                     </p>
-                  </div>
-                </div>
-              ))}
-              {items.length > 3 && (
-                <p className="text-xs text-muted-foreground">
-                  +{items.length - 3} more
-                </p>
-              )}
-            </div>
-          )
-        )}
-
-        {/* Documents */}
-        {renderContextCard<Document>(
-          "Documents",
-          <FileText className="h-5 w-5" />,
-          documents.length,
-          documents,
-          "/management/context/documents",
-          documentsLoading,
-          (items) => (
-            <div className="space-y-2">
-              {items.slice(0, 3).map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between p-2 bg-muted/50 rounded-md"
-                >
-                  <div>
-                    <p className="text-sm font-medium">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">{item.type}</p>
                   </div>
                 </div>
               ))}

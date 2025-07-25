@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import ProviderEdit from "@/components/system/providers/ProviderEdit";
+import ProviderEdit from "@/components/management/providers/ProviderEdit";
 import { getProvider } from "@/utils/queries/providers/get-provider";
 import { getQueryClient } from "@/utils/react-query/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
