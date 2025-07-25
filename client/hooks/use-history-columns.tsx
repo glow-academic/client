@@ -1,9 +1,9 @@
 "use client";
-import { useProfile } from "@/contexts/profile-context";
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { DataTableRowActions } from "@/components/common/history/DataTableRowActions";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useProfile } from "@/contexts/profile-context";
 import {
   Persona,
   Profile,
@@ -12,6 +12,7 @@ import {
   SimulationChat,
 } from "@/types";
 import { getPersonaConfig } from "@/utils/personas";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -119,6 +120,11 @@ export function useHistoryColumns({
     enabled: !!grades && grades.length > 0,
   });
 
+  const { data: cohorts, isLoading: isLoadingCohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
+  });
+
   // Create dynamic profile types from database profiles
   const personaTypes = useMemo(() => {
     if (!personas) return [];
@@ -163,7 +169,8 @@ export function useHistoryColumns({
 
   // Create enhanced attempts data
   const enhancedAttempts = useMemo(() => {
-    if (!attempts || !chats || !personas || !simulations || !scenarios) return [];
+    if (!attempts || !chats || !personas || !simulations || !scenarios)
+      return [];
 
     return attempts.map((attempt: SimulationAttempt): EnhancedAttempt => {
       const attemptChats = chats.filter(
@@ -619,37 +626,63 @@ export function useHistoryColumns({
     ];
 
     return attemptColumns;
-  }, [
-    profileOptions,
-    showAll,
-    showExport,
-    grades,
-    simulations,
-    validRubrics,
-  ]);
+  }, [profileOptions, showAll, showExport, grades, simulations, validRubrics]);
 
   // Use enhanced attempts data
   let data: unknown[] = enhancedAttempts || [];
 
-  if (cohortIds) {
-    data = data.filter(
-      (attempt: unknown) =>
-        cohortIds.includes((attempt as Record<string, unknown>)["cohortId"] as string)
+  // Apply cohort filtering if cohortIds are provided
+  if (cohortIds && cohortIds.length > 0 && cohorts) {
+    // Get cohort filtering data
+    const matchingCohorts = cohorts.filter(
+      (cohort) => cohortIds.includes(cohort.id) && cohort.active
     );
+
+    if (matchingCohorts.length > 0) {
+      // Collect all profile IDs and simulation IDs from matching cohorts
+      const allowedProfileIds = new Set<string>();
+      const allowedSimulationIds = new Set<string>();
+
+      matchingCohorts.forEach((cohort) => {
+        cohort.profileIds.forEach((profileId: string) =>
+          allowedProfileIds.add(profileId)
+        );
+        cohort.simulationIds.forEach((simulationId: string) =>
+          allowedSimulationIds.add(simulationId)
+        );
+      });
+
+      // Filter attempts based on cohort membership
+      data = data.filter((attempt: unknown) => {
+        const attemptData = attempt as Record<string, unknown>;
+        return (
+          attemptData["profileId"] &&
+          allowedProfileIds.has(attemptData["profileId"] as string) &&
+          attemptData["simulationId"] &&
+          allowedSimulationIds.has(attemptData["simulationId"] as string)
+        );
+      });
+    } else {
+      // No matching cohorts, show empty data
+      data = [];
+    }
   }
 
   // Apply filtering based on showAll parameter
-  if (!showAll && effectiveProfile) {
-    // If showAll is false, filter to show only current user's data
+  if (showAll) {
+    // If showAll is true, show all data regardless of profile
+    // Don't filter - show all data
+  } else if (effectiveProfile) {
+    // If showAll is false and there's a profile, filter to current user's data
     data = data.filter(
       (attempt: unknown) =>
-        (attempt as Record<string, unknown>)["profileId"] === effectiveProfile?.id
+        (attempt as Record<string, unknown>)["profileId"] ===
+        effectiveProfile?.id
     );
-  } else if (!effectiveProfile) {
-    // If there's no user, show empty data
+  } else {
+    // If showAll is false and there's no profile, show empty data
     data = [];
   }
-  // If showAll is true, don't filter - show all data
 
   const isLoading =
     isLoadingProfiles ||
@@ -662,7 +695,8 @@ export function useHistoryColumns({
     isLoadingGrades ||
     isLoadingFeedbacks ||
     isLoadingSimulations ||
-    isLoadingScenarios;
+    isLoadingScenarios ||
+    isLoadingCohorts;
 
   return {
     columns,
