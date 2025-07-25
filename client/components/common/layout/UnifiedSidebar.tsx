@@ -454,7 +454,8 @@ export function UnifiedSidebar({
   const handleLoginOrLogout = async () => {
     if (effectiveProfile.role === "guest" || !activeProfile) {
       // Navigate to login page for guests or when no user
-      router.push("/");
+      const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
+      router.push(`${appPrefix}/`);
       return;
     }
 

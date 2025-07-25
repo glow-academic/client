@@ -109,7 +109,10 @@ export default function Practice() {
   const { data: attempts, isLoading: _loadingAttempts } = useQuery({
     queryKey: ["simulationAttemptsForHome", profileIdsForQueries],
     queryFn: () => getSimulationAttemptsByProfiles(profileIdsForQueries),
-    enabled: profileIdsForQueries.length > 0,
+    enabled:
+      profileIdsForQueries.length > 0 &&
+      effectiveProfile &&
+      effectiveProfile.role !== "guest",
   });
 
   const { data: chats } = useQuery({

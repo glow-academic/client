@@ -112,6 +112,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         isLastAttempt,
         simulation,
         isActive,
+        showResults,
       } = simulationContext;
 
       let buttonLabel = "End Chat";
@@ -123,7 +124,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         buttonLabel = "End & Next Chat";
       }
 
-      return (
+      return !showResults && (
         <Button
           type="button"
           variant="outline"
