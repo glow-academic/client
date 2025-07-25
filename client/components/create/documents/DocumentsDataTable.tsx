@@ -61,19 +61,21 @@ export function DocumentsDataTable({
   onEdit,
   onDelete,
   canDelete,
+  selectedDocuments,
+  onDocumentSelect,
+  onSelectAll,
+  onBulkDelete,
 }: DocumentsDataTableProps) {
-  const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+  const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
-  const [sorting, setSorting] = React.useState<SortingState>([
-    { id: "updatedAt", desc: true }, // Default to descending order by date
-  ]);
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = React.useState({});
 
-  // Add checkbox column to the beginning
-  const columnsWithCheckbox = React.useMemo(() => {
+  // Add checkbox and actions columns to the columns array
+  const columnsWithActions = React.useMemo(() => {
     const checkboxColumn: ColumnDef<Document> = {
       id: "select",
       header: ({ table }) => (
@@ -82,15 +84,20 @@ export function DocumentsDataTable({
             table.getIsAllPageRowsSelected() ||
             (table.getIsSomePageRowsSelected() && "indeterminate")
           }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          onCheckedChange={(value) => {
+            table.toggleAllPageRowsSelected(!!value);
+            onSelectAll(!!value);
+          }}
           aria-label="Select all"
           className="translate-y-[2px]"
         />
       ),
       cell: ({ row }) => (
         <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          checked={selectedDocuments.includes(row.original.id)}
+          onCheckedChange={(value) =>
+            onDocumentSelect(row.original.id, !!value)
+          }
           aria-label="Select row"
           className="translate-y-[2px]"
         />
@@ -99,7 +106,6 @@ export function DocumentsDataTable({
       enableHiding: false,
     };
 
-    // Add actions column at the end
     const actionsColumn: ColumnDef<Document> = {
       id: "actions",
       header: "Actions",
@@ -107,25 +113,24 @@ export function DocumentsDataTable({
         const document = row.original;
         return (
           <div className="flex items-center justify-center gap-1">
-            {onEdit && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 w-7 p-0"
+              onClick={() => onEdit(document)}
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+            {canDelete(document.id) && (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => onEdit(document)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            )}
-            {onDelete && canDelete && canDelete(document.id) && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="text-destructive hover:text-destructive"
+                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                 onClick={() => onDelete(document)}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-3 w-3" />
               </Button>
             )}
           </div>
@@ -135,33 +140,38 @@ export function DocumentsDataTable({
       enableHiding: false,
     };
 
-    return [checkboxColumn, ...columns, actionsColumn];
-  }, [columns, onEdit, onDelete, canDelete]);
+    // Filter out the existing select and actions columns and add our custom ones
+    const filteredColumns = columns.filter(
+      (col) => col.id !== "select" && col.id !== "actions"
+    );
+    return [checkboxColumn, ...filteredColumns, actionsColumn];
+  }, [
+    columns,
+    selectedDocuments,
+    onDocumentSelect,
+    onSelectAll,
+    onEdit,
+    onDelete,
+    canDelete,
+  ]);
 
   const table = useReactTable({
     data,
-    columns: columnsWithCheckbox,
-    state: {
-      sorting,
-      columnVisibility,
-      rowSelection,
-      columnFilters,
-    },
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
+    columns: columnsWithActions,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
-    initialState: {
-      pagination: {
-        pageSize: 10,
-      },
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      rowSelection,
     },
   });
 
@@ -174,86 +184,69 @@ export function DocumentsDataTable({
         extensionOptions={extensionOptions}
         viewMode={viewMode}
         onViewModeChange={onViewModeChange}
+        selectedCount={selectedDocuments.length}
+        onBulkDelete={onBulkDelete}
       />
 
-      {viewMode === "grid" ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {table.getRowModel().rows.length ? (
-            table
-              .getRowModel()
-              .rows.map((row) => renderDocumentCard(row.original))
-          ) : (
-            <div className="col-span-full text-center py-8 text-muted-foreground">
-              No documents match the current filters.
-            </div>
-          )}
+      {viewMode === "list" ? (
+        <div className="space-y-4">
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => {
+                      return (
+                        <TableHead key={header.id}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </TableHead>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columnsWithActions.length}
+                      className="h-24 text-center"
+                    >
+                      No results.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          <DataTablePagination table={table} />
         </div>
       ) : (
-        <div className="rounded-md border overflow-x-auto">
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="h-8">
-                  {headerGroup.headers.map((header) => {
-                    return (
-                      <TableHead
-                        key={header.id}
-                        colSpan={header.colSpan}
-                        className={`border-r py-1 text-xs text-center ${
-                          header.id === "select" ? "w-12" : ""
-                        } ${header.column.getCanSort() ? "pl-4" : ""}`}
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="h-6 hover:bg-muted/30 transition-colors"
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell
-                        key={cell.id}
-                        className={`border-r px-2 py-1 text-center ${
-                          cell.column.id === "select" ? "w-12" : ""
-                        }`}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columnsWithCheckbox.length}
-                    className="h-24 text-center px-6"
-                  >
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {data.map((document) => renderDocumentCard(document))}
         </div>
       )}
-
-      <DataTablePagination table={table} />
     </div>
   );
 }

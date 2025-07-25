@@ -5,8 +5,18 @@ import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Document, Scenario } from "@/types";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
+import { Edit, Trash2 } from "lucide-react";
+
+// Helper function to truncate text
+const truncateText = (text: string, maxLength: number = 30): string => {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + "...";
+};
 
 export function useDocumentColumns() {
   // Fetch data for filter options
@@ -18,19 +28,46 @@ export function useDocumentColumns() {
   const columns = useMemo<ColumnDef<Document>[]>(
     () => [
       {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            aria-label="Select all"
+            className="translate-y-[2px]"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+            className="translate-y-[2px]"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
         accessorKey: "name",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Name" />
         ),
-        cell: ({ row }) => (
-          <div className="w-[200px]">{row.getValue("name")}</div>
-        ),
-        enableSorting: true,
-        enableHiding: false,
+        cell: ({ row }) => {
+          const name = row.getValue("name") as string;
+          return (
+            <div className="max-w-[200px]">
+              <span title={name}>{truncateText(name, 25)}</span>
+            </div>
+          );
+        },
         filterFn: (row, id, value) => {
-          const name = row.getValue(id) as string;
-          const searchText = value.toLowerCase();
-          return name.toLowerCase().includes(searchText);
+          return value.length === 0 || value.includes(row.getValue(id));
         },
       },
       {
@@ -40,24 +77,15 @@ export function useDocumentColumns() {
         ),
         cell: ({ row }) => {
           const type = row.getValue("type") as string;
-          const typeMap: Record<string, string> = {
-            homework: "📝 Homework",
-            project: "🚀 Project",
-            quiz: "❓ Quiz",
-            midterm: "📊 Midterm",
-            lab: "🧪 Lab",
-            lecture: "📚 Lecture",
-            syllabus: "📋 Syllabus",
-          };
+          const typeInfo = typeOptions.find((option) => option.value === type);
           return (
-            <div className="w-[120px]">{typeMap[type] || "📄 Document"}</div>
+            <Badge variant="outline" className="text-xs">
+              {typeInfo?.label || type}
+            </Badge>
           );
         },
-        enableSorting: true,
-        enableHiding: true,
         filterFn: (row, id, value) => {
-          const type = row.getValue(id) as string;
-          return value.includes(type);
+          return value.length === 0 || value.includes(row.getValue(id));
         },
       },
       {
@@ -66,63 +94,44 @@ export function useDocumentColumns() {
           <DataTableColumnHeader column={column} title="Extension" />
         ),
         cell: ({ row }) => {
-          const mimeType = row.original.mimeType;
-          const extensionMap: Record<string, string> = {
-            "application/pdf": "PDF",
-            "image/jpeg": "JPEG",
-            "image/jpg": "JPG",
-            "image/png": "PNG",
-            "image/gif": "GIF",
-            "image/svg+xml": "SVG",
-            "image/webp": "WEBP",
-            "application/msword": "DOC",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-              "DOCX",
-            "text/plain": "TXT",
-            "text/markdown": "MD",
-            "application/zip": "ZIP",
-            "text/html": "HTML",
-            "text/css": "CSS",
-            "application/javascript": "JS",
-            "text/javascript": "JS",
-            "application/json": "JSON",
-            "text/xml": "XML",
-            "application/xml": "XML",
-          };
+          const document = row.original;
+          const extension =
+            document.name.split(".").pop()?.toUpperCase() || "N/A";
           return (
-            <div className="w-[80px] text-center">
-              {extensionMap[mimeType] || "OTHER"}
+            <Badge variant="secondary" className="text-xs">
+              {extension}
+            </Badge>
+          );
+        },
+        filterFn: (row, id, value) => {
+          return value.length === 0 || value.includes(row.getValue(id));
+        },
+      },
+      {
+        accessorKey: "scenarios",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Scenarios" />
+        ),
+        cell: ({ row }) => {
+          const document = row.original;
+          const documentScenarios = scenarios.filter((scenario: Scenario) =>
+            scenario.documentIds?.includes(document.id)
+          );
+          return (
+            <div className="max-w-[150px]">
+              {documentScenarios.length > 0 ? (
+                <Badge variant="outline" className="text-xs">
+                  {documentScenarios.length} scenario
+                  {documentScenarios.length > 1 ? "s" : ""}
+                </Badge>
+              ) : (
+                <span className="text-muted-foreground text-xs">None</span>
+              )}
             </div>
           );
         },
-        enableSorting: true,
-        enableHiding: true,
-        filterFn: (row, _, value) => {
-          const mimeType = row.original.mimeType;
-          const extensionMap: Record<string, string> = {
-            "application/pdf": "PDF",
-            "image/jpeg": "JPEG",
-            "image/jpg": "JPG",
-            "image/png": "PNG",
-            "image/gif": "GIF",
-            "image/svg+xml": "SVG",
-            "image/webp": "WEBP",
-            "application/msword": "DOC",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-              "DOCX",
-            "text/plain": "TXT",
-            "text/markdown": "MD",
-            "application/zip": "ZIP",
-            "text/html": "HTML",
-            "text/css": "CSS",
-            "application/javascript": "JS",
-            "text/javascript": "JS",
-            "application/json": "JSON",
-            "text/xml": "XML",
-            "application/xml": "XML",
-          };
-          const extension = extensionMap[mimeType] || "OTHER";
-          return value.includes(extension);
+        filterFn: (row, id, value) => {
+          return value.length === 0 || value.includes(row.getValue(id));
         },
       },
       {
@@ -133,44 +142,9 @@ export function useDocumentColumns() {
         cell: ({ row }) => {
           const active = row.getValue("active") as boolean;
           return (
-            <div className="w-[80px] text-center">
+            <Badge variant={active ? "default" : "secondary"}>
               {active ? "Active" : "Inactive"}
-            </div>
-          );
-        },
-        enableSorting: true,
-        enableHiding: true,
-        filterFn: (row, id, value) => {
-          const active = row.getValue(id) as boolean;
-          const status = active ? "Active" : "Inactive";
-          return value.includes(status);
-        },
-      },
-      {
-        accessorKey: "scenarioIds",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Scenarios" />
-        ),
-        cell: ({ row }) => {
-          const document = row.original;
-          const documentScenarios = scenarios.filter((scenario: Scenario) =>
-            scenario.documentIds?.includes(document.id)
-          );
-          return (
-            <div className="w-[80px] text-center">
-              {documentScenarios.length}
-            </div>
-          );
-        },
-        enableSorting: true,
-        enableHiding: true,
-        filterFn: (row, _, value) => {
-          const document = row.original;
-          const documentScenarios = scenarios.filter((scenario: Scenario) =>
-            scenario.documentIds?.includes(document.id)
-          );
-          return value.some((filterValue: string) =>
-            documentScenarios.some((scenario) => scenario.id === filterValue)
+            </Badge>
           );
         },
       },
@@ -180,15 +154,42 @@ export function useDocumentColumns() {
           <DataTableColumnHeader column={column} title="Updated" />
         ),
         cell: ({ row }) => {
-          const updatedAt = row.getValue("updatedAt") as string;
+          const date = new Date(row.getValue("updatedAt"));
           return (
-            <div className="w-[120px]">
-              {new Date(updatedAt).toLocaleDateString()}
+            <div className="text-xs text-muted-foreground">
+              {date.toLocaleDateString()}
             </div>
           );
         },
-        enableSorting: true,
-        enableHiding: true,
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => {
+          const document = row.original;
+          return (
+            <div className="flex items-center justify-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 w-7 p-0"
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          );
+        },
+        enableSorting: false,
+        enableHiding: false,
       },
     ],
     [scenarios]
@@ -197,12 +198,12 @@ export function useDocumentColumns() {
   // Filter options
   const typeOptions = useMemo(
     () => [
-      { value: "homework", label: "📝 Homework" },
-      { value: "project", label: "🚀 Project" },
+      { value: "homework", label: "📚 Homework" },
+      { value: "project", label: "🎯 Project" },
       { value: "quiz", label: "❓ Quiz" },
-      { value: "midterm", label: "📊 Midterm" },
+      { value: "midterm", label: "📝 Midterm" },
       { value: "lab", label: "🧪 Lab" },
-      { value: "lecture", label: "📚 Lecture" },
+      { value: "lecture", label: "📖 Lecture" },
       { value: "syllabus", label: "📋 Syllabus" },
     ],
     []
@@ -220,23 +221,13 @@ export function useDocumentColumns() {
   const extensionOptions = useMemo(
     () => [
       { value: "PDF", label: "PDF" },
-      { value: "JPEG", label: "JPEG" },
-      { value: "JPG", label: "JPG" },
-      { value: "PNG", label: "PNG" },
-      { value: "GIF", label: "GIF" },
-      { value: "SVG", label: "SVG" },
-      { value: "WEBP", label: "WEBP" },
       { value: "DOC", label: "DOC" },
       { value: "DOCX", label: "DOCX" },
       { value: "TXT", label: "TXT" },
       { value: "MD", label: "MD" },
-      { value: "ZIP", label: "ZIP" },
-      { value: "HTML", label: "HTML" },
-      { value: "CSS", label: "CSS" },
-      { value: "JS", label: "JS" },
-      { value: "JSON", label: "JSON" },
-      { value: "XML", label: "XML" },
-      { value: "OTHER", label: "OTHER" },
+      { value: "JPG", label: "JPG" },
+      { value: "PNG", label: "PNG" },
+      { value: "OTHER", label: "Other" },
     ],
     []
   );
