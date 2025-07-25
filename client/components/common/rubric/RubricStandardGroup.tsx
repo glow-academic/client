@@ -693,16 +693,18 @@ export default function RubricStandardGroup({
   const colorClasses = getColorClasses(color);
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden w-full max-w-full">
       <Collapsible open={isOpen} onOpenChange={() => onToggle(index)}>
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-muted/20 transition-colors">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 flex-1">
-                <div className={`p-2 rounded-lg ${colorClasses.bg}`}>
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div
+                  className={`p-2 rounded-lg ${colorClasses.bg} flex-shrink-0`}
+                >
                   <IconComponent className={`h-5 w-5 ${colorClasses.text}`} />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   {isEditing ? (
                     <div
                       className="space-y-3 w-full"
@@ -760,17 +762,17 @@ export default function RubricStandardGroup({
                       </div>
                     </div>
                   ) : (
-                    <div>
-                      <CardTitle className="text-lg">
+                    <div className="min-w-0">
+                      <CardTitle className="text-lg truncate">
                         {mode === "create" ? "New Standard Group" : group!.name}
                       </CardTitle>
-                      <CardDescription>
+                      <CardDescription className="truncate">
                         {mode === "create"
                           ? "Create a new evaluation category"
                           : group!.description}
                       </CardDescription>
                       {mode === "edit" && (
-                        <div className="flex gap-2 pt-2">
+                        <div className="flex gap-2 pt-2 flex-wrap">
                           <Badge variant="outline">
                             Total: {group!.points} points
                           </Badge>
@@ -818,20 +820,20 @@ export default function RubricStandardGroup({
           </CardHeader>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <CardContent>
+          <CardContent className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-20">Points</TableHead>
                   <TableHead className="w-40">Name</TableHead>
-                  <TableHead>Description</TableHead>
+                  <TableHead className="w-full">Description</TableHead>
                   {isEditing && <TableHead className="w-20">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {visibleStandards.map((standard, standardIndex) => (
                   <TableRow key={standard.id || `new-${standardIndex}`}>
-                    <TableCell>
+                    <TableCell className="w-20">
                       {isEditing ? (
                         <Input
                           type="number"
@@ -855,7 +857,7 @@ export default function RubricStandardGroup({
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="w-40">
                       {isEditing ? (
                         <Input
                           value={standard.name}
@@ -870,10 +872,12 @@ export default function RubricStandardGroup({
                           placeholder="Standard name"
                         />
                       ) : (
-                        <span className="font-medium">{standard.name}</span>
+                        <span className="font-medium truncate block">
+                          {standard.name}
+                        </span>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="w-full max-w-0">
                       {isEditing ? (
                         <Textarea
                           value={standard.description}
@@ -884,17 +888,19 @@ export default function RubricStandardGroup({
                               e.target.value
                             )
                           }
-                          className="text-sm min-h-[60px]"
+                          className="text-sm min-h-[60px] max-w-full"
                           placeholder="Standard description"
                         />
                       ) : (
-                        <span className="text-sm leading-relaxed">
-                          {standard.description}
-                        </span>
+                        <div className="w-full overflow-hidden">
+                          <span className="text-sm leading-relaxed line-clamp-2 block truncate">
+                            {standard.description}
+                          </span>
+                        </div>
                       )}
                     </TableCell>
                     {isEditing && (
-                      <TableCell>
+                      <TableCell className="w-20">
                         <Button
                           variant="ghost"
                           size="sm"

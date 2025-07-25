@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 143
-- **Tests Created**: 11
+- **Total Components**: 144
+- **Tests Created**: 2
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 132
+- **Tests Skipped** (already implemented): 142
 
 ## Component Coverage
 
@@ -100,6 +100,8 @@
 | Simulation | common/simulation/Simulation.tsx | Simulation.test.tsx | ✅ Implemented |
 | SimulationCard | common/simulation/SimulationCard.tsx | SimulationCard.test.tsx | ✅ Implemented |
 | Documents | create/documents/Documents.tsx | Documents.test.tsx | ✅ Implemented |
+| DocumentsDataTable | create/documents/DocumentsDataTable.tsx | DocumentsDataTable.test.tsx | ✅ Implemented |
+| DocumentsDataTableToolbar | create/documents/DocumentsDataTableToolbar.tsx | DocumentsDataTableToolbar.test.tsx | ✅ Implemented |
 | NewPersona | create/personas/NewPersona.tsx | NewPersona.test.tsx | ✅ Implemented |
 | PersonaEdit | create/personas/PersonaEdit.tsx | PersonaEdit.test.tsx | ✅ Implemented |
 | Personas | create/personas/Personas.tsx | Personas.test.tsx | ✅ Implemented |
@@ -126,7 +128,6 @@
 | Context | management/context/Context.tsx | Context.test.tsx | ✅ Implemented |
 | ContextClasses | management/context/ContextClasses.tsx | ContextClasses.test.tsx | ✅ Implemented |
 | ContextDeadlines | management/context/ContextDeadlines.tsx | ContextDeadlines.test.tsx | ✅ Implemented |
-| ContextDocuments | management/context/ContextDocuments.tsx | ContextDocuments.test.tsx | ✅ Implemented |
 | ContextLocations | management/context/ContextLocations.tsx | ContextLocations.test.tsx | ✅ Implemented |
 | ContextTime | management/context/ContextTime.tsx | ContextTime.test.tsx | ✅ Implemented |
 | ModelEdit | management/providers/ModelEdit.tsx | ModelEdit.test.tsx | ✅ Implemented |
@@ -274,6 +275,8 @@ __tests__/
 ├── create/
 │   ├── documents/
 │   │   ├── Documents.test.tsx
+│   │   ├── DocumentsDataTable.test.tsx
+│   │   ├── DocumentsDataTableToolbar.test.tsx
 │   ├── personas/
 │   │   ├── NewPersona.test.tsx
 │   │   ├── PersonaEdit.test.tsx
@@ -308,7 +311,6 @@ __tests__/
 │   │   ├── Context.test.tsx
 │   │   ├── ContextClasses.test.tsx
 │   │   ├── ContextDeadlines.test.tsx
-│   │   ├── ContextDocuments.test.tsx
 │   │   ├── ContextLocations.test.tsx
 │   │   ├── ContextTime.test.tsx
 │   ├── providers/
