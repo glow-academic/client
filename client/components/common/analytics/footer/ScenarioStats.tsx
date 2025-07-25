@@ -33,6 +33,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
@@ -64,7 +65,8 @@ export interface ScenarioStatsProps {
     warning: number;
     success: number;
   };
-  profileId?: string;
+  profileId: string | undefined;
+  cohortIds: string[];
 }
 
 type MetricType = "intensity" | "crowdedness" | "documentCount";
@@ -101,6 +103,7 @@ export default function ScenarioStats({
   dateStart,
   dateEnd,
   profileId,
+  cohortIds,
   thresholds,
 }: ScenarioStatsProps) {
   const [selectedMetric, setSelectedMetric] = useState<MetricType>("intensity");
@@ -125,6 +128,11 @@ export default function ScenarioStats({
   const { data: profiles, isLoading: profilesLoading } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
+  });
+
+  const { data: cohorts, isLoading: cohortsLoading } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
   });
 
   const { data: simulations, isLoading: simulationsLoading } = useQuery({
@@ -164,11 +172,51 @@ export default function ScenarioStats({
     personasLoading ||
     documentsLoading ||
     profilesLoading ||
+    cohortsLoading ||
     simulationsLoading ||
     rubricsLoading ||
     attemptsLoading ||
     chatsLoading ||
     gradesLoading;
+
+  // Calculate cohort-based filters
+  const cohortFilters = useMemo(() => {
+    if (!cohorts || !cohortIds || cohortIds.length === 0) {
+      return {
+        allowedProfileIds: null,
+        allowedSimulationIds: null,
+        hasMatchingCohorts: true, // Show all data if no cohort filtering
+      };
+    }
+
+    // Filter cohorts based on provided cohortIds
+    const matchingCohorts = cohorts.filter((cohort) =>
+      cohortIds.includes(cohort.id)
+    );
+
+    if (matchingCohorts.length === 0) {
+      return {
+        allowedProfileIds: null,
+        allowedSimulationIds: null,
+        hasMatchingCohorts: false,
+      };
+    }
+
+    // Extract all profileIds and simulationIds from matching cohorts
+    const allProfileIds = new Set<string>();
+    const allSimulationIds = new Set<string>();
+
+    matchingCohorts.forEach((cohort) => {
+      cohort.profileIds?.forEach((id) => allProfileIds.add(id));
+      cohort.simulationIds?.forEach((id) => allSimulationIds.add(id));
+    });
+
+    return {
+      allowedProfileIds: Array.from(allProfileIds),
+      allowedSimulationIds: Array.from(allSimulationIds),
+      hasMatchingCohorts: true,
+    };
+  }, [cohorts, cohortIds]);
 
   // Calculate aggregated performance data by metric level
   const aggregatedPerformanceData = useMemo(() => {
@@ -209,7 +257,25 @@ export default function ScenarioStats({
       // Filter by profile if provided
       const profileMatch = profileId ? attempt?.profileId === profileId : true;
 
-      return inDateRange && notPractice && isTA && profileMatch;
+      // Apply cohort-based profile filtering
+      const cohortProfileMatch = cohortFilters.allowedProfileIds
+        ? profile && cohortFilters.allowedProfileIds.includes(profile.id)
+        : true;
+
+      // Apply cohort-based simulation filtering
+      const cohortSimulationMatch = cohortFilters.allowedSimulationIds
+        ? simulation &&
+          cohortFilters.allowedSimulationIds.includes(simulation.id)
+        : true;
+
+      return (
+        inDateRange &&
+        notPractice &&
+        isTA &&
+        profileMatch &&
+        cohortProfileMatch &&
+        cohortSimulationMatch
+      );
     });
 
     if (filteredGrades.length === 0) {
@@ -310,6 +376,7 @@ export default function ScenarioStats({
     dateEnd,
     profileId,
     selectedMetric,
+    cohortFilters,
   ]);
 
   // Calculate correlation coefficient
@@ -382,6 +449,34 @@ export default function ScenarioStats({
   };
 
   const thresholdStatus = getThresholdStatus();
+
+  // Show no data message if no matching cohorts found
+  if (!cohortFilters.hasMatchingCohorts) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Scenario Performance Analysis
+          </CardTitle>
+          <CardDescription>
+            Performance correlation with scenario characteristics
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center flex-1">
+          <div className="text-center space-y-2">
+            <p className="text-muted-foreground">
+              No data available for the selected cohorts.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              The selected profile is not a member of any of the specified
+              cohorts.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (isLoading) {
     return (

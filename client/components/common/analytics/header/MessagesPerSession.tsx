@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
@@ -40,7 +41,8 @@ export interface MessagesPerSessionProps {
     warning: number;
     success: number;
   };
-  profileId?: string;
+  profileId: string | undefined;
+  cohortIds: string[];
 }
 
 const COLOR_CONFIGS = {
@@ -77,6 +79,7 @@ export default function MessagesPerSession({
   dateEnd,
   profileId,
   thresholds,
+  cohortIds,
 }: MessagesPerSessionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -84,6 +87,11 @@ export default function MessagesPerSession({
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
+  });
+
+  const { data: cohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
   });
 
   const { data: attempts } = useQuery({
@@ -111,6 +119,46 @@ export default function MessagesPerSession({
     queryFn: () => getAllSimulations(),
   });
 
+  // Helper function to get allowed simulation IDs based on cohort filtering
+  const getAllowedSimulationIds = useMemo(() => {
+    if (!cohorts || !cohortIds || cohortIds.length === 0) {
+      return null; // No cohort filtering, allow all simulations
+    }
+
+    // Filter cohorts to only those in cohortIds
+    const filteredCohorts = cohorts.filter((cohort) =>
+      cohortIds.includes(cohort.id)
+    );
+
+    if (filteredCohorts.length === 0) {
+      return []; // No matching cohorts, no data allowed
+    }
+
+    // If profileId is provided, check if profile belongs to any of the filtered cohorts
+    if (profileId) {
+      const profileInCohorts = filteredCohorts.some((cohort) =>
+        cohort.profileIds.includes(profileId)
+      );
+
+      if (!profileInCohorts) {
+        return []; // Profile not in any of the specified cohorts, no data allowed
+      }
+    }
+
+    // Get union of all simulation IDs from matching cohorts
+    const allowedSimulationIds = new Set<string>();
+    filteredCohorts.forEach((cohort) => {
+      cohort.simulationIds.forEach((simId) => {
+        if (simId !== "RAY") {
+          // Exclude placeholder
+          allowedSimulationIds.add(simId);
+        }
+      });
+    });
+
+    return Array.from(allowedSimulationIds);
+  }, [cohorts, cohortIds, profileId]);
+
   // Calculate average messages per session for the specified date range and profile
   const averageMessagesPerSession = useMemo(() => {
     if (!chats || !messages || !attempts || !simulations) return 0;
@@ -130,12 +178,24 @@ export default function MessagesPerSession({
     });
 
     // Filter by profileId if provided
-    const profileFilteredChats = profileId
+    let profileFilteredChats = profileId
       ? filteredChats.filter((chat) => {
           const attempt = attempts.find((a) => a.id === chat.attemptId);
           return attempt?.profileId === profileId;
         })
       : filteredChats;
+
+    // Apply cohort filtering if simulation IDs are restricted
+    if (getAllowedSimulationIds !== null) {
+      if (getAllowedSimulationIds.length === 0) {
+        return 0; // No data allowed due to cohort restrictions
+      }
+
+      profileFilteredChats = profileFilteredChats.filter((chat) => {
+        const attempt = attempts.find((a) => a.id === chat.attemptId);
+        return getAllowedSimulationIds.includes(attempt?.simulationId || "");
+      });
+    }
 
     if (profileFilteredChats.length === 0) return 0;
 
@@ -156,7 +216,16 @@ export default function MessagesPerSession({
       0
     );
     return Math.round((totalMessages / profileFilteredChats.length) * 10) / 10;
-  }, [chats, messages, attempts, simulations, dateStart, dateEnd, profileId]);
+  }, [
+    chats,
+    messages,
+    attempts,
+    simulations,
+    dateStart,
+    dateEnd,
+    profileId,
+    getAllowedSimulationIds,
+  ]);
 
   // Messages per session trend data for the specified date range
   const messagesTrend = useMemo(() => {
@@ -179,12 +248,28 @@ export default function MessagesPerSession({
       });
 
       // Filter by profileId if provided
-      const profileFilteredDayChats = profileId
+      let profileFilteredDayChats = profileId
         ? dayChats.filter((chat) => {
             const attempt = attempts.find((a) => a.id === chat.attemptId);
             return attempt?.profileId === profileId;
           })
         : dayChats;
+
+      // Apply cohort filtering if simulation IDs are restricted
+      if (getAllowedSimulationIds !== null) {
+        if (getAllowedSimulationIds.length === 0) {
+          return {
+            date: format(date, "MM/dd"),
+            messages: 0,
+            sessions: 0,
+          };
+        }
+
+        profileFilteredDayChats = profileFilteredDayChats.filter((chat) => {
+          const attempt = attempts.find((a) => a.id === chat.attemptId);
+          return getAllowedSimulationIds.includes(attempt?.simulationId || "");
+        });
+      }
 
       // Calculate average messages per session for the day
       let avgMessages = 0;
@@ -213,7 +298,16 @@ export default function MessagesPerSession({
         sessions: profileFilteredDayChats.length,
       };
     });
-  }, [chats, messages, attempts, simulations, dateStart, dateEnd, profileId]);
+  }, [
+    chats,
+    messages,
+    attempts,
+    simulations,
+    dateStart,
+    dateEnd,
+    profileId,
+    getAllowedSimulationIds,
+  ]);
 
   // Determine color based on messages per session and thresholds
   const getColorConfig = (avgMessages: number) => {

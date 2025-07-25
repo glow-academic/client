@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -41,7 +42,8 @@ export interface HighestScoreProps {
     warning: number;
     success: number;
   };
-  profileId?: string;
+  profileId: string | undefined;
+  cohortIds: string[];
 }
 
 const COLOR_CONFIGS = {
@@ -78,6 +80,7 @@ export default function HighestScore({
   dateEnd,
   profileId,
   thresholds,
+  cohortIds,
 }: HighestScoreProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -85,6 +88,11 @@ export default function HighestScore({
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
+  });
+
+  const { data: cohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
   });
 
   const { data: attempts } = useQuery({
@@ -118,6 +126,46 @@ export default function HighestScore({
     queryFn: () => getAllRubrics(),
   });
 
+  // Helper function to get allowed simulation IDs based on cohort filtering
+  const getAllowedSimulationIds = useMemo(() => {
+    if (!cohorts || !cohortIds || cohortIds.length === 0) {
+      return null; // No cohort filtering, allow all simulations
+    }
+
+    // Filter cohorts to only those in cohortIds
+    const filteredCohorts = cohorts.filter((cohort) =>
+      cohortIds.includes(cohort.id)
+    );
+
+    if (filteredCohorts.length === 0) {
+      return []; // No matching cohorts, no data allowed
+    }
+
+    // If profileId is provided, check if profile belongs to any of the filtered cohorts
+    if (profileId) {
+      const profileInCohorts = filteredCohorts.some((cohort) =>
+        cohort.profileIds.includes(profileId)
+      );
+
+      if (!profileInCohorts) {
+        return []; // Profile not in any of the specified cohorts, no data allowed
+      }
+    }
+
+    // Get union of all simulation IDs from matching cohorts
+    const allowedSimulationIds = new Set<string>();
+    filteredCohorts.forEach((cohort) => {
+      cohort.simulationIds.forEach((simId) => {
+        if (simId !== "RAY") {
+          // Exclude placeholder
+          allowedSimulationIds.add(simId);
+        }
+      });
+    });
+
+    return Array.from(allowedSimulationIds);
+  }, [cohorts, cohortIds, profileId]);
+
   // Calculate highest score for the specified date range and profile
   const highestScore = useMemo(() => {
     if (!grades || !attempts || !chats || !simulations || !rubrics) return 0;
@@ -138,13 +186,26 @@ export default function HighestScore({
     });
 
     // Filter by profileId if provided
-    const profileFilteredGrades = profileId
+    let profileFilteredGrades = profileId
       ? filteredGrades.filter((grade) => {
           const chat = chats.find((c) => c.id === grade.simulationChatId);
           const attempt = attempts.find((a) => a.id === chat?.attemptId);
           return attempt?.profileId === profileId;
         })
       : filteredGrades;
+
+    // Apply cohort filtering if simulation IDs are restricted
+    if (getAllowedSimulationIds !== null) {
+      if (getAllowedSimulationIds.length === 0) {
+        return 0; // No data allowed due to cohort restrictions
+      }
+
+      profileFilteredGrades = profileFilteredGrades.filter((grade) => {
+        const chat = chats.find((c) => c.id === grade.simulationChatId);
+        const attempt = attempts.find((a) => a.id === chat?.attemptId);
+        return getAllowedSimulationIds.includes(attempt?.simulationId || "");
+      });
+    }
 
     if (profileFilteredGrades.length === 0) return 0;
 
@@ -170,6 +231,7 @@ export default function HighestScore({
     dateStart,
     dateEnd,
     profileId,
+    getAllowedSimulationIds,
   ]);
 
   // Highest score trend data for the specified date range
@@ -194,13 +256,30 @@ export default function HighestScore({
       });
 
       // Filter by profileId if provided
-      const profileFilteredDayGrades = profileId
+      let profileFilteredDayGrades = profileId
         ? dayGrades.filter((grade) => {
             const chat = chats.find((c) => c.id === grade.simulationChatId);
             const attempt = attempts.find((a) => a.id === chat?.attemptId);
             return attempt?.profileId === profileId;
           })
         : dayGrades;
+
+      // Apply cohort filtering if simulation IDs are restricted
+      if (getAllowedSimulationIds !== null) {
+        if (getAllowedSimulationIds.length === 0) {
+          return {
+            date: format(date, "MM/dd"),
+            score: 0,
+            sessions: 0,
+          };
+        }
+
+        profileFilteredDayGrades = profileFilteredDayGrades.filter((grade) => {
+          const chat = chats.find((c) => c.id === grade.simulationChatId);
+          const attempt = attempts.find((a) => a.id === chat?.attemptId);
+          return getAllowedSimulationIds.includes(attempt?.simulationId || "");
+        });
+      }
 
       // Calculate highest score for the day using rubric points
       let dayHighestScore = 0;
@@ -233,6 +312,7 @@ export default function HighestScore({
     dateStart,
     dateEnd,
     profileId,
+    getAllowedSimulationIds,
   ]);
 
   // Determine color based on score and thresholds

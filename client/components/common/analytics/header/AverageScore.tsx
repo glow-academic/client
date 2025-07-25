@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -41,7 +42,8 @@ export interface AverageScoreProps {
     warning: number;
     success: number;
   };
-  profileId?: string;
+  profileId: string | undefined;
+  cohortIds: string[];
 }
 
 const COLOR_CONFIGS = {
@@ -78,6 +80,7 @@ export default function AverageScore({
   dateEnd,
   profileId,
   thresholds,
+  cohortIds,
 }: AverageScoreProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -85,6 +88,11 @@ export default function AverageScore({
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
+  });
+
+  const { data: cohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
   });
 
   const { data: attempts } = useQuery({
@@ -118,6 +126,46 @@ export default function AverageScore({
     queryFn: () => getAllRubrics(),
   });
 
+  // Helper function to get allowed simulation IDs based on cohort filtering
+  const allowedSimulationIds = useMemo(() => {
+    if (!cohorts || !cohortIds || cohortIds.length === 0) {
+      return null; // No cohort filtering, allow all simulations
+    }
+
+    // Filter cohorts to only those in cohortIds
+    const filteredCohorts = cohorts.filter((cohort) =>
+      cohortIds.includes(cohort.id)
+    );
+
+    if (filteredCohorts.length === 0) {
+      return []; // No matching cohorts, no data allowed
+    }
+
+    // If profileId is provided, check if profile belongs to any of the filtered cohorts
+    if (profileId) {
+      const profileInCohorts = filteredCohorts.some((cohort) =>
+        cohort.profileIds.includes(profileId)
+      );
+
+      if (!profileInCohorts) {
+        return []; // Profile not in any of the specified cohorts, no data allowed
+      }
+    }
+
+    // Get union of all simulation IDs from matching cohorts
+    const simulationIds = new Set<string>();
+    filteredCohorts.forEach((cohort) => {
+      cohort.simulationIds.forEach((simId) => {
+        if (simId !== "RAY") {
+          // Exclude placeholder
+          simulationIds.add(simId);
+        }
+      });
+    });
+
+    return Array.from(simulationIds);
+  }, [cohorts, cohortIds, profileId]);
+
   // Calculate average score for the specified date range and profile
   const averageScore = useMemo(() => {
     if (!grades || !attempts || !chats || !simulations || !rubrics) return 0;
@@ -129,7 +177,7 @@ export default function AverageScore({
     });
 
     // Filter by profileId if provided and exclude practice simulations
-    const profileFilteredGrades = profileId
+    let profileFilteredGrades = profileId
       ? filteredGrades.filter((grade) => {
           const chat = chats.find((c) => c.id === grade.simulationChatId);
           const attempt = attempts.find((a) => a.id === chat?.attemptId);
@@ -148,6 +196,19 @@ export default function AverageScore({
           );
           return !simulation?.practiceSimulation;
         });
+
+    // Apply cohort filtering if simulation IDs are restricted
+    if (allowedSimulationIds !== null) {
+      if (allowedSimulationIds.length === 0) {
+        return 0; // No data allowed due to cohort restrictions
+      }
+
+      profileFilteredGrades = profileFilteredGrades.filter((grade) => {
+        const chat = chats.find((c) => c.id === grade.simulationChatId);
+        const attempt = attempts.find((a) => a.id === chat?.attemptId);
+        return allowedSimulationIds.includes(attempt?.simulationId || "");
+      });
+    }
 
     if (profileFilteredGrades.length === 0) return 0;
 
@@ -174,6 +235,7 @@ export default function AverageScore({
     dateStart,
     dateEnd,
     profileId,
+    allowedSimulationIds,
   ]);
 
   // Score trend data for the specified date range
@@ -193,7 +255,7 @@ export default function AverageScore({
       });
 
       // Filter by profileId if provided and exclude practice simulations
-      const profileFilteredDayGrades = profileId
+      let profileFilteredDayGrades = profileId
         ? dayGrades.filter((grade) => {
             const chat = chats.find((c) => c.id === grade.simulationChatId);
             const attempt = attempts.find((a) => a.id === chat?.attemptId);
@@ -213,6 +275,23 @@ export default function AverageScore({
             );
             return !simulation?.practiceSimulation;
           });
+
+      // Apply cohort filtering if simulation IDs are restricted
+      if (allowedSimulationIds !== null) {
+        if (allowedSimulationIds.length === 0) {
+          return {
+            date: format(date, "MM/dd"),
+            score: 0,
+            sessions: 0,
+          };
+        }
+
+        profileFilteredDayGrades = profileFilteredDayGrades.filter((grade) => {
+          const chat = chats.find((c) => c.id === grade.simulationChatId);
+          const attempt = attempts.find((a) => a.id === chat?.attemptId);
+          return allowedSimulationIds.includes(attempt?.simulationId || "");
+        });
+      }
 
       // Calculate average score for the day using rubric points
       let avgScore = 0;
@@ -248,6 +327,7 @@ export default function AverageScore({
     dateStart,
     dateEnd,
     profileId,
+    allowedSimulationIds,
   ]);
 
   // Determine color based on score and thresholds

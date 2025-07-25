@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
@@ -38,7 +39,8 @@ export interface TotalAttemptsProps {
     warning: number;
     success: number;
   };
-  profileId?: string;
+  profileId: string | undefined;
+  cohortIds: string[];
 }
 
 const COLOR_CONFIGS = {
@@ -75,6 +77,7 @@ export default function TotalAttempts({
   dateEnd,
   profileId,
   thresholds,
+  cohortIds,
 }: TotalAttemptsProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -96,9 +99,45 @@ export default function TotalAttempts({
     queryFn: () => getAllSimulations(),
   });
 
+  const { data: cohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
+  });
+
   // Calculate total attempts for the specified date range and profile
   const totalAttempts = useMemo(() => {
-    if (!attempts || !simulations) return 0;
+    if (!attempts || !simulations || !cohorts) return 0;
+
+    // Get cohort filtering data
+    let cohortFiltering: {
+      allowedProfileIds: string[];
+      allowedSimulationIds: string[];
+    } | null = null;
+    if (cohortIds && cohortIds.length > 0) {
+      const matchingCohorts = cohorts.filter(
+        (cohort) => cohortIds.includes(cohort.id) && cohort.active
+      );
+
+      if (matchingCohorts.length > 0) {
+        // Collect all profile IDs and simulation IDs from matching cohorts
+        const allowedProfileIds = new Set<string>();
+        const allowedSimulationIds = new Set<string>();
+
+        matchingCohorts.forEach((cohort) => {
+          cohort.profileIds.forEach((profileId: string) =>
+            allowedProfileIds.add(profileId)
+          );
+          cohort.simulationIds.forEach((simulationId: string) =>
+            allowedSimulationIds.add(simulationId)
+          );
+        });
+
+        cohortFiltering = {
+          allowedProfileIds: Array.from(allowedProfileIds),
+          allowedSimulationIds: Array.from(allowedSimulationIds),
+        };
+      }
+    }
 
     // Filter attempts by date range and exclude practice simulations
     const filteredAttempts = attempts.filter((attempt) => {
@@ -111,18 +150,71 @@ export default function TotalAttempts({
       );
     });
 
-    // Filter by profileId if provided
-    const profileFilteredAttempts = profileId
-      ? filteredAttempts.filter((attempt) => attempt.profileId === profileId)
+    // Apply cohort filtering if available
+    const cohortFilteredAttempts = cohortFiltering
+      ? filteredAttempts.filter((attempt) => {
+          return (
+            attempt.profileId &&
+            cohortFiltering.allowedProfileIds.includes(attempt.profileId) &&
+            attempt.simulationId &&
+            cohortFiltering.allowedSimulationIds.includes(attempt.simulationId)
+          );
+        })
       : filteredAttempts;
+
+    // Filter by profileId if provided (tighter restriction)
+    const profileFilteredAttempts = profileId
+      ? cohortFilteredAttempts.filter(
+          (attempt) => attempt.profileId === profileId
+        )
+      : cohortFilteredAttempts;
 
     // Count completed attempts only
     return profileFilteredAttempts.length;
-  }, [attempts, simulations, dateStart, dateEnd, profileId]);
+  }, [
+    attempts,
+    simulations,
+    dateStart,
+    dateEnd,
+    profileId,
+    cohortIds,
+    cohorts,
+  ]);
 
   // Total attempts trend data for the specified date range
   const attemptsTrend = useMemo(() => {
-    if (!attempts || !simulations) return [];
+    if (!attempts || !simulations || !cohorts) return [];
+
+    // Get cohort filtering data
+    let cohortFiltering: {
+      allowedProfileIds: string[];
+      allowedSimulationIds: string[];
+    } | null = null;
+    if (cohortIds && cohortIds.length > 0) {
+      const matchingCohorts = cohorts.filter(
+        (cohort) => cohortIds.includes(cohort.id) && cohort.active
+      );
+
+      if (matchingCohorts.length > 0) {
+        // Collect all profile IDs and simulation IDs from matching cohorts
+        const allowedProfileIds = new Set<string>();
+        const allowedSimulationIds = new Set<string>();
+
+        matchingCohorts.forEach((cohort) => {
+          cohort.profileIds.forEach((profileId: string) =>
+            allowedProfileIds.add(profileId)
+          );
+          cohort.simulationIds.forEach((simulationId: string) =>
+            allowedSimulationIds.add(simulationId)
+          );
+        });
+
+        cohortFiltering = {
+          allowedProfileIds: Array.from(allowedProfileIds),
+          allowedSimulationIds: Array.from(allowedSimulationIds),
+        };
+      }
+    }
 
     // Get all days in the date range
     const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
@@ -139,10 +231,26 @@ export default function TotalAttempts({
         return attemptDate === dateStr && !simulation?.practiceSimulation;
       });
 
+      // Apply cohort filtering if available
+      const cohortFilteredDayAttempts = cohortFiltering
+        ? dayAttempts.filter((attempt) => {
+            return (
+              attempt.profileId &&
+              cohortFiltering.allowedProfileIds.includes(attempt.profileId) &&
+              attempt.simulationId &&
+              cohortFiltering.allowedSimulationIds.includes(
+                attempt.simulationId
+              )
+            );
+          })
+        : dayAttempts;
+
       // Filter by profileId if provided
       const profileFilteredDayAttempts = profileId
-        ? dayAttempts.filter((attempt) => attempt.profileId === profileId)
-        : dayAttempts;
+        ? cohortFilteredDayAttempts.filter(
+            (attempt) => attempt.profileId === profileId
+          )
+        : cohortFilteredDayAttempts;
 
       return {
         date: format(date, "MM/dd"),
@@ -151,7 +259,15 @@ export default function TotalAttempts({
           .size,
       };
     });
-  }, [attempts, simulations, dateStart, dateEnd, profileId]);
+  }, [
+    attempts,
+    simulations,
+    dateStart,
+    dateEnd,
+    profileId,
+    cohortIds,
+    cohorts,
+  ]);
 
   // Determine color based on total attempts and thresholds (more attempts is better)
   const getColorConfig = (attempts: number) => {
@@ -168,6 +284,14 @@ export default function TotalAttempts({
 
   // Check if we have data to display
   const hasData = attemptsTrend.some((day) => day.attempts > 0);
+
+  // Check if cohort filtering resulted in no data
+  const hasNoCohortData =
+    cohortIds &&
+    cohortIds.length > 0 &&
+    cohorts &&
+    cohorts.filter((cohort) => cohortIds.includes(cohort.id) && cohort.active)
+      .length === 0;
 
   // Calculate actual trend from data
   const getTrendAnalysis = () => {
@@ -216,7 +340,11 @@ export default function TotalAttempts({
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
           <div className={`text-2xl font-bold ${colorConfig.text}`}>
-            {hasData ? totalAttempts : "No data"}
+            {hasNoCohortData
+              ? "No cohort data"
+              : hasData
+                ? totalAttempts
+                : "No data"}
           </div>
         </CardContent>
       </Card>
@@ -249,8 +377,9 @@ export default function TotalAttempts({
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">
-                No data available for the selected date range
-                {profileId && " and profile"}
+                {hasNoCohortData
+                  ? "No data available for the selected cohorts"
+                  : `No data available for the selected date range${profileId ? " and profile" : ""}`}
               </div>
             )}
           </div>

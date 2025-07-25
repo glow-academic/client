@@ -25,6 +25,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getCohortsByProfile } from "@/utils/queries/cohorts/get-cohorts-by-profile";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -46,7 +48,8 @@ export interface RubricHeatmapProps {
     warning: number;
     success: number;
   };
-  profileId?: string;
+  profileId: string | undefined;
+  cohortIds: string[];
 }
 
 // Calculate Pearson correlation coefficient
@@ -73,6 +76,7 @@ export default function RubricHeatmap({
   dateEnd,
   thresholds,
   profileId,
+  cohortIds,
 }: RubricHeatmapProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<Rubric[]>([]);
 
@@ -127,6 +131,45 @@ export default function RubricHeatmap({
     enabled: !!grades && grades.length > 0,
   });
 
+  // Fetch cohorts for filtering
+  const { data: allCohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
+  });
+
+  // Get cohorts by profile if profileId is provided
+  const { data: profileCohorts } = useQuery({
+    queryKey: ["cohortsByProfile", profileId],
+    queryFn: () => getCohortsByProfile(profileId!),
+    enabled: !!profileId,
+  });
+
+  // Filter cohorts based on cohortIds and profileId
+  const filteredCohorts = useMemo(() => {
+    if (!allCohorts) return [];
+
+    let availableCohorts = allCohorts;
+
+    // If profileId is provided, get cohorts that contain this profile
+    if (profileId && profileCohorts) {
+      availableCohorts = profileCohorts;
+    }
+
+    // If cohortIds are provided, filter to only those cohorts
+    if (cohortIds && cohortIds.length > 0) {
+      availableCohorts = availableCohorts.filter((cohort) =>
+        cohortIds.includes(cohort.id)
+      );
+    }
+
+    return availableCohorts;
+  }, [allCohorts, profileCohorts, profileId, cohortIds]);
+
+  // Check if user has access to any cohorts
+  const hasCohortAccess = useMemo(() => {
+    return filteredCohorts.length > 0;
+  }, [filteredCohorts]);
+
   // Fetch chats and attempts for profile filtering
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -154,14 +197,15 @@ export default function RubricHeatmap({
       !feedbacks ||
       !standards ||
       !standardGroups ||
-      !filteredRubrics
+      !filteredRubrics ||
+      !filteredCohorts
     ) {
       return { matrix: [], insights: null };
     }
 
     if (grades.length === 0) return { matrix: [], insights: null };
 
-    // Filter grades by date range and profile
+    // Filter grades by date range, profile, and cohort access
     const filteredGrades = grades.filter((grade) => {
       const gradeDate = new Date(grade.createdAt);
       const inDateRange =
@@ -181,7 +225,31 @@ export default function RubricHeatmap({
         }
       }
 
-      return inDateRange && profileMatch;
+      // Filter by cohort access - check if the profile belongs to any of the filtered cohorts
+      let cohortMatch = true;
+      if (filteredCohorts.length > 0) {
+        const chat = chats?.find((c) => c.id === grade.simulationChatId);
+        if (chat) {
+          const attempt = attempts?.find((a) => a.id === chat.attemptId);
+          if (attempt?.profileId) {
+            const profile = profiles?.find((p) => p.id === attempt.profileId);
+            if (profile) {
+              // Check if this profile belongs to any of the filtered cohorts
+              cohortMatch = filteredCohorts.some((cohort) =>
+                cohort.profileIds.includes(profile.id)
+              );
+            } else {
+              cohortMatch = false;
+            }
+          } else {
+            cohortMatch = false;
+          }
+        } else {
+          cohortMatch = false;
+        }
+      }
+
+      return inDateRange && profileMatch && cohortMatch;
     });
 
     if (filteredGrades.length === 0) return { matrix: [], insights: null };
@@ -389,6 +457,8 @@ export default function RubricHeatmap({
     profileId,
     attempts,
     chats,
+    filteredCohorts,
+    profiles,
   ]);
 
   // Calculate threshold status based on correlation matrix data
@@ -463,6 +533,44 @@ export default function RubricHeatmap({
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading correlation data...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show no access message if user doesn't have access to any cohorts
+  if (!hasCohortAccess) {
+    return (
+      <Card className="w-full h-full flex flex-col relative">
+        <div
+          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+            thresholdStatus === "success"
+              ? "bg-green-500"
+              : thresholdStatus === "warning"
+                ? "bg-yellow-500"
+                : thresholdStatus === "danger"
+                  ? "bg-red-500"
+                  : "bg-gray-400"
+          }`}
+        />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <TrendingUp className="h-4 w-4" />
+            Skill Area Correlation Matrix
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Statistical correlation between skill areas (standard groups)
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center flex-1 p-3">
+          <div className="text-center text-muted-foreground text-sm">
+            <p>No cohort access available</p>
+            <p className="text-xs mt-1">
+              {profileId
+                ? "You don't have access to any of the specified cohorts."
+                : "No cohorts match the specified criteria."}
+            </p>
           </div>
         </CardContent>
       </Card>

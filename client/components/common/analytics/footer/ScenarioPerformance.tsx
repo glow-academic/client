@@ -22,6 +22,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllScenarioClasses } from "@/utils/queries/scenario_classes/get-all-scenario-classes";
 import { getAllScenarioDeadlines } from "@/utils/queries/scenario_deadlines/get-all-scenario-deadlines";
@@ -60,7 +61,8 @@ export interface ScenarioPerformanceProps {
     warning: number;
     success: number;
   };
-  profileId?: string;
+  profileId: string | undefined;
+  cohortIds: string[];
 }
 
 interface AttributeElement {
@@ -87,6 +89,7 @@ export default function ScenarioPerformance({
   dateEnd,
   profileId,
   thresholds,
+  cohortIds,
 }: ScenarioPerformanceProps) {
   const [selectedAttribute, setSelectedAttribute] =
     useState<ScenarioAttributeType>("classes");
@@ -109,6 +112,11 @@ export default function ScenarioPerformance({
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
+  });
+
+  const { data: cohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
   });
 
   const { data: scenarios } = useQuery({
@@ -162,6 +170,46 @@ export default function ScenarioPerformance({
     enabled: !!chats && chats.length > 0,
   });
 
+  // Helper function to get allowed simulation IDs based on cohort filtering
+  const getAllowedSimulationIds = useMemo(() => {
+    if (!cohorts || !cohortIds || cohortIds.length === 0) {
+      return null; // No cohort filtering, allow all simulations
+    }
+
+    // Filter cohorts to only those in cohortIds
+    const filteredCohorts = cohorts.filter((cohort) =>
+      cohortIds.includes(cohort.id)
+    );
+
+    if (filteredCohorts.length === 0) {
+      return []; // No matching cohorts, no data allowed
+    }
+
+    // If profileId is provided, check if profile belongs to any of the filtered cohorts
+    if (profileId) {
+      const profileInCohorts = filteredCohorts.some((cohort) =>
+        cohort.profileIds.includes(profileId)
+      );
+
+      if (!profileInCohorts) {
+        return []; // Profile not in any of the specified cohorts, no data allowed
+      }
+    }
+
+    // Get union of all simulation IDs from matching cohorts
+    const allowedSimulationIds = new Set<string>();
+    filteredCohorts.forEach((cohort) => {
+      cohort.simulationIds.forEach((simId) => {
+        if (simId !== "RAY") {
+          // Exclude placeholder
+          allowedSimulationIds.add(simId);
+        }
+      });
+    });
+
+    return Array.from(allowedSimulationIds);
+  }, [cohorts, cohortIds, profileId]);
+
   // Calculate attribute breakdown
   const attributeElements = useMemo(() => {
     if (
@@ -192,7 +240,7 @@ export default function ScenarioPerformance({
     };
 
     // Filter grades by date range, exclude practice simulations, and filter by TA role
-    const filteredGrades = grades.filter((grade) => {
+    let filteredGrades = grades.filter((grade) => {
       const gradeDate = new Date(grade.createdAt);
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
@@ -216,6 +264,19 @@ export default function ScenarioPerformance({
 
       return inDateRange && notPractice && isTA && profileMatch;
     });
+
+    // Apply cohort filtering if simulation IDs are restricted
+    if (getAllowedSimulationIds !== null) {
+      if (getAllowedSimulationIds.length === 0) {
+        return []; // No data allowed due to cohort restrictions
+      }
+
+      filteredGrades = filteredGrades.filter((grade) => {
+        const chat = chats.find((c) => c.id === grade.simulationChatId);
+        const attempt = attempts.find((a) => a.id === chat?.attemptId);
+        return getAllowedSimulationIds.includes(attempt?.simulationId || "");
+      });
+    }
 
     if (filteredGrades.length === 0) {
       return [];
@@ -413,6 +474,7 @@ export default function ScenarioPerformance({
     dateEnd,
     profileId,
     selectedAttribute,
+    getAllowedSimulationIds,
   ]);
 
   // Calculate threshold status based on attribute performance

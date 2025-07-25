@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -43,13 +44,15 @@ export interface GrowthProps {
     warning: number;
     success: number;
   };
-  profileId?: string;
+  profileId: string | undefined;
+  cohortIds: string[];
 }
 
 export default function Growth({
   dateStart,
   dateEnd,
   profileId,
+  cohortIds,
   thresholds,
 }: GrowthProps) {
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([
@@ -167,6 +170,11 @@ export default function Growth({
     queryFn: () => getAllProfiles(),
   });
 
+  const { data: cohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
+  });
+
   const { data: attempts } = useQuery({
     queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
     queryFn: () =>
@@ -198,6 +206,19 @@ export default function Growth({
     queryFn: () => getAllRubrics(),
   });
 
+  // Helper function to check if a profile is in any of the specified cohorts
+  const isProfileInCohorts = useMemo(() => {
+    if (!cohortIds || cohortIds.length === 0) return () => true;
+    if (!cohorts) return () => false;
+
+    return (profileId: string) => {
+      return cohorts.some(
+        (cohort) =>
+          cohort.profileIds.includes(profileId) && cohortIds.includes(cohort.id)
+      );
+    };
+  }, [cohortIds, cohorts]);
+
   // Calculate growth data
   const growthData = useMemo(() => {
     if (
@@ -211,7 +232,7 @@ export default function Growth({
       return [];
     }
 
-    // Filter data by date range, exclude practice simulations, and filter by TA role
+    // Filter data by date range, exclude practice simulations, filter by TA role, and filter by cohorts
     const filteredGrades = grades.filter((grade) => {
       const gradeDate = new Date(grade.createdAt);
       const chat = chats.find((c) => c.id === grade.simulationChatId);
@@ -234,7 +255,10 @@ export default function Growth({
       // Filter by profile if provided
       const profileMatch = profileId ? attempt?.profileId === profileId : true;
 
-      return inDateRange && notPractice && isTA && profileMatch;
+      // Filter by cohorts
+      const cohortMatch = profile ? isProfileInCohorts(profile.id) : true;
+
+      return inDateRange && notPractice && isTA && profileMatch && cohortMatch;
     });
 
     if (filteredGrades.length === 0) return [];
@@ -465,6 +489,7 @@ export default function Growth({
     dateStart,
     dateEnd,
     profileId,
+    isProfileInCohorts,
   ]);
 
   // Calculate threshold status based on growth data
@@ -534,6 +559,56 @@ export default function Growth({
 
     return null;
   };
+
+  // Check if we have any data after cohort filtering
+  const hasDataAfterCohortFilter = useMemo(() => {
+    if (!cohortIds || cohortIds.length === 0) return true;
+    if (!profiles || !cohorts) return false;
+
+    // Check if any profile is in the specified cohorts
+    return profiles.some((profile) => isProfileInCohorts(profile.id));
+  }, [cohortIds, profiles, cohorts, isProfileInCohorts]);
+
+  if (!hasDataAfterCohortFilter) {
+    return (
+      <Card className="w-full h-full flex flex-col relative">
+        <div
+          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+            thresholdStatus === "success"
+              ? "bg-green-500"
+              : thresholdStatus === "warning"
+                ? "bg-yellow-500"
+                : thresholdStatus === "danger"
+                  ? "bg-red-500"
+                  : "bg-gray-400"
+          }`}
+        />
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Platform Growth
+              </CardTitle>
+              <CardDescription>
+                Platform-wide performance metrics over time
+              </CardDescription>
+            </div>
+            <GrowthPicker
+              availableMetrics={availableMetrics}
+              selectedMetrics={selectedMetrics}
+              onMetricsChange={setSelectedMetrics}
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center flex-1">
+          <p className="text-muted-foreground">
+            No data available for the selected cohorts
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!growthData.length) {
     return (

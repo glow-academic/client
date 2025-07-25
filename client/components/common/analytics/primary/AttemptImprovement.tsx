@@ -17,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -46,13 +47,15 @@ export interface AttemptImprovementProps {
     warning: number;
     success: number;
   };
-  profileId?: string;
+  profileId: string | undefined;
+  cohortIds: string[];
 }
 
 export default function AttemptImprovement({
   dateStart,
   dateEnd,
   profileId,
+  cohortIds,
   thresholds,
 }: AttemptImprovementProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
@@ -63,6 +66,11 @@ export default function AttemptImprovement({
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
+  });
+
+  const { data: cohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
   });
 
   const { data: attempts } = useQuery({
@@ -96,14 +104,49 @@ export default function AttemptImprovement({
     queryFn: () => getAllRubrics(),
   });
 
-  // Filter simulations based on selection
+  // Helper function to check if a profile is in any of the specified cohorts
+  const isProfileInCohorts = useMemo(() => {
+    if (!cohortIds || cohortIds.length === 0) return () => true;
+    if (!cohorts) return () => false;
+
+    return (profileId: string) => {
+      return cohorts.some(
+        (cohort) =>
+          cohort.profileIds.includes(profileId) && cohortIds.includes(cohort.id)
+      );
+    };
+  }, [cohortIds, cohorts]);
+
+  // Helper function to check if a simulation is in any of the specified cohorts
+  const isSimulationInCohorts = useMemo(() => {
+    if (!cohortIds || cohortIds.length === 0) return () => true;
+    if (!cohorts) return () => false;
+
+    return (simulationId: string) => {
+      return cohorts.some(
+        (cohort) =>
+          cohort.simulationIds.includes(simulationId) &&
+          cohortIds.includes(cohort.id)
+      );
+    };
+  }, [cohortIds, cohorts]);
+
+  // Filter simulations based on selection and cohorts
   const filteredSimulations = useMemo(() => {
     if (!simulations) return [];
-    if (selectedSimulations.length === 0) return simulations;
-    return simulations.filter((s) =>
+    let filtered = simulations;
+
+    // Filter by cohorts first
+    if (cohortIds && cohortIds.length > 0) {
+      filtered = filtered.filter((s) => isSimulationInCohorts(s.id));
+    }
+
+    // Then filter by selection
+    if (selectedSimulations.length === 0) return filtered;
+    return filtered.filter((s) =>
       selectedSimulations.some((ss) => ss.id === s.id)
     );
-  }, [simulations, selectedSimulations]);
+  }, [simulations, selectedSimulations, cohortIds, isSimulationInCohorts]);
 
   // Get simulations that have data available
   const simulationsWithData = useMemo(() => {
@@ -128,8 +171,23 @@ export default function AttemptImprovement({
       }
     });
 
-    return simulations.filter((s) => simulationIdsWithData.has(s.id));
-  }, [simulations, grades, chats, attempts, dateStart, dateEnd]);
+    // Filter by cohorts
+    let filtered = simulations.filter((s) => simulationIdsWithData.has(s.id));
+    if (cohortIds && cohortIds.length > 0) {
+      filtered = filtered.filter((s) => isSimulationInCohorts(s.id));
+    }
+
+    return filtered;
+  }, [
+    simulations,
+    grades,
+    chats,
+    attempts,
+    dateStart,
+    dateEnd,
+    cohortIds,
+    isSimulationInCohorts,
+  ]);
 
   // Calculate attempt improvement data
   const improvementData = useMemo(() => {
@@ -144,7 +202,7 @@ export default function AttemptImprovement({
       return [];
     }
 
-    // Filter data by date range, exclude practice simulations, filter by TA role, and filter by selected simulations
+    // Filter data by date range, exclude practice simulations, filter by TA role, filter by selected simulations, and filter by cohorts
     const filteredGrades = grades.filter((grade) => {
       const gradeDate = new Date(grade.createdAt);
       const chat = chats.find((c) => c.id === grade.simulationChatId);
@@ -173,8 +231,16 @@ export default function AttemptImprovement({
         (simulation &&
           selectedSimulations.some((ss) => ss.id === simulation.id));
 
+      // Filter by cohorts
+      const cohortMatch = profile ? isProfileInCohorts(profile.id) : true;
+
       return (
-        inDateRange && notPractice && isTA && profileMatch && simulationMatch
+        inDateRange &&
+        notPractice &&
+        isTA &&
+        profileMatch &&
+        simulationMatch &&
+        cohortMatch
       );
     });
 
@@ -327,6 +393,7 @@ export default function AttemptImprovement({
     dateEnd,
     profileId,
     selectedSimulations,
+    isProfileInCohorts,
   ]);
 
   // Get actionable insights
@@ -379,6 +446,51 @@ export default function AttemptImprovement({
   };
 
   const thresholdStatus = getThresholdStatus();
+
+  // Check if we have any data after cohort filtering
+  const hasDataAfterCohortFilter = useMemo(() => {
+    if (!cohortIds || cohortIds.length === 0) return true;
+    if (!profiles || !cohorts) return false;
+
+    // Check if any profile is in the specified cohorts
+    return profiles.some((profile) => isProfileInCohorts(profile.id));
+  }, [cohortIds, profiles, cohorts, isProfileInCohorts]);
+
+  if (!hasDataAfterCohortFilter) {
+    return (
+      <Card className="w-full h-full flex flex-col relative">
+        <div
+          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+            thresholdStatus === "success"
+              ? "bg-green-500"
+              : thresholdStatus === "warning"
+                ? "bg-yellow-500"
+                : thresholdStatus === "danger"
+                  ? "bg-red-500"
+                  : "bg-gray-400"
+          }`}
+        />
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Attempt Improvement
+              </CardTitle>
+              <CardDescription>
+                Performance improvement across multiple attempts
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center flex-1">
+          <p className="text-muted-foreground">
+            No data available for the selected cohorts
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!improvementData.length) {
     return (

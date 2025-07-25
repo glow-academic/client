@@ -25,11 +25,11 @@
 | SystemAgent | common/agent/SystemAgent.tsx | SystemAgent.test.tsx | ✅ Implemented |
 | AnalyticsFilters | common/analytics/AnalyticsFilters.tsx | AnalyticsFilters.test.tsx | ✅ Implemented |
 | GrowthPicker | common/analytics/GrowthPicker.tsx | GrowthPicker.test.tsx | ✅ Implemented |
-| ScenarioAttributePicker | common/analytics/footer/ScenarioAttributePicker.tsx | ScenarioAttributePicker.test.tsx | ✅ Implemented |
+| ScenarioAttributePicker | common/analytics/ScenarioAttributePicker.tsx | ScenarioAttributePicker.test.tsx | ✅ Implemented |
+| SimulationCompositionPicker | common/analytics/SimulationCompositionPicker.tsx | SimulationCompositionPicker.test.tsx | ✅ Implemented |
 | ScenarioPerformance | common/analytics/footer/ScenarioPerformance.tsx | ScenarioPerformance.test.tsx | ✅ Implemented |
 | ScenarioStats | common/analytics/footer/ScenarioStats.tsx | ScenarioStats.test.tsx | ✅ Implemented |
 | SimulationComposition | common/analytics/footer/SimulationComposition.tsx | SimulationComposition.test.tsx | ✅ Implemented |
-| SimulationCompositionPicker | common/analytics/footer/SimulationCompositionPicker.tsx | SimulationCompositionPicker.test.tsx | ✅ Implemented |
 | SimulationPerformance | common/analytics/footer/SimulationPerformance.tsx | SimulationPerformance.test.tsx | ✅ Implemented |
 | AverageScore | common/analytics/header/AverageScore.tsx | AverageScore.test.tsx | ✅ Implemented |
 | CompletionPercentage | common/analytics/header/CompletionPercentage.tsx | CompletionPercentage.test.tsx | ✅ Implemented |
@@ -177,12 +177,12 @@ __tests__/
 │   ├── analytics/
 │   │   ├── AnalyticsFilters.test.tsx
 │   │   ├── GrowthPicker.test.tsx
+│   │   ├── ScenarioAttributePicker.test.tsx
+│   │   ├── SimulationCompositionPicker.test.tsx
 │   │   ├── footer/
-│   │   │   ├── ScenarioAttributePicker.test.tsx
 │   │   │   ├── ScenarioPerformance.test.tsx
 │   │   │   ├── ScenarioStats.test.tsx
 │   │   │   ├── SimulationComposition.test.tsx
-│   │   │   ├── SimulationCompositionPicker.test.tsx
 │   │   │   ├── SimulationPerformance.test.tsx
 │   │   ├── header/
 │   │   │   ├── AverageScore.test.tsx

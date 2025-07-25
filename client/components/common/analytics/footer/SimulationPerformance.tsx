@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Simulation } from "@/types";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
@@ -57,13 +58,15 @@ export interface SimulationPerformanceProps {
     warning: number;
     success: number;
   };
-  profileId?: string;
+  profileId: string | undefined;
+  cohortIds: string[];
 }
 
 export default function SimulationPerformance({
   dateStart,
   dateEnd,
   profileId,
+  cohortIds,
   thresholds,
 }: SimulationPerformanceProps) {
   const [selectedSimulation, setSelectedSimulation] =
@@ -74,6 +77,11 @@ export default function SimulationPerformance({
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
+  });
+
+  const { data: cohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
   });
 
   const { data: simulations } = useQuery({
@@ -90,6 +98,45 @@ export default function SimulationPerformance({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
   });
+
+  // Calculate cohort-based filters
+  const cohortFilters = useMemo(() => {
+    if (!cohorts || !cohortIds || cohortIds.length === 0) {
+      return {
+        allowedProfileIds: null,
+        allowedSimulationIds: null,
+        hasMatchingCohorts: true, // Show all data if no cohort filtering
+      };
+    }
+
+    // Filter cohorts based on provided cohortIds
+    const matchingCohorts = cohorts.filter((cohort) =>
+      cohortIds.includes(cohort.id)
+    );
+
+    if (matchingCohorts.length === 0) {
+      return {
+        allowedProfileIds: null,
+        allowedSimulationIds: null,
+        hasMatchingCohorts: false,
+      };
+    }
+
+    // Extract all profileIds and simulationIds from matching cohorts
+    const allProfileIds = new Set<string>();
+    const allSimulationIds = new Set<string>();
+
+    matchingCohorts.forEach((cohort) => {
+      cohort.profileIds?.forEach((id) => allProfileIds.add(id));
+      cohort.simulationIds?.forEach((id) => allSimulationIds.add(id));
+    });
+
+    return {
+      allowedProfileIds: Array.from(allProfileIds),
+      allowedSimulationIds: Array.from(allSimulationIds),
+      hasMatchingCohorts: true,
+    };
+  }, [cohorts, cohortIds]);
 
   const { data: attempts } = useQuery({
     queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
@@ -130,8 +177,15 @@ export default function SimulationPerformance({
         rubricId: sim.rubricId,
       }));
 
+    // Apply cohort-based simulation filtering
+    const cohortFilteredSimulations = cohortFilters.allowedSimulationIds
+      ? activeSimulations.filter((sim) =>
+          cohortFilters.allowedSimulationIds!.includes(sim.id)
+        )
+      : activeSimulations;
+
     // Filter out simulations that don't have data in the selected date range
-    const simulationsWithData = activeSimulations.filter((sim) => {
+    const simulationsWithData = cohortFilteredSimulations.filter((sim) => {
       // Check if this simulation has any attempts in the date range
       const simulationAttempts = attempts.filter(
         (attempt) => attempt.simulationId === sim.id
@@ -166,7 +220,12 @@ export default function SimulationPerformance({
           ? attempt?.profileId === profileId
           : true;
 
-        return inDateRange && isTA && profileMatch;
+        // Apply cohort-based profile filtering
+        const cohortProfileMatch = cohortFilters.allowedProfileIds
+          ? profile && cohortFilters.allowedProfileIds.includes(profile.id)
+          : true;
+
+        return inDateRange && isTA && profileMatch && cohortProfileMatch;
       });
 
       // Only include simulations that have at least 1 grade (reduced from 2 for better data visibility)
@@ -183,6 +242,7 @@ export default function SimulationPerformance({
     dateStart,
     dateEnd,
     profileId,
+    cohortFilters,
   ]);
 
   // Auto-select simulation if enabled and available
@@ -248,7 +308,18 @@ export default function SimulationPerformance({
       // Filter by profile if provided
       const profileMatch = profileId ? attempt?.profileId === profileId : true;
 
-      return inDateRange && isSelectedSimulation && isTA && profileMatch;
+      // Apply cohort-based profile filtering
+      const cohortProfileMatch = cohortFilters.allowedProfileIds
+        ? profile && cohortFilters.allowedProfileIds.includes(profile.id)
+        : true;
+
+      return (
+        inDateRange &&
+        isSelectedSimulation &&
+        isTA &&
+        profileMatch &&
+        cohortProfileMatch
+      );
     });
 
     if (filteredGrades.length === 0) return [];
@@ -342,6 +413,7 @@ export default function SimulationPerformance({
     dateEnd,
     profileId,
     thresholds,
+    cohortFilters,
   ]);
 
   // Calculate insights
@@ -406,6 +478,34 @@ export default function SimulationPerformance({
 
   const thresholdStatus = getThresholdStatus();
 
+  // Show no data message if no matching cohorts found
+  if (!cohortFilters.hasMatchingCohorts) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Scenario Performance
+          </CardTitle>
+          <CardDescription className="text-sm">
+            Performance trends for scenarios within simulations
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center flex-1">
+          <div className="text-center space-y-2">
+            <p className="text-muted-foreground text-sm">
+              No data available for the selected cohorts.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              The selected profile is not a member of any of the specified
+              cohorts.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!availableSimulations.length) {
     return (
       <Card className="w-full h-full flex flex-col">
@@ -431,6 +531,7 @@ export default function SimulationPerformance({
               <li>No completed simulation attempts</li>
               <li>No simulations with sufficient data (≥1 grade)</li>
               <li>Date range too restrictive</li>
+              <li>No matching simulations in selected cohorts</li>
             </ul>
           </div>
         </CardContent>

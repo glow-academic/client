@@ -26,6 +26,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getCohortsByProfile } from "@/utils/queries/cohorts/get-cohorts-by-profile";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -54,7 +55,8 @@ export interface CohortPerformanceProps {
     warning: number;
     success: number;
   };
-  profileId?: string;
+  profileId: string | undefined;
+  cohortIds: string[];
 }
 
 export default function CohortPerformance({
@@ -62,6 +64,7 @@ export default function CohortPerformance({
   dateEnd,
   profileId,
   thresholds,
+  cohortIds,
 }: CohortPerformanceProps) {
   const [selectedCohort, setSelectedCohort] = useState<string | null>(null);
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
@@ -69,10 +72,43 @@ export default function CohortPerformance({
   );
 
   // Fetch data
-  const { data: cohorts } = useQuery({
+  const { data: allCohorts } = useQuery({
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
   });
+
+  // Get cohorts by profile if profileId is provided
+  const { data: profileCohorts } = useQuery({
+    queryKey: ["cohortsByProfile", profileId],
+    queryFn: () => getCohortsByProfile(profileId!),
+    enabled: !!profileId,
+  });
+
+  // Filter cohorts based on cohortIds and profileId
+  const filteredCohorts = useMemo(() => {
+    if (!allCohorts) return [];
+
+    let availableCohorts = allCohorts;
+
+    // If profileId is provided, get cohorts that contain this profile
+    if (profileId && profileCohorts) {
+      availableCohorts = profileCohorts;
+    }
+
+    // If cohortIds are provided, filter to only those cohorts
+    if (cohortIds && cohortIds.length > 0) {
+      availableCohorts = availableCohorts.filter((cohort) =>
+        cohortIds.includes(cohort.id)
+      );
+    }
+
+    return availableCohorts;
+  }, [allCohorts, profileCohorts, profileId, cohortIds]);
+
+  // Check if user has access to any cohorts
+  const hasCohortAccess = useMemo(() => {
+    return filteredCohorts.length > 0;
+  }, [filteredCohorts]);
 
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -148,7 +184,7 @@ export default function CohortPerformance({
   // Calculate cohort performance data
   const cohortData = useMemo(() => {
     if (
-      !cohorts ||
+      !filteredCohorts ||
       !profiles ||
       !chats ||
       !grades ||
@@ -213,8 +249,8 @@ export default function CohortPerformance({
       }
     >();
 
-    // Initialize all cohorts
-    cohorts.forEach((cohort) => {
+    // Initialize all filtered cohorts
+    filteredCohorts.forEach((cohort) => {
       cohortStats.set(cohort.id, {
         totalAttempts: 0,
         passedAttempts: 0,
@@ -241,7 +277,9 @@ export default function CohortPerformance({
       if (!profile || !rubric || !simulation) return;
 
       // Find which cohort this profile belongs to
-      const cohort = cohorts.find((c) => c.profileIds.includes(profile.id));
+      const cohort = filteredCohorts.find((c) =>
+        c.profileIds.includes(profile.id)
+      );
 
       if (cohort) {
         const cohortData = cohortStats.get(cohort.id);
@@ -272,7 +310,7 @@ export default function CohortPerformance({
 
     // Calculate which students have passed all simulations in their cohort
     cohortStats.forEach((cohortData, cohortId) => {
-      const cohort = cohorts.find((c) => c.id === cohortId);
+      const cohort = filteredCohorts.find((c) => c.id === cohortId);
       if (!cohort) return;
 
       // Determine which simulations to check based on selection
@@ -300,7 +338,7 @@ export default function CohortPerformance({
     // Calculate pass rates and create chart data
     const chartData = Array.from(cohortStats.entries())
       .map(([cohortId, data]) => {
-        const cohort = cohorts.find((c) => c.id === cohortId);
+        const cohort = filteredCohorts.find((c) => c.id === cohortId);
         const passRate =
           data.totalStudents.size > 0
             ? Math.round(
@@ -356,7 +394,7 @@ export default function CohortPerformance({
 
     return chartData;
   }, [
-    cohorts,
+    filteredCohorts,
     profiles,
     chats,
     grades,
@@ -374,7 +412,7 @@ export default function CohortPerformance({
   const dailyData = useMemo(() => {
     if (
       !selectedCohort ||
-      !cohorts ||
+      !filteredCohorts ||
       !profiles ||
       !chats ||
       !grades ||
@@ -385,7 +423,7 @@ export default function CohortPerformance({
       return [];
     }
 
-    const cohort = cohorts.find((c) => c.id === selectedCohort);
+    const cohort = filteredCohorts.find((c) => c.id === selectedCohort);
     if (!cohort) return [];
 
     // Get profiles in this cohort
@@ -513,7 +551,7 @@ export default function CohortPerformance({
     return chartData;
   }, [
     selectedCohort,
-    cohorts,
+    filteredCohorts,
     profiles,
     chats,
     grades,
@@ -557,6 +595,48 @@ export default function CohortPerformance({
   };
 
   const thresholdStatus = getThresholdStatus();
+
+  // Show no access message if user doesn't have access to any cohorts
+  if (!hasCohortAccess) {
+    return (
+      <Card className="w-full h-full flex flex-col relative">
+        <div
+          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+            thresholdStatus === "success"
+              ? "bg-green-500"
+              : thresholdStatus === "warning"
+                ? "bg-yellow-500"
+                : thresholdStatus === "danger"
+                  ? "bg-red-500"
+                  : "bg-gray-400"
+          }`}
+        />
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <BarChart3 className="h-4 w-4" />
+                Cohort Performance
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Pass rates by cohort
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center flex-1 p-3">
+          <div className="text-center text-muted-foreground text-sm">
+            <p>No cohort access available</p>
+            <p className="text-xs mt-1">
+              {profileId
+                ? "You don't have access to any of the specified cohorts."
+                : "No cohorts match the specified criteria."}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!cohortData.length) {
     return (

@@ -44,7 +44,7 @@ interface DashboardProps {
 
 export default function Dashboard({ profileId }: DashboardProps) {
   // Use analytics context for date range
-  const { startDate, endDate } = useAnalytics();
+  const { startDate, endDate, cohorts } = useAnalytics();
 
   // Threshold data
   const thresholds = {
@@ -97,70 +97,80 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
     <CompletionPercentage
       key="completion-percentage"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
     <FirstAttemptPassRate
       key="first-attempt-pass-rate"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
     <HighestScore
       key="highest-score"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
     <MessagesPerSession
       key="messages-per-session"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
     <PersonaResponseTimes
       key="persona-response-times"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
     <SessionEfficiency
       key="session-efficiency"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
     <StagnationRate
       key="stagnation-rate"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
     <TimeSpent
       key="time-spent"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
     <TotalAttempts
       key="total-attempts"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
   ];
 
@@ -170,21 +180,24 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
     <PersonaPerformance
       key="persona-performance"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
     <RubricHeatmap
       key="rubric-heatmap"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
   ];
 
@@ -194,21 +207,24 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
     <AttemptImprovement
       key="attempt-improvement"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
     <SkillPerformance
       key="skill-performance"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
   ];
 
@@ -218,14 +234,16 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
     <ScenarioStats
       key="scenario-stats"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
   ];
 
@@ -235,14 +253,16 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
     <SimulationComposition
       key="simulation-composition"
       dateStart={startDate}
       dateEnd={endDate}
       thresholds={thresholds}
-      {...(profileId && { profileId })}
+      profileId={profileId}
+      cohortIds={cohorts?.map((cohort) => cohort.id)}
     />,
   ];
 

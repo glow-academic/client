@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
@@ -40,7 +41,8 @@ export interface FirstAttemptPassRateProps {
     warning: number;
     success: number;
   };
-  profileId?: string;
+  profileId: string | undefined;
+  cohortIds: string[];
 }
 
 const COLOR_CONFIGS = {
@@ -77,6 +79,7 @@ export default function FirstAttemptPassRate({
   dateEnd,
   profileId,
   thresholds,
+  cohortIds,
 }: FirstAttemptPassRateProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -84,6 +87,11 @@ export default function FirstAttemptPassRate({
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
+  });
+
+  const { data: cohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
   });
 
   const { data: attempts } = useQuery({
@@ -112,6 +120,46 @@ export default function FirstAttemptPassRate({
     queryFn: () => getAllSimulations(),
   });
 
+  // Helper function to get allowed simulation IDs based on cohort filtering
+  const getAllowedSimulationIds = useMemo(() => {
+    if (!cohorts || !cohortIds || cohortIds.length === 0) {
+      return null; // No cohort filtering, allow all simulations
+    }
+
+    // Filter cohorts to only those in cohortIds
+    const filteredCohorts = cohorts.filter((cohort) =>
+      cohortIds.includes(cohort.id)
+    );
+
+    if (filteredCohorts.length === 0) {
+      return []; // No matching cohorts, no data allowed
+    }
+
+    // If profileId is provided, check if profile belongs to any of the filtered cohorts
+    if (profileId) {
+      const profileInCohorts = filteredCohorts.some((cohort) =>
+        cohort.profileIds.includes(profileId)
+      );
+
+      if (!profileInCohorts) {
+        return []; // Profile not in any of the specified cohorts, no data allowed
+      }
+    }
+
+    // Get union of all simulation IDs from matching cohorts
+    const allowedSimulationIds = new Set<string>();
+    filteredCohorts.forEach((cohort) => {
+      cohort.simulationIds.forEach((simId) => {
+        if (simId !== "RAY") {
+          // Exclude placeholder
+          allowedSimulationIds.add(simId);
+        }
+      });
+    });
+
+    return Array.from(allowedSimulationIds);
+  }, [cohorts, cohortIds, profileId]);
+
   // Calculate first attempt pass rate for the specified date range and profile
   const firstAttemptPassRate = useMemo(() => {
     if (!attempts || !chats || !grades || !simulations) return 0;
@@ -128,9 +176,20 @@ export default function FirstAttemptPassRate({
     });
 
     // Filter by profileId if provided
-    const profileFilteredAttempts = profileId
+    let profileFilteredAttempts = profileId
       ? filteredAttempts.filter((attempt) => attempt.profileId === profileId)
       : filteredAttempts;
+
+    // Apply cohort filtering if simulation IDs are restricted
+    if (getAllowedSimulationIds !== null) {
+      if (getAllowedSimulationIds.length === 0) {
+        return 0; // No data allowed due to cohort restrictions
+      }
+
+      profileFilteredAttempts = profileFilteredAttempts.filter((attempt) =>
+        getAllowedSimulationIds.includes(attempt.simulationId)
+      );
+    }
 
     if (profileFilteredAttempts.length === 0) return 0;
 
@@ -167,7 +226,16 @@ export default function FirstAttemptPassRate({
     return Math.round(
       (passedFirstAttempts.length / firstAttemptsList.length) * 100
     );
-  }, [attempts, chats, grades, simulations, dateStart, dateEnd, profileId]);
+  }, [
+    attempts,
+    chats,
+    grades,
+    simulations,
+    dateStart,
+    dateEnd,
+    profileId,
+    getAllowedSimulationIds,
+  ]);
 
   // First attempt pass rate trend data for the specified date range
   const passRateTrend = useMemo(() => {
@@ -189,9 +257,24 @@ export default function FirstAttemptPassRate({
       });
 
       // Filter by profileId if provided
-      const profileFilteredDayAttempts = profileId
+      let profileFilteredDayAttempts = profileId
         ? dayAttempts.filter((attempt) => attempt.profileId === profileId)
         : dayAttempts;
+
+      // Apply cohort filtering if simulation IDs are restricted
+      if (getAllowedSimulationIds !== null) {
+        if (getAllowedSimulationIds.length === 0) {
+          return {
+            date: format(date, "MM/dd"),
+            passRate: 0,
+            total: 0,
+          };
+        }
+
+        profileFilteredDayAttempts = profileFilteredDayAttempts.filter(
+          (attempt) => getAllowedSimulationIds.includes(attempt.simulationId)
+        );
+      }
 
       // Group attempts by profileId + simulationId to find first attempts for this day
       const dayFirstAttempts = profileFilteredDayAttempts.reduce(
@@ -237,7 +320,16 @@ export default function FirstAttemptPassRate({
         total: dayFirstAttemptsList.length,
       };
     });
-  }, [attempts, chats, grades, simulations, dateStart, dateEnd, profileId]);
+  }, [
+    attempts,
+    chats,
+    grades,
+    simulations,
+    dateStart,
+    dateEnd,
+    profileId,
+    getAllowedSimulationIds,
+  ]);
 
   // Determine color based on pass rate and thresholds
   const getColorConfig = (rate: number) => {

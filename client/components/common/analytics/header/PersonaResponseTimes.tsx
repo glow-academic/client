@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
@@ -40,7 +41,8 @@ export interface PersonaResponseTimesProps {
     warning: number;
     success: number;
   };
-  profileId?: string;
+  profileId: string | undefined;
+  cohortIds: string[];
 }
 
 const COLOR_CONFIGS = {
@@ -77,6 +79,7 @@ export default function PersonaResponseTimes({
   dateEnd,
   profileId,
   thresholds,
+  cohortIds,
 }: PersonaResponseTimesProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -111,9 +114,42 @@ export default function PersonaResponseTimes({
     queryFn: () => getAllSimulations(),
   });
 
+  const { data: cohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
+  });
+
   // Calculate average response time for the specified date range and profile
   const averageResponseTime = useMemo(() => {
-    if (!messages || !chats || !attempts || !simulations) return 0;
+    if (!messages || !chats || !attempts || !simulations || !cohorts) return 0;
+
+    // Get cohort filtering data
+    let cohortFiltering = null;
+    if (cohortIds && cohortIds.length > 0) {
+      const matchingCohorts = cohorts.filter(
+        (cohort) => cohortIds.includes(cohort.id) && cohort.active
+      );
+
+      if (matchingCohorts.length > 0) {
+        // Collect all profile IDs and simulation IDs from matching cohorts
+        const allowedProfileIds = new Set<string>();
+        const allowedSimulationIds = new Set<string>();
+
+        matchingCohorts.forEach((cohort) => {
+          cohort.profileIds.forEach((profileId) =>
+            allowedProfileIds.add(profileId)
+          );
+          cohort.simulationIds.forEach((simulationId) =>
+            allowedSimulationIds.add(simulationId)
+          );
+        });
+
+        cohortFiltering = {
+          allowedProfileIds: Array.from(allowedProfileIds),
+          allowedSimulationIds: Array.from(allowedSimulationIds),
+        };
+      }
+    }
 
     // Filter messages by date range and exclude practice simulations
     const filteredMessages = messages.filter((message) => {
@@ -130,14 +166,28 @@ export default function PersonaResponseTimes({
       );
     });
 
-    // Filter by profileId if provided
-    const profileFilteredMessages = profileId
+    // Apply cohort filtering if available
+    const cohortFilteredMessages = cohortFiltering
       ? filteredMessages.filter((message) => {
+          const chat = chats.find((c) => c.id === message.chatId);
+          const attempt = attempts.find((a) => a.id === chat?.attemptId);
+          return (
+            attempt?.profileId &&
+            cohortFiltering.allowedProfileIds.includes(attempt.profileId) &&
+            attempt.simulationId &&
+            cohortFiltering.allowedSimulationIds.includes(attempt.simulationId)
+          );
+        })
+      : filteredMessages;
+
+    // Filter by profileId if provided (tighter restriction)
+    const profileFilteredMessages = profileId
+      ? cohortFilteredMessages.filter((message) => {
           const chat = chats.find((c) => c.id === message.chatId);
           const attempt = attempts.find((a) => a.id === chat?.attemptId);
           return attempt?.profileId === profileId;
         })
-      : filteredMessages;
+      : cohortFilteredMessages;
 
     // Group messages by chat and calculate response times
     const responseTimes: number[] = [];
@@ -184,11 +234,49 @@ export default function PersonaResponseTimes({
     const averageTime =
       responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length;
     return Math.round(averageTime);
-  }, [messages, chats, attempts, simulations, dateStart, dateEnd, profileId]);
+  }, [
+    messages,
+    chats,
+    attempts,
+    simulations,
+    cohorts,
+    dateStart,
+    dateEnd,
+    profileId,
+    cohortIds,
+  ]);
 
   // Response time trend data for the specified date range
   const responseTimeTrend = useMemo(() => {
-    if (!messages || !chats || !attempts || !simulations) return [];
+    if (!messages || !chats || !attempts || !simulations || !cohorts) return [];
+
+    // Get cohort filtering data
+    let cohortFiltering = null;
+    if (cohortIds && cohortIds.length > 0) {
+      const matchingCohorts = cohorts.filter(
+        (cohort) => cohortIds.includes(cohort.id) && cohort.active
+      );
+
+      if (matchingCohorts.length > 0) {
+        // Collect all profile IDs and simulation IDs from matching cohorts
+        const allowedProfileIds = new Set<string>();
+        const allowedSimulationIds = new Set<string>();
+
+        matchingCohorts.forEach((cohort) => {
+          cohort.profileIds.forEach((profileId) =>
+            allowedProfileIds.add(profileId)
+          );
+          cohort.simulationIds.forEach((simulationId) =>
+            allowedSimulationIds.add(simulationId)
+          );
+        });
+
+        cohortFiltering = {
+          allowedProfileIds: Array.from(allowedProfileIds),
+          allowedSimulationIds: Array.from(allowedSimulationIds),
+        };
+      }
+    }
 
     // Get all days in the date range
     const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
@@ -207,14 +295,30 @@ export default function PersonaResponseTimes({
         return messageDate === dateStr && !simulation?.practiceSimulation;
       });
 
+      // Apply cohort filtering if available
+      const cohortFilteredDayMessages = cohortFiltering
+        ? dayMessages.filter((message) => {
+            const chat = chats.find((c) => c.id === message.chatId);
+            const attempt = attempts.find((a) => a.id === chat?.attemptId);
+            return (
+              attempt?.profileId &&
+              cohortFiltering.allowedProfileIds.includes(attempt.profileId) &&
+              attempt.simulationId &&
+              cohortFiltering.allowedSimulationIds.includes(
+                attempt.simulationId
+              )
+            );
+          })
+        : dayMessages;
+
       // Filter by profileId if provided
       const profileFilteredDayMessages = profileId
-        ? dayMessages.filter((message) => {
+        ? cohortFilteredDayMessages.filter((message) => {
             const chat = chats.find((c) => c.id === message.chatId);
             const attempt = attempts.find((a) => a.id === chat?.attemptId);
             return attempt?.profileId === profileId;
           })
-        : dayMessages;
+        : cohortFilteredDayMessages;
 
       // Calculate response times for the day
       const dayResponseTimes: number[] = [];
@@ -270,7 +374,17 @@ export default function PersonaResponseTimes({
         interactions: dayResponseTimes.length,
       };
     });
-  }, [messages, chats, attempts, simulations, dateStart, dateEnd, profileId]);
+  }, [
+    messages,
+    chats,
+    attempts,
+    simulations,
+    cohorts,
+    dateStart,
+    dateEnd,
+    profileId,
+    cohortIds,
+  ]);
 
   // Determine color based on response time and thresholds (lower is better)
   const getColorConfig = (responseTime: number) => {
@@ -287,6 +401,14 @@ export default function PersonaResponseTimes({
 
   // Check if we have data to display
   const hasData = responseTimeTrend.some((day) => day.interactions > 0);
+
+  // Check if cohort filtering resulted in no data
+  const hasNoCohortData =
+    cohortIds &&
+    cohortIds.length > 0 &&
+    cohorts &&
+    cohorts.filter((cohort) => cohortIds.includes(cohort.id) && cohort.active)
+      .length === 0;
 
   // Calculate actual trend from data
   const getTrendAnalysis = () => {
@@ -345,7 +467,11 @@ export default function PersonaResponseTimes({
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
           <div className={`text-2xl font-bold ${colorConfig.text}`}>
-            {hasData ? formatResponseTime(averageResponseTime) : "No data"}
+            {hasNoCohortData
+              ? "No cohort data"
+              : hasData
+                ? formatResponseTime(averageResponseTime)
+                : "No data"}
           </div>
         </CardContent>
       </Card>
@@ -383,8 +509,9 @@ export default function PersonaResponseTimes({
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">
-                No data available for the selected date range
-                {profileId && " and profile"}
+                {hasNoCohortData
+                  ? "No data available for the selected cohorts"
+                  : `No data available for the selected date range${profileId ? " and profile" : ""}`}
               </div>
             )}
           </div>

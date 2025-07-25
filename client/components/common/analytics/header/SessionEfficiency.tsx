@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -41,7 +42,8 @@ export interface SessionEfficiencyProps {
     warning: number;
     success: number;
   };
-  profileId?: string;
+  profileId: string | undefined;
+  cohortIds: string[];
 }
 
 const COLOR_CONFIGS = {
@@ -78,6 +80,7 @@ export default function SessionEfficiency({
   dateEnd,
   profileId,
   thresholds,
+  cohortIds,
 }: SessionEfficiencyProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -118,9 +121,46 @@ export default function SessionEfficiency({
     queryFn: () => getAllRubrics(),
   });
 
+  const { data: cohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
+  });
+
   // Calculate session efficiency for the specified date range and profile
   const sessionEfficiency = useMemo(() => {
-    if (!grades || !attempts || !chats || !simulations || !rubrics) return 0;
+    if (!grades || !attempts || !chats || !simulations || !rubrics || !cohorts)
+      return 0;
+
+    // Get cohort filtering data
+    let cohortFiltering: {
+      allowedProfileIds: string[];
+      allowedSimulationIds: string[];
+    } | null = null;
+    if (cohortIds && cohortIds.length > 0) {
+      const matchingCohorts = cohorts.filter(
+        (cohort) => cohortIds.includes(cohort.id) && cohort.active
+      );
+
+      if (matchingCohorts.length > 0) {
+        // Collect all profile IDs and simulation IDs from matching cohorts
+        const allowedProfileIds = new Set<string>();
+        const allowedSimulationIds = new Set<string>();
+
+        matchingCohorts.forEach((cohort) => {
+          cohort.profileIds.forEach((profileId: string) =>
+            allowedProfileIds.add(profileId)
+          );
+          cohort.simulationIds.forEach((simulationId: string) =>
+            allowedSimulationIds.add(simulationId)
+          );
+        });
+
+        cohortFiltering = {
+          allowedProfileIds: Array.from(allowedProfileIds),
+          allowedSimulationIds: Array.from(allowedSimulationIds),
+        };
+      }
+    }
 
     // Filter grades by date range and exclude practice simulations
     const filteredGrades = grades.filter((grade) => {
@@ -137,14 +177,28 @@ export default function SessionEfficiency({
       );
     });
 
-    // Filter by profileId if provided
-    const profileFilteredGrades = profileId
+    // Apply cohort filtering if available
+    const cohortFilteredGrades = cohortFiltering
       ? filteredGrades.filter((grade) => {
+          const chat = chats.find((c) => c.id === grade.simulationChatId);
+          const attempt = attempts.find((a) => a.id === chat?.attemptId);
+          return (
+            attempt?.profileId &&
+            cohortFiltering.allowedProfileIds.includes(attempt.profileId) &&
+            attempt.simulationId &&
+            cohortFiltering.allowedSimulationIds.includes(attempt.simulationId)
+          );
+        })
+      : filteredGrades;
+
+    // Filter by profileId if provided (tighter restriction)
+    const profileFilteredGrades = profileId
+      ? cohortFilteredGrades.filter((grade) => {
           const chat = chats.find((c) => c.id === grade.simulationChatId);
           const attempt = attempts.find((a) => a.id === chat?.attemptId);
           return attempt?.profileId === profileId;
         })
-      : filteredGrades;
+      : cohortFilteredGrades;
 
     if (profileFilteredGrades.length === 0) return 0;
 
@@ -186,11 +240,45 @@ export default function SessionEfficiency({
     dateStart,
     dateEnd,
     profileId,
+    cohortIds,
+    cohorts,
   ]);
 
   // Session efficiency trend data for the specified date range
   const efficiencyTrend = useMemo(() => {
-    if (!grades || !attempts || !chats || !simulations || !rubrics) return [];
+    if (!grades || !attempts || !chats || !simulations || !rubrics || !cohorts)
+      return [];
+
+    // Get cohort filtering data
+    let cohortFiltering: {
+      allowedProfileIds: string[];
+      allowedSimulationIds: string[];
+    } | null = null;
+    if (cohortIds && cohortIds.length > 0) {
+      const matchingCohorts = cohorts.filter(
+        (cohort) => cohortIds.includes(cohort.id) && cohort.active
+      );
+
+      if (matchingCohorts.length > 0) {
+        // Collect all profile IDs and simulation IDs from matching cohorts
+        const allowedProfileIds = new Set<string>();
+        const allowedSimulationIds = new Set<string>();
+
+        matchingCohorts.forEach((cohort) => {
+          cohort.profileIds.forEach((profileId: string) =>
+            allowedProfileIds.add(profileId)
+          );
+          cohort.simulationIds.forEach((simulationId: string) =>
+            allowedSimulationIds.add(simulationId)
+          );
+        });
+
+        cohortFiltering = {
+          allowedProfileIds: Array.from(allowedProfileIds),
+          allowedSimulationIds: Array.from(allowedSimulationIds),
+        };
+      }
+    }
 
     // Get all days in the date range
     const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
@@ -209,14 +297,30 @@ export default function SessionEfficiency({
         return gradeDate === dateStr && !simulation?.practiceSimulation;
       });
 
+      // Apply cohort filtering if available
+      const cohortFilteredDayGrades = cohortFiltering
+        ? dayGrades.filter((grade) => {
+            const chat = chats.find((c) => c.id === grade.simulationChatId);
+            const attempt = attempts.find((a) => a.id === chat?.attemptId);
+            return (
+              attempt?.profileId &&
+              cohortFiltering.allowedProfileIds.includes(attempt.profileId) &&
+              attempt.simulationId &&
+              cohortFiltering.allowedSimulationIds.includes(
+                attempt.simulationId
+              )
+            );
+          })
+        : dayGrades;
+
       // Filter by profileId if provided
       const profileFilteredDayGrades = profileId
-        ? dayGrades.filter((grade) => {
+        ? cohortFilteredDayGrades.filter((grade) => {
             const chat = chats.find((c) => c.id === grade.simulationChatId);
             const attempt = attempts.find((a) => a.id === chat?.attemptId);
             return attempt?.profileId === profileId;
           })
-        : dayGrades;
+        : cohortFilteredDayGrades;
 
       // Calculate efficiency for the day
       let dayEfficiency = 0;
@@ -267,6 +371,8 @@ export default function SessionEfficiency({
     dateStart,
     dateEnd,
     profileId,
+    cohortIds,
+    cohorts,
   ]);
 
   // Determine color based on efficiency and thresholds (higher is better)
@@ -284,6 +390,14 @@ export default function SessionEfficiency({
 
   // Check if we have data to display
   const hasData = efficiencyTrend.some((day) => day.sessions > 0);
+
+  // Check if cohort filtering resulted in no data
+  const hasNoCohortData =
+    cohortIds &&
+    cohortIds.length > 0 &&
+    cohorts &&
+    cohorts.filter((cohort) => cohortIds.includes(cohort.id) && cohort.active)
+      .length === 0;
 
   // Calculate actual trend from data
   const getTrendAnalysis = () => {
@@ -334,7 +448,11 @@ export default function SessionEfficiency({
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
           <div className={`text-2xl font-bold ${colorConfig.text}`}>
-            {hasData ? `${sessionEfficiency}` : "No data"}
+            {hasNoCohortData
+              ? "No cohort data"
+              : hasData
+                ? `${sessionEfficiency}`
+                : "No data"}
           </div>
         </CardContent>
       </Card>
@@ -368,8 +486,9 @@ export default function SessionEfficiency({
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">
-                No data available for the selected date range
-                {profileId && " and profile"}
+                {hasNoCohortData
+                  ? "No data available for the selected cohorts"
+                  : `No data available for the selected date range${profileId ? " and profile" : ""}`}
               </div>
             )}
           </div>
