@@ -55,30 +55,6 @@ import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { DocumentsDataTable } from "./DocumentsDataTable";
 
-// MIME type to extension mapping
-const MIME_TYPE_TO_EXTENSION: Record<string, string> = {
-  "application/pdf": "PDF",
-  "image/jpeg": "JPEG",
-  "image/jpg": "JPG",
-  "image/png": "PNG",
-  "image/gif": "GIF",
-  "image/svg+xml": "SVG",
-  "image/webp": "WEBP",
-  "application/msword": "DOC",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-    "DOCX",
-  "text/plain": "TXT",
-  "text/markdown": "MD",
-  "application/zip": "ZIP",
-  "text/html": "HTML",
-  "text/css": "CSS",
-  "application/javascript": "JS",
-  "text/javascript": "JS",
-  "application/json": "JSON",
-  "text/xml": "XML",
-  "application/xml": "XML",
-};
-
 // Helper function to truncate text
 const truncateText = (text: string, maxLength: number = 30): string => {
   if (text.length <= maxLength) return text;

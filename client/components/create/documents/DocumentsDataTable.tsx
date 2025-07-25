@@ -66,13 +66,17 @@ export function DocumentsDataTable({
   onSelectAll,
   onBulkDelete,
 }: DocumentsDataTableProps) {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [sorting, setSorting] = React.useState<SortingState>([
+    {
+      id: "updatedAt",
+      desc: true,
+    },
+  ]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = React.useState({});
 
   // Add checkbox and actions columns to the columns array
   const columnsWithActions = React.useMemo(() => {
@@ -171,7 +175,6 @@ export function DocumentsDataTable({
       sorting,
       columnFilters,
       columnVisibility,
-      rowSelection,
     },
   });
 

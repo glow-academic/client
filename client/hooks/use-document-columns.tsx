@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
+import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,16 @@ import { Edit, Trash2 } from "lucide-react";
 const truncateText = (text: string, maxLength: number = 30): string => {
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength) + "...";
+};
+
+// Helper function to get file extension
+const getFileExtension = (filename: string): string => {
+  const parts = filename.split(".");
+  if (parts.length > 1) {
+    const extension = parts[parts.length - 1];
+    return extension ? extension.toUpperCase() : "N/A";
+  }
+  return "N/A";
 };
 
 export function useDocumentColumns() {
@@ -54,15 +65,44 @@ export function useDocumentColumns() {
         enableHiding: false,
       },
       {
+        accessorKey: "updatedAt",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Updated" />
+        ),
+        cell: ({ row }) => {
+          const date = new Date(row.getValue("updatedAt"));
+          return (
+            <div className="text-xs text-muted-foreground">
+              {date.toLocaleDateString()}
+            </div>
+          );
+        },
+        sortingFn: "datetime",
+      },
+      {
         accessorKey: "name",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Name" />
         ),
         cell: ({ row }) => {
+          const document = row.original;
           const name = row.getValue("name") as string;
           return (
-            <div className="max-w-[200px]">
-              <span title={name}>{truncateText(name, 25)}</span>
+            <div className="flex items-center gap-3 max-w-[300px]">
+              {/* Document preview */}
+              <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                <DocumentViewer
+                  document={document}
+                  bare={true}
+                  isFormDocument={false}
+                />
+              </div>
+              {/* Document name */}
+              <div className="flex-1 min-w-0">
+                <span title={name} className="text-sm font-medium">
+                  {truncateText(name, 25)}
+                </span>
+              </div>
             </div>
           );
         },
@@ -95,8 +135,7 @@ export function useDocumentColumns() {
         ),
         cell: ({ row }) => {
           const document = row.original;
-          const extension =
-            document.name.split(".").pop()?.toUpperCase() || "N/A";
+          const extension = getFileExtension(document.name);
           return (
             <Badge variant="secondary" className="text-xs">
               {extension}
@@ -104,7 +143,9 @@ export function useDocumentColumns() {
           );
         },
         filterFn: (row, id, value) => {
-          return value.length === 0 || value.includes(row.getValue(id));
+          const document = row.original;
+          const extension = getFileExtension(document.name);
+          return value.length === 0 || value.includes(extension);
         },
       },
       {
@@ -117,15 +158,26 @@ export function useDocumentColumns() {
           const documentScenarios = scenarios.filter((scenario: Scenario) =>
             scenario.documentIds?.includes(document.id)
           );
-          return (
-            <div className="max-w-[150px]">
-              {documentScenarios.length > 0 ? (
-                <Badge variant="outline" className="text-xs">
-                  {documentScenarios.length} scenario
-                  {documentScenarios.length > 1 ? "s" : ""}
-                </Badge>
-              ) : (
+
+          if (documentScenarios.length === 0) {
+            return (
+              <div className="max-w-[200px]">
                 <span className="text-muted-foreground text-xs">None</span>
+              </div>
+            );
+          }
+
+          return (
+            <div className="max-w-[200px] flex flex-wrap gap-1">
+              {documentScenarios.slice(0, 3).map((scenario: Scenario) => (
+                <Badge key={scenario.id} variant="outline" className="text-xs">
+                  {truncateText(scenario.name, 15)}
+                </Badge>
+              ))}
+              {documentScenarios.length > 3 && (
+                <Badge variant="secondary" className="text-xs">
+                  +{documentScenarios.length - 3} more
+                </Badge>
               )}
             </div>
           );
@@ -145,20 +197,6 @@ export function useDocumentColumns() {
             <Badge variant={active ? "default" : "secondary"}>
               {active ? "Active" : "Inactive"}
             </Badge>
-          );
-        },
-      },
-      {
-        accessorKey: "updatedAt",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Updated" />
-        ),
-        cell: ({ row }) => {
-          const date = new Date(row.getValue("updatedAt"));
-          return (
-            <div className="text-xs text-muted-foreground">
-              {date.toLocaleDateString()}
-            </div>
           );
         },
       },
