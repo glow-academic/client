@@ -479,9 +479,9 @@ export default function AttemptImprovement({
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
-        <div className="space-y-6">
+        <div className="space-y-3">
           {/* Grouped Bar Chart */}
-          <div className="h-80">
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={improvementData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />

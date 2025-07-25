@@ -84,10 +84,10 @@ export default function Growth({
         formatter: (value: number) => `${value}%`,
       },
       {
-        id: "efficiencyIndex",
-        name: "Efficiency Index",
+        id: "firstAttemptPassRate",
+        name: "First Attempt Pass Rate",
         color: "#f97316",
-        description: "Performance efficiency relative to time spent",
+        description: "Percentage of first attempts that passed",
         unit: "%",
         formatter: (value: number) => `${value}%`,
       },
@@ -252,7 +252,13 @@ export default function Growth({
         messages: number[];
         responseTimes: number[];
         attempts: number[];
-        firstAttemptPassed: number[];
+        firstAttempts: Array<{
+          profileId: string;
+          simulationId: string;
+          attemptId: string;
+          createdAt: Date;
+          passed: boolean;
+        }>;
       }
     >();
 
@@ -272,7 +278,7 @@ export default function Growth({
           messages: [],
           responseTimes: [],
           attempts: [],
-          firstAttemptPassed: [],
+          firstAttempts: [],
         });
       }
 
@@ -312,17 +318,21 @@ export default function Growth({
       // Track attempts
       dayData.attempts.push(1);
 
-      // First attempt pass rate (simplified - assuming first attempt if no previous attempts)
+      // Track first attempts for pass rate calculation
       const isFirstAttempt = !attempts.some(
         (a) =>
           a.profileId === attempt?.profileId &&
           a.simulationId === attempt?.simulationId &&
           new Date(a.createdAt) < new Date(attempt.createdAt)
       );
-      if (isFirstAttempt && grade.passed) {
-        dayData.firstAttemptPassed.push(1);
-      } else if (isFirstAttempt) {
-        dayData.firstAttemptPassed.push(0);
+      if (isFirstAttempt) {
+        dayData.firstAttempts.push({
+          profileId: attempt?.profileId || "",
+          simulationId: attempt?.simulationId || "",
+          attemptId: attempt?.id || "",
+          createdAt: new Date(attempt?.createdAt || ""),
+          passed: grade.passed,
+        });
       }
     });
 
@@ -342,14 +352,13 @@ export default function Growth({
             ? Math.round((dayData.completed / dayData.total) * 100)
             : 0;
 
+        // Calculate first attempt pass rate using the same logic as FirstAttemptPassRate component
         const firstAttemptPassRate =
-          dayData.firstAttemptPassed.length > 0
+          dayData.firstAttempts.length > 0
             ? Math.round(
-                (dayData.firstAttemptPassed.reduce(
-                  (sum, passed) => sum + passed,
-                  0
-                ) /
-                  dayData.firstAttemptPassed.length) *
+                (dayData.firstAttempts.filter((attempt) => attempt.passed)
+                  .length /
+                  dayData.firstAttempts.length) *
                   100
               )
             : 0;
@@ -422,12 +431,11 @@ export default function Growth({
           avgScore,
           passRate: firstAttemptPassRate,
           completionRate: completionPercentage,
-          efficiencyIndex: sessionEfficiency,
         };
       })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    // Scale efficiency index to 0-100 range relative to the dataset
+    // Scale session efficiency to 0-100 range relative to the dataset
     if (growthMetrics.length > 0) {
       const maxEfficiency = Math.max(
         ...growthMetrics.map((m) => m.sessionEfficiency)
@@ -442,7 +450,6 @@ export default function Growth({
           metric.sessionEfficiency = Math.round(
             ((metric.sessionEfficiency - minEfficiency) / efficiencyRange) * 100
           );
-          metric.efficiencyIndex = metric.sessionEfficiency; // Keep legacy field in sync
         });
       }
     }
