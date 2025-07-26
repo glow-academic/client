@@ -9,9 +9,7 @@ from app.models import Models, Personas, Providers, SystemAgents
 from app.services.agents.generic import GenericAgent
 from app.utils.document import get_document_info
 from app.utils.personas import get_persona_info
-from app.utils.scenario import (get_class_info, get_crowdedness_info,
-                                get_deadline_info, get_intensity_info,
-                                get_location_info, get_time_info)
+from app.utils.scenario import get_parameter_item_info
 from fastapi import Depends
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -36,13 +34,8 @@ async def run_scenario_agent(
 
     Args:
         persona_id: The ID of the persona
-        class_id: The ID of the class
         document_ids: The IDs of the documents
-        crowdedness: The crowdedness of the class
-        intensity: The intensity of the class
-        location_id: The ID of the location
-        time_id: The ID of the time
-        deadline_id: The ID of the deadline
+        parameter_item_ids: The IDs of the parameter items
         group_id: The ID of the group
         session: The database session
     Returns:
@@ -58,40 +51,16 @@ async def run_scenario_agent(
             raise ValueError(f"Persona with ID {persona_id} not found")
         persona_info = get_persona_info(persona.id, session)
 
-    if crowdedness is None:
-        crowdedness_info = None
-    else:
-        crowdedness_info = get_crowdedness_info(crowdedness)
-
-    if intensity is None:
-        intensity_info = None
-    else:
-        intensity_info = get_intensity_info(intensity)
-
     if document_ids is None or len(document_ids) == 0:
         document_info = None
     else:
         document_info = get_document_info(document_ids, session)
 
-    if class_id is None:
-        class_info = None
-    else:
-        class_info = get_class_info(class_id, session)
 
-    if location_id is None:
-        location_info = None
+    if parameter_item_ids is None or len(parameter_item_ids) == 0:
+        parameter_item_info = None
     else:
-        location_info = get_location_info(location_id, session)
-
-    if time_id is None:
-        time_info = None
-    else:
-        time_info = get_time_info(time_id, session)
-
-    if deadline_id is None:
-        deadline_info = None
-    else:
-        deadline_info = get_deadline_info(deadline_id, session)
+        parameter_item_info = get_parameter_item_info(parameter_item_ids, session)
 
     # find agent with name of "Scenario"
     scenario_agent = session.exec(select(SystemAgents).where(SystemAgents.name == "Scenario")).one()
@@ -125,13 +94,8 @@ async def run_scenario_agent(
 
     input_items: list[TResponseInputItem | None] = [
         persona_info,
-        class_info,
         document_info,
-        crowdedness_info,
-        intensity_info,
-        location_info,
-        time_info,
-        deadline_info,
+        parameter_item_info,
     ]
     clean_input_items = [item for item in input_items if item is not None]
     logger.info(f"Input items: {clean_input_items}")

@@ -20,7 +20,6 @@ router = APIRouter()
 @router.post("/new")
 async def new_scenario(
     persona_id: uuid.UUID | None = Form(None),
-    class_id: uuid.UUID | None = Form(None),
     document_ids: List[uuid.UUID] | None = Form(None),
     parameter_item_ids: List[uuid.UUID] | None = Form(None),
     session: Session = Depends(get_session),
@@ -31,11 +30,6 @@ async def new_scenario(
     try:
         # Convert empty strings to None for better handling
         persona_id = persona_id if persona_id else None
-        class_id = class_id if class_id else None
-        seniority = seniority if seniority else None
-        location_id = location_id if location_id else None
-        time_id = time_id if time_id else None
-        deadline_id = deadline_id if deadline_id else None
 
         # Filter out empty document IDs
         if document_ids:
@@ -46,13 +40,8 @@ async def new_scenario(
         # Run the scenario agent to generate title and description
         title, description, _ = await run_scenario_agent(
             persona_id=persona_id,
-            class_id=class_id,
             document_ids=document_ids,
-            crowdedness=crowdedness,
-            intensity=intensity,
-            location_id=location_id,
-            time_id=time_id,
-            deadline_id=deadline_id,
+            parameter_item_ids=parameter_item_ids,
             group_id=None,  # no group id for scenarios
             session=session,
         )

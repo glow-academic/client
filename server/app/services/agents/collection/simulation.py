@@ -88,9 +88,6 @@ async def _handle_simulation_chat(
     if not scenario.persona_id:
         raise ValueError(f"Scenario {scenario.id} has no persona_id")
 
-    if not scenario.class_id:
-        raise ValueError(f"Scenario {scenario.id} has no class_id")
-
     persona = session.exec(select(Personas).where(Personas.id == scenario.persona_id)).one()
     if not persona:
         raise ValueError(f"Persona not found for scenario {scenario.id}")
