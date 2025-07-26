@@ -11,7 +11,7 @@ CREATE TABLE parameters (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
-  numerical BOOLEAN     NOT NULL DEFAULT FALSE,
+  numerical BOOLEAN     NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE parameter_items (
@@ -59,7 +59,7 @@ INSERT INTO parameter_items (id, name, description, value, parameter_id) VALUES
   ('77777777-7777-7777-7777-777777777777', 'Crowdedness (7)', 'The relative number of students in the room', '7', '11111111-1111-1111-1111-111111111111'),
   ('88888888-8888-8888-8888-888888888888', 'Crowdedness (8)', 'The relative number of students in the room', '8', '11111111-1111-1111-1111-111111111111'),
   ('99999999-9999-9999-9999-999999999999', 'Crowdedness (9)', 'The relative number of students in the room', '9', '11111111-1111-1111-1111-111111111111'),
-  ('10101010-1010-1010-1010-101010101010', 'Crowdedness (10)', 'The relative number of students in the room', '10', '11111111-1111-1111-1111-111111111111'),
+  ('10101010-1010-1010-1010-101010101010', 'Crowdedness (10)', 'The relative number of students in the room', '10', '11111111-1111-1111-1111-111111111111');
 
 -- intensity
 INSERT INTO parameter_items (id, name, description, value, parameter_id) VALUES
@@ -72,13 +72,13 @@ INSERT INTO parameter_items (id, name, description, value, parameter_id) VALUES
   ('22222222-7777-7777-7777-777777777777', 'Intensity (7)', 'The relative intensity of the student', '7', '22222222-2222-2222-2222-222222222222'),
   ('22222222-8888-8888-8888-888888888888', 'Intensity (8)', 'The relative intensity of the student', '8', '22222222-2222-2222-2222-222222222222'),
   ('22222222-9999-9999-9999-999999999999', 'Intensity (9)', 'The relative intensity of the student', '9', '22222222-2222-2222-2222-222222222222'),
-  ('22222222-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Intensity (10)', 'The relative intensity of the student', '10', '22222222-2222-2222-2222-222222222222'),
+  ('22222222-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Intensity (10)', 'The relative intensity of the student', '10', '22222222-2222-2222-2222-222222222222');
 
 -- location
 INSERT INTO parameter_items (id, name, description, value, parameter_id) VALUES
   ('33333333-1111-1111-1111-111111111111', 'Lawson Computer Science Building', 'An open, collaborative space in the Lawson building with high foot traffic.', 'Lawson', '33333333-3333-3333-3333-333333333333'),
   ('33333333-2222-2222-2222-222222222222', 'Felix Haas Hall', 'A quiet, focused study environment in the lower level of the HAAS building.', 'HAAS', '33333333-3333-3333-3333-333333333333'),
-  ('33333333-3333-3333-3333-333333333333', 'Data Science and Artificial Intelligence Building', 'A specialized tech-focused lab environment in the basement of the Data Science/AI building.', 'DSAI', '33333333-3333-3333-3333-333333333333')
+  ('33333333-3333-3333-3333-333333333333', 'Data Science and Artificial Intelligence Building', 'A specialized tech-focused lab environment in the basement of the Data Science/AI building.', 'DSAI', '33333333-3333-3333-3333-333333333333');
 
 -- class
 INSERT INTO parameter_items (id, name, description, value, parameter_id) VALUES
