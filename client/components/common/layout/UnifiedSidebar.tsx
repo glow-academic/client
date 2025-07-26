@@ -457,10 +457,10 @@ export function UnifiedSidebar({
   };
 
   const handleLoginOrLogout = async () => {
+    const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
     if (effectiveProfile.role === "guest" || !activeProfile) {
       // Navigate to login page for guests or when no user
-      const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
-      router.push(`/${appPrefix}`);
+      router.push("/");
       return;
     }
 
@@ -474,7 +474,7 @@ export function UnifiedSidebar({
           localStorage.removeItem("guestAttemptIds");
           localStorage.removeItem("simulatedRole");
           localStorage.removeItem("guestMode");
-          await signOut({ redirectTo: "/" });
+          await signOut({ redirectTo: `${appPrefix}/` });
           return "Logged out successfully";
         } catch (error) {
           logError("Error logging out:", error);
