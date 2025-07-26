@@ -12,6 +12,17 @@ from sqlmodel import Session, select
 logger = logging.getLogger(__name__)
 
 
+
+def get_parameter_item_info(parameter_item_ids: List[uuid.UUID], session: Session) -> TResponseInputItem:
+    """
+    Get the parameter item information for a given parameter item ids.
+    """
+    parameter_items = session.exec(select(ParameterItems).where(ParameterItems.id.in_(parameter_item_ids))).all()
+    return {
+        "role": "user",
+        "content": f"The following is the parameter item information: {parameter_items}",
+    }
+
 def get_crowdedness_info(crowdedness: int) -> TResponseInputItem:
     """
     Get the crowdedness information for a given crowdedness.

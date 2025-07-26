@@ -22,12 +22,7 @@ async def new_scenario(
     persona_id: uuid.UUID | None = Form(None),
     class_id: uuid.UUID | None = Form(None),
     document_ids: List[uuid.UUID] | None = Form(None),
-    seniority: str | None = Form(None),
-    crowdedness: int | None = Form(None),
-    intensity: int | None = Form(None),
-    location_id: uuid.UUID | None = Form(None),
-    time_id: uuid.UUID | None = Form(None),
-    deadline_id: uuid.UUID | None = Form(None),
+    parameter_item_ids: List[uuid.UUID] | None = Form(None),
     session: Session = Depends(get_session),
 ) -> JSONResponse:
     """

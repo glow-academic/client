@@ -27,12 +27,7 @@ class Scenario(BaseModel):
 async def run_scenario_agent(
     persona_id: uuid.UUID | None = None,
     document_ids: List[uuid.UUID] | None = None,
-    crowdedness: int | None = None,
-    intensity: int | None = None,
-    class_id: uuid.UUID | None = None,
-    location_id: uuid.UUID | None = None,
-    time_id: uuid.UUID | None = None,
-    deadline_id: uuid.UUID | None = None,
+    parameter_item_ids: List[uuid.UUID] | None = None,
     group_id: uuid.UUID | None = None,
     session: Session = Depends(get_session),
 ) -> Tuple[str, str, str]:
