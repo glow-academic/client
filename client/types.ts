@@ -16,14 +16,12 @@ import {
   assistantToolCalls as AssistantToolCalls,
   personas as Personas,
   systemAgents as SystemAgents,
-  scenarios as Scenarios,
-  scenarioClasses as ScenarioClasses,
-  scenarioLocations as ScenarioLocations,
-  scenarioDeadlines as ScenarioDeadlines,
-  scenarioTimes as ScenarioTimes,
-  simulations as Simulations,
   simulationAttempts as SimulationAttempts,
+  parameters as Parameters,
+  parameterItems as ParameterItems,
+  scenarios as Scenarios,
   simulationChats as SimulationChats,
+  simulations as Simulations,
   simulationMessages as SimulationMessages,
   simulationChatGrades as SimulationChatGrades,
   simulationChatFeedbacks as SimulationChatFeedbacks,
@@ -50,14 +48,12 @@ type AssistantMessage = typeof AssistantMessages.$inferSelect;
 type AssistantToolCall = typeof AssistantToolCalls.$inferSelect;
 type Persona = typeof Personas.$inferSelect;
 type SystemAgent = typeof SystemAgents.$inferSelect;
-type Scenario = typeof Scenarios.$inferSelect;
-type ScenarioClasse = typeof ScenarioClasses.$inferSelect;
-type ScenarioLocation = typeof ScenarioLocations.$inferSelect;
-type ScenarioDeadline = typeof ScenarioDeadlines.$inferSelect;
-type ScenarioTime = typeof ScenarioTimes.$inferSelect;
-type Simulation = typeof Simulations.$inferSelect;
 type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
+type Parameter = typeof Parameters.$inferSelect;
+type ParameterItem = typeof ParameterItems.$inferSelect;
+type Scenario = typeof Scenarios.$inferSelect;
 type SimulationChat = typeof SimulationChats.$inferSelect;
+type Simulation = typeof Simulations.$inferSelect;
 type SimulationMessage = typeof SimulationMessages.$inferSelect;
 type SimulationChatGrade = typeof SimulationChatGrades.$inferSelect;
 type SimulationChatFeedback = typeof SimulationChatFeedbacks.$inferSelect;
@@ -90,14 +86,12 @@ export type {
   AssistantToolCall,
   Persona,
   SystemAgent,
-  Scenario,
-  ScenarioClasse,
-  ScenarioLocation,
-  ScenarioDeadline,
-  ScenarioTime,
-  Simulation,
   SimulationAttempt,
+  Parameter,
+  ParameterItem,
+  Scenario,
   SimulationChat,
+  Simulation,
   SimulationMessage,
   SimulationChatGrade,
   SimulationChatFeedback,

@@ -132,6 +132,36 @@ vi.mock('@/utils/mutations/models/delete-models', () => ({ deleteModels: deleteM
 vi.mock('@/utils/mutations/models/update-model', () => ({ updateModel: updateModelMock }));
 vi.mock('@/utils/mutations/models/update-models', () => ({ updateModels: updateModelsMock }));
 
+// PARAMETER_ITEMS MUTATIONS
+export const createParameterItemMock = vi.fn(() => mockSchema.parameterItems?.[0] || {});
+export const createParameterItemsMock = vi.fn(() => mockSchema.parameterItems || []);
+export const deleteParameterItemMock = vi.fn(() => mockSchema.parameterItems?.[0] || {});
+export const deleteParameterItemsMock = vi.fn(() => mockSchema.parameterItems || []);
+export const updateParameterItemMock = vi.fn(() => mockSchema.parameterItems?.[0] || {});
+export const updateParameterItemsMock = vi.fn(() => mockSchema.parameterItems || []);
+
+vi.mock('@/utils/mutations/parameter_items/create-parameter-item', () => ({ createParameterItem: createParameterItemMock }));
+vi.mock('@/utils/mutations/parameter_items/create-parameter-items', () => ({ createParameterItems: createParameterItemsMock }));
+vi.mock('@/utils/mutations/parameter_items/delete-parameter-item', () => ({ deleteParameterItem: deleteParameterItemMock }));
+vi.mock('@/utils/mutations/parameter_items/delete-parameter-items', () => ({ deleteParameterItems: deleteParameterItemsMock }));
+vi.mock('@/utils/mutations/parameter_items/update-parameter-item', () => ({ updateParameterItem: updateParameterItemMock }));
+vi.mock('@/utils/mutations/parameter_items/update-parameter-items', () => ({ updateParameterItems: updateParameterItemsMock }));
+
+// PARAMETERS MUTATIONS
+export const createParameterMock = vi.fn(() => mockSchema.parameters?.[0] || {});
+export const createParametersMock = vi.fn(() => mockSchema.parameters || []);
+export const deleteParameterMock = vi.fn(() => mockSchema.parameters?.[0] || {});
+export const deleteParametersMock = vi.fn(() => mockSchema.parameters || []);
+export const updateParameterMock = vi.fn(() => mockSchema.parameters?.[0] || {});
+export const updateParametersMock = vi.fn(() => mockSchema.parameters || []);
+
+vi.mock('@/utils/mutations/parameters/create-parameter', () => ({ createParameter: createParameterMock }));
+vi.mock('@/utils/mutations/parameters/create-parameters', () => ({ createParameters: createParametersMock }));
+vi.mock('@/utils/mutations/parameters/delete-parameter', () => ({ deleteParameter: deleteParameterMock }));
+vi.mock('@/utils/mutations/parameters/delete-parameters', () => ({ deleteParameters: deleteParametersMock }));
+vi.mock('@/utils/mutations/parameters/update-parameter', () => ({ updateParameter: updateParameterMock }));
+vi.mock('@/utils/mutations/parameters/update-parameters', () => ({ updateParameters: updateParametersMock }));
+
 // PERSONAS MUTATIONS
 export const createPersonaMock = vi.fn(() => mockSchema.personas?.[0] || {});
 export const createPersonasMock = vi.fn(() => mockSchema.personas || []);
@@ -191,66 +221,6 @@ vi.mock('@/utils/mutations/rubrics/delete-rubric', () => ({ deleteRubric: delete
 vi.mock('@/utils/mutations/rubrics/delete-rubrics', () => ({ deleteRubrics: deleteRubricsMock }));
 vi.mock('@/utils/mutations/rubrics/update-rubric', () => ({ updateRubric: updateRubricMock }));
 vi.mock('@/utils/mutations/rubrics/update-rubrics', () => ({ updateRubrics: updateRubricsMock }));
-
-// SCENARIO_CLASSES MUTATIONS
-export const createScenarioClassMock = vi.fn(() => mockSchema.scenarioClasses || []);
-export const createScenarioClassesMock = vi.fn(() => mockSchema.scenarioClasses || []);
-export const deleteScenarioClassMock = vi.fn(() => mockSchema.scenarioClasses || []);
-export const deleteScenarioClassesMock = vi.fn(() => mockSchema.scenarioClasses || []);
-export const updateScenarioClassMock = vi.fn(() => mockSchema.scenarioClasses || []);
-export const updateScenarioClassesMock = vi.fn(() => mockSchema.scenarioClasses || []);
-
-vi.mock('@/utils/mutations/scenario_classes/create-scenario-class', () => ({ createScenarioClass: createScenarioClassMock }));
-vi.mock('@/utils/mutations/scenario_classes/create-scenario-classes', () => ({ createScenarioClasses: createScenarioClassesMock }));
-vi.mock('@/utils/mutations/scenario_classes/delete-scenario-class', () => ({ deleteScenarioClass: deleteScenarioClassMock }));
-vi.mock('@/utils/mutations/scenario_classes/delete-scenario-classes', () => ({ deleteScenarioClasses: deleteScenarioClassesMock }));
-vi.mock('@/utils/mutations/scenario_classes/update-scenario-class', () => ({ updateScenarioClass: updateScenarioClassMock }));
-vi.mock('@/utils/mutations/scenario_classes/update-scenario-classes', () => ({ updateScenarioClasses: updateScenarioClassesMock }));
-
-// SCENARIO_DEADLINES MUTATIONS
-export const createScenarioDeadlineMock = vi.fn(() => mockSchema.scenarioDeadlines?.[0] || {});
-export const createScenarioDeadlinesMock = vi.fn(() => mockSchema.scenarioDeadlines || []);
-export const deleteScenarioDeadlineMock = vi.fn(() => mockSchema.scenarioDeadlines?.[0] || {});
-export const deleteScenarioDeadlinesMock = vi.fn(() => mockSchema.scenarioDeadlines || []);
-export const updateScenarioDeadlineMock = vi.fn(() => mockSchema.scenarioDeadlines?.[0] || {});
-export const updateScenarioDeadlinesMock = vi.fn(() => mockSchema.scenarioDeadlines || []);
-
-vi.mock('@/utils/mutations/scenario_deadlines/create-scenario-deadline', () => ({ createScenarioDeadline: createScenarioDeadlineMock }));
-vi.mock('@/utils/mutations/scenario_deadlines/create-scenario-deadlines', () => ({ createScenarioDeadlines: createScenarioDeadlinesMock }));
-vi.mock('@/utils/mutations/scenario_deadlines/delete-scenario-deadline', () => ({ deleteScenarioDeadline: deleteScenarioDeadlineMock }));
-vi.mock('@/utils/mutations/scenario_deadlines/delete-scenario-deadlines', () => ({ deleteScenarioDeadlines: deleteScenarioDeadlinesMock }));
-vi.mock('@/utils/mutations/scenario_deadlines/update-scenario-deadline', () => ({ updateScenarioDeadline: updateScenarioDeadlineMock }));
-vi.mock('@/utils/mutations/scenario_deadlines/update-scenario-deadlines', () => ({ updateScenarioDeadlines: updateScenarioDeadlinesMock }));
-
-// SCENARIO_LOCATIONS MUTATIONS
-export const createScenarioLocationMock = vi.fn(() => mockSchema.scenarioLocations?.[0] || {});
-export const createScenarioLocationsMock = vi.fn(() => mockSchema.scenarioLocations || []);
-export const deleteScenarioLocationMock = vi.fn(() => mockSchema.scenarioLocations?.[0] || {});
-export const deleteScenarioLocationsMock = vi.fn(() => mockSchema.scenarioLocations || []);
-export const updateScenarioLocationMock = vi.fn(() => mockSchema.scenarioLocations?.[0] || {});
-export const updateScenarioLocationsMock = vi.fn(() => mockSchema.scenarioLocations || []);
-
-vi.mock('@/utils/mutations/scenario_locations/create-scenario-location', () => ({ createScenarioLocation: createScenarioLocationMock }));
-vi.mock('@/utils/mutations/scenario_locations/create-scenario-locations', () => ({ createScenarioLocations: createScenarioLocationsMock }));
-vi.mock('@/utils/mutations/scenario_locations/delete-scenario-location', () => ({ deleteScenarioLocation: deleteScenarioLocationMock }));
-vi.mock('@/utils/mutations/scenario_locations/delete-scenario-locations', () => ({ deleteScenarioLocations: deleteScenarioLocationsMock }));
-vi.mock('@/utils/mutations/scenario_locations/update-scenario-location', () => ({ updateScenarioLocation: updateScenarioLocationMock }));
-vi.mock('@/utils/mutations/scenario_locations/update-scenario-locations', () => ({ updateScenarioLocations: updateScenarioLocationsMock }));
-
-// SCENARIO_TIMES MUTATIONS
-export const createScenarioTimeMock = vi.fn(() => mockSchema.scenarioTimes?.[0] || {});
-export const createScenarioTimesMock = vi.fn(() => mockSchema.scenarioTimes || []);
-export const deleteScenarioTimeMock = vi.fn(() => mockSchema.scenarioTimes?.[0] || {});
-export const deleteScenarioTimesMock = vi.fn(() => mockSchema.scenarioTimes || []);
-export const updateScenarioTimeMock = vi.fn(() => mockSchema.scenarioTimes?.[0] || {});
-export const updateScenarioTimesMock = vi.fn(() => mockSchema.scenarioTimes || []);
-
-vi.mock('@/utils/mutations/scenario_times/create-scenario-time', () => ({ createScenarioTime: createScenarioTimeMock }));
-vi.mock('@/utils/mutations/scenario_times/create-scenario-times', () => ({ createScenarioTimes: createScenarioTimesMock }));
-vi.mock('@/utils/mutations/scenario_times/delete-scenario-time', () => ({ deleteScenarioTime: deleteScenarioTimeMock }));
-vi.mock('@/utils/mutations/scenario_times/delete-scenario-times', () => ({ deleteScenarioTimes: deleteScenarioTimesMock }));
-vi.mock('@/utils/mutations/scenario_times/update-scenario-time', () => ({ updateScenarioTime: updateScenarioTimeMock }));
-vi.mock('@/utils/mutations/scenario_times/update-scenario-times', () => ({ updateScenarioTimes: updateScenarioTimesMock }));
 
 // SCENARIOS MUTATIONS
 export const createScenarioMock = vi.fn(() => mockSchema.scenarios?.[0] || {});

@@ -93,6 +93,21 @@ class Models(_Base, table=True):
     system_agents: List['SystemAgents'] = Relationship(back_populates='model')
 
 
+class Parameters(_Base, table=True):
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='parameters_pkey'),
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
+    name: str = Field(sa_column=Column('name', Text))
+    description: str = Field(sa_column=Column('description', Text))
+    numerical: bool = Field(sa_column=Column('numerical', Boolean, default=False))
+
+    parameter_items: List['ParameterItems'] = Relationship(back_populates='parameter')
+
+
 class Providers(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='providers_pkey'),
@@ -125,67 +140,6 @@ class Rubrics(_Base, table=True):
     simulations: List['Simulations'] = Relationship(back_populates='rubric')
     standard_groups: List['StandardGroups'] = Relationship(back_populates='rubric')
     simulation_chat_grades: List['SimulationChatGrades'] = Relationship(back_populates='rubric')
-
-
-class ScenarioClasses(_Base, table=True):
-    __tablename__ = 'scenario_classes'
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='scenario_classes_pkey'),
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    class_code: str = Field(sa_column=Column('class_code', Text))
-    description: str = Field(sa_column=Column('description', Text))
-
-    scenarios: List['Scenarios'] = Relationship(back_populates='class_')
-
-
-class ScenarioDeadlines(_Base, table=True):
-    __tablename__ = 'scenario_deadlines'
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='scenario_deadlines_pkey'),
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    deadline: str = Field(sa_column=Column('deadline', Text))
-    description: str = Field(sa_column=Column('description', Text))
-
-    scenarios: List['Scenarios'] = Relationship(back_populates='deadline')
-
-
-class ScenarioLocations(_Base, table=True):
-    __tablename__ = 'scenario_locations'
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='scenario_locations_pkey'),
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-
-    scenarios: List['Scenarios'] = Relationship(back_populates='location')
-
-
-class ScenarioTimes(_Base, table=True):
-    __tablename__ = 'scenario_times'
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='scenario_times_pkey'),
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    time_of_day: time = Field(sa_column=Column('time_of_day', Time))
-    description: str = Field(sa_column=Column('description', Text))
-
-    scenarios: List['Scenarios'] = Relationship(back_populates='time_')
 
 
 class Sessions(_Base, table=True):
@@ -222,6 +176,24 @@ class VerificationToken(_Base, table=True):
     identifier: str = Field(sa_column=Column('identifier', Text, primary_key=True))
     expires: datetime = Field(sa_column=Column('expires', DateTime(True)))
     token: str = Field(sa_column=Column('token', Text, primary_key=True))
+
+
+class ParameterItems(_Base, table=True):
+    __tablename__ = 'parameter_items'
+    __table_args__ = (
+        ForeignKeyConstraint(['parameter_id'], ['parameters.id'], ondelete='CASCADE', name='parameter_items_parameter_id_fkey'),
+        PrimaryKeyConstraint('id', name='parameter_items_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
+    name: str = Field(sa_column=Column('name', Text))
+    description: str = Field(sa_column=Column('description', Text))
+    value: str = Field(sa_column=Column('value', Text))
+    parameter_id: Mapped[uuid.UUID] = Field(sa_column=Column('parameter_id', Uuid(as_uuid=True)))
+
+    parameter: Optional['Parameters'] = Relationship(back_populates='parameter_items')
 
 
 class Personas(_Base, table=True):
@@ -371,11 +343,7 @@ class AssistantChats(_Base, table=True):
 
 class Scenarios(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['class_id'], ['scenario_classes.id'], ondelete='SET NULL', name='scenarios_class_id_fkey'),
-        ForeignKeyConstraint(['deadline_id'], ['scenario_deadlines.id'], ondelete='SET NULL', name='scenarios_deadline_id_fkey'),
-        ForeignKeyConstraint(['location_id'], ['scenario_locations.id'], ondelete='SET NULL', name='scenarios_location_id_fkey'),
         ForeignKeyConstraint(['persona_id'], ['personas.id'], ondelete='SET NULL', name='scenarios_persona_id_fkey'),
-        ForeignKeyConstraint(['time_id'], ['scenario_times.id'], ondelete='SET NULL', name='scenarios_time_id_fkey'),
         PrimaryKeyConstraint('id', name='scenarios_pkey')
     )
 
@@ -389,20 +357,11 @@ class Scenarios(_Base, table=True):
     generated: bool = Field(sa_column=Column('generated', Boolean, default=False))
     active: bool = Field(sa_column=Column('active', Boolean, default=True))
     persona_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('persona_id', Uuid(as_uuid=True)))
-    crowdedness: Optional[int] = Field(default=None, sa_column=Column('crowdedness', Integer))
-    intensity: Optional[int] = Field(default=None, sa_column=Column('intensity', Integer))
-    class_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('class_id', Uuid(as_uuid=True)))
-    location_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('location_id', Uuid(as_uuid=True)))
-    deadline_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('deadline_id', Uuid(as_uuid=True)))
-    time_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('time_id', Uuid(as_uuid=True)))
+    parameter_item_ids: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('parameter_item_ids', ARRAY(Uuid(as_uuid=True))))
     document_ids: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('document_ids', ARRAY(Uuid(as_uuid=True))))
     parent_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('parent_id', Uuid(as_uuid=True)))
 
-    class_: Optional['ScenarioClasses'] = Relationship(back_populates='scenarios')
-    deadline: Optional['ScenarioDeadlines'] = Relationship(back_populates='scenarios')
-    location: Optional['ScenarioLocations'] = Relationship(back_populates='scenarios')
     persona: Optional['Personas'] = Relationship(back_populates='scenarios')
-    time_: Optional['ScenarioTimes'] = Relationship(back_populates='scenarios')
     simulation_chats: List['SimulationChats'] = Relationship(back_populates='scenario')
 
 

@@ -99,6 +99,28 @@ vi.mock('@/utils/queries/models/get-model', () => ({
   getModel: vi.fn(() => mockSchema.models?.[0] || null),
 }));
 
+// PARAMETER_ITEMS QUERIES
+vi.mock('@/utils/queries/parameter_items/get-all-parameter-items', () => ({
+  getAllParameterItems: vi.fn(() => mockSchema.parameterItems || []),
+}));
+vi.mock('@/utils/queries/parameter_items/get-parameter-item', () => ({
+  getParameterItem: vi.fn(() => mockSchema.parameterItems?.[0] || null),
+}));
+vi.mock('@/utils/queries/parameter_items/get-parameter-items-by-parameter', () => ({
+  getParameterItemsByParameter: vi.fn(() => mockSchema.parameterItems || []),
+}));
+vi.mock('@/utils/queries/parameter_items/get-parameter-items-by-parameters', () => ({
+  getParameterItemsByParameters: vi.fn(() => mockSchema.parameterItems || []),
+}));
+
+// PARAMETERS QUERIES
+vi.mock('@/utils/queries/parameters/get-all-parameters', () => ({
+  getAllParameters: vi.fn(() => mockSchema.parameters || []),
+}));
+vi.mock('@/utils/queries/parameters/get-parameter', () => ({
+  getParameter: vi.fn(() => mockSchema.parameters?.[0] || null),
+}));
+
 // PERSONAS QUERIES
 vi.mock('@/utils/queries/personas/get-all-personas', () => ({
   getAllPersonas: vi.fn(() => mockSchema.personas || []),
@@ -143,38 +165,6 @@ vi.mock('@/utils/queries/rubrics/get-rubric', () => ({
   getRubric: vi.fn(() => mockSchema.rubrics?.[0] || null),
 }));
 
-// SCENARIO_CLASSES QUERIES
-vi.mock('@/utils/queries/scenario_classes/get-all-scenario-classes', () => ({
-  getAllScenarioClasses: vi.fn(() => mockSchema.scenarioClasses || []),
-}));
-vi.mock('@/utils/queries/scenario_classes/get-scenario-class', () => ({
-  getScenarioClass: vi.fn(() => mockSchema.scenarioClasses?.[0] || null),
-}));
-
-// SCENARIO_DEADLINES QUERIES
-vi.mock('@/utils/queries/scenario_deadlines/get-all-scenario-deadlines', () => ({
-  getAllScenarioDeadlines: vi.fn(() => mockSchema.scenarioDeadlines || []),
-}));
-vi.mock('@/utils/queries/scenario_deadlines/get-scenario-deadline', () => ({
-  getScenarioDeadline: vi.fn(() => mockSchema.scenarioDeadlines?.[0] || null),
-}));
-
-// SCENARIO_LOCATIONS QUERIES
-vi.mock('@/utils/queries/scenario_locations/get-all-scenario-locations', () => ({
-  getAllScenarioLocations: vi.fn(() => mockSchema.scenarioLocations || []),
-}));
-vi.mock('@/utils/queries/scenario_locations/get-scenario-location', () => ({
-  getScenarioLocation: vi.fn(() => mockSchema.scenarioLocations?.[0] || null),
-}));
-
-// SCENARIO_TIMES QUERIES
-vi.mock('@/utils/queries/scenario_times/get-all-scenario-times', () => ({
-  getAllScenarioTimes: vi.fn(() => mockSchema.scenarioTimes || []),
-}));
-vi.mock('@/utils/queries/scenario_times/get-scenario-time', () => ({
-  getScenarioTime: vi.fn(() => mockSchema.scenarioTimes?.[0] || null),
-}));
-
 // SCENARIOS QUERIES
 vi.mock('@/utils/queries/scenarios/get-all-scenarios', () => ({
   getAllScenarios: vi.fn(() => mockSchema.scenarios || []),
@@ -182,32 +172,11 @@ vi.mock('@/utils/queries/scenarios/get-all-scenarios', () => ({
 vi.mock('@/utils/queries/scenarios/get-scenario', () => ({
   getScenario: vi.fn(() => mockSchema.scenarios?.[0] || null),
 }));
-vi.mock('@/utils/queries/scenarios/get-scenarios-by-class', () => ({
-  getScenariosByClass: vi.fn(() => mockSchema.scenarios || []),
-}));
-vi.mock('@/utils/queries/scenarios/get-scenarios-by-deadline', () => ({
-  getScenariosByDeadline: vi.fn(() => mockSchema.scenarios || []),
-}));
-vi.mock('@/utils/queries/scenarios/get-scenarios-by-deadlines', () => ({
-  getScenariosByDeadlines: vi.fn(() => mockSchema.scenarios || []),
-}));
-vi.mock('@/utils/queries/scenarios/get-scenarios-by-location', () => ({
-  getScenariosByLocation: vi.fn(() => mockSchema.scenarios || []),
-}));
-vi.mock('@/utils/queries/scenarios/get-scenarios-by-locations', () => ({
-  getScenariosByLocations: vi.fn(() => mockSchema.scenarios || []),
-}));
 vi.mock('@/utils/queries/scenarios/get-scenarios-by-persona', () => ({
   getScenariosByPersona: vi.fn(() => mockSchema.scenarios || []),
 }));
 vi.mock('@/utils/queries/scenarios/get-scenarios-by-personas', () => ({
   getScenariosByPersonas: vi.fn(() => mockSchema.scenarios || []),
-}));
-vi.mock('@/utils/queries/scenarios/get-scenarios-by-time', () => ({
-  getScenariosByTime: vi.fn(() => mockSchema.scenarios || []),
-}));
-vi.mock('@/utils/queries/scenarios/get-scenarios-by-times', () => ({
-  getScenariosByTimes: vi.fn(() => mockSchema.scenarios || []),
 }));
 
 // SESSIONS QUERIES
