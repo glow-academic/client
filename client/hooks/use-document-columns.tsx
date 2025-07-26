@@ -109,6 +109,7 @@ export function useDocumentColumns() {
                     document={row.original}
                     bare={true}
                     isFormDocument={false}
+                    compact={true}
                   />
                 </div>
               </div>

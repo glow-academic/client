@@ -25,6 +25,7 @@ export interface DocumentViewerProps {
   bare?: boolean;
   classId?: string;
   isFormDocument?: boolean;
+  compact?: boolean;
 }
 
 // Simplified document type info
@@ -44,6 +45,7 @@ export default function DocumentViewer({
   classId,
   bare = true,
   isFormDocument = false,
+  compact = false,
 }: DocumentViewerProps) {
   const [docId, setDocId] = useState<string | null>(null);
   const [content, setContent] = useState<string | null>(null);
@@ -206,13 +208,19 @@ export default function DocumentViewer({
     // Text/Markdown viewer
     if (type?.includes("text/") || current.name?.endsWith(".md")) {
       return (
-        <div className="w-full h-full p-4 flex flex-col">
+        <div
+          className={`w-full h-full ${compact ? "p-1" : "p-4"} flex flex-col items-center justify-center`}
+        >
           {current.name?.endsWith(".md") ? (
-            <div className="prose prose-sm max-w-none dark:prose-invert flex-1 min-h-0 overflow-y-auto">
+            <div
+              className={`prose ${compact ? "prose-xs" : "prose-sm"} max-w-none dark:prose-invert flex-1 min-h-0 overflow-y-auto text-center ${compact ? "leading-tight" : ""}`}
+            >
               <Markdown>{content ?? ""}</Markdown>
             </div>
           ) : (
-            <pre className="whitespace-pre-wrap text-sm font-mono bg-muted/30 p-3 rounded-md overflow-auto flex-1 min-h-0">
+            <pre
+              className={`whitespace-pre-wrap ${compact ? "text-[4px] leading-[6px]" : "text-sm"} font-mono bg-muted/30 ${compact ? "p-1" : "p-3"} rounded-md overflow-auto flex-1 min-h-0 text-center`}
+            >
               {content}
             </pre>
           )}
