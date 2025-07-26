@@ -189,15 +189,14 @@ export default function DocumentViewer({
     // Image viewer - responsive and fit to width
     if (type?.includes("image/")) {
       return (
-        <div className="w-full flex justify-center p-4">
+        <div className="w-full h-full">
           <Image
             src={content ?? ""}
             alt={current.name ?? ""}
-            className="max-w-full h-auto rounded-md shadow-sm"
+            className="w-full h-full object-cover"
             width={0}
             height={0}
             sizes="100vw"
-            style={{ width: "100%", height: "auto" }}
             unoptimized
           />
         </div>

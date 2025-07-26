@@ -103,8 +103,8 @@ export function useDocumentColumns() {
           return (
             <div className="flex items-center gap-3 max-w-[300px]">
               {/* Document preview */}
-              <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
-                <div className="w-full h-full flex items-center justify-center scale-75 transform object-contain">
+              <div className="w-12 h-12 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+                <div className="w-full h-full">
                   <DocumentViewer
                     document={row.original}
                     bare={true}
