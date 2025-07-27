@@ -10,14 +10,8 @@ import { logError } from "@/utils/logger";
 
 export interface NewScenarioParams {
   personaId?: string | null;
-  classId?: string | null;
-  locationId?: string | null;
-  deadlineId?: string | null;
-  timeId?: string | null;
   documentIds?: string[];
-  crowdedness?: number | null;
-  intensity?: number | null;
-  seniority?: string | null;
+  parameterItemIds?: string[];
 }
 
 export interface NewScenarioResponse {
@@ -38,9 +32,6 @@ export async function newScenario(
     if (params.personaId) {
       formData.append("persona_id", params.personaId);
     }
-    if (params.classId) {
-      formData.append("class_id", params.classId);
-    }
     if (params.documentIds && params.documentIds.length > 0) {
       params.documentIds.forEach((docId) => {
         if (docId) {
@@ -48,24 +39,14 @@ export async function newScenario(
         }
       });
     }
-    if (params.seniority) {
-      formData.append("seniority", params.seniority);
+    if (params.parameterItemIds && params.parameterItemIds.length > 0) {
+      params.parameterItemIds.forEach((paramId) => {
+        if (paramId) {
+          formData.append("parameter_item_ids", paramId);
+        }
+      });
     }
-    if (params.crowdedness !== null && params.crowdedness !== undefined) {
-      formData.append("crowdedness", params.crowdedness.toString());
-    }
-    if (params.intensity !== null && params.intensity !== undefined) {
-      formData.append("intensity", params.intensity.toString());
-    }
-    if (params.locationId) {
-      formData.append("location_id", params.locationId);
-    }
-    if (params.deadlineId) {
-      formData.append("deadline_id", params.deadlineId);
-    }
-    if (params.timeId) {
-      formData.append("time_id", params.timeId);
-    }
+
 
     const response = await fetch(`${getApiBase()}/scenarios/new`, {
       method: "POST",
