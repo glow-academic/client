@@ -103,23 +103,6 @@ function AccessDeniedCard({ role, pathname }: AccessDeniedCardProps) {
     router.push(redirectPath);
   };
 
-  const getRoleDisplayName = (role: string) => {
-    switch (role) {
-      case "guest":
-        return "Guest User";
-      case "ta":
-        return "Teaching Assistant";
-      case "instructional":
-        return "Instructional Staff";
-      case "admin":
-        return "Administrator";
-      case "superadmin":
-        return "Super Administrator";
-      default:
-        return "User";
-    }
-  };
-
   const getAccessDeniedMessage = (role: string, pathname: string) => {
     const section = pathname.split("/")[1];
 
@@ -180,25 +163,10 @@ function AccessDeniedCard({ role, pathname }: AccessDeniedCardProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <div className="text-sm text-muted-foreground">
-              <p>
-                Current role:{" "}
-                <span className="font-medium">{getRoleDisplayName(role)}</span>
-              </p>
-              <p>
-                Attempted to access:{" "}
-                <span className="font-mono text-xs">{pathname}</span>
-              </p>
-              <p>
-                Suggested redirect:{" "}
-                <span className="font-mono text-xs">{redirectPath}</span>
-              </p>
-            </div>
-
             <div className="flex flex-col gap-2">
               <Button onClick={handleRedirect} className="w-full">
                 <Home className="h-4 w-4 mr-2" />
-                Go to Dashboard ({redirectPath})
+                Go to Dashboard
               </Button>
 
               {role === "guest" && (
