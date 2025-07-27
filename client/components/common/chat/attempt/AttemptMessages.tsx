@@ -56,7 +56,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
     const scrollArea = scrollAreaRef.current;
     if (scrollArea) {
       const viewport = scrollArea.querySelector(
-        "[data-radix-scroll-area-viewport]"
+        "[data-radix-scroll-area-viewport]",
       ) as HTMLElement;
       if (viewport)
         viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
@@ -76,7 +76,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
     const scrollArea = scrollAreaRef.current;
     if (!scrollArea) return;
     const viewport = scrollArea.querySelector(
-      "[data-radix-scroll-area-viewport]"
+      "[data-radix-scroll-area-viewport]",
     ) as HTMLElement;
     if (!viewport) return;
     const handleScrollEvent = () => {
@@ -145,7 +145,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                   .sort(
                     (a, b) =>
                       new Date(a.createdAt).getTime() -
-                      new Date(b.createdAt).getTime()
+                      new Date(b.createdAt).getTime(),
                   )
                   .map((message) => (
                     <div key={message.id} className="space-y-3">

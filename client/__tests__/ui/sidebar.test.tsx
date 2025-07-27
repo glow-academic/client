@@ -20,7 +20,7 @@ describe("Sidebar", () => {
             <SidebarHeader>Sidebar Header</SidebarHeader>
             <SidebarContent>Sidebar Content</SidebarContent>
           </Sidebar>
-        </SidebarProvider>
+        </SidebarProvider>,
       );
 
       expect(screen.getByText("Sidebar Header")).toBeInTheDocument();
@@ -34,7 +34,7 @@ describe("Sidebar", () => {
             <SidebarHeader>Accessible Header</SidebarHeader>
             <SidebarContent>Accessible Content</SidebarContent>
           </Sidebar>
-        </SidebarProvider>
+        </SidebarProvider>,
       );
 
       const sidebar = document.querySelector('[data-slot="sidebar"]');
@@ -49,7 +49,7 @@ describe("Sidebar", () => {
           <Sidebar className="custom-class">
             <SidebarContent>Content</SidebarContent>
           </Sidebar>
-        </SidebarProvider>
+        </SidebarProvider>,
       );
 
       const sidebar = document.querySelector('[data-slot="sidebar"]');
@@ -63,7 +63,7 @@ describe("Sidebar", () => {
             <SidebarContent>Content</SidebarContent>
           </Sidebar>
           <SidebarTrigger />
-        </SidebarProvider>
+        </SidebarProvider>,
       );
 
       const trigger = screen.getByRole("button", { name: "Toggle Sidebar" });
@@ -79,7 +79,7 @@ describe("Sidebar", () => {
           <Sidebar>
             <SidebarContent />
           </Sidebar>
-        </SidebarProvider>
+        </SidebarProvider>,
       );
 
       const sidebar = document.querySelector('[data-slot="sidebar"]');

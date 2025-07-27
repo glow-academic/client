@@ -76,7 +76,7 @@ export function useHistoryColumns({
       queryFn: () =>
         getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
       enabled: !!rubrics && rubrics.length > 0,
-    }
+    },
   );
 
   const { data: standards, isLoading: isLoadingStandards } = useQuery({
@@ -111,7 +111,7 @@ export function useHistoryColumns({
     queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
     queryFn: () =>
       getSimulationChatFeedbacksBySimulationChatGrades(
-        grades!.map((grade) => grade.id)
+        grades!.map((grade) => grade.id),
       ),
     enabled: !!grades && grades.length > 0,
   });
@@ -151,7 +151,7 @@ export function useHistoryColumns({
   const validStandardGroups = useMemo(() => {
     if (!standardGroups || !validRubrics) return [];
     return standardGroups.filter((g) =>
-      validRubrics.some((r) => r.id === g.rubricId)
+      validRubrics.some((r) => r.id === g.rubricId),
     );
   }, [standardGroups, validRubrics]);
 
@@ -159,7 +159,7 @@ export function useHistoryColumns({
   const validStandards = useMemo(() => {
     if (!standards || !validStandardGroups) return [];
     return standards.filter((s) =>
-      validStandardGroups.some((g) => g.id === s.standardGroupId)
+      validStandardGroups.some((g) => g.id === s.standardGroupId),
     );
   }, [standards, validStandardGroups]);
 
@@ -170,7 +170,7 @@ export function useHistoryColumns({
 
     return attempts.map((attempt: SimulationAttempt): EnhancedAttempt => {
       const attemptChats = chats.filter(
-        (chat) => chat.attemptId === attempt.id
+        (chat) => chat.attemptId === attempt.id,
       );
 
       // Get agents from all scenarios in the chats
@@ -182,18 +182,18 @@ export function useHistoryColumns({
             if (scenario) {
               // Find agent by the agentId in the scenario
               const scenarioAgent = personas.find(
-                (a) => a.id === scenario.personaId
+                (a) => a.id === scenario.personaId,
               );
               return scenarioAgent?.name || "Unknown Persona";
             }
 
             return "Unknown Persona";
-          })
+          }),
         ),
       ].filter((name) => name !== "Unknown Persona"); // Filter out unknown personas
 
       const simulation = simulations?.find(
-        (s) => s.id === attempt.simulationId
+        (s) => s.id === attempt.simulationId,
       );
 
       return {
@@ -215,10 +215,10 @@ export function useHistoryColumns({
 
     validStandardGroups.forEach((group) => {
       const groupStandards = validStandards.filter(
-        (s) => s.standardGroupId === group.id
+        (s) => s.standardGroupId === group.id,
       );
       const groupFeedbacks = feedbacks.filter((f) =>
-        groupStandards.some((s) => s.id === f.standardId)
+        groupStandards.some((s) => s.id === f.standardId),
       );
 
       if (groupFeedbacks.length > 0) {
@@ -266,7 +266,7 @@ export function useHistoryColumns({
         label: "Not Graded",
       },
     ],
-    []
+    [],
   );
 
   // Define columns - only attempts view
@@ -358,7 +358,7 @@ export function useHistoryColumns({
               }) => <DataTableColumnHeader column={column} title="Name" />,
               cell: ({ row }: { row: Row<EnhancedAttempt> }) => {
                 const profileOption = profileOptions.find(
-                  (profile) => profile.value === row.getValue("profileId")
+                  (profile) => profile.value === row.getValue("profileId"),
                 );
 
                 if (!profileOption) {
@@ -376,7 +376,7 @@ export function useHistoryColumns({
               filterFn: (
                 row: Row<EnhancedAttempt>,
                 id: string,
-                value: string[]
+                value: string[],
               ) => {
                 return value.includes(row.getValue(id) as string);
               },
@@ -468,8 +468,8 @@ export function useHistoryColumns({
           if (!value || value.length === 0) return true;
           return value.some((filterAgent: string) =>
             personasTested?.some((agent) =>
-              agent.toLowerCase().includes(filterAgent.toLowerCase())
-            )
+              agent.toLowerCase().includes(filterAgent.toLowerCase()),
+            ),
           );
         },
       },
@@ -485,7 +485,7 @@ export function useHistoryColumns({
 
           const chatGrades = chats
             .map((chat) =>
-              grades?.find((grade) => grade.simulationChatId === chat.id)
+              grades?.find((grade) => grade.simulationChatId === chat.id),
             )
             .filter(Boolean);
 
@@ -493,7 +493,7 @@ export function useHistoryColumns({
 
           const totalScore = chatGrades.reduce(
             (sum: number, grade) => sum + (grade?.score || 0),
-            0
+            0,
           );
           return totalScore / chatGrades.length;
         },
@@ -505,7 +505,7 @@ export function useHistoryColumns({
 
           const chatGrades = chats
             .map((chat: SimulationChat) =>
-              grades?.find((grade) => grade.simulationChatId === chat.id)
+              grades?.find((grade) => grade.simulationChatId === chat.id),
             )
             .filter(Boolean);
 
@@ -517,7 +517,7 @@ export function useHistoryColumns({
 
             // Check if simulation timed out
             const simulation = simulations?.find(
-              (s) => s.id === row.original.simulationId
+              (s) => s.id === row.original.simulationId,
             );
             const isTimedOut = isSimulationTimedOut({
               attemptCreatedAt: row.original.createdAt,
@@ -533,23 +533,23 @@ export function useHistoryColumns({
 
           const totalScore = chatGrades.reduce(
             (sum: number, grade) => sum + (grade?.score || 0),
-            0
+            0,
           );
           const averageScore = totalScore / chatGrades.length;
 
           // Calculate percentage based on rubric total points
           // Find the rubric for this simulation
           const simulation = simulations?.find(
-            (s) => s.id === row.original.simulationId
+            (s) => s.id === row.original.simulationId,
           );
           const rubric = validRubrics.find(
-            (r) => r.id === simulation?.rubricId
+            (r) => r.id === simulation?.rubricId,
           );
 
           // Calculate percentage using rubric total points, fallback to 100 if not found
           const rubricTotalPoints = rubric?.points || 100;
           const scorePercent = Math.round(
-            (averageScore / rubricTotalPoints) * 100
+            (averageScore / rubricTotalPoints) * 100,
           );
 
           return (
@@ -578,14 +578,14 @@ export function useHistoryColumns({
 
           const chatGrades = chats
             .map((chat: SimulationChat) =>
-              grades?.find((grade) => grade.simulationChatId === chat.id)
+              grades?.find((grade) => grade.simulationChatId === chat.id),
             )
             .filter(Boolean);
 
           if (chatGrades.length === 0) {
             // Check if simulation timed out
             const simulation = simulations?.find(
-              (s) => s.id === row.original.simulationId
+              (s) => s.id === row.original.simulationId,
             );
             const isTimedOut = isSimulationTimedOut({
               attemptCreatedAt: row.original.createdAt,
@@ -601,20 +601,20 @@ export function useHistoryColumns({
 
           const totalScore = chatGrades.reduce(
             (sum: number, grade) => sum + (grade?.score || 0),
-            0
+            0,
           );
           const averageScore = totalScore / chatGrades.length;
 
           // Calculate percentage based on rubric total points
           const simulation = simulations?.find(
-            (s) => s.id === row.original.simulationId
+            (s) => s.id === row.original.simulationId,
           );
           const rubric = validRubrics.find(
-            (r) => r.id === simulation?.rubricId
+            (r) => r.id === simulation?.rubricId,
           );
           const rubricTotalPoints = rubric?.points || 100;
           const scorePercent = Math.round(
-            (averageScore / rubricTotalPoints) * 100
+            (averageScore / rubricTotalPoints) * 100,
           );
 
           if (scorePercent >= 80) {
@@ -647,7 +647,7 @@ export function useHistoryColumns({
   if (cohortIds && cohortIds.length > 0 && cohorts) {
     // Get cohort filtering data
     const matchingCohorts = cohorts.filter(
-      (cohort) => cohortIds.includes(cohort.id) && cohort.active
+      (cohort) => cohortIds.includes(cohort.id) && cohort.active,
     );
 
     if (matchingCohorts.length > 0) {
@@ -657,10 +657,10 @@ export function useHistoryColumns({
 
       matchingCohorts.forEach((cohort) => {
         cohort.profileIds.forEach((profileId: string) =>
-          allowedProfileIds.add(profileId)
+          allowedProfileIds.add(profileId),
         );
         cohort.simulationIds.forEach((simulationId: string) =>
-          allowedSimulationIds.add(simulationId)
+          allowedSimulationIds.add(simulationId),
         );
       });
 
@@ -686,7 +686,7 @@ export function useHistoryColumns({
     data = data.filter((attempt: unknown) => {
       const attemptData = attempt as Record<string, unknown>;
       const simulation = simulations?.find(
-        (s) => s.id === attemptData["simulationId"]
+        (s) => s.id === attemptData["simulationId"],
       );
       return simulation?.practiceSimulation;
     });
@@ -695,7 +695,7 @@ export function useHistoryColumns({
     data = data.filter((attempt: unknown) => {
       const attemptData = attempt as Record<string, unknown>;
       const simulation = simulations?.find(
-        (s) => s.id === attemptData["simulationId"]
+        (s) => s.id === attemptData["simulationId"],
       );
       return !simulation?.practiceSimulation;
     });
@@ -710,7 +710,7 @@ export function useHistoryColumns({
     data = data.filter(
       (attempt: unknown) =>
         (attempt as Record<string, unknown>)["profileId"] ===
-        effectiveProfile?.id
+        effectiveProfile?.id,
     );
   } else {
     // If showAll is false and there's no profile, show empty data

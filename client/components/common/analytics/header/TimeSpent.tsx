@@ -131,7 +131,7 @@ export default function TimeSpent({
     } | null = null;
     if (cohortIds && cohortIds.length > 0) {
       const matchingCohorts = cohorts.filter(
-        (cohort) => cohortIds.includes(cohort.id) && cohort.active
+        (cohort) => cohortIds.includes(cohort.id) && cohort.active,
       );
 
       if (matchingCohorts.length > 0) {
@@ -141,10 +141,10 @@ export default function TimeSpent({
 
         matchingCohorts.forEach((cohort) => {
           cohort.profileIds.forEach((profileId: string) =>
-            allowedProfileIds.add(profileId)
+            allowedProfileIds.add(profileId),
           );
           cohort.simulationIds.forEach((simulationId: string) =>
-            allowedSimulationIds.add(simulationId)
+            allowedSimulationIds.add(simulationId),
           );
         });
 
@@ -161,7 +161,7 @@ export default function TimeSpent({
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId
+        (s) => s.id === attempt?.simulationId,
       );
       return (
         gradeDate >= dateStart &&
@@ -196,7 +196,7 @@ export default function TimeSpent({
     // Sum up all timeTaken values (in seconds)
     const totalSeconds = profileFilteredGrades.reduce(
       (sum, grade) => sum + grade.timeTaken,
-      0
+      0,
     );
     return totalSeconds;
   }, [
@@ -222,7 +222,7 @@ export default function TimeSpent({
     } | null = null;
     if (cohortIds && cohortIds.length > 0) {
       const matchingCohorts = cohorts.filter(
-        (cohort) => cohortIds.includes(cohort.id) && cohort.active
+        (cohort) => cohortIds.includes(cohort.id) && cohort.active,
       );
 
       if (matchingCohorts.length > 0) {
@@ -232,10 +232,10 @@ export default function TimeSpent({
 
         matchingCohorts.forEach((cohort) => {
           cohort.profileIds.forEach((profileId: string) =>
-            allowedProfileIds.add(profileId)
+            allowedProfileIds.add(profileId),
           );
           cohort.simulationIds.forEach((simulationId: string) =>
-            allowedSimulationIds.add(simulationId)
+            allowedSimulationIds.add(simulationId),
           );
         });
 
@@ -258,7 +258,7 @@ export default function TimeSpent({
         const chat = chats.find((c) => c.id === grade.simulationChatId);
         const attempt = attempts.find((a) => a.id === chat?.attemptId);
         const simulation = simulations.find(
-          (s) => s.id === attempt?.simulationId
+          (s) => s.id === attempt?.simulationId,
         );
         return gradeDate === dateStr && !simulation?.practiceSimulation;
       });
@@ -273,7 +273,7 @@ export default function TimeSpent({
               cohortFiltering.allowedProfileIds.includes(attempt.profileId) &&
               attempt.simulationId &&
               cohortFiltering.allowedSimulationIds.includes(
-                attempt.simulationId
+                attempt.simulationId,
               )
             );
           })
@@ -291,7 +291,7 @@ export default function TimeSpent({
       // Sum up time for the day (in seconds)
       const dayTimeSpent = profileFilteredDayGrades.reduce(
         (sum, grade) => sum + grade.timeTaken,
-        0
+        0,
       );
 
       return {

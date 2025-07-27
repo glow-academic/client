@@ -194,7 +194,7 @@ export default function NewStaff() {
         })
         .filter(
           (user): user is CSVUser =>
-            Boolean(user.firstName) && Boolean(user.lastName)
+            Boolean(user.firstName) && Boolean(user.lastName),
         );
 
       setCsvPreview(users);
@@ -237,8 +237,8 @@ export default function NewStaff() {
             lastName: user.lastName,
             alias: user.alias,
             role: user.role,
-          })
-        )
+          }),
+        ),
       );
       router.push("/management/staff");
     } catch (error) {
@@ -438,11 +438,11 @@ export default function NewStaff() {
                   <Label>Role Information</Label>
                   <div className="space-y-2">
                     {Array.from(
-                      new Set(csvPreview.map((user) => user.role))
+                      new Set(csvPreview.map((user) => user.role)),
                     ).map((role) => {
                       const RoleIcon = getRoleIcon(role);
                       const userCount = csvPreview.filter(
-                        (user) => user.role === role
+                        (user) => user.role === role,
                       ).length;
                       return (
                         <div key={role} className="p-3 bg-muted rounded-md">

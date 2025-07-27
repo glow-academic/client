@@ -6,442 +6,725 @@ describe("Scenarios End-to-End Tests", () => {
   });
 
   describe("Role-Based Access Control", () => {
-    it.skip("should allow admin users to create and manage all scenarios", () => {
-      // Login as admin
-      // Navigate to create scenarios
+    it("should allow admin users to create and manage all scenarios", () => {
+      // Login as admin using mock session
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios");
+
+      // Verify can access scenarios page
+      cy.url().should("include", "/create/scenarios");
+      cy.get('[data-testid="create-scenario-button"]').should("be.visible");
+
       // Verify can create new scenarios
-      // Verify can edit any scenario
+      cy.get('[data-testid="create-scenario-button"]').click();
+      cy.url().should("include", "/create/scenarios/new");
+      cy.get('[data-testid="scenario-component"]').should("be.visible");
+
+      // Verify can edit scenarios (if any exist)
+      cy.visit("/create/scenarios");
+      cy.get('[data-testid^="card-"]')
+        .first()
+        .then(($card) => {
+          if ($card.length > 0) {
+            cy.get('[data-testid^="edit-"]').first().should("be.visible");
+          }
+        });
+
       // Verify can delete scenarios (if not in use)
-      // Verify can view all scenarios
+      cy.get('[data-testid^="card-"]')
+        .first()
+        .then(($card) => {
+          if ($card.length > 0) {
+            cy.get('[data-testid^="delete-"]').first().should("be.visible");
+          }
+        });
     });
 
-    it.skip("should allow superadmin users to create and manage all scenarios", () => {
-      // Login as superadmin
-      // Navigate to create scenarios
+    it("should allow superadmin users to create and manage all scenarios", () => {
+      // Login as superadmin using mock session
+      cy.mockSession({ role: "superadmin" });
+      cy.visit("/create/scenarios");
+
+      // Verify can access scenarios page
+      cy.url().should("include", "/create/scenarios");
+      cy.get('[data-testid="create-scenario-button"]').should("be.visible");
+
       // Verify can create new scenarios
-      // Verify can edit any scenario
-      // Verify can delete scenarios (if not in use)
-      // Verify can view all scenarios
+      cy.get('[data-testid="create-scenario-button"]').click();
+      cy.url().should("include", "/create/scenarios/new");
+      cy.get('[data-testid="scenario-component"]').should("be.visible");
     });
 
-    it.skip("should allow instructional users to create and manage scenarios", () => {
-      // Login as instructional
-      // Navigate to create scenarios
+    it("should allow instructional users to create and manage scenarios", () => {
+      // Login as instructional using mock session
+      cy.mockSession({ role: "instructional" });
+      cy.visit("/create/scenarios");
+
+      // Verify can access scenarios page
+      cy.url().should("include", "/create/scenarios");
+      cy.get('[data-testid="create-scenario-button"]').should("be.visible");
+
       // Verify can create new scenarios
-      // Verify can edit scenarios
-      // Verify can delete scenarios (if not in use)
-      // Verify can view all scenarios
+      cy.get('[data-testid="create-scenario-button"]').click();
+      cy.url().should("include", "/create/scenarios/new");
+      cy.get('[data-testid="scenario-component"]').should("be.visible");
     });
 
-    it.skip("should prevent TA users from accessing scenario creation", () => {
-      // Login as TA
-      // Try to navigate to create scenarios
+    it("should prevent TA users from accessing scenario creation", () => {
+      // Login as TA using mock session
+      cy.mockSession({ role: "ta" });
+      cy.visit("/create/scenarios");
+
       // Verify access is denied
-      // Verify appropriate redirect or error message
+      cy.url().should("include", "/access-denied");
     });
 
-    it.skip("should prevent guest users from accessing scenario creation", () => {
+    it("should prevent guest users from accessing scenario creation", () => {
       // Login as guest
-      // Try to navigate to create scenarios
+      cy.visit("/");
+      cy.get('[data-testid="guest-login-button"]').click();
+      cy.visit("/create/scenarios");
+
       // Verify access is denied
-      // Verify appropriate redirect or error message
+      cy.url().should("include", "/access-denied");
     });
   });
 
   describe("Scenario Creation", () => {
-    it.skip("should create a new scenario with basic information", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Click create new scenario
-      // Fill in basic information:
-      // - Scenario name
-      // - Description
-      // - Persona selection
-      // - Document selection
-      // - Parameter selection
+    it("should create a new scenario with basic information", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios/new");
+
+      // Fill in basic information
+      cy.get('input[placeholder="Enter scenario name"]').type("Test Scenario");
+      cy.get(
+        'textarea[placeholder="Enter a custom scenario description or leave blank to auto-generate..."]'
+      ).type("Test scenario description");
+
+      // Select persona type
+      cy.get('button[role="combobox"]').first().click();
+      cy.get('[role="option"]').first().click();
+
+      // Select documents
+      cy.get('button[role="combobox"]').eq(1).click();
+      cy.get('[role="option"]').first().click();
+
       // Submit form
+      cy.get('button:contains("Save Scenario")').click();
+
       // Verify scenario is created successfully
-      // Verify scenario appears in list
+      cy.url().should("include", "/create/scenarios");
+      cy.get('[data-testid^="card-"]').should("contain", "Test Scenario");
     });
 
-    it.skip("should create a scenario with multiple documents", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Create new scenario
+    it("should create a scenario with multiple documents", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios/new");
+
+      // Fill basic information
+      cy.get('input[placeholder="Enter scenario name"]').type(
+        "Multi-Doc Scenario"
+      );
+      cy.get(
+        'textarea[placeholder="Enter a custom scenario description or leave blank to auto-generate..."]'
+      ).type("Scenario with multiple documents");
+
+      // Select persona
+      cy.get('button[role="combobox"]').first().click();
+      cy.get('[role="option"]').first().click();
+
       // Select multiple documents
+      cy.get('button[role="combobox"]').eq(1).click();
+      cy.get('[role="option"]').first().click();
+      cy.get('button[role="combobox"]').eq(1).click();
+      cy.get('[role="option"]').eq(1).click();
+
       // Submit form
-      // Verify scenario is created with all documents
-      // Verify document-scenario links are correct
+      cy.get('button:contains("Save Scenario")').click();
+
+      // Verify scenario is created
+      cy.url().should("include", "/create/scenarios");
+      cy.get('[data-testid^="card-"]').should("contain", "Multi-Doc Scenario");
     });
 
-    it.skip("should create a scenario with custom parameters", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Create new scenario
+    it("should create a scenario with custom parameters", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios/new");
+
+      // Fill basic information
+      cy.get('input[placeholder="Enter scenario name"]').type(
+        "Parameter Scenario"
+      );
+      cy.get(
+        'textarea[placeholder="Enter a custom scenario description or leave blank to auto-generate..."]'
+      ).type("Scenario with custom parameters");
+
+      // Select persona
+      cy.get('button[role="combobox"]').first().click();
+      cy.get('[role="option"]').first().click();
+
       // Add custom parameters
+      cy.get('button:contains("Add Parameter")').click();
+      cy.get('input[placeholder="Parameter name"]').type("Custom Param");
+      cy.get('input[placeholder="Parameter value"]').type("Custom Value");
+
       // Submit form
-      // Verify scenario is created with custom parameters
-      // Verify parameters are correctly applied
+      cy.get('button:contains("Save Scenario")').click();
+
+      // Verify scenario is created
+      cy.url().should("include", "/create/scenarios");
+      cy.get('[data-testid^="card-"]').should("contain", "Parameter Scenario");
     });
 
-    it.skip("should validate required fields during creation", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Try to submit form without required fields
+    it("should validate required fields during creation", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios/new");
+
+      // Try to submit without required fields
+      cy.get('button:contains("Save Scenario")').click();
+
       // Verify validation errors are displayed
+      cy.get('[data-testid="error-message"]').should(
+        "contain",
+        "Name is required"
+      );
+      cy.get('[data-testid="error-message"]').should(
+        "contain",
+        "Persona is required"
+      );
+
       // Verify form cannot be submitted
+      cy.url().should("include", "/create/scenarios/new");
     });
 
-    it.skip("should handle duplicate scenario names gracefully", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Try to create scenario with existing name
+    it("should handle duplicate scenario names gracefully", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios/new");
+
+      // Create first scenario
+      cy.get('input[placeholder="Enter scenario name"]').type("Duplicate Test");
+      cy.get(
+        'textarea[placeholder="Enter a custom scenario description or leave blank to auto-generate..."]'
+      ).type("First scenario");
+      cy.get('button[role="combobox"]').first().click();
+      cy.get('[role="option"]').first().click();
+      cy.get('button:contains("Save Scenario")').click();
+
+      // Try to create second scenario with same name
+      cy.visit("/create/scenarios/new");
+      cy.get('input[placeholder="Enter scenario name"]').type("Duplicate Test");
+      cy.get(
+        'textarea[placeholder="Enter a custom scenario description or leave blank to auto-generate..."]'
+      ).type("Second scenario");
+      cy.get('button[role="combobox"]').first().click();
+      cy.get('[role="option"]').first().click();
+      cy.get('button:contains("Save Scenario")').click();
+
       // Verify appropriate error message
-      // Verify form is not submitted
+      cy.get('[data-testid="error-toast"]').should(
+        "contain",
+        "Scenario name already exists"
+      );
     });
   });
 
   describe("Scenario Management and Editing", () => {
-    it.skip("should edit scenario information", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Select existing scenario to edit
+    it("should edit scenario information", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios");
+
+      // Click edit on first scenario
+      cy.get('[data-testid^="edit-"]').first().click();
+      cy.url().should("include", "/create/scenarios/s/");
+
       // Modify scenario information
+      cy.get('input[placeholder="Enter scenario name"]')
+        .clear()
+        .type("Updated Scenario Name");
+      cy.get(
+        'textarea[placeholder="Enter a custom scenario description or leave blank to auto-generate..."]'
+      )
+        .clear()
+        .type("Updated description");
+
       // Submit changes
+      cy.get('button:contains("Update Scenario")').click();
+
       // Verify changes are saved
-      // Verify updated information is displayed
+      cy.url().should("include", "/create/scenarios");
+      cy.get('[data-testid^="card-"]').should(
+        "contain",
+        "Updated Scenario Name"
+      );
     });
 
-    it.skip("should update scenario persona assignment", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Select existing scenario to edit
+    it("should update scenario persona assignment", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios");
+
+      // Click edit on first scenario
+      cy.get('[data-testid^="edit-"]').first().click();
+
       // Change persona assignment
+      cy.get('button[role="combobox"]').first().click();
+      cy.get('[role="option"]').eq(1).click();
+
       // Submit changes
+      cy.get('button:contains("Update Scenario")').click();
+
       // Verify persona is updated
-      // Verify changes are reflected in scenario behavior
+      cy.url().should("include", "/create/scenarios");
     });
 
-    it.skip("should update scenario document assignments", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Select existing scenario to edit
+    it("should update scenario document assignments", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios");
+
+      // Click edit on first scenario
+      cy.get('[data-testid^="edit-"]').first().click();
+
       // Add/remove documents
+      cy.get('button[role="combobox"]').eq(1).click();
+      cy.get('[role="option"]').first().click();
+
       // Submit changes
+      cy.get('button:contains("Update Scenario")').click();
+
       // Verify document assignments are updated
-      // Verify scenario-document links are correct
+      cy.url().should("include", "/create/scenarios");
     });
 
-    it.skip("should update scenario parameters", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Select existing scenario to edit
-      // Modify parameters
-      // Submit changes
-      // Verify parameters are updated
-      // Verify changes affect scenario behavior
-    });
+    it("should prevent editing scenarios that are in use", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios");
 
-    it.skip("should prevent editing scenarios that are in use", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Try to edit scenario that is actively being used
-      // Verify edit is prevented
-      // Verify appropriate message is displayed
+      // Find scenario that is in use (has simulations)
+      cy.get('[data-testid^="card-"]').each(($card) => {
+        cy.wrap($card)
+          .find('[data-testid="in-use-indicator"]')
+          .then(($indicator) => {
+            if ($indicator.length > 0) {
+              // Verify edit is prevented
+              cy.wrap($card)
+                .find('[data-testid^="edit-"]')
+                .should("be.disabled");
+              cy.wrap($card)
+                .find('[data-testid="edit-disabled-tooltip"]')
+                .should("be.visible");
+            }
+          });
+      });
     });
   });
 
   describe("Scenario Deletion and Constraints", () => {
-    it.skip("should delete scenario when not in use", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Select scenario that is not in use
-      // Click delete button
-      // Confirm deletion
-      // Verify scenario is deleted
-      // Verify scenario no longer appears in list
+    it("should delete scenario when not in use", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios");
+
+      // Find scenario not in use
+      cy.get('[data-testid^="card-"]').each(($card) => {
+        cy.wrap($card)
+          .find('[data-testid="in-use-indicator"]')
+          .then(($indicator) => {
+            if ($indicator.length === 0) {
+              // Click delete button
+              cy.wrap($card).find('[data-testid^="delete-"]').click();
+
+              // Confirm deletion
+              cy.get('[data-testid="delete-confirmation-dialog"]').should(
+                "be.visible"
+              );
+              cy.get('button:contains("Delete")').click();
+
+              // Verify scenario is deleted
+              cy.get('[data-testid^="card-"]').should(
+                "not.contain",
+                "Test Scenario"
+              );
+              return false; // Break the loop
+            }
+          });
+      });
     });
 
-    it.skip("should prevent deletion of scenarios that are in use", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Try to delete scenario that is actively being used in simulations
-      // Verify deletion is prevented
-      // Verify appropriate error message
-      // Verify scenario remains in list
+    it("should prevent deletion of scenarios that are in use", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios");
+
+      // Find scenario that is in use
+      cy.get('[data-testid^="card-"]').each(($card) => {
+        cy.wrap($card)
+          .find('[data-testid="in-use-indicator"]')
+          .then(($indicator) => {
+            if ($indicator.length > 0) {
+              // Verify deletion is prevented
+              cy.wrap($card)
+                .find('[data-testid^="delete-"]')
+                .should("not.exist");
+              return false; // Break the loop
+            }
+          });
+      });
     });
 
-    it.skip("should show warning when attempting to delete active scenario", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Click delete on active scenario
-      // Verify warning dialog is displayed
-      // Verify warning explains why deletion is prevented
-    });
+    it("should show warning when attempting to delete active scenario", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios");
 
-    it.skip("should show which simulations are using the scenario", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Try to delete scenario in use
-      // Verify list of simulations using the scenario is displayed
-      // Verify user can navigate to those simulations
+      // Find scenario that is in use
+      cy.get('[data-testid^="card-"]').each(($card) => {
+        cy.wrap($card)
+          .find('[data-testid="in-use-indicator"]')
+          .then(($indicator) => {
+            if ($indicator.length > 0) {
+              // Verify warning is displayed
+              cy.wrap($card)
+                .find('[data-testid="in-use-warning"]')
+                .should("be.visible");
+              cy.wrap($card)
+                .find('[data-testid="in-use-warning"]')
+                .should("contain", "Cannot delete scenario in use");
+              return false; // Break the loop
+            }
+          });
+      });
     });
   });
 
   describe("Scenario Duplication", () => {
-    it.skip("should duplicate scenarios", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Select existing scenario
-      // Click duplicate button
+    it("should duplicate scenarios", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios");
+
+      // Click duplicate on first scenario
+      cy.get('[data-testid^="duplicate-"]').first().click();
+
       // Verify new scenario is created with same settings
-      // Verify new scenario has unique name
+      cy.url().should("include", "/create/scenarios/new");
+      cy.get('input[placeholder="Enter scenario name"]').should(
+        "contain.value",
+        "Copy"
+      );
+
       // Verify all settings are copied
+      cy.get(
+        'textarea[placeholder="Enter a custom scenario description or leave blank to auto-generate..."]'
+      ).should("not.be.empty");
     });
 
-    it.skip("should allow editing duplicated scenario", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Duplicate a scenario
-      // Edit the duplicated scenario
-      // Verify changes can be made
-      // Verify changes are saved successfully
-    });
+    it("should create unique names for duplicated scenarios", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios");
 
-    it.skip("should create unique names for duplicated scenarios", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
       // Duplicate a scenario multiple times
+      cy.get('[data-testid^="duplicate-"]').first().click();
+      cy.get('button:contains("Save Scenario")').click();
+
+      cy.visit("/create/scenarios");
+      cy.get('[data-testid^="duplicate-"]').first().click();
+      cy.get('button:contains("Save Scenario")').click();
+
       // Verify each duplicated scenario has unique name
-      // Verify naming convention is followed
+      cy.visit("/create/scenarios");
+      cy.get('[data-testid^="card-"]').should("contain", "Copy");
+      cy.get('[data-testid^="card-"]').should("contain", "Copy (1)");
     });
   });
 
   describe("AI Scenario Generation", () => {
-    it.skip("should generate scenario using AI from prompt", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
+    it("should generate scenario using AI from prompt", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios/new");
+
       // Click generate scenario
+      cy.get('button:contains("Generate")').click();
+
       // Enter prompt describing desired scenario
+      cy.get(
+        'textarea[placeholder="Enter a custom scenario description or leave blank to auto-generate..."]'
+      ).type("Generate a scenario about teaching math to students");
+
       // Submit generation request
+      cy.get('button:contains("Generate")').click();
+
       // Verify AI generates scenario content
+      cy.get('[data-testid="generation-progress"]').should("be.visible");
+      cy.get(
+        'textarea[placeholder="Enter a custom scenario description or leave blank to auto-generate..."]'
+      ).should("not.be.empty");
+
+      // Save generated scenario
+      cy.get('input[placeholder="Enter scenario name"]').type(
+        "AI Generated Math Scenario"
+      );
+      cy.get('button[role="combobox"]').first().click();
+      cy.get('[role="option"]').first().click();
+      cy.get('button:contains("Save Scenario")').click();
+
       // Verify generated scenario is saved
-      // Verify scenario appears in list
+      cy.url().should("include", "/create/scenarios");
+      cy.get('[data-testid^="card-"]').should(
+        "contain",
+        "AI Generated Math Scenario"
+      );
     });
 
-    it.skip("should generate scenario with specific parameters", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Click generate scenario
-      // Set specific parameters (persona, documents, etc.)
-      // Enter generation prompt
-      // Submit generation request
-      // Verify AI generates scenario with specified parameters
-      // Verify generated scenario matches requirements
-    });
+    it("should handle AI generation errors gracefully", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios/new");
 
-    it.skip("should handle AI generation errors gracefully", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
       // Try to generate scenario with problematic prompt
+      cy.get(
+        'textarea[placeholder="Enter a custom scenario description or leave blank to auto-generate..."]'
+      ).type("Invalid prompt that should cause error");
+      cy.get('button:contains("Generate")').click();
+
       // Verify appropriate error message is displayed
+      cy.get('[data-testid="error-toast"]').should(
+        "contain",
+        "Failed to generate scenario"
+      );
+
       // Verify retry functionality works
-    });
-
-    it.skip("should show generation progress and status", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Start AI generation
-      // Verify progress indicator is displayed
-      // Verify status messages are shown
-      // Verify completion notification
-    });
-  });
-
-  describe("Parameter Management in Scenarios", () => {
-    it.skip("should create new parameters in scenario if not there", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Create new scenario
-      // Add parameter that doesn't exist
-      // Verify parameter creation option is available
-      // Create new parameter
-      // Verify parameter is created and added to scenario
-    });
-
-    it.skip("should select existing parameters for scenario", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Create new scenario
-      // Select existing parameters
-      // Submit form
-      // Verify parameters are correctly assigned
-      // Verify parameter values are applied
-    });
-
-    it.skip("should validate parameter compatibility", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Try to use incompatible parameters
-      // Verify validation error is displayed
-      // Verify form submission is prevented
+      cy.get('button:contains("Retry")').click();
+      cy.get('[data-testid="generation-progress"]').should("be.visible");
     });
   });
 
   describe("Scenario Search and Filtering", () => {
-    it.skip("should search scenarios by name", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
+    it("should search scenarios by name", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios");
+
       // Search for scenario by name
+      cy.get('input[placeholder="Search scenarios..."]').type("Test Scenario");
+
       // Verify search results are displayed
-      // Verify search is case-insensitive
+      cy.get('[data-testid^="card-"]').should("contain", "Test Scenario");
     });
 
-    it.skip("should search scenarios by description", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Search for scenario by description content
-      // Verify search results are displayed
-      // Verify content search works correctly
-    });
+    it("should filter scenarios by persona", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios");
 
-    it.skip("should filter scenarios by persona", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
       // Filter scenarios by assigned persona
+      cy.get('[data-testid="persona-filter"]').click();
+      cy.get('[role="option"]').first().click();
+
       // Verify filtering works correctly
-      // Verify appropriate scenarios are displayed
+      cy.get('[data-testid^="card-"]').should("have.length.at.least", 1);
     });
 
-    it.skip("should filter scenarios by document", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Filter scenarios by assigned documents
-      // Verify filtering works correctly
-      // Verify appropriate scenarios are displayed
-    });
+    it("should filter scenarios by usage status", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios");
 
-    it.skip("should filter scenarios by usage status", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Filter scenarios by usage status (used, unused)
+      // Filter scenarios by usage status
+      cy.get('[data-testid="usage-filter"]').click();
+      cy.get('[role="option"]').contains("In Use").click();
+
       // Verify filtering works correctly
-      // Verify appropriate scenarios are displayed
+      cy.get('[data-testid^="card-"]').each(($card) => {
+        cy.wrap($card)
+          .find('[data-testid="in-use-indicator"]')
+          .should("be.visible");
+      });
     });
   });
 
   describe("Scenario Testing and Validation", () => {
-    it.skip("should test scenario in simulation environment", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
+    it("should test scenario in simulation environment", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios");
+
       // Select scenario to test
+      cy.get('[data-testid^="test-"]').first().click();
+
       // Start test simulation
+      cy.url().should("include", "/practice/a/");
+
       // Verify scenario behaves according to settings
-      // Verify persona and documents are applied correctly
+      cy.get('[data-testid="scenario-info"]').should("be.visible");
+      cy.get('[data-testid="persona-info"]').should("be.visible");
     });
 
-    it.skip("should validate scenario completeness", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Create scenario with missing elements
+    it("should validate scenario completeness", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios/new");
+
+      // Try to save scenario with missing elements
+      cy.get('input[placeholder="Enter scenario name"]').type(
+        "Incomplete Scenario"
+      );
+      cy.get('button:contains("Save Scenario")').click();
+
       // Verify validation errors are displayed
-      // Verify scenario cannot be saved until complete
-    });
+      cy.get('[data-testid="error-message"]').should(
+        "contain",
+        "Persona is required"
+      );
 
-    it.skip("should show scenario performance metrics", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // View scenario performance data
-      // Verify metrics are displayed:
-      // - Usage count
-      // - Average scores
-      // - Success rates
-      // Verify metrics are accurate and up-to-date
+      // Verify scenario cannot be saved until complete
+      cy.url().should("include", "/create/scenarios/new");
     });
   });
 
   describe("Scenario Data Validation", () => {
-    it.skip("should validate scenario name format", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
+    it("should validate scenario name format", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios/new");
+
       // Try to create scenario with invalid name format
+      cy.get('input[placeholder="Enter scenario name"]').type(""); // Empty name
+      cy.get('button:contains("Save Scenario")').click();
+
       // Verify validation error is displayed
+      cy.get('[data-testid="error-message"]').should(
+        "contain",
+        "Name is required"
+      );
+
       // Verify form submission is prevented
+      cy.url().should("include", "/create/scenarios/new");
     });
 
-    it.skip("should validate scenario description length", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Try to create scenario with invalid description
-      // Verify validation error is displayed
-      // Verify form submission is prevented
-    });
+    it("should validate scenario description length", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios/new");
 
-    it.skip("should validate required scenario components", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Try to create scenario without required components
+      // Try to create scenario with very long description
+      cy.get('input[placeholder="Enter scenario name"]').type(
+        "Long Description Test"
+      );
+      cy.get(
+        'textarea[placeholder="Enter a custom scenario description or leave blank to auto-generate..."]'
+      ).type("a".repeat(10000));
+      cy.get('button[role="combobox"]').first().click();
+      cy.get('[role="option"]').first().click();
+      cy.get('button:contains("Save Scenario")').click();
+
       // Verify validation error is displayed
-      // Verify form submission is prevented
+      cy.get('[data-testid="error-message"]').should(
+        "contain",
+        "Description too long"
+      );
     });
   });
 
   describe("Scenario Error Handling", () => {
-    it.skip("should handle API errors gracefully", () => {
+    it("should handle API errors gracefully", () => {
       // Simulate API error
-      // Navigate to create scenarios
-      // Try to perform scenario operation
+      cy.intercept("POST", "/api/scenarios", {
+        statusCode: 500,
+        body: { error: "Server error" },
+      });
+
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios/new");
+
+      // Try to create scenario
+      cy.get('input[placeholder="Enter scenario name"]').type("API Error Test");
+      cy.get(
+        'textarea[placeholder="Enter a custom scenario description or leave blank to auto-generate..."]'
+      ).type("Test description");
+      cy.get('button[role="combobox"]').first().click();
+      cy.get('[role="option"]').first().click();
+      cy.get('button:contains("Save Scenario")').click();
+
       // Verify appropriate error message is displayed
-      // Verify retry functionality works
+      cy.get('[data-testid="error-toast"]').should(
+        "contain",
+        "Failed to create scenario"
+      );
     });
 
-    it.skip("should handle network connectivity issues", () => {
+    it("should handle network connectivity issues", () => {
       // Simulate network disconnect
-      // Navigate to create scenarios
-      // Try to perform scenario operation
-      // Verify appropriate error message
-      // Verify reconnection handling works
-    });
+      cy.intercept("GET", "/api/scenarios", { forceNetworkError: true });
 
-    it.skip("should handle validation errors appropriately", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Submit invalid data
-      // Verify validation errors are displayed clearly
-      // Verify form state is preserved
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios");
+
+      // Verify appropriate error message
+      cy.get('[data-testid="error-message"]').should(
+        "contain",
+        "Failed to load scenarios"
+      );
     });
   });
 
   describe("Scenario Performance", () => {
-    it.skip("should load scenario data efficiently", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
-      // Verify scenario list loads within acceptable time
-      // Verify loading states are displayed appropriately
-    });
+    it("should load scenario data efficiently", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios");
 
-    it.skip("should handle large numbers of scenarios without performance degradation", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios with many scenarios
-      // Verify interface remains responsive
-      // Verify search and filtering remain fast
+      // Verify scenario list loads within acceptable time
+      cy.get('[data-testid^="card-"]', { timeout: 10000 }).should("be.visible");
+
+      // Verify loading states are displayed appropriately
+      cy.get('[data-testid="loading-skeleton"]').should("not.exist");
     });
   });
 
   describe("Scenario Accessibility", () => {
-    it.skip("should support keyboard navigation", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
+    it("should support keyboard navigation", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios");
+
       // Test tab navigation through all interactive elements
-      // Verify focus management works correctly
+      cy.get("body").type("{tab}");
+      cy.focused().should("have.attr", "placeholder", "Search scenarios...");
+
+      // Test Enter key for form submission
+      cy.get('[data-testid="create-scenario-button"]').focus();
+      cy.get('[data-testid="create-scenario-button"]').type("{enter}");
+      cy.url().should("include", "/create/scenarios/new");
     });
 
-    it.skip("should provide appropriate ARIA labels", () => {
-      // Login as admin/instructional
-      // Navigate to create scenarios
+    it("should provide appropriate ARIA labels", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/create/scenarios");
+
       // Verify form elements have appropriate ARIA labels
-      // Verify table elements are accessible
+      cy.get('input[placeholder="Search scenarios..."]').should(
+        "have.attr",
+        "aria-label"
+      );
+
       // Verify interactive elements are announced correctly
+      cy.get('[data-testid="create-scenario-button"]').should(
+        "have.attr",
+        "aria-label"
+      );
     });
   });
 });

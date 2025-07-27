@@ -91,7 +91,7 @@ describe("ProvidersDataTable", () => {
           customModelOptions={[]}
           statusOptions={[]}
           renderProviderGroup={vi.fn()}
-        />
+        />,
       );
 
       // Component should handle invalid props gracefully

@@ -120,7 +120,7 @@ describe("LogsDataTable", () => {
 
       // Should show "No logs match the current filters" message
       expect(
-        screen.getByText("No logs match the current filters.")
+        screen.getByText("No logs match the current filters."),
       ).toBeInTheDocument();
     });
 

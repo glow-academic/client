@@ -170,7 +170,7 @@ describe("StaffDataTable", () => {
 
       // Look for search input
       const searchInput = screen.getByPlaceholderText(
-        /search staff by name or alias/i
+        /search staff by name or alias/i,
       );
       expect(searchInput).toBeInTheDocument();
 

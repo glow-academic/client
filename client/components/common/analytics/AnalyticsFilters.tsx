@@ -51,7 +51,7 @@ export function AnalyticsFilters() {
 
   // Get selected cohorts for the picker
   const selectedCohorts = cohortOptions.filter((cohort) =>
-    selectedCohortIds.includes(cohort.id)
+    selectedCohortIds.includes(cohort.id),
   );
 
   const handleCohortSelect = (selectedCohorts: CohortPickerCohort[]) => {

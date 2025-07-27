@@ -182,7 +182,7 @@ export default function Providers() {
           className="border-dashed border-2 hover:border-dashed hover:border-primary/50 transition-colors cursor-pointer"
           onClick={() =>
             router.push(
-              `/management/providers/p/${providerGroup.provider.id}/new`
+              `/management/providers/p/${providerGroup.provider.id}/new`,
             )
           }
         >

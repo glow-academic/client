@@ -31,7 +31,7 @@ describe("ReportsDataTableToolbar", () => {
 
       // Should render the search input
       expect(
-        screen.getByPlaceholderText("Search TAs by name or alias...")
+        screen.getByPlaceholderText("Search TAs by name or alias..."),
       ).toBeInTheDocument();
     });
 
@@ -50,7 +50,7 @@ describe("ReportsDataTableToolbar", () => {
 
       // Should render search input
       expect(
-        screen.getByPlaceholderText("Search TAs by name or alias...")
+        screen.getByPlaceholderText("Search TAs by name or alias..."),
       ).toBeInTheDocument();
     });
 
@@ -59,7 +59,7 @@ describe("ReportsDataTableToolbar", () => {
 
       // Should have search input with proper accessibility
       const searchInput = screen.getByPlaceholderText(
-        "Search TAs by name or alias..."
+        "Search TAs by name or alias...",
       );
       expect(searchInput).toBeInTheDocument();
       // Note: The input doesn't have a type attribute, it's a text input by default
@@ -73,7 +73,7 @@ describe("ReportsDataTableToolbar", () => {
       renderWithMocks(<ReportsDataTableToolbar {...mockProps} />);
 
       const searchInput = screen.getByPlaceholderText(
-        "Search TAs by name or alias..."
+        "Search TAs by name or alias...",
       );
 
       // Type into the input
@@ -96,7 +96,7 @@ describe("ReportsDataTableToolbar", () => {
 
       // Should render search input
       expect(
-        screen.getByPlaceholderText("Search TAs by name or alias...")
+        screen.getByPlaceholderText("Search TAs by name or alias..."),
       ).toBeInTheDocument();
       // Note: Filter buttons are only rendered when there are options and the table has the right columns
     });
@@ -118,7 +118,7 @@ describe("ReportsDataTableToolbar", () => {
 
       // Should still render search input
       expect(
-        screen.getByPlaceholderText("Search TAs by name or alias...")
+        screen.getByPlaceholderText("Search TAs by name or alias..."),
       ).toBeInTheDocument();
     });
 
@@ -138,7 +138,7 @@ describe("ReportsDataTableToolbar", () => {
 
       // Should still render without crashing
       expect(
-        screen.getByPlaceholderText("Search TAs by name or alias...")
+        screen.getByPlaceholderText("Search TAs by name or alias..."),
       ).toBeInTheDocument();
     });
   });

@@ -128,7 +128,7 @@ export default function CompletionPercentage({
 
     // Filter cohorts to only those in cohortIds
     const filteredCohorts = cohorts.filter((cohort) =>
-      cohortIds.includes(cohort.id)
+      cohortIds.includes(cohort.id),
     );
 
     if (filteredCohorts.length === 0) {
@@ -138,7 +138,7 @@ export default function CompletionPercentage({
     // If profileId is provided, check if profile belongs to any of the filtered cohorts
     if (profileId) {
       const profileInCohorts = filteredCohorts.some((cohort) =>
-        cohort.profileIds.includes(profileId)
+        cohort.profileIds.includes(profileId),
       );
 
       if (!profileInCohorts) {
@@ -182,7 +182,7 @@ export default function CompletionPercentage({
     let nonPracticeChats = profileFilteredChats.filter((chat) => {
       const attempt = attempts?.find((a) => a.id === chat.attemptId);
       const simulation = simulations?.find(
-        (s) => s.id === attempt?.simulationId
+        (s) => s.id === attempt?.simulationId,
       );
       return !simulation?.practiceSimulation;
     });
@@ -204,7 +204,7 @@ export default function CompletionPercentage({
     // Count chats with passing grades
     const passingChats = nonPracticeChats.filter((chat) => {
       const chatGrade = grades.find(
-        (grade) => grade.simulationChatId === chat.id
+        (grade) => grade.simulationChatId === chat.id,
       );
       return chatGrade?.passed === true;
     });
@@ -249,7 +249,7 @@ export default function CompletionPercentage({
       let nonPracticeDayChats = profileFilteredDayChats.filter((chat) => {
         const attempt = attempts?.find((a) => a.id === chat.attemptId);
         const simulation = simulations?.find(
-          (s) => s.id === attempt?.simulationId
+          (s) => s.id === attempt?.simulationId,
         );
         return !simulation?.practiceSimulation;
       });
@@ -275,12 +275,12 @@ export default function CompletionPercentage({
       if (nonPracticeDayChats.length > 0) {
         const passingDayChats = nonPracticeDayChats.filter((chat) => {
           const chatGrade = grades.find(
-            (grade) => grade.simulationChatId === chat.id
+            (grade) => grade.simulationChatId === chat.id,
           );
           return chatGrade?.passed === true;
         });
         completionRate = Math.round(
-          (passingDayChats.length / nonPracticeDayChats.length) * 100
+          (passingDayChats.length / nonPracticeDayChats.length) * 100,
         );
       }
 

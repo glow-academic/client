@@ -49,7 +49,11 @@ export default function Rubrics() {
   const { effectiveProfile } = useProfile();
 
   // Fetch rubrics data
-  const { data: rubrics = [], refetch: refetchRubrics, isLoading: isRubricsLoading } = useQuery({
+  const {
+    data: rubrics = [],
+    refetch: refetchRubrics,
+    isLoading: isRubricsLoading,
+  } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
   });

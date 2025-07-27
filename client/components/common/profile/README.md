@@ -5,12 +5,14 @@ A reusable component for selecting and managing profiles with multiple input met
 ## Features
 
 ### 🔍 **Search Functionality**
+
 - Real-time fuzzy search through existing profiles
 - Searches by first name, last name, alias, and full name
 - Client-side search (no MCP dependency)
 - Role-based filtering (only shows profiles with allowed roles)
 
 ### 📁 **CSV Upload**
+
 - Upload CSV files with profile data
 - Template download with example data
 - Preview table before adding profiles
@@ -18,11 +20,13 @@ A reusable component for selecting and managing profiles with multiple input met
 - Automatic role filtering based on component configuration
 
 ### ✏️ **Quick Add**
+
 - Paste comma-separated names in "First Last" format
 - Automatic alias generation (firstname + lastname)
 - Default role assignment (first allowed role)
 
 ### 📊 **Table Management**
+
 - Display selected profiles in a clean table format
 - Role management with dropdown selection
 - Visual indicators for new vs existing profiles
@@ -54,17 +58,18 @@ import ProfileSelector from '@/components/common/profile/ProfileSelector';
 
 ## Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `selectedProfiles` | `EditableProfile[]` | Yes | Array of currently selected profiles |
-| `onProfilesChange` | `(profiles: EditableProfile[]) => void` | Yes | Callback when profiles change |
-| `allowedRoles` | `ProfileRole[]` | Yes | Array of allowed roles for this context |
-| `title` | `string` | No | Title for the component (default: "Profiles") |
-| `description` | `string` | No | Description text (default: "Add profiles to this item") |
+| Prop               | Type                                    | Required | Description                                             |
+| ------------------ | --------------------------------------- | -------- | ------------------------------------------------------- |
+| `selectedProfiles` | `EditableProfile[]`                     | Yes      | Array of currently selected profiles                    |
+| `onProfilesChange` | `(profiles: EditableProfile[]) => void` | Yes      | Callback when profiles change                           |
+| `allowedRoles`     | `ProfileRole[]`                         | Yes      | Array of allowed roles for this context                 |
+| `title`            | `string`                                | No       | Title for the component (default: "Profiles")           |
+| `description`      | `string`                                | No       | Description text (default: "Add profiles to this item") |
 
 ## CSV Format
 
 The CSV should have the following columns:
+
 ```csv
 firstName,lastName,alias,role
 John,Doe,jdoe,instructor
@@ -74,9 +79,10 @@ Jane,Smith,jsmith,ta
 ## Profile Types
 
 ### EditableProfile
+
 ```tsx
-type EditableProfile = 
-  | Profile  // Existing profile from database
+type EditableProfile =
+  | Profile // Existing profile from database
   | {
       isNew: true;
       id: string;
@@ -99,9 +105,10 @@ The ProfileSelector is designed to work with form state management:
 ## Search Algorithm
 
 The fuzzy search uses a scoring system:
+
 - **Exact matches**: 100-150 points
-- **Starts with**: 40-60 points  
+- **Starts with**: 40-60 points
 - **Contains**: 15-25 points
 - **Partial word matches**: 5-10 points
 
-Results are sorted by score and limited to top 10 matches. 
+Results are sorted by score and limited to top 10 matches.

@@ -47,7 +47,7 @@ export function useDocumentColumns() {
       { value: "lecture", label: "📖 Lecture" },
       { value: "syllabus", label: "📋 Syllabus" },
     ],
-    []
+    [],
   );
 
   const columns = useMemo<ColumnDef<Document>[]>(
@@ -171,7 +171,7 @@ export function useDocumentColumns() {
         cell: ({ row }) => {
           const document = row.original;
           const documentScenarios = scenarios.filter((scenario: Scenario) =>
-            scenario.documentIds?.includes(document.id)
+            scenario.documentIds?.includes(document.id),
           );
 
           if (documentScenarios.length === 0) {
@@ -244,7 +244,7 @@ export function useDocumentColumns() {
         enableHiding: false,
       },
     ],
-    [scenarios, typeOptions]
+    [scenarios, typeOptions],
   );
 
   const scenarioOptions = useMemo(
@@ -253,7 +253,7 @@ export function useDocumentColumns() {
         value: scenario.id,
         label: scenario.name,
       })),
-    [scenarios]
+    [scenarios],
   );
 
   const extensionOptions = useMemo(
@@ -267,7 +267,7 @@ export function useDocumentColumns() {
       { value: "PNG", label: "PNG" },
       { value: "OTHER", label: "Other" },
     ],
-    []
+    [],
   );
 
   return {

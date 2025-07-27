@@ -127,7 +127,7 @@ export default function MessagesPerSession({
 
     // Filter cohorts to only those in cohortIds
     const filteredCohorts = cohorts.filter((cohort) =>
-      cohortIds.includes(cohort.id)
+      cohortIds.includes(cohort.id),
     );
 
     if (filteredCohorts.length === 0) {
@@ -137,7 +137,7 @@ export default function MessagesPerSession({
     // If profileId is provided, check if profile belongs to any of the filtered cohorts
     if (profileId) {
       const profileInCohorts = filteredCohorts.some((cohort) =>
-        cohort.profileIds.includes(profileId)
+        cohort.profileIds.includes(profileId),
       );
 
       if (!profileInCohorts) {
@@ -168,7 +168,7 @@ export default function MessagesPerSession({
       const chatDate = new Date(chat.createdAt);
       const attempt = attempts.find((a) => a.id === chat.attemptId);
       const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId
+        (s) => s.id === attempt?.simulationId,
       );
       return (
         chatDate >= dateStart &&
@@ -205,7 +205,7 @@ export default function MessagesPerSession({
         (message) =>
           message.chatId === chat.id &&
           message.type === "query" &&
-          message.completed
+          message.completed,
       );
       return chatMessages.length;
     });
@@ -213,7 +213,7 @@ export default function MessagesPerSession({
     // Calculate average
     const totalMessages = messagesPerChat.reduce(
       (sum, count) => sum + count,
-      0
+      0,
     );
     return Math.round((totalMessages / profileFilteredChats.length) * 10) / 10;
   }, [
@@ -242,7 +242,7 @@ export default function MessagesPerSession({
         const chatDate = format(new Date(chat.createdAt), "yyyy-MM-dd");
         const attempt = attempts.find((a) => a.id === chat.attemptId);
         const simulation = simulations.find(
-          (s) => s.id === attempt?.simulationId
+          (s) => s.id === attempt?.simulationId,
         );
         return chatDate === dateStr && !simulation?.practiceSimulation;
       });
@@ -279,13 +279,13 @@ export default function MessagesPerSession({
             (message) =>
               message.chatId === chat.id &&
               message.type === "query" &&
-              message.completed
+              message.completed,
           );
           return chatMessages.length;
         });
         const totalDayMessages = dayMessagesPerChat.reduce(
           (sum, count) => sum + count,
-          0
+          0,
         );
         avgMessages =
           Math.round((totalDayMessages / profileFilteredDayChats.length) * 10) /

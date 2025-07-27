@@ -69,7 +69,7 @@ export default function Documents() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingDocument, setEditingDocument] = useState<DocumentObject | null>(
-    null
+    null,
   );
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -108,20 +108,20 @@ export default function Documents() {
     (documentId: string) => {
       const activeScenarios = scenarios.filter((scenario) => scenario.active);
       return !activeScenarios.some((scenario) =>
-        scenario.documentIds?.includes(documentId)
+        scenario.documentIds?.includes(documentId),
       );
     },
-    [scenarios]
+    [scenarios],
   );
 
   // Get scenarios that use this document
   const getScenariosUsingDocument = useCallback(
     (documentId: string) => {
       return scenarios.filter((scenario) =>
-        scenario.documentIds?.includes(documentId)
+        scenario.documentIds?.includes(documentId),
       );
     },
-    [scenarios]
+    [scenarios],
   );
 
   // Handle document selection (for bulk operations in list view only)
@@ -171,7 +171,7 @@ export default function Documents() {
 
       if (!canDeleteDocument(editingDocument.id)) {
         toast.error(
-          "This document cannot be deleted as it is used in active scenarios"
+          "This document cannot be deleted as it is used in active scenarios",
         );
         setShowDeleteDialog(false);
         setEditingDocument(null);
@@ -198,7 +198,7 @@ export default function Documents() {
 
       // Filter to only deletable documents
       const deletableDocuments = selectedDocuments.filter((documentId) =>
-        canDeleteDocument(documentId)
+        canDeleteDocument(documentId),
       );
 
       if (deletableDocuments.length === 0) {
@@ -393,7 +393,7 @@ export default function Documents() {
                   value={editingDocument.name}
                   onChange={(e) =>
                     setEditingDocument((prev) =>
-                      prev ? { ...prev, name: e.target.value } : null
+                      prev ? { ...prev, name: e.target.value } : null,
                     )
                   }
                 />
@@ -405,7 +405,7 @@ export default function Documents() {
                   value={editingDocument.type}
                   onValueChange={(value) =>
                     setEditingDocument((prev) =>
-                      prev ? { ...prev, type: value as DocumentType } : null
+                      prev ? { ...prev, type: value as DocumentType } : null,
                     )
                   }
                 >
@@ -428,7 +428,7 @@ export default function Documents() {
                   checked={editingDocument.active}
                   onCheckedChange={(checked) =>
                     setEditingDocument((prev) =>
-                      prev ? { ...prev, active: checked } : null
+                      prev ? { ...prev, active: checked } : null,
                     )
                   }
                 />
@@ -463,7 +463,7 @@ export default function Documents() {
                   Are you sure you want to delete "{editingDocument.name}"?
                   {(() => {
                     const scenariosUsing = getScenariosUsingDocument(
-                      editingDocument.id
+                      editingDocument.id,
                     );
                     if (scenariosUsing.length > 0) {
                       return ` This document is used by ${scenariosUsing.length} scenario${scenariosUsing.length > 1 ? "s" : ""}.`;
@@ -486,10 +486,10 @@ export default function Documents() {
 
                   {(() => {
                     const deletableDocuments = selectedDocuments.filter(
-                      (documentId) => canDeleteDocument(documentId)
+                      (documentId) => canDeleteDocument(documentId),
                     );
                     const nonDeletableDocuments = selectedDocuments.filter(
-                      (documentId) => !canDeleteDocument(documentId)
+                      (documentId) => !canDeleteDocument(documentId),
                     );
 
                     return (
@@ -504,7 +504,7 @@ export default function Documents() {
                               <ul className="text-sm space-y-1">
                                 {deletableDocuments.map((documentId) => {
                                   const doc = documents.find(
-                                    (d) => d.id === documentId
+                                    (d) => d.id === documentId,
                                   );
                                   return (
                                     <li
@@ -530,7 +530,7 @@ export default function Documents() {
                               <ul className="text-sm space-y-1">
                                 {nonDeletableDocuments.map((documentId) => {
                                   const doc = documents.find(
-                                    (d) => d.id === documentId
+                                    (d) => d.id === documentId,
                                   );
                                   const scenariosUsing = doc
                                     ? getScenariosUsingDocument(doc.id)
@@ -579,7 +579,7 @@ export default function Documents() {
                 (editingDocument && !selectedDocuments.length
                   ? !canDeleteDocument(editingDocument.id)
                   : selectedDocuments.filter((documentId) =>
-                      canDeleteDocument(documentId)
+                      canDeleteDocument(documentId),
                     ).length === 0)
               }
               className="bg-red-600 hover:bg-red-700 text-white"

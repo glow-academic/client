@@ -19,7 +19,6 @@ import { DataTablePagination } from "@/components/common/history/DataTablePagina
 import { Scenario } from "@/types";
 import { ScenariosDataTableToolbar } from "./ScenariosDataTableToolbar";
 
-
 export interface ScenariosDataTableProps {
   columns: ColumnDef<Scenario>[];
   data: Scenario[];
@@ -43,7 +42,7 @@ export function ScenariosDataTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "updatedAt", desc: true }, // Default to descending order by date

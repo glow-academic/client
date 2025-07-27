@@ -62,7 +62,7 @@ export default function SimulationCompositionPicker({
     (config) =>
       config.method === currentConfig.method &&
       config.topPercentage === currentConfig.topPercentage &&
-      config.bottomPercentage === currentConfig.bottomPercentage
+      config.bottomPercentage === currentConfig.bottomPercentage,
   ) ?? PRESET_CONFIGS[0]) as SimulationCompositionConfig;
 
   const getConfigLabel = (config: SimulationCompositionConfig) => {

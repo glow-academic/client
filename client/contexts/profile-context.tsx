@@ -51,7 +51,7 @@ interface ProfileContextType {
   isLoading: boolean;
   setSimulatedProfile: (
     profileId: string | null,
-    shouldNavigate?: boolean
+    shouldNavigate?: boolean,
   ) => void;
   clearSimulation: () => void;
   navigateToDefault: (role: ProfileRole) => void;
@@ -83,7 +83,7 @@ export function ProfileProvider({
     () =>
       typeof window === "undefined"
         ? null
-        : localStorage.getItem("simulatedProfileId")
+        : localStorage.getItem("simulatedProfileId"),
   );
   const [isClient, setIsClient] = useState(false);
   const queryClient = useQueryClient();
@@ -190,7 +190,7 @@ export function ProfileProvider({
       const route = getSectionRoute(defaultSection, pathname);
       router.push(route);
     },
-    [router, pathname]
+    [router, pathname],
   );
 
   const setSimulatedProfile = React.useCallback(
@@ -213,7 +213,7 @@ export function ProfileProvider({
         navigateToDefault(activeProfile.role);
       }
     },
-    [isClient, queryClient, navigateToDefault, activeProfile]
+    [isClient, queryClient, navigateToDefault, activeProfile],
   );
 
   const clearSimulation = React.useCallback(() => {
@@ -225,7 +225,7 @@ export function ProfileProvider({
       const targetRole = role || effectiveProfile?.role || "guest";
       return isSectionAvailableForRole(section, targetRole);
     },
-    [effectiveProfile?.role]
+    [effectiveProfile?.role],
   );
 
   const value: ProfileContextType = {

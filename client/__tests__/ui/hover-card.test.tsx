@@ -16,7 +16,7 @@ describe("HoverCard", () => {
         <HoverCard>
           <HoverCardTrigger>Hover Me</HoverCardTrigger>
           <HoverCardContent>Hover Content</HoverCardContent>
-        </HoverCard>
+        </HoverCard>,
       );
 
       expect(screen.getByText("Hover Me")).toBeInTheDocument();
@@ -27,7 +27,7 @@ describe("HoverCard", () => {
         <HoverCard>
           <HoverCardTrigger>Hover Me</HoverCardTrigger>
           <HoverCardContent>Accessible Content</HoverCardContent>
-        </HoverCard>
+        </HoverCard>,
       );
 
       const trigger = screen.getByText("Hover Me");
@@ -44,7 +44,7 @@ describe("HoverCard", () => {
             <div>Card Content</div>
             <div>More Content</div>
           </HoverCardContent>
-        </HoverCard>
+        </HoverCard>,
       );
 
       // Only the trigger should be visible when hover card is not active
@@ -59,7 +59,7 @@ describe("HoverCard", () => {
         <HoverCard>
           <HoverCardTrigger>Minimal</HoverCardTrigger>
           <HoverCardContent>Content</HoverCardContent>
-        </HoverCard>
+        </HoverCard>,
       );
 
       expect(screen.getByText("Minimal")).toBeInTheDocument();

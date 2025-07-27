@@ -85,7 +85,7 @@ describe("SimulationPerformance", () => {
       // Should have proper accessibility attributes
       expect(screen.getByText("Scenario Performance")).toBeInTheDocument();
       expect(
-        screen.getByText("Performance trends for scenarios within simulations")
+        screen.getByText("Performance trends for scenarios within simulations"),
       ).toBeInTheDocument();
     });
   });

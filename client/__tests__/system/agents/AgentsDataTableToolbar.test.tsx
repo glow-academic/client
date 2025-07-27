@@ -32,72 +32,83 @@ const mockProps: AgentsDataTableToolbarProps = {
 };
 // ------------------------------------------------------------------
 describe("AgentsDataTableToolbar", () => {
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
       renderWithMocks(<AgentsDataTableToolbar {...mockProps} />);
-      
+
       // Basic render check - find search input
-      expect(screen.getByPlaceholderText('Search system agents...')).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText("Search system agents..."),
+      ).toBeInTheDocument();
     });
 
-    it('should render with props', () => {
+    it("should render with props", () => {
       renderWithMocks(<AgentsDataTableToolbar {...mockProps} />);
 
       // Check that the search input is rendered with correct placeholder
-      expect(screen.getByPlaceholderText('Search system agents...')).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText("Search system agents..."),
+      ).toBeInTheDocument();
     });
 
-    it('should have correct accessibility attributes', () => {
+    it("should have correct accessibility attributes", () => {
       renderWithMocks(<AgentsDataTableToolbar {...mockProps} />);
 
       // Check that the search input has proper accessibility
-      const searchInput = screen.getByPlaceholderText('Search system agents...');
+      const searchInput = screen.getByPlaceholderText(
+        "Search system agents...",
+      );
       expect(searchInput).toBeInTheDocument();
     });
   });
 
-  describe('User Interactions', () => {
-    it('should handle search input changes', async () => {
+  describe("User Interactions", () => {
+    it("should handle search input changes", async () => {
       const user = userEvent.setup();
-      
+
       renderWithMocks(<AgentsDataTableToolbar {...mockProps} />);
 
-      const searchInput = screen.getByPlaceholderText('Search system agents...');
-      await user.type(searchInput, 'test agent');
+      const searchInput = screen.getByPlaceholderText(
+        "Search system agents...",
+      );
+      await user.type(searchInput, "test agent");
 
       // The input value might not update due to mock table setup, but we can check the interaction
       expect(searchInput).toBeInTheDocument();
     });
   });
 
-  describe('Edge Cases', () => {
-    it('should handle edge cases gracefully', () => {
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
       const propsWithEmptyOptions = {
         ...mockProps,
         reasoningOptions: [],
         modelOptions: [],
         temperatureOptions: [],
       };
-      
+
       renderWithMocks(<AgentsDataTableToolbar {...propsWithEmptyOptions} />);
-      
+
       // Should still render without crashing
-      expect(screen.getByPlaceholderText('Search system agents...')).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText("Search system agents..."),
+      ).toBeInTheDocument();
     });
 
-    it('should handle missing or invalid props', () => {
+    it("should handle missing or invalid props", () => {
       const minimalProps = {
         table: getMockTable<Agent>(),
         reasoningOptions: [],
         modelOptions: [],
         temperatureOptions: [],
       };
-      
+
       renderWithMocks(<AgentsDataTableToolbar {...minimalProps} />);
-      
+
       // Should still render without crashing
-      expect(screen.getByPlaceholderText('Search system agents...')).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText("Search system agents..."),
+      ).toBeInTheDocument();
     });
   });
 });

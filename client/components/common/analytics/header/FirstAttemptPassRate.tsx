@@ -128,7 +128,7 @@ export default function FirstAttemptPassRate({
 
     // Filter cohorts to only those in cohortIds
     const filteredCohorts = cohorts.filter((cohort) =>
-      cohortIds.includes(cohort.id)
+      cohortIds.includes(cohort.id),
     );
 
     if (filteredCohorts.length === 0) {
@@ -138,7 +138,7 @@ export default function FirstAttemptPassRate({
     // If profileId is provided, check if profile belongs to any of the filtered cohorts
     if (profileId) {
       const profileInCohorts = filteredCohorts.some((cohort) =>
-        cohort.profileIds.includes(profileId)
+        cohort.profileIds.includes(profileId),
       );
 
       if (!profileInCohorts) {
@@ -187,7 +187,7 @@ export default function FirstAttemptPassRate({
       }
 
       profileFilteredAttempts = profileFilteredAttempts.filter((attempt) =>
-        getAllowedSimulationIds.includes(attempt.simulationId)
+        getAllowedSimulationIds.includes(attempt.simulationId),
       );
     }
 
@@ -205,7 +205,7 @@ export default function FirstAttemptPassRate({
         }
         return acc;
       },
-      {} as Record<string, (typeof attempts)[0]>
+      {} as Record<string, (typeof attempts)[0]>,
     );
 
     const firstAttemptsList = Object.values(firstAttempts);
@@ -213,18 +213,18 @@ export default function FirstAttemptPassRate({
     // Count first attempts that passed (have at least one chat with passed grade)
     const passedFirstAttempts = firstAttemptsList.filter((attempt) => {
       const attemptChats = chats.filter(
-        (chat) => chat.attemptId === attempt.id
+        (chat) => chat.attemptId === attempt.id,
       );
       return attemptChats.some((chat) => {
         const chatGrade = grades.find(
-          (grade) => grade.simulationChatId === chat.id
+          (grade) => grade.simulationChatId === chat.id,
         );
         return chatGrade?.passed === true;
       });
     });
 
     return Math.round(
-      (passedFirstAttempts.length / firstAttemptsList.length) * 100
+      (passedFirstAttempts.length / firstAttemptsList.length) * 100,
     );
   }, [
     attempts,
@@ -251,7 +251,7 @@ export default function FirstAttemptPassRate({
       const dayAttempts = attempts.filter((attempt) => {
         const attemptDate = format(new Date(attempt.createdAt), "yyyy-MM-dd");
         const simulation = simulations.find(
-          (s) => s.id === attempt.simulationId
+          (s) => s.id === attempt.simulationId,
         );
         return attemptDate === dateStr && !simulation?.practiceSimulation;
       });
@@ -272,7 +272,7 @@ export default function FirstAttemptPassRate({
         }
 
         profileFilteredDayAttempts = profileFilteredDayAttempts.filter(
-          (attempt) => getAllowedSimulationIds.includes(attempt.simulationId)
+          (attempt) => getAllowedSimulationIds.includes(attempt.simulationId),
         );
       }
 
@@ -288,7 +288,7 @@ export default function FirstAttemptPassRate({
           }
           return acc;
         },
-        {} as Record<string, (typeof attempts)[0]>
+        {} as Record<string, (typeof attempts)[0]>,
       );
 
       const dayFirstAttemptsList = Object.values(dayFirstAttempts);
@@ -299,18 +299,18 @@ export default function FirstAttemptPassRate({
         const passedDayFirstAttempts = dayFirstAttemptsList.filter(
           (attempt) => {
             const attemptChats = chats.filter(
-              (chat) => chat.attemptId === attempt.id
+              (chat) => chat.attemptId === attempt.id,
             );
             return attemptChats.some((chat) => {
               const chatGrade = grades.find(
-                (grade) => grade.simulationChatId === chat.id
+                (grade) => grade.simulationChatId === chat.id,
               );
               return chatGrade?.passed === true;
             });
-          }
+          },
         );
         passRate = Math.round(
-          (passedDayFirstAttempts.length / dayFirstAttemptsList.length) * 100
+          (passedDayFirstAttempts.length / dayFirstAttemptsList.length) * 100,
         );
       }
 

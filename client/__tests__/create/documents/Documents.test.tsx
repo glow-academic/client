@@ -144,7 +144,7 @@ describe("Documents", () => {
       // Find and click the grid view button (using icon selector)
       const buttons = screen.getAllByRole("button");
       const gridButton = buttons.find((button) =>
-        button.querySelector('svg[class*="lucide-grid3x3"]')
+        button.querySelector('svg[class*="lucide-grid3x3"]'),
       );
       expect(gridButton).toBeDefined();
       await user.click(gridButton!);
@@ -185,7 +185,7 @@ describe("Documents", () => {
       // Switch to list view to enable selection (using icon selector)
       const buttons = screen.getAllByRole("button");
       const listButton = buttons.find((button) =>
-        button.querySelector('svg[class*="lucide-list"]')
+        button.querySelector('svg[class*="lucide-list"]'),
       );
       expect(listButton).toBeDefined();
       await user.click(listButton!);

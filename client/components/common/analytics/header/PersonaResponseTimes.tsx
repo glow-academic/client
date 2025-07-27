@@ -127,7 +127,7 @@ export default function PersonaResponseTimes({
     let cohortFiltering = null;
     if (cohortIds && cohortIds.length > 0) {
       const matchingCohorts = cohorts.filter(
-        (cohort) => cohortIds.includes(cohort.id) && cohort.active
+        (cohort) => cohortIds.includes(cohort.id) && cohort.active,
       );
 
       if (matchingCohorts.length > 0) {
@@ -137,10 +137,10 @@ export default function PersonaResponseTimes({
 
         matchingCohorts.forEach((cohort) => {
           cohort.profileIds.forEach((profileId) =>
-            allowedProfileIds.add(profileId)
+            allowedProfileIds.add(profileId),
           );
           cohort.simulationIds.forEach((simulationId) =>
-            allowedSimulationIds.add(simulationId)
+            allowedSimulationIds.add(simulationId),
           );
         });
 
@@ -157,7 +157,7 @@ export default function PersonaResponseTimes({
       const chat = chats.find((c) => c.id === message.chatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId
+        (s) => s.id === attempt?.simulationId,
       );
       return (
         messageDate >= dateStart &&
@@ -206,7 +206,7 @@ export default function PersonaResponseTimes({
       // Sort messages by creation time
       const sortedMessages = chatMessages.sort(
         (a, b) =>
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       );
 
       // Find response times (time between response message and next query message)
@@ -254,7 +254,7 @@ export default function PersonaResponseTimes({
     let cohortFiltering = null;
     if (cohortIds && cohortIds.length > 0) {
       const matchingCohorts = cohorts.filter(
-        (cohort) => cohortIds.includes(cohort.id) && cohort.active
+        (cohort) => cohortIds.includes(cohort.id) && cohort.active,
       );
 
       if (matchingCohorts.length > 0) {
@@ -264,10 +264,10 @@ export default function PersonaResponseTimes({
 
         matchingCohorts.forEach((cohort) => {
           cohort.profileIds.forEach((profileId) =>
-            allowedProfileIds.add(profileId)
+            allowedProfileIds.add(profileId),
           );
           cohort.simulationIds.forEach((simulationId) =>
-            allowedSimulationIds.add(simulationId)
+            allowedSimulationIds.add(simulationId),
           );
         });
 
@@ -290,7 +290,7 @@ export default function PersonaResponseTimes({
         const chat = chats.find((c) => c.id === message.chatId);
         const attempt = attempts.find((a) => a.id === chat?.attemptId);
         const simulation = simulations.find(
-          (s) => s.id === attempt?.simulationId
+          (s) => s.id === attempt?.simulationId,
         );
         return messageDate === dateStr && !simulation?.practiceSimulation;
       });
@@ -305,7 +305,7 @@ export default function PersonaResponseTimes({
               cohortFiltering.allowedProfileIds.includes(attempt.profileId) &&
               attempt.simulationId &&
               cohortFiltering.allowedSimulationIds.includes(
-                attempt.simulationId
+                attempt.simulationId,
               )
             );
           })
@@ -339,7 +339,7 @@ export default function PersonaResponseTimes({
       dayChatsWithMessages.forEach((chatMessages) => {
         const sortedMessages = chatMessages.sort(
           (a, b) =>
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
         );
 
         for (let i = 0; i < sortedMessages.length - 1; i++) {
@@ -364,7 +364,7 @@ export default function PersonaResponseTimes({
         dayResponseTimes.length > 0
           ? Math.round(
               dayResponseTimes.reduce((sum, time) => sum + time, 0) /
-                dayResponseTimes.length
+                dayResponseTimes.length,
             )
           : 0;
 

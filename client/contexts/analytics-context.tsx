@@ -37,7 +37,7 @@ interface AnalyticsContextType {
 }
 
 const AnalyticsContext = createContext<AnalyticsContextType | undefined>(
-  undefined
+  undefined,
 );
 
 interface AnalyticsProviderProps {
@@ -47,7 +47,7 @@ interface AnalyticsProviderProps {
 export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   // Default to last 30 days
   const [startDate, setStartDate] = useState<Date>(() =>
-    subDays(new Date(), 30)
+    subDays(new Date(), 30),
   );
   const [endDate, setEndDate] = useState<Date>(() => new Date());
 
@@ -72,7 +72,7 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     // If user is instructional, only show cohorts they are part of
     if (effectiveProfile.role === "instructional") {
       return allCohorts.filter((cohort) =>
-        cohort.profileIds?.includes(effectiveProfile.id)
+        cohort.profileIds?.includes(effectiveProfile.id),
       );
     }
 

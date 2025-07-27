@@ -11,8 +11,6 @@ export interface SimulationEditProps {
   simulationId: string;
 }
 
-export default function SimulationEdit({
-  simulationId,
-}: SimulationEditProps) {
+export default function SimulationEdit({ simulationId }: SimulationEditProps) {
   return <Simulation simulationId={simulationId} />;
 }

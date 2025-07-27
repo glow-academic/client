@@ -143,7 +143,7 @@ export default function Growth({
         formatter: (value: number) => `${value} attempts`,
       },
     ],
-    []
+    [],
   );
 
   // Ensure at least one metric is always selected
@@ -160,7 +160,7 @@ export default function Growth({
   // Get selected metric objects
   const selectedMetricObjects = useMemo(() => {
     return availableMetrics.filter((metric) =>
-      selectedMetrics.includes(metric.id)
+      selectedMetrics.includes(metric.id),
     );
   }, [availableMetrics, selectedMetrics]);
 
@@ -214,7 +214,8 @@ export default function Growth({
     return (profileId: string) => {
       return cohorts.some(
         (cohort) =>
-          cohort.profileIds.includes(profileId) && cohortIds.includes(cohort.id)
+          cohort.profileIds.includes(profileId) &&
+          cohortIds.includes(cohort.id),
       );
     };
   }, [cohortIds, cohorts]);
@@ -238,7 +239,7 @@ export default function Growth({
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId
+        (s) => s.id === attempt?.simulationId,
       );
       const profile = profiles.find((p) => p.id === attempt?.profileId);
 
@@ -311,7 +312,7 @@ export default function Growth({
       // Calculate score percentage
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId
+        (s) => s.id === attempt?.simulationId,
       );
       const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
       const rubricTotalPoints = rubric?.points || 100;
@@ -347,7 +348,7 @@ export default function Growth({
         (a) =>
           a.profileId === attempt?.profileId &&
           a.simulationId === attempt?.simulationId &&
-          new Date(a.createdAt) < new Date(attempt.createdAt)
+          new Date(a.createdAt) < new Date(attempt.createdAt),
       );
       if (isFirstAttempt) {
         dayData.firstAttempts.push({
@@ -367,7 +368,7 @@ export default function Growth({
           dayData.scores.length > 0
             ? Math.round(
                 dayData.scores.reduce((sum, score) => sum + score, 0) /
-                  dayData.scores.length
+                  dayData.scores.length,
               )
             : 0;
 
@@ -383,7 +384,7 @@ export default function Growth({
                 (dayData.firstAttempts.filter((attempt) => attempt.passed)
                   .length /
                   dayData.firstAttempts.length) *
-                  100
+                  100,
               )
             : 0;
 
@@ -394,7 +395,7 @@ export default function Growth({
           dayData.messages.length > 0
             ? Math.round(
                 dayData.messages.reduce((sum, msg) => sum + msg, 0) /
-                  dayData.messages.length
+                  dayData.messages.length,
               )
             : 0;
 
@@ -402,7 +403,7 @@ export default function Growth({
           dayData.responseTimes.length > 0
             ? Math.round(
                 dayData.responseTimes.reduce((sum, time) => sum + time, 0) /
-                  dayData.responseTimes.length
+                  dayData.responseTimes.length,
               )
             : 0;
 
@@ -425,9 +426,9 @@ export default function Growth({
             ? Math.sqrt(
                 dayData.scores.reduce(
                   (sum, score) => sum + Math.pow(score - avgScore, 2),
-                  0
+                  0,
                 ) /
-                  (dayData.scores.length - 1)
+                  (dayData.scores.length - 1),
               )
             : 0;
         const stagnationRate = Math.round(Math.min(scoreVariance / 10, 100));
@@ -436,7 +437,7 @@ export default function Growth({
 
         const totalAttempts = dayData.attempts.reduce(
           (sum, attempt) => sum + attempt,
-          0
+          0,
         );
 
         return {
@@ -462,17 +463,18 @@ export default function Growth({
     // Scale session efficiency to 0-100 range relative to the dataset
     if (growthMetrics.length > 0) {
       const maxEfficiency = Math.max(
-        ...growthMetrics.map((m) => m.sessionEfficiency)
+        ...growthMetrics.map((m) => m.sessionEfficiency),
       );
       const minEfficiency = Math.min(
-        ...growthMetrics.map((m) => m.sessionEfficiency)
+        ...growthMetrics.map((m) => m.sessionEfficiency),
       );
       const efficiencyRange = maxEfficiency - minEfficiency;
 
       if (efficiencyRange > 0) {
         growthMetrics.forEach((metric) => {
           metric.sessionEfficiency = Math.round(
-            ((metric.sessionEfficiency - minEfficiency) / efficiencyRange) * 100
+            ((metric.sessionEfficiency - minEfficiency) / efficiencyRange) *
+              100,
           );
         });
       }

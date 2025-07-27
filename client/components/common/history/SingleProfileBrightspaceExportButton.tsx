@@ -78,13 +78,13 @@ export function SingleProfileBrightspaceExportButton<TData>({
       }
       const profileId = firstRow.getValue("profileId") as string;
       const profileOption = profileOptions.find(
-        (profile) => profile.value === profileId
+        (profile) => profile.value === profileId,
       );
       const profileAlias = profileOption?.label || profileId;
 
       // Find all cohorts that contain this profile
       const profileCohorts = cohorts.filter((cohort) =>
-        cohort.profileIds.includes(profileId)
+        cohort.profileIds.includes(profileId),
       );
 
       // Get all simulation IDs assigned to this profile through their cohorts
@@ -100,7 +100,7 @@ export function SingleProfileBrightspaceExportButton<TData>({
 
       // Get simulation titles for all assigned simulations
       const assignedSimulations = simulations.filter((sim) =>
-        assignedSimulationIds.has(sim.id)
+        assignedSimulationIds.has(sim.id),
       );
 
       // Group attempts by simulation and find the highest score for each
@@ -133,9 +133,10 @@ export function SingleProfileBrightspaceExportButton<TData>({
 
       // Create CSV header: Alias, Simulation1, Simulation2, etc.
       const selectedSimulations = Array.from(simulationScores.values());
-      const headerRow = ["Alias", ...selectedSimulations.map((sim) => sim.title)].join(
-        ","
-      );
+      const headerRow = [
+        "Alias",
+        ...selectedSimulations.map((sim) => sim.title),
+      ].join(",");
 
       // Create CSV row with profile alias and scores
       const scoreValues = selectedSimulations.map((sim) => {

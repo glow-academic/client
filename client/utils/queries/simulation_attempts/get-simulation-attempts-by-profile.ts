@@ -7,7 +7,10 @@ import { logError } from "@/utils/logger";
 
 export async function getSimulationAttemptsByProfile(profileId: string) {
   try {
-    return await db.select().from(simulationAttempts).where(eq(simulationAttempts.profileId, profileId));
+    return await db
+      .select()
+      .from(simulationAttempts)
+      .where(eq(simulationAttempts.profileId, profileId));
   } catch (error) {
     logError("Error fetching simulation_attempts by profile:", error);
     throw error;

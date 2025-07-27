@@ -7,7 +7,10 @@ import { logError } from "@/utils/logger";
 
 export async function deleteParameterItems(ids: string[]) {
   try {
-    return await db.delete(parameterItems).where(inArray(parameterItems.id, ids)).returning();
+    return await db
+      .delete(parameterItems)
+      .where(inArray(parameterItems.id, ids))
+      .returning();
   } catch (error) {
     logError("Error deleting multiple parameter_items:", error);
     throw error;

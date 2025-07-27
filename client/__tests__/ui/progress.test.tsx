@@ -10,7 +10,7 @@ describe("Progress", () => {
       renderWithMocks(<Progress value={50} />);
 
       expect(
-        document.querySelector('[data-slot="progress"]')
+        document.querySelector('[data-slot="progress"]'),
       ).toBeInTheDocument();
     });
 

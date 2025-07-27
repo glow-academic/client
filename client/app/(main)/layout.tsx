@@ -102,7 +102,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         progress: 0,
         toastId: toastId as string,
         status: "uploading",
-      })
+      }),
     );
 
     try {
@@ -175,7 +175,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             const result = await finalizeDocumentUpload(
               fileId,
               isZipFile, // zip parameter
-              shouldAutoClassify // autoClassify parameter
+              shouldAutoClassify, // autoClassify parameter
             );
 
             if (result.success) {

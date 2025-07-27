@@ -50,6 +50,6 @@ export function renderWithMocks(ui: React.ReactElement) {
           </AssistantProvider>
         </AnalyticsProvider>
       </ProfileProvider>
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 }

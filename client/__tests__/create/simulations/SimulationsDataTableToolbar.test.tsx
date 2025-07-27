@@ -149,7 +149,7 @@ describe("SimulationsDataTableToolbar", () => {
 
       // Check that the search input is rendered
       expect(
-        screen.getByPlaceholderText("Search simulations...")
+        screen.getByPlaceholderText("Search simulations..."),
       ).toBeInTheDocument();
     });
 
@@ -158,7 +158,7 @@ describe("SimulationsDataTableToolbar", () => {
 
       // Check that the search input is rendered with correct placeholder
       expect(
-        screen.getByPlaceholderText("Search simulations...")
+        screen.getByPlaceholderText("Search simulations..."),
       ).toBeInTheDocument();
 
       // Check that filter buttons are rendered
@@ -201,7 +201,9 @@ describe("SimulationsDataTableToolbar", () => {
       const buttons = screen.getAllByRole("button");
       if (buttons.length > 0) {
         const firstButton = buttons[0];
-        await user.click(firstButton);
+        if (firstButton) {
+          await user.click(firstButton);
+        }
         // The interaction should not crash
         expect(firstButton).toBeInTheDocument();
       }
@@ -218,12 +220,12 @@ describe("SimulationsDataTableToolbar", () => {
       };
 
       renderWithMocks(
-        <SimulationsDataTableToolbar {...propsWithEmptyOptions} />
+        <SimulationsDataTableToolbar {...propsWithEmptyOptions} />,
       );
 
       // Should still render without crashing
       expect(
-        screen.getByPlaceholderText("Search simulations...")
+        screen.getByPlaceholderText("Search simulations..."),
       ).toBeInTheDocument();
     });
 
@@ -239,7 +241,7 @@ describe("SimulationsDataTableToolbar", () => {
 
       // Should still render without crashing
       expect(
-        screen.getByPlaceholderText("Search simulations...")
+        screen.getByPlaceholderText("Search simulations..."),
       ).toBeInTheDocument();
     });
   });

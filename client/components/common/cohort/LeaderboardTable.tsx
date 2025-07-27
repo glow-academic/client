@@ -95,7 +95,7 @@ export default function LeaderboardTable({
         label: "Needs Improvement (<70%)",
       },
     ],
-    []
+    [],
   );
 
   // Define columns
@@ -221,7 +221,7 @@ export default function LeaderboardTable({
         sortingFn: "basic",
       },
     ],
-    [currentUserId]
+    [currentUserId],
   );
 
   const table = useReactTable({
@@ -330,7 +330,7 @@ export default function LeaderboardTable({
                       ? null
                       : flexRender(
                           header.column.columnDef.header,
-                          header.getContext()
+                          header.getContext(),
                         )}
                   </TableHead>
                 ))}
@@ -356,7 +356,7 @@ export default function LeaderboardTable({
                       ) : (
                         flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )
                       )}
                     </TableCell>

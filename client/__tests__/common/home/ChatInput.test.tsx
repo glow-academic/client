@@ -70,7 +70,7 @@ describe("ChatInput", () => {
         expect(sendButton).toBeInTheDocument();
         expect(textarea).toHaveAttribute(
           "placeholder",
-          "Start a conversation..."
+          "Start a conversation...",
         );
       });
     });
@@ -92,7 +92,7 @@ describe("ChatInput", () => {
     });
 
     it("should handle form submission", async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithMocks(<ChatInput {...mockProps} />);
 
       await waitFor(() => {
@@ -102,8 +102,8 @@ describe("ChatInput", () => {
       const textarea = screen.getByRole("textbox");
       const sendButton = screen.getByTitle("Send");
 
-      await user.type(textarea, "Test message");
-      await user.click(sendButton);
+      await _user.type(textarea, "Test message");
+      await _user.click(sendButton);
 
       // Message should be cleared after sending
       expect(textarea).toHaveValue("");
@@ -162,7 +162,7 @@ describe("ChatInput", () => {
           {...mockProps}
           promptToSet="Set prompt"
           onPromptSet={onPromptSet}
-        />
+        />,
       );
 
       await waitFor(() => {

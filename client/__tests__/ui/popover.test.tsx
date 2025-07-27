@@ -16,7 +16,7 @@ describe("Popover", () => {
         <Popover>
           <PopoverTrigger>Open Popover</PopoverTrigger>
           <PopoverContent>Popover Content</PopoverContent>
-        </Popover>
+        </Popover>,
       );
 
       expect(screen.getByText("Open Popover")).toBeInTheDocument();
@@ -27,7 +27,7 @@ describe("Popover", () => {
         <Popover>
           <PopoverTrigger>Open Popover</PopoverTrigger>
           <PopoverContent>Accessible Content</PopoverContent>
-        </Popover>
+        </Popover>,
       );
 
       const trigger = screen.getByText("Open Popover");
@@ -44,7 +44,7 @@ describe("Popover", () => {
             <div>Content</div>
             <div>More Content</div>
           </PopoverContent>
-        </Popover>
+        </Popover>,
       );
 
       // Only the trigger should be visible when popover is closed
@@ -59,7 +59,7 @@ describe("Popover", () => {
         <Popover>
           <PopoverTrigger>Minimal</PopoverTrigger>
           <PopoverContent>Content</PopoverContent>
-        </Popover>
+        </Popover>,
       );
 
       expect(screen.getByText("Minimal")).toBeInTheDocument();

@@ -46,7 +46,7 @@ describe("PersonasDataTableToolbar", () => {
 
       // Check that the search input is rendered
       expect(
-        screen.getByPlaceholderText("Search personas...")
+        screen.getByPlaceholderText("Search personas..."),
       ).toBeInTheDocument();
     });
 
@@ -55,7 +55,7 @@ describe("PersonasDataTableToolbar", () => {
 
       // Check that the search input is rendered
       expect(
-        screen.getByPlaceholderText("Search personas...")
+        screen.getByPlaceholderText("Search personas..."),
       ).toBeInTheDocument();
 
       // Check that filters are rendered (they may not be rendered if columns don't exist)
@@ -113,7 +113,7 @@ describe("PersonasDataTableToolbar", () => {
 
       // Component should still render without crashing
       expect(
-        screen.getByPlaceholderText("Search personas...")
+        screen.getByPlaceholderText("Search personas..."),
       ).toBeInTheDocument();
     });
 
@@ -131,7 +131,7 @@ describe("PersonasDataTableToolbar", () => {
 
       // Component should still render
       expect(
-        screen.getByPlaceholderText("Search personas...")
+        screen.getByPlaceholderText("Search personas..."),
       ).toBeInTheDocument();
     });
 
@@ -145,12 +145,12 @@ describe("PersonasDataTableToolbar", () => {
       };
 
       renderWithMocks(
-        <PersonasDataTableToolbar {...propsWithNoFilterOptions} />
+        <PersonasDataTableToolbar {...propsWithNoFilterOptions} />,
       );
 
       // Should still render the search input
       expect(
-        screen.getByPlaceholderText("Search personas...")
+        screen.getByPlaceholderText("Search personas..."),
       ).toBeInTheDocument();
 
       // Filters with no options should not be rendered
@@ -158,7 +158,7 @@ describe("PersonasDataTableToolbar", () => {
       expect(screen.queryByTestId("filter-reasoning")).not.toBeInTheDocument();
       expect(screen.queryByTestId("filter-model")).not.toBeInTheDocument();
       expect(
-        screen.queryByTestId("filter-temperature")
+        screen.queryByTestId("filter-temperature"),
       ).not.toBeInTheDocument();
     });
   });

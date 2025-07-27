@@ -69,7 +69,7 @@ export default function RubricDetails({
         toast.success(
           isCreateMode
             ? "Rubric created successfully"
-            : "Rubric updated successfully"
+            : "Rubric updated successfully",
         );
         setIsEditing(false);
       }
@@ -77,14 +77,14 @@ export default function RubricDetails({
     onError: (error) => {
       logError("Error updating rubric:", error);
       toast.error(
-        isCreateMode ? "Failed to create rubric" : "Failed to update rubric"
+        isCreateMode ? "Failed to create rubric" : "Failed to update rubric",
       );
     },
   });
 
   const handleInputChange = (
     field: keyof typeof formData,
-    value: string | boolean
+    value: string | boolean,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -209,8 +209,8 @@ export default function RubricDetails({
                       ? "Creating..."
                       : "Updating..."
                     : isCreateMode
-                    ? "Create Rubric"
-                    : "Update"}
+                      ? "Create Rubric"
+                      : "Update"}
                 </Button>
               </>
             ) : (

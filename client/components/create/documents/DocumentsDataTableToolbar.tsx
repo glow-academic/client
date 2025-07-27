@@ -50,7 +50,7 @@ export function DocumentsDataTableToolbar({
 
   // Calculate deletable documents count
   const deletableCount = selectedDocuments.filter((documentId) =>
-    canDeleteDocument(documentId)
+    canDeleteDocument(documentId),
   ).length;
 
   return (

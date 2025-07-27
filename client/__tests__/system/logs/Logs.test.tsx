@@ -38,7 +38,7 @@ describe("Logs", () => {
 
       // Check that the component renders with search input
       expect(
-        screen.getByPlaceholderText("Search messages...")
+        screen.getByPlaceholderText("Search messages..."),
       ).toBeInTheDocument();
     });
 
@@ -48,7 +48,7 @@ describe("Logs", () => {
       // Check that the refresh button is accessible
       const buttons = screen.getAllByRole("button");
       const refreshButton = buttons.find((button) =>
-        button.querySelector('svg[class*="refresh-cw"]')
+        button.querySelector('svg[class*="refresh-cw"]'),
       );
       expect(refreshButton).toBeInTheDocument();
     });
@@ -62,7 +62,7 @@ describe("Logs", () => {
 
       const buttons = screen.getAllByRole("button");
       const refreshButton = buttons.find((button) =>
-        button.querySelector('svg[class*="refresh-cw"]')
+        button.querySelector('svg[class*="refresh-cw"]'),
       );
       expect(refreshButton).toBeDefined();
       await user.click(refreshButton!);
@@ -76,7 +76,7 @@ describe("Logs", () => {
       // Check that loading state is handled
       // The component should show loading or data
       expect(
-        screen.getByPlaceholderText("Search messages...")
+        screen.getByPlaceholderText("Search messages..."),
       ).toBeInTheDocument();
     });
   });
@@ -87,7 +87,7 @@ describe("Logs", () => {
 
       // Component should render even with no data
       expect(
-        screen.getByText("No logs match the current filters.")
+        screen.getByText("No logs match the current filters."),
       ).toBeInTheDocument();
     });
   });

@@ -33,11 +33,11 @@ describe("PersonaEdit", () => {
       expect(screen.getByTestId("persona-component")).toBeInTheDocument();
       expect(screen.getByTestId("persona-component")).toHaveAttribute(
         "data-mode",
-        "edit"
+        "edit",
       );
       expect(screen.getByTestId("persona-component")).toHaveAttribute(
         "data-persona-id",
-        "test-persona-id"
+        "test-persona-id",
       );
     });
 
@@ -48,7 +48,7 @@ describe("PersonaEdit", () => {
       expect(screen.getByTestId("persona-component")).toBeInTheDocument();
       expect(screen.getByTestId("persona-component")).toHaveAttribute(
         "data-persona-id",
-        "test-persona-id"
+        "test-persona-id",
       );
     });
 
@@ -72,7 +72,7 @@ describe("PersonaEdit", () => {
       // Component should render with the new persona ID
       expect(screen.getByTestId("persona-component")).toHaveAttribute(
         "data-persona-id",
-        "different-persona-id"
+        "different-persona-id",
       );
     });
 
@@ -88,7 +88,7 @@ describe("PersonaEdit", () => {
       expect(screen.getByTestId("persona-component")).toBeInTheDocument();
       expect(screen.getByTestId("persona-component")).toHaveAttribute(
         "data-persona-id",
-        ""
+        "",
       );
     });
   });

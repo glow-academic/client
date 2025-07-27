@@ -7,7 +7,10 @@ import { logError } from "@/utils/logger";
 
 export async function getSimulationMessagesByChat(chatId: string) {
   try {
-    return await db.select().from(simulationMessages).where(eq(simulationMessages.chatId, chatId));
+    return await db
+      .select()
+      .from(simulationMessages)
+      .where(eq(simulationMessages.chatId, chatId));
   } catch (error) {
     logError("Error fetching simulation_messages by chat:", error);
     throw error;

@@ -26,7 +26,7 @@ describe("Dialog", () => {
             </DialogHeader>
             <DialogFooter>Test Footer</DialogFooter>
           </DialogContent>
-        </Dialog>
+        </Dialog>,
       );
 
       expect(screen.getByText("Open Dialog")).toBeInTheDocument();
@@ -41,7 +41,7 @@ describe("Dialog", () => {
               <DialogTitle>Accessible Dialog</DialogTitle>
             </DialogHeader>
           </DialogContent>
-        </Dialog>
+        </Dialog>,
       );
 
       const trigger = screen.getByRole("button", { name: "Open Dialog" });
@@ -62,7 +62,7 @@ describe("Dialog", () => {
             <div>Content</div>
             <DialogFooter>Footer</DialogFooter>
           </DialogContent>
-        </Dialog>
+        </Dialog>,
       );
 
       // Only the trigger should be visible when dialog is closed
@@ -81,7 +81,7 @@ describe("Dialog", () => {
               <DialogTitle>Minimal</DialogTitle>
             </DialogHeader>
           </DialogContent>
-        </Dialog>
+        </Dialog>,
       );
 
       expect(screen.getByText("Open")).toBeInTheDocument();

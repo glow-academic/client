@@ -170,7 +170,7 @@ describe("SingleProfileBrightspaceExportButton", () => {
       };
 
       renderWithMocks(
-        <SingleProfileBrightspaceExportButton {...minimalProps} />
+        <SingleProfileBrightspaceExportButton {...minimalProps} />,
       );
 
       // Should render with minimal props

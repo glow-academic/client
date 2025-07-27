@@ -11,7 +11,7 @@ describe("Button", () => {
       renderWithMocks(<Button>Test Button</Button>);
 
       expect(
-        screen.getByRole("button", { name: "Test Button" })
+        screen.getByRole("button", { name: "Test Button" }),
       ).toBeInTheDocument();
     });
 
@@ -41,7 +41,7 @@ describe("Button", () => {
 
     it("should render with destructive variant", () => {
       renderWithMocks(
-        <Button variant="destructive">Destructive Button</Button>
+        <Button variant="destructive">Destructive Button</Button>,
       );
 
       const button = screen.getByRole("button", { name: "Destructive Button" });
@@ -114,7 +114,7 @@ describe("Button", () => {
       renderWithMocks(
         <Button asChild>
           <a href="/test">Link Button</a>
-        </Button>
+        </Button>,
       );
 
       const link = screen.getByRole("link", { name: "Link Button" });

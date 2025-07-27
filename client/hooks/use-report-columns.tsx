@@ -133,7 +133,7 @@ export function useReportColumns({
         label: "Administrator",
       },
     ],
-    []
+    [],
   );
 
   const cohortOptions = useMemo(() => {
@@ -513,7 +513,7 @@ export function useReportColumns({
           const ta = row.original;
           if (!value || value.length === 0) return true;
           return ta.personasTested.some((personaId) =>
-            value.includes(personaId)
+            value.includes(personaId),
           );
         },
       },
@@ -528,7 +528,7 @@ export function useReportColumns({
           const ta = row.original;
           if (!value || value.length === 0) return true;
           return ta.scenarioIds.some((scenarioId) =>
-            value.includes(scenarioId)
+            value.includes(scenarioId),
           );
         },
       },
@@ -543,7 +543,7 @@ export function useReportColumns({
           const ta = row.original;
           if (!value || value.length === 0) return true;
           return ta.simulationIds.some((simulationId) =>
-            value.includes(simulationId)
+            value.includes(simulationId),
           );
         },
       },

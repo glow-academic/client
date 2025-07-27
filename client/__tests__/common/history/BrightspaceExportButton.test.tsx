@@ -95,7 +95,7 @@ describe("BrightspaceExportButton", () => {
 
     it("should handle missing or invalid props", () => {
       renderWithMocks(
-        <BrightspaceExportButton table={createMockTable()} simulations={[]} />
+        <BrightspaceExportButton table={createMockTable()} simulations={[]} />,
       );
 
       // Component should handle missing props

@@ -42,7 +42,7 @@ describe("Rubrics", () => {
       // Check that the component renders without crashing
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search rubrics...")
+          screen.getByPlaceholderText("Search rubrics..."),
         ).toBeInTheDocument();
       });
     });
@@ -70,7 +70,7 @@ describe("Rubrics", () => {
       // Test search functionality
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search rubrics...")
+          screen.getByPlaceholderText("Search rubrics..."),
         ).toBeInTheDocument();
       });
 
@@ -88,7 +88,7 @@ describe("Rubrics", () => {
       // Test search input interaction
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search rubrics...")
+          screen.getByPlaceholderText("Search rubrics..."),
         ).toBeInTheDocument();
       });
 
@@ -110,7 +110,7 @@ describe("Rubrics", () => {
       // The component should handle the error gracefully
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search rubrics...")
+          screen.getByPlaceholderText("Search rubrics..."),
         ).toBeInTheDocument();
       });
     });
@@ -122,7 +122,7 @@ describe("Rubrics", () => {
       // Component should show loading state initially
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search rubrics...")
+          screen.getByPlaceholderText("Search rubrics..."),
         ).toBeInTheDocument();
       });
     });
@@ -135,7 +135,7 @@ describe("Rubrics", () => {
       // Wait for component to load
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search rubrics...")
+          screen.getByPlaceholderText("Search rubrics..."),
         ).toBeInTheDocument();
       });
 
@@ -154,7 +154,7 @@ describe("Rubrics", () => {
       // Should handle empty data gracefully
       await waitFor(() => {
         expect(
-          screen.getByText("No rubrics match the current filters.")
+          screen.getByText("No rubrics match the current filters."),
         ).toBeInTheDocument();
       });
     });

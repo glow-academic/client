@@ -7,7 +7,10 @@ import { logError } from "@/utils/logger";
 
 export async function getProfilesByUsers(userIds: number[]) {
   try {
-    return await db.select().from(profiles).where(inArray(profiles.userId, userIds));
+    return await db
+      .select()
+      .from(profiles)
+      .where(inArray(profiles.userId, userIds));
   } catch (error) {
     logError("Error fetching profiles by users:", error);
     throw error;

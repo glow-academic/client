@@ -148,7 +148,7 @@ describe("RubricsDataTableToolbar", () => {
 
       // Check that the search input is rendered
       expect(
-        screen.getByPlaceholderText("Search rubrics...")
+        screen.getByPlaceholderText("Search rubrics..."),
       ).toBeInTheDocument();
     });
 
@@ -157,7 +157,7 @@ describe("RubricsDataTableToolbar", () => {
 
       // Check that the search input is rendered with correct placeholder
       expect(
-        screen.getByPlaceholderText("Search rubrics...")
+        screen.getByPlaceholderText("Search rubrics..."),
       ).toBeInTheDocument();
 
       // Check that filter buttons are rendered
@@ -200,7 +200,9 @@ describe("RubricsDataTableToolbar", () => {
       const buttons = screen.getAllByRole("button");
       if (buttons.length > 0) {
         const firstButton = buttons[0];
-        await user.click(firstButton);
+        if (firstButton) {
+          await user.click(firstButton);
+        }
         // The interaction should not crash
         expect(firstButton).toBeInTheDocument();
       }
@@ -220,7 +222,7 @@ describe("RubricsDataTableToolbar", () => {
 
       // Should still render without crashing
       expect(
-        screen.getByPlaceholderText("Search rubrics...")
+        screen.getByPlaceholderText("Search rubrics..."),
       ).toBeInTheDocument();
     });
 
@@ -236,7 +238,7 @@ describe("RubricsDataTableToolbar", () => {
 
       // Should still render without crashing
       expect(
-        screen.getByPlaceholderText("Search rubrics...")
+        screen.getByPlaceholderText("Search rubrics..."),
       ).toBeInTheDocument();
     });
   });

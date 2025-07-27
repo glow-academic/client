@@ -22,7 +22,7 @@ describe("NewScenario", () => {
       expect(screen.getByTestId("scenario-component")).toBeInTheDocument();
       expect(screen.getByTestId("scenario-component")).toHaveAttribute(
         "data-mode",
-        "create"
+        "create",
       );
     });
 
@@ -45,12 +45,12 @@ describe("NewScenario", () => {
       expect(screen.getByTestId("scenario-component")).toBeInTheDocument();
       expect(screen.getByTestId("scenario-component")).toHaveAttribute(
         "data-mode",
-        "create"
+        "create",
       );
 
       // Verify the component text is displayed
       expect(
-        screen.getByText("Scenario Component (Mode: create)")
+        screen.getByText("Scenario Component (Mode: create)"),
       ).toBeInTheDocument();
     });
   });

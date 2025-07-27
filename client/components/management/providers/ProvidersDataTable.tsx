@@ -45,7 +45,7 @@ export function ProvidersDataTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "updatedAt", desc: true }, // Default to descending order by date
@@ -88,7 +88,7 @@ export function ProvidersDataTable({
       .map((provider: Provider) => ({
         provider,
         models: filteredModels.filter(
-          (model: Model) => model.providerId === provider.id
+          (model: Model) => model.providerId === provider.id,
         ),
       }))
       .filter((group) => group.models.length > 0);

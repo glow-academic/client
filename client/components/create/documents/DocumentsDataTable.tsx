@@ -73,7 +73,7 @@ export function DocumentsDataTable({
     },
   ]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -146,7 +146,7 @@ export function DocumentsDataTable({
 
     // Filter out the existing select and actions columns and add our custom ones
     const filteredColumns = columns.filter(
-      (col) => col.id !== "select" && col.id !== "actions"
+      (col) => col.id !== "select" && col.id !== "actions",
     );
     return [checkboxColumn, ...filteredColumns, actionsColumn];
   }, [
@@ -215,7 +215,7 @@ export function DocumentsDataTable({
                             ? null
                             : flexRender(
                                 header.column.columnDef.header,
-                                header.getContext()
+                                header.getContext(),
                               )}
                         </TableHead>
                       );
@@ -234,7 +234,7 @@ export function DocumentsDataTable({
                         <TableCell key={cell.id}>
                           {flexRender(
                             cell.column.columnDef.cell,
-                            cell.getContext()
+                            cell.getContext(),
                           )}
                         </TableCell>
                       ))}

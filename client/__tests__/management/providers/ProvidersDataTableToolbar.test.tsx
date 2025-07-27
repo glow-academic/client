@@ -102,7 +102,7 @@ describe("ProvidersDataTableToolbar", () => {
           providerOptions={[]}
           customModelOptions={[]}
           statusOptions={[]}
-        />
+        />,
       );
 
       // Component should handle invalid props gracefully

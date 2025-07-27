@@ -104,7 +104,7 @@ export default function ChatWidget({ up }: { up: boolean }) {
                       .sort(
                         (a, b) =>
                           new Date(b.createdAt).getTime() -
-                          new Date(a.createdAt).getTime()
+                          new Date(a.createdAt).getTime(),
                       )
                       .map((pastChat) => (
                         <SelectItem key={pastChat.id} value={pastChat.id}>

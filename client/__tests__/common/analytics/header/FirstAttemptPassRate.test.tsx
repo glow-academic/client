@@ -89,7 +89,7 @@ describe("FirstAttemptPassRate", () => {
       };
 
       renderWithMocks(
-        <FirstAttemptPassRate {...propsWithDifferentThresholds} />
+        <FirstAttemptPassRate {...propsWithDifferentThresholds} />,
       );
 
       // Wait for loading to complete

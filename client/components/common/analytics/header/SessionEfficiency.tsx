@@ -138,7 +138,7 @@ export default function SessionEfficiency({
     } | null = null;
     if (cohortIds && cohortIds.length > 0) {
       const matchingCohorts = cohorts.filter(
-        (cohort) => cohortIds.includes(cohort.id) && cohort.active
+        (cohort) => cohortIds.includes(cohort.id) && cohort.active,
       );
 
       if (matchingCohorts.length > 0) {
@@ -148,10 +148,10 @@ export default function SessionEfficiency({
 
         matchingCohorts.forEach((cohort) => {
           cohort.profileIds.forEach((profileId: string) =>
-            allowedProfileIds.add(profileId)
+            allowedProfileIds.add(profileId),
           );
           cohort.simulationIds.forEach((simulationId: string) =>
-            allowedSimulationIds.add(simulationId)
+            allowedSimulationIds.add(simulationId),
           );
         });
 
@@ -168,7 +168,7 @@ export default function SessionEfficiency({
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId
+        (s) => s.id === attempt?.simulationId,
       );
       return (
         gradeDate >= dateStart &&
@@ -207,7 +207,7 @@ export default function SessionEfficiency({
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId
+        (s) => s.id === attempt?.simulationId,
       );
       const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
       const rubricTotalPoints = rubric?.points || 100;
@@ -256,7 +256,7 @@ export default function SessionEfficiency({
     } | null = null;
     if (cohortIds && cohortIds.length > 0) {
       const matchingCohorts = cohorts.filter(
-        (cohort) => cohortIds.includes(cohort.id) && cohort.active
+        (cohort) => cohortIds.includes(cohort.id) && cohort.active,
       );
 
       if (matchingCohorts.length > 0) {
@@ -266,10 +266,10 @@ export default function SessionEfficiency({
 
         matchingCohorts.forEach((cohort) => {
           cohort.profileIds.forEach((profileId: string) =>
-            allowedProfileIds.add(profileId)
+            allowedProfileIds.add(profileId),
           );
           cohort.simulationIds.forEach((simulationId: string) =>
-            allowedSimulationIds.add(simulationId)
+            allowedSimulationIds.add(simulationId),
           );
         });
 
@@ -292,7 +292,7 @@ export default function SessionEfficiency({
         const chat = chats.find((c) => c.id === grade.simulationChatId);
         const attempt = attempts.find((a) => a.id === chat?.attemptId);
         const simulation = simulations.find(
-          (s) => s.id === attempt?.simulationId
+          (s) => s.id === attempt?.simulationId,
         );
         return gradeDate === dateStr && !simulation?.practiceSimulation;
       });
@@ -307,7 +307,7 @@ export default function SessionEfficiency({
               cohortFiltering.allowedProfileIds.includes(attempt.profileId) &&
               attempt.simulationId &&
               cohortFiltering.allowedSimulationIds.includes(
-                attempt.simulationId
+                attempt.simulationId,
               )
             );
           })
@@ -330,7 +330,7 @@ export default function SessionEfficiency({
           const chat = chats.find((c) => c.id === grade.simulationChatId);
           const attempt = attempts.find((a) => a.id === chat?.attemptId);
           const simulation = simulations.find(
-            (s) => s.id === attempt?.simulationId
+            (s) => s.id === attempt?.simulationId,
           );
           const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
           const rubricTotalPoints = rubric?.points || 100;

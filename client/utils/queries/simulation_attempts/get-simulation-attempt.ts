@@ -7,7 +7,10 @@ import { logError } from "@/utils/logger";
 
 export async function getSimulationAttempt(id: string) {
   try {
-    const result = await db.select().from(simulationAttempts).where(eq(simulationAttempts.id, id));
+    const result = await db
+      .select()
+      .from(simulationAttempts)
+      .where(eq(simulationAttempts.id, id));
     return result[0] || null;
   } catch (error) {
     logError("Error fetching simulationAttempt:", error);

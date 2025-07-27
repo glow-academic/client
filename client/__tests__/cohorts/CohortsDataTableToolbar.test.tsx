@@ -103,7 +103,7 @@ describe("CohortsDataTableToolbar", () => {
           table={createMockTable()}
           profileOptions={[]}
           simulationOptions={[]}
-        />
+        />,
       );
       expect(document.body).toBeInTheDocument();
     });

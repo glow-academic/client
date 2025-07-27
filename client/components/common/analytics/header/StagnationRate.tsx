@@ -138,7 +138,7 @@ export default function StagnationRate({
     } | null = null;
     if (cohortIds && cohortIds.length > 0) {
       const matchingCohorts = cohorts.filter(
-        (cohort) => cohortIds.includes(cohort.id) && cohort.active
+        (cohort) => cohortIds.includes(cohort.id) && cohort.active,
       );
 
       if (matchingCohorts.length > 0) {
@@ -148,10 +148,10 @@ export default function StagnationRate({
 
         matchingCohorts.forEach((cohort) => {
           cohort.profileIds.forEach((profileId: string) =>
-            allowedProfileIds.add(profileId)
+            allowedProfileIds.add(profileId),
           );
           cohort.simulationIds.forEach((simulationId: string) =>
-            allowedSimulationIds.add(simulationId)
+            allowedSimulationIds.add(simulationId),
           );
         });
 
@@ -188,7 +188,7 @@ export default function StagnationRate({
     // Filter by profileId if provided (tighter restriction)
     const profileFilteredAttempts = profileId
       ? cohortFilteredAttempts.filter(
-          (attempt) => attempt.profileId === profileId
+          (attempt) => attempt.profileId === profileId,
         )
       : cohortFilteredAttempts;
 
@@ -220,7 +220,7 @@ export default function StagnationRate({
         // Sort attempts by creation time
         const sortedAttempts = profileAttempts.sort(
           (a, b) =>
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
         );
 
         // Get first and last attempt scores
@@ -231,17 +231,17 @@ export default function StagnationRate({
 
         // Find grades for first and last attempts
         const firstAttemptChats = chats.filter(
-          (chat) => chat.attemptId === firstAttempt.id
+          (chat) => chat.attemptId === firstAttempt.id,
         );
         const lastAttemptChats = chats.filter(
-          (chat) => chat.attemptId === lastAttempt.id
+          (chat) => chat.attemptId === lastAttempt.id,
         );
 
         const firstAttemptGrades = grades.filter((grade) =>
-          firstAttemptChats.some((chat) => chat.id === grade.simulationChatId)
+          firstAttemptChats.some((chat) => chat.id === grade.simulationChatId),
         );
         const lastAttemptGrades = grades.filter((grade) =>
-          lastAttemptChats.some((chat) => chat.id === grade.simulationChatId)
+          lastAttemptChats.some((chat) => chat.id === grade.simulationChatId),
         );
 
         if (firstAttemptGrades.length > 0 && lastAttemptGrades.length > 0) {
@@ -250,7 +250,7 @@ export default function StagnationRate({
             const chat = chats.find((c) => c.id === grade.simulationChatId);
             const attempt = attempts.find((a) => a.id === chat?.attemptId);
             const simulation = simulations.find(
-              (s) => s.id === attempt?.simulationId
+              (s) => s.id === attempt?.simulationId,
             );
             const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
             const rubricTotalPoints = rubric?.points || 100;
@@ -261,7 +261,7 @@ export default function StagnationRate({
             const chat = chats.find((c) => c.id === grade.simulationChatId);
             const attempt = attempts.find((a) => a.id === chat?.attemptId);
             const simulation = simulations.find(
-              (s) => s.id === attempt?.simulationId
+              (s) => s.id === attempt?.simulationId,
             );
             const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
             const rubricTotalPoints = rubric?.points || 100;
@@ -290,7 +290,7 @@ export default function StagnationRate({
     if (totalProfilesWithMultipleAttempts === 0) return 0;
 
     return Math.round(
-      (stagnantProfiles / totalProfilesWithMultipleAttempts) * 100
+      (stagnantProfiles / totalProfilesWithMultipleAttempts) * 100,
     );
   }, [
     attempts,
@@ -317,7 +317,7 @@ export default function StagnationRate({
     } | null = null;
     if (cohortIds && cohortIds.length > 0) {
       const matchingCohorts = cohorts.filter(
-        (cohort) => cohortIds.includes(cohort.id) && cohort.active
+        (cohort) => cohortIds.includes(cohort.id) && cohort.active,
       );
 
       if (matchingCohorts.length > 0) {
@@ -327,10 +327,10 @@ export default function StagnationRate({
 
         matchingCohorts.forEach((cohort) => {
           cohort.profileIds.forEach((profileId: string) =>
-            allowedProfileIds.add(profileId)
+            allowedProfileIds.add(profileId),
           );
           cohort.simulationIds.forEach((simulationId: string) =>
-            allowedSimulationIds.add(simulationId)
+            allowedSimulationIds.add(simulationId),
           );
         });
 
@@ -351,7 +351,7 @@ export default function StagnationRate({
       const dayAttempts = attempts.filter((attempt) => {
         const attemptDate = format(new Date(attempt.createdAt), "yyyy-MM-dd");
         const simulation = simulations.find(
-          (s) => s.id === attempt.simulationId
+          (s) => s.id === attempt.simulationId,
         );
         return attemptDate === dateStr && !simulation?.practiceSimulation;
       });
@@ -364,7 +364,7 @@ export default function StagnationRate({
               cohortFiltering.allowedProfileIds.includes(attempt.profileId) &&
               attempt.simulationId &&
               cohortFiltering.allowedSimulationIds.includes(
-                attempt.simulationId
+                attempt.simulationId,
               )
             );
           })
@@ -373,7 +373,7 @@ export default function StagnationRate({
       // Filter by profileId if provided
       const profileFilteredDayAttempts = profileId
         ? cohortFilteredDayAttempts.filter(
-            (attempt) => attempt.profileId === profileId
+            (attempt) => attempt.profileId === profileId,
           )
         : cohortFilteredDayAttempts;
 
@@ -382,7 +382,7 @@ export default function StagnationRate({
         profileFilteredDayAttempts.length > 0
           ? Math.min(
               100,
-              Math.round((profileFilteredDayAttempts.length / 10) * 100)
+              Math.round((profileFilteredDayAttempts.length / 10) * 100),
             )
           : 0; // Heuristic
 

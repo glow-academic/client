@@ -70,7 +70,7 @@ export default function Parameter({
       numerical: false,
       active: false,
     }),
-    []
+    [],
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -90,7 +90,7 @@ export default function Parameter({
       queryKey: ["parameterItems", parameterId],
       queryFn: () => getParameterItemsByParameter(parameterId!),
       enabled: isEditMode,
-    }
+    },
   );
 
   const isLoading = isLoadingParameter || isLoadingParameterItems;
@@ -170,7 +170,7 @@ export default function Parameter({
                 description: item.description,
                 value: item.value,
                 parameterId: parameterId!,
-              })
+              }),
             );
           } else if (!item.isNew && !item.isDeleted && item.id) {
             // Update existing items
@@ -180,7 +180,7 @@ export default function Parameter({
                 description: item.description,
                 value: item.value,
                 updatedAt: new Date().toISOString(),
-              })
+              }),
             );
           }
         });
@@ -212,7 +212,7 @@ export default function Parameter({
                   description: item.description,
                   value: item.value,
                   parameterId: newParameter.id,
-                })
+                }),
               );
             }
           });
@@ -230,7 +230,7 @@ export default function Parameter({
       router.push("/management/parameters");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`
+        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -240,7 +240,7 @@ export default function Parameter({
   const handleParameterItemInputChange = (
     itemIndex: number,
     field: keyof ParameterItemFormData,
-    value: string
+    value: string,
   ) => {
     setParameterItemsFormData((prev) => {
       const updated = [...prev];
@@ -289,7 +289,7 @@ export default function Parameter({
 
     // Validate parameter items
     const activeItems = parameterItemsFormData.filter(
-      (item) => !item.isDeleted
+      (item) => !item.isDeleted,
     );
 
     activeItems.forEach((item, index) => {
@@ -308,7 +308,7 @@ export default function Parameter({
         const numValue = parseInt(item.value);
         if (isNaN(numValue)) {
           errors.push(
-            `Parameter item ${index + 1}: Value must be a valid number`
+            `Parameter item ${index + 1}: Value must be a valid number`,
           );
         }
       }
@@ -319,7 +319,7 @@ export default function Parameter({
 
   // Get visible parameter items (not deleted)
   const visibleParameterItems = parameterItemsFormData.filter(
-    (item) => !item.isDeleted
+    (item) => !item.isDeleted,
   );
 
   return (
@@ -440,7 +440,7 @@ export default function Parameter({
                             handleParameterItemInputChange(
                               itemIndex,
                               "name",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           className="text-sm"
@@ -454,7 +454,7 @@ export default function Parameter({
                             handleParameterItemInputChange(
                               itemIndex,
                               "description",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           className="text-sm min-h-[60px]"
@@ -469,7 +469,7 @@ export default function Parameter({
                             handleParameterItemInputChange(
                               itemIndex,
                               "value",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           className="text-sm"

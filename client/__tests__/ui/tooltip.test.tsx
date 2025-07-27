@@ -19,7 +19,7 @@ describe("Tooltip", () => {
             <TooltipTrigger>Hover Me</TooltipTrigger>
             <TooltipContent>Tooltip Content</TooltipContent>
           </Tooltip>
-        </TooltipProvider>
+        </TooltipProvider>,
       );
 
       expect(screen.getByText("Hover Me")).toBeInTheDocument();
@@ -32,7 +32,7 @@ describe("Tooltip", () => {
             <TooltipTrigger>Accessible Trigger</TooltipTrigger>
             <TooltipContent>Accessible Content</TooltipContent>
           </Tooltip>
-        </TooltipProvider>
+        </TooltipProvider>,
       );
 
       const trigger = screen.getByText("Accessible Trigger");
@@ -51,7 +51,7 @@ describe("Tooltip", () => {
               <div>More Content</div>
             </TooltipContent>
           </Tooltip>
-        </TooltipProvider>
+        </TooltipProvider>,
       );
 
       expect(screen.getByText("Trigger")).toBeInTheDocument();
@@ -67,7 +67,7 @@ describe("Tooltip", () => {
             <TooltipTrigger>Minimal</TooltipTrigger>
             <TooltipContent>Content</TooltipContent>
           </Tooltip>
-        </TooltipProvider>
+        </TooltipProvider>,
       );
 
       expect(screen.getByText("Minimal")).toBeInTheDocument();

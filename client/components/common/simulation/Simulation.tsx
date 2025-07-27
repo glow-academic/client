@@ -67,7 +67,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
-    null
+    null,
   );
   const [draggedScenario, setDraggedScenario] = useState<string | null>(null);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
@@ -84,7 +84,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
       scenarioIds: [],
       active: true,
     }),
-    []
+    [],
   );
 
   const [formData, setFormData] = useState<FormData>();
@@ -97,7 +97,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
     queryFn: () => getSimulation(simulationId!),
     enabled: isEditMode,
   });
-  
+
   const { data: rubrics = [], isLoading: isLoadingRubrics } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
@@ -109,9 +109,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
   });
 
   const isLoading =
-    isLoadingSimulation ||
-    isLoadingRubrics ||
-    isLoadingScenarios;
+    isLoadingSimulation || isLoadingRubrics || isLoadingScenarios;
 
   useEffect(() => {
     if (simulation && isEditMode) {
@@ -149,7 +147,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | number | boolean | string[] | null
+    value: string | number | boolean | string[] | null,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -272,7 +270,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
     } catch (error) {
       const targetSimulationId = simulationId || editingSimulationId;
       toast.error(
-        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -398,7 +396,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                     {scenarios
                       .filter(
                         (scenario: Scenario) =>
-                          !formData.scenarioIds?.includes(scenario.id)
+                          !formData.scenarioIds?.includes(scenario.id),
                       )
                       .map((scenario: Scenario) => (
                         <SelectItem key={scenario.id} value={scenario.id}>
@@ -450,7 +448,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {formData?.scenarioIds?.map((scenarioId) => {
                 const scenario = scenarios.find(
-                  (s: Scenario) => s.id === scenarioId
+                  (s: Scenario) => s.id === scenarioId,
                 );
                 if (!scenario) return null;
 

@@ -16,7 +16,7 @@ describe("Tabs", () => {
           </TabsList>
           <TabsContent value="tab1">Content 1</TabsContent>
           <TabsContent value="tab2">Content 2</TabsContent>
-        </Tabs>
+        </Tabs>,
       );
 
       expect(screen.getByText("Tab 1")).toBeInTheDocument();
@@ -30,7 +30,7 @@ describe("Tabs", () => {
             <TabsTrigger value="tab1">Accessible Tab</TabsTrigger>
           </TabsList>
           <TabsContent value="tab1">Accessible Content</TabsContent>
-        </Tabs>
+        </Tabs>,
       );
 
       const tab = screen.getByRole("tab", { name: "Accessible Tab" });
@@ -48,7 +48,7 @@ describe("Tabs", () => {
           </TabsList>
           <TabsContent value="tab1">First Content</TabsContent>
           <TabsContent value="tab2">Second Content</TabsContent>
-        </Tabs>
+        </Tabs>,
       );
 
       expect(screen.getByText("First Tab")).toBeInTheDocument();
@@ -66,7 +66,7 @@ describe("Tabs", () => {
             <TabsTrigger value="tab1">Minimal</TabsTrigger>
           </TabsList>
           <TabsContent value="tab1">Content</TabsContent>
-        </Tabs>
+        </Tabs>,
       );
 
       expect(screen.getByText("Minimal")).toBeInTheDocument();

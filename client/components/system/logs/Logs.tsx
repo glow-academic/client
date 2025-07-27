@@ -75,7 +75,7 @@ export default function Logs() {
                       ? JSON.stringify(
                           selectedLog.context as Record<string, unknown>,
                           null,
-                          2
+                          2,
                         )
                       : "No context data"}
                   </pre>

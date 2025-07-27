@@ -65,7 +65,7 @@ export default function ReportProblem({ children }: ReportProblemProps) {
       logInfo("Feedback submitted successfully", { feedbackId: data[0]?.id });
       queryClient.invalidateQueries({ queryKey: ["app_feedback"] });
       toast.success(
-        "Feedback submitted successfully! Thank you for your input."
+        "Feedback submitted successfully! Thank you for your input.",
       );
       setIsOpen(false);
       resetForm();

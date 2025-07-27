@@ -11,7 +11,7 @@ describe("LoadingDots", () => {
 
       // LoadingDots should render three dots
       const dots = document.querySelectorAll(
-        ".w-2.h-2.bg-current.rounded-full.animate-pulse"
+        ".w-2.h-2.bg-current.rounded-full.animate-pulse",
       );
       expect(dots).toHaveLength(3);
     });
@@ -23,7 +23,7 @@ describe("LoadingDots", () => {
       expect(container).toBeInTheDocument();
 
       const dots = document.querySelectorAll(
-        ".w-2.h-2.bg-current.rounded-full.animate-pulse"
+        ".w-2.h-2.bg-current.rounded-full.animate-pulse",
       );
       expect(dots).toHaveLength(3);
     });
@@ -34,7 +34,7 @@ describe("LoadingDots", () => {
       renderWithMocks(<LoadingDots />);
 
       const dots = document.querySelectorAll(
-        ".w-2.h-2.bg-current.rounded-full.animate-pulse"
+        ".w-2.h-2.bg-current.rounded-full.animate-pulse",
       );
       expect(dots).toHaveLength(3);
 

@@ -146,7 +146,7 @@ describe("Provider", () => {
       // The button doesn't have an accessible name, so we look for it by its position
       const buttons = screen.getAllByRole("button");
       const eyeButton = buttons.find((button) =>
-        button.querySelector('svg[class*="lucide-eye"]')
+        button.querySelector('svg[class*="lucide-eye"]'),
       );
       expect(eyeButton).toBeInTheDocument();
     });

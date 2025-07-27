@@ -133,7 +133,7 @@ describe("AgentsDataTable", () => {
 
       // Should show "No system agents match the current filters." message
       expect(
-        screen.getByText("No system agents match the current filters.")
+        screen.getByText("No system agents match the current filters."),
       ).toBeInTheDocument();
     });
 
@@ -152,7 +152,7 @@ describe("AgentsDataTable", () => {
 
       // Component should still render
       expect(
-        screen.getByText("No system agents match the current filters.")
+        screen.getByText("No system agents match the current filters."),
       ).toBeInTheDocument();
     });
   });

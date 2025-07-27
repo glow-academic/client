@@ -17,7 +17,7 @@ describe("Chart", () => {
       renderWithMocks(
         <ChartContainer config={mockConfig}>
           <div>Chart Content</div>
-        </ChartContainer>
+        </ChartContainer>,
       );
 
       const chart = document.querySelector('[data-slot="chart"]');
@@ -28,7 +28,7 @@ describe("Chart", () => {
       renderWithMocks(
         <ChartContainer config={mockConfig}>
           <div>Accessible Chart</div>
-        </ChartContainer>
+        </ChartContainer>,
       );
 
       const chart = document.querySelector('[data-slot="chart"]');
@@ -41,7 +41,7 @@ describe("Chart", () => {
       renderWithMocks(
         <ChartContainer config={mockConfig}>
           <div>Chart with Config</div>
-        </ChartContainer>
+        </ChartContainer>,
       );
 
       const chart = document.querySelector('[data-slot="chart"]');
@@ -52,7 +52,7 @@ describe("Chart", () => {
       renderWithMocks(
         <ChartContainer config={mockConfig} className="custom-class">
           <div>Chart</div>
-        </ChartContainer>
+        </ChartContainer>,
       );
 
       const chart = document.querySelector('[data-slot="chart"]');
@@ -66,7 +66,7 @@ describe("Chart", () => {
       renderWithMocks(
         <ChartContainer config={{}}>
           <div>Minimal Chart</div>
-        </ChartContainer>
+        </ChartContainer>,
       );
 
       const chart = document.querySelector('[data-slot="chart"]');

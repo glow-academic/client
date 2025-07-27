@@ -102,7 +102,7 @@ describe("Login", () => {
       await waitFor(() => {
         expect(screen.getByText("Glow")).toBeInTheDocument();
         expect(
-          screen.getByTestId("microsoft-login-button")
+          screen.getByTestId("microsoft-login-button"),
         ).toBeInTheDocument();
         expect(screen.getByTestId("guest-login-button")).toBeInTheDocument();
       });
@@ -133,7 +133,7 @@ describe("Login", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByTestId("microsoft-login-button")
+          screen.getByTestId("microsoft-login-button"),
         ).toBeInTheDocument();
       });
 
@@ -167,7 +167,7 @@ describe("Login", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByTestId("microsoft-login-button")
+          screen.getByTestId("microsoft-login-button"),
         ).toBeInTheDocument();
       });
 

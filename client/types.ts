@@ -1,4 +1,4 @@
-import { 
+import {
   accounts as Accounts,
   sessions as Sessions,
   documents as Documents,
@@ -27,7 +27,13 @@ import {
   simulationChatFeedbacks as SimulationChatFeedbacks,
   cohorts as Cohorts,
   verificationToken as VerificationToken,
-  assistantMessageType, assistantToolType, documentType, feedbackType, profileRole, reasoningEffort, simulationMessageType
+  assistantMessageType,
+  assistantToolType,
+  documentType,
+  feedbackType,
+  profileRole,
+  reasoningEffort,
+  simulationMessageType,
 } from "@/utils/drizzle/schema";
 
 // Use Drizzle schema types
@@ -68,7 +74,7 @@ type ProfileRole = (typeof profileRole.enumValues)[number];
 type ReasoningEffort = (typeof reasoningEffort.enumValues)[number];
 type SimulationMessageType = (typeof simulationMessageType.enumValues)[number];
 
-export type { 
+export type {
   Account,
   Session,
   Document,
@@ -103,5 +109,5 @@ export type {
   FeedbackType,
   ProfileRole,
   ReasoningEffort,
-  SimulationMessageType
+  SimulationMessageType,
 };

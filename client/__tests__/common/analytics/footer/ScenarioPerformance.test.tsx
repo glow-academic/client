@@ -39,7 +39,7 @@ describe("ScenarioPerformance", () => {
       // Wait for component to load
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Attribute Breakdown")
+          screen.getByText("Scenario Attribute Breakdown"),
         ).toBeInTheDocument();
       });
     });
@@ -51,13 +51,13 @@ describe("ScenarioPerformance", () => {
       // Wait for component to load
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Attribute Breakdown")
+          screen.getByText("Scenario Attribute Breakdown"),
         ).toBeInTheDocument();
       });
 
       // Should display the component title
       expect(
-        screen.getByText("Scenario Attribute Breakdown")
+        screen.getByText("Scenario Attribute Breakdown"),
       ).toBeInTheDocument();
     });
 
@@ -68,13 +68,13 @@ describe("ScenarioPerformance", () => {
       // Wait for component to load
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Attribute Breakdown")
+          screen.getByText("Scenario Attribute Breakdown"),
         ).toBeInTheDocument();
       });
 
       // Should have proper structure
       expect(
-        screen.getByText("Scenario Attribute Breakdown")
+        screen.getByText("Scenario Attribute Breakdown"),
       ).toBeInTheDocument();
     });
   });
@@ -89,13 +89,13 @@ describe("ScenarioPerformance", () => {
       // Wait for component to load
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Attribute Breakdown")
+          screen.getByText("Scenario Attribute Breakdown"),
         ).toBeInTheDocument();
       });
 
       // Should handle errors gracefully
       expect(
-        screen.getByText("Scenario Attribute Breakdown")
+        screen.getByText("Scenario Attribute Breakdown"),
       ).toBeInTheDocument();
     });
 
@@ -106,13 +106,13 @@ describe("ScenarioPerformance", () => {
       // Wait for component to load
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Attribute Breakdown")
+          screen.getByText("Scenario Attribute Breakdown"),
         ).toBeInTheDocument();
       });
 
       // Should handle loading states
       expect(
-        screen.getByText("Scenario Attribute Breakdown")
+        screen.getByText("Scenario Attribute Breakdown"),
       ).toBeInTheDocument();
     });
   });
@@ -131,13 +131,13 @@ describe("ScenarioPerformance", () => {
       // Wait for component to load
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Attribute Breakdown")
+          screen.getByText("Scenario Attribute Breakdown"),
         ).toBeInTheDocument();
       });
 
       // Should handle different date ranges
       expect(
-        screen.getByText("Scenario Attribute Breakdown")
+        screen.getByText("Scenario Attribute Breakdown"),
       ).toBeInTheDocument();
     });
 
@@ -153,13 +153,13 @@ describe("ScenarioPerformance", () => {
       // Wait for component to load
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Attribute Breakdown")
+          screen.getByText("Scenario Attribute Breakdown"),
         ).toBeInTheDocument();
       });
 
       // Should handle missing profileId
       expect(
-        screen.getByText("Scenario Attribute Breakdown")
+        screen.getByText("Scenario Attribute Breakdown"),
       ).toBeInTheDocument();
     });
   });

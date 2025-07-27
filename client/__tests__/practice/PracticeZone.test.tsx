@@ -151,7 +151,7 @@ describe("PracticeZone", () => {
 
       // Should show no simulations message - the component returns null when no simulations
       expect(
-        screen.queryByText("No simulations available")
+        screen.queryByText("No simulations available"),
       ).not.toBeInTheDocument();
     });
 
@@ -177,9 +177,17 @@ describe("PracticeZone", () => {
         ...mockProps,
         simulations: [
           {
-            ...mockProps.simulations[0],
+            id: "sim-1",
+            title: "Math Practice",
+            timeLimit: 30,
             active: false,
-          },
+            scenarioIds: ["scenario-1"],
+            rubricId: "rubric-1",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            defaultSimulation: false,
+            practiceSimulation: true,
+          } satisfies Simulation,
         ],
       };
 

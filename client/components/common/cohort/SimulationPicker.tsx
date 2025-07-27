@@ -88,7 +88,7 @@ export function SimulationPicker({
     if (isSelected) {
       // Remove from selection
       newSelectedSimulations = selectedSimulations.filter(
-        (s) => s.id !== simulation.id
+        (s) => s.id !== simulation.id,
       );
     } else {
       // Add to selection
@@ -108,11 +108,11 @@ export function SimulationPicker({
   // Remove individual item
   const handleRemoveItem = (
     simulationToRemove: Simulation,
-    e: React.MouseEvent
+    e: React.MouseEvent,
   ) => {
     e.stopPropagation();
     const newSelectedSimulations = selectedSimulations.filter(
-      (s) => s.id !== simulationToRemove.id
+      (s) => s.id !== simulationToRemove.id,
     );
     onSelect?.(newSelectedSimulations);
   };
@@ -253,7 +253,7 @@ export function SimulationPicker({
                       key={simulation.id}
                       simulation={simulation}
                       isSelected={selectedSimulations.some(
-                        (s) => s.id === simulation.id
+                        (s) => s.id === simulation.id,
                       )}
                       onPeek={(simulation) => setPeekedSimulation(simulation)}
                       onSelect={() => handleSelect(simulation)}
@@ -332,7 +332,7 @@ function SimulationItem({
         <Check
           className={cn(
             "ml-auto flex-shrink-0",
-            isSelected ? "opacity-100" : "opacity-0"
+            isSelected ? "opacity-100" : "opacity-0",
           )}
         />
       </div>

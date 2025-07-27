@@ -217,7 +217,7 @@ export default function ScenarioPerformance({
 
     // Filter cohorts to only those in cohortIds
     const filteredCohorts = cohorts.filter((cohort) =>
-      cohortIds.includes(cohort.id)
+      cohortIds.includes(cohort.id),
     );
 
     if (filteredCohorts.length === 0) {
@@ -227,7 +227,7 @@ export default function ScenarioPerformance({
     // If profileId is provided, check if profile belongs to any of the filtered cohorts
     if (profileId) {
       const profileInCohorts = filteredCohorts.some((cohort) =>
-        cohort.profileIds.includes(profileId)
+        cohort.profileIds.includes(profileId),
       );
 
       if (!profileInCohorts) {
@@ -270,7 +270,7 @@ export default function ScenarioPerformance({
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId
+        (s) => s.id === attempt?.simulationId,
       );
       const profile = profiles?.find((p) => p.id === attempt?.profileId);
 
@@ -317,7 +317,7 @@ export default function ScenarioPerformance({
     });
 
     const attemptedScenarios = scenarios.filter((scenario) =>
-      attemptedScenarioIds.has(scenario.id)
+      attemptedScenarioIds.has(scenario.id),
     );
 
     // Calculate total scenarios for percentage calculation
@@ -362,7 +362,7 @@ export default function ScenarioPerformance({
 
         scenariosWithAttribute.forEach((scenario) => {
           const scenarioChats = chats.filter(
-            (chat) => chat.scenarioId === scenario.id
+            (chat) => chat.scenarioId === scenario.id,
           );
           const scenarioGrades = filteredGrades.filter((grade) => {
             const chat = chats.find((c) => c.id === grade.simulationChatId);
@@ -446,7 +446,7 @@ export default function ScenarioPerformance({
           trendData,
           insight,
         };
-      }
+      },
     );
 
     // Filter out attributes with no usage and sort by percentage descending
@@ -485,7 +485,7 @@ export default function ScenarioPerformance({
   const thresholdStatus = getThresholdStatus();
 
   const selectedParameterOption = PARAMETER_OPTIONS.find(
-    (p) => p.id === selectedParameterId
+    (p) => p.id === selectedParameterId,
   );
 
   return (
@@ -550,7 +550,7 @@ export default function ScenarioPerformance({
                             "mr-2 h-4 w-4",
                             selectedParameterId === parameter.id
                               ? "opacity-100"
-                              : "opacity-0"
+                              : "opacity-0",
                           )}
                         />
                         <div>
@@ -605,10 +605,10 @@ export default function ScenarioPerformance({
                     formatter={(
                       value: number,
                       name: string,
-                      _props: unknown
+                      _props: unknown,
                     ) => {
                       const element = attributeElements.find(
-                        (e) => e.name === name
+                        (e) => e.name === name,
                       );
                       if (!element) return [value, name];
 

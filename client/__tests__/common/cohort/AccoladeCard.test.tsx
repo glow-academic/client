@@ -71,7 +71,7 @@ describe("AccoladeCard", () => {
           title="title"
           user={mockProps.user}
           details="details"
-        />
+        />,
       );
 
       // Component should handle missing props

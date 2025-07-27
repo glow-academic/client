@@ -11,8 +11,6 @@ export interface CohortEditProps {
   cohortId: string;
 }
 
-export default function CohortEdit({
-  cohortId,
-}: CohortEditProps) {
+export default function CohortEdit({ cohortId }: CohortEditProps) {
   return <Cohort cohortId={cohortId} />;
 }

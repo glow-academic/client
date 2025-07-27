@@ -134,7 +134,7 @@ export default function HighestScore({
 
     // Filter cohorts to only those in cohortIds
     const filteredCohorts = cohorts.filter((cohort) =>
-      cohortIds.includes(cohort.id)
+      cohortIds.includes(cohort.id),
     );
 
     if (filteredCohorts.length === 0) {
@@ -144,7 +144,7 @@ export default function HighestScore({
     // If profileId is provided, check if profile belongs to any of the filtered cohorts
     if (profileId) {
       const profileInCohorts = filteredCohorts.some((cohort) =>
-        cohort.profileIds.includes(profileId)
+        cohort.profileIds.includes(profileId),
       );
 
       if (!profileInCohorts) {
@@ -176,7 +176,7 @@ export default function HighestScore({
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId
+        (s) => s.id === attempt?.simulationId,
       );
       return (
         gradeDate >= dateStart &&
@@ -214,7 +214,7 @@ export default function HighestScore({
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId
+        (s) => s.id === attempt?.simulationId,
       );
       const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
       const rubricTotalPoints = rubric?.points || 100;
@@ -250,7 +250,7 @@ export default function HighestScore({
         const chat = chats.find((c) => c.id === grade.simulationChatId);
         const attempt = attempts.find((a) => a.id === chat?.attemptId);
         const simulation = simulations.find(
-          (s) => s.id === attempt?.simulationId
+          (s) => s.id === attempt?.simulationId,
         );
         return gradeDate === dateStr && !simulation?.practiceSimulation;
       });
@@ -288,7 +288,7 @@ export default function HighestScore({
           const chat = chats.find((c) => c.id === grade.simulationChatId);
           const attempt = attempts.find((a) => a.id === chat?.attemptId);
           const simulation = simulations.find(
-            (s) => s.id === attempt?.simulationId
+            (s) => s.id === attempt?.simulationId,
           );
           const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
           const rubricTotalPoints = rubric?.points || 100;

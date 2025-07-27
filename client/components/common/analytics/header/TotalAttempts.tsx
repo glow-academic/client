@@ -115,7 +115,7 @@ export default function TotalAttempts({
     } | null = null;
     if (cohortIds && cohortIds.length > 0) {
       const matchingCohorts = cohorts.filter(
-        (cohort) => cohortIds.includes(cohort.id) && cohort.active
+        (cohort) => cohortIds.includes(cohort.id) && cohort.active,
       );
 
       if (matchingCohorts.length > 0) {
@@ -125,10 +125,10 @@ export default function TotalAttempts({
 
         matchingCohorts.forEach((cohort) => {
           cohort.profileIds.forEach((profileId: string) =>
-            allowedProfileIds.add(profileId)
+            allowedProfileIds.add(profileId),
           );
           cohort.simulationIds.forEach((simulationId: string) =>
-            allowedSimulationIds.add(simulationId)
+            allowedSimulationIds.add(simulationId),
           );
         });
 
@@ -165,7 +165,7 @@ export default function TotalAttempts({
     // Filter by profileId if provided (tighter restriction)
     const profileFilteredAttempts = profileId
       ? cohortFilteredAttempts.filter(
-          (attempt) => attempt.profileId === profileId
+          (attempt) => attempt.profileId === profileId,
         )
       : cohortFilteredAttempts;
 
@@ -192,7 +192,7 @@ export default function TotalAttempts({
     } | null = null;
     if (cohortIds && cohortIds.length > 0) {
       const matchingCohorts = cohorts.filter(
-        (cohort) => cohortIds.includes(cohort.id) && cohort.active
+        (cohort) => cohortIds.includes(cohort.id) && cohort.active,
       );
 
       if (matchingCohorts.length > 0) {
@@ -202,10 +202,10 @@ export default function TotalAttempts({
 
         matchingCohorts.forEach((cohort) => {
           cohort.profileIds.forEach((profileId: string) =>
-            allowedProfileIds.add(profileId)
+            allowedProfileIds.add(profileId),
           );
           cohort.simulationIds.forEach((simulationId: string) =>
-            allowedSimulationIds.add(simulationId)
+            allowedSimulationIds.add(simulationId),
           );
         });
 
@@ -226,7 +226,7 @@ export default function TotalAttempts({
       const dayAttempts = attempts.filter((attempt) => {
         const attemptDate = format(new Date(attempt.createdAt), "yyyy-MM-dd");
         const simulation = simulations.find(
-          (s) => s.id === attempt.simulationId
+          (s) => s.id === attempt.simulationId,
         );
         return attemptDate === dateStr && !simulation?.practiceSimulation;
       });
@@ -239,7 +239,7 @@ export default function TotalAttempts({
               cohortFiltering.allowedProfileIds.includes(attempt.profileId) &&
               attempt.simulationId &&
               cohortFiltering.allowedSimulationIds.includes(
-                attempt.simulationId
+                attempt.simulationId,
               )
             );
           })
@@ -248,7 +248,7 @@ export default function TotalAttempts({
       // Filter by profileId if provided
       const profileFilteredDayAttempts = profileId
         ? cohortFilteredDayAttempts.filter(
-            (attempt) => attempt.profileId === profileId
+            (attempt) => attempt.profileId === profileId,
           )
         : cohortFilteredDayAttempts;
 

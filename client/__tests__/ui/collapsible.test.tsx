@@ -16,7 +16,7 @@ describe("Collapsible", () => {
         <Collapsible>
           <CollapsibleTrigger>Toggle</CollapsibleTrigger>
           <CollapsibleContent>Content</CollapsibleContent>
-        </Collapsible>
+        </Collapsible>,
       );
 
       expect(screen.getByText("Toggle")).toBeInTheDocument();
@@ -27,7 +27,7 @@ describe("Collapsible", () => {
         <Collapsible>
           <CollapsibleTrigger>Accessible Trigger</CollapsibleTrigger>
           <CollapsibleContent>Accessible Content</CollapsibleContent>
-        </Collapsible>
+        </Collapsible>,
       );
 
       const trigger = screen.getByText("Accessible Trigger");
@@ -44,7 +44,7 @@ describe("Collapsible", () => {
             <div>Content</div>
             <div>More Content</div>
           </CollapsibleContent>
-        </Collapsible>
+        </Collapsible>,
       );
 
       expect(screen.getByText("Trigger")).toBeInTheDocument();
@@ -58,7 +58,7 @@ describe("Collapsible", () => {
         <Collapsible>
           <CollapsibleTrigger>Minimal</CollapsibleTrigger>
           <CollapsibleContent>Content</CollapsibleContent>
-        </Collapsible>
+        </Collapsible>,
       );
 
       expect(screen.getByText("Minimal")).toBeInTheDocument();

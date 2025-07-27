@@ -41,7 +41,7 @@ describe("Personas", () => {
       // Wait for the component to load
       await waitFor(() => {
         expect(
-          screen.getByText("No personas match the current filters.")
+          screen.getByText("No personas match the current filters."),
         ).toBeInTheDocument();
       });
     });
@@ -102,7 +102,7 @@ describe("Personas", () => {
       // Check for empty state message
       await waitFor(() => {
         expect(
-          screen.getByText("No personas match the current filters.")
+          screen.getByText("No personas match the current filters."),
         ).toBeInTheDocument();
       });
     });
@@ -144,7 +144,7 @@ describe("Personas", () => {
       // Find and click the duplicate button (it has a Copy icon)
       const buttons = screen.getAllByRole("button");
       const duplicateButton = buttons.find((button) =>
-        button.querySelector('svg[class*="lucide-copy"]')
+        button.querySelector('svg[class*="lucide-copy"]'),
       );
       expect(duplicateButton).toBeDefined();
       await user.click(duplicateButton!);
@@ -194,7 +194,7 @@ describe("Personas", () => {
       // Find and click the edit button (using icon selector)
       const buttons = screen.getAllByRole("button");
       const editButton = buttons.find((button) =>
-        button.querySelector('svg[class*="lucide-square-pen"]')
+        button.querySelector('svg[class*="lucide-square-pen"]'),
       );
       expect(editButton).toBeDefined();
       await user.click(editButton!);
@@ -238,7 +238,7 @@ describe("Personas", () => {
       // Find and click the delete button (using icon selector)
       const buttons = screen.getAllByRole("button");
       const deleteButton = buttons.find((button) =>
-        button.querySelector('svg[class*="lucide-trash"]')
+        button.querySelector('svg[class*="lucide-trash"]'),
       );
       expect(deleteButton).toBeDefined();
       await user.click(deleteButton!);
@@ -302,7 +302,7 @@ describe("Personas", () => {
       await waitFor(() => {
         // Component should still render without crashing
         expect(
-          screen.getByText("No personas match the current filters.")
+          screen.getByText("No personas match the current filters."),
         ).toBeInTheDocument();
       });
     });
@@ -320,7 +320,7 @@ describe("Personas", () => {
       // The component should render without crashing during loading
       // React Query will handle the loading state internally
       expect(
-        screen.getByPlaceholderText("Search personas...")
+        screen.getByPlaceholderText("Search personas..."),
       ).toBeInTheDocument();
     });
   });
@@ -333,7 +333,7 @@ describe("Personas", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("No personas match the current filters.")
+          screen.getByText("No personas match the current filters."),
         ).toBeInTheDocument();
       });
     });
@@ -351,7 +351,7 @@ describe("Personas", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("No personas match the current filters.")
+          screen.getByText("No personas match the current filters."),
         ).toBeInTheDocument();
       });
     });

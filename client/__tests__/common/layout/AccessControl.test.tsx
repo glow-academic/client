@@ -102,7 +102,7 @@ describe("AccessControl", () => {
       renderWithMocks(
         <AccessControl pathname="test-pathname">
           <div>fallback</div>
-        </AccessControl>
+        </AccessControl>,
       );
 
       await waitFor(() => {
@@ -139,7 +139,7 @@ describe("AccessControl", () => {
       renderWithMocks(
         <AccessControl pathname="/admin">
           <div>admin-content</div>
-        </AccessControl>
+        </AccessControl>,
       );
 
       await waitFor(() => {

@@ -14,7 +14,7 @@ interface UpdateProviderData {
 
 export async function updateProviderWithEncryption(
   id: string,
-  data: UpdateProviderData
+  data: UpdateProviderData,
 ) {
   try {
     // Prepare the update data

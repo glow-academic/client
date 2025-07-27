@@ -1,6 +1,5 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
 import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -62,7 +61,6 @@ describe("Home", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      const _user = userEvent.setup();
       renderWithMocks(<Home />);
 
       // Wait for component to load
@@ -75,7 +73,6 @@ describe("Home", () => {
     });
 
     it("should handle user events", async () => {
-      const _user = userEvent.setup();
       renderWithMocks(<Home />);
 
       // Wait for component to load

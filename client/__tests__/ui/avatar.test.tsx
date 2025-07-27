@@ -12,7 +12,7 @@ describe("Avatar", () => {
         <Avatar>
           <AvatarImage src="/test-image.jpg" alt="Test Avatar" />
           <AvatarFallback>TA</AvatarFallback>
-        </Avatar>
+        </Avatar>,
       );
 
       expect(screen.getByText("TA")).toBeInTheDocument();
@@ -23,7 +23,7 @@ describe("Avatar", () => {
         <Avatar>
           <AvatarImage src="/test-image.jpg" alt="Test Avatar" />
           <AvatarFallback>TA</AvatarFallback>
-        </Avatar>
+        </Avatar>,
       );
 
       // In tests, the fallback is shown since the image won't load
@@ -38,7 +38,7 @@ describe("Avatar", () => {
         <Avatar>
           <AvatarImage src="/test-image.jpg" alt="Test Avatar" />
           <AvatarFallback>TA</AvatarFallback>
-        </Avatar>
+        </Avatar>,
       );
 
       // The fallback should be visible since the image won't load in tests
@@ -49,7 +49,7 @@ describe("Avatar", () => {
       renderWithMocks(
         <Avatar>
           <AvatarFallback>FB</AvatarFallback>
-        </Avatar>
+        </Avatar>,
       );
 
       expect(screen.getByText("FB")).toBeInTheDocument();
@@ -62,7 +62,7 @@ describe("Avatar", () => {
       renderWithMocks(
         <Avatar>
           <AvatarFallback>M</AvatarFallback>
-        </Avatar>
+        </Avatar>,
       );
 
       expect(screen.getByText("M")).toBeInTheDocument();

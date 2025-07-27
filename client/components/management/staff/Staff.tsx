@@ -57,7 +57,7 @@ export default function Staff() {
     }
 
     return allProfiles.filter((profile: Profile) =>
-      allowedRoles.includes(profile.role)
+      allowedRoles.includes(profile.role),
     );
   }, [allProfiles, effectiveProfile?.role]);
 
@@ -66,7 +66,7 @@ export default function Staff() {
     return staffUsers.map((profile: Profile) => {
       // Find cohorts this user belongs to
       const userCohorts = allCohorts.filter((cohort) =>
-        cohort.profileIds.includes(profile.id)
+        cohort.profileIds.includes(profile.id),
       );
 
       return {
@@ -90,7 +90,7 @@ export default function Staff() {
   const counts = React.useMemo(() => {
     const activeStaff = staffUsers.filter((profile: Profile) => profile.active);
     const inactiveStaff = staffUsers.filter(
-      (profile: Profile) => !profile.active
+      (profile: Profile) => !profile.active,
     );
 
     const baseCounts = {
@@ -98,13 +98,13 @@ export default function Staff() {
       active: activeStaff.length,
       inactive: inactiveStaff.length,
       instructional: staffUsers.filter(
-        (profile: Profile) => profile.role === "instructional"
+        (profile: Profile) => profile.role === "instructional",
       ).length,
       ta: staffUsers.filter((profile: Profile) => profile.role === "ta").length,
       admin: staffUsers.filter((profile: Profile) => profile.role === "admin")
         .length,
       superadmin: staffUsers.filter(
-        (profile: Profile) => profile.role === "superadmin"
+        (profile: Profile) => profile.role === "superadmin",
       ).length,
     };
 
@@ -140,7 +140,7 @@ export default function Staff() {
         if (effectiveProfile?.role === "superadmin") {
           // For superadmins, show both superadmins and admins
           filteredStaff = staffData.filter(
-            (staff) => staff.role === "superadmin" || staff.role === "admin"
+            (staff) => staff.role === "superadmin" || staff.role === "admin",
           );
           title = `Superadmins/Admins (${filteredStaff.length})`;
         } else {
@@ -151,7 +151,7 @@ export default function Staff() {
         break;
       case "instructional":
         filteredStaff = staffData.filter(
-          (staff) => staff.role === "instructional"
+          (staff) => staff.role === "instructional",
         );
         title = `Instructional Staff (${filteredStaff.length})`;
         break;
@@ -184,7 +184,7 @@ export default function Staff() {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInMinutes = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60)
+      (now.getTime() - date.getTime()) / (1000 * 60),
     );
 
     if (diffInMinutes < 1) return "Just now";

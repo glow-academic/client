@@ -7,7 +7,10 @@ import { logError } from "@/utils/logger";
 
 export async function getAssistantMessagesByChats(chatIds: string[]) {
   try {
-    return await db.select().from(assistantMessages).where(inArray(assistantMessages.chatId, chatIds));
+    return await db
+      .select()
+      .from(assistantMessages)
+      .where(inArray(assistantMessages.chatId, chatIds));
   } catch (error) {
     logError("Error fetching assistant_messages by chats:", error);
     throw error;

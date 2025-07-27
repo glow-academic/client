@@ -65,7 +65,15 @@ import { getProfileByAlias } from "@/utils/auth/get-profile-by-alias";
 import { createProfiles } from "@/utils/mutations/profiles/create-profiles";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Download, Plus, Search, Upload, UserPlus, X } from "lucide-react";
+import {
+  Check,
+  Download,
+  Plus,
+  Search,
+  Upload,
+  UserPlus,
+  X,
+} from "lucide-react";
 import { logError } from "@/utils/logger";
 
 // CSV Template interface
@@ -122,7 +130,7 @@ export default function CohortAddStaff({
       !existingProfileIds.includes(profile.id) &&
       !selectedProfiles.find((p) => p.id === profile.id) &&
       (profile.role === "instructional" || profile.role === "ta") &&
-      !profile.defaultProfile
+      !profile.defaultProfile,
   );
 
   // Filter profiles based on search query
@@ -130,7 +138,7 @@ export default function CohortAddStaff({
     (profile: Profile) =>
       profile.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       profile.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      profile.alias.toLowerCase().includes(searchQuery.toLowerCase())
+      profile.alias.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   // Validate alias uniqueness
@@ -225,7 +233,7 @@ export default function CohortAddStaff({
             // Check if alias already exists
             const existingProfile = allProfiles.find(
               (profile: Profile) =>
-                profile.alias.toLowerCase() === row.alias.toLowerCase()
+                profile.alias.toLowerCase() === row.alias.toLowerCase(),
             );
 
             if (existingProfile) {
@@ -247,7 +255,7 @@ export default function CohortAddStaff({
                 const isAliasAvailable = await validateAlias(row.alias.trim());
                 if (!isAliasAvailable) {
                   toast.error(
-                    `Row ${index + 1}: Alias "${row.alias}" already exists`
+                    `Row ${index + 1}: Alias "${row.alias}" already exists`,
                   );
                   continue;
                 }
@@ -273,7 +281,7 @@ export default function CohortAddStaff({
               } else {
                 // If no firstName/lastName provided, skip creating new profile
                 toast.warning(
-                  `Row ${index + 1}: Skipping "${row.alias}" - firstName and lastName required for new profiles`
+                  `Row ${index + 1}: Skipping "${row.alias}" - firstName and lastName required for new profiles`,
                 );
               }
             }
@@ -298,20 +306,20 @@ export default function CohortAddStaff({
           if (newProfiles.length > 0) {
             setSelectedProfiles(newProfiles);
             toast.success(
-              `Successfully processed ${newProfiles.length} profiles`
+              `Successfully processed ${newProfiles.length} profiles`,
             );
           } else {
             toast.error("No valid profiles found in CSV");
           }
         } catch (error) {
           toast.error(
-            `Error parsing CSV: ${error instanceof Error ? error.message : "Unknown error"}`
+            `Error parsing CSV: ${error instanceof Error ? error.message : "Unknown error"}`,
           );
         }
       };
       reader.readAsText(file);
     },
-    [allProfiles, existingProfileIds, currentCohortName, validateAlias]
+    [allProfiles, existingProfileIds, currentCohortName, validateAlias],
   );
 
   // Handle CSV file input change
@@ -324,7 +332,7 @@ export default function CohortAddStaff({
         }
       }
     },
-    [handleCsvUpload]
+    [handleCsvUpload],
   );
 
   // Handle CSV click
@@ -361,7 +369,7 @@ export default function CohortAddStaff({
       !manualProfile.alias
     ) {
       toast.error(
-        "Please fill in all required fields (firstName, lastName, alias)"
+        "Please fill in all required fields (firstName, lastName, alias)",
       );
       return;
     }
@@ -369,7 +377,7 @@ export default function CohortAddStaff({
     // Check if alias already exists
     const existingProfile = allProfiles.find(
       (profile: Profile) =>
-        profile.alias.toLowerCase() === manualProfile.alias.toLowerCase()
+        profile.alias.toLowerCase() === manualProfile.alias.toLowerCase(),
     );
 
     if (existingProfile) {
@@ -384,7 +392,7 @@ export default function CohortAddStaff({
         };
         setSelectedProfiles((prev) => [...prev, newProfile]);
         toast.success(
-          `Added existing profile: ${existingProfile.firstName} ${existingProfile.lastName}`
+          `Added existing profile: ${existingProfile.firstName} ${existingProfile.lastName}`,
         );
       } else {
         toast.error("Profile already exists in this cohort");
@@ -394,7 +402,7 @@ export default function CohortAddStaff({
       const isAliasAvailable = await validateAlias(manualProfile.alias.trim());
       if (!isAliasAvailable) {
         toast.error(
-          "This alias already exists. Please choose a different one."
+          "This alias already exists. Please choose a different one.",
         );
         return;
       }
@@ -423,7 +431,7 @@ export default function CohortAddStaff({
             };
             setSelectedProfiles((prev) => [...prev, newProfile]);
             toast.success(
-              `Created and added new profile: ${createdProfile.firstName} ${createdProfile.lastName}`
+              `Created and added new profile: ${createdProfile.firstName} ${createdProfile.lastName}`,
             );
           }
         }

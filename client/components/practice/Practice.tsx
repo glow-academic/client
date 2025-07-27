@@ -36,10 +36,10 @@ import PracticeZone from "./PracticeZone";
 export default function Practice() {
   const router = useRouter();
   const [loadingSimulation, setLoadingSimulation] = useState<string | null>(
-    null
+    null,
   );
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
-    null
+    null,
   );
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
@@ -118,7 +118,7 @@ export default function Practice() {
             allAttempts?.filter(
               (att) =>
                 att.profileId === effectiveProfile.id! &&
-                att.simulationId === simulation.id
+                att.simulationId === simulation.id,
             ) || [];
 
           if (userAttempts.length > 0) {
@@ -128,7 +128,7 @@ export default function Practice() {
               [];
             const userGrades =
               allGrades?.filter((g) =>
-                userChats?.some((c) => c.id === g.simulationChatId)
+                userChats?.some((c) => c.id === g.simulationChatId),
               ) || [];
 
             if (userGrades.length > 0) {
@@ -137,7 +137,7 @@ export default function Practice() {
               highestScore = Math.round(
                 (Math.max(...userGrades.map((g) => g.score)) /
                   rubricTotalPoints) *
-                  100
+                  100,
               );
               hasPassed = userGrades.some((g) => g.passed);
             }
@@ -192,14 +192,14 @@ export default function Practice() {
 
     window.addEventListener(
       "simulationStarted",
-      handleSimulationStarted as EventListener
+      handleSimulationStarted as EventListener,
     );
     window.addEventListener("simulationError", handleSimulationError);
 
     return () => {
       window.removeEventListener(
         "simulationStarted",
-        handleSimulationStarted as EventListener
+        handleSimulationStarted as EventListener,
       );
       window.removeEventListener("simulationError", handleSimulationError);
       if (timeoutRef.current) {
@@ -219,7 +219,7 @@ export default function Practice() {
 
         if (!isConnected) {
           toast.error(
-            "WebSocket not connected. Please wait for connection or refresh the page."
+            "WebSocket not connected. Please wait for connection or refresh the page.",
           );
           logError("WebSocket not connected when trying to start simulation", {
             simulationId,
@@ -270,7 +270,7 @@ export default function Practice() {
       emitStartSimulation,
       loadingToastId,
       activeProfile,
-    ]
+    ],
   );
 
   // Loading state

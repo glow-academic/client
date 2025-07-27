@@ -42,7 +42,7 @@ describe("Simulations", () => {
       // Check that the component renders without crashing
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search simulations...")
+          screen.getByPlaceholderText("Search simulations..."),
         ).toBeInTheDocument();
       });
     });
@@ -53,7 +53,7 @@ describe("Simulations", () => {
       // Check that search input has proper accessibility attributes
       await waitFor(() => {
         const searchInput = screen.getByPlaceholderText(
-          "Search simulations..."
+          "Search simulations...",
         );
         expect(searchInput).toBeInTheDocument();
       });
@@ -71,7 +71,7 @@ describe("Simulations", () => {
       // Test search functionality
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search simulations...")
+          screen.getByPlaceholderText("Search simulations..."),
         ).toBeInTheDocument();
       });
 
@@ -89,7 +89,7 @@ describe("Simulations", () => {
       // Test search input interaction
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search simulations...")
+          screen.getByPlaceholderText("Search simulations..."),
         ).toBeInTheDocument();
       });
 
@@ -111,7 +111,7 @@ describe("Simulations", () => {
       // The component should handle the error gracefully
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search simulations...")
+          screen.getByPlaceholderText("Search simulations..."),
         ).toBeInTheDocument();
       });
     });
@@ -123,7 +123,7 @@ describe("Simulations", () => {
       // Component should show loading state initially
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search simulations...")
+          screen.getByPlaceholderText("Search simulations..."),
         ).toBeInTheDocument();
       });
     });
@@ -136,7 +136,7 @@ describe("Simulations", () => {
       // Wait for component to load
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search simulations...")
+          screen.getByPlaceholderText("Search simulations..."),
         ).toBeInTheDocument();
       });
 

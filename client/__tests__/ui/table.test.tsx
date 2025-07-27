@@ -31,7 +31,7 @@ describe("Table", () => {
               <TableCell>Cell 2</TableCell>
             </TableRow>
           </TableBody>
-        </Table>
+        </Table>,
       );
 
       expect(screen.getByText("Test Table")).toBeInTheDocument();
@@ -50,7 +50,7 @@ describe("Table", () => {
               <TableCell>Accessible Cell</TableCell>
             </TableRow>
           </TableBody>
-        </Table>
+        </Table>,
       );
 
       const table = screen.getByRole("table");
@@ -78,7 +78,7 @@ describe("Table", () => {
               <TableCell>Value 2</TableCell>
             </TableRow>
           </TableBody>
-        </Table>
+        </Table>,
       );
 
       expect(screen.getByText("Name")).toBeInTheDocument();
@@ -98,7 +98,7 @@ describe("Table", () => {
               <TableCell>Minimal</TableCell>
             </TableRow>
           </TableBody>
-        </Table>
+        </Table>,
       );
 
       expect(screen.getByText("Minimal")).toBeInTheDocument();

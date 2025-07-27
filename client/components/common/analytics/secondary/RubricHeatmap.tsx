@@ -64,7 +64,7 @@ function calculateCorrelation(x: number[], y: number[]): number {
 
   const numerator = n * sumXY - sumX * sumY;
   const denominator = Math.sqrt(
-    (n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY)
+    (n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY),
   );
 
   return denominator === 0 ? 0 : numerator / denominator;
@@ -125,7 +125,7 @@ export default function RubricHeatmap({
     queryKey: ["feedbacks", grades?.map((g) => g.id) || []],
     queryFn: () =>
       getSimulationChatFeedbacksBySimulationChatGrades(
-        grades?.map((g) => g.id) || []
+        grades?.map((g) => g.id) || [],
       ),
     enabled: !!grades && grades.length > 0,
   });
@@ -145,14 +145,14 @@ export default function RubricHeatmap({
     // If profileId is provided, filter to cohorts that contain this profile
     if (profileId) {
       availableCohorts = availableCohorts.filter((cohort) =>
-        cohort.profileIds.includes(profileId)
+        cohort.profileIds.includes(profileId),
       );
     }
 
     // If cohortIds are provided, filter to only those cohorts
     if (cohortIds && cohortIds.length > 0) {
       availableCohorts = availableCohorts.filter((cohort) =>
-        cohortIds.includes(cohort.id)
+        cohortIds.includes(cohort.id),
       );
     }
 
@@ -230,7 +230,7 @@ export default function RubricHeatmap({
             if (profile) {
               // Check if this profile belongs to any of the filtered cohorts
               cohortMatch = filteredCohorts.some((cohort) =>
-                cohort.profileIds.includes(profile.id)
+                cohort.profileIds.includes(profile.id),
               );
             } else {
               cohortMatch = false;
@@ -251,8 +251,8 @@ export default function RubricHeatmap({
     // Filter feedbacks to only include those from filtered grades
     const filteredFeedbacks = feedbacks.filter((feedback) =>
       filteredGrades.some(
-        (grade) => grade.id === feedback.simulationChatGradeId
-      )
+        (grade) => grade.id === feedback.simulationChatGradeId,
+      ),
     );
 
     // Get all standard groups that have feedback data
@@ -260,7 +260,7 @@ export default function RubricHeatmap({
       filteredFeedbacks.some((feedback) => {
         const standard = standards.find((s) => s.id === feedback.standardId);
         return standard && standard.standardGroupId === group.id;
-      })
+      }),
     );
 
     if (standardGroupsWithData.length < 2)
@@ -302,7 +302,7 @@ export default function RubricHeatmap({
         // Get all grades that have feedback for both standard groups
         const gradesWithBothGroups = filteredGrades.filter((grade) => {
           const gradeFeedbacks = filteredFeedbacks.filter(
-            (f) => f.simulationChatGradeId === grade.id
+            (f) => f.simulationChatGradeId === grade.id,
           );
 
           const hasGroup1 = gradeFeedbacks.some((f) => {

@@ -7,7 +7,10 @@ import { logError } from "@/utils/logger";
 
 export async function getDocument(id: string) {
   try {
-    const result = await db.select().from(documents).where(eq(documents.id, id));
+    const result = await db
+      .select()
+      .from(documents)
+      .where(eq(documents.id, id));
     return result[0] || null;
   } catch (error) {
     logError("Error fetching document:", error);

@@ -51,7 +51,7 @@ describe("DataTableColumnHeader", () => {
 
     it("should handle missing or invalid props", () => {
       renderWithMocks(
-        <DataTableColumnHeader column={getMockColumn()} title="test" />
+        <DataTableColumnHeader column={getMockColumn()} title="test" />,
       );
 
       // Component should handle missing props

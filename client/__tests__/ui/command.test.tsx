@@ -21,7 +21,7 @@ describe("Command", () => {
             <CommandItem>Item 1</CommandItem>
             <CommandItem>Item 2</CommandItem>
           </CommandList>
-        </Command>
+        </Command>,
       );
 
       expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
@@ -34,7 +34,7 @@ describe("Command", () => {
           <CommandList>
             <CommandItem>Accessible Item</CommandItem>
           </CommandList>
-        </Command>
+        </Command>,
       );
 
       const input = screen.getByPlaceholderText("Search...");
@@ -53,7 +53,7 @@ describe("Command", () => {
               <CommandItem>Item 2</CommandItem>
             </CommandGroup>
           </CommandList>
-        </Command>
+        </Command>,
       );
 
       expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
@@ -69,7 +69,7 @@ describe("Command", () => {
         <Command>
           <CommandInput />
           <CommandList />
-        </Command>
+        </Command>,
       );
 
       const command = document.querySelector('[data-slot="command"]');

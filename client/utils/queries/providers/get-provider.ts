@@ -7,7 +7,10 @@ import { logError } from "@/utils/logger";
 
 export async function getProvider(id: string) {
   try {
-    const result = await db.select().from(providers).where(eq(providers.id, id));
+    const result = await db
+      .select()
+      .from(providers)
+      .where(eq(providers.id, id));
     return result[0] || null;
   } catch (error) {
     logError("Error fetching provider:", error);

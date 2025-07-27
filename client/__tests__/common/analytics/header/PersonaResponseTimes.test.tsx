@@ -89,7 +89,7 @@ describe("PersonaResponseTimes", () => {
       };
 
       renderWithMocks(
-        <PersonaResponseTimes {...propsWithDifferentThresholds} />
+        <PersonaResponseTimes {...propsWithDifferentThresholds} />,
       );
 
       // Wait for loading to complete

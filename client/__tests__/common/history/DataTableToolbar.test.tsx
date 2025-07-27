@@ -87,7 +87,7 @@ describe("DataTableToolbar", () => {
           table={createMockTable()}
           profileOptions={[]}
           scoreRangeOptions={[]}
-        />
+        />,
       );
 
       // Component should handle missing props

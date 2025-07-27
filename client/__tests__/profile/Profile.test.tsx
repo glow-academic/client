@@ -101,7 +101,7 @@ describe("Profile", () => {
               </AssistantProvider>
             </AnalyticsProvider>
           </ProfileProvider>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
       // Check that guest user message is displayed
@@ -109,8 +109,8 @@ describe("Profile", () => {
         expect(screen.getByText("Guest User")).toBeInTheDocument();
         expect(
           screen.getByText(
-            "You are browsing as a guest. Please log in to access your profile."
-          )
+            "You are browsing as a guest. Please log in to access your profile.",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -166,7 +166,7 @@ describe("Profile", () => {
               </AssistantProvider>
             </AnalyticsProvider>
           </ProfileProvider>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
       // Should handle empty names gracefully

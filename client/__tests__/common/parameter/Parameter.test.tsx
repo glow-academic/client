@@ -92,7 +92,7 @@ describe("Parameter", () => {
 
     it("should render edit form with existing data", async () => {
       renderWithMocks(
-        <Parameter parameterId="test-parameter-id" mode="edit" />
+        <Parameter parameterId="test-parameter-id" mode="edit" />,
       );
 
       // Wait for the form to load
@@ -103,7 +103,7 @@ describe("Parameter", () => {
       // Check that the form fields are populated with existing data
       expect(screen.getByDisplayValue("Parameters 1")).toBeInTheDocument();
       expect(
-        screen.getByDisplayValue("Description for parameters 1")
+        screen.getByDisplayValue("Description for parameters 1"),
       ).toBeInTheDocument();
     });
 
@@ -113,7 +113,7 @@ describe("Parameter", () => {
       // Check for proper form structure
       expect(screen.getByText("Parameter Information")).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: "Create Parameter" })
+        screen.getByRole("button", { name: "Create Parameter" }),
       ).toBeInTheDocument();
     });
   });
@@ -135,7 +135,7 @@ describe("Parameter", () => {
       // Check that a new row appears in the table
       expect(screen.getByPlaceholderText("Item name")).toBeInTheDocument();
       expect(
-        screen.getByPlaceholderText("Item description")
+        screen.getByPlaceholderText("Item description"),
       ).toBeInTheDocument();
       expect(screen.getByPlaceholderText("Value")).toBeInTheDocument();
     });
@@ -173,7 +173,7 @@ describe("Parameter", () => {
       // Wait for the form to load
       await waitFor(() => {
         expect(
-          screen.getByLabelText("Numerical Parameter")
+          screen.getByLabelText("Numerical Parameter"),
         ).toBeInTheDocument();
       });
 
@@ -225,7 +225,7 @@ describe("Parameter", () => {
       // Check that the item is removed
       await waitFor(() => {
         expect(
-          screen.queryByPlaceholderText("Item name")
+          screen.queryByPlaceholderText("Item name"),
         ).not.toBeInTheDocument();
       });
     });
@@ -262,7 +262,7 @@ describe("Parameter", () => {
 
     it("should handle loading states", async () => {
       renderWithMocks(
-        <Parameter parameterId="test-parameter-id" mode="edit" />
+        <Parameter parameterId="test-parameter-id" mode="edit" />,
       );
 
       // Check that loading skeletons are shown initially
@@ -309,7 +309,7 @@ describe("Parameter", () => {
       updateParameterMock.mockResolvedValue({ success: true });
 
       renderWithMocks(
-        <Parameter parameterId="test-parameter-id" mode="edit" />
+        <Parameter parameterId="test-parameter-id" mode="edit" />,
       );
 
       // Wait for the form to load
@@ -389,7 +389,7 @@ describe("Parameter", () => {
       // Wait for the form to load
       await waitFor(() => {
         expect(
-          screen.getByLabelText("Numerical Parameter")
+          screen.getByLabelText("Numerical Parameter"),
         ).toBeInTheDocument();
       });
 
@@ -436,15 +436,15 @@ describe("Parameter", () => {
       // Wait for the form to load
       await waitFor(() => {
         expect(
-          screen.getByText("No parameter items added yet.")
+          screen.getByText("No parameter items added yet."),
         ).toBeInTheDocument();
       });
 
       // Check that the empty state is displayed
       expect(
         screen.getByText(
-          'Click "Add Item" to create your first parameter item.'
-        )
+          'Click "Add Item" to create your first parameter item.',
+        ),
       ).toBeInTheDocument();
     });
   });

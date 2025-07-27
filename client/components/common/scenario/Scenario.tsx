@@ -169,7 +169,7 @@ export default function Scenario({
     if (!isEditMode || !scenarioId) return [];
     return simulations.filter(
       (sim: Simulation) =>
-        sim.scenarioIds && sim.scenarioIds.includes(scenarioId)
+        sim.scenarioIds && sim.scenarioIds.includes(scenarioId),
     );
   }, [simulations, scenarioId, isEditMode]);
 
@@ -245,7 +245,7 @@ export default function Scenario({
   // Event handlers
   const handleInputChange = (
     field: keyof Partial<ScenarioType>,
-    value: string | string[] | null
+    value: string | string[] | null,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -277,7 +277,7 @@ export default function Scenario({
     } catch (error) {
       logError("Error generating scenario:", error);
       toast.error(
-        `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsGeneratingScenario(false);
@@ -311,7 +311,7 @@ export default function Scenario({
       router.push("/create/scenarios");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -346,10 +346,10 @@ export default function Scenario({
   }
 
   const selectedDocuments = documents.filter((doc) =>
-    formData.documentIds?.includes(doc.id)
+    formData.documentIds?.includes(doc.id),
   );
   const selectedPersona = personas.find(
-    (persona) => persona.id === formData.personaId
+    (persona) => persona.id === formData.personaId,
   );
 
   return (
@@ -471,7 +471,7 @@ export default function Scenario({
               onMultiSelect={(models) =>
                 handleInputChange(
                   "documentIds",
-                  models.map((m) => m.id)
+                  models.map((m) => m.id),
                 )
               }
             />

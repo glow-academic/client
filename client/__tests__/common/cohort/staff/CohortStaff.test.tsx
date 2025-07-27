@@ -96,7 +96,7 @@ describe("CohortStaff", () => {
           setProfiles={vi.fn()}
           profilesToDelete={[]}
           setProfilesToDelete={vi.fn()}
-        />
+        />,
       );
 
       // Component should handle missing props

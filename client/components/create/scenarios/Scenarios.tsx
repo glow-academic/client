@@ -57,7 +57,7 @@ export function Scenarios() {
   // Check if a scenario is being used by any simulations
   const isScenarioInUse = (scenarioId: string) => {
     return simulations.some(
-      (sim) => sim.scenarioIds && sim.scenarioIds.includes(scenarioId)
+      (sim) => sim.scenarioIds && sim.scenarioIds.includes(scenarioId),
     );
   };
 
@@ -199,7 +199,7 @@ export function Scenarios() {
                 onClick={() =>
                   handleDeleteClick(
                     scenario.id,
-                    scenario.name || "Unnamed Scenario"
+                    scenario.name || "Unnamed Scenario",
                   )
                 }
               >

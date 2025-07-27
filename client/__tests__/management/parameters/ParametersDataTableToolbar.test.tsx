@@ -64,7 +64,7 @@ describe("ParametersDataTableToolbar", () => {
 
       // Should render the search input
       expect(
-        screen.getByPlaceholderText("Search parameters...")
+        screen.getByPlaceholderText("Search parameters..."),
       ).toBeInTheDocument();
 
       // Should render filter options
@@ -137,7 +137,7 @@ describe("ParametersDataTableToolbar", () => {
 
       // Should still render the search input
       expect(
-        screen.getByPlaceholderText("Search parameters...")
+        screen.getByPlaceholderText("Search parameters..."),
       ).toBeInTheDocument();
 
       // Should not render filter options when empty
@@ -158,7 +158,7 @@ describe("ParametersDataTableToolbar", () => {
 
       // Should still render without crashing
       expect(
-        screen.getByPlaceholderText("Search parameters...")
+        screen.getByPlaceholderText("Search parameters..."),
       ).toBeInTheDocument();
     });
   });

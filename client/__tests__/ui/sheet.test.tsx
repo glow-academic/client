@@ -23,7 +23,7 @@ describe("Sheet", () => {
             </SheetHeader>
             Sheet Content
           </SheetContent>
-        </Sheet>
+        </Sheet>,
       );
 
       expect(screen.getByText("Open Sheet")).toBeInTheDocument();
@@ -39,7 +39,7 @@ describe("Sheet", () => {
             </SheetHeader>
             Accessible Content
           </SheetContent>
-        </Sheet>
+        </Sheet>,
       );
 
       const trigger = screen.getByRole("button", { name: "Open Sheet" });
@@ -58,7 +58,7 @@ describe("Sheet", () => {
             </SheetHeader>
             <div>Content</div>
           </SheetContent>
-        </Sheet>
+        </Sheet>,
       );
 
       // Only the trigger should be visible when sheet is closed
@@ -73,7 +73,7 @@ describe("Sheet", () => {
         <Sheet>
           <SheetTrigger>Minimal</SheetTrigger>
           <SheetContent>Content</SheetContent>
-        </Sheet>
+        </Sheet>,
       );
 
       expect(screen.getByText("Minimal")).toBeInTheDocument();

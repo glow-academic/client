@@ -151,7 +151,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
 
     // Filter profiles to only include those in the cohort
     const filteredProfiles = allProfiles.filter((profile) =>
-      allCohortProfileIds.has(profile.id)
+      allCohortProfileIds.has(profile.id),
     );
 
     return filteredProfiles;
@@ -225,11 +225,11 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       if (rubric && grade.score === rubric.points) {
         const attempt = safeAttempts.find((a) =>
           chats.some(
-            (c) => c.id === grade.simulationChatId && c.attemptId === a.id
-          )
+            (c) => c.id === grade.simulationChatId && c.attemptId === a.id,
+          ),
         );
         perfectScoreHolder = cohortProfiles.find(
-          (p) => p.id === attempt?.profileId
+          (p) => p.id === attempt?.profileId,
         );
         perfectScoreDetails = `on a simulation.`;
         break;
@@ -243,10 +243,10 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     }));
     const longestChat = chatMessageCounts.sort((a, b) => b.count - a.count)[0];
     const longestChatAttempt = safeAttempts.find((a) =>
-      chats.some((c) => c.id === longestChat?.chatId && c.attemptId === a.id)
+      chats.some((c) => c.id === longestChat?.chatId && c.attemptId === a.id),
     );
     const longestConvoHolder = cohortProfiles.find(
-      (p) => p.id === longestChatAttempt?.profileId
+      (p) => p.id === longestChatAttempt?.profileId,
     );
 
     // 3. Most Improved (Simplified: Biggest score jump on any simulation)
@@ -256,15 +256,15 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     // 4. Quickest Pass
     const passedGrades = safeGrades.filter((g) => g.passed);
     const quickestGrade = passedGrades.sort(
-      (a, b) => a.timeTaken - b.timeTaken
+      (a, b) => a.timeTaken - b.timeTaken,
     )[0];
     const quickestPassAttempt = safeAttempts.find((a) =>
       chats.some(
-        (c) => c.id === quickestGrade?.simulationChatId && c.attemptId === a.id
-      )
+        (c) => c.id === quickestGrade?.simulationChatId && c.attemptId === a.id,
+      ),
     );
     const quickestPassHolder = cohortProfiles.find(
-      (p) => p.id === quickestPassAttempt?.profileId
+      (p) => p.id === quickestPassAttempt?.profileId,
     );
 
     return {
@@ -317,8 +317,8 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       const userGrades = safeGrades.filter((g) => {
         const attempt = safeAttempts.find((a) =>
           chats?.some(
-            (c) => c.id === g.simulationChatId && c.attemptId === a.id
-          )
+            (c) => c.id === g.simulationChatId && c.attemptId === a.id,
+          ),
         );
         return attempt?.profileId === profile.id;
       });
@@ -326,8 +326,8 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       // Calculate metrics
       const totalSims = new Set(
         userGrades.map(
-          (g) => chats?.find((c) => c.id === g.simulationChatId)?.attemptId
-        )
+          (g) => chats?.find((c) => c.id === g.simulationChatId)?.attemptId,
+        ),
       ).size;
 
       const passRate =

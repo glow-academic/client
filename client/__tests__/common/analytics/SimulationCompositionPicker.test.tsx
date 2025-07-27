@@ -70,7 +70,7 @@ describe("SimulationCompositionPicker", () => {
         <SimulationCompositionPicker
           {...mockProps}
           onConfigChange={mockOnConfigChange}
-        />
+        />,
       );
 
       // Should render the dropdown button

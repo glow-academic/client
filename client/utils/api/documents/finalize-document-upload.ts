@@ -61,7 +61,7 @@ export async function finalizeDocumentUpload(
   autoClassify?: boolean,
   csv?: boolean,
   profile?: string,
-  test?: boolean
+  test?: boolean,
 ): Promise<FinalizeDocumentUploadResponse> {
   try {
     const payload: FinalizeDocumentUploadParams = {

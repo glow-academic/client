@@ -54,7 +54,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
       modelId: "",
       reasoning: "none",
     }),
-    []
+    [],
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);

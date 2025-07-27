@@ -42,7 +42,7 @@ describe("Scenarios", () => {
       // Check that the component renders without crashing
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search scenarios...")
+          screen.getByPlaceholderText("Search scenarios..."),
         ).toBeInTheDocument();
       });
     });
@@ -70,7 +70,7 @@ describe("Scenarios", () => {
       // Test search functionality
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search scenarios...")
+          screen.getByPlaceholderText("Search scenarios..."),
         ).toBeInTheDocument();
       });
 
@@ -88,7 +88,7 @@ describe("Scenarios", () => {
       // Test search input interaction
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search scenarios...")
+          screen.getByPlaceholderText("Search scenarios..."),
         ).toBeInTheDocument();
       });
 
@@ -110,7 +110,7 @@ describe("Scenarios", () => {
       // The component should handle the error gracefully
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search scenarios...")
+          screen.getByPlaceholderText("Search scenarios..."),
         ).toBeInTheDocument();
       });
     });
@@ -122,7 +122,7 @@ describe("Scenarios", () => {
       // Component should show loading state initially
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search scenarios...")
+          screen.getByPlaceholderText("Search scenarios..."),
         ).toBeInTheDocument();
       });
     });
@@ -135,7 +135,7 @@ describe("Scenarios", () => {
       // Wait for component to load
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search scenarios...")
+          screen.getByPlaceholderText("Search scenarios..."),
         ).toBeInTheDocument();
       });
 
@@ -154,7 +154,7 @@ describe("Scenarios", () => {
       // Should handle empty data gracefully
       await waitFor(() => {
         expect(
-          screen.getByText("No scenarios match the current filters.")
+          screen.getByText("No scenarios match the current filters."),
         ).toBeInTheDocument();
       });
     });

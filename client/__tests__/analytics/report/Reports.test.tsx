@@ -94,7 +94,7 @@ describe("Reports", () => {
       // Wait for loading to complete
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading reports...")
+          screen.queryByText("Loading reports..."),
         ).not.toBeInTheDocument();
       });
 
@@ -145,7 +145,7 @@ describe("Reports", () => {
       // Wait for data to load
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading reports...")
+          screen.queryByText("Loading reports..."),
         ).not.toBeInTheDocument();
       });
 
@@ -216,7 +216,7 @@ describe("Reports", () => {
       // Wait for data to load
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading reports...")
+          screen.queryByText("Loading reports..."),
         ).not.toBeInTheDocument();
       });
 

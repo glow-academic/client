@@ -75,11 +75,11 @@ body.tour-open [data-sidebar="content"] {
     width: 100vw;
     left: 0;
   }
-  
+
   .tour-sidebar {
     transform: translateX(0);
   }
-  
+
   /* On mobile, tour takes full screen */
   body.tour-open [data-sidebar="sidebar"] {
     transform: translateX(-100%);
@@ -113,4 +113,4 @@ body.tour-open [data-sidebar="content"] {
     bottom: 0.5rem;
     left: 0.5rem;
   }
-} 
+}

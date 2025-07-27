@@ -11,7 +11,7 @@ describe("ScrollArea", () => {
       renderWithMocks(
         <ScrollArea>
           <div>Content</div>
-        </ScrollArea>
+        </ScrollArea>,
       );
 
       const scrollArea = document.querySelector('[data-slot="scroll-area"]');
@@ -22,7 +22,7 @@ describe("ScrollArea", () => {
       renderWithMocks(
         <ScrollArea>
           <div>Accessible Content</div>
-        </ScrollArea>
+        </ScrollArea>,
       );
 
       const scrollArea = document.querySelector('[data-slot="scroll-area"]');
@@ -37,7 +37,7 @@ describe("ScrollArea", () => {
           <div>Item 1</div>
           <div>Item 2</div>
           <div>Item 3</div>
-        </ScrollArea>
+        </ScrollArea>,
       );
 
       expect(screen.getByText("Item 1")).toBeInTheDocument();
@@ -49,7 +49,7 @@ describe("ScrollArea", () => {
       renderWithMocks(
         <ScrollArea className="custom-class">
           <div>Content</div>
-        </ScrollArea>
+        </ScrollArea>,
       );
 
       const scrollArea = document.querySelector('[data-slot="scroll-area"]');

@@ -46,7 +46,7 @@ async function handleProxyRequest(req: NextRequest) {
   } catch (error) {
     logError(
       "[TUS proxy] Error:",
-      error instanceof Error ? error.message : "Unknown error"
+      error instanceof Error ? error.message : "Unknown error",
     );
     return new Response("Proxy Error", { status: 500 });
   }

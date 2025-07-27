@@ -16,7 +16,7 @@ async function handleProxyRequest(
     params,
   }: {
     params: Promise<{ upload_id: string }>;
-  }
+  },
 ) {
   try {
     const { upload_id } = await params;
@@ -55,7 +55,7 @@ async function handleProxyRequest(
   } catch (error) {
     logError(
       "[TUS proxy] Error:",
-      error instanceof Error ? error.message : "Unknown error"
+      error instanceof Error ? error.message : "Unknown error",
     );
     return new Response("Proxy Error", { status: 500 });
   }
@@ -63,28 +63,28 @@ async function handleProxyRequest(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ upload_id: string }> }
+  { params }: { params: Promise<{ upload_id: string }> },
 ) {
   return handleProxyRequest(req, { params });
 }
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ upload_id: string }> }
+  { params }: { params: Promise<{ upload_id: string }> },
 ) {
   return handleProxyRequest(req, { params });
 }
 
 export async function HEAD(
   req: NextRequest,
-  { params }: { params: Promise<{ upload_id: string }> }
+  { params }: { params: Promise<{ upload_id: string }> },
 ) {
   return handleProxyRequest(req, { params });
 }
 
 export async function OPTIONS(
   req: NextRequest,
-  { params }: { params: Promise<{ upload_id: string }> }
+  { params }: { params: Promise<{ upload_id: string }> },
 ) {
   return handleProxyRequest(req, { params });
 }

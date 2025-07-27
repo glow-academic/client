@@ -92,7 +92,7 @@ export function BrightspaceExportButton<TData>({
 
       // Get the metric option
       const metricOption = metricOptions.find(
-        (m) => m.value === selectedMetric
+        (m) => m.value === selectedMetric,
       );
       if (!metricOption) {
         toast?.error("Invalid metric selected");
@@ -101,7 +101,7 @@ export function BrightspaceExportButton<TData>({
 
       // Create CSV header: Alias, Simulation1, Simulation2, etc.
       const headerRow = ["Alias", ...simulations.map((sim) => sim.title)].join(
-        ","
+        ",",
       );
 
       // Create CSV rows

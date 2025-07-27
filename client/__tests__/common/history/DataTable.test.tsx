@@ -132,7 +132,7 @@ describe("DataTable", () => {
           data={[]}
           profileOptions={[]}
           scoreRangeOptions={[]}
-        />
+        />,
       );
 
       // Should handle missing props gracefully

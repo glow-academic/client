@@ -20,7 +20,7 @@ export function useCohortStaffColumns() {
         },
       },
     ],
-    []
+    [],
   );
 
   // Filter options
@@ -29,15 +29,13 @@ export function useCohortStaffColumns() {
       profileRole.enumValues
         .filter(
           (role) =>
-            role !== "superadmin" &&
-            role !== "admin" &&
-            role !== "guest"
+            role !== "superadmin" && role !== "admin" && role !== "guest",
         )
         .map((role) => ({
           value: role,
           label: role,
         })),
-    []
+    [],
   );
 
   return {

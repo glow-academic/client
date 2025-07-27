@@ -165,7 +165,7 @@ describe("ScenarioPicker", () => {
       // Should show selected model name
       const buttons = screen.getAllByRole("combobox");
       expect(
-        buttons.some((button) => button.textContent?.includes("GPT-4"))
+        buttons.some((button) => button.textContent?.includes("GPT-4")),
       ).toBe(true);
     });
   });

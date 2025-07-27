@@ -3,7 +3,13 @@
 
 import React from "react";
 import { vi } from "vitest";
-import type { Column, Table, Row, RowModel, TableState } from "@tanstack/react-table";
+import type {
+  Column,
+  Table,
+  Row,
+  RowModel,
+  TableState,
+} from "@tanstack/react-table";
 
 // Export router mock for direct access in tests
 // This object will be the single source of truth for router functions.
@@ -90,7 +96,7 @@ export function getMockColumn<TData, TValue>(
     getFacetedUniqueValues: () => new Map(),
     getFilterValue: () => undefined,
     setFilterValue: vi.fn(),
-    ...opts,               // allow per-test overrides
+    ...opts, // allow per-test overrides
   };
 
   return base as Column<TData, TValue>;
@@ -107,11 +113,12 @@ export function getMockTable<TData>(
     getFilteredSelectedRowModel: () => emptyRows as unknown as RowModel<TData>,
     getFilteredRowModel: () => emptyRows as unknown as RowModel<TData>,
     /* Pagination */
-    getState: () => ({
-      pagination: { pageSize: 10, pageIndex: 0 },
-      columnFilters: [],
-      rowSelection: {},
-    }) as unknown as TableState,
+    getState: () =>
+      ({
+        pagination: { pageSize: 10, pageIndex: 0 },
+        columnFilters: [],
+        rowSelection: {},
+      }) as unknown as TableState,
     setPageSize: vi.fn(),
     setPageIndex: vi.fn(),
     previousPage: vi.fn(),
@@ -122,7 +129,7 @@ export function getMockTable<TData>(
     /* Columns */
     getAllColumns: () => [],
     getColumn: () => undefined,
-    ...opts,               // allow per-test overrides
+    ...opts, // allow per-test overrides
   };
 
   return base as Table<TData>;
@@ -134,7 +141,7 @@ export function getMockDashboardComponent(overrides = {}) {
     name: "Mock Chart",
     fileName: "MockChart",
     stat: false,
-    layout: {},           // anything → avoids the crash
+    layout: {}, // anything → avoids the crash
     ...overrides,
   };
 }

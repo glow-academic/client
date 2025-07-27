@@ -50,7 +50,7 @@ export const isMainScreen = (pathname: string): boolean => {
  */
 export const getSectionRoute = (
   section: string,
-  currentPathname?: string
+  currentPathname?: string,
 ): string => {
   switch (section) {
     case "home":
@@ -207,7 +207,7 @@ export const getSectionRoute = (
  */
 export const getBreadcrumbSectionRoute = (
   section: string,
-  _currentPathname?: string
+  _currentPathname?: string,
 ): string => {
   switch (section) {
     default:
@@ -221,7 +221,7 @@ export const getBreadcrumbSectionRoute = (
  */
 export const createSectionChangeHandler = (
   router: AppRouterInstance,
-  currentPathname?: string
+  currentPathname?: string,
 ) => {
   return (section: string) => {
     const route = getSectionRoute(section, currentPathname);
@@ -235,7 +235,7 @@ export const createSectionChangeHandler = (
  */
 export const createBreadcrumbSectionChangeHandler = (
   router: AppRouterInstance,
-  currentPathname?: string
+  currentPathname?: string,
 ) => {
   return (section: string) => {
     const route = getBreadcrumbSectionRoute(section, currentPathname);
@@ -250,7 +250,7 @@ export const createRoleAwareSectionChangeHandler = (
   router: AppRouterInstance,
   currentRole: ProfileRole,
   onSectionChange?: (section: string) => void,
-  currentPathname?: string
+  currentPathname?: string,
 ) => {
   return (section: string) => {
     // Check if the section is available for the current role
@@ -279,7 +279,7 @@ export const createRoleAwareSectionChangeHandler = (
 export const createFlexibleSectionChangeHandler = (
   router: AppRouterInstance,
   onSectionChange?: (section: string) => void,
-  currentPathname?: string
+  currentPathname?: string,
 ) => {
   return (section: string) => {
     // If onSectionChange prop is provided, use it (for layout components)

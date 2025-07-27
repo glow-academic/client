@@ -5,9 +5,16 @@ import { personas } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 
-export async function updatePersonas(ids: string[], data: Partial<typeof personas.$inferInsert>) {
+export async function updatePersonas(
+  ids: string[],
+  data: Partial<typeof personas.$inferInsert>,
+) {
   try {
-    return await db.update(personas).set(data).where(inArray(personas.id, ids)).returning();
+    return await db
+      .update(personas)
+      .set(data)
+      .where(inArray(personas.id, ids))
+      .returning();
   } catch (error) {
     logError("Error updating multiple personas:", error);
     throw error;

@@ -66,7 +66,7 @@ describe("ChatStarterPrompts", () => {
       const onPromptClick = vi.fn();
 
       renderWithMocks(
-        <ChatStarterPrompts {...mockProps} onPromptClick={onPromptClick} />
+        <ChatStarterPrompts {...mockProps} onPromptClick={onPromptClick} />,
       );
 
       await waitFor(() => {
@@ -101,7 +101,7 @@ describe("ChatStarterPrompts", () => {
       if (promptCards[0]) {
         await user.click(promptCards[0]);
         expect(mockProps.onPromptClick).toHaveBeenCalledWith(
-          expect.any(String)
+          expect.any(String),
         );
       }
     });
@@ -124,7 +124,7 @@ describe("ChatStarterPrompts", () => {
         promptCards[0].focus();
         await user.keyboard("{Enter}");
         expect(mockProps.onPromptClick).toHaveBeenCalledWith(
-          expect.any(String)
+          expect.any(String),
         );
       }
     });

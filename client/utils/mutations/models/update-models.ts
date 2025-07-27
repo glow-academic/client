@@ -5,9 +5,16 @@ import { models } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 
-export async function updateModels(ids: string[], data: Partial<typeof models.$inferInsert>) {
+export async function updateModels(
+  ids: string[],
+  data: Partial<typeof models.$inferInsert>,
+) {
   try {
-    return await db.update(models).set(data).where(inArray(models.id, ids)).returning();
+    return await db
+      .update(models)
+      .set(data)
+      .where(inArray(models.id, ids))
+      .returning();
   } catch (error) {
     logError("Error updating multiple models:", error);
     throw error;

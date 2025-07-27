@@ -89,7 +89,7 @@ describe("CompletionPercentage", () => {
       };
 
       renderWithMocks(
-        <CompletionPercentage {...propsWithDifferentThresholds} />
+        <CompletionPercentage {...propsWithDifferentThresholds} />,
       );
 
       // Wait for loading to complete

@@ -23,7 +23,7 @@ describe("NewPersona", () => {
       expect(screen.getByTestId("persona-component")).toBeInTheDocument();
       expect(screen.getByTestId("persona-component")).toHaveAttribute(
         "data-mode",
-        "create"
+        "create",
       );
     });
 

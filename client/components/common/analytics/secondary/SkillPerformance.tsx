@@ -106,7 +106,7 @@ export default function SkillPerformance({
     queryKey: ["feedbacks", grades?.map((g) => g.id) || []],
     queryFn: () =>
       getSimulationChatFeedbacksBySimulationChatGrades(
-        grades?.map((g) => g.id) || []
+        grades?.map((g) => g.id) || [],
       ),
     enabled: !!grades && grades.length > 0,
   });
@@ -126,14 +126,14 @@ export default function SkillPerformance({
     // If profileId is provided, filter to cohorts that contain this profile
     if (profileId) {
       availableCohorts = availableCohorts.filter((cohort) =>
-        cohort.profileIds.includes(profileId)
+        cohort.profileIds.includes(profileId),
       );
     }
 
     // If cohortIds are provided, filter to only those cohorts
     if (cohortIds && cohortIds.length > 0) {
       availableCohorts = availableCohorts.filter((cohort) =>
-        cohortIds.includes(cohort.id)
+        cohortIds.includes(cohort.id),
       );
     }
 
@@ -211,7 +211,7 @@ export default function SkillPerformance({
             if (profile) {
               // Check if this profile belongs to any of the filtered cohorts
               cohortMatch = filteredCohorts.some((cohort) =>
-                cohort.profileIds.includes(profile.id)
+                cohort.profileIds.includes(profile.id),
               );
             } else {
               cohortMatch = false;
@@ -232,8 +232,8 @@ export default function SkillPerformance({
     // Filter feedbacks to only include those from filtered grades
     const filteredFeedbacks = feedbacks.filter((feedback) =>
       filteredGrades.some(
-        (grade) => grade.id === feedback.simulationChatGradeId
-      )
+        (grade) => grade.id === feedback.simulationChatGradeId,
+      ),
     );
 
     // Calculate skill-based scores from feedbacks and standards
@@ -241,12 +241,14 @@ export default function SkillPerformance({
       (acc, group) => {
         // Find all standards that belong to this standard group
         const groupStandards = standards.filter(
-          (s) => s.standardGroupId === group.id
+          (s) => s.standardGroupId === group.id,
         );
 
         // Find all feedbacks that correspond to standards in this group
         const groupFeedbacks = filteredFeedbacks.filter((feedback) =>
-          groupStandards.some((standard) => standard.id === feedback.standardId)
+          groupStandards.some(
+            (standard) => standard.id === feedback.standardId,
+          ),
         );
 
         if (groupFeedbacks.length > 0) {
@@ -268,7 +270,7 @@ export default function SkillPerformance({
             // Sum up all feedback totals for this user in this standard group
             const userTotalPoints = userFeedbacks.reduce(
               (sum, feedback) => sum + feedback.total,
-              0
+              0,
             );
 
             // Calculate user's percentage for this standard group
@@ -283,7 +285,7 @@ export default function SkillPerformance({
             userPerformances.length > 0
               ? Math.round(
                   userPerformances.reduce((sum, perf) => sum + perf, 0) /
-                    userPerformances.length
+                    userPerformances.length,
                 )
               : 0;
 
@@ -295,7 +297,7 @@ export default function SkillPerformance({
 
         return acc;
       },
-      {} as Record<string, number>
+      {} as Record<string, number>,
     );
 
     // Create metrics based on standard groups using shortName

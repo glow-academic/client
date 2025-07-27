@@ -35,7 +35,7 @@ export function isSimulationTimedOut(timeData: SimulationTimeData): boolean {
  * @returns true if the simulation is still within time limit, false if timed out or no time limit
  */
 export function isSimulationWithinTimeLimit(
-  timeData: SimulationTimeData
+  timeData: SimulationTimeData,
 ): boolean {
   const { attemptCreatedAt, simulationTimeLimit } = timeData;
 

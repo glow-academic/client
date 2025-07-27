@@ -56,7 +56,7 @@ describe("RubricHeatmap", () => {
       // Wait for component to load
       await waitFor(() => {
         expect(
-          screen.getByText("Skill Area Correlation Matrix")
+          screen.getByText("Skill Area Correlation Matrix"),
         ).toBeInTheDocument();
       });
     });
@@ -68,13 +68,13 @@ describe("RubricHeatmap", () => {
       // Wait for component to load
       await waitFor(() => {
         expect(
-          screen.getByText("Skill Area Correlation Matrix")
+          screen.getByText("Skill Area Correlation Matrix"),
         ).toBeInTheDocument();
       });
 
       // Should display the component title
       expect(
-        screen.getByText("Skill Area Correlation Matrix")
+        screen.getByText("Skill Area Correlation Matrix"),
       ).toBeInTheDocument();
     });
 
@@ -85,13 +85,13 @@ describe("RubricHeatmap", () => {
       // Wait for component to load
       await waitFor(() => {
         expect(
-          screen.getByText("Skill Area Correlation Matrix")
+          screen.getByText("Skill Area Correlation Matrix"),
         ).toBeInTheDocument();
       });
 
       // Should have proper structure
       expect(
-        screen.getByText("Skill Area Correlation Matrix")
+        screen.getByText("Skill Area Correlation Matrix"),
       ).toBeInTheDocument();
     });
   });
@@ -106,13 +106,13 @@ describe("RubricHeatmap", () => {
       // Wait for component to load
       await waitFor(() => {
         expect(
-          screen.getByText("Skill Area Correlation Matrix")
+          screen.getByText("Skill Area Correlation Matrix"),
         ).toBeInTheDocument();
       });
 
       // Should handle errors gracefully
       expect(
-        screen.getByText("Skill Area Correlation Matrix")
+        screen.getByText("Skill Area Correlation Matrix"),
       ).toBeInTheDocument();
     });
 
@@ -123,13 +123,13 @@ describe("RubricHeatmap", () => {
       // Wait for component to load
       await waitFor(() => {
         expect(
-          screen.getByText("Skill Area Correlation Matrix")
+          screen.getByText("Skill Area Correlation Matrix"),
         ).toBeInTheDocument();
       });
 
       // Should handle loading states
       expect(
-        screen.getByText("Skill Area Correlation Matrix")
+        screen.getByText("Skill Area Correlation Matrix"),
       ).toBeInTheDocument();
     });
   });
@@ -148,13 +148,13 @@ describe("RubricHeatmap", () => {
       // Wait for component to load
       await waitFor(() => {
         expect(
-          screen.getByText("Skill Area Correlation Matrix")
+          screen.getByText("Skill Area Correlation Matrix"),
         ).toBeInTheDocument();
       });
 
       // Should handle different date ranges
       expect(
-        screen.getByText("Skill Area Correlation Matrix")
+        screen.getByText("Skill Area Correlation Matrix"),
       ).toBeInTheDocument();
     });
 
@@ -170,13 +170,13 @@ describe("RubricHeatmap", () => {
       // Wait for component to load
       await waitFor(() => {
         expect(
-          screen.getByText("Skill Area Correlation Matrix")
+          screen.getByText("Skill Area Correlation Matrix"),
         ).toBeInTheDocument();
       });
 
       // Should handle missing profileId
       expect(
-        screen.getByText("Skill Area Correlation Matrix")
+        screen.getByText("Skill Area Correlation Matrix"),
       ).toBeInTheDocument();
     });
   });

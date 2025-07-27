@@ -23,7 +23,7 @@ describe("Card", () => {
           </CardHeader>
           <CardContent>Test Content</CardContent>
           <CardFooter>Test Footer</CardFooter>
-        </Card>
+        </Card>,
       );
 
       expect(screen.getByText("Test Card")).toBeInTheDocument();
@@ -39,7 +39,7 @@ describe("Card", () => {
             <CardTitle>Accessible Card</CardTitle>
           </CardHeader>
           <CardContent>Content</CardContent>
-        </Card>
+        </Card>,
       );
 
       const title = screen.getByText("Accessible Card");
@@ -57,7 +57,7 @@ describe("Card", () => {
           </CardHeader>
           <CardContent>Main Content</CardContent>
           <CardFooter>Footer Content</CardFooter>
-        </Card>
+        </Card>,
       );
 
       expect(screen.getByText("Full Card")).toBeInTheDocument();
@@ -70,7 +70,7 @@ describe("Card", () => {
       renderWithMocks(
         <Card>
           <CardContent>Minimal Content</CardContent>
-        </Card>
+        </Card>,
       );
 
       expect(screen.getByText("Minimal Content")).toBeInTheDocument();

@@ -53,7 +53,7 @@ describe("ScenarioAttributePicker", () => {
       };
 
       renderWithMocks(
-        <ScenarioAttributePicker {...propsWithDifferentAttribute} />
+        <ScenarioAttributePicker {...propsWithDifferentAttribute} />,
       );
 
       // Wait for component to load
@@ -69,7 +69,7 @@ describe("ScenarioAttributePicker", () => {
       };
 
       renderWithMocks(
-        <ScenarioAttributePicker {...propsWithDifferentAttribute} />
+        <ScenarioAttributePicker {...propsWithDifferentAttribute} />,
       );
 
       // Wait for component to load

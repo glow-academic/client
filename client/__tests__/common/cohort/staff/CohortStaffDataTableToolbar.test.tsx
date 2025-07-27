@@ -96,7 +96,7 @@ describe("CohortStaffDataTableToolbar", () => {
         <CohortStaffDataTableToolbar
           table={createMockTable()}
           roleOptions={[]}
-        />
+        />,
       );
 
       // Component should handle missing props

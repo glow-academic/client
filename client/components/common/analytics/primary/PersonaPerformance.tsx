@@ -73,7 +73,7 @@ export default function PersonaPerformance({
   thresholds,
 }: PersonaPerformanceProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
-    []
+    [],
   );
 
   // Fetch data
@@ -136,7 +136,8 @@ export default function PersonaPerformance({
     return (profileId: string) => {
       return cohorts.some(
         (cohort) =>
-          cohort.profileIds.includes(profileId) && cohortIds.includes(cohort.id)
+          cohort.profileIds.includes(profileId) &&
+          cohortIds.includes(cohort.id),
       );
     };
   }, [cohortIds, cohorts]);
@@ -150,7 +151,7 @@ export default function PersonaPerformance({
       return cohorts.some(
         (cohort) =>
           cohort.simulationIds.includes(simulationId) &&
-          cohortIds.includes(cohort.id)
+          cohortIds.includes(cohort.id),
       );
     };
   }, [cohortIds, cohorts]);
@@ -168,7 +169,7 @@ export default function PersonaPerformance({
     // Then filter by selection
     if (selectedSimulations.length === 0) return filtered;
     return filtered.filter((s) =>
-      selectedSimulations.some((ss) => ss.id === s.id)
+      selectedSimulations.some((ss) => ss.id === s.id),
     );
   }, [simulations, selectedSimulations, cohortIds, isSimulationInCohorts]);
 
@@ -205,7 +206,7 @@ export default function PersonaPerformance({
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = filteredSimulations.find(
-        (s) => s.id === attempt?.simulationId
+        (s) => s.id === attempt?.simulationId,
       );
 
       // Check date range
@@ -246,13 +247,13 @@ export default function PersonaPerformance({
       .filter((persona) => persona.name)
       .map((persona) => {
         const personaScenarios = scenarios.filter(
-          (s) => s.personaId === persona.id
+          (s) => s.personaId === persona.id,
         );
         const personaChats = chats.filter((chat) =>
-          personaScenarios.some((scenario) => scenario.id === chat.scenarioId)
+          personaScenarios.some((scenario) => scenario.id === chat.scenarioId),
         );
         const personaGrades = filteredGrades.filter((grade) =>
-          personaChats.some((chat) => chat.id === grade.simulationChatId)
+          personaChats.some((chat) => chat.id === grade.simulationChatId),
         );
 
         // Calculate average score
@@ -262,12 +263,12 @@ export default function PersonaPerformance({
             const chat = chats.find((c) => c.id === grade.simulationChatId);
             const attempt = attempts.find((a) => a.id === chat?.attemptId);
             const simulation = simulations.find(
-              (s) => s.id === attempt?.simulationId
+              (s) => s.id === attempt?.simulationId,
             );
             const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
             const rubricTotalPoints = rubric?.points || 100;
             const scorePercent = Math.round(
-              (grade.score / rubricTotalPoints) * 100
+              (grade.score / rubricTotalPoints) * 100,
             );
             return sum + scorePercent;
           }, 0);
@@ -280,12 +281,12 @@ export default function PersonaPerformance({
             const chat = chats.find((c) => c.id === grade.simulationChatId);
             const attempt = attempts.find((a) => a.id === chat?.attemptId);
             const simulation = simulations.find(
-              (s) => s.id === attempt?.simulationId
+              (s) => s.id === attempt?.simulationId,
             );
             const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
             const rubricTotalPoints = rubric?.points || 100;
             const scorePercent = Math.round(
-              (grade.score / rubricTotalPoints) * 100
+              (grade.score / rubricTotalPoints) * 100,
             );
 
             return {
@@ -547,7 +548,7 @@ export default function PersonaPerformance({
                   <div
                     className={cn(
                       "flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors",
-                      getBackgroundColor(persona.score)
+                      getBackgroundColor(persona.score),
                     )}
                   >
                     <div className="flex items-center gap-3">

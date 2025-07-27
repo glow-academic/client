@@ -31,7 +31,7 @@ describe("AlertDialog", () => {
               <AlertDialogAction>Continue</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
-        </AlertDialog>
+        </AlertDialog>,
       );
 
       expect(screen.getByText("Open Dialog")).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe("AlertDialog", () => {
               <AlertDialogAction>Continue</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
-        </AlertDialog>
+        </AlertDialog>,
       );
 
       // Check that trigger button is accessible
@@ -75,13 +75,13 @@ describe("AlertDialog", () => {
               <AlertDialogAction>Continue</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
-        </AlertDialog>
+        </AlertDialog>,
       );
 
       // Only the trigger should be visible when dialog is closed
       expect(screen.getByText("Open Dialog")).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: "Open Dialog" })
+        screen.getByRole("button", { name: "Open Dialog" }),
       ).toBeInTheDocument();
     });
   });
@@ -97,7 +97,7 @@ describe("AlertDialog", () => {
               <AlertDialogTitle>Minimal</AlertDialogTitle>
             </AlertDialogHeader>
           </AlertDialogContent>
-        </AlertDialog>
+        </AlertDialog>,
       );
 
       expect(screen.getByText("Open")).toBeInTheDocument();

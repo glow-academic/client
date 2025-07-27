@@ -101,7 +101,7 @@ describe("DocumentsDataTable", () => {
 
       // Check that the toolbar is rendered
       expect(
-        screen.getByTestId("documents-data-table-toolbar")
+        screen.getByTestId("documents-data-table-toolbar"),
       ).toBeInTheDocument();
 
       // Check that the pagination is rendered
@@ -113,7 +113,7 @@ describe("DocumentsDataTable", () => {
 
       // Check that the toolbar is rendered
       expect(
-        screen.getByTestId("documents-data-table-toolbar")
+        screen.getByTestId("documents-data-table-toolbar"),
       ).toBeInTheDocument();
 
       // Check that the pagination is rendered
@@ -141,7 +141,7 @@ describe("DocumentsDataTable", () => {
 
       // Check that the toolbar is accessible
       expect(
-        screen.getByTestId("documents-data-table-toolbar")
+        screen.getByTestId("documents-data-table-toolbar"),
       ).toBeInTheDocument();
 
       // Check that the pagination is accessible
@@ -157,7 +157,7 @@ describe("DocumentsDataTable", () => {
         <DocumentsDataTable
           {...defaultProps}
           onViewModeChange={onViewModeChange}
-        />
+        />,
       );
 
       // The view mode change is handled by the toolbar component
@@ -174,7 +174,7 @@ describe("DocumentsDataTable", () => {
           {...defaultProps}
           onEdit={onEdit}
           onDelete={onDelete}
-        />
+        />,
       );
 
       // The edit and delete actions are handled by the table actions column
@@ -194,7 +194,7 @@ describe("DocumentsDataTable", () => {
           viewMode="list"
           onDocumentSelect={onDocumentSelect}
           onSelectAll={onSelectAll}
-        />
+        />,
       );
 
       // Find and click the select all checkbox
@@ -245,7 +245,7 @@ describe("DocumentsDataTable", () => {
 
       // Component should still render
       expect(
-        screen.getByTestId("documents-data-table-toolbar")
+        screen.getByTestId("documents-data-table-toolbar"),
       ).toBeInTheDocument();
     });
 
@@ -257,7 +257,7 @@ describe("DocumentsDataTable", () => {
           {...defaultProps}
           canDelete={canDelete}
           viewMode="list"
-        />
+        />,
       );
 
       // The delete buttons should not be rendered for documents that cannot be deleted

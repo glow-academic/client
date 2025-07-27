@@ -53,7 +53,7 @@ describe("DatePickerWithRange", () => {
         <DatePickerWithRange
           dateRange={dateRange}
           setDateRange={setDateRange}
-        />
+        />,
       );
 
       // Should display a date range

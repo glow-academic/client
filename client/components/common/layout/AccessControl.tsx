@@ -96,7 +96,7 @@ interface AccessDeniedCardProps {
 function AccessDeniedCard({ role, pathname }: AccessDeniedCardProps) {
   const router = useRouter();
   const redirectPath = getRedirectPathForRole(
-    role as "guest" | "ta" | "instructional" | "admin" | "superadmin"
+    role as "guest" | "ta" | "instructional" | "admin" | "superadmin",
   );
 
   const handleRedirect = () => {

@@ -57,7 +57,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
       description: "",
       active: "true",
     }),
-    []
+    [],
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -89,7 +89,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
 
   const handleInputChange = (
     field: keyof ModelType,
-    value: string | boolean | undefined
+    value: string | boolean | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -153,12 +153,12 @@ export default function Model({ modelId, providerId }: ModelProps) {
       toast.success(
         isEditMode && modelId
           ? "Model updated successfully!"
-          : "Model created successfully!"
+          : "Model created successfully!",
       );
       router.push(`/management/providers`);
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode && modelId ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode && modelId ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsSubmitting(false);

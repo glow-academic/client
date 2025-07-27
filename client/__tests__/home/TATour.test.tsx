@@ -170,7 +170,7 @@ describe("TATour", () => {
 
     // Trigger step 2 action via custom event (simulating Next button click)
     window.dispatchEvent(
-      new CustomEvent("tourAction", { detail: { stepIndex: 2 } })
+      new CustomEvent("tourAction", { detail: { stepIndex: 2 } }),
     );
 
     // Should trigger simulation card click after timeout

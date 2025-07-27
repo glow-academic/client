@@ -63,7 +63,7 @@ export default function ScenarioAttributePicker({
   onAttributeChange,
 }: ScenarioAttributePickerProps) {
   const selectedOption = attributeOptions.find(
-    (option) => option.value === selectedAttribute
+    (option) => option.value === selectedAttribute,
   );
 
   return (

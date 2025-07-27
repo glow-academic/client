@@ -78,6 +78,9 @@ const mockScenarios: Scenario[] = [
     name: "Test Scenario 1",
     description: "Test scenario description 1",
     parameterItemIds: [],
+    documentIds: [],
+    personaId: null,
+    parentId: null,
     defaultScenario: true,
     practiceScenario: false,
     generated: true,
@@ -122,7 +125,7 @@ describe("PersonasDataTable", () => {
 
       // Check that the toolbar is rendered
       expect(
-        screen.getByTestId("personas-data-table-toolbar")
+        screen.getByTestId("personas-data-table-toolbar"),
       ).toBeInTheDocument();
 
       // Check that the pagination is rendered
@@ -134,7 +137,7 @@ describe("PersonasDataTable", () => {
 
       // Check that the toolbar is rendered
       expect(
-        screen.getByTestId("personas-data-table-toolbar")
+        screen.getByTestId("personas-data-table-toolbar"),
       ).toBeInTheDocument();
 
       // Check that the pagination is rendered
@@ -154,7 +157,7 @@ describe("PersonasDataTable", () => {
 
       // Check that the toolbar is accessible
       expect(
-        screen.getByTestId("personas-data-table-toolbar")
+        screen.getByTestId("personas-data-table-toolbar"),
       ).toBeInTheDocument();
 
       // Check that the pagination is accessible
@@ -169,7 +172,7 @@ describe("PersonasDataTable", () => {
       // The component uses internal state for table management
       // We can verify that the component renders correctly
       expect(
-        screen.getByTestId("personas-data-table-toolbar")
+        screen.getByTestId("personas-data-table-toolbar"),
       ).toBeInTheDocument();
     });
 
@@ -179,7 +182,7 @@ describe("PersonasDataTable", () => {
       // The component handles user interactions through the toolbar
       // which is mocked, so we just verify the component renders
       expect(
-        screen.getByTestId("personas-data-table-toolbar")
+        screen.getByTestId("personas-data-table-toolbar"),
       ).toBeInTheDocument();
     });
   });
@@ -196,7 +199,7 @@ describe("PersonasDataTable", () => {
 
       // Should show no results message
       expect(
-        screen.getByText("No personas match the current filters.")
+        screen.getByText("No personas match the current filters."),
       ).toBeInTheDocument();
     });
 
@@ -217,7 +220,7 @@ describe("PersonasDataTable", () => {
 
       // Component should still render
       expect(
-        screen.getByTestId("personas-data-table-toolbar")
+        screen.getByTestId("personas-data-table-toolbar"),
       ).toBeInTheDocument();
     });
 

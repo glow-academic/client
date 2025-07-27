@@ -76,7 +76,7 @@ describe("DocumentSelect", () => {
 
       // Test button interactions
       const combobox = document.querySelector(
-        '[role="combobox"]'
+        '[role="combobox"]',
       ) as HTMLElement;
       expect(combobox).toBeInTheDocument();
 
@@ -93,13 +93,13 @@ describe("DocumentSelect", () => {
 
       // Test document selection
       const combobox = document.querySelector(
-        '[role="combobox"]'
+        '[role="combobox"]',
       ) as HTMLElement;
       await user.click(combobox);
 
       // Find and click on a document option
       const documentOption = document.querySelector(
-        '[data-value="Test Document 1"]'
+        '[data-value="Test Document 1"]',
       );
       if (documentOption) {
         await user.click(documentOption);
@@ -122,7 +122,7 @@ describe("DocumentSelect", () => {
           documents={[]}
           selectedDocumentId={null}
           onDocumentSelect={vi.fn()}
-        />
+        />,
       );
 
       // Component should handle empty documents array

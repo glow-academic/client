@@ -60,7 +60,7 @@ describe("LogsDataTableToolbar", () => {
 
       // Check that the search input is rendered with correct placeholder
       expect(
-        screen.getByPlaceholderText("Search messages...")
+        screen.getByPlaceholderText("Search messages..."),
       ).toBeInTheDocument();
     });
 
@@ -86,7 +86,7 @@ describe("LogsDataTableToolbar", () => {
       // Find the refresh button by looking for the button with refresh icon
       const buttons = screen.getAllByRole("button");
       const refreshButton = buttons.find((button) =>
-        button.querySelector('svg[class*="refresh-cw"]')
+        button.querySelector('svg[class*="refresh-cw"]'),
       );
       expect(refreshButton).toBeDefined();
       await user.click(refreshButton!);
@@ -96,13 +96,13 @@ describe("LogsDataTableToolbar", () => {
 
     it("should disable refresh button when refreshing", () => {
       renderWithMocks(
-        <LogsDataTableToolbar {...mockProps} isRefreshing={true} />
+        <LogsDataTableToolbar {...mockProps} isRefreshing={true} />,
       );
 
       // Find the refresh button by looking for the button with refresh icon
       const buttons = screen.getAllByRole("button");
       const refreshButton = buttons.find((button) =>
-        button.querySelector('svg[class*="refresh-cw"]')
+        button.querySelector('svg[class*="refresh-cw"]'),
       );
       expect(refreshButton).toBeDefined();
       expect(refreshButton).toBeDisabled();

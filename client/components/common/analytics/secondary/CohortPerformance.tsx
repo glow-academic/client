@@ -67,7 +67,7 @@ export default function CohortPerformance({
 }: CohortPerformanceProps) {
   const [selectedCohort, setSelectedCohort] = useState<string | null>(null);
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
-    []
+    [],
   );
 
   // Fetch data
@@ -85,14 +85,14 @@ export default function CohortPerformance({
     // If profileId is provided, filter to cohorts that contain this profile
     if (profileId) {
       availableCohorts = availableCohorts.filter((cohort) =>
-        cohort.profileIds.includes(profileId)
+        cohort.profileIds.includes(profileId),
       );
     }
 
     // If cohortIds are provided, filter to only those cohorts
     if (cohortIds && cohortIds.length > 0) {
       availableCohorts = availableCohorts.filter((cohort) =>
-        cohortIds.includes(cohort.id)
+        cohortIds.includes(cohort.id),
       );
     }
 
@@ -145,7 +145,7 @@ export default function CohortPerformance({
     if (!simulations) return [];
     if (selectedSimulations.length === 0) return simulations;
     return simulations.filter((s) =>
-      selectedSimulations.some((ss) => ss.id === s.id)
+      selectedSimulations.some((ss) => ss.id === s.id),
     );
   }, [simulations, selectedSimulations]);
 
@@ -195,7 +195,7 @@ export default function CohortPerformance({
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = filteredSimulations.find(
-        (s) => s.id === attempt?.simulationId
+        (s) => s.id === attempt?.simulationId,
       );
       const profile = profiles?.find((p) => p.id === attempt?.profileId);
 
@@ -265,14 +265,14 @@ export default function CohortPerformance({
       const profile = profiles?.find((p) => p.id === attempt?.profileId);
       const rubric = rubrics?.find((r) => r.id === grade.rubricId);
       const simulation = filteredSimulations.find(
-        (s) => s.id === attempt?.simulationId
+        (s) => s.id === attempt?.simulationId,
       );
 
       if (!profile || !rubric || !simulation) return;
 
       // Find which cohort this profile belongs to
       const cohort = filteredCohorts.find((c) =>
-        c.profileIds.includes(profile.id)
+        c.profileIds.includes(profile.id),
       );
 
       if (cohort) {
@@ -320,7 +320,7 @@ export default function CohortPerformance({
 
         // Check if student has passed all relevant simulations
         const hasPassedAll = simulationsToCheck.every((simId) =>
-          studentPassedSimulations.has(simId)
+          studentPassedSimulations.has(simId),
         );
 
         if (hasPassedAll) {
@@ -336,7 +336,7 @@ export default function CohortPerformance({
         const passRate =
           data.totalStudents.size > 0
             ? Math.round(
-                (data.passedStudents.size / data.totalStudents.size) * 100
+                (data.passedStudents.size / data.totalStudents.size) * 100,
               )
             : 0;
 
@@ -347,7 +347,7 @@ export default function CohortPerformance({
                 (data.totalScores.reduce((sum, score) => sum + score, 0) /
                   data.totalScores.length /
                   data.rubricPoints) *
-                  100
+                  100,
               )
             : 0;
 
@@ -422,7 +422,7 @@ export default function CohortPerformance({
 
     // Get profiles in this cohort
     const cohortProfiles = profiles.filter(
-      (p) => cohort.profileIds.includes(p.id) && p.role === "ta"
+      (p) => cohort.profileIds.includes(p.id) && p.role === "ta",
     );
 
     // Filter grades for this cohort in date range
@@ -431,7 +431,7 @@ export default function CohortPerformance({
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = filteredSimulations.find(
-        (s) => s.id === attempt?.simulationId
+        (s) => s.id === attempt?.simulationId,
       );
       const profile = profiles?.find((p) => p.id === attempt?.profileId);
 
@@ -521,14 +521,14 @@ export default function CohortPerformance({
                 (data.scores.reduce((sum, score) => sum + score, 0) /
                   data.scores.length /
                   data.rubricPoints) *
-                  100
+                  100,
               )
             : 0;
 
         const passRate =
           data.totalStudents.size > 0
             ? Math.round(
-                (data.passedStudents.size / data.totalStudents.size) * 100
+                (data.passedStudents.size / data.totalStudents.size) * 100,
               )
             : 0;
 
@@ -781,7 +781,7 @@ export default function CohortPerformance({
                           {selectedSimulations.length !== 1 ? "zes" : ""} with a{" "}
                           {Math.round(
                             (cohort.rubricPassPoints / cohort.rubricPoints) *
-                              100
+                              100,
                           )}
                           % or better
                         </p>

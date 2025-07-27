@@ -7,7 +7,10 @@ import { logError } from "@/utils/logger";
 
 export async function getAssistantToolCall(id: string) {
   try {
-    const result = await db.select().from(assistantToolCalls).where(eq(assistantToolCalls.id, id));
+    const result = await db
+      .select()
+      .from(assistantToolCalls)
+      .where(eq(assistantToolCalls.id, id));
     return result[0] || null;
   } catch (error) {
     logError("Error fetching assistantToolCall:", error);

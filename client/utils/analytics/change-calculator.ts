@@ -18,7 +18,7 @@ export interface ChangeData {
 export function calculateChange(
   currentData: number,
   historicalData: number,
-  interval: string
+  interval: string,
 ): ChangeData {
   if (historicalData === 0) {
     return {
@@ -77,12 +77,12 @@ export function formatChangeText(change: ChangeData): string {
 
 export function getSignificantChange(
   currentValue: number,
-  historicalValues: { value: number; interval: string }[]
+  historicalValues: { value: number; interval: string }[],
 ): ChangeData | null {
   // Find the most significant positive change (at least 5%)
   const significantChanges = historicalValues
     .map(({ value, interval }) =>
-      calculateChange(currentValue, value, interval)
+      calculateChange(currentValue, value, interval),
     )
     .filter((change) => change.percentage >= 5) // Only positive changes of 5% or more
     .sort((a, b) => b.percentage - a.percentage); // Sort by highest percentage first

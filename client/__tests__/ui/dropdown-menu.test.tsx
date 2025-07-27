@@ -24,7 +24,7 @@ describe("DropdownMenu", () => {
             <DropdownMenuSeparator />
             <DropdownMenuItem>Item 2</DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu>,
       );
 
       expect(screen.getByText("Open Menu")).toBeInTheDocument();
@@ -37,7 +37,7 @@ describe("DropdownMenu", () => {
           <DropdownMenuContent>
             <DropdownMenuItem>Accessible Item</DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu>,
       );
 
       const trigger = screen.getByRole("button", { name: "Open Menu" });
@@ -57,7 +57,7 @@ describe("DropdownMenu", () => {
             <DropdownMenuSeparator />
             <DropdownMenuItem>Option 3</DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu>,
       );
 
       // Only the trigger should be visible when dropdown is closed
@@ -74,7 +74,7 @@ describe("DropdownMenu", () => {
           <DropdownMenuContent>
             <DropdownMenuItem>Single Item</DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu>,
       );
 
       expect(screen.getByText("Open")).toBeInTheDocument();

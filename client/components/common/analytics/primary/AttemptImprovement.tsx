@@ -59,7 +59,7 @@ export default function AttemptImprovement({
   thresholds,
 }: AttemptImprovementProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
-    []
+    [],
   );
 
   // Fetch data
@@ -112,7 +112,8 @@ export default function AttemptImprovement({
     return (profileId: string) => {
       return cohorts.some(
         (cohort) =>
-          cohort.profileIds.includes(profileId) && cohortIds.includes(cohort.id)
+          cohort.profileIds.includes(profileId) &&
+          cohortIds.includes(cohort.id),
       );
     };
   }, [cohortIds, cohorts]);
@@ -126,7 +127,7 @@ export default function AttemptImprovement({
       return cohorts.some(
         (cohort) =>
           cohort.simulationIds.includes(simulationId) &&
-          cohortIds.includes(cohort.id)
+          cohortIds.includes(cohort.id),
       );
     };
   }, [cohortIds, cohorts]);
@@ -144,7 +145,7 @@ export default function AttemptImprovement({
     // Then filter by selection
     if (selectedSimulations.length === 0) return filtered;
     return filtered.filter((s) =>
-      selectedSimulations.some((ss) => ss.id === s.id)
+      selectedSimulations.some((ss) => ss.id === s.id),
     );
   }, [simulations, selectedSimulations, cohortIds, isSimulationInCohorts]);
 
@@ -208,7 +209,7 @@ export default function AttemptImprovement({
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = filteredSimulations.find(
-        (s) => s.id === attempt?.simulationId
+        (s) => s.id === attempt?.simulationId,
       );
       const profile = profiles?.find((p) => p.id === attempt?.profileId);
 
@@ -271,7 +272,7 @@ export default function AttemptImprovement({
       if (!chat || !grade) return;
 
       const simulation = filteredSimulations.find(
-        (s) => s.id === attempt.simulationId
+        (s) => s.id === attempt.simulationId,
       );
       if (!simulation) return;
 
@@ -318,7 +319,7 @@ export default function AttemptImprovement({
     // Calculate average metrics by attempt number
     const maxAttempts = Math.min(
       Math.max(...multiAttemptSimulations.map((sim) => sim.attempts.length)),
-      5 // Limit to 5 attempts for clean visualization
+      5, // Limit to 5 attempts for clean visualization
     );
 
     const attemptMetrics = new Map<
@@ -362,15 +363,15 @@ export default function AttemptImprovement({
       .map((metrics) => {
         const avgScore = Math.round(
           metrics.scores.reduce((sum, score) => sum + score, 0) /
-            metrics.scores.length
+            metrics.scores.length,
         );
         const avgTime = Math.round(
           metrics.times.reduce((sum, time) => sum + time, 0) /
-            metrics.times.length
+            metrics.times.length,
         );
         const avgPassRate = Math.round(
           metrics.passRates.reduce((sum, rate) => sum + rate, 0) /
-            metrics.passRates.length
+            metrics.passRates.length,
         );
 
         return {

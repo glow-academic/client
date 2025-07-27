@@ -38,10 +38,10 @@ export default function Home() {
   const [selectedCohorts, setSelectedCohorts] = useState<Cohort[]>([]);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [loadingSimulation, setLoadingSimulation] = useState<string | null>(
-    null
+    null,
   );
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
-    null
+    null,
   );
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
@@ -127,12 +127,12 @@ export default function Home() {
     return activeCohorts.map((cohort) => {
       // Get simulations for this cohort
       const cohortSimulations = allSimulations.filter((sim) =>
-        cohort.simulationIds?.includes(sim.id)
+        cohort.simulationIds?.includes(sim.id),
       );
 
       // Get the profiles of members in this cohort
       const cohortMembers = allProfiles.filter((p) =>
-        cohort.profileIds?.includes(p.id)
+        cohort.profileIds?.includes(p.id),
       );
 
       // Calculate completion status
@@ -144,15 +144,15 @@ export default function Home() {
           (att) =>
             att.profileId &&
             cohort.profileIds?.includes(att.profileId) &&
-            cohortSimulations.some((sim) => sim.id === att.simulationId)
+            cohortSimulations.some((sim) => sim.id === att.simulationId),
         );
 
         const cohortAttemptIds = cohortAttempts.map((att) => att.id);
         const cohortChats = allChats?.filter((c) =>
-          cohortAttemptIds.includes(c.attemptId)
+          cohortAttemptIds.includes(c.attemptId),
         );
         const cohortGrades = allGrades.filter((g) =>
-          cohortChats?.some((c) => c.id === g.simulationChatId)
+          cohortChats?.some((c) => c.id === g.simulationChatId),
         );
 
         const passedCount = cohortGrades.filter((g) => g.passed).length || 0;
@@ -168,15 +168,15 @@ export default function Home() {
           const taAttempts = allAttempts.filter(
             (att) =>
               att.profileId === effectiveProfile.id! &&
-              cohortSimulations.some((sim) => sim.id === att.simulationId)
+              cohortSimulations.some((sim) => sim.id === att.simulationId),
           );
 
           const taAttemptIds = taAttempts.map((att) => att.id);
           const taChats = allChats?.filter((c) =>
-            taAttemptIds.includes(c.attemptId)
+            taAttemptIds.includes(c.attemptId),
           );
           const taGrades = allGrades.filter((g) =>
-            taChats?.some((c) => c.id === g.simulationChatId)
+            taChats?.some((c) => c.id === g.simulationChatId),
           );
 
           const passedCount = taGrades.filter((g) => g.passed).length || 0;
@@ -280,7 +280,7 @@ export default function Home() {
 
     // Filter profiles to only include those in the cohort
     const filteredProfiles = allProfiles.filter((profile) =>
-      allCohortProfileIds.has(profile.id)
+      allCohortProfileIds.has(profile.id),
     );
 
     return filteredProfiles;
@@ -296,7 +296,7 @@ export default function Home() {
     });
 
     return allAttempts.filter(
-      (attempt) => attempt.profileId && cohortProfileIds.has(attempt.profileId)
+      (attempt) => attempt.profileId && cohortProfileIds.has(attempt.profileId),
     );
   }, [allAttempts, cohorts]);
 
@@ -350,14 +350,14 @@ export default function Home() {
 
     window.addEventListener(
       "simulationStarted",
-      handleSimulationStarted as EventListener
+      handleSimulationStarted as EventListener,
     );
     window.addEventListener("simulationError", handleSimulationError);
 
     return () => {
       window.removeEventListener(
         "simulationStarted",
-        handleSimulationStarted as EventListener
+        handleSimulationStarted as EventListener,
       );
       window.removeEventListener("simulationError", handleSimulationError);
       if (timeoutRef.current) {
@@ -377,7 +377,7 @@ export default function Home() {
 
         if (!isConnected) {
           toast.error(
-            "WebSocket not connected. Please wait for connection or refresh the page."
+            "WebSocket not connected. Please wait for connection or refresh the page.",
           );
           logError("WebSocket not connected when trying to start simulation", {
             simulationId,
@@ -428,7 +428,7 @@ export default function Home() {
       isConnected,
       emitStartSimulation,
       loadingToastId,
-    ]
+    ],
   );
 
   // Note: attempts and grades can be empty/undefined when no simulations have been started yet
@@ -451,12 +451,12 @@ export default function Home() {
     return cohorts.map((cohort) => {
       // Get simulations for this specific cohort (and exclude default/practice ones)
       const cohortSimulations = allSimulations.filter((sim) =>
-        cohort.simulationIds?.includes(sim.id)
+        cohort.simulationIds?.includes(sim.id),
       );
 
       // Get the profiles of members in this cohort
       const cohortMembers = cohortProfiles.filter((p) =>
-        cohort.profileIds?.includes(p.id)
+        cohort.profileIds?.includes(p.id),
       );
 
       // For each simulation, calculate progress based on user role
@@ -467,15 +467,15 @@ export default function Home() {
             (att) =>
               att.profileId &&
               cohort.profileIds?.includes(att.profileId) &&
-              att.simulationId === simulation.id
+              att.simulationId === simulation.id,
           );
 
           const cohortAttemptIds = cohortAttempts.map((att) => att.id);
           const cohortChats = chats?.filter((c) =>
-            cohortAttemptIds.includes(c.attemptId)
+            cohortAttemptIds.includes(c.attemptId),
           );
           const cohortGrades = safeGrades.filter((g) =>
-            cohortChats?.some((c) => c.id === g.simulationChatId)
+            cohortChats?.some((c) => c.id === g.simulationChatId),
           );
 
           const passedCount = cohortGrades.filter((g) => g.passed).length || 0;
@@ -496,10 +496,10 @@ export default function Home() {
                   ?.filter((g) => g.passed)
                   .map((g) => {
                     const chat = cohortChats?.find(
-                      (c) => c.id === g.simulationChatId
+                      (c) => c.id === g.simulationChatId,
                     );
                     const attempt = cohortAttempts.find(
-                      (a) => a.id === chat?.attemptId
+                      (a) => a.id === chat?.attemptId,
                     );
                     return attempt?.profileId || "";
                   })
@@ -509,10 +509,10 @@ export default function Home() {
                   ?.filter((g) => !g.passed)
                   .map((g) => {
                     const chat = cohortChats?.find(
-                      (c) => c.id === g.simulationChatId
+                      (c) => c.id === g.simulationChatId,
                     );
                     const attempt = cohortAttempts.find(
-                      (a) => a.id === chat?.attemptId
+                      (a) => a.id === chat?.attemptId,
                     );
                     return attempt?.profileId || "";
                   })
@@ -540,7 +540,7 @@ export default function Home() {
           const taAttempts = safeAttempts.filter(
             (att) =>
               att.profileId === effectiveProfile.id! &&
-              att.simulationId === simulation.id
+              att.simulationId === simulation.id,
           );
 
           const taProgress = {
@@ -557,10 +557,10 @@ export default function Home() {
 
             // Find chats and grades related to these attempts
             const taChats = chats?.filter((c) =>
-              taAttemptIds.includes(c.attemptId)
+              taAttemptIds.includes(c.attemptId),
             );
             const taGrades = safeGrades.filter((g) =>
-              taChats?.some((c) => c.id === g.simulationChatId)
+              taChats?.some((c) => c.id === g.simulationChatId),
             );
 
             const hasPassed = taGrades.some((g) => g.passed);
@@ -629,16 +629,16 @@ export default function Home() {
           const userAttempts = safeAttempts.filter(
             (att) =>
               att.profileId === effectiveProfile.id! &&
-              att.simulationId === simulation.id
+              att.simulationId === simulation.id,
           );
 
           if (userAttempts.length > 0) {
             const userAttemptIds = userAttempts.map((att) => att.id);
             const userChats = chats?.filter((c) =>
-              userAttemptIds.includes(c.attemptId)
+              userAttemptIds.includes(c.attemptId),
             );
             const userGrades = safeGrades.filter((g) =>
-              userChats?.some((c) => c.id === g.simulationChatId)
+              userChats?.some((c) => c.id === g.simulationChatId),
             );
 
             if (userGrades.length > 0) {
@@ -647,7 +647,7 @@ export default function Home() {
               highestScore = Math.round(
                 (Math.max(...userGrades.map((g) => g.score)) /
                   rubricTotalPoints) *
-                  100
+                  100,
               );
               hasPassed = userGrades.some((g) => g.passed);
             }

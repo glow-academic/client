@@ -7,7 +7,10 @@ import { logError } from "@/utils/logger";
 
 export async function getScenario(id: string) {
   try {
-    const result = await db.select().from(scenarios).where(eq(scenarios.id, id));
+    const result = await db
+      .select()
+      .from(scenarios)
+      .where(eq(scenarios.id, id));
     return result[0] || null;
   } catch (error) {
     logError("Error fetching scenario:", error);

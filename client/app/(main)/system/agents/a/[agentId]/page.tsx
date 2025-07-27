@@ -12,7 +12,7 @@ import { use } from "react";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ agentId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { agentId } = await params;
   const agent = await getAgent(agentId);

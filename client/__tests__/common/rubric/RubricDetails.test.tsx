@@ -137,7 +137,7 @@ describe("RubricDetails", () => {
 
       // Check that edit mode is activated
       expect(
-        screen.getByRole("button", { name: "Update" })
+        screen.getByRole("button", { name: "Update" }),
       ).toBeInTheDocument();
     });
 

@@ -110,7 +110,7 @@ describe("SimulationsDataTable", () => {
 
       // Check that the component renders without crashing
       expect(
-        screen.getByPlaceholderText("Search simulations...")
+        screen.getByPlaceholderText("Search simulations..."),
       ).toBeInTheDocument();
     });
 
@@ -119,13 +119,13 @@ describe("SimulationsDataTable", () => {
 
       // Check that the toolbar renders with search input
       expect(
-        screen.getByPlaceholderText("Search simulations...")
+        screen.getByPlaceholderText("Search simulations..."),
       ).toBeInTheDocument();
 
       // Check that simulation cards are rendered
       mockSimulations.forEach((simulation) => {
         expect(
-          screen.getByTestId(`simulation-card-${simulation.id}`)
+          screen.getByTestId(`simulation-card-${simulation.id}`),
         ).toBeInTheDocument();
         expect(screen.getByText(simulation.title)).toBeInTheDocument();
       });

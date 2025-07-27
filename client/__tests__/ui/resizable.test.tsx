@@ -17,11 +17,11 @@ describe("Resizable", () => {
           <ResizablePanel>Panel 1</ResizablePanel>
           <ResizableHandle />
           <ResizablePanel>Panel 2</ResizablePanel>
-        </ResizablePanelGroup>
+        </ResizablePanelGroup>,
       );
 
       const panelGroup = document.querySelector(
-        '[data-slot="resizable-panel-group"]'
+        '[data-slot="resizable-panel-group"]',
       );
       expect(panelGroup).toBeInTheDocument();
     });
@@ -32,11 +32,11 @@ describe("Resizable", () => {
           <ResizablePanel>Accessible Panel</ResizablePanel>
           <ResizableHandle />
           <ResizablePanel>Another Panel</ResizablePanel>
-        </ResizablePanelGroup>
+        </ResizablePanelGroup>,
       );
 
       const panelGroup = document.querySelector(
-        '[data-slot="resizable-panel-group"]'
+        '[data-slot="resizable-panel-group"]',
       );
       expect(panelGroup).toBeInTheDocument();
     });
@@ -49,7 +49,7 @@ describe("Resizable", () => {
           <ResizablePanel>Left Panel</ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel>Right Panel</ResizablePanel>
-        </ResizablePanelGroup>
+        </ResizablePanelGroup>,
       );
 
       expect(screen.getByText("Left Panel")).toBeInTheDocument();
@@ -58,13 +58,13 @@ describe("Resizable", () => {
 
     it("should render with custom className", () => {
       renderWithMocks(
-        <ResizablePanelGroup className="custom-class">
+        <ResizablePanelGroup direction="horizontal" className="custom-class">
           <ResizablePanel>Panel</ResizablePanel>
-        </ResizablePanelGroup>
+        </ResizablePanelGroup>,
       );
 
       const panelGroup = document.querySelector(
-        '[data-slot="resizable-panel-group"]'
+        '[data-slot="resizable-panel-group"]',
       );
       expect(panelGroup).toHaveClass("custom-class");
     });
@@ -74,13 +74,13 @@ describe("Resizable", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal content
       renderWithMocks(
-        <ResizablePanelGroup>
+        <ResizablePanelGroup direction="horizontal">
           <ResizablePanel />
-        </ResizablePanelGroup>
+        </ResizablePanelGroup>,
       );
 
       const panelGroup = document.querySelector(
-        '[data-slot="resizable-panel-group"]'
+        '[data-slot="resizable-panel-group"]',
       );
       expect(panelGroup).toBeInTheDocument();
     });

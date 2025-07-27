@@ -128,7 +128,7 @@ describe("CohortStaffDataTable", () => {
 
     it("should handle missing or invalid props", () => {
       renderWithMocks(
-        <CohortStaffDataTable columns={[]} data={[]} roleOptions={[]} />
+        <CohortStaffDataTable columns={[]} data={[]} roleOptions={[]} />,
       );
 
       // Component should handle missing props

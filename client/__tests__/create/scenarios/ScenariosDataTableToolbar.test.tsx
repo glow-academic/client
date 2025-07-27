@@ -97,7 +97,7 @@ describe("ScenariosDataTableToolbar", () => {
 
       // Check that the search input is rendered
       expect(
-        screen.getByPlaceholderText("Search scenarios...")
+        screen.getByPlaceholderText("Search scenarios..."),
       ).toBeInTheDocument();
     });
 
@@ -106,7 +106,7 @@ describe("ScenariosDataTableToolbar", () => {
 
       // Check that the search input is rendered with correct placeholder
       expect(
-        screen.getByPlaceholderText("Search scenarios...")
+        screen.getByPlaceholderText("Search scenarios..."),
       ).toBeInTheDocument();
 
       // Check that filter buttons are rendered
@@ -149,7 +149,9 @@ describe("ScenariosDataTableToolbar", () => {
       const buttons = screen.getAllByRole("button");
       if (buttons.length > 0) {
         const firstButton = buttons[0];
-        await user.click(firstButton);
+        if (firstButton) {
+          await user.click(firstButton);
+        }
         // The interaction should not crash
         expect(firstButton).toBeInTheDocument();
       }
@@ -170,7 +172,7 @@ describe("ScenariosDataTableToolbar", () => {
 
       // Should still render without crashing
       expect(
-        screen.getByPlaceholderText("Search scenarios...")
+        screen.getByPlaceholderText("Search scenarios..."),
       ).toBeInTheDocument();
     });
 
@@ -187,7 +189,7 @@ describe("ScenariosDataTableToolbar", () => {
 
       // Should still render without crashing
       expect(
-        screen.getByPlaceholderText("Search scenarios...")
+        screen.getByPlaceholderText("Search scenarios..."),
       ).toBeInTheDocument();
     });
   });

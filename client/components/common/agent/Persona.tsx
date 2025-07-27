@@ -85,7 +85,7 @@ export default function Persona({
       color: "#000000",
       icon: "Zap",
     }),
-    []
+    [],
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -186,7 +186,7 @@ export default function Persona({
       router.push("/create/personas");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`
+        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -424,7 +424,7 @@ export default function Persona({
                                         "mr-2 h-4 w-4",
                                         formData.icon === iconName
                                           ? "opacity-100"
-                                          : "opacity-0"
+                                          : "opacity-0",
                                       )}
                                     />
                                     <IconComponent className="mr-2 h-4 w-4" />
@@ -459,7 +459,7 @@ export default function Persona({
                                     "mr-2 h-4 w-4",
                                     formData.icon === iconName
                                       ? "opacity-100"
-                                      : "opacity-0"
+                                      : "opacity-0",
                                   )}
                                 />
                                 <IconComponent className="mr-2 h-4 w-4" />

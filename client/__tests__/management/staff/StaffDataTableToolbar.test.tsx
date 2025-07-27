@@ -39,7 +39,7 @@ describe("StaffDataTableToolbar", () => {
 
       // Should render the search input
       expect(
-        screen.getByPlaceholderText("Search staff by name or alias...")
+        screen.getByPlaceholderText("Search staff by name or alias..."),
       ).toBeInTheDocument();
     });
 
@@ -57,7 +57,7 @@ describe("StaffDataTableToolbar", () => {
 
       // Should render the search input
       expect(
-        screen.getByPlaceholderText("Search staff by name or alias...")
+        screen.getByPlaceholderText("Search staff by name or alias..."),
       ).toBeInTheDocument();
     });
 
@@ -66,7 +66,7 @@ describe("StaffDataTableToolbar", () => {
 
       // Should have search input with proper accessibility
       const searchInput = screen.getByPlaceholderText(
-        "Search staff by name or alias..."
+        "Search staff by name or alias...",
       );
       expect(searchInput).toBeInTheDocument();
     });
@@ -87,7 +87,7 @@ describe("StaffDataTableToolbar", () => {
 
       // Should still render the search input
       expect(
-        screen.getByPlaceholderText("Search staff by name or alias...")
+        screen.getByPlaceholderText("Search staff by name or alias..."),
       ).toBeInTheDocument();
     });
 
@@ -112,7 +112,7 @@ describe("StaffDataTableToolbar", () => {
 
       // Should render with minimal props
       expect(
-        screen.getByPlaceholderText("Search staff by name or alias...")
+        screen.getByPlaceholderText("Search staff by name or alias..."),
       ).toBeInTheDocument();
     });
   });

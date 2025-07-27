@@ -4,7 +4,9 @@ import { db } from "@/utils/drizzle/db";
 import { assistantToolCalls } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 
-export async function createAssistantToolCall(data: typeof assistantToolCalls.$inferInsert) {
+export async function createAssistantToolCall(
+  data: typeof assistantToolCalls.$inferInsert,
+) {
   try {
     const result = await db.insert(assistantToolCalls).values(data).returning();
     return result[0];

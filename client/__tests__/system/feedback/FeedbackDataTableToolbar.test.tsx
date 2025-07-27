@@ -47,7 +47,7 @@ describe("FeedbackDataTableToolbar", () => {
 
       // Check that the search input is rendered with correct placeholder
       expect(
-        screen.getByPlaceholderText("Search feedback or author...")
+        screen.getByPlaceholderText("Search feedback or author..."),
       ).toBeInTheDocument();
     });
 
@@ -60,7 +60,7 @@ describe("FeedbackDataTableToolbar", () => {
 
       // Check that the search input has proper accessibility
       const searchInput = screen.getByPlaceholderText(
-        "Search feedback or author..."
+        "Search feedback or author...",
       );
       expect(searchInput).toBeInTheDocument();
     });
@@ -75,7 +75,7 @@ describe("FeedbackDataTableToolbar", () => {
       // Find the refresh button by looking for the button with refresh icon
       const buttons = screen.getAllByRole("button");
       const refreshButton = buttons.find((button) =>
-        button.querySelector('svg[class*="refresh-cw"]')
+        button.querySelector('svg[class*="refresh-cw"]'),
       );
       expect(refreshButton).toBeDefined();
       await user.click(refreshButton!);
@@ -85,13 +85,13 @@ describe("FeedbackDataTableToolbar", () => {
 
     it("should disable refresh button when refreshing", () => {
       renderWithMocks(
-        <FeedbackDataTableToolbar {...mockProps} isRefreshing={true} />
+        <FeedbackDataTableToolbar {...mockProps} isRefreshing={true} />,
       );
 
       // Find the refresh button by looking for the button with refresh icon
       const buttons = screen.getAllByRole("button");
       const refreshButton = buttons.find((button) =>
-        button.querySelector('svg[class*="refresh-cw"]')
+        button.querySelector('svg[class*="refresh-cw"]'),
       );
       expect(refreshButton).toBeDefined();
       expect(refreshButton).toBeDisabled();
@@ -103,7 +103,7 @@ describe("FeedbackDataTableToolbar", () => {
       renderWithMocks(<FeedbackDataTableToolbar {...mockProps} />);
 
       const searchInput = screen.getByPlaceholderText(
-        "Search feedback or author..."
+        "Search feedback or author...",
       );
       await user.type(searchInput, "test feedback");
 

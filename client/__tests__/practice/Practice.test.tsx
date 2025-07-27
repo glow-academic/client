@@ -110,7 +110,7 @@ describe("Practice", () => {
         "@/utils/queries/personas/get-all-personas"
       );
       vi.mocked(getAllPersonas).mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve([]), 100))
+        () => new Promise((resolve) => setTimeout(() => resolve([]), 100)),
       );
 
       renderWithMocks(<Practice />);
@@ -213,7 +213,7 @@ describe("Practice", () => {
               </AssistantProvider>
             </AnalyticsProvider>
           </ProfileProvider>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
       await waitFor(() => {
@@ -231,7 +231,7 @@ describe("Practice", () => {
         "@/utils/queries/simulations/get-all-simulations"
       );
       vi.mocked(getAllSimulations).mockImplementation(
-        () => new Promise(() => {}) // Never resolves
+        () => new Promise(() => {}), // Never resolves
       );
 
       renderWithMocks(<Practice />);

@@ -7,12 +7,10 @@
 "use client";
 import Model from "@/components/common/model/Model";
 
-export interface NewModelProps {  
+export interface NewModelProps {
   providerId: string;
 }
 
-export default function NewModel({
-  providerId,
-}: NewModelProps) {
+export default function NewModel({ providerId }: NewModelProps) {
   return <Model providerId={providerId} />;
 }

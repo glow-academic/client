@@ -7,7 +7,10 @@ import { logError } from "@/utils/logger";
 
 export async function getParameter(id: string) {
   try {
-    const result = await db.select().from(parameters).where(eq(parameters.id, id));
+    const result = await db
+      .select()
+      .from(parameters)
+      .where(eq(parameters.id, id));
     return result[0] || null;
   } catch (error) {
     logError("Error fetching parameter:", error);

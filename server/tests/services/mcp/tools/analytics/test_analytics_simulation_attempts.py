@@ -13,23 +13,41 @@ from sqlalchemy.exc import SQLAlchemyError
 
 
 class MockSimulation:
-    def __init__(self, id, title):
+    def __init__(self, id, title, active=True):
         self.id = id
         self.title = title
+        self.active = active
 
 
 class MockSimulationAttempt:
-    def __init__(self, id, created_at, profile_id=None):
+    def __init__(self, id, created_at, profile_id=None, simulation_id=None):
         self.id = id
         self.created_at = created_at
         self.profile_id = profile_id or uuid.uuid4()
+        self.simulation_id = simulation_id or uuid.uuid4()
 
 
 class MockProfile:
-    def __init__(self, id, first_name, last_name):
+    def __init__(self, id, first_name, last_name, alias="test_alias"):
         self.id = id
         self.first_name = first_name
         self.last_name = last_name
+        self.alias = alias
+
+
+class MockSimulationChat:
+    def __init__(self, id, attempt_id, created_at=None):
+        self.id = id
+        self.attempt_id = attempt_id
+        self.created_at = created_at or datetime.now()
+
+
+class MockSimulationChatGrade:
+    def __init__(self, id, score, passed, time_taken=300):
+        self.id = id
+        self.score = score
+        self.passed = passed
+        self.time_taken = time_taken
 
 
 @patch("app.services.mcp.tools.analytics.simulation_attempts.get_session")
@@ -50,9 +68,9 @@ class TestSimulation_Attempts:
         profile2_id = uuid.uuid4()
         
         mock_attempts = [
-            MockSimulationAttempt(uuid.uuid4(), base_time, profile1_id),
-            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=1), profile2_id),
-            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=2), profile1_id),
+            MockSimulationAttempt(uuid.uuid4(), base_time, profile1_id, simulation_id),
+            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=1), profile2_id, simulation_id),
+            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=2), profile1_id, simulation_id),
         ]
         
         mock_profiles = [
@@ -60,17 +78,16 @@ class TestSimulation_Attempts:
             MockProfile(profile2_id, "Jane", "Smith"),
         ]
         
-        mock_session.get.return_value = mock_simulation
-        mock_session.exec.return_value.all.return_value = mock_attempts
-        mock_session.exec.return_value.first.return_value = mock_profiles[0]
+        mock_session.get.side_effect = [mock_simulation, mock_profiles[0], mock_profiles[1], mock_profiles[0]]
+        mock_session.exec.return_value.all.side_effect = [mock_attempts, [], [], []]
+        mock_session.exec.return_value.first.return_value = None
         
         result = simulation_attempts(str(simulation_id))
         
-        assert result["simulation"]["id"] == str(simulation_id)
-        assert result["simulation"]["title"] == "Conflict Resolution"
-        assert len(result["attempts"]) == 3
-        assert result["total_attempts"] == 3
-        assert result["unique_students"] == 2
+        assert len(result) == 3
+        assert result[0]["student"] == "John Doe"
+        assert result[1]["student"] == "Jane Smith"
+        assert result[2]["student"] == "John Doe"
 
     def test_simulation_attempts_error(self, mock_get_session):
         """Test simulation_attempts error handling."""
@@ -82,8 +99,9 @@ class TestSimulation_Attempts:
         
         result = simulation_attempts(str(simulation_id))
         
-        assert "error" in result
-        assert "Database error" in result["error"]
+        assert len(result) == 1
+        assert "error" in result[0]
+        assert "Database error" in result[0]["error"]
 
     def test_simulation_attempts_simulation_not_found(self, mock_get_session):
         """Test simulation_attempts with non-existent simulation."""
@@ -95,15 +113,17 @@ class TestSimulation_Attempts:
         
         result = simulation_attempts(str(simulation_id))
         
-        assert "error" in result
-        assert "Simulation not found" in result["error"]
+        assert len(result) == 1
+        assert "error" in result[0]
+        assert "Simulation not found" in result[0]["error"]
 
     def test_simulation_attempts_invalid_uuid(self, mock_get_session):
         """Test simulation_attempts with invalid UUID."""
         result = simulation_attempts("invalid-uuid")
         
-        assert "error" in result
-        assert "Invalid simulation_id format" in result["error"]
+        assert len(result) == 1
+        assert "error" in result[0]
+        assert "Invalid sim_id format" in result[0]["error"]
 
     def test_simulation_attempts_no_attempts(self, mock_get_session):
         """Test simulation_attempts with no attempts."""
@@ -118,10 +138,7 @@ class TestSimulation_Attempts:
         
         result = simulation_attempts(str(simulation_id))
         
-        assert result["simulation"]["id"] == str(simulation_id)
-        assert result["attempts"] == []
-        assert result["total_attempts"] == 0
-        assert result["unique_students"] == 0
+        assert result == []
 
     def test_simulation_attempts_single_student(self, mock_get_session):
         """Test simulation_attempts with single student multiple attempts."""
@@ -135,19 +152,21 @@ class TestSimulation_Attempts:
         base_time = datetime.now()
         
         mock_attempts = [
-            MockSimulationAttempt(uuid.uuid4(), base_time, profile_id),
-            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=1), profile_id),
-            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=2), profile_id),
+            MockSimulationAttempt(uuid.uuid4(), base_time, profile_id, simulation_id),
+            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=1), profile_id, simulation_id),
+            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=2), profile_id, simulation_id),
         ]
         
-        mock_session.get.return_value = mock_simulation
-        mock_session.exec.return_value.all.return_value = mock_attempts
-        mock_session.exec.return_value.first.return_value = MockProfile(profile_id, "John", "Doe")
+        mock_profile = MockProfile(profile_id, "John", "Doe")
+        
+        mock_session.get.side_effect = [mock_simulation, mock_profile, mock_profile, mock_profile]
+        mock_session.exec.return_value.all.side_effect = [mock_attempts, [], [], []]
+        mock_session.exec.return_value.first.return_value = None
         
         result = simulation_attempts(str(simulation_id))
         
-        assert result["total_attempts"] == 3
-        assert result["unique_students"] == 1
+        assert len(result) == 3
+        assert all(attempt["student"] == "John Doe" for attempt in result)
 
     def test_simulation_attempts_multiple_students(self, mock_get_session):
         """Test simulation_attempts with multiple students."""
@@ -164,20 +183,29 @@ class TestSimulation_Attempts:
         base_time = datetime.now()
         
         mock_attempts = [
-            MockSimulationAttempt(uuid.uuid4(), base_time, profile1_id),
-            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=1), profile2_id),
-            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=2), profile3_id),
-            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=3), profile1_id),
+            MockSimulationAttempt(uuid.uuid4(), base_time, profile1_id, simulation_id),
+            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=1), profile2_id, simulation_id),
+            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=2), profile3_id, simulation_id),
+            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=3), profile1_id, simulation_id),
         ]
         
-        mock_session.get.return_value = mock_simulation
-        mock_session.exec.return_value.all.return_value = mock_attempts
-        mock_session.exec.return_value.first.return_value = MockProfile(profile1_id, "John", "Doe")
+        mock_profiles = [
+            MockProfile(profile1_id, "John", "Doe"),
+            MockProfile(profile2_id, "Jane", "Smith"),
+            MockProfile(profile3_id, "Bob", "Johnson"),
+        ]
+        
+        mock_session.get.side_effect = [mock_simulation, mock_profiles[0], mock_profiles[1], mock_profiles[2], mock_profiles[0]]
+        mock_session.exec.return_value.all.side_effect = [mock_attempts, [], [], [], []]
+        mock_session.exec.return_value.first.return_value = None
         
         result = simulation_attempts(str(simulation_id))
         
-        assert result["total_attempts"] == 4
-        assert result["unique_students"] == 3
+        assert len(result) == 4
+        assert result[0]["student"] == "John Doe"
+        assert result[1]["student"] == "Jane Smith"
+        assert result[2]["student"] == "Bob Johnson"
+        assert result[3]["student"] == "John Doe"
 
     def test_simulation_attempts_attempt_details(self, mock_get_session):
         """Test simulation_attempts with detailed attempt information."""
@@ -191,18 +219,17 @@ class TestSimulation_Attempts:
         attempt_id = uuid.uuid4()
         base_time = datetime.now()
         
-        mock_attempt = MockSimulationAttempt(attempt_id, base_time, profile_id)
+        mock_attempt = MockSimulationAttempt(attempt_id, base_time, profile_id, simulation_id)
         mock_profile = MockProfile(profile_id, "John", "Doe")
         
-        mock_session.get.return_value = mock_simulation
-        mock_session.exec.return_value.all.return_value = [mock_attempt]
-        mock_session.exec.return_value.first.return_value = mock_profile
+        mock_session.get.side_effect = [mock_simulation, mock_profile]
+        mock_session.exec.return_value.all.side_effect = [[mock_attempt], []]
+        mock_session.exec.return_value.first.return_value = None
         
         result = simulation_attempts(str(simulation_id))
         
-        assert len(result["attempts"]) == 1
-        attempt = result["attempts"][0]
+        assert len(result) == 1
+        attempt = result[0]
         assert attempt["id"] == str(attempt_id)
-        assert attempt["profile"]["id"] == str(profile_id)
-        assert attempt["profile"]["first_name"] == "John"
-        assert attempt["profile"]["last_name"] == "Doe"
+        assert attempt["student_id"] == str(profile_id)
+        assert attempt["student"] == "John Doe"

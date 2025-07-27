@@ -4,7 +4,9 @@ import { db } from "@/utils/drizzle/db";
 import { parameterItems } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 
-export async function createParameterItems(data: (typeof parameterItems.$inferInsert)[]) {
+export async function createParameterItems(
+  data: (typeof parameterItems.$inferInsert)[],
+) {
   try {
     return await db.insert(parameterItems).values(data).returning();
   } catch (error) {

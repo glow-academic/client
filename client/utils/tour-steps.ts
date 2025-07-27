@@ -26,7 +26,7 @@ export const createTATourSteps = (
   _onStartPracticeSimulation: (simulationId: string) => void,
   _onEndChat: () => void,
   cohortId?: string,
-  attemptId?: string
+  attemptId?: string,
 ): TourStep[] => {
   if (!profile) return [];
 

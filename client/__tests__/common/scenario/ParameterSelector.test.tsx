@@ -191,7 +191,7 @@ describe("ParameterSelector", () => {
         <ParameterSelector
           {...mockProps}
           onParameterItemIdsChange={onParameterItemIdsChange}
-        />
+        />,
       );
 
       // Open the dropdown and select an item
@@ -232,7 +232,7 @@ describe("ParameterSelector", () => {
         <ParameterSelector
           {...mockProps}
           onParameterItemIdsChange={onParameterItemIdsChange}
-        />
+        />,
       );
 
       // Move the slider - click on the slider track to change value
@@ -287,7 +287,7 @@ describe("ParameterSelector", () => {
       // Click the reset button (X icon) - it's the button with no text content
       const resetButtons = screen.getAllByRole("button");
       const resetButton = resetButtons.find(
-        (button) => button.textContent === ""
+        (button) => button.textContent === "",
       );
       expect(resetButton).toBeDefined();
 
@@ -309,7 +309,7 @@ describe("ParameterSelector", () => {
       renderWithMocks(<ParameterSelector {...propsWithNoCategorical} />);
 
       expect(
-        screen.getByText("No categorical parameters available")
+        screen.getByText("No categorical parameters available"),
       ).toBeInTheDocument();
     });
 
@@ -322,7 +322,7 @@ describe("ParameterSelector", () => {
       renderWithMocks(<ParameterSelector {...propsWithNoNumerical} />);
 
       expect(
-        screen.getByText("No numerical parameters available")
+        screen.getByText("No numerical parameters available"),
       ).toBeInTheDocument();
     });
   });

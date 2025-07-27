@@ -175,7 +175,7 @@ export default function SimulationComposition({
 
     // Filter cohorts based on provided cohortIds
     const matchingCohorts = cohorts.filter((cohort) =>
-      cohortIds.includes(cohort.id)
+      cohortIds.includes(cohort.id),
     );
 
     if (matchingCohorts.length === 0) {
@@ -231,7 +231,7 @@ export default function SimulationComposition({
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId
+        (s) => s.id === attempt?.simulationId,
       );
       const profile = profiles?.find((p) => p.id === attempt?.profileId);
 
@@ -340,7 +340,7 @@ export default function SimulationComposition({
 
       // Calculate parameter breakdown for this simulation
       const simScenarios = scenarios.filter((s) =>
-        performance.simulation.scenarioIds?.includes(s.id)
+        performance.simulation.scenarioIds?.includes(s.id),
       );
 
       // Collect all parameter items used in this simulation's scenarios
@@ -359,7 +359,7 @@ export default function SimulationComposition({
           const paramItem = parameterItems.find((pi) => pi.id === paramItemId);
           if (paramItem) {
             const parameter = parameters.find(
-              (p) => p.id === paramItem.parameterId
+              (p) => p.id === paramItem.parameterId,
             );
             if (parameter) {
               const key = `${paramItem.parameterId}-${paramItem.id}`;
@@ -417,10 +417,10 @@ export default function SimulationComposition({
     switch (config.method) {
       case "percentile":
         const topCount = Math.ceil(
-          (simulationsWithScore.length * config.topPercentage) / 100
+          (simulationsWithScore.length * config.topPercentage) / 100,
         );
         const bottomCount = Math.ceil(
-          (simulationsWithScore.length * config.bottomPercentage) / 100
+          (simulationsWithScore.length * config.bottomPercentage) / 100,
         );
         highPerformingSims = simulationsWithScore.slice(0, topCount);
         lowPerformingSims = simulationsWithScore.slice(-bottomCount);
@@ -446,19 +446,19 @@ export default function SimulationComposition({
         const lowerThreshold = mean - stdDev;
 
         highPerformingSims = simulationsWithScore.filter(
-          (sim) => sim.combinedScore >= upperThreshold
+          (sim) => sim.combinedScore >= upperThreshold,
         );
         lowPerformingSims = simulationsWithScore.filter(
-          (sim) => sim.combinedScore <= lowerThreshold
+          (sim) => sim.combinedScore <= lowerThreshold,
         );
         break;
 
       default:
         const fallbackTopCount = Math.ceil(
-          (simulationsWithScore.length * 25) / 100
+          (simulationsWithScore.length * 25) / 100,
         );
         const fallbackBottomCount = Math.ceil(
-          (simulationsWithScore.length * 25) / 100
+          (simulationsWithScore.length * 25) / 100,
         );
         highPerformingSims = simulationsWithScore.slice(0, fallbackTopCount);
         lowPerformingSims = simulationsWithScore.slice(-fallbackBottomCount);
@@ -476,7 +476,7 @@ export default function SimulationComposition({
         timeLimit: sim.timeLimit,
         scenarioCount: sim.scenarioCount,
         parameterBreakdown: sim.parameterBreakdown,
-      })
+      }),
     );
 
     const lowPerformingDetails: SimulationDetail[] = lowPerformingSims.map(
@@ -490,7 +490,7 @@ export default function SimulationComposition({
         timeLimit: sim.timeLimit,
         scenarioCount: sim.scenarioCount,
         parameterBreakdown: sim.parameterBreakdown,
-      })
+      }),
     );
 
     // Generate colors for attributes
@@ -518,7 +518,7 @@ export default function SimulationComposition({
       parameterItemId: string,
       parameterName: string,
       parameterValue: string,
-      isNumerical: boolean
+      isNumerical: boolean,
     ): SimulationAttribute => {
       const key = `${parameterId}-${parameterItemId}`;
       if (!parameterUsage.has(key)) {
@@ -547,7 +547,7 @@ export default function SimulationComposition({
       sim.parameterBreakdown.forEach((param) => {
         // Find the parameter item for this value
         const paramItem = parameterItems.find(
-          (pi) => pi.value === param.parameterValue
+          (pi) => pi.value === param.parameterValue,
         );
 
         if (paramItem && paramItem.parameterId) {
@@ -556,7 +556,7 @@ export default function SimulationComposition({
             paramItem.id,
             param.parameterName,
             param.parameterValue,
-            param.isNumerical
+            param.isNumerical,
           );
           attribute.highPerforming += 1;
         }
@@ -568,7 +568,7 @@ export default function SimulationComposition({
       sim.parameterBreakdown.forEach((param) => {
         // Find the parameter item for this value
         const paramItem = parameterItems.find(
-          (pi) => pi.value === param.parameterValue
+          (pi) => pi.value === param.parameterValue,
         );
 
         if (paramItem && paramItem.parameterId) {
@@ -577,7 +577,7 @@ export default function SimulationComposition({
             paramItem.id,
             param.parameterName,
             param.parameterValue,
-            param.isNumerical
+            param.isNumerical,
           );
           attribute.lowPerforming += 1;
         }
@@ -749,13 +749,13 @@ export default function SimulationComposition({
     const highPerformingAvg =
       simulationComposition.highPerformingDetails.reduce(
         (sum, sim) => sum + sim.avgScore,
-        0
+        0,
       ) / Math.max(simulationComposition.highPerformingDetails.length, 1);
 
     const lowPerformingAvg =
       simulationComposition.lowPerformingDetails.reduce(
         (sum, sim) => sum + sim.avgScore,
-        0
+        0,
       ) / Math.max(simulationComposition.lowPerformingDetails.length, 1);
 
     const performanceGap = highPerformingAvg - lowPerformingAvg;
@@ -908,7 +908,7 @@ export default function SimulationComposition({
                               key={`high-cell-${index}`}
                               fill={entry.color}
                             />
-                          )
+                          ),
                         )}
                       </Pie>
                       <Tooltip
@@ -1063,7 +1063,7 @@ export default function SimulationComposition({
                               key={`low-cell-${index}`}
                               fill={entry.color}
                             />
-                          )
+                          ),
                         )}
                       </Pie>
                       <Tooltip

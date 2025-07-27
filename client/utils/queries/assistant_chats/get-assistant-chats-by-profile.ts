@@ -7,7 +7,10 @@ import { logError } from "@/utils/logger";
 
 export async function getAssistantChatsByProfile(profileId: string) {
   try {
-    return await db.select().from(assistantChats).where(eq(assistantChats.profileId, profileId));
+    return await db
+      .select()
+      .from(assistantChats)
+      .where(eq(assistantChats.profileId, profileId));
   } catch (error) {
     logError("Error fetching assistant_chats by profile:", error);
     throw error;

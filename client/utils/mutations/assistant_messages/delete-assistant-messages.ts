@@ -7,7 +7,10 @@ import { logError } from "@/utils/logger";
 
 export async function deleteAssistantMessages(ids: string[]) {
   try {
-    return await db.delete(assistantMessages).where(inArray(assistantMessages.id, ids)).returning();
+    return await db
+      .delete(assistantMessages)
+      .where(inArray(assistantMessages.id, ids))
+      .returning();
   } catch (error) {
     logError("Error deleting multiple assistant_messages:", error);
     throw error;

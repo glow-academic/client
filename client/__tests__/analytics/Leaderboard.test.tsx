@@ -41,7 +41,7 @@ describe("Leaderboard", () => {
       // Wait for loading to complete and check for leaderboard content
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading leaderboard...")
+          screen.queryByText("Loading leaderboard..."),
         ).not.toBeInTheDocument();
       });
 
@@ -58,7 +58,7 @@ describe("Leaderboard", () => {
       // Wait for loading to complete
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading leaderboard...")
+          screen.queryByText("Loading leaderboard..."),
         ).not.toBeInTheDocument();
       });
 
@@ -75,7 +75,7 @@ describe("Leaderboard", () => {
       // Wait for loading to complete
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading leaderboard...")
+          screen.queryByText("Loading leaderboard..."),
         ).not.toBeInTheDocument();
       });
 
@@ -96,7 +96,7 @@ describe("Leaderboard", () => {
       // Wait for loading to complete
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading leaderboard...")
+          screen.queryByText("Loading leaderboard..."),
         ).not.toBeInTheDocument();
       });
 
@@ -115,7 +115,7 @@ describe("Leaderboard", () => {
       // Wait for loading to complete
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading leaderboard...")
+          screen.queryByText("Loading leaderboard..."),
         ).not.toBeInTheDocument();
       });
 
@@ -140,7 +140,7 @@ describe("Leaderboard", () => {
       // Wait for loading to complete
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading leaderboard...")
+          screen.queryByText("Loading leaderboard..."),
         ).not.toBeInTheDocument();
       });
 
@@ -157,7 +157,7 @@ describe("Leaderboard", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
       vi.mocked(getAllProfiles).mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve([]), 100))
+        () => new Promise((resolve) => setTimeout(() => resolve([]), 100)),
       );
 
       renderWithMocks(<Leaderboard />);
@@ -168,7 +168,7 @@ describe("Leaderboard", () => {
       // Wait for loading to complete
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading leaderboard...")
+          screen.queryByText("Loading leaderboard..."),
         ).not.toBeInTheDocument();
       });
 
@@ -193,7 +193,7 @@ describe("Leaderboard", () => {
       // Wait for loading to complete
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading leaderboard...")
+          screen.queryByText("Loading leaderboard..."),
         ).not.toBeInTheDocument();
       });
 

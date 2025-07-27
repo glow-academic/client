@@ -215,7 +215,7 @@ export default function ScenarioStats({
 
     // Filter cohorts based on provided cohortIds
     const matchingCohorts = cohorts.filter((cohort) =>
-      cohortIds.includes(cohort.id)
+      cohortIds.includes(cohort.id),
     );
 
     if (matchingCohorts.length === 0) {
@@ -266,7 +266,7 @@ export default function ScenarioStats({
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId
+        (s) => s.id === attempt?.simulationId,
       );
       const profile = profiles?.find((p) => p.id === attempt?.profileId);
 
@@ -315,10 +315,10 @@ export default function ScenarioStats({
 
     scenarios.forEach((scenario) => {
       const scenarioChats = chats.filter(
-        (chat) => chat.scenarioId === scenario.id
+        (chat) => chat.scenarioId === scenario.id,
       );
       const scenarioGrades = filteredGrades.filter((grade) =>
-        scenarioChats.some((chat) => chat.id === grade.simulationChatId)
+        scenarioChats.some((chat) => chat.id === grade.simulationChatId),
       );
 
       if (scenarioGrades.length === 0) return;
@@ -328,12 +328,12 @@ export default function ScenarioStats({
         (itemId) => {
           const item = parameterItemsForSelected.find((pi) => pi.id === itemId);
           return item && item.parameterId === selectedParameter?.id;
-        }
+        },
       );
 
       if (scenarioParameterItem) {
         const item = parameterItemsForSelected.find(
-          (pi) => pi.id === scenarioParameterItem
+          (pi) => pi.id === scenarioParameterItem,
         );
         const metricValue = item?.value || "";
 
@@ -349,7 +349,7 @@ export default function ScenarioStats({
 
           const avgScore = Math.round(
             percentageScores.reduce((sum, score) => sum + score, 0) /
-              percentageScores.length
+              percentageScores.length,
           );
 
           if (!metricGroups[metricValue]) {
@@ -369,7 +369,7 @@ export default function ScenarioStats({
               const firstGrade = scenarioGrades[0];
               if (firstGrade) {
                 const rubric = rubrics.find(
-                  (r) => r.id === firstGrade.rubricId
+                  (r) => r.id === firstGrade.rubricId,
                 );
                 group.rubricPoints = rubric?.points || 0;
               }
@@ -385,7 +385,7 @@ export default function ScenarioStats({
         metricLevel,
         avgScore: Math.round(
           data.scores.reduce((sum, score) => sum + score, 0) /
-            data.scores.length
+            data.scores.length,
         ),
         scenarioCount: data.scores.length,
         totalAttempts: data.count,
@@ -420,35 +420,35 @@ export default function ScenarioStats({
     const n = aggregatedPerformanceData.length;
     const sumX = aggregatedPerformanceData.reduce(
       (sum, item) => sum + parseFloat(item.metricLevel),
-      0
+      0,
     );
     const sumY = aggregatedPerformanceData.reduce(
       (sum, item) => sum + item.avgScore,
-      0
+      0,
     );
     const sumXY = aggregatedPerformanceData.reduce(
       (sum, item) => sum + parseFloat(item.metricLevel) * item.avgScore,
-      0
+      0,
     );
     const sumX2 = aggregatedPerformanceData.reduce(
       (sum, item) => sum + Math.pow(parseFloat(item.metricLevel), 2),
-      0
+      0,
     );
     const sumY2 = aggregatedPerformanceData.reduce(
       (sum, item) => sum + item.avgScore * item.avgScore,
-      0
+      0,
     );
 
     const numerator = n * sumXY - sumX * sumY;
     const denominator = Math.sqrt(
-      (n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY)
+      (n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY),
     );
 
     return denominator === 0 ? 0 : numerator / denominator;
   }, [aggregatedPerformanceData]);
 
   const selectedMetricOption = METRIC_OPTIONS.find(
-    (m) => m.id === selectedParameterId
+    (m) => m.id === selectedParameterId,
   );
 
   // Generate insight text
@@ -637,7 +637,7 @@ export default function ScenarioStats({
                               "mr-2 h-4 w-4",
                               selectedParameterId === metric.id
                                 ? "opacity-100"
-                                : "opacity-0"
+                                : "opacity-0",
                             )}
                           />
                           <div>
@@ -688,7 +688,7 @@ export default function ScenarioStats({
                   ]}
                   labelFormatter={(label) => {
                     const dataPoint = aggregatedPerformanceData.find(
-                      (item) => item.metricLevel === label
+                      (item) => item.metricLevel === label,
                     );
                     const metricName =
                       selectedMetricOption?.name || "Parameter";

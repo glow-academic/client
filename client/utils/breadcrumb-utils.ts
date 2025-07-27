@@ -39,7 +39,7 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         }
         // get simulation for attempt
         const attemptSimulation = await getSimulation(
-          attemptData?.simulationId
+          attemptData?.simulationId,
         );
         // Attempts don't have a title, so we'll use a generic name with timestamp
         return attemptSimulation?.title || `Attempt ${id.substring(0, 8)}...`;
@@ -107,7 +107,7 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
 
 // Enhanced breadcrumb generation with async ID resolution
 export const generateEnhancedBreadcrumbs = async (
-  pathname: string
+  pathname: string,
 ): Promise<BreadcrumbItem[]> => {
   const segments = pathname.split("/").filter(Boolean);
   const breadcrumbs: BreadcrumbItem[] = [];

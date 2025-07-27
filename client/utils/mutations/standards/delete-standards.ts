@@ -7,7 +7,10 @@ import { logError } from "@/utils/logger";
 
 export async function deleteStandards(ids: string[]) {
   try {
-    return await db.delete(standards).where(inArray(standards.id, ids)).returning();
+    return await db
+      .delete(standards)
+      .where(inArray(standards.id, ids))
+      .returning();
   } catch (error) {
     logError("Error deleting multiple standards:", error);
     throw error;

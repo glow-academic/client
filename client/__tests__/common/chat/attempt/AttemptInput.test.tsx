@@ -41,9 +41,9 @@ describe("AttemptInput", () => {
       renderWithMocks(<AttemptInput />);
 
       expect(
-        screen.getByPlaceholderText("Type your message...")
+        screen.getByPlaceholderText("Type your message..."),
       ).toBeInTheDocument();
-      
+
       // Look for the send button by its type attribute
       const sendButton = document.querySelector('button[type="submit"]');
       expect(sendButton).toBeInTheDocument();
@@ -53,10 +53,10 @@ describe("AttemptInput", () => {
       renderWithMocks(<AttemptInput />);
 
       const textarea = screen.getByPlaceholderText("Type your message...");
-      
+
       // Check accessibility attributes
       expect(textarea).toHaveAttribute("placeholder", "Type your message...");
-      
+
       // The button should be disabled when no text (we'll test this in user interactions)
       const sendButton = document.querySelector('button[type="submit"]');
       expect(sendButton).toBeInTheDocument();
@@ -69,7 +69,9 @@ describe("AttemptInput", () => {
       renderWithMocks(<AttemptInput />);
 
       const textarea = screen.getByPlaceholderText("Type your message...");
-      const sendButton = document.querySelector('button[type="submit"]') as HTMLButtonElement;
+      const sendButton = document.querySelector(
+        'button[type="submit"]',
+      ) as HTMLButtonElement;
 
       // Initially button should be disabled (no text)
       expect(sendButton).toBeDisabled();
@@ -86,7 +88,9 @@ describe("AttemptInput", () => {
       renderWithMocks(<AttemptInput />);
 
       const textarea = screen.getByPlaceholderText("Type your message...");
-      const sendButton = document.querySelector('button[type="submit"]') as HTMLButtonElement;
+      const sendButton = document.querySelector(
+        'button[type="submit"]',
+      ) as HTMLButtonElement;
 
       // Type a message
       await user.type(textarea, "Test message");
@@ -125,7 +129,7 @@ describe("AttemptInput", () => {
 
       // Type a message
       await user.type(textarea, "Test message");
-      
+
       // Press Shift+Enter (this should not submit)
       await user.keyboard("{Shift>}{Enter}{/Shift}");
 
@@ -140,12 +144,14 @@ describe("AttemptInput", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
       const user = userEvent.setup();
-      
+
       // Test with empty message (button should be disabled)
       renderWithMocks(<AttemptInput />);
 
       const textarea = screen.getByPlaceholderText("Type your message...");
-      const sendButton = document.querySelector('button[type="submit"]') as HTMLButtonElement;
+      const sendButton = document.querySelector(
+        'button[type="submit"]',
+      ) as HTMLButtonElement;
 
       // Button should be disabled when no text
       expect(sendButton).toBeDisabled();
@@ -162,7 +168,9 @@ describe("AttemptInput", () => {
       renderWithMocks(<AttemptInput />);
 
       const textarea = screen.getByPlaceholderText("Type your message...");
-      const sendButton = document.querySelector('button[type="submit"]') as HTMLButtonElement;
+      const sendButton = document.querySelector(
+        'button[type="submit"]',
+      ) as HTMLButtonElement;
 
       // Try to submit empty message
       await user.click(sendButton);
@@ -176,11 +184,13 @@ describe("AttemptInput", () => {
       renderWithMocks(<AttemptInput />);
 
       const textarea = screen.getByPlaceholderText("Type your message...");
-      const sendButton = document.querySelector('button[type="submit"]') as HTMLButtonElement;
+      const sendButton = document.querySelector(
+        'button[type="submit"]',
+      ) as HTMLButtonElement;
 
       // Type only whitespace
       await user.type(textarea, "   ");
-      
+
       // Try to submit
       await user.click(sendButton);
 

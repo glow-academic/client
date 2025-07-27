@@ -12,9 +12,6 @@ export interface ModelEditProps {
   providerId: string;
 }
 
-export default function ModelEdit({
-  modelId,
-  providerId,
-}: ModelEditProps) {
+export default function ModelEdit({ modelId, providerId }: ModelEditProps) {
   return <Model modelId={modelId} providerId={providerId} />;
 }

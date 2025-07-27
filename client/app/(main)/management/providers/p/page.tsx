@@ -11,8 +11,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Providers",
-  description:
-    `Manage individual AI providers in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+  description: `Manage individual AI providers in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
 
 export default function ProviderEditPage() {

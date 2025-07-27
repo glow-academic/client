@@ -44,7 +44,7 @@ describe("CohortsDataTable", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithMocks(<CohortsDataTable {...mockProps} />);
 
       // Component should handle state changes without errors
@@ -52,7 +52,7 @@ describe("CohortsDataTable", () => {
     });
 
     it("should handle user events", async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithMocks(<CohortsDataTable {...mockProps} />);
 
       // Component should handle user events without errors
@@ -77,7 +77,7 @@ describe("CohortsDataTable", () => {
           profileOptions={[]}
           simulationOptions={[]}
           renderCohortCard={vi.fn()}
-        />
+        />,
       );
       expect(document.body).toBeInTheDocument();
     });

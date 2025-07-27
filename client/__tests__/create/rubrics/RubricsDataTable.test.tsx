@@ -81,7 +81,7 @@ describe("RubricsDataTable", () => {
   it("renders the toolbar", () => {
     render(<RubricsDataTable {...defaultProps} />);
     expect(
-      screen.getByTestId("rubrics-data-table-toolbar")
+      screen.getByTestId("rubrics-data-table-toolbar"),
     ).toBeInTheDocument();
   });
 
@@ -99,7 +99,7 @@ describe("RubricsDataTable", () => {
   it("shows no results message when no data", () => {
     render(<RubricsDataTable {...defaultProps} data={[]} />);
     expect(
-      screen.getByText("No rubrics match the current filters.")
+      screen.getByText("No rubrics match the current filters."),
     ).toBeInTheDocument();
   });
 });

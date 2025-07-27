@@ -29,7 +29,7 @@ interface Profile {
 export default function Feedback() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedFeedback, setSelectedFeedback] = useState<FeedbackData | null>(
-    null
+    null,
   );
   const queryClient = useQueryClient();
 
@@ -80,7 +80,7 @@ export default function Feedback() {
       if (!profile) return "Unknown User";
       return `${profile.firstName} ${profile.lastName}`;
     },
-    [profileMap]
+    [profileMap],
   );
 
   const getAuthorAlias = useCallback(
@@ -90,7 +90,7 @@ export default function Feedback() {
       if (!profile) return "";
       return profile.alias;
     },
-    [profileMap]
+    [profileMap],
   );
 
   const getFeedbackTypeVariant = (type: string) => {

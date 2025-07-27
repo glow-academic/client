@@ -63,7 +63,7 @@ export default function ChatStarterPrompts({
   };
 
   const [selectedPrompts, setSelectedPrompts] = useState<string[]>(() =>
-    getRandomPrompts(PROMPT_COUNT)
+    getRandomPrompts(PROMPT_COUNT),
   );
 
   useEffect(() => {

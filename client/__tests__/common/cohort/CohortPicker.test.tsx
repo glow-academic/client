@@ -38,7 +38,7 @@ describe("CohortPicker", () => {
         cohorts={mockCohorts}
         onSelect={onSelect}
         selectedCohorts={[]}
-      />
+      />,
     );
 
     expect(screen.getByText("Select cohorts...")).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe("CohortPicker", () => {
         cohorts={mockCohorts}
         onSelect={onSelect}
         selectedCohorts={[mockCohorts[0]!]}
-      />
+      />,
     );
 
     // Check that the cohort appears in the button text
@@ -65,7 +65,7 @@ describe("CohortPicker", () => {
         cohorts={mockCohorts}
         onSelect={onSelect}
         selectedCohorts={[mockCohorts[0]!, mockCohorts[1]!]}
-      />
+      />,
     );
 
     expect(screen.getByText("2 cohorts selected")).toBeInTheDocument();
@@ -79,7 +79,7 @@ describe("CohortPicker", () => {
         onSelect={onSelect}
         selectedCohorts={[mockCohorts[0]!, mockCohorts[1]!]}
         hideSelectedChips={false}
-      />
+      />,
     );
 
     expect(screen.getByText("Test Cohort 1")).toBeInTheDocument();
@@ -93,7 +93,7 @@ describe("CohortPicker", () => {
         cohorts={mockCohorts}
         onSelect={onSelect}
         selectedCohorts={[]}
-      />
+      />,
     );
 
     const button = screen.getByRole("combobox");
@@ -113,7 +113,7 @@ describe("CohortPicker", () => {
         cohorts={mockCohorts}
         onSelect={onSelect}
         selectedCohorts={[]}
-      />
+      />,
     );
 
     const button = screen.getByRole("combobox");
@@ -135,7 +135,7 @@ describe("CohortPicker", () => {
         onSelect={onSelect}
         selectedCohorts={[mockCohorts[0]!, mockCohorts[1]!]}
         hideSelectedChips={false}
-      />
+      />,
     );
 
     // Find remove buttons by looking for X icons

@@ -23,7 +23,7 @@ describe("Select", () => {
             <SelectItem value="option1">Option 1</SelectItem>
             <SelectItem value="option2">Option 2</SelectItem>
           </SelectContent>
-        </Select>
+        </Select>,
       );
 
       expect(screen.getByText("Select an option")).toBeInTheDocument();
@@ -38,7 +38,7 @@ describe("Select", () => {
           <SelectContent>
             <SelectItem value="option1">Accessible Option</SelectItem>
           </SelectContent>
-        </Select>
+        </Select>,
       );
 
       const trigger = screen.getByRole("combobox", { name: "Test Select" });
@@ -57,7 +57,7 @@ describe("Select", () => {
             <SelectItem value="item1">Item 1</SelectItem>
             <SelectItem value="item2">Item 2</SelectItem>
           </SelectContent>
-        </Select>
+        </Select>,
       );
 
       expect(screen.getByText("Choose...")).toBeInTheDocument();
@@ -73,7 +73,7 @@ describe("Select", () => {
             <SelectValue />
           </SelectTrigger>
           <SelectContent />
-        </Select>
+        </Select>,
       );
 
       const trigger = document.querySelector('[data-slot="select-trigger"]');

@@ -5,11 +5,24 @@ import { simulationChatFeedbacks } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 
-export async function getSimulationChatFeedbacksBySimulationChatGrades(simulationChatGradeIds: string[]) {
+export async function getSimulationChatFeedbacksBySimulationChatGrades(
+  simulationChatGradeIds: string[],
+) {
   try {
-    return await db.select().from(simulationChatFeedbacks).where(inArray(simulationChatFeedbacks.simulationChatGradeId, simulationChatGradeIds));
+    return await db
+      .select()
+      .from(simulationChatFeedbacks)
+      .where(
+        inArray(
+          simulationChatFeedbacks.simulationChatGradeId,
+          simulationChatGradeIds,
+        ),
+      );
   } catch (error) {
-    logError("Error fetching simulation_chat_feedbacks by simulationChatGrades:", error);
+    logError(
+      "Error fetching simulation_chat_feedbacks by simulationChatGrades:",
+      error,
+    );
     throw error;
   }
 }

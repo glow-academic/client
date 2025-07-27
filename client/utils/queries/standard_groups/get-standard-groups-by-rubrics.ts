@@ -7,7 +7,10 @@ import { logError } from "@/utils/logger";
 
 export async function getStandardGroupsByRubrics(rubricIds: string[]) {
   try {
-    return await db.select().from(standardGroups).where(inArray(standardGroups.rubricId, rubricIds));
+    return await db
+      .select()
+      .from(standardGroups)
+      .where(inArray(standardGroups.rubricId, rubricIds));
   } catch (error) {
     logError("Error fetching standard_groups by rubrics:", error);
     throw error;

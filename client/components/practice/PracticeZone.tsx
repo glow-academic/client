@@ -36,7 +36,7 @@ export default function PracticeZone({
                 scenarios={scenarios}
                 personas={personas}
               />
-            )
+            ),
         )}
       </div>
     </div>

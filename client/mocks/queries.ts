@@ -103,13 +103,13 @@ vi.mock(
   "@/utils/queries/assistant_chats/get-assistant-chats-by-profile",
   () => ({
     getAssistantChatsByProfile: vi.fn(() => mockSchema.assistantChats || []),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/assistant_chats/get-assistant-chats-by-profiles",
   () => ({
     getAssistantChatsByProfiles: vi.fn(() => mockSchema.assistantChats || []),
-  })
+  }),
 );
 
 // ASSISTANT_MESSAGES QUERIES
@@ -117,7 +117,7 @@ vi.mock(
   "@/utils/queries/assistant_messages/get-all-assistant-messages",
   () => ({
     getAllAssistantMessages: vi.fn(() => mockSchema.assistantMessages || []),
-  })
+  }),
 );
 vi.mock("@/utils/queries/assistant_messages/get-assistant-message", () => ({
   getAssistantMessage: vi.fn(() => mockSchema.assistantMessages?.[0] || null),
@@ -126,15 +126,15 @@ vi.mock(
   "@/utils/queries/assistant_messages/get-assistant-messages-by-chat",
   () => ({
     getAssistantMessagesByChat: vi.fn(() => mockSchema.assistantMessages || []),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/assistant_messages/get-assistant-messages-by-chats",
   () => ({
     getAssistantMessagesByChats: vi.fn(
-      () => mockSchema.assistantMessages || []
+      () => mockSchema.assistantMessages || [],
     ),
-  })
+  }),
 );
 
 // ASSISTANT_TOOL_CALLS QUERIES
@@ -142,7 +142,7 @@ vi.mock(
   "@/utils/queries/assistant_tool_calls/get-all-assistant-tool-calls",
   () => ({
     getAllAssistantToolCalls: vi.fn(() => mockSchema.assistantToolCalls || []),
-  })
+  }),
 );
 vi.mock("@/utils/queries/assistant_tool_calls/get-assistant-tool-call", () => ({
   getAssistantToolCall: vi.fn(() => mockSchema.assistantToolCalls?.[0] || null),
@@ -151,17 +151,17 @@ vi.mock(
   "@/utils/queries/assistant_tool_calls/get-assistant-tool-calls-by-chat",
   () => ({
     getAssistantToolCallsByChat: vi.fn(
-      () => mockSchema.assistantToolCalls || []
+      () => mockSchema.assistantToolCalls || [],
     ),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/assistant_tool_calls/get-assistant-tool-calls-by-chats",
   () => ({
     getAssistantToolCallsByChats: vi.fn(
-      () => mockSchema.assistantToolCalls || []
+      () => mockSchema.assistantToolCalls || [],
     ),
-  })
+  }),
 );
 
 // COHORTS QUERIES
@@ -199,13 +199,13 @@ vi.mock(
   "@/utils/queries/parameter_items/get-parameter-items-by-parameter",
   () => ({
     getParameterItemsByParameter: vi.fn(() => mockSchema.parameterItems || []),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/parameter_items/get-parameter-items-by-parameters",
   () => ({
     getParameterItemsByParameters: vi.fn(() => mockSchema.parameterItems || []),
-  })
+  }),
 );
 
 // PARAMETERS QUERIES
@@ -287,7 +287,7 @@ vi.mock(
   "@/utils/queries/simulation_attempts/get-all-simulation-attempts",
   () => ({
     getAllSimulationAttempts: vi.fn(() => mockSchema.simulationAttempts || []),
-  })
+  }),
 );
 vi.mock("@/utils/queries/simulation_attempts/get-simulation-attempt", () => ({
   getSimulationAttempt: vi.fn(() => mockSchema.simulationAttempts?.[0] || null),
@@ -296,33 +296,33 @@ vi.mock(
   "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profile",
   () => ({
     getSimulationAttemptsByProfile: vi.fn(
-      () => mockSchema.simulationAttempts || []
+      () => mockSchema.simulationAttempts || [],
     ),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles",
   () => ({
     getSimulationAttemptsByProfiles: vi.fn(
-      () => mockSchema.simulationAttempts || []
+      () => mockSchema.simulationAttempts || [],
     ),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/simulation_attempts/get-simulation-attempts-by-simulation",
   () => ({
     getSimulationAttemptsBySimulation: vi.fn(
-      () => mockSchema.simulationAttempts || []
+      () => mockSchema.simulationAttempts || [],
     ),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/simulation_attempts/get-simulation-attempts-by-simulations",
   () => ({
     getSimulationAttemptsBySimulations: vi.fn(
-      () => mockSchema.simulationAttempts || []
+      () => mockSchema.simulationAttempts || [],
     ),
-  })
+  }),
 );
 
 // SIMULATION_CHAT_FEEDBACKS QUERIES
@@ -330,49 +330,49 @@ vi.mock(
   "@/utils/queries/simulation_chat_feedbacks/get-all-simulation-chat-feedbacks",
   () => ({
     getAllSimulationChatFeedbacks: vi.fn(
-      () => mockSchema.simulationChatFeedbacks || []
+      () => mockSchema.simulationChatFeedbacks || [],
     ),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedback",
   () => ({
     getSimulationChatFeedback: vi.fn(
-      () => mockSchema.simulationChatFeedbacks?.[0] || null
+      () => mockSchema.simulationChatFeedbacks?.[0] || null,
     ),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrade",
   () => ({
     getSimulationChatFeedbacksBySimulationchatgrade: vi.fn(
-      () => mockSchema.simulationChatFeedbacks || []
+      () => mockSchema.simulationChatFeedbacks || [],
     ),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades",
   () => ({
     getSimulationChatFeedbacksBySimulationchatgrades: vi.fn(
-      () => mockSchema.simulationChatFeedbacks || []
+      () => mockSchema.simulationChatFeedbacks || [],
     ),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-standard",
   () => ({
     getSimulationChatFeedbacksByStandard: vi.fn(
-      () => mockSchema.simulationChatFeedbacks || []
+      () => mockSchema.simulationChatFeedbacks || [],
     ),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-standards",
   () => ({
     getSimulationChatFeedbacksByStandards: vi.fn(
-      () => mockSchema.simulationChatFeedbacks || []
+      () => mockSchema.simulationChatFeedbacks || [],
     ),
-  })
+  }),
 );
 
 // SIMULATION_CHAT_GRADES QUERIES
@@ -380,49 +380,49 @@ vi.mock(
   "@/utils/queries/simulation_chat_grades/get-all-simulation-chat-grades",
   () => ({
     getAllSimulationChatGrades: vi.fn(
-      () => mockSchema.simulationChatGrades || []
+      () => mockSchema.simulationChatGrades || [],
     ),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/simulation_chat_grades/get-simulation-chat-grade",
   () => ({
     getSimulationChatGrade: vi.fn(
-      () => mockSchema.simulationChatGrades?.[0] || null
+      () => mockSchema.simulationChatGrades?.[0] || null,
     ),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-rubric",
   () => ({
     getSimulationChatGradesByRubric: vi.fn(
-      () => mockSchema.simulationChatGrades || []
+      () => mockSchema.simulationChatGrades || [],
     ),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-rubrics",
   () => ({
     getSimulationChatGradesByRubrics: vi.fn(
-      () => mockSchema.simulationChatGrades || []
+      () => mockSchema.simulationChatGrades || [],
     ),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchat",
   () => ({
     getSimulationChatGradesBySimulationchat: vi.fn(
-      () => mockSchema.simulationChatGrades || []
+      () => mockSchema.simulationChatGrades || [],
     ),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats",
   () => ({
     getSimulationChatGradesBySimulationchats: vi.fn(
-      () => mockSchema.simulationChatGrades || []
+      () => mockSchema.simulationChatGrades || [],
     ),
-  })
+  }),
 );
 
 // SIMULATION_CHATS QUERIES
@@ -436,27 +436,27 @@ vi.mock(
   "@/utils/queries/simulation_chats/get-simulation-chats-by-attempt",
   () => ({
     getSimulationChatsByAttempt: vi.fn(() => mockSchema.simulationChats || []),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts",
   () => ({
     getSimulationChatsByAttempts: vi.fn(() => mockSchema.simulationChats || []),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/simulation_chats/get-simulation-chats-by-scenario",
   () => ({
     getSimulationChatsByScenario: vi.fn(() => mockSchema.simulationChats || []),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/simulation_chats/get-simulation-chats-by-scenarios",
   () => ({
     getSimulationChatsByScenarios: vi.fn(
-      () => mockSchema.simulationChats || []
+      () => mockSchema.simulationChats || [],
     ),
-  })
+  }),
 );
 
 // SIMULATION_MESSAGES QUERIES
@@ -464,7 +464,7 @@ vi.mock(
   "@/utils/queries/simulation_messages/get-all-simulation-messages",
   () => ({
     getAllSimulationMessages: vi.fn(() => mockSchema.simulationMessages || []),
-  })
+  }),
 );
 vi.mock("@/utils/queries/simulation_messages/get-simulation-message", () => ({
   getSimulationMessage: vi.fn(() => mockSchema.simulationMessages?.[0] || null),
@@ -473,17 +473,17 @@ vi.mock(
   "@/utils/queries/simulation_messages/get-simulation-messages-by-chat",
   () => ({
     getSimulationMessagesByChat: vi.fn(
-      () => mockSchema.simulationMessages || []
+      () => mockSchema.simulationMessages || [],
     ),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/simulation_messages/get-simulation-messages-by-chats",
   () => ({
     getSimulationMessagesByChats: vi.fn(
-      () => mockSchema.simulationMessages || []
+      () => mockSchema.simulationMessages || [],
     ),
-  })
+  }),
 );
 
 // SIMULATIONS QUERIES
@@ -511,13 +511,13 @@ vi.mock(
   "@/utils/queries/standard_groups/get-standard-groups-by-rubric",
   () => ({
     getStandardGroupsByRubric: vi.fn(() => mockSchema.standardGroups || []),
-  })
+  }),
 );
 vi.mock(
   "@/utils/queries/standard_groups/get-standard-groups-by-rubrics",
   () => ({
     getStandardGroupsByRubrics: vi.fn(() => mockSchema.standardGroups || []),
-  })
+  }),
 );
 
 // STANDARDS QUERIES
@@ -547,5 +547,5 @@ vi.mock(
   "@/utils/queries/verification_token/get-all-verification-token",
   () => ({
     getAllVerificationToken: vi.fn(() => mockSchema.verificationToken || []),
-  })
+  }),
 );

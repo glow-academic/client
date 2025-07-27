@@ -11,8 +11,6 @@ export interface ProviderEditProps {
   providerId: string;
 }
 
-export default function ProviderEdit({
-  providerId,
-}: ProviderEditProps) {
+export default function ProviderEdit({ providerId }: ProviderEditProps) {
   return <Provider providerId={providerId} />;
 }

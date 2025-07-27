@@ -23,7 +23,7 @@ export interface NewScenarioResponse {
 }
 
 export async function newScenario(
-  params: NewScenarioParams
+  params: NewScenarioParams,
 ): Promise<NewScenarioResponse> {
   try {
     const formData = new FormData();
@@ -46,7 +46,6 @@ export async function newScenario(
         }
       });
     }
-
 
     const response = await fetch(`${getApiBase()}/scenarios/new`, {
       method: "POST",

@@ -49,20 +49,20 @@ export function useScenarioColumns() {
         cell: ({ row }) => {
           const scenario = row.original;
           const scenarioSimulations = simulations.filter((sim: Simulation) =>
-            sim.scenarioIds.includes(scenario.id)
+            sim.scenarioIds.includes(scenario.id),
           );
           return scenarioSimulations.map((sim: Simulation) => sim.id);
         },
         filterFn: (row, _, value) => {
           const scenario = row.original;
           const scenarioSimulations = simulations.filter((sim: Simulation) =>
-            sim.scenarioIds.includes(scenario.id)
+            sim.scenarioIds.includes(scenario.id),
           );
           const simulationIds = scenarioSimulations.map(
-            (sim: Simulation) => sim.id
+            (sim: Simulation) => sim.id,
           );
           return value.some((filterValue: string) =>
-            simulationIds.includes(filterValue)
+            simulationIds.includes(filterValue),
           );
         },
       },
@@ -77,36 +77,42 @@ export function useScenarioColumns() {
             .map((sim: Simulation) => sim.id);
 
           // Find all cohorts whose simulation_ids include any of the scenario's simulation IDs
-          const relatedCohorts = cohorts.filter((cohort: Cohort) =>
-            Array.isArray(cohort.simulationIds) &&
-            cohort.simulationIds.some((simId: string) =>
-              scenarioSimulationIds.includes(simId)
-            )
+          const relatedCohorts = cohorts.filter(
+            (cohort: Cohort) =>
+              Array.isArray(cohort.simulationIds) &&
+              cohort.simulationIds.some((simId: string) =>
+                scenarioSimulationIds.includes(simId),
+              ),
           );
 
           // Return unique cohort IDs
-          return [...new Set(relatedCohorts.map((cohort: Cohort) => cohort.id))];
+          return [
+            ...new Set(relatedCohorts.map((cohort: Cohort) => cohort.id)),
+          ];
         },
         filterFn: (row, _, value) => {
           const scenario = row.original;
           const scenarioSimulations = simulations.filter((sim: Simulation) =>
-            sim.scenarioIds.includes(scenario.id)
+            sim.scenarioIds.includes(scenario.id),
           );
           const scenarioSimulationIds = scenarioSimulations.map(
-            (sim: Simulation) => sim.id
+            (sim: Simulation) => sim.id,
           );
 
           // Find all cohorts whose simulation_ids include any of the scenario's simulation IDs
-          const relatedCohorts = cohorts.filter((cohort: Cohort) =>
-            Array.isArray(cohort.simulationIds) &&
-            cohort.simulationIds.some((simId: string) =>
-              scenarioSimulationIds.includes(simId)
-            )
+          const relatedCohorts = cohorts.filter(
+            (cohort: Cohort) =>
+              Array.isArray(cohort.simulationIds) &&
+              cohort.simulationIds.some((simId: string) =>
+                scenarioSimulationIds.includes(simId),
+              ),
           );
 
           // Return unique cohort IDs
           return value.some((filterValue: string) =>
-            relatedCohorts.map((cohort: Cohort) => cohort.id).includes(filterValue)
+            relatedCohorts
+              .map((cohort: Cohort) => cohort.id)
+              .includes(filterValue),
           );
         },
       },
@@ -142,7 +148,7 @@ export function useScenarioColumns() {
         cell: ({ row }) => row.getValue("updatedAt"),
       },
     ],
-    [simulations, cohorts]
+    [simulations, cohorts],
   );
 
   // Filter options
@@ -152,7 +158,7 @@ export function useScenarioColumns() {
         value: simulation.id,
         label: simulation.title,
       })),
-    [simulations]
+    [simulations],
   );
 
   const cohortOptions = useMemo(
@@ -161,7 +167,7 @@ export function useScenarioColumns() {
         value: cohort.id,
         label: cohort.title,
       })),
-    [cohorts]
+    [cohorts],
   );
 
   const personaOptions = useMemo(
@@ -170,7 +176,7 @@ export function useScenarioColumns() {
         value: persona.id,
         label: persona.name,
       })),
-    [personas]
+    [personas],
   );
 
   const scenarioTypeOptions = useMemo(
@@ -179,7 +185,7 @@ export function useScenarioColumns() {
       { value: "generated", label: "Generated" },
       { value: "default", label: "Default" },
     ],
-    []
+    [],
   );
 
   return {

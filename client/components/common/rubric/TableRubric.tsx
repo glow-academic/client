@@ -50,7 +50,7 @@ export default function TableRubric({
     ],
     queryFn: () =>
       getStandardsByStandardGroups(
-        standardGroups!.map((group: StandardGroup) => group.id)
+        standardGroups!.map((group: StandardGroup) => group.id),
       ),
     enabled: !!standardGroups && standardGroups.length > 0,
   });
@@ -72,7 +72,7 @@ export default function TableRubric({
       ],
       queryFn: () =>
         getSimulationChatFeedbacksBySimulationChatGrades(
-          simulationGrades!.map((grade) => grade.id)
+          simulationGrades!.map((grade) => grade.id),
         ),
       enabled: !!simulationGrades && simulationGrades.length > 0,
     });
@@ -97,7 +97,7 @@ export default function TableRubric({
   // Helper function to determine if a standard was achieved
   const isStandardAchieved = (
     standard: Standard,
-    groupStandards: Standard[]
+    groupStandards: Standard[],
   ) => {
     const feedback = getFeedbackForStandard(standard.id);
     if (!feedback) return false;
@@ -120,7 +120,7 @@ export default function TableRubric({
 
     // Find the achieved standard in this group
     const achievedStandard = groupStandards.find((s) =>
-      isStandardAchieved(s, groupStandards)
+      isStandardAchieved(s, groupStandards),
     );
     if (!achievedStandard) return false;
 
@@ -152,14 +152,14 @@ export default function TableRubric({
       standards:
         standards
           ?.filter(
-            (standard: Standard) => standard.standardGroupId === group.id
+            (standard: Standard) => standard.standardGroupId === group.id,
           )
           ?.sort((a, b) => b.points - a.points) || [], // Sort by points descending (Level 5 to Level 1)
     })) || [];
 
   // Determine the maximum number of standards across all groups for consistent column count
   const maxStandards = Math.max(
-    ...groupedStandards.map((g) => g.standards.length)
+    ...groupedStandards.map((g) => g.standards.length),
   );
 
   return (
@@ -215,11 +215,11 @@ export default function TableRubric({
                     const feedback = getFeedbackForStandard(standard.id);
                     const isAchieved = isStandardAchieved(
                       standard,
-                      groupStandards
+                      groupStandards,
                     );
                     const shouldHighlightCell = shouldHighlight(
                       standard,
-                      groupStandards
+                      groupStandards,
                     );
 
                     return (
@@ -248,7 +248,7 @@ export default function TableRubric({
                     );
                   })}
                 </TableRow>
-              )
+              ),
             )}
           </TableBody>
         </Table>

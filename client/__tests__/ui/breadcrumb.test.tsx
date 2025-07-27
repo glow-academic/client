@@ -26,7 +26,7 @@ describe("Breadcrumb", () => {
               <BreadcrumbPage>Current</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
-        </Breadcrumb>
+        </Breadcrumb>,
       );
 
       expect(screen.getByText("Home")).toBeInTheDocument();
@@ -45,7 +45,7 @@ describe("Breadcrumb", () => {
               <BreadcrumbPage>Current</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
-        </Breadcrumb>
+        </Breadcrumb>,
       );
 
       const link = screen.getByRole("link", { name: "Home" });
@@ -71,7 +71,7 @@ describe("Breadcrumb", () => {
               <BreadcrumbPage>Current</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
-        </Breadcrumb>
+        </Breadcrumb>,
       );
 
       expect(screen.getByText("Home")).toBeInTheDocument();
@@ -90,7 +90,7 @@ describe("Breadcrumb", () => {
               <BreadcrumbPage>Single Page</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
-        </Breadcrumb>
+        </Breadcrumb>,
       );
 
       expect(screen.getByText("Single Page")).toBeInTheDocument();

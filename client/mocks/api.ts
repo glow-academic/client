@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { vi } from "vitest";
 
 // Generated automatically by generate-mocks.js
 // API mocks for all functions in client/utils/api
@@ -39,20 +39,34 @@ const mockReportResponse = {
   blob: () => Promise.resolve(new Blob(["mock-blob-data"])),
 };
 
-
-
 // DOCUMENTS API MOCKS
-export const deleteDocumentMock = vi.fn(() => Promise.resolve(mockErrorResponse));
-export const finalizeDocumentUploadMock = vi.fn(() => Promise.resolve(mockDocumentResponse));
+export const deleteDocumentMock = vi.fn(() =>
+  Promise.resolve(mockErrorResponse),
+);
+export const finalizeDocumentUploadMock = vi.fn(() =>
+  Promise.resolve(mockDocumentResponse),
+);
 
 // SCENARIOS API MOCKS
-export const newScenarioMock = vi.fn(() => Promise.resolve(mockScenarioResponse));
-export const testScenarioMock = vi.fn(() => Promise.resolve(mockReportResponse));
+export const newScenarioMock = vi.fn(() =>
+  Promise.resolve(mockScenarioResponse),
+);
+export const testScenarioMock = vi.fn(() =>
+  Promise.resolve(mockReportResponse),
+);
 
-vi.mock('@/utils/api/documents/delete-document', () => ({ deleteDocument: deleteDocumentMock }));
-vi.mock('@/utils/api/documents/finalize-document-upload', () => ({ finalizeDocumentUpload: finalizeDocumentUploadMock }));
-vi.mock('@/utils/api/scenarios/new-scenario', () => ({ newScenario: newScenarioMock }));
-vi.mock('@/utils/api/scenarios/test-scenario', () => ({ testScenario: testScenarioMock }));
+vi.mock("@/utils/api/documents/delete-document", () => ({
+  deleteDocument: deleteDocumentMock,
+}));
+vi.mock("@/utils/api/documents/finalize-document-upload", () => ({
+  finalizeDocumentUpload: finalizeDocumentUploadMock,
+}));
+vi.mock("@/utils/api/scenarios/new-scenario", () => ({
+  newScenario: newScenarioMock,
+}));
+vi.mock("@/utils/api/scenarios/test-scenario", () => ({
+  testScenario: testScenarioMock,
+}));
 
 // Utility functions for testing
 export const resetAllApiMocks = () => {
@@ -62,11 +76,17 @@ export const resetAllApiMocks = () => {
   testScenarioMock.mockClear();
 };
 
-export const setApiMockResponse = (mockFn: ReturnType<typeof vi.fn>, response: unknown) => {
+export const setApiMockResponse = (
+  mockFn: ReturnType<typeof vi.fn>,
+  response: unknown,
+) => {
   mockFn.mockResolvedValue(response);
 };
 
-export const setApiMockError = (mockFn: ReturnType<typeof vi.fn>, error: unknown) => {
+export const setApiMockError = (
+  mockFn: ReturnType<typeof vi.fn>,
+  error: unknown,
+) => {
   mockFn.mockRejectedValue(error);
 };
 

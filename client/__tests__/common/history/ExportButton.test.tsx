@@ -79,7 +79,7 @@ describe("ExportButton", () => {
     });
     it("should handle missing or invalid props", () => {
       renderWithMocks(
-        <ExportButton table={createMockTable()} profileOptions={[]} />
+        <ExportButton table={createMockTable()} profileOptions={[]} />,
       );
       expect(document.body).toBeInTheDocument();
     });

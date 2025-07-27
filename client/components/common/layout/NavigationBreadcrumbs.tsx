@@ -23,7 +23,7 @@ export function NavigationBreadcrumbs({
   const pathname = usePathname();
   const breadcrumbNavigate = createBreadcrumbSectionChangeHandler(
     router,
-    pathname
+    pathname,
   );
 
   const handleBreadcrumbClick = (crumb: {

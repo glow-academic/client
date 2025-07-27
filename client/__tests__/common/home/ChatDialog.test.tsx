@@ -206,7 +206,7 @@ describe("ChatDialog", () => {
       const minimizeButton = buttons.find(
         (button) =>
           button.querySelector('svg[class*="minimize2"]') ||
-          button.querySelector('svg[class*="minimize-2"]')
+          button.querySelector('svg[class*="minimize-2"]'),
       );
       expect(minimizeButton).toBeInTheDocument();
 
@@ -225,7 +225,7 @@ describe("ChatDialog", () => {
       // Test close button - look for the button with X icon
       const buttons = screen.getAllByRole("button");
       const closeButton = buttons.find((button) =>
-        button.querySelector('svg[class*="x"]')
+        button.querySelector('svg[class*="x"]'),
       );
       expect(closeButton).toBeInTheDocument();
 
@@ -241,7 +241,7 @@ describe("ChatDialog", () => {
         "@/utils/queries/assistant_chats/get-assistant-chats-by-profile"
       );
       vi.mocked(getAssistantChatsByProfile).mockRejectedValue(
-        new Error("API Error")
+        new Error("API Error"),
       );
 
       renderWithMocks(<ChatDialog />);

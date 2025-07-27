@@ -8,9 +8,7 @@ export interface DataTableRowActionsProps {
   id: string;
 }
 
-export function DataTableRowActions({
-  id,
-}: DataTableRowActionsProps) {
+export function DataTableRowActions({ id }: DataTableRowActionsProps) {
   return (
     <Link href={`/home/a/${id}`}>
       <Button variant="outline" size="sm" className="h-8">

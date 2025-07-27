@@ -97,7 +97,7 @@ describe("Dashboard", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
       vi.mocked(getAllProfiles).mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve([]), 100))
+        () => new Promise((resolve) => setTimeout(() => resolve([]), 100)),
       );
 
       renderWithMocks(<Dashboard />);

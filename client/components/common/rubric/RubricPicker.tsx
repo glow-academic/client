@@ -63,7 +63,7 @@ export function RubricPicker({
 }: RubricPickerProps) {
   const [open, setOpen] = React.useState(false);
   const [peekedRubric, setPeekedRubric] = React.useState<Rubric | undefined>(
-    rubrics[0]
+    rubrics[0],
   );
 
   const handleSelect = (rubric: Rubric) => {
@@ -92,7 +92,7 @@ export function RubricPicker({
   const handleRemoveItem = (rubricToRemove: Rubric, e: React.MouseEvent) => {
     e.stopPropagation();
     const newSelectedRubrics = selectedRubrics.filter(
-      (r) => r.id !== rubricToRemove.id
+      (r) => r.id !== rubricToRemove.id,
     );
     onSelect?.(newSelectedRubrics);
   };
@@ -187,7 +187,7 @@ export function RubricPicker({
                       key={rubric.id}
                       rubric={rubric}
                       isSelected={selectedRubrics.some(
-                        (r) => r.id === rubric.id
+                        (r) => r.id === rubric.id,
                       )}
                       onPeek={(rubric) => setPeekedRubric(rubric)}
                       onSelect={() => handleSelect(rubric)}
@@ -246,7 +246,7 @@ function RubricItem({ rubric, isSelected, onSelect, onPeek }: RubricItemProps) {
         <Check
           className={cn(
             "ml-auto flex-shrink-0",
-            isSelected ? "opacity-100" : "opacity-0"
+            isSelected ? "opacity-100" : "opacity-0",
           )}
         />
       </div>

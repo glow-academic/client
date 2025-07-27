@@ -29,7 +29,7 @@ export function useSimulationColumns({
         header: "Scenarios",
         accessorFn: (simulation) => {
           const simulationScenarios = scenarios.filter((scenario: Scenario) =>
-            simulation.scenarioIds?.includes(scenario.id)
+            simulation.scenarioIds?.includes(scenario.id),
           );
           return simulationScenarios.map((scenario: Scenario) => scenario.id);
         },
@@ -37,7 +37,7 @@ export function useSimulationColumns({
           const simulation = row.original;
           const simulationScenarioIds = simulation.scenarioIds || [];
           return value.some((filterValue: string) =>
-            simulationScenarioIds.includes(filterValue)
+            simulationScenarioIds.includes(filterValue),
           );
         },
       },
@@ -46,7 +46,7 @@ export function useSimulationColumns({
         header: "Rubric",
         accessorFn: (simulation) => {
           const simulationRubric = rubrics.find(
-            (rubric: Rubric) => rubric.id === simulation.rubricId
+            (rubric: Rubric) => rubric.id === simulation.rubricId,
           );
           return simulationRubric?.id || "";
         },
@@ -88,7 +88,7 @@ export function useSimulationColumns({
         cell: ({ row }) => row.getValue("updatedAt"),
       },
     ],
-    [scenarios, rubrics]
+    [scenarios, rubrics],
   );
 
   return { columns };
