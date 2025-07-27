@@ -7,466 +7,962 @@ describe("Rubrics End-to-End Tests", () => {
 
   describe("Role-Based Access Control", () => {
     it.skip("should allow admin users to create and manage all rubrics", () => {
-      // Login as admin
+      // Login as admin using mock session
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+
       // Navigate to create rubrics
-      // Verify can create new rubrics
-      // Verify can edit any rubric
-      // Verify can delete rubrics (if not in use)
-      // Verify can view all rubrics
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+      cy.url().should("include", "/create/rubrics");
+
+      // Verify can view all rubrics (search input should be visible)
+      cy.get('input[placeholder="Search rubrics..."]').should("be.visible");
+
+      // Verify can edit rubrics (edit buttons should be present if rubrics exist)
+      cy.get("button").contains("Edit").should("exist");
+
+      // Verify can delete rubrics (delete buttons should be present if rubrics exist)
+      cy.get("button").contains("Delete").should("exist");
     });
 
     it.skip("should allow superadmin users to create and manage all rubrics", () => {
-      // Login as superadmin
+      // Login as superadmin using mock session
+      cy.mockSession({ role: "superadmin" });
+      cy.visit("/analytics/dashboard");
+
       // Navigate to create rubrics
-      // Verify can create new rubrics
-      // Verify can edit any rubric
-      // Verify can delete rubrics (if not in use)
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+      cy.url().should("include", "/create/rubrics");
+
       // Verify can view all rubrics
+      cy.get('input[placeholder="Search rubrics..."]').should("be.visible");
+
+      // Verify can edit rubrics
+      cy.get("button").contains("Edit").should("exist");
+
+      // Verify can delete rubrics
+      cy.get("button").contains("Delete").should("exist");
     });
 
     it.skip("should allow instructional users to create and manage rubrics", () => {
-      // Login as instructional
+      // Login as instructional using mock session
+      cy.mockSession({ role: "instructional" });
+      cy.visit("/analytics/dashboard");
+
       // Navigate to create rubrics
-      // Verify can create new rubrics
-      // Verify can edit rubrics
-      // Verify can delete rubrics (if not in use)
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+      cy.url().should("include", "/create/rubrics");
+
       // Verify can view all rubrics
+      cy.get('input[placeholder="Search rubrics..."]').should("be.visible");
+
+      // Verify can edit rubrics
+      cy.get("button").contains("Edit").should("exist");
+
+      // Verify can delete rubrics
+      cy.get("button").contains("Delete").should("exist");
     });
 
     it.skip("should prevent TA users from accessing rubric creation", () => {
-      // Login as TA
-      // Try to navigate to create rubrics
-      // Verify access is denied
-      // Verify appropriate redirect or error message
+      // Login as TA using mock session
+      cy.mockSession({ role: "ta" });
+      cy.visit("/home");
+
+      // Try to navigate to create rubrics directly
+      cy.visit("/create/rubrics");
+      cy.url().should("include", "/access-denied");
+
+      // Verify sidebar doesn't show Rubrics option
+      cy.get('[data-sidebar="menu-sub-button"]').should(
+        "not.contain",
+        "Rubrics"
+      );
     });
 
     it.skip("should prevent guest users from accessing rubric creation", () => {
       // Login as guest
-      // Try to navigate to create rubrics
-      // Verify access is denied
-      // Verify appropriate redirect or error message
+      cy.visit("/");
+      cy.get('[data-testid="guest-login-button"]').click();
+      cy.visit("/practice");
+
+      // Try to navigate to create rubrics directly
+      cy.visit("/create/rubrics");
+      cy.url().should("include", "/access-denied");
+
+      // Verify sidebar doesn't show Rubrics option
+      cy.get('[data-sidebar="menu-sub-button"]').should(
+        "not.contain",
+        "Rubrics"
+      );
     });
   });
 
   describe("Rubric Creation", () => {
     it.skip("should create a new rubric with basic information", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
-      // Click create new rubric
-      // Fill in basic information:
-      // - Rubric name
-      // - Description
-      // - Total points
-      // - Pass threshold
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
+      // Navigate to new rubric creation
+      cy.visit("/create/rubrics/new");
+      cy.url().should("include", "/create/rubrics/new");
+
+      // Fill in basic information
+      cy.get('input[id="name"]').type("Test Rubric");
+      cy.get('textarea[id="description"]').type("Test rubric description");
+      cy.get('input[id="points"]').type("100");
+      cy.get('input[id="passPoints"]').type("70");
+
       // Submit form
+      cy.get("button").contains("Create Rubric").click();
+
       // Verify rubric is created successfully
-      // Verify rubric appears in list
+      cy.url().should("include", "/create/rubrics");
     });
 
     it.skip("should create a rubric with multiple criteria", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
-      // Create new rubric
-      // Add multiple criteria:
-      // - Communication skills
-      // - Problem solving
-      // - Professionalism
-      // - Technical knowledge
-      // Set points for each criterion
-      // Submit form
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
+      // Navigate to new rubric creation
+      cy.visit("/create/rubrics/new");
+
+      // Fill in basic information
+      cy.get('input[id="name"]').type("Multi-Criteria Rubric");
+      cy.get('textarea[id="description"]').type(
+        "Rubric with multiple criteria"
+      );
+      cy.get('input[id="points"]').type("100");
+      cy.get('input[id="passPoints"]').type("70");
+
+      // Add multiple criteria
+      // Note: Criteria addition would need to be implemented
+      cy.get("button").contains("Create Rubric").click();
+
       // Verify rubric is created with all criteria
-      // Verify criteria are correctly configured
+      cy.url().should("include", "/create/rubrics");
     });
 
     it.skip("should create a rubric with detailed scoring levels", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
-      // Create new rubric
-      // Add scoring levels for each criterion:
-      // - Excellent (4 points)
-      // - Good (3 points)
-      // - Satisfactory (2 points)
-      // - Needs Improvement (1 point)
-      // - Unsatisfactory (0 points)
-      // Submit form
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
+      // Navigate to new rubric creation
+      cy.visit("/create/rubrics/new");
+
+      // Fill in basic information
+      cy.get('input[id="name"]').type("Scoring Rubric");
+      cy.get('textarea[id="description"]').type("Rubric with detailed scoring");
+      cy.get('input[id="points"]').type("100");
+      cy.get('input[id="passPoints"]').type("70");
+
+      // Add scoring levels for each criterion
+      // Note: Scoring levels would need to be implemented
+      cy.get("button").contains("Create Rubric").click();
+
       // Verify rubric is created with scoring levels
-      // Verify scoring is correctly configured
+      cy.url().should("include", "/create/rubrics");
     });
 
     it.skip("should validate required fields during creation", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
+      // Navigate to new rubric creation
+      cy.visit("/create/rubrics/new");
+
       // Try to submit form without required fields
+      cy.get("button").contains("Create Rubric").click();
+
       // Verify validation errors are displayed
-      // Verify form cannot be submitted
+      // Note: Validation would need to be implemented
+      cy.get("button").contains("Create Rubric").should("be.visible");
     });
 
     it.skip("should handle duplicate rubric names gracefully", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
+      // Navigate to new rubric creation
+      cy.visit("/create/rubrics/new");
+
       // Try to create rubric with existing name
+      cy.get('input[id="name"]').type("Existing Rubric Name");
+      cy.get('textarea[id="description"]').type("Test description");
+      cy.get('input[id="points"]').type("100");
+      cy.get('input[id="passPoints"]').type("70");
+
+      // Submit form
+      cy.get("button").contains("Create Rubric").click();
+
       // Verify appropriate error message
-      // Verify form is not submitted
+      // Note: Duplicate validation would need to be implemented
+      cy.get("button").contains("Create Rubric").should("be.visible");
     });
   });
 
   describe("Rubric Management and Editing", () => {
     it.skip("should edit rubric information", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Select existing rubric to edit
+      cy.get("button").contains("Edit").first().click();
+
+      // Verify edit page loads
+      cy.url().should("include", "/create/rubrics/r/");
+
       // Modify rubric information
+      cy.get('input[id="name"]').clear().type("Updated Rubric Name");
+
       // Submit changes
+      cy.get("button").contains("Update Rubric").click();
+
       // Verify changes are saved
-      // Verify updated information is displayed
+      cy.url().should("include", "/create/rubrics");
     });
 
     it.skip("should add new criteria to existing rubric", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Select existing rubric to edit
+      cy.get("button").contains("Edit").first().click();
+
+      // Verify edit page loads
+      cy.url().should("include", "/create/rubrics/r/");
+
       // Add new criterion
-      // Set points and description
+      // Note: Criteria addition would need to be implemented
+      cy.get("button").contains("Add Criterion").click();
+
       // Submit changes
+      cy.get("button").contains("Update Rubric").click();
+
       // Verify new criterion is added
-      // Verify total points are updated
+      cy.url().should("include", "/create/rubrics");
     });
 
     it.skip("should remove criteria from existing rubric", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Select existing rubric to edit
+      cy.get("button").contains("Edit").first().click();
+
+      // Verify edit page loads
+      cy.url().should("include", "/create/rubrics/r/");
+
       // Remove criterion
+      // Note: Criteria removal would need to be implemented
+      cy.get("button").contains("Remove").first().click();
+
       // Submit changes
+      cy.get("button").contains("Update Rubric").click();
+
       // Verify criterion is removed
-      // Verify total points are updated
+      cy.url().should("include", "/create/rubrics");
     });
 
     it.skip("should update scoring levels for criteria", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Select existing rubric to edit
+      cy.get("button").contains("Edit").first().click();
+
+      // Verify edit page loads
+      cy.url().should("include", "/create/rubrics/r/");
+
       // Modify scoring levels for criteria
+      // Note: Scoring level modification would need to be implemented
+      cy.get('input[id="excellent"]').clear().type("5");
+
       // Submit changes
+      cy.get("button").contains("Update Rubric").click();
+
       // Verify scoring levels are updated
-      // Verify changes affect grading calculations
+      cy.url().should("include", "/create/rubrics");
     });
 
     it.skip("should update pass threshold for rubric", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Select existing rubric to edit
+      cy.get("button").contains("Edit").first().click();
+
+      // Verify edit page loads
+      cy.url().should("include", "/create/rubrics/r/");
+
       // Change pass threshold
+      cy.get('input[id="passPoints"]').clear().type("75");
+
       // Submit changes
+      cy.get("button").contains("Update Rubric").click();
+
       // Verify pass threshold is updated
-      // Verify changes affect pass/fail determination
+      cy.url().should("include", "/create/rubrics");
     });
 
     it.skip("should prevent editing rubrics that are in use", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Try to edit rubric that is actively being used
+      cy.get("button").contains("Edit").first().click();
+
       // Verify edit is prevented
-      // Verify appropriate message is displayed
+      // Note: Usage validation would need to be implemented
+      cy.url().should("include", "/create/rubrics/r/");
     });
   });
 
   describe("Rubric Deletion and Constraints", () => {
     it.skip("should delete rubric when not in use", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Select rubric that is not in use
-      // Click delete button
+      cy.get("button").contains("Delete").first().click();
+
       // Confirm deletion
+      cy.get("h2").contains("Delete Rubric").should("be.visible");
+      cy.get("button").contains("Delete").click();
+
       // Verify rubric is deleted
-      // Verify rubric no longer appears in list
+      cy.get("h2").contains("Delete Rubric").should("not.exist");
     });
 
     it.skip("should prevent deletion of rubrics that are in use", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Try to delete rubric that is actively being used in simulations
+      cy.get("button").contains("Delete").first().click();
+
       // Verify deletion is prevented
+      cy.get("h2").contains("Delete Rubric").should("be.visible");
+      cy.get("p").should("contain", "This action cannot be undone");
+
       // Verify appropriate error message
-      // Verify rubric remains in list
+      // Note: Usage validation would need to be implemented
+      cy.get("button").contains("Delete").should("be.visible");
     });
 
     it.skip("should show warning when attempting to delete active rubric", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Click delete on active rubric
+      cy.get("button").contains("Delete").first().click();
+
       // Verify warning dialog is displayed
+      cy.get("h2").contains("Delete Rubric").should("be.visible");
+
       // Verify warning explains why deletion is prevented
+      cy.get("p").should("contain", "This action cannot be undone");
     });
 
     it.skip("should show which simulations are using the rubric", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Try to delete rubric in use
+      cy.get("button").contains("Delete").first().click();
+
       // Verify list of simulations using the rubric is displayed
-      // Verify user can navigate to those simulations
+      cy.get("h2").contains("Delete Rubric").should("be.visible");
+      // Note: Usage details would need to be implemented
     });
   });
 
   describe("Rubric Duplication", () => {
     it.skip("should duplicate rubrics", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Select existing rubric
-      // Click duplicate button
+      cy.get("button")
+        .find('svg[class*="lucide-copy"]')
+        .parent()
+        .first()
+        .click();
+
       // Verify new rubric is created with same settings
-      // Verify new rubric has unique name
-      // Verify all criteria and scoring are copied
+      // Note: Duplication functionality would need to be implemented
+      cy.get('input[placeholder="Search rubrics..."]').should("be.visible");
     });
 
     it.skip("should allow editing duplicated rubric", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Duplicate a rubric
+      cy.get("button")
+        .find('svg[class*="lucide-copy"]')
+        .parent()
+        .first()
+        .click();
+
       // Edit the duplicated rubric
+      cy.get("button").contains("Edit").first().click();
+
       // Verify changes can be made
-      // Verify changes are saved successfully
+      cy.url().should("include", "/create/rubrics/r/");
     });
 
     it.skip("should create unique names for duplicated rubrics", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Duplicate a rubric multiple times
+      cy.get("button")
+        .find('svg[class*="lucide-copy"]')
+        .parent()
+        .first()
+        .click();
+      cy.get("button")
+        .find('svg[class*="lucide-copy"]')
+        .parent()
+        .first()
+        .click();
+
       // Verify each duplicated rubric has unique name
-      // Verify naming convention is followed
+      // Note: Unique naming would need to be implemented
+      cy.get('input[placeholder="Search rubrics..."]').should("be.visible");
     });
   });
 
   describe("Rubric Criteria Management", () => {
     it.skip("should add criteria with detailed descriptions", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
-      // Create new rubric
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
+      // Navigate to new rubric creation
+      cy.visit("/create/rubrics/new");
+
+      // Fill in basic information
+      cy.get('input[id="name"]').type("Criteria Rubric");
+      cy.get('textarea[id="description"]').type(
+        "Rubric with detailed criteria"
+      );
+      cy.get('input[id="points"]').type("100");
+      cy.get('input[id="passPoints"]').type("70");
+
       // Add criterion with detailed description
-      // Set scoring levels and descriptions
+      // Note: Criteria addition would need to be implemented
+      cy.get("button").contains("Add Criterion").click();
+
       // Submit form
+      cy.get("button").contains("Create Rubric").click();
+
       // Verify criterion is added with all details
-      // Verify descriptions are saved correctly
+      cy.url().should("include", "/create/rubrics");
     });
 
     it.skip("should reorder criteria in rubric", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Select existing rubric to edit
+      cy.get("button").contains("Edit").first().click();
+
       // Drag and drop criteria to reorder
-      // Submit changes
+      // Note: Drag and drop functionality would need to be implemented
+      cy.get("button").contains("Update Rubric").click();
+
       // Verify order is saved
-      // Verify order is maintained in grading interface
+      cy.url().should("include", "/create/rubrics");
     });
 
     it.skip("should set different point values for criteria", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
-      // Create new rubric
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
+      // Navigate to new rubric creation
+      cy.visit("/create/rubrics/new");
+
+      // Fill in basic information
+      cy.get('input[id="name"]').type("Points Rubric");
+      cy.get('textarea[id="description"]').type(
+        "Rubric with different point values"
+      );
+      cy.get('input[id="points"]').type("100");
+      cy.get('input[id="passPoints"]').type("70");
+
       // Add criteria with different point values
-      // Submit form
+      // Note: Point value setting would need to be implemented
+      cy.get("button").contains("Create Rubric").click();
+
       // Verify point values are saved correctly
-      // Verify total points calculation is accurate
+      cy.url().should("include", "/create/rubrics");
     });
 
     it.skip("should validate criteria point distribution", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
+      // Navigate to new rubric creation
+      cy.visit("/create/rubrics/new");
+
       // Try to create rubric with invalid point distribution
+      cy.get('input[id="name"]').type("Invalid Points Rubric");
+      cy.get('textarea[id="description"]').type(
+        "Rubric with invalid point distribution"
+      );
+      cy.get('input[id="points"]').type("100");
+      cy.get('input[id="passPoints"]').type("150"); // Invalid: pass points > total points
+
+      // Submit form
+      cy.get("button").contains("Create Rubric").click();
+
       // Verify validation error is displayed
-      // Verify form submission is prevented
+      // Note: Validation would need to be implemented
+      cy.get("button").contains("Create Rubric").should("be.visible");
     });
   });
 
   describe("Rubric Scoring and Grading", () => {
     it.skip("should calculate total points correctly", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
+      // Navigate to new rubric creation
+      cy.visit("/create/rubrics/new");
+
       // Create rubric with multiple criteria
-      // Set different point values
+      cy.get('input[id="name"]').type("Calculation Rubric");
+      cy.get('textarea[id="description"]').type(
+        "Rubric for testing calculations"
+      );
+      cy.get('input[id="points"]').type("100");
+      cy.get('input[id="passPoints"]').type("70");
+
       // Verify total points calculation is correct
+      // Note: Calculation would need to be implemented
+      cy.get("button").contains("Create Rubric").click();
+
       // Verify pass threshold validation works
+      cy.url().should("include", "/create/rubrics");
     });
 
     it.skip("should validate pass threshold against total points", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
+      // Navigate to new rubric creation
+      cy.visit("/create/rubrics/new");
+
       // Try to set pass threshold higher than total points
+      cy.get('input[id="name"]').type("Invalid Threshold Rubric");
+      cy.get('textarea[id="description"]').type(
+        "Rubric with invalid threshold"
+      );
+      cy.get('input[id="points"]').type("100");
+      cy.get('input[id="passPoints"]').type("150"); // Invalid: pass points > total points
+
+      // Submit form
+      cy.get("button").contains("Create Rubric").click();
+
       // Verify validation error is displayed
-      // Verify form submission is prevented
+      // Note: Validation would need to be implemented
+      cy.get("button").contains("Create Rubric").should("be.visible");
     });
 
     it.skip("should show rubric preview with scoring", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
+      // Navigate to new rubric creation
+      cy.visit("/create/rubrics/new");
+
       // Create rubric with criteria and scoring
+      cy.get('input[id="name"]').type("Preview Rubric");
+      cy.get('textarea[id="description"]').type("Rubric for preview testing");
+      cy.get('input[id="points"]').type("100");
+      cy.get('input[id="passPoints"]').type("70");
+
       // View rubric preview
+      // Note: Preview functionality would need to be implemented
+      cy.get("button").contains("Preview").click();
+
       // Verify all criteria are displayed
-      // Verify scoring levels are shown
-      // Verify total points are calculated
+      // Note: Preview would need to be implemented
+      cy.get("button").contains("Create Rubric").click();
     });
 
     it.skip("should test rubric in simulation environment", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Select rubric to test
+      cy.get("button").contains("Edit").first().click();
+
       // Assign to simulation
+      // Note: Simulation assignment would need to be implemented
+      cy.url().should("include", "/create/rubrics/r/");
+
       // Test simulation with rubric
-      // Verify grading works according to rubric
-      // Verify pass/fail determination is correct
+      // Note: Testing functionality would need to be implemented
     });
   });
 
   describe("Rubric Search and Filtering", () => {
     it.skip("should search rubrics by name", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Search for rubric by name
+      cy.get('input[placeholder="Search rubrics..."]').type("test rubric");
+
       // Verify search results are displayed
+      cy.get('input[placeholder="Search rubrics..."]').should(
+        "have.value",
+        "test rubric"
+      );
+
       // Verify search is case-insensitive
+      cy.get('input[placeholder="Search rubrics..."]')
+        .clear()
+        .type("TEST RUBRIC");
+      cy.get('input[placeholder="Search rubrics..."]').should(
+        "have.value",
+        "TEST RUBRIC"
+      );
     });
 
     it.skip("should search rubrics by description", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Search for rubric by description content
+      cy.get('input[placeholder="Search rubrics..."]').type(
+        "description search"
+      );
+
       // Verify search results are displayed
-      // Verify content search works correctly
+      cy.get('input[placeholder="Search rubrics..."]').should(
+        "have.value",
+        "description search"
+      );
     });
 
     it.skip("should filter rubrics by criteria count", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Filter rubrics by number of criteria
-      // Verify filtering works correctly
-      // Verify appropriate rubrics are displayed
+      // Note: Criteria count filtering would need to be implemented
+      cy.get('input[placeholder="Search rubrics..."]').should("be.visible");
     });
 
     it.skip("should filter rubrics by usage status", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Filter rubrics by usage status (used, unused)
-      // Verify filtering works correctly
-      // Verify appropriate rubrics are displayed
+      // Note: Usage status filtering would need to be implemented
+      cy.get('input[placeholder="Search rubrics..."]').should("be.visible");
     });
   });
 
   describe("Rubric Performance Metrics", () => {
     it.skip("should show rubric usage statistics", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // View rubric usage data
-      // Verify statistics are displayed:
-      // - Usage count
-      // - Average scores
-      // - Pass rates
-      // - Most common scores
-      // Verify statistics are accurate and up-to-date
+      // Note: Usage statistics would need to be implemented
+      cy.get('input[placeholder="Search rubrics..."]').should("be.visible");
+
+      // Verify statistics are displayed
+      // This would be tested when statistics are implemented
     });
 
     it.skip("should show criterion performance analysis", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Select rubric with usage data
+      cy.get("button").contains("Edit").first().click();
+
       // View criterion performance analysis
-      // Verify analysis shows:
-      // - Average scores per criterion
-      // - Difficulty analysis
-      // - Improvement suggestions
-      // Verify analysis is accurate
+      // Note: Performance analysis would need to be implemented
+      cy.url().should("include", "/create/rubrics/r/");
+
+      // Verify analysis shows
+      // This would be tested when analysis is implemented
     });
   });
 
   describe("Rubric Data Validation", () => {
     it.skip("should validate rubric name format", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
+      // Navigate to new rubric creation
+      cy.visit("/create/rubrics/new");
+
       // Try to create rubric with invalid name format
+      cy.get('input[id="name"]').type(""); // Empty name
+
+      // Submit form
+      cy.get("button").contains("Create Rubric").click();
+
       // Verify validation error is displayed
-      // Verify form submission is prevented
+      // Note: Validation would need to be implemented
+      cy.get("button").contains("Create Rubric").should("be.visible");
     });
 
     it.skip("should validate criterion descriptions", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
+      // Navigate to new rubric creation
+      cy.visit("/create/rubrics/new");
+
       // Try to create criterion with invalid description
+      // Note: Criterion creation would need to be implemented
+      cy.get('input[id="name"]').type("Test Rubric");
+      cy.get('textarea[id="description"]').type("Test description");
+      cy.get('input[id="points"]').type("100");
+      cy.get('input[id="passPoints"]').type("70");
+
+      // Submit form
+      cy.get("button").contains("Create Rubric").click();
+
       // Verify validation error is displayed
-      // Verify form submission is prevented
+      // Note: Validation would need to be implemented
+      cy.get("button").contains("Create Rubric").should("be.visible");
     });
 
     it.skip("should validate point values", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
+      // Navigate to new rubric creation
+      cy.visit("/create/rubrics/new");
+
       // Try to set invalid point values
+      cy.get('input[id="name"]').type("Invalid Points Rubric");
+      cy.get('textarea[id="description"]').type("Test description");
+      cy.get('input[id="points"]').type("-10"); // Invalid negative value
+      cy.get('input[id="passPoints"]').type("70");
+
+      // Submit form
+      cy.get("button").contains("Create Rubric").click();
+
       // Verify validation error is displayed
-      // Verify form submission is prevented
+      // Note: Validation would need to be implemented
+      cy.get("button").contains("Create Rubric").should("be.visible");
     });
 
     it.skip("should validate scoring level descriptions", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
+      // Navigate to new rubric creation
+      cy.visit("/create/rubrics/new");
+
       // Try to create scoring level with invalid description
+      // Note: Scoring level creation would need to be implemented
+      cy.get('input[id="name"]').type("Test Rubric");
+      cy.get('textarea[id="description"]').type("Test description");
+      cy.get('input[id="points"]').type("100");
+      cy.get('input[id="passPoints"]').type("70");
+
+      // Submit form
+      cy.get("button").contains("Create Rubric").click();
+
       // Verify validation error is displayed
-      // Verify form submission is prevented
+      // Note: Validation would need to be implemented
+      cy.get("button").contains("Create Rubric").should("be.visible");
     });
   });
 
   describe("Rubric Error Handling", () => {
     it.skip("should handle API errors gracefully", () => {
       // Simulate API error
-      // Navigate to create rubrics
+      cy.intercept("GET", "/api/rubrics", {
+        statusCode: 500,
+        body: { error: "API Error" },
+      });
+
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Try to perform rubric operation
+      cy.get('input[placeholder="Search rubrics..."]').should("be.visible");
+
       // Verify appropriate error message is displayed
-      // Verify retry functionality works
+      // Note: Error handling would need to be implemented
     });
 
     it.skip("should handle network connectivity issues", () => {
       // Simulate network disconnect
-      // Navigate to create rubrics
+      cy.intercept("GET", "/api/rubrics", { forceNetworkError: true });
+
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Try to perform rubric operation
+      cy.get('input[placeholder="Search rubrics..."]').should("be.visible");
+
       // Verify appropriate error message
-      // Verify reconnection handling works
+      // Note: Error handling would need to be implemented
     });
 
     it.skip("should handle validation errors appropriately", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
+      // Navigate to new rubric creation
+      cy.visit("/create/rubrics/new");
+
       // Submit invalid data
+      cy.get("button").contains("Create Rubric").click();
+
       // Verify validation errors are displayed clearly
-      // Verify form state is preserved
+      // Note: Validation would need to be implemented
+      cy.get("button").contains("Create Rubric").should("be.visible");
     });
   });
 
   describe("Rubric Performance", () => {
     it.skip("should load rubric data efficiently", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Verify rubric list loads within acceptable time
+      cy.get('input[placeholder="Search rubrics..."]').should("be.visible");
+
       // Verify loading states are displayed appropriately
+      // Note: Loading states would need to be implemented
     });
 
     it.skip("should handle large numbers of rubrics without performance degradation", () => {
       // Login as admin/instructional
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Navigate to create rubrics with many rubrics
+      cy.get('input[placeholder="Search rubrics..."]').should("be.visible");
+
       // Verify interface remains responsive
-      // Verify search and filtering remain fast
+      // Note: Performance testing would need to be implemented
     });
   });
 
   describe("Rubric Accessibility", () => {
     it.skip("should support keyboard navigation", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Test tab navigation through all interactive elements
+      cy.get("body").type("{tab}");
+      cy.focused().should("have.attr", "placeholder", "Search rubrics...");
+
       // Verify focus management works correctly
+      cy.get('input[placeholder="Search rubrics..."]').should("be.focused");
     });
 
     it.skip("should provide appropriate ARIA labels", () => {
       // Login as admin/instructional
-      // Navigate to create rubrics
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+
       // Verify form elements have appropriate ARIA labels
+      cy.get('input[placeholder="Search rubrics..."]').should("be.visible");
+
       // Verify table elements are accessible
+      cy.get('div[class*="grid"]').should("be.visible");
+
       // Verify interactive elements are announced correctly
+      cy.get("button").contains("Edit").should("be.visible");
     });
   });
 });

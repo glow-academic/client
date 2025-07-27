@@ -1,13 +1,13 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
 import { screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
 import NewScenario from "@/components/create/scenarios/NewScenario";
 
 // Mock the Scenario component since NewScenario is just a wrapper
 vi.mock("@/components/common/scenario/Scenario", () => ({
-  default: vi.fn(({ mode }) => (
+  default: vi.fn(({ mode }: { mode: string }) => (
     <div data-testid="scenario-component" data-mode={mode}>
       Scenario Component (Mode: {mode})
     </div>

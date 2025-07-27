@@ -1,4 +1,5 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
+import { Scenario } from "@/types";
 import type { ColumnDef } from "@tanstack/react-table";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -44,20 +45,24 @@ describe("ScenariosDataTable", () => {
         ...mockProps,
         columns: [
           {
-            id: "title",
-            header: "Title",
-            accessorKey: "title",
-          } as ColumnDef<any>,
+            id: "name",
+            header: "Name",
+            accessorKey: "name",
+          } as ColumnDef<Scenario>,
         ],
         data: [
           {
             id: "scenario-1",
-            title: "Test Scenario",
+            name: "Test Scenario",
             description: "Test Description",
-            simulationId: "sim-1",
-            cohortId: "cohort-1",
             personaId: "persona-1",
-            scenarioType: "type-1",
+            parameterItemIds: [],
+            documentIds: [],
+            defaultScenario: false,
+            practiceScenario: false,
+            generated: false,
+            parentId: null,
+            active: true,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },

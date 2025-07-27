@@ -14,15 +14,12 @@ vi.mock("@/contexts/assistant-context", () => ({
     isSendingMessage: false,
     isStoppingMessage: false,
     currentChatId: null,
-    uiState: { isOpen: false, isExpanded: false },
+    uiState: "closed",
     setUiState: vi.fn(),
     openWidget: vi.fn(),
     expand: vi.fn(),
-    minimize: vi.fn(),
     close: vi.fn(),
-    toggle: vi.fn(),
     setCurrentChatId: vi.fn(),
-    clearCurrentChatId: vi.fn(),
   })),
   AssistantProvider: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
@@ -81,7 +78,7 @@ describe("ChatInput", () => {
 
   describe("User Interactions", () => {
     it("should handle text input", async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithMocks(<ChatInput {...mockProps} />);
 
       await waitFor(() => {
@@ -89,7 +86,7 @@ describe("ChatInput", () => {
       });
 
       const textarea = screen.getByRole("textbox");
-      await user.type(textarea, "Hello World");
+      await _user.type(textarea, "Hello World");
 
       expect(textarea).toHaveValue("Hello World");
     });
@@ -196,15 +193,12 @@ describe("ChatInput", () => {
         isSendingMessage: false,
         isStoppingMessage: false,
         currentChatId: "test-chat-id",
-        uiState: { isOpen: false, isExpanded: false },
+        uiState: "closed",
         setUiState: vi.fn(),
         openWidget: vi.fn(),
         expand: vi.fn(),
-        minimize: vi.fn(),
         close: vi.fn(),
-        toggle: vi.fn(),
         setCurrentChatId: vi.fn(),
-        clearCurrentChatId: vi.fn(),
       });
 
       renderWithMocks(<ChatInput {...mockProps} />);
@@ -249,7 +243,7 @@ describe("ChatInput", () => {
         isSendingMessage: true,
         isStoppingMessage: false,
         currentChatId: null,
-        uiState: { isOpen: false, isExpanded: false },
+        uiState: "closed",
         setUiState: vi.fn(),
         openWidget: vi.fn(),
         expand: vi.fn(),

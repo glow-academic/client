@@ -13,7 +13,7 @@ describe("Resizable", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       renderWithMocks(
-        <ResizablePanelGroup>
+        <ResizablePanelGroup direction="horizontal">
           <ResizablePanel>Panel 1</ResizablePanel>
           <ResizableHandle />
           <ResizablePanel>Panel 2</ResizablePanel>
@@ -28,7 +28,7 @@ describe("Resizable", () => {
 
     it("should have correct accessibility attributes", () => {
       renderWithMocks(
-        <ResizablePanelGroup>
+        <ResizablePanelGroup direction="horizontal">
           <ResizablePanel>Accessible Panel</ResizablePanel>
           <ResizableHandle />
           <ResizablePanel>Another Panel</ResizablePanel>
@@ -45,7 +45,7 @@ describe("Resizable", () => {
   describe("Component Structure", () => {
     it("should render resizable panels with handle", () => {
       renderWithMocks(
-        <ResizablePanelGroup>
+        <ResizablePanelGroup direction="horizontal">
           <ResizablePanel>Left Panel</ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel>Right Panel</ResizablePanel>
