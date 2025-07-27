@@ -629,8 +629,9 @@ export function UnifiedSidebar({
     );
   };
 
-  // Show skeleton while profile is loading or while we don't have a profile yet
-  const shouldShowSkeleton = isLoading || !effectiveProfile;
+  // Show skeleton while profile is loading or while we don't have a complete profile yet
+  const shouldShowSkeleton =
+    isLoading || !effectiveProfile || !effectiveProfile?.role;
 
   if (shouldShowSkeleton) {
     return <SidebarSkeleton />;
