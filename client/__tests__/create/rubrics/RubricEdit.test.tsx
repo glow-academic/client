@@ -45,7 +45,9 @@ describe("RubricEdit", () => {
 
       // Check that the component renders with proper accessibility
       await waitFor(() => {
-        expect(screen.getByText("Create New Rubric")).toBeInTheDocument();
+        expect(
+          screen.getByText("Math Problem Solving Rubric")
+        ).toBeInTheDocument();
       });
 
       // The component should have proper structure
@@ -64,7 +66,9 @@ describe("RubricEdit", () => {
 
       // Should handle edge case gracefully
       await waitFor(() => {
-        expect(screen.getByText("Create New Rubric")).toBeInTheDocument();
+        expect(
+          screen.getByText("Math Problem Solving Rubric")
+        ).toBeInTheDocument();
       });
     });
 
@@ -78,7 +82,7 @@ describe("RubricEdit", () => {
 
       // Should still render without crashing
       await waitFor(() => {
-        expect(screen.getByText("Create New Rubric")).toBeInTheDocument();
+        expect(screen.getByText("Create Rubric")).toBeInTheDocument();
       });
     });
   });

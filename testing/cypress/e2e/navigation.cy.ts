@@ -5,137 +5,458 @@ describe("Navigation End-to-End Tests", () => {
     cy.clearAllStorage();
   });
 
-  describe("Access Control and Navigation", () => {
-    it.skip("should show proper access denied for guest users trying to access restricted pages", () => {
-      // Test that guest users see access denied when trying to access:
-      // - /analytics/* (should redirect to /practice)
-      // - /create/* (should redirect to /practice)
-      // - /management/* (should redirect to /practice)
-      // - /system/* (should redirect to /practice)
-      // Verify access denied cards show appropriate messages and redirect buttons
-    });
-
-    it.skip("should show proper access denied for TA users trying to access staff/admin pages", () => {
-      // Test that TA users see access denied when trying to access:
-      // - /analytics/* (should redirect to /home)
-      // - /create/* (should redirect to /home)
-      // - /management/* (should redirect to /home)
-      // - /system/* (should redirect to /home)
-      // Verify access denied cards show appropriate messages and redirect buttons
-    });
-
-    it.skip("should show proper access denied for instructional users trying to access admin pages", () => {
-      // Test that instructional users see access denied when trying to access:
-      // - /management/* (should redirect to /analytics/dashboard)
-      // - /system/* (should redirect to /analytics/dashboard)
-      // Verify access denied cards show appropriate messages and redirect buttons
-    });
-
-    it.skip("should show proper access denied for admin users trying to access superadmin pages", () => {
-      // Test that admin users see access denied when trying to access:
-      // - /system/* (should redirect to /analytics/dashboard)
-      // Verify access denied cards show appropriate messages and redirect buttons
-    });
-  });
-
   describe("Role-Based Navigation", () => {
     it.skip("should show correct sidebar options for guest users", () => {
-      // Login as guest and verify sidebar only shows:
-      // - Practice (active)
-      // - Profile
-      // Verify no analytics, create, management, or system sections
+      // Login as guest using data-testid="guest-login-button"
+      cy.visit("/");
+      cy.get('[data-testid="guest-login-button"]').click();
+      cy.url().should("include", "/practice");
+
+      // Verify sidebar only shows:
+      // - Practice (active) - should be highlighted
+      // - Profile dropdown in footer
+      cy.get('[data-sidebar="menu-button"]').should("contain", "Practice");
+      cy.get('[data-sidebar="menu-button"]').should("not.contain", "Analytics");
+      cy.get('[data-sidebar="menu-button"]').should("not.contain", "Create");
+      cy.get('[data-sidebar="menu-button"]').should(
+        "not.contain",
+        "Management"
+      );
+      cy.get('[data-sidebar="menu-button"]').should("not.contain", "System");
+
+      // Verify Practice is active
+      cy.get('[data-sidebar="menu-button"][data-active="true"]').should(
+        "contain",
+        "Practice"
+      );
     });
 
     it.skip("should show correct sidebar options for TA users", () => {
-      // Login as TA and verify sidebar shows:
-      // - Home (active)
+      // Login as TA using mock session
+      cy.mockSession({ role: "ta" });
+      cy.visit("/home");
+
+      // Verify sidebar shows:
+      // - Home (active) - should be highlighted
       // - Practice
-      // - Profile
-      // Verify no analytics, create, management, or system sections
+      // - Profile dropdown in footer
+      cy.get('[data-sidebar="menu-button"]').should("contain", "Home");
+      cy.get('[data-sidebar="menu-button"]').should("contain", "Practice");
+      cy.get('[data-sidebar="menu-button"]').should("not.contain", "Analytics");
+      cy.get('[data-sidebar="menu-button"]').should("not.contain", "Create");
+      cy.get('[data-sidebar="menu-button"]').should(
+        "not.contain",
+        "Management"
+      );
+      cy.get('[data-sidebar="menu-button"]').should("not.contain", "System");
+
+      // Verify Home is active
+      cy.get('[data-sidebar="menu-button"][data-active="true"]').should(
+        "contain",
+        "Home"
+      );
     });
 
     it.skip("should show correct sidebar options for instructional users", () => {
-      // Login as instructional and verify sidebar shows:
-      // - Analytics (with submenu: Dashboard, Reports, Leaderboard)
-      // - Create (with submenu: Cohorts, Personas, Documents, Scenarios, Simulations, Rubrics)
-      // - Profile
-      // Verify no management or system sections
+      // Login as instructional using mock session
+      cy.mockSession({ role: "instructional" });
+      cy.visit("/analytics/dashboard");
+
+      // Verify sidebar shows:
+      // - Analytics (collapsible with submenu: Dashboard, Reports, Leaderboard)
+      // - Create (collapsible with submenu: Cohorts, Personas, Documents, Scenarios, Simulations, Rubrics)
+      // - Profile dropdown in footer
+      cy.get('[data-sidebar="menu-button"]').should("contain", "Analytics");
+      cy.get('[data-sidebar="menu-button"]').should("contain", "Create");
+      cy.get('[data-sidebar="menu-button"]').should(
+        "not.contain",
+        "Management"
+      );
+      cy.get('[data-sidebar="menu-button"]').should("not.contain", "System");
+
+      // Verify Analytics submenu items
+      cy.get('[data-sidebar="menu-sub-button"]').should("contain", "Dashboard");
+      cy.get('[data-sidebar="menu-sub-button"]').should("contain", "Reports");
+      cy.get('[data-sidebar="menu-sub-button"]').should(
+        "contain",
+        "Leaderboard"
+      );
+
+      // Verify Create submenu items
+      cy.get('[data-sidebar="menu-sub-button"]').should("contain", "Personas");
+      cy.get('[data-sidebar="menu-sub-button"]').should("contain", "Documents");
+      cy.get('[data-sidebar="menu-sub-button"]').should("contain", "Scenarios");
+      cy.get('[data-sidebar="menu-sub-button"]').should(
+        "contain",
+        "Simulations"
+      );
+      cy.get('[data-sidebar="menu-sub-button"]').should("contain", "Rubrics");
+
+      // Verify Analytics is active (Dashboard should be highlighted)
+      cy.get('[data-sidebar="menu-sub-button"][data-active="true"]').should(
+        "contain",
+        "Dashboard"
+      );
     });
 
     it.skip("should show correct sidebar options for admin users", () => {
-      // Login as admin and verify sidebar shows:
-      // - Analytics (with submenu: Dashboard, Reports, Leaderboard)
-      // - Create (with submenu: Cohorts, Personas, Documents, Scenarios, Simulations, Rubrics)
-      // - Management (with submenu: Staff, Providers, Parameters)
-      // - Profile
-      // Verify no system section
+      // Login as admin using mock session
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+
+      // Verify sidebar shows:
+      // - Analytics (collapsible with submenu: Dashboard, Reports, Leaderboard)
+      // - Create (collapsible with submenu: Cohorts, Personas, Documents, Scenarios, Simulations, Rubrics)
+      // - Management (collapsible with submenu: Staff, Providers, Parameters)
+      // - Profile dropdown in footer
+      cy.get('[data-sidebar="menu-button"]').should("contain", "Analytics");
+      cy.get('[data-sidebar="menu-button"]').should("contain", "Create");
+      cy.get('[data-sidebar="menu-button"]').should("contain", "Management");
+      cy.get('[data-sidebar="menu-button"]').should("not.contain", "System");
+
+      // Verify Management submenu items
+      cy.get('[data-sidebar="menu-sub-button"]').should("contain", "Staff");
+      cy.get('[data-sidebar="menu-sub-button"]').should("contain", "Providers");
+      cy.get('[data-sidebar="menu-sub-button"]').should(
+        "contain",
+        "Parameters"
+      );
+
+      // Verify Analytics is active (Dashboard should be highlighted)
+      cy.get('[data-sidebar="menu-sub-button"][data-active="true"]').should(
+        "contain",
+        "Dashboard"
+      );
     });
 
     it.skip("should show correct sidebar options for superadmin users", () => {
-      // Login as superadmin and verify sidebar shows:
-      // - Analytics (with submenu: Dashboard, Reports, Leaderboard)
-      // - Create (with submenu: Cohorts, Personas, Documents, Scenarios, Simulations, Rubrics)
-      // - Management (with submenu: Staff, Providers, Parameters)
-      // - System (with submenu: Agents, Feedback, Logs, Health)
-      // - Profile
+      // Login as superadmin using mock session
+      cy.mockSession({ role: "superadmin" });
+      cy.visit("/analytics/dashboard");
+
+      // Verify sidebar shows:
+      // - Analytics (collapsible with submenu: Dashboard, Reports, Leaderboard)
+      // - Create (collapsible with submenu: Cohorts, Personas, Documents, Scenarios, Simulations, Rubrics)
+      // - Management (collapsible with submenu: Staff, Providers, Parameters)
+      // - System (collapsible with submenu: Agents, Feedback, Logs, Health)
+      // - Profile dropdown in footer
+      cy.get('[data-sidebar="menu-button"]').should("contain", "Analytics");
+      cy.get('[data-sidebar="menu-button"]').should("contain", "Create");
+      cy.get('[data-sidebar="menu-button"]').should("contain", "Management");
+      cy.get('[data-sidebar="menu-button"]').should("contain", "System");
+
+      // Verify System submenu items
+      cy.get('[data-sidebar="menu-sub-button"]').should("contain", "Agents");
+      cy.get('[data-sidebar="menu-sub-button"]').should("contain", "Feedback");
+      cy.get('[data-sidebar="menu-sub-button"]').should("contain", "Logs");
+      cy.get('[data-sidebar="menu-sub-button"]').should("contain", "Health");
+
+      // Verify Analytics is active (Dashboard should be highlighted)
+      cy.get('[data-sidebar="menu-sub-button"][data-active="true"]').should(
+        "contain",
+        "Dashboard"
+      );
     });
   });
 
-  describe("Navigation Redirects", () => {
-    it.skip("should redirect guest users to practice page on login", () => {
-      // Login as guest and verify redirect to /practice
-      // Verify URL and page content
+  describe("Navigation Functionality", () => {
+    it.skip("should navigate to correct routes when clicking sidebar items", () => {
+      // Login as admin to access all sections
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+
+      // Test Analytics navigation
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Reports").click();
+      cy.url().should("include", "/analytics/reports");
+
+      cy.get('[data-sidebar="menu-sub-button"]')
+        .contains("Leaderboard")
+        .click();
+      cy.url().should("include", "/analytics/leaderboard");
+
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Dashboard").click();
+      cy.url().should("include", "/analytics/dashboard");
+
+      // Test Create navigation
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Personas").click();
+      cy.url().should("include", "/create/personas");
+
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Documents").click();
+      cy.url().should("include", "/create/documents");
+
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Scenarios").click();
+      cy.url().should("include", "/create/scenarios");
+
+      cy.get('[data-sidebar="menu-sub-button"]')
+        .contains("Simulations")
+        .click();
+      cy.url().should("include", "/create/simulations");
+
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Rubrics").click();
+      cy.url().should("include", "/create/rubrics");
+
+      // Test Management navigation
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Staff").click();
+      cy.url().should("include", "/management/staff");
+
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Providers").click();
+      cy.url().should("include", "/management/providers");
+
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Parameters").click();
+      cy.url().should("include", "/management/parameters");
     });
 
-    it.skip("should redirect TA users to home page on login", () => {
-      // Login as TA and verify redirect to /home
-      // Verify URL and page content
+    it.skip("should navigate to correct routes for superadmin system section", () => {
+      // Login as superadmin
+      cy.mockSession({ role: "superadmin" });
+      cy.visit("/analytics/dashboard");
+
+      // Test System navigation
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Agents").click();
+      cy.url().should("include", "/system/agents");
+
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Feedback").click();
+      cy.url().should("include", "/system/feedback");
+
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Logs").click();
+      cy.url().should("include", "/system/logs");
+
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Health").click();
+      cy.url().should("include", "/system/health");
     });
 
-    it.skip("should redirect instructional users to analytics dashboard on login", () => {
-      // Login as instructional and verify redirect to /analytics/dashboard
-      // Verify URL and page content
+    it.skip("should navigate to correct routes for TA users", () => {
+      // Login as TA
+      cy.mockSession({ role: "ta" });
+      cy.visit("/home");
+
+      // Test Home navigation
+      cy.get('[data-sidebar="menu-button"]').contains("Home").click();
+      cy.url().should("include", "/home");
+
+      // Test Practice navigation
+      cy.get('[data-sidebar="menu-button"]').contains("Practice").click();
+      cy.url().should("include", "/practice");
     });
 
-    it.skip("should redirect admin users to analytics dashboard on login", () => {
-      // Login as admin and verify redirect to /analytics/dashboard
-      // Verify URL and page content
+    it.skip("should navigate to correct routes for guest users", () => {
+      // Login as guest
+      cy.visit("/");
+      cy.get('[data-testid="guest-login-button"]').click();
+      cy.url().should("include", "/practice");
+
+      // Test Practice navigation (only option available)
+      cy.get('[data-sidebar="menu-button"]').contains("Practice").click();
+      cy.url().should("include", "/practice");
+    });
+  });
+
+  describe("Access Control", () => {
+    it.skip("should prevent unauthorized access to restricted sections", () => {
+      // Login as TA (limited access)
+      cy.mockSession({ role: "ta" });
+      cy.visit("/home");
+
+      // Try to access restricted routes directly
+      cy.visit("/analytics/dashboard");
+      cy.url().should("include", "/access-denied");
+
+      cy.visit("/create/personas");
+      cy.url().should("include", "/access-denied");
+
+      cy.visit("/management/staff");
+      cy.url().should("include", "/access-denied");
+
+      cy.visit("/system/agents");
+      cy.url().should("include", "/access-denied");
     });
 
-    it.skip("should redirect superadmin users to analytics dashboard on login", () => {
-      // Login as superadmin and verify redirect to /analytics/dashboard
-      // Verify URL and page content
+    it.skip("should prevent guest users from accessing restricted sections", () => {
+      // Login as guest
+      cy.visit("/");
+      cy.get('[data-testid="guest-login-button"]').click();
+
+      // Try to access restricted routes directly
+      cy.visit("/home");
+      cy.url().should("include", "/access-denied");
+
+      cy.visit("/analytics/dashboard");
+      cy.url().should("include", "/access-denied");
+
+      cy.visit("/create/personas");
+      cy.url().should("include", "/access-denied");
+    });
+
+    it.skip("should allow appropriate access for each role", () => {
+      // Test admin access
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+      cy.url().should("include", "/analytics/dashboard");
+
+      cy.visit("/create/personas");
+      cy.url().should("include", "/create/personas");
+
+      cy.visit("/management/staff");
+      cy.url().should("include", "/management/staff");
+
+      // Admin should not have access to system section
+      cy.visit("/system/agents");
+      cy.url().should("include", "/access-denied");
+
+      // Test superadmin access
+      cy.mockSession({ role: "superadmin" });
+      cy.visit("/system/agents");
+      cy.url().should("include", "/system/agents");
     });
   });
 
   describe("Breadcrumb Navigation", () => {
-    it.skip("should show correct breadcrumbs for all user roles", () => {
-      // Test breadcrumb navigation for each role:
-      // - Guest: Practice
-      // - TA: Home
-      // - Instructional: Analytics > Dashboard, Create > Cohorts, etc.
-      // - Admin: Analytics > Dashboard, Management > Staff, etc.
-      // - Superadmin: Analytics > Dashboard, System > Agents, etc.
-      // Verify breadcrumb links work and show correct hierarchy
+    it.skip("should display correct breadcrumbs for each section", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+
+      // Verify breadcrumbs are displayed
+      cy.get('[data-testid="breadcrumb"]').should("be.visible");
+
+      // Test breadcrumb navigation
+      cy.get('[data-testid="breadcrumb"]').contains("Analytics").click();
+      cy.url().should("include", "/analytics");
+
+      cy.visit("/create/personas");
+      cy.get('[data-testid="breadcrumb"]').contains("Create").click();
+      cy.url().should("include", "/create");
+
+      cy.visit("/management/staff");
+      cy.get('[data-testid="breadcrumb"]').contains("Management").click();
+      cy.url().should("include", "/management");
+    });
+
+    it.skip("should allow navigation via breadcrumbs", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/reports");
+
+      // Navigate via breadcrumbs
+      cy.get('[data-testid="breadcrumb"]').contains("Dashboard").click();
+      cy.url().should("include", "/analytics/dashboard");
+
+      cy.visit("/create/personas/new");
+      cy.get('[data-testid="breadcrumb"]').contains("Personas").click();
+      cy.url().should("include", "/create/personas");
     });
   });
 
-  describe("URL Navigation", () => {
-    it.skip("should handle direct URL access with proper redirects", () => {
-      // Test direct URL access for each role:
-      // - Guest accessing /home should redirect to /practice
-      // - TA accessing /analytics should redirect to /home
-      // - Instructional accessing /management should redirect to /analytics/dashboard
-      // - Admin accessing /system should redirect to /analytics/dashboard
-      // Verify proper redirects and access denied messages
+  describe("Profile Navigation", () => {
+    it.skip("should allow profile navigation from sidebar footer", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+
+      // Click profile dropdown in sidebar footer
+      cy.get('[data-sidebar="menu-button"]').contains("Profile").click();
+      cy.url().should("include", "/profile");
     });
 
-    it.skip("should handle invalid URLs gracefully", () => {
-      // Test accessing non-existent URLs:
-      // - /invalid-page should show 404 or redirect appropriately
-      // - /analytics/invalid should redirect to /analytics/dashboard
-      // - /create/invalid should redirect to /create/cohorts
-      // Verify graceful error handling
+    it.skip("should allow logout from profile dropdown", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+
+      // Click profile dropdown and logout
+      cy.get('[data-sidebar="menu-button"]').contains("Logout").click();
+      cy.url().should("include", "/");
+    });
+  });
+
+  describe("Search Functionality", () => {
+    it.skip("should allow searching within the application", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+
+      // Use sidebar search
+      cy.get('[data-sidebar="input"]').type("test search");
+      cy.get('[data-sidebar="input"]').should("have.value", "test search");
+    });
+  });
+
+  describe("Responsive Navigation", () => {
+    it.skip("should handle mobile navigation correctly", () => {
+      // Set mobile viewport
+      cy.viewport("iphone-x");
+
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+
+      // Verify sidebar trigger is visible on mobile
+      cy.get('[data-sidebar="trigger"]').should("be.visible");
+
+      // Toggle sidebar
+      cy.get('[data-sidebar="trigger"]').click();
+      cy.get('[data-slot="sidebar"]').should("be.visible");
+
+      // Close sidebar
+      cy.get('[data-sidebar="trigger"]').click();
+      cy.get('[data-slot="sidebar"]').should("not.be.visible");
+    });
+
+    it.skip("should handle tablet navigation correctly", () => {
+      // Set tablet viewport
+      cy.viewport("ipad-2");
+
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+
+      // Verify sidebar behavior on tablet
+      cy.get('[data-sidebar="trigger"]').should("be.visible");
+    });
+  });
+
+  describe("Navigation State Management", () => {
+    it.skip("should maintain navigation state across page refreshes", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+
+      // Navigate to a specific page
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Reports").click();
+      cy.url().should("include", "/analytics/reports");
+
+      // Refresh the page
+      cy.reload();
+
+      // Verify we're still on the same page
+      cy.url().should("include", "/analytics/reports");
+      cy.get('[data-sidebar="menu-sub-button"][data-active="true"]').should(
+        "contain",
+        "Reports"
+      );
+    });
+
+    it.skip("should handle browser back/forward navigation", () => {
+      // Login as admin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+
+      // Navigate to different pages
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Reports").click();
+      cy.url().should("include", "/analytics/reports");
+
+      cy.get('[data-sidebar="menu-sub-button"]')
+        .contains("Leaderboard")
+        .click();
+      cy.url().should("include", "/analytics/leaderboard");
+
+      // Use browser back
+      cy.go("back");
+      cy.url().should("include", "/analytics/reports");
+
+      // Use browser forward
+      cy.go("forward");
+      cy.url().should("include", "/analytics/leaderboard");
     });
   });
 });
