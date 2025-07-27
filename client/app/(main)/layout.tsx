@@ -51,7 +51,7 @@ import {
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "/";
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, isLoading } = useProfile();
   const queryClient = useQueryClient();
 
   // Role context is available for child components
@@ -308,9 +308,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       effectiveProfile?.role &&
       allowedRoles.includes(effectiveProfile.role) &&
       isAnalyticsPage &&
-      !pathname.includes("/edit")
+      !pathname.includes("/edit") &&
+      !isLoading // Add loading state check
     );
-  }, [effectiveProfile?.role, isAnalyticsPage, pathname]);
+  }, [effectiveProfile?.role, isAnalyticsPage, pathname, isLoading]);
 
   // Load enhanced breadcrumbs with async ID resolution
   React.useEffect(() => {

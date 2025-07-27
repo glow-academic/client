@@ -28,21 +28,57 @@ interface AccessControlProps {
 
 export function AccessControl({ children, pathname }: AccessControlProps) {
   const { effectiveProfile, isLoading } = useProfile();
+  const [showAccessDenied, setShowAccessDenied] = React.useState(false);
+
+  // Add a small delay to prevent flickering access denied screens during profile transitions
+  React.useEffect(() => {
+    // Only proceed if we're not loading AND we have a complete profile with a role
+    if (isLoading || !effectiveProfile || !effectiveProfile.role) {
+      setShowAccessDenied(false);
+      return;
+    }
+
+    // Small delay to prevent flickering during profile transitions
+    const timer = setTimeout(() => {
+      if (!hasRouteAccess(pathname, effectiveProfile.role)) {
+        setShowAccessDenied(true);
+      } else {
+        setShowAccessDenied(false);
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [effectiveProfile, pathname, isLoading]);
 
   // If still loading, show loading state instead of access denied
+  // Also show loading if we don't have a profile yet (prevents premature access denied)
   if (isLoading || !effectiveProfile) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">
+            {isLoading ? "Loading..." : "Initializing..."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Additional safety check: ensure we have a valid role
+  if (!effectiveProfile.role) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading user permissions...</p>
         </div>
       </div>
     );
   }
 
   // Check if user has access to the current route
-  if (!hasRouteAccess(pathname, effectiveProfile.role)) {
+  if (showAccessDenied) {
     return (
       <AccessDeniedCard role={effectiveProfile.role} pathname={pathname} />
     );
@@ -153,12 +189,16 @@ function AccessDeniedCard({ role, pathname }: AccessDeniedCardProps) {
                 Attempted to access:{" "}
                 <span className="font-mono text-xs">{pathname}</span>
               </p>
+              <p>
+                Suggested redirect:{" "}
+                <span className="font-mono text-xs">{redirectPath}</span>
+              </p>
             </div>
 
             <div className="flex flex-col gap-2">
               <Button onClick={handleRedirect} className="w-full">
                 <Home className="h-4 w-4 mr-2" />
-                Go to Dashboard
+                Go to Dashboard ({redirectPath})
               </Button>
 
               {role === "guest" && (

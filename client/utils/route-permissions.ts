@@ -460,7 +460,24 @@ export const getRedirectPathForRole = (role: ProfileRole): string => {
     case "superadmin":
       return "/analytics/dashboard"; // Staff and admins start at analytics dashboard
     default:
-      return "/practice";
+      // For unknown roles, try to determine a safe default based on available sections
+      // This prevents incorrect redirects to practice page
+      if (role && typeof role === "string") {
+        // If we have a role but it's not in our switch, check if it's a valid role
+        const validRoles = [
+          "guest",
+          "ta",
+          "instructional",
+          "admin",
+          "superadmin",
+        ];
+        if (validRoles.includes(role)) {
+          // Fallback to home for valid but unhandled roles
+          return "/home";
+        }
+      }
+      // Ultimate fallback - should rarely happen
+      return "/home";
   }
 };
 

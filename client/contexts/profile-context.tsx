@@ -71,11 +71,13 @@ export const useProfile = () => {
 interface ProfileProviderProps {
   children: React.ReactNode;
   activeProfile: Profile | null;
+  isProfileLoading?: boolean;
 }
 
 export function ProfileProvider({
   children,
   activeProfile,
+  isProfileLoading = false,
 }: ProfileProviderProps) {
   const [simulatedProfileId, setSimulatedProfileId] = useState<string | null>(
     null
@@ -104,8 +106,8 @@ export function ProfileProvider({
     });
 
   const { effectiveProfile, simulatedProfile, isLoading } = useMemo(() => {
-    // During hydration or while fetching a simulation, don't default to guest
-    if (!isClient || isSimulatingProfileLoading) {
+    // During hydration, show loading state
+    if (!isClient) {
       return {
         effectiveProfile: null,
         simulatedProfile: null,
@@ -142,18 +144,44 @@ export function ProfileProvider({
       };
     }
 
-    // Otherwise, use the active logged-in profile from the auth layer.
-    // This correctly handles users whose assigned role IS 'guest',
-    // as well as falling back to the generic GUEST_PROFILE if no user is logged in at all.
-    const finalProfile = activeProfile || GUEST_PROFILE;
+    // If we're still loading the simulated profile, show loading
+    if (isSimulatingProfileLoading) {
+      return {
+        effectiveProfile: null,
+        simulatedProfile: null,
+        isLoading: true,
+      };
+    }
+
+    // If we're still loading the main profile query, show loading
+    if (isProfileLoading) {
+      return {
+        effectiveProfile: null,
+        simulatedProfile: null,
+        isLoading: true,
+      };
+    }
+
+    // If we have an active profile, use it
+    if (activeProfile) {
+      return {
+        effectiveProfile: activeProfile,
+        simulatedProfile: null,
+        isLoading: false,
+      };
+    }
+
+    // Only fall back to guest if we're sure there's no active profile
+    // This prevents the guest -> superadmin flicker
     return {
-      effectiveProfile: finalProfile,
+      effectiveProfile: GUEST_PROFILE,
       simulatedProfile: null,
       isLoading: false,
     };
   }, [
     isClient,
     isSimulatingProfileLoading,
+    isProfileLoading,
     simulatedProfileData,
     activeProfile,
   ]);

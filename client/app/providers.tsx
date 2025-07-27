@@ -30,7 +30,10 @@ const RoleAndWebSocketProviderWrapper = ({
   const profileId = isLoading ? undefined : (profile?.id ?? null);
 
   return (
-    <ProfileProvider activeProfile={profile ?? null}>
+    <ProfileProvider
+      activeProfile={profile ?? null}
+      isProfileLoading={isLoading}
+    >
       <WebSocketProvider profileId={profileId}>{children}</WebSocketProvider>
     </ProfileProvider>
   );

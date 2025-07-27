@@ -41,11 +41,7 @@ import { getSimulatableProfiles } from "@/utils/auth/get-simulatable-profiles";
 import { logError } from "@/utils/logger";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import {
-  getAvailableSubsectionsForRole,
-  getRedirectPathForRole,
-  hasRouteAccess,
-} from "@/utils/route-permissions";
+import { getAvailableSubsectionsForRole } from "@/utils/route-permissions";
 import { useQuery } from "@tanstack/react-query";
 import {
   Brain,
@@ -199,12 +195,8 @@ export function UnifiedSidebar({
   const profileSearchInputRef = React.useRef<HTMLInputElement>(null);
 
   // Use the profile context
-  const {
-    activeProfile,
-    effectiveProfile,
-    setSimulatedProfile,
-    isLoading: isProfileLoading,
-  } = useProfile();
+  const { activeProfile, effectiveProfile, setSimulatedProfile, isLoading } =
+    useProfile();
 
   // Get simulatable profiles for the dropdown
   const { data: simulatableProfiles, isLoading: isLoadingProfiles } = useQuery({
@@ -577,15 +569,24 @@ export function UnifiedSidebar({
   };
 
   // Watch for profile changes and redirect if current page is not accessible
+  // TEMPORARILY DISABLED: Let users manually navigate from access denied screen for debugging
+  /*
   React.useEffect(() => {
-    if (effectiveProfile && !hasRouteAccess(pathname, effectiveProfile.role)) {
+    // Don't redirect if still loading or if we don't have a profile yet
+    if (isLoading || !effectiveProfile) {
+      return;
+    }
+
+    // Only redirect if current page is not accessible
+    if (!hasRouteAccess(pathname, effectiveProfile.role)) {
       // Only redirect if we're not already on a redirect path
       const redirectPath = getRedirectPathForRole(effectiveProfile.role);
       if (pathname !== redirectPath) {
         router.push(redirectPath);
       }
     }
-  }, [effectiveProfile, pathname, router]);
+  }, [effectiveProfile, pathname, router, isLoading]);
+  */
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -629,7 +630,7 @@ export function UnifiedSidebar({
   };
 
   // Show skeleton while profile is loading or while we don't have a profile yet
-  const shouldShowSkeleton = isProfileLoading || !effectiveProfile;
+  const shouldShowSkeleton = isLoading || !effectiveProfile;
 
   if (shouldShowSkeleton) {
     return <SidebarSkeleton />;
