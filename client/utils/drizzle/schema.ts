@@ -208,7 +208,8 @@ export const personas = pgTable("personas", {
 	color: text().notNull(),
 	icon: text().notNull(),
 	modelId: uuid("model_id"),
-	reasoning: reasoningEffort()}, (table) => [
+	reasoning: reasoningEffort(),
+	active: boolean().default(false).notNull()}, (table) => [
 	foreignKey({
 			columns: [table.modelId],
 			foreignColumns: [models.id],

@@ -34,7 +34,8 @@ CREATE TABLE personas (
   color TEXT        NOT NULL, -- hex color code
   icon TEXT        NOT NULL, -- icon name, in Lucide Icons
   model_id UUID REFERENCES models(id),
-  reasoning reasoning_effort DEFAULT NULL
+  reasoning reasoning_effort DEFAULT NULL,
+  active BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE agents (
@@ -49,10 +50,10 @@ CREATE TABLE agents (
   reasoning reasoning_effort DEFAULT NULL
 );
 -- Insert Core Student Agents (Essential for testing)
-INSERT INTO personas (id, name, description, system_prompt, temperature, default_persona, color, icon, model_id, reasoning) VALUES
-  ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive','Pushes back on your ideas and challenges assumptions.', '$AGGRESSIVE_PROMPT', 0, true, '#FF0000', 'Zap', '33333333-cccc-cccc-cccc-333333333333', 'low'),
-  ('22222222-bbbb-bbbb-bbbb-222222222222', 'Happy', 'Provides uplifting feedback and cheerful responses.', '$HAPPY_PROMPT', 0, true, '#00FF00', 'SmilePlus', '33333333-cccc-cccc-cccc-333333333333', 'low'),
-  ('33333333-cccc-cccc-cccc-333333333333', 'Confused', 'Seeks to understand by asking questions and exploring ideas', '$CONFUSED_PROMPT', 0, true, '#FFFF00', 'HelpCircle', '33333333-cccc-cccc-cccc-333333333333', 'low');
+INSERT INTO personas (id, name, description, system_prompt, temperature, default_persona, color, icon, model_id, reasoning, active) VALUES
+  ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive','Pushes back on your ideas and challenges assumptions.', '$AGGRESSIVE_PROMPT', 0, true, '#FF0000', 'Zap', '33333333-cccc-cccc-cccc-333333333333', 'low', true),
+  ('22222222-bbbb-bbbb-bbbb-222222222222', 'Happy', 'Provides uplifting feedback and cheerful responses.', '$HAPPY_PROMPT', 0, true, '#00FF00', 'SmilePlus', '33333333-cccc-cccc-cccc-333333333333', 'low', true),
+  ('33333333-cccc-cccc-cccc-333333333333', 'Confused', 'Seeks to understand by asking questions and exploring ideas', '$CONFUSED_PROMPT', 0, true, '#FFFF00', 'HelpCircle', '33333333-cccc-cccc-cccc-333333333333', 'low', true);
 
 
   -- These agents cannot be edited

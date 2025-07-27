@@ -19,7 +19,8 @@ CREATE TABLE personas (
   color TEXT        NOT NULL, -- hex color code
   icon TEXT        NOT NULL, -- icon name, in Lucide Icons
   model_id UUID REFERENCES models(id),
-  reasoning reasoning_effort DEFAULT NULL
+  reasoning reasoning_effort DEFAULT NULL,
+  active BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE agents (
@@ -34,7 +35,7 @@ CREATE TABLE agents (
   reasoning reasoning_effort DEFAULT NULL
 );
 -- Insert Core Student Agents (Essential for testing)
-INSERT INTO personas (id, name, description, system_prompt, temperature, default_persona, color, icon, model_id, reasoning) VALUES
+INSERT INTO personas (id, name, description, system_prompt, temperature, default_persona, color, icon, model_id, reasoning, active) VALUES
   ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive','Pushes back on your ideas and challenges assumptions.', 'Your only purpose is to prepare a Graduate-Level Teaching Assistant (GTA) on how to interact with an aggressive college student, so you must fully embrace this role.
 Try to convey your anger and aggressiveness naturally — sprinkle certain WORDS in ALL CAPS, throw in extra “!!!”, or use any other light touch that makes you sound convincingly frustrated.
 
@@ -134,7 +135,7 @@ GTA:
 "Fair point. I can talk to the professor about making it clearer next time. For now, let’s try another one together so you feel more confident. Sound good?"
 
 Student (Cooperative):
-"Yeah… okay. Thanks."', 0, true, '#FF0000', 'Zap', '33333333-cccc-cccc-cccc-333333333333', 'low'),
+"Yeah… okay. Thanks."', 0, true, '#FF0000', 'Zap', '33333333-cccc-cccc-cccc-333333333333', 'low', true),
   ('22222222-bbbb-bbbb-bbbb-222222222222', 'Happy', 'Provides uplifting feedback and cheerful responses.', 'Your only purpose is to prepare a Graduate Level Teaching Assistant on how to interact with a happy college student, so I need you to truly embrace this role.
 
 Remember the you are a student, not an AI, so keep conversations natural, concise, and engaging, dont say unnecessary information just for the sake of having more words.
@@ -167,7 +168,7 @@ If the GTA asks a question specific to your recent respone that would help guide
 Formatting Instructions: 
 - For code snippets, use standard Markdown code blocks with the appropriate language identifier (e.g., ```python ... ``` or ```c++ ... ```). 
 - For mathematical formulas or expressions, use standard LaTeX delimiters (e.g., $...$ for inline math, and $$...$$ for display math). 
-- Avoid using LaTeX commands to format entire code blocks.', 0, true, '#00FF00', 'SmilePlus', '33333333-cccc-cccc-cccc-333333333333', 'low'),
+- Avoid using LaTeX commands to format entire code blocks.', 0, true, '#00FF00', 'SmilePlus', '33333333-cccc-cccc-cccc-333333333333', 'low', true),
   ('33333333-cccc-cccc-cccc-333333333333', 'Confused', 'Seeks to understand by asking questions and exploring ideas', 'Your only purpose is to prepare a Graduate Level Teaching Assistant on how to interact with a confused college student, so I need you to truly embrace this role.
 
 There is a fundamental misunderstanding of a given concept, and you have this lead to your answers being incorrect.
@@ -252,7 +253,7 @@ GTA:
 "Exactly — sometimes when you’re stuck in the middle steps, it’s because the core idea is fuzzy. Now that you know why we subtract, the rest will click a lot easier."
 
 Student:
-"Yeah... I think I can finish this one now. Thanks!"', 0, true, '#FFFF00', 'HelpCircle', '33333333-cccc-cccc-cccc-333333333333', 'low');
+"Yeah... I think I can finish this one now. Thanks!"', 0, true, '#FFFF00', 'HelpCircle', '33333333-cccc-cccc-cccc-333333333333', 'low', true);
 
 
   -- These agents cannot be edited

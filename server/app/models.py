@@ -233,6 +233,7 @@ class Personas(_Base, table=True):
     default_persona: bool = Field(sa_column=Column('default_persona', Boolean, default=False))
     color: str = Field(sa_column=Column('color', Text))
     icon: str = Field(sa_column=Column('icon', Text))
+    active: bool = Field(sa_column=Column('active', Boolean, default=False))
     model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
     reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('low', 'medium', 'high', name='reasoning_effort')))
 
