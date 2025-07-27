@@ -26,9 +26,13 @@ export interface StaffData {
 
 export interface UseStaffColumnsProps {
   onEditUser: (profileId: string) => void;
+  currentUserRole?: string | undefined;
 }
 
-export function useStaffColumns({ onEditUser }: UseStaffColumnsProps) {
+export function useStaffColumns({
+  onEditUser,
+  currentUserRole,
+}: UseStaffColumnsProps) {
   // Fetch data for filter options
   const { data: cohorts } = useQuery({
     queryKey: ["cohorts"],
@@ -36,8 +40,8 @@ export function useStaffColumns({ onEditUser }: UseStaffColumnsProps) {
   });
 
   // Create filter options
-  const roleOptions = useMemo(
-    () => [
+  const roleOptions = useMemo(() => {
+    const baseOptions = [
       {
         value: "admin",
         label: "Administrator",
@@ -50,9 +54,18 @@ export function useStaffColumns({ onEditUser }: UseStaffColumnsProps) {
         value: "ta",
         label: "Teaching Assistant",
       },
-    ],
-    []
-  );
+    ];
+
+    // Add superadmin option if current user is superadmin
+    if (currentUserRole === "superadmin") {
+      baseOptions.unshift({
+        value: "superadmin",
+        label: "Super Administrator",
+      });
+    }
+
+    return baseOptions;
+  }, [currentUserRole]);
 
   const cohortOptions = useMemo(() => {
     if (!cohorts) return [];
@@ -79,20 +92,52 @@ export function useStaffColumns({ onEditUser }: UseStaffColumnsProps) {
   const lastActiveOptions = useMemo(
     () => [
       {
+        value: "last_hour",
+        label: "Last Hour",
+      },
+      {
+        value: "last_2_hours",
+        label: "Last 2 Hours",
+      },
+      {
+        value: "last_4_hours",
+        label: "Last 4 Hours",
+      },
+      {
+        value: "last_8_hours",
+        label: "Last 8 Hours",
+      },
+      {
+        value: "last_12_hours",
+        label: "Last 12 Hours",
+      },
+      {
         value: "today",
         label: "Today",
       },
       {
-        value: "week",
-        label: "This Week",
+        value: "last_2_days",
+        label: "Last 2 Days",
       },
       {
-        value: "month",
-        label: "This Month",
+        value: "last_3_days",
+        label: "Last 3 Days",
       },
       {
-        value: "quarter",
-        label: "This Quarter",
+        value: "last_week",
+        label: "Last Week",
+      },
+      {
+        value: "last_2_weeks",
+        label: "Last 2 Weeks",
+      },
+      {
+        value: "last_month",
+        label: "Last Month",
+      },
+      {
+        value: "last_3_months",
+        label: "Last 3 Months",
       },
     ],
     []
@@ -111,6 +156,8 @@ export function useStaffColumns({ onEditUser }: UseStaffColumnsProps) {
 
   const getRoleIcon = (role: string) => {
     switch (role) {
+      case "superadmin":
+        return Shield;
       case "admin":
         return Shield;
       case "instructional":
@@ -124,6 +171,8 @@ export function useStaffColumns({ onEditUser }: UseStaffColumnsProps) {
 
   const getRoleDisplayName = (role: string) => {
     switch (role) {
+      case "superadmin":
+        return "Super Administrator";
       case "admin":
         return "Administrator";
       case "instructional":
@@ -300,23 +349,61 @@ export function useStaffColumns({ onEditUser }: UseStaffColumnsProps) {
 
           return value.some((filterValue: string) => {
             switch (filterValue) {
+              case "last_hour":
+                const hourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+                return lastActiveDate >= hourAgo;
+              case "last_2_hours":
+                const twoHoursAgo = new Date(
+                  now.getTime() - 2 * 60 * 60 * 1000
+                );
+                return lastActiveDate >= twoHoursAgo;
+              case "last_4_hours":
+                const fourHoursAgo = new Date(
+                  now.getTime() - 4 * 60 * 60 * 1000
+                );
+                return lastActiveDate >= fourHoursAgo;
+              case "last_8_hours":
+                const eightHoursAgo = new Date(
+                  now.getTime() - 8 * 60 * 60 * 1000
+                );
+                return lastActiveDate >= eightHoursAgo;
+              case "last_12_hours":
+                const twelveHoursAgo = new Date(
+                  now.getTime() - 12 * 60 * 60 * 1000
+                );
+                return lastActiveDate >= twelveHoursAgo;
               case "today":
                 return lastActiveDate.toDateString() === now.toDateString();
-              case "week":
+              case "last_2_days":
+                const twoDaysAgo = new Date(
+                  now.getTime() - 2 * 24 * 60 * 60 * 1000
+                );
+                return lastActiveDate >= twoDaysAgo;
+              case "last_3_days":
+                const threeDaysAgo = new Date(
+                  now.getTime() - 3 * 24 * 60 * 60 * 1000
+                );
+                return lastActiveDate >= threeDaysAgo;
+              case "last_week":
                 const weekAgo = new Date(
                   now.getTime() - 7 * 24 * 60 * 60 * 1000
                 );
                 return lastActiveDate >= weekAgo;
-              case "month":
+              case "last_2_weeks":
+                const twoWeeksAgo = new Date(
+                  now.getTime() - 14 * 24 * 60 * 60 * 1000
+                );
+                return lastActiveDate >= twoWeeksAgo;
+              case "last_month":
                 const monthAgo = new Date(
                   now.getTime() - 30 * 24 * 60 * 60 * 1000
                 );
                 return lastActiveDate >= monthAgo;
-              case "quarter":
-                const quarterAgo = new Date(
+              case "last_3_months":
+                const threeMonthsAgo = new Date(
                   now.getTime() - 90 * 24 * 60 * 60 * 1000
                 );
-                return lastActiveDate >= quarterAgo;
+                return lastActiveDate >= threeMonthsAgo;
               default:
                 return true;
             }

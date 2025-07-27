@@ -55,7 +55,7 @@ export function StaffDataTable({
     []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
-    { id: "firstName", desc: false }, // Default sort by name ascending
+    { id: "lastActive", desc: true }, // Default sort by last active descending
   ]);
 
   const table = useReactTable({

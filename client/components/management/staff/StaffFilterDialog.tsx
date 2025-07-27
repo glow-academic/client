@@ -45,6 +45,8 @@ export function StaffFilterDialog({
 
   const getRoleIcon = (role: string) => {
     switch (role) {
+      case "superadmin":
+        return Shield;
       case "admin":
         return Shield;
       case "instructional":
@@ -58,6 +60,8 @@ export function StaffFilterDialog({
 
   const getRoleDisplayName = (role: string) => {
     switch (role) {
+      case "superadmin":
+        return "Super Administrator";
       case "admin":
         return "Administrator";
       case "instructional":

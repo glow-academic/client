@@ -6,6 +6,7 @@
  */
 "use client";
 import { Card, CardContent } from "@/components/ui/card";
+import { useProfile } from "@/contexts/profile-context";
 import { StaffData, useStaffColumns } from "@/hooks/use-staff-columns";
 import { Profile } from "@/types";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
@@ -25,6 +26,7 @@ export default function Staff() {
     StaffData[]
   >([]);
   const router = useRouter();
+  const { effectiveProfile } = useProfile();
 
   // Fetch all users and cohorts
   const { data: allProfiles = [], isLoading: isLoadingProfiles } = useQuery({
@@ -38,12 +40,26 @@ export default function Staff() {
     queryFn: () => getAllCohorts(),
   });
 
-  // Filter staff users (include admin, instructional, ta)
+  // Filter staff users based on current user's role
   const staffUsers = React.useMemo(() => {
+    const isCurrentUserSuperadmin = effectiveProfile?.role === "superadmin";
+    const isCurrentUserAdmin = effectiveProfile?.role === "admin";
+
+    // Define which roles to include based on current user's role
+    let allowedRoles = ["instructional", "ta"];
+
+    if (isCurrentUserSuperadmin) {
+      // Superadmins can see superadmins, admins, instructional, and ta
+      allowedRoles = ["superadmin", "admin", "instructional", "ta"];
+    } else if (isCurrentUserAdmin) {
+      // Admins can see admins, instructional, and ta (existing behavior)
+      allowedRoles = ["admin", "instructional", "ta"];
+    }
+
     return allProfiles.filter((profile: Profile) =>
-      ["admin", "instructional", "ta"].includes(profile.role)
+      allowedRoles.includes(profile.role)
     );
-  }, [allProfiles]);
+  }, [allProfiles, effectiveProfile?.role]);
 
   // Transform staff data for the table
   const staffData = React.useMemo((): StaffData[] => {
@@ -77,17 +93,23 @@ export default function Staff() {
       (profile: Profile) => !profile.active
     );
 
-    return {
+    const baseCounts = {
       total: staffUsers.length,
       active: activeStaff.length,
       inactive: inactiveStaff.length,
-      admin: staffUsers.filter((profile: Profile) => profile.role === "admin")
-        .length,
       instructional: staffUsers.filter(
         (profile: Profile) => profile.role === "instructional"
       ).length,
       ta: staffUsers.filter((profile: Profile) => profile.role === "ta").length,
+      admin: staffUsers.filter((profile: Profile) => profile.role === "admin")
+        .length,
+      superadmin: staffUsers.filter(
+        (profile: Profile) => profile.role === "superadmin"
+      ).length,
     };
+
+    // Always return base counts (all properties are included)
+    return baseCounts;
   }, [staffUsers]);
 
   const handleEditUser = (profileId: string) => {
@@ -115,8 +137,17 @@ export default function Staff() {
         title = `Active Staff Members (${filteredStaff.length})`;
         break;
       case "admin":
-        filteredStaff = staffData.filter((staff) => staff.role === "admin");
-        title = `Administrators (${filteredStaff.length})`;
+        if (effectiveProfile?.role === "superadmin") {
+          // For superadmins, show both superadmins and admins
+          filteredStaff = staffData.filter(
+            (staff) => staff.role === "superadmin" || staff.role === "admin"
+          );
+          title = `Superadmins/Admins (${filteredStaff.length})`;
+        } else {
+          // For admins, show only admins
+          filteredStaff = staffData.filter((staff) => staff.role === "admin");
+          title = `Administrators (${filteredStaff.length})`;
+        }
         break;
       case "instructional":
         filteredStaff = staffData.filter(
@@ -145,6 +176,7 @@ export default function Staff() {
     lastActiveOptions,
   } = useStaffColumns({
     onEditUser: handleEditUser,
+    currentUserRole: effectiveProfile?.role,
   });
 
   // Helper functions
@@ -170,6 +202,8 @@ export default function Staff() {
 
   function getRoleDisplayName(role: string) {
     switch (role) {
+      case "superadmin":
+        return "Super Administrator";
       case "admin":
         return "Administrator";
       case "instructional":
@@ -219,9 +253,15 @@ export default function Staff() {
             <div className="flex items-center gap-2">
               <Shield className="h-4 w-4 text-red-600" />
               <div>
-                <p className="text-2xl font-bold">{counts.admin}</p>
+                <p className="text-2xl font-bold">
+                  {effectiveProfile?.role === "superadmin"
+                    ? (counts.superadmin || 0) + (counts.admin || 0)
+                    : counts.admin}
+                </p>
                 <p className="text-sm text-muted-foreground">
-                  Admins/Superadmins
+                  {effectiveProfile?.role === "superadmin"
+                    ? "Superadmins/Admins"
+                    : "Admins"}
                 </p>
               </div>
             </div>
