@@ -11,13 +11,23 @@ import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
+import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
+import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
+import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import SimulationHistory from "../common/history/SimulationHistory";
 import { Skeleton } from "../ui/skeleton";
@@ -56,11 +66,99 @@ export default function Practice() {
     queryFn: () => getAllPersonas(),
   });
 
+  // Fetch data needed for highest score calculation
+  const { data: allProfiles } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getAllProfiles(),
+  });
+
+  const { data: allAttempts } = useQuery({
+    queryKey: ["simulationAttempts"],
+    queryFn: () => {
+      if (!allProfiles) return [];
+      return getSimulationAttemptsByProfiles(allProfiles.map((p) => p.id));
+    },
+    enabled: !!allProfiles && allProfiles.length > 0,
+  });
+
+  const { data: allChats } = useQuery({
+    queryKey: ["simulationChats", allAttempts?.map((a) => a.id)?.sort() || []],
+    queryFn: () => getSimulationChatsByAttempts(allAttempts!.map((a) => a.id)),
+    enabled: !!allAttempts && allAttempts.length > 0,
+  });
+
+  const { data: allGrades } = useQuery({
+    queryKey: ["simulationGrades", allChats?.map((c) => c.id)?.sort() || []],
+    queryFn: () =>
+      getSimulationChatGradesBySimulationChats(allChats!.map((c) => c.id)),
+    enabled: !!allChats && allChats.length > 0,
+  });
+
+  const { data: allRubrics } = useQuery({
+    queryKey: ["rubrics"],
+    queryFn: () => getAllRubrics(),
+  });
+
   const practiceSimulations = useMemo(() => {
-    if (!simulations) return [];
-    // Simply filter for all simulations marked as 'practiceSimulation'
-    return simulations.filter((sim) => sim.practiceSimulation);
-  }, [simulations]);
+    if (!simulations || !allRubrics) return [];
+
+    // Filter for practice simulations and add highest score calculation
+    return simulations
+      .filter((sim) => sim.practiceSimulation)
+      .map((simulation) => {
+        // Get rubric for this simulation
+        const rubric = allRubrics.find((r) => r.id === simulation.rubricId);
+
+        // Calculate individual user's highest score for any profile with an ID (except guests)
+        let highestScore = 0;
+        let hasPassed = false;
+
+        if (effectiveProfile?.id && effectiveProfile?.role !== "guest") {
+          const userAttempts =
+            allAttempts?.filter(
+              (att) =>
+                att.profileId === effectiveProfile.id! &&
+                att.simulationId === simulation.id
+            ) || [];
+
+          if (userAttempts.length > 0) {
+            const userAttemptIds = userAttempts.map((att) => att.id);
+            const userChats =
+              allChats?.filter((c) => userAttemptIds.includes(c.attemptId)) ||
+              [];
+            const userGrades =
+              allGrades?.filter((g) =>
+                userChats?.some((c) => c.id === g.simulationChatId)
+              ) || [];
+
+            if (userGrades.length > 0) {
+              // Calculate highest score as percentage
+              const rubricTotalPoints = rubric?.points || 100;
+              highestScore = Math.round(
+                (Math.max(...userGrades.map((g) => g.score)) /
+                  rubricTotalPoints) *
+                  100
+              );
+              hasPassed = userGrades.some((g) => g.passed);
+            }
+          }
+        }
+
+        return {
+          ...simulation,
+          highestScore,
+          hasPassed,
+        };
+      });
+  }, [
+    simulations,
+    allRubrics,
+    effectiveProfile?.id,
+    effectiveProfile?.role,
+    allAttempts,
+    allChats,
+    allGrades,
+  ]);
 
   // Set up simulation-specific event listeners using global WebSocket
   useEffect(() => {

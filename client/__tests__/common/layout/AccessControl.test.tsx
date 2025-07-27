@@ -1,10 +1,15 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
 import { AccessControl } from "@/components/common/layout/AccessControl";
+
+// Import mocks
+import "@/mocks/api";
+import "@/mocks/mutations";
+import "@/mocks/queries";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
@@ -101,8 +106,45 @@ describe("AccessControl", () => {
       );
 
       await waitFor(() => {
-        // Should still render without children
-        expect(screen.getByText("test-pathname")).toBeInTheDocument();
+        expect(screen.getByText("fallback")).toBeInTheDocument();
+      });
+    });
+
+    it("should handle loading state", async () => {
+      // Test that component renders even during loading
+      renderWithMocks(<AccessControl {...mockProps} />);
+
+      // Should render children when access is granted
+      await waitFor(() => {
+        expect(screen.getByText("test-children")).toBeInTheDocument();
+      });
+    });
+
+    it("should handle access denied state", async () => {
+      // Mock the profile context to simulate access denied
+      const mockUseProfile = vi.fn(() => ({
+        effectiveProfile: {
+          role: "guest",
+          firstName: "Test",
+          lastName: "User",
+        },
+        isLoading: false,
+      }));
+
+      vi.doMock("@/contexts/profile-context", () => ({
+        useProfile: mockUseProfile,
+      }));
+
+      // Test with a pathname that guests don't have access to
+      renderWithMocks(
+        <AccessControl pathname="/admin">
+          <div>admin-content</div>
+        </AccessControl>
+      );
+
+      await waitFor(() => {
+        // Should show access denied message
+        expect(screen.getByText(/access denied/i)).toBeInTheDocument();
       });
     });
   });

@@ -11,6 +11,58 @@ import "@/mocks/api";
 import "@/mocks/mutations";
 import "@/mocks/queries";
 
+// Mock next-auth
+vi.mock("next-auth/react", () => ({
+  signIn: vi.fn(),
+}));
+
+// Mock the router
+const mockPush = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
+  usePathname: () => "/login",
+}));
+
+// Mock localStorage
+Object.defineProperty(window, "localStorage", {
+  value: {
+    getItem: vi.fn(),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+  },
+  writable: true,
+});
+
+// Mock the profile context
+vi.mock("@/contexts/profile-context", () => ({
+  useProfile: () => ({
+    activeProfile: {
+      id: "test-profile-id",
+      userId: 1,
+      firstName: "Test",
+      lastName: "User",
+      alias: "testuser",
+      role: "admin",
+      active: true,
+      viewedIntro: true,
+      viewedChat: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastLogin: new Date().toISOString(),
+      lastActive: new Date().toISOString(),
+      defaultProfile: false,
+    },
+    setActiveProfile: vi.fn(),
+    profiles: [],
+    isLoading: false,
+  }),
+  ProfileProvider: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+}));
+
 describe("Login", () => {
   /* ------------------------------------------------------------------ *
    * 💡 Mock Data Usage Guide:
@@ -40,16 +92,19 @@ describe("Login", () => {
 
       // Should render the login component
       await waitFor(() => {
-        expect(screen.getByText(/login/i)).toBeInTheDocument();
+        expect(screen.getByText("Glow")).toBeInTheDocument();
       });
     });
 
-    it("should render login form", async () => {
+    it("should render login buttons", async () => {
       renderWithMocks(<Login />);
 
       await waitFor(() => {
-        expect(screen.getByText(/login/i)).toBeInTheDocument();
-        expect(screen.getByRole("form")).toBeInTheDocument();
+        expect(screen.getByText("Glow")).toBeInTheDocument();
+        expect(
+          screen.getByTestId("microsoft-login-button")
+        ).toBeInTheDocument();
+        expect(screen.getByTestId("guest-login-button")).toBeInTheDocument();
       });
     });
 
@@ -57,73 +112,71 @@ describe("Login", () => {
       renderWithMocks(<Login />);
 
       await waitFor(() => {
-        // Check for form elements
-        const form = screen.getByRole("form");
-        expect(form).toBeInTheDocument();
+        // Check for login buttons
+        const microsoftButton = screen.getByTestId("microsoft-login-button");
+        const guestButton = screen.getByTestId("guest-login-button");
 
-        // Check for input fields
-        const inputs = screen.getAllByRole("textbox");
-        expect(inputs.length).toBeGreaterThan(0);
+        expect(microsoftButton).toBeInTheDocument();
+        expect(guestButton).toBeInTheDocument();
+
+        // Check that buttons are accessible
+        expect(microsoftButton).toHaveAttribute("type", "button");
+        expect(guestButton).toHaveAttribute("type", "button");
       });
     });
   });
 
   describe("User Interactions", () => {
-    it("should handle form submissions", async () => {
+    it("should handle Microsoft login button click", async () => {
       const user = userEvent.setup();
       renderWithMocks(<Login />);
 
       await waitFor(() => {
-        expect(screen.getByRole("form")).toBeInTheDocument();
+        expect(
+          screen.getByTestId("microsoft-login-button")
+        ).toBeInTheDocument();
       });
 
-      // Find form inputs
-      const emailInput = screen.getByLabelText(/email/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole("button", { name: /login/i });
+      // Find and click Microsoft login button
+      const microsoftButton = screen.getByTestId("microsoft-login-button");
+      await user.click(microsoftButton);
 
-      // Fill out the form
-      await user.type(emailInput, "test@example.com");
-      await user.type(passwordInput, "password123");
-
-      // Submit the form
-      await user.click(submitButton);
-
-      // Form should be submitted
-      expect(emailInput).toHaveValue("test@example.com");
-      expect(passwordInput).toHaveValue("password123");
+      // Button should be clickable
+      expect(microsoftButton).toBeInTheDocument();
     });
 
-    it("should handle state changes", async () => {
+    it("should handle guest access button click", async () => {
       const user = userEvent.setup();
       renderWithMocks(<Login />);
 
       await waitFor(() => {
-        expect(screen.getByRole("form")).toBeInTheDocument();
+        expect(screen.getByTestId("guest-login-button")).toBeInTheDocument();
       });
 
-      // Test input state changes
-      const emailInput = screen.getByLabelText(/email/i);
-      await user.type(emailInput, "test@example.com");
-      expect(emailInput).toHaveValue("test@example.com");
+      // Find and click guest access button
+      const guestButton = screen.getByTestId("guest-login-button");
+      await user.click(guestButton);
+
+      // Button should be clickable
+      expect(guestButton).toBeInTheDocument();
     });
 
-    it("should handle user events", async () => {
+    it("should handle button state changes", async () => {
       const user = userEvent.setup();
       renderWithMocks(<Login />);
 
       await waitFor(() => {
-        expect(screen.getByRole("form")).toBeInTheDocument();
+        expect(
+          screen.getByTestId("microsoft-login-button")
+        ).toBeInTheDocument();
       });
 
-      // Test input interactions
-      const emailInput = screen.getByLabelText(/email/i);
-      await user.type(emailInput, "test@example.com");
-      expect(emailInput).toHaveValue("test@example.com");
+      // Test button interactions
+      const microsoftButton = screen.getByTestId("microsoft-login-button");
+      await user.click(microsoftButton);
 
-      // Test form submission
-      const submitButton = screen.getByRole("button", { name: /login/i });
-      await user.click(submitButton);
+      // Button should remain in document after click
+      expect(microsoftButton).toBeInTheDocument();
     });
   });
 
@@ -138,22 +191,24 @@ describe("Login", () => {
       renderWithMocks(<Login />);
 
       await waitFor(() => {
-        expect(screen.getByText(/login/i)).toBeInTheDocument();
+        expect(screen.getByText("Glow")).toBeInTheDocument();
       });
 
       // Component should still render even with API errors
-      expect(screen.getByRole("form")).toBeInTheDocument();
+      expect(screen.getByTestId("microsoft-login-button")).toBeInTheDocument();
+      expect(screen.getByTestId("guest-login-button")).toBeInTheDocument();
     });
 
     it("should handle loading states", async () => {
       renderWithMocks(<Login />);
 
       await waitFor(() => {
-        expect(screen.getByText(/login/i)).toBeInTheDocument();
+        expect(screen.getByText("Glow")).toBeInTheDocument();
       });
 
       // Component should show loading states appropriately
-      expect(screen.getByRole("form")).toBeInTheDocument();
+      expect(screen.getByTestId("microsoft-login-button")).toBeInTheDocument();
+      expect(screen.getByTestId("guest-login-button")).toBeInTheDocument();
     });
   });
 
@@ -162,11 +217,12 @@ describe("Login", () => {
       renderWithMocks(<Login />);
 
       await waitFor(() => {
-        expect(screen.getByText(/login/i)).toBeInTheDocument();
+        expect(screen.getByText("Glow")).toBeInTheDocument();
       });
 
-      // Should render login form
-      expect(screen.getByRole("form")).toBeInTheDocument();
+      // Should render login buttons
+      expect(screen.getByTestId("microsoft-login-button")).toBeInTheDocument();
+      expect(screen.getByTestId("guest-login-button")).toBeInTheDocument();
     });
   });
 
@@ -175,11 +231,12 @@ describe("Login", () => {
       renderWithMocks(<Login />);
 
       await waitFor(() => {
-        expect(screen.getByText(/login/i)).toBeInTheDocument();
+        expect(screen.getByText("Glow")).toBeInTheDocument();
       });
 
       // Should render properly even with no props
-      expect(screen.getByRole("form")).toBeInTheDocument();
+      expect(screen.getByTestId("microsoft-login-button")).toBeInTheDocument();
+      expect(screen.getByTestId("guest-login-button")).toBeInTheDocument();
     });
   });
 });

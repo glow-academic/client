@@ -20,9 +20,10 @@ describe("ChatStarterPrompts", () => {
     it("renders without crashing", async () => {
       renderWithMocks(<ChatStarterPrompts {...mockProps} />);
 
-      // Should render starter prompts
+      // Should render starter prompts (expanded variant shows 4 prompts by default)
       await waitFor(() => {
-        expect(screen.getByText(/help/i)).toBeInTheDocument();
+        const promptCards = screen.getAllByRole("article");
+        expect(promptCards.length).toBe(4);
       });
     });
 
@@ -36,7 +37,9 @@ describe("ChatStarterPrompts", () => {
       renderWithMocks(<ChatStarterPrompts {...propsWithVariant} />);
 
       await waitFor(() => {
-        expect(screen.getByText(/help/i)).toBeInTheDocument();
+        // Minimized variant shows 2 prompts
+        const promptCards = screen.getAllByRole("article");
+        expect(promptCards.length).toBe(2);
       });
     });
 
@@ -44,13 +47,14 @@ describe("ChatStarterPrompts", () => {
       renderWithMocks(<ChatStarterPrompts {...mockProps} />);
 
       await waitFor(() => {
-        // Check for clickable prompt buttons
-        const promptButtons = screen.getAllByRole("button");
-        expect(promptButtons.length).toBeGreaterThan(0);
+        // Check for clickable prompt cards
+        const promptCards = screen.getAllByRole("article");
+        expect(promptCards.length).toBeGreaterThan(0);
 
-        // Each button should have proper accessibility attributes
-        promptButtons.forEach((button) => {
-          expect(button).toHaveAttribute("aria-label");
+        // Each card should have proper accessibility attributes
+        promptCards.forEach((card) => {
+          expect(card).toHaveAttribute("aria-label");
+          expect(card).toHaveAttribute("tabIndex", "0");
         });
       });
     });
@@ -66,17 +70,18 @@ describe("ChatStarterPrompts", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText(/help/i)).toBeInTheDocument();
+        const promptCards = screen.getAllByRole("article");
+        expect(promptCards.length).toBe(4);
       });
 
-      // Click on a prompt button
-      const promptButton = screen.getAllByRole("button")[0];
-      if (promptButton) {
-        await user.click(promptButton);
+      // Click on a prompt card
+      const promptCard = screen.getAllByRole("article")[0];
+      if (promptCard) {
+        await user.click(promptCard);
       }
 
-      // onPromptClick should be called
-      expect(onPromptClick).toHaveBeenCalled();
+      // onPromptClick should be called with the prompt text
+      expect(onPromptClick).toHaveBeenCalledWith(expect.any(String));
     });
 
     it("should handle state changes", async () => {
@@ -84,17 +89,20 @@ describe("ChatStarterPrompts", () => {
       renderWithMocks(<ChatStarterPrompts {...mockProps} />);
 
       await waitFor(() => {
-        expect(screen.getByText(/help/i)).toBeInTheDocument();
+        const promptCards = screen.getAllByRole("article");
+        expect(promptCards.length).toBe(4);
       });
 
       // Test that prompts are interactive
-      const promptButtons = screen.getAllByRole("button");
-      expect(promptButtons.length).toBeGreaterThan(0);
+      const promptCards = screen.getAllByRole("article");
+      expect(promptCards.length).toBeGreaterThan(0);
 
       // Click on a prompt
-      if (promptButtons[0]) {
-        await user.click(promptButtons[0]);
-        expect(mockProps.onPromptClick).toHaveBeenCalled();
+      if (promptCards[0]) {
+        await user.click(promptCards[0]);
+        expect(mockProps.onPromptClick).toHaveBeenCalledWith(
+          expect.any(String)
+        );
       }
     });
 
@@ -103,18 +111,21 @@ describe("ChatStarterPrompts", () => {
       renderWithMocks(<ChatStarterPrompts {...mockProps} />);
 
       await waitFor(() => {
-        expect(screen.getByText(/help/i)).toBeInTheDocument();
+        const promptCards = screen.getAllByRole("article");
+        expect(promptCards.length).toBe(4);
       });
 
       // Test keyboard navigation
-      const promptButtons = screen.getAllByRole("button");
-      expect(promptButtons.length).toBeGreaterThan(0);
+      const promptCards = screen.getAllByRole("article");
+      expect(promptCards.length).toBeGreaterThan(0);
 
       // Focus and press Enter on a prompt
-      if (promptButtons[0]) {
-        promptButtons[0].focus();
+      if (promptCards[0]) {
+        promptCards[0].focus();
         await user.keyboard("{Enter}");
-        expect(mockProps.onPromptClick).toHaveBeenCalled();
+        expect(mockProps.onPromptClick).toHaveBeenCalledWith(
+          expect.any(String)
+        );
       }
     });
   });
@@ -124,12 +135,13 @@ describe("ChatStarterPrompts", () => {
       renderWithMocks(<ChatStarterPrompts {...mockProps} />);
 
       await waitFor(() => {
-        expect(screen.getByText(/help/i)).toBeInTheDocument();
+        const promptCards = screen.getAllByRole("article");
+        expect(promptCards.length).toBe(4);
       });
 
       // Should render properly even with minimal props
-      const promptButtons = screen.getAllByRole("button");
-      expect(promptButtons.length).toBeGreaterThan(0);
+      const promptCards = screen.getAllByRole("article");
+      expect(promptCards.length).toBeGreaterThan(0);
     });
 
     it("should handle missing or invalid props", async () => {
@@ -137,12 +149,13 @@ describe("ChatStarterPrompts", () => {
       renderWithMocks(<ChatStarterPrompts onPromptClick={vi.fn()} />);
 
       await waitFor(() => {
-        expect(screen.getByText(/help/i)).toBeInTheDocument();
+        const promptCards = screen.getAllByRole("article");
+        expect(promptCards.length).toBe(4);
       });
 
       // Should still render with default props
-      const promptButtons = screen.getAllByRole("button");
-      expect(promptButtons.length).toBeGreaterThan(0);
+      const promptCards = screen.getAllByRole("article");
+      expect(promptCards.length).toBeGreaterThan(0);
     });
   });
 });

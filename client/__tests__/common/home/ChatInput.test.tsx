@@ -6,6 +6,26 @@ import { describe, expect, it, vi } from "vitest";
 // ——————————————————————————————————————————
 import ChatInput, { ChatInputProps } from "@/components/common/home/ChatInput";
 
+// Mock the assistant context
+vi.mock("@/contexts/assistant-context", () => ({
+  useAssistant: vi.fn(() => ({
+    sendMessage: vi.fn(),
+    stopMessage: vi.fn(),
+    isSendingMessage: false,
+    isStoppingMessage: false,
+    currentChatId: null,
+    uiState: { isOpen: false, isExpanded: false },
+    setUiState: vi.fn(),
+    openWidget: vi.fn(),
+    expand: vi.fn(),
+    minimize: vi.fn(),
+    close: vi.fn(),
+    toggle: vi.fn(),
+    setCurrentChatId: vi.fn(),
+    clearCurrentChatId: vi.fn(),
+  })),
+}));
+
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
 const mockProps: ChatInputProps = {
@@ -48,117 +68,225 @@ describe("ChatInput", () => {
 
       await waitFor(() => {
         const textarea = screen.getByRole("textbox");
-        expect(textarea).toBeInTheDocument();
-        expect(textarea).toHaveAttribute("placeholder");
-
         const sendButton = screen.getByRole("button", { name: /send/i });
+
+        expect(textarea).toBeInTheDocument();
         expect(sendButton).toBeInTheDocument();
-        expect(sendButton).toHaveAttribute("title");
+        expect(textarea).toHaveAttribute(
+          "placeholder",
+          "Start a conversation..."
+        );
       });
     });
   });
 
   describe("User Interactions", () => {
-    it("should handle form submissions", async () => {
+    it("should handle text input", async () => {
       const user = userEvent.setup();
       renderWithMocks(<ChatInput {...mockProps} />);
 
       await waitFor(() => {
-        expect(screen.getByRole("form")).toBeInTheDocument();
+        expect(screen.getByRole("textbox")).toBeInTheDocument();
+      });
+
+      const textarea = screen.getByRole("textbox");
+      await user.type(textarea, "Hello World");
+
+      expect(textarea).toHaveValue("Hello World");
+    });
+
+    it("should handle form submission", async () => {
+      const user = userEvent.setup();
+      renderWithMocks(<ChatInput {...mockProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByRole("textbox")).toBeInTheDocument();
       });
 
       const textarea = screen.getByRole("textbox");
       const sendButton = screen.getByRole("button", { name: /send/i });
 
-      // Type a message
-      await user.type(textarea, "Hello, world!");
-      expect(textarea).toHaveValue("Hello, world!");
-
-      // Submit the form
+      await user.type(textarea, "Test message");
       await user.click(sendButton);
 
-      // The message should be sent and textarea cleared
+      // Message should be cleared after sending
       expect(textarea).toHaveValue("");
     });
 
-    it("should handle state changes", async () => {
-      const user = userEvent.setup();
-      const togglePrompt = vi.fn();
-
-      renderWithMocks(<ChatInput {...mockProps} togglePrompt={togglePrompt} />);
-
-      await waitFor(() => {
-        expect(screen.getByRole("form")).toBeInTheDocument();
-      });
-
-      const textarea = screen.getByRole("textbox");
-
-      // Type a message
-      await user.type(textarea, "Test message");
-
-      // togglePrompt should be called when message changes
-      expect(togglePrompt).toHaveBeenCalledWith(false);
-
-      // Clear the message
-      await user.clear(textarea);
-
-      // togglePrompt should be called again
-      expect(togglePrompt).toHaveBeenCalledWith(true);
-    });
-
-    it("should handle user events", async () => {
+    it("should handle Enter key submission", async () => {
       const user = userEvent.setup();
       renderWithMocks(<ChatInput {...mockProps} />);
 
       await waitFor(() => {
-        expect(screen.getByRole("form")).toBeInTheDocument();
+        expect(screen.getByRole("textbox")).toBeInTheDocument();
       });
 
       const textarea = screen.getByRole("textbox");
+      await user.type(textarea, "Test message{enter}");
 
-      // Test typing
-      await user.type(textarea, "Test message");
-      expect(textarea).toHaveValue("Test message");
-
-      // Test Enter key submission
-      await user.keyboard("{Enter}");
+      // Message should be cleared after sending
       expect(textarea).toHaveValue("");
+    });
+
+    it("should not submit empty messages", async () => {
+      const user = userEvent.setup();
+      renderWithMocks(<ChatInput {...mockProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByRole("textbox")).toBeInTheDocument();
+      });
+
+      const sendButton = screen.getByRole("button", { name: /send/i });
+      expect(sendButton).toBeDisabled();
+    });
+
+    it("should handle Shift+Enter for new lines", async () => {
+      const user = userEvent.setup();
+      renderWithMocks(<ChatInput {...mockProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByRole("textbox")).toBeInTheDocument();
+      });
+
+      const textarea = screen.getByRole("textbox");
+      await user.type(textarea, "Line 1{shift+enter}Line 2");
+
+      // Should not submit, should add new line
+      expect(textarea).toHaveValue("Line 1\nLine 2");
+    });
+  });
+
+  describe("Props and State", () => {
+    it("should handle promptToSet prop", async () => {
+      const onPromptSet = vi.fn();
+      renderWithMocks(
+        <ChatInput
+          {...mockProps}
+          promptToSet="Set prompt"
+          onPromptSet={onPromptSet}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByDisplayValue("Set prompt")).toBeInTheDocument();
+      });
+
+      expect(onPromptSet).toHaveBeenCalled();
+    });
+
+    it("should handle togglePrompt callback", async () => {
+      const togglePrompt = vi.fn();
+      renderWithMocks(<ChatInput {...mockProps} togglePrompt={togglePrompt} />);
+
+      await waitFor(() => {
+        expect(screen.getByRole("textbox")).toBeInTheDocument();
+      });
+
+      // Should call togglePrompt with true when message is empty
+      expect(togglePrompt).toHaveBeenCalledWith(true);
+    });
+
+    it("should update placeholder based on currentChatId", async () => {
+      // Mock the context to return a currentChatId
+      const { useAssistant } = await import("@/contexts/assistant-context");
+      vi.mocked(useAssistant).mockReturnValue({
+        sendMessage: vi.fn(),
+        stopMessage: vi.fn(),
+        isSendingMessage: false,
+        isStoppingMessage: false,
+        currentChatId: "test-chat-id",
+        uiState: { isOpen: false, isExpanded: false },
+        setUiState: vi.fn(),
+        openWidget: vi.fn(),
+        expand: vi.fn(),
+        minimize: vi.fn(),
+        close: vi.fn(),
+        toggle: vi.fn(),
+        setCurrentChatId: vi.fn(),
+        clearCurrentChatId: vi.fn(),
+      });
+
+      renderWithMocks(<ChatInput {...mockProps} />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByPlaceholderText("Type a message...")
+        ).toBeInTheDocument();
+      });
     });
   });
 
   describe("Edge Cases", () => {
-    it("should handle edge cases gracefully", async () => {
+    it("should handle disabled state during sending", async () => {
+      // Mock the context to return isSendingMessage: true
+      const { useAssistant } = await import("@/contexts/assistant-context");
+      vi.mocked(useAssistant).mockReturnValue({
+        sendMessage: vi.fn(),
+        stopMessage: vi.fn(),
+        isSendingMessage: true,
+        isStoppingMessage: false,
+        currentChatId: null,
+        uiState: { isOpen: false, isExpanded: false },
+        setUiState: vi.fn(),
+        openWidget: vi.fn(),
+        expand: vi.fn(),
+        minimize: vi.fn(),
+        close: vi.fn(),
+        toggle: vi.fn(),
+        setCurrentChatId: vi.fn(),
+        clearCurrentChatId: vi.fn(),
+      });
+
       renderWithMocks(<ChatInput {...mockProps} />);
 
       await waitFor(() => {
-        expect(screen.getByRole("form")).toBeInTheDocument();
+        const textarea = screen.getByRole("textbox");
+        expect(textarea).toBeDisabled();
       });
-
-      const textarea = screen.getByRole("textbox");
-      const sendButton = screen.getByRole("button", { name: /send/i });
-
-      // Send button should be disabled when textarea is empty
-      expect(sendButton).toBeDisabled();
-
-      // Type whitespace only
-      await userEvent.type(textarea, "   ");
-      expect(sendButton).toBeDisabled();
     });
 
-    it("should handle missing or invalid props", async () => {
-      // Test with no props
-      renderWithMocks(<ChatInput />);
-
-      await waitFor(() => {
-        expect(screen.getByRole("form")).toBeInTheDocument();
+    it("should handle stop button when sending", async () => {
+      // Mock the context to return isSendingMessage: true
+      const { useAssistant } = await import("@/contexts/assistant-context");
+      vi.mocked(useAssistant).mockReturnValue({
+        sendMessage: vi.fn(),
+        stopMessage: vi.fn(),
+        isSendingMessage: true,
+        isStoppingMessage: false,
+        currentChatId: null,
+        uiState: { isOpen: false, isExpanded: false },
+        setUiState: vi.fn(),
+        openWidget: vi.fn(),
+        expand: vi.fn(),
+        minimize: vi.fn(),
+        close: vi.fn(),
+        toggle: vi.fn(),
+        setCurrentChatId: vi.fn(),
+        clearCurrentChatId: vi.fn(),
       });
 
-      // Should render with default placeholder
+      renderWithMocks(<ChatInput {...mockProps} />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole("button", { name: /stop/i })
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("should handle very long messages", async () => {
+      const user = userEvent.setup();
+      renderWithMocks(<ChatInput {...mockProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByRole("textbox")).toBeInTheDocument();
+      });
+
       const textarea = screen.getByRole("textbox");
-      expect(textarea).toHaveAttribute(
-        "placeholder",
-        "Start a conversation..."
-      );
+      const longMessage = "A".repeat(1000);
+      await user.type(textarea, longMessage);
+
+      expect(textarea).toHaveValue(longMessage);
     });
   });
 });

@@ -1,82 +1,45 @@
-import { describe, it } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import NewSimulation from '@/components/create/simulations/NewSimulation';
+import NewSimulation from "@/components/create/simulations/NewSimulation";
 
-describe('NewSimulation', () => {
-  
+// Mock the Simulation component since NewSimulation is just a wrapper
+vi.mock("@/components/common/simulation/Simulation", () => ({
+  default: vi.fn(() => (
+    <div data-testid="simulation-component">Simulation Component</div>
+  )),
+}));
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<NewSimulation  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+describe("NewSimulation", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      renderWithMocks(<NewSimulation />);
+
+      expect(screen.getByTestId("simulation-component")).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      renderWithMocks(<NewSimulation />);
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
+      const simulationComponent = screen.getByTestId("simulation-component");
+      expect(simulationComponent).toBeInTheDocument();
 
+      // Check that the component is accessible
+      expect(simulationComponent).toBeVisible();
     });
   });
 
-  
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test that the component renders without props
+      renderWithMocks(<NewSimulation />);
 
-  
+      expect(screen.getByTestId("simulation-component")).toBeInTheDocument();
 
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      // Verify the component text is displayed
+      expect(screen.getByText("Simulation Component")).toBeInTheDocument();
     });
-
-    
   });
 });
-
-/*
- * Component Analysis for NewSimulation:
- * Path: create/simulations/NewSimulation.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<NewSimulation />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<NewSimulation {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

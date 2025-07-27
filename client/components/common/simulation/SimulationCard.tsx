@@ -222,7 +222,8 @@ export default function SimulationCard({
               </span>
             </div>
             {effectiveProfile?.role !== "guest" &&
-              simulation.highestScore &&
+              simulation.highestScore !== undefined &&
+              simulation.highestScore !== null &&
               simulation.highestScore > 0 && (
                 <div className="flex items-center">
                   <Tooltip>

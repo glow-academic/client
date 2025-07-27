@@ -21,10 +21,13 @@ vi.mock("sonner", () => ({
 
 // Mock the router
 const mockBack = vi.fn();
+const mockPush = vi.fn();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     back: mockBack,
+    push: mockPush,
   }),
+  usePathname: () => "/test-path",
 }));
 
 // Mock the encryption utilities
@@ -34,6 +37,11 @@ vi.mock("@/utils/model/server-model", () => ({
 
 vi.mock("@/utils/model/update-provider-with-encryption", () => ({
   updateProviderWithEncryption: vi.fn(() => Promise.resolve(true)),
+}));
+
+// Mock the client model utilities
+vi.mock("@/utils/model/client-model", () => ({
+  maskApiKey: vi.fn((key: string) => (key ? "***" + key.slice(-4) : "")),
 }));
 
 describe("Provider", () => {
@@ -135,7 +143,11 @@ describe("Provider", () => {
       });
 
       // Look for the eye icon button (show/hide API key)
-      const eyeButton = screen.getByRole("button", { name: /eye/i });
+      // The button doesn't have an accessible name, so we look for it by its position
+      const buttons = screen.getAllByRole("button");
+      const eyeButton = buttons.find((button) =>
+        button.querySelector('svg[class*="lucide-eye"]')
+      );
       expect(eyeButton).toBeInTheDocument();
     });
 

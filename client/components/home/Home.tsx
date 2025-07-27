@@ -624,44 +624,42 @@ export default function Home() {
         let hasPassed = false;
         let highestScore = 0;
 
+        // Calculate individual user's highest score for any profile with an ID (except guests)
+        if (effectiveProfile?.id && effectiveProfile?.role !== "guest") {
+          const userAttempts = safeAttempts.filter(
+            (att) =>
+              att.profileId === effectiveProfile.id! &&
+              att.simulationId === simulation.id
+          );
+
+          if (userAttempts.length > 0) {
+            const userAttemptIds = userAttempts.map((att) => att.id);
+            const userChats = chats?.filter((c) =>
+              userAttemptIds.includes(c.attemptId)
+            );
+            const userGrades = safeGrades.filter((g) =>
+              userChats?.some((c) => c.id === g.simulationChatId)
+            );
+
+            if (userGrades.length > 0) {
+              // Calculate highest score as percentage
+              const rubricTotalPoints = rubric?.points || 100;
+              highestScore = Math.round(
+                (Math.max(...userGrades.map((g) => g.score)) /
+                  rubricTotalPoints) *
+                  100
+              );
+              hasPassed = userGrades.some((g) => g.passed);
+            }
+          }
+        }
+
+        // For instructor view, also check if ALL members have passed (but keep individual score)
         if (shouldShowAll) {
-          // Instructor view: Check if ALL members have passed (not just any)
           const passedMembers = simulation.progress.passedMembers;
           const totalMembers = simulation.progress.totalMembers;
           hasPassed =
             passedMembers.length > 0 && passedMembers.length >= totalMembers;
-          // For instructor view, we don't track individual scores, so use a placeholder
-          highestScore = hasPassed ? 100 : 0;
-        } else {
-          // TA view: Check if current TA has passed
-          if (effectiveProfile?.id) {
-            const taAttempts = safeAttempts.filter(
-              (att) =>
-                att.profileId === effectiveProfile.id! &&
-                att.simulationId === simulation.id
-            );
-
-            if (taAttempts.length > 0) {
-              const taAttemptIds = taAttempts.map((att) => att.id);
-              const taChats = chats?.filter((c) =>
-                taAttemptIds.includes(c.attemptId)
-              );
-              const taGrades = safeGrades.filter((g) =>
-                taChats?.some((c) => c.id === g.simulationChatId)
-              );
-
-              if (taGrades.length > 0) {
-                // Calculate highest score as percentage
-                const rubricTotalPoints = rubric?.points || 100;
-                highestScore = Math.round(
-                  (Math.max(...taGrades.map((g) => g.score)) /
-                    rubricTotalPoints) *
-                    100
-                );
-                hasPassed = taGrades.some((g) => g.passed);
-              }
-            }
-          }
         }
 
         return {
@@ -683,6 +681,7 @@ export default function Home() {
     allRubrics,
     shouldShowAll,
     effectiveProfile?.id,
+    effectiveProfile?.role,
     safeAttempts,
     chats,
     safeGrades,

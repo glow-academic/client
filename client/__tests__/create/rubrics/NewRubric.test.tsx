@@ -1,82 +1,45 @@
-import { describe, it } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import NewRubric from '@/components/create/rubrics/NewRubric';
+import NewRubric from "@/components/create/rubrics/NewRubric";
 
-describe('NewRubric', () => {
-  
+// Mock the Rubric component since NewRubric is just a wrapper
+vi.mock("@/components/common/rubric/Rubric", () => ({
+  default: vi.fn(() => (
+    <div data-testid="rubric-component">Rubric Component</div>
+  )),
+}));
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<NewRubric  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+describe("NewRubric", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      renderWithMocks(<NewRubric />);
+
+      expect(screen.getByTestId("rubric-component")).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      renderWithMocks(<NewRubric />);
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
+      const rubricComponent = screen.getByTestId("rubric-component");
+      expect(rubricComponent).toBeInTheDocument();
 
+      // Check that the component is accessible
+      expect(rubricComponent).toBeVisible();
     });
   });
 
-  
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test that the component renders without props
+      renderWithMocks(<NewRubric />);
 
-  
+      expect(screen.getByTestId("rubric-component")).toBeInTheDocument();
 
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      // Verify the component text is displayed
+      expect(screen.getByText("Rubric Component")).toBeInTheDocument();
     });
-
-    
   });
 });
-
-/*
- * Component Analysis for NewRubric:
- * Path: create/rubrics/NewRubric.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<NewRubric />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<NewRubric {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */
