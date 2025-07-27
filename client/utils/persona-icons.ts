@@ -433,11 +433,11 @@ export function getPersonaIconComponent(iconName: string) {
 // Suggested icons for common persona types
 export const PERSONA_TYPE_ICONS = {
   // Emotional personas
-  aggressive: ["Zap", "Flame", "Lightning", "Angry", "Target"],
+  aggressive: ["Zap", "Flame", "Angry", "Target", "X"],
   happy: ["SmilePlus", "Heart", "Star", "Sparkles", "Sun", "Rainbow"],
-  sad: ["Frown", "HeartCrack", "Cloud", "Rain", "Droplet", "Moon"],
-  angry: ["Angry", "Flame", "Lightning", "Zap", "Target"],
-  confused: ["HelpCircle", "QuestionMark", "Cloud", "Brain", "Eye", "Search"],
+  sad: ["Frown", "HeartCrack", "Cloud", "Droplet", "Moon"],
+  angry: ["Angry", "Flame", "Zap", "Target", "X"],
+  confused: ["HelpCircle", "Cloud", "Brain", "Eye", "Search"],
 
   // Personality personas
   confident: ["Award", "Crown", "Star", "Target", "Trophy", "Medal"],
@@ -451,7 +451,7 @@ export const PERSONA_TYPE_ICONS = {
     "BarChart",
     "Calculator",
   ],
-  stubborn: ["Target", "Lock", "Shield", "X", "Stop", "Pause"],
+  stubborn: ["Target", "Lock", "Shield", "X", "Pause"],
 
   // Professional personas
   teacher: [
@@ -496,14 +496,7 @@ export const PERSONA_TYPE_ICONS = {
 
   // Intelligence personas
   smart: ["Brain", "Lightbulb", "Target", "CheckCircle", "Star", "Award"],
-  curious: [
-    "Search",
-    "Eye",
-    "QuestionMark",
-    "HelpCircle",
-    "Lightbulb",
-    "Compass",
-  ],
+  curious: ["Search", "Eye", "HelpCircle", "Lightbulb", "Compass"],
   logical: [
     "Brain",
     "Target",
@@ -522,20 +515,14 @@ export const PERSONA_TYPE_ICONS = {
 
   // Mood personas
   enthusiastic: ["SmilePlus", "Sparkles", "Star", "Sun", "Heart", "Zap"],
-  calm: ["Cloud", "Moon", "Droplet", "Leaf", "Tree", "Heart"],
-  energetic: ["Zap", "Flame", "Lightning", "Activity", "Star", "Sparkles"],
-  thoughtful: ["Brain", "Eye", "Search", "QuestionMark", "Cloud", "Moon"],
+  calm: ["Cloud", "Moon", "Droplet", "Leaf", "Heart"],
+  energetic: ["Zap", "Flame", "Activity", "Star", "Sparkles"],
+  thoughtful: ["Brain", "Eye", "Search", "Cloud", "Moon"],
 
   // Role personas
   leader: ["Crown", "Award", "Users", "Target", "Star", "Trophy"],
   follower: ["User", "Users", "Heart", "CheckCircle", "Eye", "Lock"],
-  critic: [
-    "Target",
-    "XCircle",
-    "AlertCircle",
-    "Eye",
-    "Search",
-  ],
+  critic: ["Target", "XCircle", "AlertCircle", "Eye", "Search"],
   supporter: ["Heart", "Users", "MessageSquare", "CheckCircle", "Star", "Gift"],
 
   // Special personas

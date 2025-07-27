@@ -17,60 +17,31 @@ def get_parameter_item_info(parameter_item_ids: List[uuid.UUID], session: Sessio
     """
     Get the parameter item information for a given parameter item ids.
     """
-    parameter_items = session.exec(select(ParameterItems).where(ParameterItems.id.in_(parameter_item_ids))).all()
+    # Join ParameterItems with Parameters to get parameter name and description
+    parameter_items_with_params = session.exec(
+        select(ParameterItems, Parameters)
+        .join(Parameters, ParameterItems.parameter_id == Parameters.id)
+        .where(ParameterItems.id.in_(parameter_item_ids))
+    ).all()
+    
+    if not parameter_items_with_params:
+        return {
+            "role": "user",
+            "content": "No parameter items found.",
+        }
+    
+    # Format each parameter item using the template
+    formatted_items = []
+    for param_item, param in parameter_items_with_params:
+        formatted_item = f"This is the {param.name} ({param.description}) for this chat: {param_item.name}. Description: {param_item.description}"
+        formatted_items.append(formatted_item)
+    
+    content = "The following is the parameter item information:\n" + "\n".join(formatted_items)
+    
     return {
         "role": "user",
-        "content": f"The following is the parameter item information: {parameter_items}",
+        "content": content,
     }
-
-
-def construct_scenario_description(scenario: Scenarios, session: Session) -> str:
-    """
-    Construct a comprehensive scenario description based on all parameter items and their associated parameters.
-    
-    Args:
-        scenario: The scenario object
-        session: Database session
-        
-    Returns:
-        Enhanced description with parameter context
-    """
-    base_description = scenario.description or ""
-    
-    if not scenario.parameter_item_ids:
-        return base_description
-    
-    # Get all parameter items
-    parameter_items = session.exec(
-        select(ParameterItems).where(ParameterItems.id.in_(scenario.parameter_item_ids))
-    ).all()
-    
-    if not parameter_items:
-        return base_description
-    
-    # Get the associated parameters
-    parameter_ids = [item.parameter_id for item in parameter_items]
-    parameters = session.exec(
-        select(Parameters).where(Parameters.id.in_(parameter_ids))
-    ).all()
-    
-    # Create a mapping of parameter_id to parameter
-    param_map = {param.id: param for param in parameters}
-    
-    # Build parameter context description
-    param_context = []
-    for param_item in parameter_items:
-        param = param_map.get(param_item.parameter_id)
-        if param:
-            param_context.append(f"{param.name}: {param_item.name} ({param_item.value})")
-    
-    # Combine base description with parameter context
-    if param_context:
-        enhanced_description = f"{base_description}\n\nContext Parameters:\n" + "\n".join(f"- {context}" for context in param_context)
-        return enhanced_description
-    
-    return base_description
-
 
 async def randomly_fill_scenario_attributes(
     scenario: Scenarios, session: Session
@@ -121,8 +92,8 @@ async def randomly_fill_scenario_attributes(
     else:
         scenario_documents = scenario.document_ids
 
-    # Random parameter item selection if parameter_item_ids is null
-    if scenario.parameter_item_ids is None:
+    # Random parameter item selection if parameter_item_ids is null or empty
+    if scenario.parameter_item_ids is None or len(scenario.parameter_item_ids) == 0:
         # Get all active parameters
         active_parameters = session.exec(select(Parameters).where(Parameters.active == True)).all()
         
@@ -180,19 +151,9 @@ async def randomly_fill_scenario_attributes(
         
         logger.info(f"Filtered to {len(scenario_parameter_item_ids)} parameter items (one per active parameter): {scenario_parameter_item_ids}")
 
-    # Construct enhanced description with parameter context
-    enhanced_description = construct_scenario_description(
-        Scenarios(
-            name=scenario.name,
-            description=scenario.description,
-            parameter_item_ids=scenario_parameter_item_ids
-        ), 
-        session
-    )
-
     return Scenarios(
         name=scenario.name,
-        description=enhanced_description,
+        description=scenario.description,
         persona_id=scenario_persona_id,
         document_ids=scenario_documents,
         parameter_item_ids=scenario_parameter_item_ids,

@@ -40,462 +40,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { createPersona } from "@/utils/mutations/personas/create-persona";
 import { updatePersona } from "@/utils/mutations/personas/update-persona";
+import {
+  getPersonaIconComponent,
+  getSuggestedIconsForPersona,
+  PERSONA_ICON_MAP,
+  PERSONA_ICONS,
+} from "@/utils/persona-icons";
 import { getAllModels } from "@/utils/queries/models/get-all-models";
 import { getPersona } from "@/utils/queries/personas/get-persona";
-import {
-  Activity,
-  Airplay,
-  AlertCircle,
-  AlertOctagon,
-  AlertTriangle,
-  AlignCenter,
-  AlignJustify,
-  AlignLeft,
-  AlignRight,
-  Anchor,
-  Aperture,
-  Archive,
-  ArrowDown,
-  ArrowLeft,
-  ArrowRight,
-  ArrowUp,
-  Award,
-  BarChart,
-  Battery,
-  Bell,
-  Bluetooth,
-  Bold,
-  Book,
-  BookOpen,
-  Bookmark,
-  Box,
-  Briefcase,
-  Calendar,
-  Camera,
-  Cast,
-  Check,
-  CheckCircle,
-  CheckSquare,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  ChevronsDown,
-  ChevronsLeft,
-  ChevronsRight,
-  ChevronsUpDown,
-  Circle,
-  Clipboard,
-  Clock,
-  Cloud,
-  Code,
-  Codepen,
-  Compass,
-  Copy,
-  CornerDownLeft,
-  CornerDownRight,
-  CornerLeftDown,
-  CornerLeftUp,
-  CornerRightDown,
-  CornerRightUp,
-  CornerUpLeft,
-  CornerUpRight,
-  Cpu,
-  CreditCard,
-  Crop,
-  Crosshair,
-  Database,
-  Delete,
-  Disc,
-  DollarSign,
-  Download,
-  Droplet,
-  Edit,
-  Edit2,
-  Edit3,
-  Eye,
-  Facebook,
-  FastForward,
-  Feather,
-  File,
-  FileText,
-  Film,
-  Filter,
-  Flag,
-  Folder,
-  Github,
-  Globe,
-  Grid,
-  Hash,
-  Headphones,
-  Heart,
-  HelpCircle,
-  Home,
-  Image,
-  Inbox,
-  Info,
-  Instagram,
-  Italic,
-  Key,
-  Layers,
-  Layout,
-  LifeBuoy,
-  Link,
-  Link2,
-  List,
-  Loader,
-  Lock,
-  LogIn,
-  LogOut,
-  Mail,
-  Map,
-  MapPin,
-  Maximize,
-  Maximize2,
-  Menu,
-  MessageCircle,
-  MessageSquare,
-  Mic,
-  MicOff,
-  Minimize,
-  Minimize2,
-  Monitor,
-  Moon,
-  MoreHorizontal,
-  MoreVertical,
-  Move,
-  Music,
-  Navigation,
-  Navigation2,
-  Octagon,
-  Package,
-  Paperclip,
-  Pause,
-  PauseCircle,
-  Percent,
-  Phone,
-  PieChart,
-  Play,
-  PlayCircle,
-  Plus,
-  PlusCircle,
-  PlusSquare,
-  Pocket,
-  Power,
-  Printer,
-  Radio,
-  RefreshCcw,
-  RefreshCw,
-  Repeat,
-  Rewind,
-  RotateCcw,
-  RotateCw,
-  Rss,
-  Save,
-  Scissors,
-  Search,
-  Send,
-  Server,
-  Settings,
-  Share,
-  Share2,
-  Shield,
-  ShieldOff,
-  ShoppingBag,
-  ShoppingCart,
-  Shuffle,
-  Sidebar,
-  SkipBack,
-  SkipForward,
-  Slack,
-  Slash,
-  Sliders,
-  Smartphone,
-  Speaker,
-  Square,
-  Star,
-  StopCircle,
-  Sun,
-  Sunrise,
-  Sunset,
-  Tablet,
-  Tag,
-  Target,
-  Terminal,
-  Thermometer,
-  ThumbsDown,
-  ThumbsUp,
-  ToggleLeft,
-  ToggleRight,
-  Trash,
-  Trash2,
-  Trello,
-  TrendingDown,
-  TrendingUp,
-  Triangle,
-  Truck,
-  Tv,
-  Twitch,
-  Twitter,
-  Type,
-  Umbrella,
-  Underline,
-  Unlock,
-  Upload,
-  User,
-  UserCheck,
-  UserMinus,
-  UserPlus,
-  UserX,
-  Users,
-  Video,
-  VideoOff,
-  Voicemail,
-  Volume,
-  Volume1,
-  Volume2,
-  VolumeX,
-  Watch,
-  Wifi,
-  WifiOff,
-  Wind,
-  X,
-  XCircle,
-  XSquare,
-  Youtube,
-  Zap,
-  ZapOff,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
-
-// Icon mapping
-const ICON_MAP = {
-  Activity,
-  Airplay,
-  AlertCircle,
-  AlertOctagon,
-  AlertTriangle,
-  AlignCenter,
-  AlignJustify,
-  AlignLeft,
-  AlignRight,
-  Anchor,
-  Aperture,
-  Archive,
-  ArrowDown,
-  ArrowLeft,
-  ArrowRight,
-  ArrowUp,
-  Award,
-  BarChart,
-  Battery,
-  Bell,
-  Bluetooth,
-  Bold,
-  Book,
-  BookOpen,
-  Bookmark,
-  Box,
-  Briefcase,
-  Calendar,
-  Camera,
-  Cast,
-  CheckCircle,
-  CheckSquare,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  ChevronsDown,
-  ChevronsLeft,
-  ChevronsRight,
-  Circle,
-  Clipboard,
-  Clock,
-  Cloud,
-  Code,
-  Codepen,
-  Compass,
-  Copy,
-  CornerDownLeft,
-  CornerDownRight,
-  CornerLeftDown,
-  CornerLeftUp,
-  CornerRightDown,
-  CornerRightUp,
-  CornerUpLeft,
-  CornerUpRight,
-  Cpu,
-  CreditCard,
-  Crop,
-  Crosshair,
-  Database,
-  Delete,
-  Disc,
-  DollarSign,
-  Download,
-  Droplet,
-  Edit,
-  Edit2,
-  Edit3,
-  Eye,
-  Facebook,
-  FastForward,
-  Feather,
-  File,
-  FileText,
-  Film,
-  Filter,
-  Flag,
-  Folder,
-  Github,
-  Globe,
-  Grid,
-  Hash,
-  Headphones,
-  Heart,
-  HelpCircle,
-  Home,
-  Image,
-  Inbox,
-  Info,
-  Instagram,
-  Italic,
-  Key,
-  Layers,
-  Layout,
-  LifeBuoy,
-  Link,
-  Link2,
-  List,
-  Loader,
-  Lock,
-  LogIn,
-  LogOut,
-  Mail,
-  Map,
-  MapPin,
-  Maximize,
-  Maximize2,
-  Menu,
-  MessageCircle,
-  MessageSquare,
-  Mic,
-  MicOff,
-  Minimize,
-  Minimize2,
-  Monitor,
-  Moon,
-  MoreHorizontal,
-  MoreVertical,
-  Move,
-  Music,
-  Navigation,
-  Navigation2,
-  Octagon,
-  Package,
-  Paperclip,
-  Pause,
-  PauseCircle,
-  Percent,
-  Phone,
-  PieChart,
-  Play,
-  PlayCircle,
-  Plus,
-  PlusCircle,
-  PlusSquare,
-  Pocket,
-  Power,
-  Printer,
-  Radio,
-  RefreshCw,
-  RefreshCcw,
-  Repeat,
-  Rewind,
-  RotateCcw,
-  RotateCw,
-  Rss,
-  Save,
-  Scissors,
-  Search,
-  Send,
-  Server,
-  Settings,
-  Share,
-  Share2,
-  Shield,
-  ShieldOff,
-  ShoppingBag,
-  ShoppingCart,
-  Shuffle,
-  Sidebar,
-  SkipBack,
-  SkipForward,
-  Slack,
-  Slash,
-  Sliders,
-  Smartphone,
-  Speaker,
-  Square,
-  Star,
-  StopCircle,
-  Sun,
-  Sunrise,
-  Sunset,
-  Tablet,
-  Tag,
-  Target,
-  Terminal,
-  Thermometer,
-  ThumbsDown,
-  ThumbsUp,
-  ToggleLeft,
-  ToggleRight,
-  Trash,
-  Trash2,
-  Trello,
-  TrendingDown,
-  TrendingUp,
-  Triangle,
-  Truck,
-  Tv,
-  Twitch,
-  Twitter,
-  Type,
-  Umbrella,
-  Underline,
-  Unlock,
-  Upload,
-  User,
-  UserCheck,
-  UserMinus,
-  UserPlus,
-  UserX,
-  Users,
-  Video,
-  VideoOff,
-  Voicemail,
-  Volume,
-  Volume1,
-  Volume2,
-  VolumeX,
-  Watch,
-  Wifi,
-  WifiOff,
-  Wind,
-  X,
-  XCircle,
-  XSquare,
-  Youtube,
-  Zap,
-  ZapOff,
-  ZoomIn,
-  ZoomOut,
-};
-
-const LUCIDE_ICONS = Object.keys(ICON_MAP);
+import { Check, ChevronsUpDown } from "lucide-react";
 
 interface FormData {
   name?: string;
@@ -643,8 +196,14 @@ export default function Persona({
   // Dynamic icon component
   const IconComponent = useMemo(() => {
     if (!formData?.icon) return null;
-    return ICON_MAP[formData.icon as keyof typeof ICON_MAP] || null;
+    return getPersonaIconComponent(formData.icon) || null;
   }, [formData?.icon]);
+
+  // Get suggested icons when persona name changes
+  const _suggestedIcons = useMemo(() => {
+    if (!formData?.name) return [];
+    return getSuggestedIconsForPersona(formData.name);
+  }, [formData?.name]);
 
   return (
     <div className="space-y-6 py-4 px-4">
@@ -656,9 +215,22 @@ export default function Persona({
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
-                }
+                onChange={(e) => {
+                  const newName = e.target.value;
+                  setFormData((prev) => {
+                    const updatedData = { ...prev, name: newName };
+
+                    // Auto-suggest icon if no icon is selected yet or if it's the default
+                    if (!prev?.icon || prev.icon === "Zap") {
+                      const suggestions = getSuggestedIconsForPersona(newName);
+                      if (suggestions.length > 0) {
+                        updatedData.icon = suggestions[0] || "Zap";
+                      }
+                    }
+
+                    return updatedData;
+                  });
+                }}
                 placeholder="e.g., Enthusiastic Student"
                 required
               />
@@ -722,10 +294,16 @@ export default function Persona({
                             value={formData.color}
                             onChange={(e) => {
                               const value = e.target.value;
-                              if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+                              // Allow any hex value (with or without #, any length)
+                              if (
+                                value === "" ||
+                                /^#?[0-9A-Fa-f]*$/.test(value)
+                              ) {
                                 setFormData((prev) => ({
                                   ...prev,
-                                  color: value,
+                                  color: value.startsWith("#")
+                                    ? value
+                                    : `#${value}`,
                                 }));
                               }
                             }}
@@ -818,10 +396,50 @@ export default function Persona({
                       <CommandInput placeholder="Search icons..." />
                       <CommandList>
                         <CommandEmpty>No icon found.</CommandEmpty>
-                        <CommandGroup>
-                          {LUCIDE_ICONS.map((iconName) => {
+                        {_suggestedIcons.length > 0 && (
+                          <CommandGroup heading="Suggested for this persona">
+                            {_suggestedIcons
+                              .slice(0, 6)
+                              .map((iconName: string) => {
+                                const IconComponent =
+                                  PERSONA_ICON_MAP[
+                                    iconName as keyof typeof PERSONA_ICON_MAP
+                                  ];
+                                if (!IconComponent) return null;
+
+                                return (
+                                  <CommandItem
+                                    key={iconName}
+                                    value={iconName}
+                                    onSelect={() => {
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        icon: iconName,
+                                      }));
+                                      setIconPickerOpen(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        formData.icon === iconName
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      )}
+                                    />
+                                    <IconComponent className="mr-2 h-4 w-4" />
+                                    {iconName}
+                                  </CommandItem>
+                                );
+                              })}
+                          </CommandGroup>
+                        )}
+                        <CommandGroup heading="All Icons">
+                          {PERSONA_ICONS.map((iconName: string) => {
                             const IconComponent =
-                              ICON_MAP[iconName as keyof typeof ICON_MAP];
+                              PERSONA_ICON_MAP[
+                                iconName as keyof typeof PERSONA_ICON_MAP
+                              ];
                             if (!IconComponent) return null;
 
                             return (
