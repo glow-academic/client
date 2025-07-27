@@ -473,7 +473,7 @@ describe("Agents End-to-End Tests", () => {
       cy.visit("/system/agents");
 
       // Test tab navigation through all interactive elements
-      cy.get("body").tab();
+      cy.get("body").type("{tab}");
       cy.get('input[placeholder="Search system agents..."]').should(
         "be.focused"
       );
