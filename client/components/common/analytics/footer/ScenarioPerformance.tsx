@@ -7,6 +7,7 @@
  */
 "use client";
 
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -15,6 +16,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -22,12 +30,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
+import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { getAllScenarioClasses } from "@/utils/queries/scenario_classes/get-all-scenario-classes";
-import { getAllScenarioDeadlines } from "@/utils/queries/scenario_deadlines/get-all-scenario-deadlines";
-import { getAllScenarioLocations } from "@/utils/queries/scenario_locations/get-all-scenario-locations";
-import { getAllScenarioTimes } from "@/utils/queries/scenario_times/get-all-scenario-times";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
@@ -35,7 +47,7 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { format, isAfter, isBefore } from "date-fns";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   Cell,
@@ -49,9 +61,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import ScenarioAttributePicker, {
-  ScenarioAttributeType,
-} from "../ScenarioAttributePicker";
 
 export interface ScenarioPerformanceProps {
   dateStart: Date;
@@ -84,6 +93,12 @@ interface AttributeElement {
   insight: string;
 }
 
+interface ParameterOption {
+  id: string; // parameterId
+  name: string;
+  description: string;
+}
+
 export default function ScenarioPerformance({
   dateStart,
   dateEnd,
@@ -91,8 +106,8 @@ export default function ScenarioPerformance({
   thresholds,
   cohortIds,
 }: ScenarioPerformanceProps) {
-  const [selectedAttribute, setSelectedAttribute] =
-    useState<ScenarioAttributeType>("classes");
+  const [selectedParameterId, setSelectedParameterId] = useState<string>("");
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   // Helper function to format time values
   const formatTimeValue = (timeString: string) => {
@@ -129,24 +144,14 @@ export default function ScenarioPerformance({
     queryFn: () => getAllSimulations(),
   });
 
-  const { data: scenarioClasses } = useQuery({
-    queryKey: ["scenarioClasses"],
-    queryFn: () => getAllScenarioClasses(),
+  const { data: parameters } = useQuery({
+    queryKey: ["parameters"],
+    queryFn: () => getAllParameters(),
   });
 
-  const { data: scenarioLocations } = useQuery({
-    queryKey: ["scenarioLocations"],
-    queryFn: () => getAllScenarioLocations(),
-  });
-
-  const { data: scenarioDeadlines } = useQuery({
-    queryKey: ["scenarioDeadlines"],
-    queryFn: () => getAllScenarioDeadlines(),
-  });
-
-  const { data: scenarioTimes } = useQuery({
-    queryKey: ["scenarioTimes"],
-    queryFn: () => getAllScenarioTimes(),
+  const { data: parameterItems } = useQuery({
+    queryKey: ["parameterItems"],
+    queryFn: () => getAllParameterItems(),
   });
 
   const { data: attempts } = useQuery({
@@ -169,6 +174,40 @@ export default function ScenarioPerformance({
       getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
     enabled: !!chats && chats.length > 0,
   });
+
+  // Get non-numerical parameters only
+  const nonNumericalParameters = useMemo(() => {
+    return parameters?.filter((p) => !p.numerical && p.active) || [];
+  }, [parameters]);
+
+  // Set default selected parameter if none selected and we have non-numerical parameters
+  const selectedParameter = useMemo(() => {
+    if (!selectedParameterId && nonNumericalParameters.length > 0) {
+      const firstParameter = nonNumericalParameters[0];
+      if (firstParameter) {
+        setSelectedParameterId(firstParameter.id);
+        return firstParameter;
+      }
+    }
+    return nonNumericalParameters.find((p) => p.id === selectedParameterId);
+  }, [selectedParameterId, nonNumericalParameters]);
+
+  // Get parameter items for the selected parameter
+  const parameterItemsForSelected = useMemo(() => {
+    if (!parameterItems || !selectedParameter) return [];
+    return parameterItems
+      .filter((item) => item.parameterId === selectedParameter.id)
+      .sort((a, b) => a.value.localeCompare(b.value));
+  }, [parameterItems, selectedParameter]);
+
+  // Generate parameter options from non-numerical parameters
+  const PARAMETER_OPTIONS: ParameterOption[] = useMemo(() => {
+    return nonNumericalParameters.map((parameter) => ({
+      id: parameter.id,
+      name: parameter.name,
+      description: `Performance by ${parameter.name.toLowerCase()} value`,
+    }));
+  }, [nonNumericalParameters]);
 
   // Helper function to get allowed simulation IDs based on cohort filtering
   const getAllowedSimulationIds = useMemo(() => {
@@ -219,25 +258,11 @@ export default function ScenarioPerformance({
       !grades ||
       !attempts ||
       !profiles ||
-      !scenarioClasses ||
-      !scenarioLocations ||
-      !scenarioDeadlines ||
-      !scenarioTimes
+      !parameterItemsForSelected ||
+      !selectedParameter
     ) {
       return [];
     }
-
-    // Helper function to get formatted attribute value
-    const getAttributeValue = (
-      attr: Record<string, unknown>,
-      key: string
-    ): string => {
-      const value = attr[key];
-      if (key === "timeOfDay" && typeof value === "string") {
-        return formatTimeValue(value);
-      }
-      return String(value);
-    };
 
     // Filter grades by date range, exclude practice simulations, and filter by TA role
     let filteredGrades = grades.filter((grade) => {
@@ -282,44 +307,6 @@ export default function ScenarioPerformance({
       return [];
     }
 
-    // Determine which attribute data to use based on selection
-    let attributeData: Array<Record<string, unknown>> = [];
-    let attributeKey: string = "";
-    let nameKey: string = "";
-    let displayNameKey: string = "";
-    let icon: string = "";
-
-    switch (selectedAttribute) {
-      case "classes":
-        attributeData = scenarioClasses;
-        attributeKey = "classId";
-        nameKey = "classCode";
-        displayNameKey = "name";
-        icon = "👨‍🏫";
-        break;
-      case "locations":
-        attributeData = scenarioLocations;
-        attributeKey = "locationId";
-        nameKey = "name";
-        displayNameKey = "name";
-        icon = "📍";
-        break;
-      case "deadlines":
-        attributeData = scenarioDeadlines;
-        attributeKey = "deadlineId";
-        nameKey = "deadline";
-        displayNameKey = "deadline";
-        icon = "⏰";
-        break;
-      case "times":
-        attributeData = scenarioTimes;
-        attributeKey = "timeId";
-        nameKey = "timeOfDay";
-        displayNameKey = "timeOfDay";
-        icon = "🕐";
-        break;
-    }
-
     // Get all scenarios that were attempted in the filtered data
     const attemptedScenarioIds = new Set<string>();
     filteredGrades.forEach((grade) => {
@@ -352,108 +339,115 @@ export default function ScenarioPerformance({
       "#f43f5e",
     ];
 
-    // Analyze each attribute
-    const elements: AttributeElement[] = attributeData.map((attr, index) => {
-      // Find scenarios that use this attribute
-      const scenariosWithAttribute = attemptedScenarios.filter(
-        (scenario) =>
-          scenario[attributeKey as keyof typeof scenario] === String(attr["id"])
-      );
-
-      const count = scenariosWithAttribute.length;
-      const percentage =
-        totalScenarios > 0 ? (count / totalScenarios) * 100 : 0;
-
-      // Calculate performance metrics for this attribute
-      let totalScore = 0;
-      let totalCompletion = 0;
-      let totalAttempts = 0;
-      let gradeCount = 0;
-
-      // Collect grades for trend data
-      const attributeGrades: Array<{ score: number; createdAt: string }> = [];
-
-      scenariosWithAttribute.forEach((scenario) => {
-        const scenarioChats = chats.filter(
-          (chat) => chat.scenarioId === scenario.id
-        );
-        const scenarioGrades = filteredGrades.filter((grade) => {
-          const chat = chats.find((c) => c.id === grade.simulationChatId);
-          return chat?.scenarioId === scenario.id;
+    // Analyze each parameter item
+    const elements: AttributeElement[] = parameterItemsForSelected.map(
+      (paramItem, index) => {
+        // Find scenarios that use this parameter item
+        const scenariosWithAttribute = attemptedScenarios.filter((scenario) => {
+          return scenario.parameterItemIds?.includes(paramItem.id);
         });
 
-        scenarioGrades.forEach((grade) => {
-          totalScore += grade.score;
-          gradeCount++;
-          attributeGrades.push({
-            score: grade.score,
-            createdAt: grade.createdAt,
+        const count = scenariosWithAttribute.length;
+        const percentage =
+          totalScenarios > 0 ? (count / totalScenarios) * 100 : 0;
+
+        // Calculate performance metrics for this attribute
+        let totalScore = 0;
+        let totalCompletion = 0;
+        let totalAttempts = 0;
+        let gradeCount = 0;
+
+        // Collect grades for trend data
+        const attributeGrades: Array<{ score: number; createdAt: string }> = [];
+
+        scenariosWithAttribute.forEach((scenario) => {
+          const scenarioChats = chats.filter(
+            (chat) => chat.scenarioId === scenario.id
+          );
+          const scenarioGrades = filteredGrades.filter((grade) => {
+            const chat = chats.find((c) => c.id === grade.simulationChatId);
+            return chat?.scenarioId === scenario.id;
+          });
+
+          scenarioGrades.forEach((grade) => {
+            totalScore += grade.score;
+            gradeCount++;
+            attributeGrades.push({
+              score: grade.score,
+              createdAt: grade.createdAt,
+            });
+          });
+
+          scenarioChats.forEach((chat) => {
+            if (chat.completed) {
+              totalCompletion++;
+            }
+            totalAttempts++;
           });
         });
 
-        scenarioChats.forEach((chat) => {
-          if (chat.completed) {
-            totalCompletion++;
+        const avgScore = gradeCount > 0 ? totalScore / gradeCount : 0;
+        const completionRate =
+          totalAttempts > 0 ? (totalCompletion / totalAttempts) * 100 : 0;
+
+        // Calculate trend data for line chart
+        const trendData = attributeGrades
+          .map((grade) => ({
+            date: format(new Date(grade.createdAt), "MMM dd"),
+            score: Math.round(grade.score),
+            timestamp: new Date(grade.createdAt).getTime(),
+          }))
+          .sort((a, b) => a.timestamp - b.timestamp);
+
+        // Generate insight for this attribute
+        let insight = "";
+        if (trendData.length >= 2) {
+          const recentScores = trendData.slice(-3);
+          const earlierScores = trendData.slice(0, 3);
+
+          if (recentScores.length > 0 && earlierScores.length > 0) {
+            const recentAvg =
+              recentScores.reduce((sum, item) => sum + item.score, 0) /
+              recentScores.length;
+            const earlierAvg =
+              earlierScores.reduce((sum, item) => sum + item.score, 0) /
+              earlierScores.length;
+            const improvement = recentAvg - earlierAvg;
+
+            if (improvement > 5) {
+              insight = `Performance has improved by ${Math.round(improvement)}% recently. Consider using this ${selectedParameter.name.toLowerCase()} more frequently.`;
+            } else if (improvement < -5) {
+              insight = `Performance has declined by ${Math.round(Math.abs(improvement))}% recently. Review training approach for this ${selectedParameter.name.toLowerCase()}.`;
+            } else {
+              insight = `Performance has remained stable. Current average score is ${Math.round(avgScore)}% with ${Math.round(completionRate)}% completion rate.`;
+            }
           }
-          totalAttempts++;
-        });
-      });
-
-      const avgScore = gradeCount > 0 ? totalScore / gradeCount : 0;
-      const completionRate =
-        totalAttempts > 0 ? (totalCompletion / totalAttempts) * 100 : 0;
-
-      // Calculate trend data for line chart
-      const trendData = attributeGrades
-        .map((grade) => ({
-          date: format(new Date(grade.createdAt), "MMM dd"),
-          score: Math.round(grade.score),
-          timestamp: new Date(grade.createdAt).getTime(),
-        }))
-        .sort((a, b) => a.timestamp - b.timestamp);
-
-      // Generate insight for this attribute
-      let insight = "";
-      if (trendData.length >= 2) {
-        const recentScores = trendData.slice(-3);
-        const earlierScores = trendData.slice(0, 3);
-
-        if (recentScores.length > 0 && earlierScores.length > 0) {
-          const recentAvg =
-            recentScores.reduce((sum, item) => sum + item.score, 0) /
-            recentScores.length;
-          const earlierAvg =
-            earlierScores.reduce((sum, item) => sum + item.score, 0) /
-            earlierScores.length;
-          const improvement = recentAvg - earlierAvg;
-
-          if (improvement > 5) {
-            insight = `Performance has improved by ${Math.round(improvement)}% recently. Consider using this ${selectedAttribute.slice(0, -1)} more frequently.`;
-          } else if (improvement < -5) {
-            insight = `Performance has declined by ${Math.round(Math.abs(improvement))}% recently. Review training approach for this ${selectedAttribute.slice(0, -1)}.`;
-          } else {
-            insight = `Performance has remained stable. Current average score is ${Math.round(avgScore)}% with ${Math.round(completionRate)}% completion rate.`;
-          }
+        } else {
+          insight = `Limited data available. Current average score is ${Math.round(avgScore)}% with ${Math.round(completionRate)}% completion rate.`;
         }
-      } else {
-        insight = `Limited data available. Current average score is ${Math.round(avgScore)}% with ${Math.round(completionRate)}% completion rate.`;
-      }
 
-      return {
-        id: String(attr["id"]),
-        name: getAttributeValue(attr, nameKey),
-        displayName: getAttributeValue(attr, displayNameKey),
-        icon,
-        color: colors[index % colors.length] || "#3b82f6",
-        count,
-        percentage: Math.round(percentage * 10) / 10, // Round to 1 decimal place
-        avgScore: Math.round(avgScore),
-        completionRate: Math.round(completionRate),
-        totalAttempts,
-        trendData,
-        insight,
-      };
-    });
+        // Format display name based on parameter type
+        let displayName = paramItem.value;
+        if (selectedParameter.name.toLowerCase().includes("time")) {
+          displayName = formatTimeValue(paramItem.value);
+        }
+
+        return {
+          id: paramItem.id,
+          name: paramItem.value,
+          displayName,
+          icon: "📊", // Generic icon since we don't have specific icons for parameters
+          color: colors[index % colors.length] || "#3b82f6",
+          count,
+          percentage: Math.round(percentage * 10) / 10, // Round to 1 decimal place
+          avgScore: Math.round(avgScore),
+          completionRate: Math.round(completionRate),
+          totalAttempts,
+          trendData,
+          insight,
+        };
+      }
+    );
 
     // Filter out attributes with no usage and sort by percentage descending
     return elements
@@ -466,14 +460,11 @@ export default function ScenarioPerformance({
     grades,
     attempts,
     profiles,
-    scenarioClasses,
-    scenarioLocations,
-    scenarioDeadlines,
-    scenarioTimes,
     dateStart,
     dateEnd,
     profileId,
-    selectedAttribute,
+    parameterItemsForSelected,
+    selectedParameter,
     getAllowedSimulationIds,
   ]);
 
@@ -492,6 +483,10 @@ export default function ScenarioPerformance({
   };
 
   const thresholdStatus = getThresholdStatus();
+
+  const selectedParameterOption = PARAMETER_OPTIONS.find(
+    (p) => p.id === selectedParameterId
+  );
 
   return (
     <Card className="w-full h-full flex flex-col relative">
@@ -517,10 +512,60 @@ export default function ScenarioPerformance({
               Performance analysis by scenario attributes
             </CardDescription>
           </div>
-          <ScenarioAttributePicker
-            selectedAttribute={selectedAttribute}
-            onAttributeChange={setSelectedAttribute}
-          />
+
+          {/* Parameter Picker */}
+          <div className="flex items-center gap-2">
+            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={pickerOpen}
+                  className="w-48 justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <span>
+                      {selectedParameterOption?.name || "Select Parameter"}
+                    </span>
+                  </div>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-0">
+                <Command>
+                  <CommandInput placeholder="Search parameters..." />
+                  <CommandEmpty>No parameter found.</CommandEmpty>
+                  <CommandGroup>
+                    {PARAMETER_OPTIONS.map((parameter) => (
+                      <CommandItem
+                        key={parameter.id}
+                        value={parameter.id}
+                        onSelect={() => {
+                          setSelectedParameterId(parameter.id);
+                          setPickerOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedParameterId === parameter.id
+                              ? "opacity-100"
+                              : "opacity-0"
+                          )}
+                        />
+                        <div>
+                          <div className="font-medium">{parameter.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {parameter.description}
+                          </div>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
       </CardHeader>
 
@@ -614,7 +659,7 @@ export default function ScenarioPerformance({
                                   <DialogDescription>
                                     Detailed performance analysis for{" "}
                                     {element.displayName}{" "}
-                                    {selectedAttribute.slice(0, -1)}
+                                    {selectedParameter?.name.toLowerCase()}
                                   </DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-6">
