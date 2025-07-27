@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 139
-- **Tests Created**: 1
+- **Total Components**: 143
+- **Tests Created**: 3
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 138
+- **Tests Skipped** (already implemented): 140
 
 ## Component Coverage
 
@@ -87,6 +87,7 @@
 | UnifiedSidebar | common/layout/UnifiedSidebar.tsx | UnifiedSidebar.test.tsx | ✅ Implemented |
 | Login | common/login/Login.tsx | Login.test.tsx | ✅ Implemented |
 | Model | common/model/Model.tsx | Model.test.tsx | ✅ Implemented |
+| Parameter | common/parameter/Parameter.tsx | Parameter.test.tsx | ✅ Implemented |
 | ProfileSelector | common/profile/ProfileSelector.tsx | ProfileSelector.test.tsx | ✅ Implemented |
 | Provider | common/provider/Provider.tsx | Provider.test.tsx | ✅ Implemented |
 | Rubric | common/rubric/Rubric.tsx | Rubric.test.tsx | ✅ Implemented |
@@ -94,6 +95,7 @@
 | RubricPicker | common/rubric/RubricPicker.tsx | RubricPicker.test.tsx | ✅ Implemented |
 | RubricStandardGroup | common/rubric/RubricStandardGroup.tsx | RubricStandardGroup.test.tsx | ✅ Implemented |
 | TableRubric | common/rubric/TableRubric.tsx | TableRubric.test.tsx | ✅ Implemented |
+| ParameterSelector | common/scenario/ParameterSelector.tsx | ParameterSelector.test.tsx | ✅ Implemented |
 | Scenario | common/scenario/Scenario.tsx | Scenario.test.tsx | ✅ Implemented |
 | ScenarioPicker | common/scenario/ScenarioPicker.tsx | ScenarioPicker.test.tsx | ✅ Implemented |
 | ScenarioSlider | common/scenario/ScenarioSlider.tsx | ScenarioSlider.test.tsx | ✅ Implemented |
@@ -124,6 +126,8 @@
 | SimulationsDataTableToolbar | create/simulations/SimulationsDataTableToolbar.tsx | SimulationsDataTableToolbar.test.tsx | ✅ Implemented |
 | Home | home/Home.tsx | Home.test.tsx | ✅ Implemented |
 | TATour | home/TATour.tsx | TATour.test.tsx | ✅ Implemented |
+| EditParameter | management/parameters/EditParameter.tsx | EditParameter.test.tsx | ✅ Implemented |
+| NewParameter | management/parameters/NewParameter.tsx | NewParameter.test.tsx | ✅ Implemented |
 | Parameters | management/parameters/Parameters.tsx | Parameters.test.tsx | ✅ Implemented |
 | ModelEdit | management/providers/ModelEdit.tsx | ModelEdit.test.tsx | ✅ Implemented |
 | NewModel | management/providers/NewModel.tsx | NewModel.test.tsx | ✅ Implemented |
@@ -250,6 +254,8 @@ __tests__/
 │   │   ├── Login.test.tsx
 │   ├── model/
 │   │   ├── Model.test.tsx
+│   ├── parameter/
+│   │   ├── Parameter.test.tsx
 │   ├── profile/
 │   │   ├── ProfileSelector.test.tsx
 │   ├── provider/
@@ -261,6 +267,7 @@ __tests__/
 │   │   ├── RubricStandardGroup.test.tsx
 │   │   ├── TableRubric.test.tsx
 │   ├── scenario/
+│   │   ├── ParameterSelector.test.tsx
 │   │   ├── Scenario.test.tsx
 │   │   ├── ScenarioPicker.test.tsx
 │   │   ├── ScenarioSlider.test.tsx
@@ -301,6 +308,8 @@ __tests__/
 │   ├── TATour.test.tsx
 ├── management/
 │   ├── parameters/
+│   │   ├── EditParameter.test.tsx
+│   │   ├── NewParameter.test.tsx
 │   │   ├── Parameters.test.tsx
 │   ├── providers/
 │   │   ├── ModelEdit.test.tsx

@@ -162,7 +162,7 @@ export default function Parameters() {
               variant="outline"
               size="sm"
               onClick={() =>
-                router.push(`/management/parameters/${parameter.id}`)
+                router.push(`/management/parameters/p/${parameter.id}`)
               }
               aria-label={`Edit ${parameter.name}`}
             >

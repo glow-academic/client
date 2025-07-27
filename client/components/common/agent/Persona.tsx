@@ -143,6 +143,7 @@ export default function Persona({
           modelId: formData.modelId,
           reasoning: formData.reasoning === "none" ? null : formData.reasoning,
           color: "#000000",
+          icon: "Zap",
         });
         queryClient.invalidateQueries({ queryKey: ["personas"] });
         queryClient.invalidateQueries({

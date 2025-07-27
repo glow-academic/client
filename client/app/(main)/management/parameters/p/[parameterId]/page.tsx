@@ -5,32 +5,32 @@
  * 07/26/2025
  */
 
-import EditSystemAgent from "@/components/system/agents/EditAgent";
-import { getAgent } from "@/utils/queries/agents/get-agent";
+import EditParameter from "@/components/common/parameter/Parameter";
+import { getParameter } from "@/utils/queries/parameters/get-parameter";
 import type { Metadata, ResolvingMetadata } from "next";
 import { use } from "react";
 
 export async function generateMetadata(
-  { params }: { params: Promise<{ agentId: string }> },
+  { params }: { params: Promise<{ parameterId: string }> },
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
-  const { agentId } = await params;
-  const agent = await getAgent(agentId);
+  const { parameterId } = await params;
+  const parameter = await getParameter(parameterId);
   return {
-    title: `${agent?.name || "Agent"} Agent`,
-    description: `${agent?.name + " " + agent?.description || "Agent"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    title: `${parameter?.name || "Parameter"} Parameter`,
+    description: `${parameter?.name + " " + parameter?.description || "Parameter"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
   };
 }
 
-export default function AgentEditPage({
+export default function ParameterEditPage({
   params,
 }: {
-  params: Promise<{ agentId: string }>;
+  params: Promise<{ parameterId: string }>;
 }) {
-  const { agentId } = use(params);
+  const { parameterId } = use(params);
   return (
     <div className="space-y-6">
-      <EditSystemAgent agentId={agentId} />
+      <EditParameter parameterId={parameterId} mode="edit" />
     </div>
   );
 }

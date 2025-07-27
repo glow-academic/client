@@ -477,6 +477,15 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
+    if (pathname === "/management/parameters") {
+      return (
+        <Button onClick={() => router.push("/management/parameters/new")} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Parameter
+        </Button>
+      );
+    }
+
     if (!shouldShowChatComponents && canShowChatComponents) {
       return (
         <>
