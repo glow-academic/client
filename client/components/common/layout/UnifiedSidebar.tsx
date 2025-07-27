@@ -40,6 +40,7 @@ import { getSimulatableProfiles } from "@/utils/auth/get-simulatable-profiles";
 import { logError } from "@/utils/logger";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getAvailableSubsectionsForRole } from "@/utils/route-permissions";
 import { useQuery } from "@tanstack/react-query";
 import {
   Brain,
@@ -220,9 +221,12 @@ export function UnifiedSidebar({
   // Build navigation menu based on role with search filtering
   const navMain = useMemo(() => {
     const menu: NavSection[] = [];
+    const availableSections = getAvailableSubsectionsForRole(
+      effectiveProfile.role
+    );
 
     // Home - Only for non guest users
-    if (effectiveProfile.role !== "guest") {
+    if (availableSections.includes("home")) {
       menu.push({
         title: "Home",
         url: "#",
@@ -232,37 +236,41 @@ export function UnifiedSidebar({
     }
 
     // Cohorts sections based on role
-    if (["ta"].includes(effectiveProfile.role)) {
-      // TA/Instructor view - collapsible with sub-items
+    if (availableSections.includes("cohorts")) {
+      if (["ta"].includes(effectiveProfile.role)) {
+        // TA/Instructor view - collapsible with sub-items
+        menu.push({
+          title: "Cohorts",
+          url: "#",
+          icon: Users,
+          items: [...getCohortSubItems],
+        });
+      } else {
+        // Staff/Admin view - single items, no sub-items, no "new"
+        menu.push({
+          title: "Cohorts",
+          url: "#",
+          icon: Users,
+          section: "cohorts",
+        });
+      }
+    }
+
+    // Practice - all users
+    if (availableSections.includes("practice")) {
       menu.push({
-        title: "Cohorts",
+        title: "Practice",
         url: "#",
-        icon: Users,
-        items: [...getCohortSubItems],
-      });
-    } else if (
-      ["instructional", "admin", "superadmin"].includes(effectiveProfile.role)
-    ) {
-      // Staff/Admin view - single items, no sub-items, no "new"
-      menu.push({
-        title: "Cohorts",
-        url: "#",
-        icon: Users,
-        section: "cohorts",
+        icon: Brain,
+        section: "practice",
       });
     }
 
-    // all users
-    menu.push({
-      title: "Practice",
-      url: "#",
-      icon: Brain,
-      section: "practice",
-    });
-
     // Analytics - Available from instructor level and up
     if (
-      ["instructional", "admin", "superadmin"].includes(effectiveProfile.role)
+      availableSections.includes("dashboard") ||
+      availableSections.includes("reports") ||
+      availableSections.includes("leaderboard")
     ) {
       menu.push({
         title: "Analytics",
@@ -290,7 +298,11 @@ export function UnifiedSidebar({
 
     // Create - Available from instructor level and up
     if (
-      ["instructional", "admin", "superadmin"].includes(effectiveProfile.role)
+      availableSections.includes("personas") ||
+      availableSections.includes("documents") ||
+      availableSections.includes("scenarios") ||
+      availableSections.includes("simulations") ||
+      availableSections.includes("rubrics")
     ) {
       menu.push({
         title: "Create",
@@ -327,7 +339,11 @@ export function UnifiedSidebar({
     }
 
     // Management - Available from admin level only
-    if (["admin", "superadmin"].includes(effectiveProfile.role)) {
+    if (
+      availableSections.includes("staff") ||
+      availableSections.includes("providers") ||
+      availableSections.includes("parameters")
+    ) {
       const managementItems: MenuItem[] = [];
 
       menu.push({
@@ -337,27 +353,38 @@ export function UnifiedSidebar({
         items: managementItems,
       });
 
-      managementItems.push({
-        title: "Staff",
-        url: "#",
-        section: "staff",
-      });
+      if (availableSections.includes("staff")) {
+        managementItems.push({
+          title: "Staff",
+          url: "#",
+          section: "staff",
+        });
+      }
 
-      managementItems.push({
-        title: "Providers",
-        url: "#",
-        section: "providers",
-      });
+      if (availableSections.includes("providers")) {
+        managementItems.push({
+          title: "Providers",
+          url: "#",
+          section: "providers",
+        });
+      }
 
-      managementItems.push({
-        title: "Parameters",
-        url: "#",
-        section: "parameters",
-      });
+      if (availableSections.includes("parameters")) {
+        managementItems.push({
+          title: "Parameters",
+          url: "#",
+          section: "parameters",
+        });
+      }
     }
 
     // System  - Available from superadmin level only
-    if (["superadmin"].includes(effectiveProfile.role)) {
+    if (
+      availableSections.includes("agents") ||
+      availableSections.includes("feedback") ||
+      availableSections.includes("logs") ||
+      availableSections.includes("health")
+    ) {
       const systemItems: MenuItem[] = [];
 
       menu.push({
@@ -367,32 +394,40 @@ export function UnifiedSidebar({
         items: systemItems,
       });
 
-      systemItems.push({
-        title: "Agents",
-        url: "#",
-        section: "agents",
-      });
+      if (availableSections.includes("agents")) {
+        systemItems.push({
+          title: "Agents",
+          url: "#",
+          section: "agents",
+        });
+      }
 
       // Feedback - moved from management
-      systemItems.push({
-        title: "Feedback",
-        url: "#",
-        section: "feedback",
-      });
+      if (availableSections.includes("feedback")) {
+        systemItems.push({
+          title: "Feedback",
+          url: "#",
+          section: "feedback",
+        });
+      }
 
       // Logs - available for admin
-      systemItems.push({
-        title: "Logs",
-        url: "#",
-        section: "logs",
-      });
+      if (availableSections.includes("logs")) {
+        systemItems.push({
+          title: "Logs",
+          url: "#",
+          section: "logs",
+        });
+      }
 
       // Health - available for admin
-      systemItems.push({
-        title: "Health",
-        url: "#",
-        section: "health",
-      });
+      if (availableSections.includes("health")) {
+        systemItems.push({
+          title: "Health",
+          url: "#",
+          section: "health",
+        });
+      }
     }
 
     // Apply search filter if search term exists

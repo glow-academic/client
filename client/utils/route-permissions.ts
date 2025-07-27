@@ -1,0 +1,564 @@
+/**
+ * route-permissions.ts
+ * Centralized route permissions configuration for access control
+ * @AshokSaravanan222 & @siladiea
+ * 01/20/2025
+ */
+import { profileRole } from "@/utils/drizzle/schema";
+
+type ProfileRole = (typeof profileRole.enumValues)[number];
+
+export interface RoutePermission {
+  path: string;
+  roles: ProfileRole[];
+  title: string;
+  description?: string;
+  redirectTo?: string; // Where to redirect if access denied
+}
+
+export interface SectionPermission {
+  section: string;
+  roles: ProfileRole[];
+  title: string;
+  description?: string;
+  routes: RoutePermission[];
+}
+
+// Centralized route permissions configuration
+export const ROUTE_PERMISSIONS: SectionPermission[] = [
+  {
+    section: "home",
+    roles: ["ta", "instructional", "admin", "superadmin"],
+    title: "Home",
+    description: "Main dashboard for TA users",
+    routes: [
+      {
+        path: "/home",
+        roles: ["ta", "instructional", "admin", "superadmin"],
+        title: "Home Dashboard",
+        redirectTo: "/home",
+      },
+      {
+        path: "/home/a/[attemptId]",
+        roles: ["ta", "instructional", "admin", "superadmin"],
+        title: "Simulation Attempt",
+        redirectTo: "/home",
+      },
+    ],
+  },
+  {
+    section: "practice",
+    roles: ["guest", "ta", "instructional", "admin", "superadmin"],
+    title: "Practice",
+    description: "Practice simulations for all users",
+    routes: [
+      {
+        path: "/practice",
+        roles: ["guest", "ta", "instructional", "admin", "superadmin"],
+        title: "Practice Zone",
+        redirectTo: "/practice",
+      },
+      {
+        path: "/practice/a/[attemptId]",
+        roles: ["guest", "ta", "instructional", "admin", "superadmin"],
+        title: "Practice Attempt",
+        redirectTo: "/practice",
+      },
+    ],
+  },
+  {
+    section: "analytics",
+    roles: ["instructional", "admin", "superadmin"],
+    title: "Analytics",
+    description: "Analytics and reporting tools",
+    routes: [
+      {
+        path: "/analytics",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Analytics Overview",
+        redirectTo: "/analytics/dashboard",
+      },
+      {
+        path: "/analytics/dashboard",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Analytics Dashboard",
+        redirectTo: "/analytics/dashboard",
+      },
+      {
+        path: "/analytics/reports",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Analytics Reports",
+        redirectTo: "/analytics/reports",
+      },
+      {
+        path: "/analytics/leaderboard",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Leaderboard",
+        redirectTo: "/analytics/leaderboard",
+      },
+      {
+        path: "/analytics/reports/p/[profileId]",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Profile Report",
+        redirectTo: "/analytics/reports",
+      },
+    ],
+  },
+  {
+    section: "cohorts",
+    roles: ["ta", "instructional", "admin", "superadmin"],
+    title: "Cohorts",
+    description: "Cohort management and viewing",
+    routes: [
+      {
+        path: "/cohorts",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Cohorts Management",
+        redirectTo: "/cohorts",
+      },
+      {
+        path: "/cohorts/new",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Create Cohort",
+        redirectTo: "/cohorts",
+      },
+      {
+        path: "/cohorts/c/[cohortId]",
+        roles: ["ta", "instructional", "admin", "superadmin"],
+        title: "View Cohort",
+        redirectTo: "/cohorts",
+      },
+      {
+        path: "/cohorts/e/[cohortId]",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Edit Cohort",
+        redirectTo: "/cohorts",
+      },
+    ],
+  },
+  {
+    section: "create",
+    roles: ["instructional", "admin", "superadmin"],
+    title: "Create",
+    description: "Content creation tools",
+    routes: [
+      {
+        path: "/create",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Create Overview",
+        redirectTo: "/create/personas",
+      },
+      {
+        path: "/create/personas",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Personas",
+        redirectTo: "/create/personas",
+      },
+      {
+        path: "/create/personas/new",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Create Persona",
+        redirectTo: "/create/personas",
+      },
+      {
+        path: "/create/personas/a/[personaId]",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Edit Persona",
+        redirectTo: "/create/personas",
+      },
+      {
+        path: "/create/scenarios",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Scenarios",
+        redirectTo: "/create/scenarios",
+      },
+      {
+        path: "/create/scenarios/new",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Create Scenario",
+        redirectTo: "/create/scenarios",
+      },
+      {
+        path: "/create/scenarios/s/[scenarioId]",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Edit Scenario",
+        redirectTo: "/create/scenarios",
+      },
+      {
+        path: "/create/simulations",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Simulations",
+        redirectTo: "/create/simulations",
+      },
+      {
+        path: "/create/simulations/new",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Create Simulation",
+        redirectTo: "/create/simulations",
+      },
+      {
+        path: "/create/simulations/s/[simulationId]",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Edit Simulation",
+        redirectTo: "/create/simulations",
+      },
+      {
+        path: "/create/rubrics",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Rubrics",
+        redirectTo: "/create/rubrics",
+      },
+      {
+        path: "/create/rubrics/new",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Create Rubric",
+        redirectTo: "/create/rubrics",
+      },
+      {
+        path: "/create/rubrics/r/[rubricId]",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Edit Rubric",
+        redirectTo: "/create/rubrics",
+      },
+      {
+        path: "/create/documents",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Documents",
+        redirectTo: "/create/documents",
+      },
+      {
+        path: "/create/documents/d/[documentId]",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "View Document",
+        redirectTo: "/create/documents",
+      },
+    ],
+  },
+  {
+    section: "management",
+    roles: ["admin", "superadmin"],
+    title: "Management",
+    description: "System management tools",
+    routes: [
+      {
+        path: "/management",
+        roles: ["admin", "superadmin"],
+        title: "Management Overview",
+        redirectTo: "/management/staff",
+      },
+      {
+        path: "/management/staff",
+        roles: ["admin", "superadmin"],
+        title: "Staff Management",
+        redirectTo: "/management/staff",
+      },
+      {
+        path: "/management/staff/new",
+        roles: ["admin", "superadmin"],
+        title: "Create Staff Member",
+        redirectTo: "/management/staff",
+      },
+      {
+        path: "/management/staff/p/[profileId]",
+        roles: ["admin", "superadmin"],
+        title: "Edit Staff Member",
+        redirectTo: "/management/staff",
+      },
+      {
+        path: "/management/providers",
+        roles: ["admin", "superadmin"],
+        title: "Providers",
+        redirectTo: "/management/providers",
+      },
+      {
+        path: "/management/providers/new",
+        roles: ["admin", "superadmin"],
+        title: "Create Provider",
+        redirectTo: "/management/providers",
+      },
+      {
+        path: "/management/providers/p/[providerId]",
+        roles: ["admin", "superadmin"],
+        title: "Edit Provider",
+        redirectTo: "/management/providers",
+      },
+      {
+        path: "/management/parameters",
+        roles: ["admin", "superadmin"],
+        title: "Parameters",
+        redirectTo: "/management/parameters",
+      },
+      {
+        path: "/management/parameters/new",
+        roles: ["admin", "superadmin"],
+        title: "Create Parameter",
+        redirectTo: "/management/parameters",
+      },
+      {
+        path: "/management/parameters/p/[parameterId]",
+        roles: ["admin", "superadmin"],
+        title: "Edit Parameter",
+        redirectTo: "/management/parameters",
+      },
+    ],
+  },
+  {
+    section: "system",
+    roles: ["superadmin"],
+    title: "System",
+    description: "System administration tools",
+    routes: [
+      {
+        path: "/system",
+        roles: ["superadmin"],
+        title: "System Overview",
+        redirectTo: "/system/agents",
+      },
+      {
+        path: "/system/agents",
+        roles: ["superadmin"],
+        title: "Agents",
+        redirectTo: "/system/agents",
+      },
+      {
+        path: "/system/agents/new",
+        roles: ["superadmin"],
+        title: "Create Agent",
+        redirectTo: "/system/agents",
+      },
+      {
+        path: "/system/agents/a/[agentId]",
+        roles: ["superadmin"],
+        title: "Edit Agent",
+        redirectTo: "/system/agents",
+      },
+      {
+        path: "/system/feedback",
+        roles: ["superadmin"],
+        title: "Feedback",
+        redirectTo: "/system/feedback",
+      },
+      {
+        path: "/system/logs",
+        roles: ["superadmin"],
+        title: "System Logs",
+        redirectTo: "/system/logs",
+      },
+      {
+        path: "/system/health",
+        roles: ["superadmin"],
+        title: "System Health",
+        redirectTo: "/system/health",
+      },
+      {
+        path: "/system/providers",
+        roles: ["superadmin"],
+        title: "System Providers",
+        redirectTo: "/system/providers",
+      },
+      {
+        path: "/system/providers/new",
+        roles: ["superadmin"],
+        title: "Create System Provider",
+        redirectTo: "/system/providers",
+      },
+      {
+        path: "/system/providers/p/[providerId]",
+        roles: ["superadmin"],
+        title: "Edit System Provider",
+        redirectTo: "/system/providers",
+      },
+      {
+        path: "/system/providers/p/[providerId]/m/[modelId]",
+        roles: ["superadmin"],
+        title: "Edit Model",
+        redirectTo: "/system/providers",
+      },
+    ],
+  },
+  {
+    section: "profile",
+    roles: ["ta", "instructional", "admin", "superadmin"],
+    title: "Profile",
+    description: "User profile management",
+    routes: [
+      {
+        path: "/profile",
+        roles: ["ta", "instructional", "admin", "superadmin"],
+        title: "User Profile",
+        redirectTo: "/profile",
+      },
+    ],
+  },
+];
+
+// Helper function to check if a user has access to a specific path
+export const hasRouteAccess = (
+  pathname: string,
+  role: ProfileRole
+): boolean => {
+  // Handle dynamic routes by converting them to pattern matches
+  const normalizedPath = normalizePathForMatching(pathname);
+
+  for (const section of ROUTE_PERMISSIONS) {
+    for (const route of section.routes) {
+      if (
+        routeMatches(route.path, normalizedPath) &&
+        route.roles.includes(role)
+      ) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+
+// Helper function to get route permission for a specific path
+export const getRoutePermission = (
+  pathname: string
+): RoutePermission | null => {
+  const normalizedPath = normalizePathForMatching(pathname);
+
+  for (const section of ROUTE_PERMISSIONS) {
+    for (const route of section.routes) {
+      if (routeMatches(route.path, normalizedPath)) {
+        return route;
+      }
+    }
+  }
+
+  return null;
+};
+
+// Helper function to get section permission for a specific path
+export const getSectionPermission = (
+  pathname: string
+): SectionPermission | null => {
+  const normalizedPath = normalizePathForMatching(pathname);
+
+  for (const section of ROUTE_PERMISSIONS) {
+    for (const route of section.routes) {
+      if (routeMatches(route.path, normalizedPath)) {
+        return section;
+      }
+    }
+  }
+
+  return null;
+};
+
+// Helper function to get the redirect path for a user when access is denied
+export const getRedirectPathForRole = (role: ProfileRole): string => {
+  switch (role) {
+    case "guest":
+      return "/practice";
+    case "ta":
+    case "instructional":
+    case "admin":
+    case "superadmin":
+      return "/home";
+    default:
+      return "/practice";
+  }
+};
+
+// Helper function to normalize path for matching (handles dynamic segments)
+const normalizePathForMatching = (pathname: string): string => {
+  // Remove leading slash and normalize
+  let normalized = pathname.startsWith("/") ? pathname.slice(1) : pathname;
+
+  // Convert dynamic segments to pattern format
+  normalized = normalized.replace(/\/\[[^\]]+\]/g, "/[id]");
+
+  return normalized;
+};
+
+// Helper function to check if a route pattern matches a normalized path
+const routeMatches = (pattern: string, normalizedPath: string): boolean => {
+  // Remove leading slash from pattern
+  const cleanPattern = pattern.startsWith("/")
+    ? pattern.slice(1) || ""
+    : pattern;
+
+  // Convert pattern to regex
+  const regexPattern = cleanPattern
+    .replace(/\/\[[^\]]+\]/g, "/[^/]+") // Replace [id] with regex
+    .replace(/\//g, "\\/"); // Escape forward slashes
+
+  const regex = new RegExp(`^${regexPattern}$`);
+  return regex.test(normalizedPath);
+};
+
+// Helper function to get all available sections for a role
+export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
+  const sections = new Set<string>();
+
+  for (const section of ROUTE_PERMISSIONS) {
+    if (section.roles.includes(role)) {
+      sections.add(section.section);
+    }
+  }
+
+  return Array.from(sections);
+};
+
+// Helper function to get all available subsections for a role (including individual route sections)
+export const getAvailableSubsectionsForRole = (role: ProfileRole): string[] => {
+  const subsections = new Set<string>();
+
+  for (const section of ROUTE_PERMISSIONS) {
+    if (section.roles.includes(role)) {
+      // Add the main section
+      subsections.add(section.section);
+
+      // Add all subsections from routes
+      for (const route of section.routes) {
+        // Extract subsection from route path
+        const pathParts = route.path.split("/").filter(Boolean);
+        if (pathParts.length >= 2 && pathParts[1]) {
+          // For paths like "/analytics/dashboard", add "dashboard"
+          // For paths like "/create/personas", add "personas"
+          subsections.add(pathParts[1]);
+        }
+      }
+    }
+  }
+
+  return Array.from(subsections);
+};
+
+// Helper function to check if a section is available for a role
+export const isSectionAvailableForRole = (
+  section: string,
+  role: ProfileRole
+): boolean => {
+  return getAvailableSectionsForRole(role).includes(section);
+};
+
+// Helper function to get the first available section for a role
+export const getFirstAvailableSectionForRole = (role: ProfileRole): string => {
+  const availableSections = getAvailableSectionsForRole(role);
+
+  if (availableSections.length === 0) {
+    return "home";
+  }
+
+  // Priority order for first section
+  const priorityOrder = [
+    "home",
+    "dashboard",
+    "analytics",
+    "create",
+    "management",
+    "system",
+  ];
+
+  for (const priority of priorityOrder) {
+    if (availableSections.includes(priority)) {
+      return priority;
+    }
+  }
+
+  return availableSections[0] || "home";
+};

@@ -1,117 +1,18 @@
 import { profileRole } from "@/utils/drizzle/schema";
+import {
+  getAvailableSectionsForRole,
+  getFirstAvailableSectionForRole,
+  isSectionAvailableForRole,
+} from "@/utils/route-permissions";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+
 type ProfileRole = (typeof profileRole.enumValues)[number];
 
-/**
- * Get the first available section for a given role
- * This determines where users should be navigated when switching roles
- */
-export const getFirstAvailableSectionForRole = (role: ProfileRole): string => {
-  switch (role) {
-    case "guest":
-    case "ta":
-      return "home";
-    case "instructional":
-      return "dashboard"; // Analytics overview
-    case "admin":
-      return "dashboard"; // Analytics overview
-    default:
-      return "home";
-  }
-};
-
-/**
- * Get all available sections for a given role
- * This helps determine what sections a user can access
- */
-export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
-  const sections: string[] = [];
-
-  switch (role) {
-    case "guest":
-      sections.push("home");
-      break;
-    case "ta":
-      sections.push("home", "classes", "cohorts");
-      break;
-    case "instructional":
-      sections.push(
-        "dashboard",
-        "reports",
-        "progress", // Analytics
-        "scenarios",
-        "simulations",
-        "rubrics", // Create
-        "documents", // Create
-        "cohorts" // Classes (all)
-      );
-      break;
-    case "admin":
-      sections.push(
-        "dashboard",
-        "reports",
-        "progress", // Analytics
-        "scenarios",
-        "simulations",
-        "rubrics", // Create
-        "documents", // Create
-        "cohorts", // Classes (all)
-        "personas",
-        "logs",
-        "providers", // Management
-        "parameters", // Management
-        "agents",
-        "providers",
-        "logs",
-        "health" // System
-      );
-      break;
-    case "superadmin":
-      sections.push(
-        "dashboard",
-        "reports",
-        "progress", // Analytics
-        "scenarios",
-        "simulations",
-        "rubrics", // Create
-        "documents", // Create
-        "classes",
-        "cohorts", // Classes (all)
-        "departments",
-        "personas",
-        "logs",
-        "providers", // Management
-        "parameters", // Management
-        "agents",
-        "providers",
-        "logs",
-        "health" // System
-      );
-      break;
-  }
-
-  // All roles can access profile
-  sections.push("profile");
-
-  return sections;
-};
-
-/**
- * Check if a section is available for a given role
- */
-export const isSectionAvailableForRole = (
-  section: string,
-  role: ProfileRole
-): boolean => {
-  const availableSections = getAvailableSectionsForRole(role);
-
-  // Handle dynamic sections (class-*, agent-*, etc.)
-  if (section && section.includes("-")) {
-    const baseSection = section.split("-")[0];
-    return availableSections.some((s) => s.startsWith(baseSection || ""));
-  }
-
-  return availableSections.includes(section);
+// Re-export the functions from route-permissions for backward compatibility
+export {
+  getAvailableSectionsForRole,
+  getFirstAvailableSectionForRole,
+  isSectionAvailableForRole,
 };
 
 /**

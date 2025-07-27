@@ -25,6 +25,7 @@ import { AnalyticsFilters } from "@/components/common/analytics/AnalyticsFilters
 import ChatDialog from "@/components/common/home/ChatDialog";
 import ChatFab from "@/components/common/home/ChatFab";
 import ChatWidget from "@/components/common/home/ChatWidget";
+import { AccessControl } from "@/components/common/layout/AccessControl";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import TATour from "@/components/home/TATour";
@@ -479,7 +480,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
     if (pathname === "/management/parameters") {
       return (
-        <Button onClick={() => router.push("/management/parameters/new")} size="sm">
+        <Button
+          onClick={() => router.push("/management/parameters/new")}
+          size="sm"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Parameter
         </Button>
@@ -528,7 +532,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
             {actionButton && <div className="px-4">{actionButton}</div>}
           </header>
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+            <AccessControl pathname={pathname}>{children}</AccessControl>
+          </div>
         </SidebarInset>
       </SidebarProvider>
 
