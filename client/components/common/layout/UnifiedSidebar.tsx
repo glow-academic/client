@@ -215,6 +215,48 @@ export function UnifiedSidebar({
       ["superadmin", "admin", "instructional"].includes(activeProfile.role),
   });
 
+  const { data: cohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  // Extract stable profile ID to avoid complex dependency expressions
+  const stableProfileId = effectiveProfile?.id || "";
+
+  const getCohortSubItems = React.useMemo(() => {
+    if (!cohorts || !effectiveProfile) return [];
+
+    let profileCohorts: Cohort[] = [];
+
+    switch (effectiveProfile.role) {
+      case "superadmin":
+      case "admin":
+        profileCohorts = cohorts;
+        break;
+      case "instructional":
+      case "ta":
+        if (effectiveProfile.defaultProfile) {
+          profileCohorts = cohorts;
+          break;
+        }
+        profileCohorts = cohorts.filter((cohortData: Cohort) =>
+          cohortData?.profileIds?.includes(stableProfileId)
+        );
+        break;
+      default:
+        return [];
+    }
+
+    return profileCohorts.map((c: { id: string; title: string }) => ({
+      title: c.title,
+      url: `/cohorts/c/${c.id}`,
+      section: `cohort-${c.id}`,
+      isSubItem: true,
+    }));
+  }, [cohorts, effectiveProfile, stableProfileId]);
+
   // Create the final profile list for the dropdown, organized by priority
   const profileOptions = React.useMemo(() => {
     if (!activeProfile) return [];
@@ -257,53 +299,13 @@ export function UnifiedSidebar({
     return options;
   }, [activeProfile, simulatableProfiles, profileSearchTerm]);
 
-  const { data: cohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  });
-
-  // Extract stable profile ID to avoid complex dependency expressions
-  const stableProfileId = effectiveProfile!.id || "";
-
-  const getCohortSubItems = React.useMemo(() => {
-    if (!cohorts) return [];
-
-    let profileCohorts: Cohort[] = [];
-
-    switch (effectiveProfile!.role) {
-      case "superadmin":
-      case "admin":
-        profileCohorts = cohorts;
-        break;
-      case "instructional":
-      case "ta":
-        if (effectiveProfile!.defaultProfile) {
-          profileCohorts = cohorts;
-          break;
-        }
-        profileCohorts = cohorts.filter((cohortData: Cohort) =>
-          cohortData?.profileIds?.includes(stableProfileId)
-        );
-        break;
-      default:
-        return [];
-    }
-
-    return profileCohorts.map((c: { id: string; title: string }) => ({
-      title: c.title,
-      url: `/cohorts/c/${c.id}`,
-      section: `cohort-${c.id}`,
-      isSubItem: true,
-    }));
-  }, [cohorts, effectiveProfile, stableProfileId]);
-
   // Build navigation menu based on role with search filtering
   const navMain = useMemo(() => {
+    if (!effectiveProfile) return [];
+
     const menu: NavSection[] = [];
     const availableSections = getAvailableSubsectionsForRole(
-      effectiveProfile!.role
+      effectiveProfile.role
     );
 
     // Home - Only for non guest users
@@ -318,7 +320,7 @@ export function UnifiedSidebar({
 
     // Cohorts sections based on role
     if (availableSections.includes("cohorts")) {
-      if (["ta"].includes(effectiveProfile!.role)) {
+      if (["ta"].includes(effectiveProfile.role)) {
         // TA/Instructor view - collapsible with sub-items
         menu.push({
           title: "Cohorts",
@@ -585,20 +587,13 @@ export function UnifiedSidebar({
     }
   }, [effectiveProfile, pathname, router]);
 
-  // Show skeleton while profile is loading or while we don't have a profile yet
-  const shouldShowSkeleton = isProfileLoading || !effectiveProfile;
-
-  if (shouldShowSkeleton) {
-    return <SidebarSkeleton />;
-  }
-
   const handleSearch = (value: string) => {
     setSearchTerm(value);
   };
 
   const handleLoginOrLogout = async () => {
     const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
-    if (effectiveProfile.role === "guest" || !activeProfile) {
+    if (effectiveProfile?.role === "guest" || !activeProfile) {
       // Navigate to login page for guests or when no user
       router.push("/");
       return;
@@ -632,6 +627,13 @@ export function UnifiedSidebar({
       }
     );
   };
+
+  // Show skeleton while profile is loading or while we don't have a profile yet
+  const shouldShowSkeleton = isProfileLoading || !effectiveProfile;
+
+  if (shouldShowSkeleton) {
+    return <SidebarSkeleton />;
+  }
 
   return (
     <Sidebar {...props}>

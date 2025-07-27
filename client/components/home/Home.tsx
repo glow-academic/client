@@ -6,6 +6,13 @@
  */
 "use client";
 import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { logError, logInfo } from "@/utils/logger";
@@ -200,7 +207,7 @@ export default function Home() {
   const availableCohorts = useMemo(() => {
     if (!cohortsForPicker) return [];
 
-    if (shouldShowAll || effectiveProfile.defaultProfile) {
+    if (shouldShowAll || effectiveProfile?.defaultProfile) {
       // Instructors see all active cohorts
       return cohortsForPicker;
     } else if (isTA && effectiveProfile?.id) {
@@ -756,11 +763,103 @@ export default function Home() {
     loadingChats ||
     loadingGrades;
 
-  if (isLoading) {
+  if (isLoading || !effectiveProfile) {
     return (
-      <div className="container mx-auto p-4">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">Loading cohort dashboard...</div>
+      <div className="container mx-auto p-4 space-y-8">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-10 w-48" />
+        </div>
+
+        {/* Progress Visualization Section skeleton */}
+        <div className="space-y-6">
+          <div className="max-h-96 overflow-y-auto space-y-4 pr-2">
+            {[...Array(5)].map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center space-x-4 p-3 rounded-lg border bg-gray-50 dark:bg-gray-800"
+              >
+                <Skeleton className="h-4 w-32" />
+                <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <Skeleton className="h-2 w-1/2 rounded-full" />
+                </div>
+                <Skeleton className="h-6 w-16" />
+                <Skeleton className="h-4 w-12" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Assignments List Section skeleton */}
+        <div className="space-y-4">
+          {/* Header with navigation skeleton */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-8 w-8 rounded-lg" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-8 w-8 rounded-lg" />
+            </div>
+          </div>
+
+          {/* Carousel container skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <Card
+                key={i}
+                className="overflow-hidden bg-white dark:bg-gray-900 border-0 shadow-lg"
+              >
+                <CardHeader className="pb-4">
+                  <div className="flex items-start justify-between">
+                    <Skeleton className="h-12 w-12 rounded-xl" />
+                    <div className="text-right space-y-1">
+                      <Skeleton className="h-3 w-12" />
+                      <Skeleton className="h-3 w-10" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Skeleton className="h-6 w-32 mb-2" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </CardContent>
+                <CardFooter className="pt-0">
+                  <Skeleton className="h-10 w-full rounded-lg" />
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+
+          {/* Dots indicator skeleton */}
+          <div className="flex justify-center space-x-2 mt-4">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="w-2 h-2 rounded-full" />
+            ))}
+          </div>
+        </div>
+
+        {/* History Section skeleton */}
+        <div className="mt-12 space-y-4">
+          <Skeleton className="h-6 w-32" />
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center space-x-4 p-3 rounded-lg border bg-gray-50 dark:bg-gray-800"
+              >
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );

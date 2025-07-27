@@ -39,22 +39,27 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useProfile } from "@/contexts/profile-context";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Cohort } from "@/types";
 import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { useProfile } from "@/contexts/profile-context";
 
 export default function Cohorts() {
   const router = useRouter();
   const queryClient = useQueryClient();
   // Fetch cohorts data
-  const { data: cohorts = [], refetch: refetchCohorts } = useQuery({
+  const {
+    data: cohorts = [],
+    refetch: refetchCohorts,
+    isLoading: loadingCohorts,
+  } = useQuery({
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
   });
 
   // Fetch profiles data for role checking
-  const { data: profiles = [] } = useQuery({
+  const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
   });
@@ -72,7 +77,54 @@ export default function Cohorts() {
     name: string;
   } | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
+
+  // Get table columns and filter options - must be called before loading check
+  const { columns, profileOptions, simulationOptions } = useCohortColumns();
+
+  const isLoading =
+    isProfileLoading || !effectiveProfile || loadingCohorts || loadingProfiles;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+
+        {/* Cohorts grid skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="overflow-hidden">
+              <CardHeader className="pb-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                  <div className="flex space-x-2">
+                    <Skeleton className="h-8 w-8 rounded" />
+                    <Skeleton className="h-8 w-8 rounded" />
+                    <Skeleton className="h-8 w-8 rounded" />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-3/4 mb-3" />
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-3 w-3" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // Check if a cohort is being used (has members)
   const isCohortInUse = (cohortId: string) => {
@@ -188,9 +240,6 @@ export default function Cohorts() {
     // Other roles can see all cohorts
     return true;
   });
-
-  // Get table columns and filter options
-  const { columns, profileOptions, simulationOptions } = useCohortColumns();
 
   const handleDelete = async () => {
     if (!deleteItem) return;

@@ -6,6 +6,7 @@
  */
 "use client";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
@@ -25,7 +26,7 @@ export interface LeaderboardProps {
 }
 
 export default function Leaderboard({ cohortId }: LeaderboardProps) {
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
   const { startDate, endDate, selectedCohortIds, cohorts } = useAnalytics();
   const router = useRouter();
 
@@ -372,6 +373,8 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   ]);
 
   const isLoading =
+    isProfileLoading ||
+    !effectiveProfile ||
     loadingProfiles ||
     loadingAttempts ||
     loadingChats ||
@@ -381,9 +384,45 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-4">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">Loading leaderboard...</div>
+      <div className="space-y-6">
+        <div className="container mx-auto p-4 space-y-8">
+          {/* Accolades Section skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="bg-white dark:bg-gray-900 rounded-lg border p-4 space-y-3"
+              >
+                <div className="flex items-center space-x-2">
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Leaderboard Table skeleton */}
+          <div className="bg-white dark:bg-gray-900 rounded-lg border">
+            <div className="p-4 border-b">
+              <Skeleton className="h-6 w-32" />
+            </div>
+            <div className="p-4 space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <Skeleton className="h-4 w-8" />
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-12" />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );

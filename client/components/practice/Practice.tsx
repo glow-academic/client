@@ -22,6 +22,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { Profile } from "@/types";
+import { simulationAttempts } from "@/utils/drizzle/schema";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -49,7 +50,11 @@ export default function Practice() {
 
   // Use global WebSocket context instead of local connection
   const { isConnected, emitStartSimulation } = useWebSocket();
-  const { effectiveProfile, activeProfile } = useProfile();
+  const {
+    effectiveProfile,
+    activeProfile,
+    isLoading: isProfileLoading,
+  } = useProfile();
 
   // 1. EXPAND DATA FETCHING SCOPE FOR ADMINS/INSTRUCTORS
   const isAdminView =
@@ -111,12 +116,12 @@ export default function Practice() {
     queryFn: () => getSimulationAttemptsByProfiles(profileIdsForQueries),
     enabled:
       profileIdsForQueries.length > 0 &&
-      effectiveProfile &&
+      !!effectiveProfile &&
       effectiveProfile.role !== "guest",
   });
 
   const { data: chats } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
+    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id) || []],
     queryFn: () =>
       getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
     enabled: !!attempts && attempts.length > 0,
@@ -271,19 +276,24 @@ export default function Practice() {
     }
 
     const cache = new Map();
+    type SimulationAttempt = typeof simulationAttempts.$inferSelect;
 
     // Pre-calculate for all simulations to avoid recalculation on each render
-    const allSimulationIds = [...new Set(attempts.map((a) => a.simulationId))];
+    const allSimulationIds = [
+      ...new Set(attempts.map((a: SimulationAttempt) => a.simulationId)),
+    ];
 
     allSimulationIds.forEach((simulationId) => {
       // Get attempts for this simulation
-      const simulationAttempts = attempts.filter(
-        (attempt) => attempt.simulationId === simulationId
+      const simulationAttemptsData = attempts.filter(
+        (attempt: SimulationAttempt) => attempt.simulationId === simulationId
       );
 
       // Get chats for these attempts
       const simulationChats = chats.filter((chat) =>
-        simulationAttempts.some((attempt) => attempt.id === chat.attemptId)
+        simulationAttemptsData.some(
+          (attempt: SimulationAttempt) => attempt.id === chat.attemptId
+        )
       );
 
       // Get grades for these chats
@@ -299,75 +309,81 @@ export default function Practice() {
       );
 
       // Group by attempt and calculate scores
-      const attemptData = simulationAttempts.map((attempt, index) => {
-        const attemptChats = simulationChats.filter(
-          (chat) => chat.attemptId === attempt.id
-        );
-        const attemptGrades = simulationGrades.filter((grade) =>
-          attemptChats.some((chat) => chat.id === grade.simulationChatId)
-        );
-        const attemptFeedbacks = simulationFeedbacks.filter((feedback) =>
-          attemptGrades.some(
-            (grade) => grade.id === feedback.simulationChatGradeId
-          )
-        );
+      const attemptData = simulationAttemptsData.map(
+        (attempt: SimulationAttempt, index: number) => {
+          const attemptChats = simulationChats.filter(
+            (chat) => chat.attemptId === attempt.id
+          );
+          const attemptGrades = simulationGrades.filter((grade) =>
+            attemptChats.some((chat) => chat.id === grade.simulationChatId)
+          );
+          const attemptFeedbacks = simulationFeedbacks.filter((feedback) =>
+            attemptGrades.some(
+              (grade) => grade.id === feedback.simulationChatGradeId
+            )
+          );
 
-        // Calculate skill scores similar to Overview.tsx
-        const skillScores = standardGroups.reduce(
-          (acc, group) => {
-            const groupStandards = standards.filter(
-              (s) => s.standardGroupId === group.id
-            );
-            const groupFeedbacks = attemptFeedbacks.filter((f) =>
-              groupStandards.some((s) => s.id === f.standardId)
-            );
-
-            if (groupFeedbacks.length > 0) {
-              // Use the rubric's total points for this group instead of max standard points
-              const rubric = rubrics?.find((r) => r.id === group.rubricId);
-              const rubricTotalPoints = rubric?.points || 100;
-
-              const avgScore = Math.round(
-                (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
-                  groupFeedbacks.length /
-                  rubricTotalPoints) *
-                  100
+          // Calculate skill scores similar to Overview.tsx
+          const skillScores = standardGroups.reduce(
+            (acc, group) => {
+              const groupStandards = standards.filter(
+                (s) => s.standardGroupId === group.id
               );
-              acc[group.shortName] = avgScore;
-            }
+              const groupFeedbacks = attemptFeedbacks.filter((f) =>
+                groupStandards.some((s) => s.id === f.standardId)
+              );
 
-            return acc;
-          },
-          {} as Record<string, number>
-        );
+              if (groupFeedbacks.length > 0) {
+                // Use the rubric's total points for this group instead of max standard points
+                const rubric = rubrics?.find((r) => r.id === group.rubricId);
+                const rubricTotalPoints = rubric?.points || 100;
 
-        // Calculate overall score - normalize to percentage based on rubric total points
-        const rubric = rubrics?.find((r) =>
-          standardGroups?.some((sg) => sg.rubricId === r.id)
-        );
-        const rubricTotalPoints = rubric?.points || 20;
+                const avgScore = Math.round(
+                  (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
+                    groupFeedbacks.length /
+                    rubricTotalPoints) *
+                    100
+                );
+                acc[group.shortName] = avgScore;
+              }
 
-        const overallScore =
-          attemptGrades.length > 0
-            ? Math.round(
-                (attemptGrades.reduce((sum, g) => sum + g.score, 0) /
-                  attemptGrades.length /
-                  rubricTotalPoints) *
-                  100 // Convert to percentage
-              )
-            : 0;
+              return acc;
+            },
+            {} as Record<string, number>
+          );
 
-        return {
-          attempt: index + 1,
-          overallScore,
-          skillScores,
-          createdAt: attempt.createdAt,
-        };
-      });
+          // Calculate overall score - normalize to percentage based on rubric total points
+          const rubric = rubrics?.find((r) =>
+            standardGroups?.some((sg) => sg.rubricId === r.id)
+          );
+          const rubricTotalPoints = rubric?.points || 20;
+
+          const overallScore =
+            attemptGrades.length > 0
+              ? Math.round(
+                  (attemptGrades.reduce((sum, g) => sum + g.score, 0) /
+                    attemptGrades.length /
+                    rubricTotalPoints) *
+                    100 // Convert to percentage
+                )
+              : 0;
+
+          return {
+            attempt: index + 1,
+            overallScore,
+            skillScores,
+            createdAt: attempt.createdAt,
+          };
+        }
+      );
 
       const highestScore =
         attemptData.length > 0
-          ? Math.max(...attemptData.map((a) => a.overallScore))
+          ? Math.max(
+              ...attemptData.map(
+                (a: { overallScore: number }) => a.overallScore
+              )
+            )
           : 0;
 
       cache.set(simulationId, { attempts: attemptData, highestScore });
@@ -387,49 +403,78 @@ export default function Practice() {
   );
 
   // Loading state
-  if (simulationsLoading) {
+  if (simulationsLoading || isProfileLoading || !effectiveProfile) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between space-y-2">
-          <div>
-            <Skeleton className="h-8 w-48 mb-2" />
-            <Skeleton className="h-4 w-64" />
+      <div className="container mx-auto p-4 md:p-6 space-y-12">
+        {/* Header skeleton */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between space-y-2">
+            <div>
+              <Skeleton className="h-8 w-48 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </div>
           </div>
         </div>
 
-        {/* Skeleton for Simulation Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Card
-              key={i}
-              className="overflow-hidden bg-white dark:bg-gray-900 border-0 shadow-lg"
-            >
-              <CardHeader className="pb-4">
-                <div className="flex items-start justify-between">
-                  <Skeleton className="h-12 w-12 rounded-xl" />
-                  <div className="text-right space-y-1">
-                    <Skeleton className="h-3 w-12" />
-                    <Skeleton className="h-3 w-10" />
+        {/* Practice Zone skeleton */}
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <Card
+                key={i}
+                className="overflow-hidden bg-white dark:bg-gray-900 border-0 shadow-lg"
+              >
+                <CardHeader className="pb-4">
+                  <div className="flex items-start justify-between">
+                    <Skeleton className="h-12 w-12 rounded-xl" />
+                    <div className="text-right space-y-1">
+                      <Skeleton className="h-3 w-12" />
+                      <Skeleton className="h-3 w-10" />
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Skeleton className="h-6 w-32 mb-2" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
-                </div>
-                <div className="flex items-center space-x-4">
-                  <Skeleton className="h-3 w-16" />
-                  <Skeleton className="h-3 w-20" />
-                </div>
-              </CardContent>
-              <CardFooter className="pt-0">
-                <Skeleton className="h-10 w-full rounded-lg" />
-              </CardFooter>
-            </Card>
-          ))}
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Skeleton className="h-6 w-32 mb-2" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </CardContent>
+                <CardFooter className="pt-0">
+                  <Skeleton className="h-10 w-full rounded-lg" />
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
         </div>
+
+        {/* History Section skeleton - only show if not guest */}
+        {effectiveProfile?.role !== "guest" && (
+          <div className="space-y-2">
+            <div className="space-y-4">
+              <Skeleton className="h-6 w-32" />
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center space-x-4 p-3 rounded-lg border bg-gray-50 dark:bg-gray-800"
+                  >
+                    <Skeleton className="h-4 w-24" />
+                    <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <Skeleton className="h-2 w-1/3 rounded-full" />
+                    </div>
+                    <Skeleton className="h-6 w-16" />
+                    <Skeleton className="h-4 w-12" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
