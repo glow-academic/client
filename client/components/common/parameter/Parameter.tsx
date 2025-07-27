@@ -422,7 +422,7 @@ export default function Parameter({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-40">Name</TableHead>
+                    <TableHead className="w-64">Name</TableHead>
                     <TableHead className="w-full">Description</TableHead>
                     <TableHead className="w-32">
                       Value {formData?.numerical && "(Number)"}
@@ -433,7 +433,7 @@ export default function Parameter({
                 <TableBody>
                   {visibleParameterItems.map((item, itemIndex) => (
                     <TableRow key={item.id || `new-${itemIndex}`}>
-                      <TableCell className="w-40">
+                      <TableCell className="w-64">
                         <Input
                           value={item.name}
                           onChange={(e) =>

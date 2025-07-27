@@ -11,6 +11,7 @@ import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getAgent } from "./queries/agents/get-agent";
 import { getCohort } from "./queries/cohorts/get-cohort";
 import { getModel } from "./queries/models/get-model";
+import { getParameter } from "./queries/parameters/get-parameter";
 import { getProfile } from "./queries/profiles/get-profile";
 import { getProvider } from "./queries/providers/get-provider";
 import { getRubric } from "./queries/rubrics/get-rubric";
@@ -91,6 +92,10 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         const providerData = await getProvider(id);
         return providerData?.name || `Provider ${id.substring(0, 8)}...`;
 
+      case "parameter":
+        const parameterData = await getParameter(id);
+        return parameterData?.name || `Parameter ${id.substring(0, 8)}...`;
+
       default:
         return id.length > 10 ? `${id.substring(0, 8)}...` : id;
     }
@@ -161,6 +166,8 @@ export const generateEnhancedBreadcrumbs = async (
         context = "rubric";
       } else if (prevSegment === "p" && segments.includes("reports")) {
         context = "report";
+      } else if (prevSegment === "p" && segments.includes("parameters")) {
+        context = "parameter";
       }
 
       if (context) {
@@ -241,6 +248,9 @@ export const generateEnhancedBreadcrumbs = async (
           break;
         case "providers":
           title = "Providers";
+          break;
+        case "parameters":
+          title = "Parameters";
           break;
         case "logs":
           title = "Logs";
@@ -371,6 +381,9 @@ const getSectionFromSegments = (segments: string[]): string => {
         return "providers";
       }
       if (second === "parameters") {
+        if (third === "p" && fourth) {
+          return `parameter-${fourth}`;
+        }
         return "parameters";
       }
       if (second) {
@@ -494,6 +507,9 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
         break;
       case "providers":
         title = "Providers";
+        break;
+      case "parameters":
+        title = "Parameters";
         break;
       case "documents":
         title = "Documents";

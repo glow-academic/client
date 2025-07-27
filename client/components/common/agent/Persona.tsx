@@ -12,8 +12,21 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -24,10 +37,465 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { createPersona } from "@/utils/mutations/personas/create-persona";
 import { updatePersona } from "@/utils/mutations/personas/update-persona";
 import { getAllModels } from "@/utils/queries/models/get-all-models";
 import { getPersona } from "@/utils/queries/personas/get-persona";
+import {
+  Activity,
+  Airplay,
+  AlertCircle,
+  AlertOctagon,
+  AlertTriangle,
+  AlignCenter,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
+  Anchor,
+  Aperture,
+  Archive,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  Award,
+  BarChart,
+  Battery,
+  Bell,
+  Bluetooth,
+  Bold,
+  Book,
+  BookOpen,
+  Bookmark,
+  Box,
+  Briefcase,
+  Calendar,
+  Camera,
+  Cast,
+  Check,
+  CheckCircle,
+  CheckSquare,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronsDown,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronsUpDown,
+  Circle,
+  Clipboard,
+  Clock,
+  Cloud,
+  Code,
+  Codepen,
+  Compass,
+  Copy,
+  CornerDownLeft,
+  CornerDownRight,
+  CornerLeftDown,
+  CornerLeftUp,
+  CornerRightDown,
+  CornerRightUp,
+  CornerUpLeft,
+  CornerUpRight,
+  Cpu,
+  CreditCard,
+  Crop,
+  Crosshair,
+  Database,
+  Delete,
+  Disc,
+  DollarSign,
+  Download,
+  Droplet,
+  Edit,
+  Edit2,
+  Edit3,
+  Eye,
+  Facebook,
+  FastForward,
+  Feather,
+  File,
+  FileText,
+  Film,
+  Filter,
+  Flag,
+  Folder,
+  Github,
+  Globe,
+  Grid,
+  Hash,
+  Headphones,
+  Heart,
+  HelpCircle,
+  Home,
+  Image,
+  Inbox,
+  Info,
+  Instagram,
+  Italic,
+  Key,
+  Layers,
+  Layout,
+  LifeBuoy,
+  Link,
+  Link2,
+  List,
+  Loader,
+  Lock,
+  LogIn,
+  LogOut,
+  Mail,
+  Map,
+  MapPin,
+  Maximize,
+  Maximize2,
+  Menu,
+  MessageCircle,
+  MessageSquare,
+  Mic,
+  MicOff,
+  Minimize,
+  Minimize2,
+  Monitor,
+  Moon,
+  MoreHorizontal,
+  MoreVertical,
+  Move,
+  Music,
+  Navigation,
+  Navigation2,
+  Octagon,
+  Package,
+  Paperclip,
+  Pause,
+  PauseCircle,
+  Percent,
+  Phone,
+  PieChart,
+  Play,
+  PlayCircle,
+  Plus,
+  PlusCircle,
+  PlusSquare,
+  Pocket,
+  Power,
+  Printer,
+  Radio,
+  RefreshCcw,
+  RefreshCw,
+  Repeat,
+  Rewind,
+  RotateCcw,
+  RotateCw,
+  Rss,
+  Save,
+  Scissors,
+  Search,
+  Send,
+  Server,
+  Settings,
+  Share,
+  Share2,
+  Shield,
+  ShieldOff,
+  ShoppingBag,
+  ShoppingCart,
+  Shuffle,
+  Sidebar,
+  SkipBack,
+  SkipForward,
+  Slack,
+  Slash,
+  Sliders,
+  Smartphone,
+  Speaker,
+  Square,
+  Star,
+  StopCircle,
+  Sun,
+  Sunrise,
+  Sunset,
+  Tablet,
+  Tag,
+  Target,
+  Terminal,
+  Thermometer,
+  ThumbsDown,
+  ThumbsUp,
+  ToggleLeft,
+  ToggleRight,
+  Trash,
+  Trash2,
+  Trello,
+  TrendingDown,
+  TrendingUp,
+  Triangle,
+  Truck,
+  Tv,
+  Twitch,
+  Twitter,
+  Type,
+  Umbrella,
+  Underline,
+  Unlock,
+  Upload,
+  User,
+  UserCheck,
+  UserMinus,
+  UserPlus,
+  UserX,
+  Users,
+  Video,
+  VideoOff,
+  Voicemail,
+  Volume,
+  Volume1,
+  Volume2,
+  VolumeX,
+  Watch,
+  Wifi,
+  WifiOff,
+  Wind,
+  X,
+  XCircle,
+  XSquare,
+  Youtube,
+  Zap,
+  ZapOff,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
+
+// Icon mapping
+const ICON_MAP = {
+  Activity,
+  Airplay,
+  AlertCircle,
+  AlertOctagon,
+  AlertTriangle,
+  AlignCenter,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
+  Anchor,
+  Aperture,
+  Archive,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  Award,
+  BarChart,
+  Battery,
+  Bell,
+  Bluetooth,
+  Bold,
+  Book,
+  BookOpen,
+  Bookmark,
+  Box,
+  Briefcase,
+  Calendar,
+  Camera,
+  Cast,
+  CheckCircle,
+  CheckSquare,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronsDown,
+  ChevronsLeft,
+  ChevronsRight,
+  Circle,
+  Clipboard,
+  Clock,
+  Cloud,
+  Code,
+  Codepen,
+  Compass,
+  Copy,
+  CornerDownLeft,
+  CornerDownRight,
+  CornerLeftDown,
+  CornerLeftUp,
+  CornerRightDown,
+  CornerRightUp,
+  CornerUpLeft,
+  CornerUpRight,
+  Cpu,
+  CreditCard,
+  Crop,
+  Crosshair,
+  Database,
+  Delete,
+  Disc,
+  DollarSign,
+  Download,
+  Droplet,
+  Edit,
+  Edit2,
+  Edit3,
+  Eye,
+  Facebook,
+  FastForward,
+  Feather,
+  File,
+  FileText,
+  Film,
+  Filter,
+  Flag,
+  Folder,
+  Github,
+  Globe,
+  Grid,
+  Hash,
+  Headphones,
+  Heart,
+  HelpCircle,
+  Home,
+  Image,
+  Inbox,
+  Info,
+  Instagram,
+  Italic,
+  Key,
+  Layers,
+  Layout,
+  LifeBuoy,
+  Link,
+  Link2,
+  List,
+  Loader,
+  Lock,
+  LogIn,
+  LogOut,
+  Mail,
+  Map,
+  MapPin,
+  Maximize,
+  Maximize2,
+  Menu,
+  MessageCircle,
+  MessageSquare,
+  Mic,
+  MicOff,
+  Minimize,
+  Minimize2,
+  Monitor,
+  Moon,
+  MoreHorizontal,
+  MoreVertical,
+  Move,
+  Music,
+  Navigation,
+  Navigation2,
+  Octagon,
+  Package,
+  Paperclip,
+  Pause,
+  PauseCircle,
+  Percent,
+  Phone,
+  PieChart,
+  Play,
+  PlayCircle,
+  Plus,
+  PlusCircle,
+  PlusSquare,
+  Pocket,
+  Power,
+  Printer,
+  Radio,
+  RefreshCw,
+  RefreshCcw,
+  Repeat,
+  Rewind,
+  RotateCcw,
+  RotateCw,
+  Rss,
+  Save,
+  Scissors,
+  Search,
+  Send,
+  Server,
+  Settings,
+  Share,
+  Share2,
+  Shield,
+  ShieldOff,
+  ShoppingBag,
+  ShoppingCart,
+  Shuffle,
+  Sidebar,
+  SkipBack,
+  SkipForward,
+  Slack,
+  Slash,
+  Sliders,
+  Smartphone,
+  Speaker,
+  Square,
+  Star,
+  StopCircle,
+  Sun,
+  Sunrise,
+  Sunset,
+  Tablet,
+  Tag,
+  Target,
+  Terminal,
+  Thermometer,
+  ThumbsDown,
+  ThumbsUp,
+  ToggleLeft,
+  ToggleRight,
+  Trash,
+  Trash2,
+  Trello,
+  TrendingDown,
+  TrendingUp,
+  Triangle,
+  Truck,
+  Tv,
+  Twitch,
+  Twitter,
+  Type,
+  Umbrella,
+  Underline,
+  Unlock,
+  Upload,
+  User,
+  UserCheck,
+  UserMinus,
+  UserPlus,
+  UserX,
+  Users,
+  Video,
+  VideoOff,
+  Voicemail,
+  Volume,
+  Volume1,
+  Volume2,
+  VolumeX,
+  Watch,
+  Wifi,
+  WifiOff,
+  Wind,
+  X,
+  XCircle,
+  XSquare,
+  Youtube,
+  Zap,
+  ZapOff,
+  ZoomIn,
+  ZoomOut,
+};
+
+const LUCIDE_ICONS = Object.keys(ICON_MAP);
 
 interface FormData {
   name?: string;
@@ -36,6 +504,8 @@ interface FormData {
   temperature?: number;
   modelId?: string;
   reasoning?: "none" | "low" | "medium" | "high";
+  color?: string;
+  icon?: string;
 }
 
 export interface PersonaProps {
@@ -59,12 +529,16 @@ export default function Persona({
       temperature: 0.0,
       modelId: "",
       reasoning: "none",
+      color: "#000000",
+      icon: "Zap",
     }),
     []
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>();
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
 
   const { data: persona, isLoading: isLoadingPersona } = useQuery({
     queryKey: ["persona", personaId],
@@ -88,6 +562,8 @@ export default function Persona({
         temperature: persona.temperature,
         modelId: persona.modelId || "",
         reasoning: persona.reasoning || "none",
+        color: persona.color || "#000000",
+        icon: persona.icon || "Zap",
       });
     } else if (!isEditMode) {
       setFormData(initialFormData);
@@ -129,6 +605,8 @@ export default function Persona({
           temperature: Number(formData.temperature),
           modelId: formData.modelId,
           reasoning: formData.reasoning === "none" ? null : formData.reasoning,
+          color: formData.color || "#000000",
+          icon: formData.icon || "Zap",
           updatedAt: new Date().toISOString(),
         });
         queryClient.invalidateQueries({ queryKey: ["personas"] });
@@ -142,8 +620,8 @@ export default function Persona({
           temperature: Number(formData.temperature),
           modelId: formData.modelId,
           reasoning: formData.reasoning === "none" ? null : formData.reasoning,
-          color: "#000000",
-          icon: "Zap",
+          color: formData.color || "#000000",
+          icon: formData.icon || "Zap",
         });
         queryClient.invalidateQueries({ queryKey: ["personas"] });
         queryClient.invalidateQueries({
@@ -161,6 +639,12 @@ export default function Persona({
       setIsSubmitting(false);
     }
   };
+
+  // Dynamic icon component
+  const IconComponent = useMemo(() => {
+    if (!formData?.icon) return null;
+    return ICON_MAP[formData.icon as keyof typeof ICON_MAP] || null;
+  }, [formData?.icon]);
 
   return (
     <div className="space-y-6 py-4 px-4">
@@ -202,6 +686,178 @@ export default function Persona({
             ) : (
               <Skeleton className="h-10 w-full" />
             )}
+          </div>
+
+          {/* Color and Icon Selection Row */}
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+            {/* Color Picker */}
+            <div className="space-y-2">
+              <Label htmlFor="color">Persona Color</Label>
+              {formData?.color !== undefined && !isLoading ? (
+                <Popover
+                  open={colorPickerOpen}
+                  onOpenChange={setColorPickerOpen}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-4 h-4 rounded border"
+                          style={{ backgroundColor: formData.color }}
+                        />
+                        <span>{formData.color}</span>
+                      </div>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-4">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="colorInput">Hex Color</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="colorInput"
+                            value={formData.color}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  color: value,
+                                }));
+                              }
+                            }}
+                            placeholder="#000000"
+                            className="flex-1"
+                          />
+                          <div
+                            className="w-10 h-10 rounded border"
+                            style={{ backgroundColor: formData.color }}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Preset Colors</Label>
+                        <div className="grid grid-cols-8 gap-2">
+                          {[
+                            "#ef4444",
+                            "#f97316",
+                            "#eab308",
+                            "#22c55e",
+                            "#06b6d4",
+                            "#3b82f6",
+                            "#8b5cf6",
+                            "#ec4899",
+                            "#dc2626",
+                            "#ea580c",
+                            "#ca8a04",
+                            "#16a34a",
+                            "#0891b2",
+                            "#2563eb",
+                            "#7c3aed",
+                            "#db2777",
+                            "#b91c1c",
+                            "#c2410c",
+                            "#a16207",
+                            "#15803d",
+                            "#0e7490",
+                            "#1d4ed8",
+                            "#6d28d9",
+                            "#be185d",
+                            "#991b1b",
+                            "#9a3412",
+                            "#854d0e",
+                            "#166534",
+                            "#155e75",
+                            "#1e40af",
+                            "#581c87",
+                            "#9d174d",
+                          ].map((color) => (
+                            <button
+                              key={color}
+                              type="button"
+                              className="w-8 h-8 rounded border-2 border-gray-200 hover:border-gray-400 transition-colors"
+                              style={{ backgroundColor: color }}
+                              onClick={() => {
+                                setFormData((prev) => ({ ...prev, color }));
+                                setColorPickerOpen(false);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <Skeleton className="h-10 w-full" />
+              )}
+            </div>
+
+            {/* Icon Picker */}
+            <div className="space-y-2">
+              <Label htmlFor="icon">Persona Icon</Label>
+              {formData?.icon !== undefined && !isLoading ? (
+                <Popover open={iconPickerOpen} onOpenChange={setIconPickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <div className="flex items-center gap-2">
+                        {IconComponent && <IconComponent className="w-4 h-4" />}
+                        <span>{formData.icon}</span>
+                        <ChevronsUpDown className="ml-auto h-4 w-4 opacity-50" />
+                      </div>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-0">
+                    <Command>
+                      <CommandInput placeholder="Search icons..." />
+                      <CommandList>
+                        <CommandEmpty>No icon found.</CommandEmpty>
+                        <CommandGroup>
+                          {LUCIDE_ICONS.map((iconName) => {
+                            const IconComponent =
+                              ICON_MAP[iconName as keyof typeof ICON_MAP];
+                            if (!IconComponent) return null;
+
+                            return (
+                              <CommandItem
+                                key={iconName}
+                                value={iconName}
+                                onSelect={() => {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    icon: iconName,
+                                  }));
+                                  setIconPickerOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    formData.icon === iconName
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                <IconComponent className="mr-2 h-4 w-4" />
+                                {iconName}
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <Skeleton className="h-10 w-full" />
+              )}
+            </div>
           </div>
 
           <div className={`grid gap-4 grid-cols-1`}>

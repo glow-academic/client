@@ -276,6 +276,10 @@ export const getSectionRoute = (
         const providerId = section.replace("provider-", "");
         return `/management/providers/p/${providerId}`;
       }
+      if (section.startsWith("parameter-")) {
+        const parameterId = section.replace("parameter-", "");
+        return `/management/parameters/p/${parameterId}`;
+      }
       if (section.startsWith("model-")) {
         const providerId = section.replace("provider-", "");
         const modelId = section.replace("model-", "");
