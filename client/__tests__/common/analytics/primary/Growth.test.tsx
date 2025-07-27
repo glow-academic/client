@@ -25,37 +25,20 @@ const mockProps: GrowthProps = {
   profileId: "test-profile-id",
   cohortIds: ["test-cohort-id"],
 };
+
 // ------------------------------------------------------------------
 describe("Growth", () => {
-  /* ------------------------------------------------------------------ *
-   * 💡 Mock Data Usage Guide:
-   *
-   * All API functions are automatically mocked via imports above.
-   * Use mockSchema.* for realistic test data:
-   *
-   * Examples:
-   * - mockSchema.users[0] - First user object
-   * - mockSchema.classes - Array of class objects
-   * - mockSchema.profiles - Array of profile objects
-   *
-   * To override specific mocks in individual tests:
-   * - vi.mocked(queryFunction).mockResolvedValue(customData)
-   * - vi.mocked(mutationFunction).mockResolvedValue(customResponse)
-   * ------------------------------------------------------------------ */
-
-  // ✨ Reset mocks after each test
   afterEach(() => {
     vi.clearAllMocks();
   });
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      // ✨ All mocks are automatically set up via imports above
       renderWithMocks(<Growth {...mockProps} />);
 
       // Wait for component to load
       await waitFor(() => {
-        expect(screen.getByText("Growth")).toBeInTheDocument();
+        expect(screen.getByText("Platform Growth")).toBeInTheDocument();
       });
     });
 
@@ -65,11 +48,11 @@ describe("Growth", () => {
 
       // Wait for component to load
       await waitFor(() => {
-        expect(screen.getByText("Growth")).toBeInTheDocument();
+        expect(screen.getByText("Platform Growth")).toBeInTheDocument();
       });
 
       // Should display the component title
-      expect(screen.getByText("Growth")).toBeInTheDocument();
+      expect(screen.getByText("Platform Growth")).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", async () => {
@@ -78,11 +61,11 @@ describe("Growth", () => {
 
       // Wait for component to load
       await waitFor(() => {
-        expect(screen.getByText("Growth")).toBeInTheDocument();
+        expect(screen.getByText("Platform Growth")).toBeInTheDocument();
       });
 
       // Should have proper structure
-      expect(screen.getByText("Growth")).toBeInTheDocument();
+      expect(screen.getByText("Platform Growth")).toBeInTheDocument();
     });
   });
 
@@ -95,11 +78,11 @@ describe("Growth", () => {
 
       // Wait for component to load
       await waitFor(() => {
-        expect(screen.getByText("Growth")).toBeInTheDocument();
+        expect(screen.getByText("Platform Growth")).toBeInTheDocument();
       });
 
       // Should handle errors gracefully
-      expect(screen.getByText("Growth")).toBeInTheDocument();
+      expect(screen.getByText("Platform Growth")).toBeInTheDocument();
     });
 
     it("should handle loading states", async () => {
@@ -108,39 +91,36 @@ describe("Growth", () => {
 
       // Wait for component to load
       await waitFor(() => {
-        expect(screen.getByText("Growth")).toBeInTheDocument();
+        expect(screen.getByText("Platform Growth")).toBeInTheDocument();
       });
 
-      // Should display the component even during loading
-      expect(screen.getByText("Growth")).toBeInTheDocument();
+      // Should handle loading states
+      expect(screen.getByText("Platform Growth")).toBeInTheDocument();
     });
   });
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      // Test with different thresholds
-      const propsWithDifferentThresholds = {
+      // Test with different props
+      const propsWithDifferentDates = {
         ...mockProps,
-        thresholds: {
-          danger: 30,
-          warning: 60,
-          success: 80,
-        },
+        dateStart: new Date("2023-01-01"),
+        dateEnd: new Date("2023-12-31"),
       };
 
-      renderWithMocks(<Growth {...propsWithDifferentThresholds} />);
+      renderWithMocks(<Growth {...propsWithDifferentDates} />);
 
       // Wait for component to load
       await waitFor(() => {
-        expect(screen.getByText("Growth")).toBeInTheDocument();
+        expect(screen.getByText("Platform Growth")).toBeInTheDocument();
       });
 
-      // Should render with different thresholds
-      expect(screen.getByText("Growth")).toBeInTheDocument();
+      // Should handle different date ranges
+      expect(screen.getByText("Platform Growth")).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", async () => {
-      // Test with undefined profileId
+      // Test with missing profileId
       const propsWithoutProfile = {
         ...mockProps,
         profileId: undefined,
@@ -150,11 +130,11 @@ describe("Growth", () => {
 
       // Wait for component to load
       await waitFor(() => {
-        expect(screen.getByText("Growth")).toBeInTheDocument();
+        expect(screen.getByText("Platform Growth")).toBeInTheDocument();
       });
 
-      // Should handle undefined profileId
-      expect(screen.getByText("Growth")).toBeInTheDocument();
+      // Should handle missing profileId
+      expect(screen.getByText("Platform Growth")).toBeInTheDocument();
     });
   });
 });

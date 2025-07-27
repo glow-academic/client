@@ -28,13 +28,6 @@ import { getPersonaConfig } from "@/utils/personas";
 import { FileText, Info, Timer, User, Users } from "lucide-react";
 import TableRubric from "../rubric/TableRubric";
 
-interface AttemptData {
-  attempt: number;
-  overallScore: number;
-  skillScores: Record<string, number>;
-  createdAt: string;
-}
-
 export interface SimulationCardProps {
   simulation: Simulation & {
     cohort?: { title: string };
@@ -47,7 +40,6 @@ export interface SimulationCardProps {
   onStartSimulation: (id: string) => void;
   loadingSimulation: string | null;
   effectiveProfile: Profile;
-  rubricData: { attempts: AttemptData[]; highestScore: number };
   scenarios?: Scenario[];
   personas?: Persona[];
 }
@@ -58,7 +50,6 @@ export default function SimulationCard({
   onStartSimulation,
   loadingSimulation,
   effectiveProfile,
-  rubricData,
   scenarios,
   personas,
 }: SimulationCardProps) {
@@ -231,13 +222,14 @@ export default function SimulationCard({
               </span>
             </div>
             {effectiveProfile?.role !== "guest" &&
-              rubricData.highestScore > 0 && (
+              simulation.highestScore &&
+              simulation.highestScore > 0 && (
                 <div className="flex items-center">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center">
                         <Info className="h-3 w-3 mr-1" />
-                        <span>{rubricData.highestScore}%</span>
+                        <span>{simulation.highestScore}%</span>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>

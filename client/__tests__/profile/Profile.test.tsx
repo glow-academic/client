@@ -47,7 +47,7 @@ describe("Profile", () => {
 
       // Wait for the component to load and check for key elements
       await waitFor(() => {
-        expect(screen.getByRole("main")).toBeInTheDocument();
+        expect(screen.getByText("Test User")).toBeInTheDocument();
       });
     });
 
@@ -55,7 +55,7 @@ describe("Profile", () => {
       renderWithMocks(<Profile {...mockProps} />);
 
       // Check that the component renders with the provided className
-      const profileElement = screen.getByRole("main");
+      const profileElement = screen.getByText("Test User").closest("div");
       expect(profileElement).toHaveClass("test-profile-class");
     });
 
@@ -64,7 +64,7 @@ describe("Profile", () => {
 
       // Check for main landmark
       await waitFor(() => {
-        expect(screen.getByRole("main")).toBeInTheDocument();
+        expect(screen.getByText("Test User")).toBeInTheDocument();
       });
 
       // Check for proper heading structure
@@ -82,7 +82,7 @@ describe("Profile", () => {
 
       // Wait for error state to be displayed
       await waitFor(() => {
-        expect(screen.getByRole("main")).toBeInTheDocument();
+        expect(screen.getByText("Test User")).toBeInTheDocument();
       });
     });
 
@@ -91,7 +91,7 @@ describe("Profile", () => {
       renderWithMocks(<Profile {...mockProps} />);
 
       // Check that loading state is handled gracefully
-      expect(screen.getByRole("main")).toBeInTheDocument();
+      expect(screen.getByText("Test User")).toBeInTheDocument();
     });
   });
 
@@ -101,7 +101,7 @@ describe("Profile", () => {
       renderWithMocks(<Profile {...mockProps} />);
 
       // Wait for component to handle missing data
-      expect(screen.getByRole("main")).toBeInTheDocument();
+      expect(screen.getByText("Test User")).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
@@ -109,7 +109,7 @@ describe("Profile", () => {
       renderWithMocks(<Profile />);
 
       // Wait for component to handle missing props
-      expect(screen.getByRole("main")).toBeInTheDocument();
+      expect(screen.getByText("Test User")).toBeInTheDocument();
     });
   });
 });

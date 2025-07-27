@@ -12,46 +12,49 @@ import EditAgent, {
 const mockProps: EditSystemAgentProps = {
   agentId: "test-agentId",
 };
+
 // ------------------------------------------------------------------
 describe("EditAgent", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       renderWithMocks(<EditAgent {...mockProps} />);
 
-      // Check that the component renders
-      expect(screen.getByText(/Edit Agent/i)).toBeInTheDocument();
+      // Check that the component renders with form elements
+      expect(screen.getByText("Agent Name *")).toBeInTheDocument();
+      expect(screen.getByText("Description *")).toBeInTheDocument();
     });
 
     it("should render with props", () => {
       renderWithMocks(<EditAgent {...mockProps} />);
 
-      // Check that the agent ID is used
-      expect(mockProps.agentId).toBe("test-agentId");
+      // Check that form elements are rendered
+      expect(screen.getByText("Agent Name *")).toBeInTheDocument();
+      expect(screen.getByText("System Prompt *")).toBeInTheDocument();
+      expect(screen.getByText("Update Agent")).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
       renderWithMocks(<EditAgent {...mockProps} />);
 
       // Check that the component is accessible
-      expect(screen.getByText(/Edit Agent/i)).toBeInTheDocument();
+      expect(screen.getByText("Agent Name *")).toBeInTheDocument();
+      expect(screen.getByText("Update Agent")).toBeInTheDocument();
     });
   });
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      // Test with different agent ID
-      const propsWithDifferentId = {
-        agentId: "different-agent-id",
+      const edgeCaseProps = {
+        agentId: "invalid-id",
       };
 
-      renderWithMocks(<EditAgent {...propsWithDifferentId} />);
+      renderWithMocks(<EditAgent {...edgeCaseProps} />);
 
       // Component should still render
-      expect(screen.getByText(/Edit Agent/i)).toBeInTheDocument();
+      expect(screen.getByText("Agent Name *")).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      // Test with minimal required props
       const minimalProps = {
         agentId: "",
       };
@@ -59,7 +62,7 @@ describe("EditAgent", () => {
       renderWithMocks(<EditAgent {...minimalProps} />);
 
       // Component should still render
-      expect(screen.getByText(/Edit Agent/i)).toBeInTheDocument();
+      expect(screen.getByText("Agent Name *")).toBeInTheDocument();
     });
   });
 });

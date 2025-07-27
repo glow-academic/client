@@ -980,7 +980,6 @@ export default function Home() {
                 onStartSimulation={handleStartSimulation}
                 loadingSimulation={loadingSimulation}
                 effectiveProfile={effectiveProfile}
-                rubricData={sim.rubricData}
                 scenarios={[]} // Not needed for cohort simulations
                 personas={[]} // Not needed for cohort simulations
               />

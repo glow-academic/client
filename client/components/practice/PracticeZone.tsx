@@ -1,22 +1,11 @@
 import { Persona, Profile, Scenario, Simulation } from "@/types";
 import SimulationCard from "../common/simulation/SimulationCard";
 
-interface AttemptData {
-  attempt: number;
-  overallScore: number;
-  skillScores: Record<string, number>;
-  createdAt: string;
-}
-
 interface PracticeZoneProps {
   simulations: Simulation[];
   profile: Profile | null;
   onStartSimulation: (simulationId: string) => void;
   loadingSimulation: string | null;
-  getRealRubricData: (simulationId: string) => {
-    attempts: AttemptData[];
-    highestScore: number;
-  };
   scenarios: Scenario[];
   personas: Persona[];
 }
@@ -26,7 +15,6 @@ export default function PracticeZone({
   profile,
   onStartSimulation,
   loadingSimulation,
-  getRealRubricData,
   scenarios,
   personas,
 }: PracticeZoneProps) {
@@ -45,7 +33,6 @@ export default function PracticeZone({
                 onStartSimulation={onStartSimulation}
                 loadingSimulation={loadingSimulation}
                 effectiveProfile={profile}
-                rubricData={getRealRubricData(simulation.id)}
                 scenarios={scenarios}
                 personas={personas}
               />
