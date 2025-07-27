@@ -1,6 +1,6 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
 import type { Table } from "@tanstack/react-table";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
 import {
@@ -9,9 +9,39 @@ import {
 } from "@/components/common/history/DataTableToolbar";
 
 // ------------------------------------------------------------------
+// Create a comprehensive mock table with all required methods
+const createMockTable = (): Table<unknown> =>
+  ({
+    getState: () => ({
+      columnFilters: [],
+      rowSelection: {},
+    }),
+    getColumn: () => ({
+      getFilterValue: () => "",
+      setFilterValue: vi.fn(),
+    }),
+    resetColumnFilters: vi.fn(),
+    getFilteredSelectedRowModel: () => ({
+      rows: [],
+    }),
+    getFilteredRowModel: () => ({
+      rows: [],
+    }),
+    getVisibleLeafColumns: () => [],
+    getAllColumns: () => [
+      {
+        id: "test",
+        accessorFn: () => "test",
+        getCanHide: () => true,
+        getIsVisible: () => true,
+        toggleVisibility: vi.fn(),
+      },
+    ],
+  }) as unknown as Table<unknown>;
+
 // Minimal props factory – edit values as needed
 const mockProps: DataTableToolbarProps<unknown> = {
-  table: {} as unknown as Table<unknown>,
+  table: createMockTable(),
   profileOptions: [],
   scoreRangeOptions: [],
 };
@@ -54,7 +84,7 @@ describe("DataTableToolbar", () => {
     it("should handle missing or invalid props", () => {
       renderWithMocks(
         <DataTableToolbar
-          table={{} as unknown as Table<unknown>}
+          table={createMockTable()}
           profileOptions={[]}
           scoreRangeOptions={[]}
         />

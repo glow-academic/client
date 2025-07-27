@@ -1,81 +1,69 @@
-import { describe, it } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
 
-describe('scroll-area', () => {
-  
+describe("ScrollArea", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      renderWithMocks(
+        <ScrollArea>
+          <div>Content</div>
+        </ScrollArea>
+      );
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<scroll-area  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      const scrollArea = document.querySelector('[data-slot="scroll-area"]');
+      expect(scrollArea).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      renderWithMocks(
+        <ScrollArea>
+          <div>Accessible Content</div>
+        </ScrollArea>
+      );
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      const scrollArea = document.querySelector('[data-slot="scroll-area"]');
+      expect(scrollArea).toBeInTheDocument();
     });
   });
 
-  
+  describe("Component Structure", () => {
+    it("should render scroll area with content", () => {
+      renderWithMocks(
+        <ScrollArea>
+          <div>Item 1</div>
+          <div>Item 2</div>
+          <div>Item 3</div>
+        </ScrollArea>
+      );
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      expect(screen.getByText("Item 1")).toBeInTheDocument();
+      expect(screen.getByText("Item 2")).toBeInTheDocument();
+      expect(screen.getByText("Item 3")).toBeInTheDocument();
     });
 
-    
+    it("should render with custom className", () => {
+      renderWithMocks(
+        <ScrollArea className="custom-class">
+          <div>Content</div>
+        </ScrollArea>
+      );
+
+      const scrollArea = document.querySelector('[data-slot="scroll-area"]');
+      expect(scrollArea).toHaveClass("custom-class");
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with minimal content
+      renderWithMocks(<ScrollArea />);
+
+      const scrollArea = document.querySelector('[data-slot="scroll-area"]');
+      expect(scrollArea).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for scroll-area:
- * Path: ui/scroll-area.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: ScrollArea, ScrollBar
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<scroll-area />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<scroll-area {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

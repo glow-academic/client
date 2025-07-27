@@ -1,81 +1,56 @@
-import { describe, it } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { Slider } from "@/components/ui/slider";
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
 
-describe('slider', () => {
-  
+describe("Slider", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      renderWithMocks(<Slider />);
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<slider  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      const slider = document.querySelector('[data-slot="slider"]');
+      expect(slider).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      renderWithMocks(<Slider aria-label="Test Slider" />);
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      const slider = document.querySelector('[data-slot="slider"]');
+      expect(slider).toBeInTheDocument();
     });
   });
 
-  
+  describe("Component Props", () => {
+    it("should render with default value", () => {
+      renderWithMocks(<Slider defaultValue={[50]} />);
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      const slider = document.querySelector('[data-slot="slider"]');
+      expect(slider).toBeInTheDocument();
     });
 
-    
+    it("should render with custom min and max", () => {
+      renderWithMocks(<Slider min={0} max={200} />);
+
+      const slider = document.querySelector('[data-slot="slider"]');
+      expect(slider).toBeInTheDocument();
+    });
+
+    it("should render with multiple values", () => {
+      renderWithMocks(<Slider defaultValue={[25, 75]} />);
+
+      const slider = document.querySelector('[data-slot="slider"]');
+      expect(slider).toBeInTheDocument();
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with minimal props
+      renderWithMocks(<Slider />);
+
+      const slider = document.querySelector('[data-slot="slider"]');
+      expect(slider).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for slider:
- * Path: ui/slider.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: Slider
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: useMemo
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<slider />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<slider {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

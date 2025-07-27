@@ -57,7 +57,7 @@ describe("Badge", () => {
       // Test with empty content
       renderWithMocks(<Badge></Badge>);
 
-      const badge = screen.getByRole("generic");
+      const badge = document.querySelector('[data-slot="badge"]');
       expect(badge).toBeInTheDocument();
     });
   });

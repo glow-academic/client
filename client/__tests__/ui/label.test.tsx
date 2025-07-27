@@ -43,7 +43,7 @@ describe("Label", () => {
       // Test with empty content
       renderWithMocks(<Label></Label>);
 
-      const label = screen.getByRole("generic");
+      const label = document.querySelector('[data-slot="label"]');
       expect(label).toBeInTheDocument();
     });
   });

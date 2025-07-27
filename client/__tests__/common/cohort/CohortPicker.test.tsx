@@ -78,6 +78,7 @@ describe("CohortPicker", () => {
         cohorts={mockCohorts}
         onSelect={onSelect}
         selectedCohorts={[mockCohorts[0]!, mockCohorts[1]!]}
+        hideSelectedChips={false}
       />
     );
 
@@ -133,6 +134,7 @@ describe("CohortPicker", () => {
         cohorts={mockCohorts}
         onSelect={onSelect}
         selectedCohorts={[mockCohorts[0]!, mockCohorts[1]!]}
+        hideSelectedChips={false}
       />
     );
 

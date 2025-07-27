@@ -1,5 +1,6 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
-import { describe, expect, it } from "vitest";
+import type { Table } from "@tanstack/react-table";
+import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
 import {
@@ -8,9 +9,34 @@ import {
 } from "@/components/common/history/DataTablePagination";
 
 // ------------------------------------------------------------------
+// Create a comprehensive mock table with all required methods
+const createMockTable = (): Table<unknown> =>
+  ({
+    getFilteredSelectedRowModel: () => ({
+      rows: [],
+    }),
+    getFilteredRowModel: () => ({
+      rows: [],
+    }),
+    getState: () => ({
+      pagination: {
+        pageIndex: 0,
+        pageSize: 10,
+      },
+      rowSelection: {},
+    }),
+    setPageSize: vi.fn(),
+    getPageCount: () => 1,
+    setPageIndex: vi.fn(),
+    getCanPreviousPage: () => false,
+    getCanNextPage: () => false,
+    previousPage: vi.fn(),
+    nextPage: vi.fn(),
+  }) as unknown as Table<unknown>;
+
 // Minimal props factory – edit values as needed
 const mockProps: DataTablePaginationProps<unknown> = {
-  table: {} as any,
+  table: createMockTable(),
 };
 // ------------------------------------------------------------------
 describe("DataTablePagination", () => {
@@ -49,7 +75,7 @@ describe("DataTablePagination", () => {
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(<DataTablePagination table={{} as any} />);
+      renderWithMocks(<DataTablePagination table={createMockTable()} />);
 
       // Component should handle missing props
       expect(document.body).toBeInTheDocument();

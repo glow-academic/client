@@ -1,7 +1,7 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
 import type { Table } from "@tanstack/react-table";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
 import {
@@ -10,9 +10,28 @@ import {
 } from "@/components/common/history/ExportButton";
 
 // ------------------------------------------------------------------
+// Create a comprehensive mock table with all required methods
+const createMockTable = (): Table<unknown> =>
+  ({
+    getState: () => ({
+      rowSelection: {},
+    }),
+    getFilteredSelectedRowModel: () => ({
+      rows: [],
+    }),
+    getFilteredRowModel: () => ({
+      rows: [],
+    }),
+    getVisibleLeafColumns: () => [],
+    getColumn: () => ({
+      getFilterValue: () => "",
+      setFilterValue: vi.fn(),
+    }),
+  }) as unknown as Table<unknown>;
+
 // Minimal props factory – edit values as needed
 const mockProps: ExportButtonProps<unknown> = {
-  table: {} as unknown as Table<unknown>,
+  table: createMockTable(),
   profileOptions: [],
 };
 // ------------------------------------------------------------------
@@ -60,10 +79,7 @@ describe("ExportButton", () => {
     });
     it("should handle missing or invalid props", () => {
       renderWithMocks(
-        <ExportButton
-          table={{} as unknown as Table<unknown>}
-          profileOptions={[]}
-        />
+        <ExportButton table={createMockTable()} profileOptions={[]} />
       );
       expect(document.body).toBeInTheDocument();
     });

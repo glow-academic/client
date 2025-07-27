@@ -1,6 +1,6 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
 import type { Table } from "@tanstack/react-table";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
 import {
@@ -9,9 +9,23 @@ import {
 } from "@/components/common/history/DataTableViewOptions";
 
 // ------------------------------------------------------------------
+// Create a comprehensive mock table with all required methods
+const createMockTable = (): Table<unknown> =>
+  ({
+    getAllColumns: () => [
+      {
+        id: "test",
+        accessorFn: () => "test",
+        getCanHide: () => true,
+        getIsVisible: () => true,
+        toggleVisibility: vi.fn(),
+      },
+    ],
+  }) as unknown as Table<unknown>;
+
 // Minimal props factory – edit values as needed
 const mockProps: DataTableViewOptionsProps<unknown> = {
-  table: {} as unknown as Table<unknown>,
+  table: createMockTable(),
 };
 // ------------------------------------------------------------------
 describe("DataTableViewOptions", () => {
@@ -50,9 +64,7 @@ describe("DataTableViewOptions", () => {
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(
-        <DataTableViewOptions table={{} as unknown as Table<unknown>} />
-      );
+      renderWithMocks(<DataTableViewOptions table={createMockTable()} />);
 
       // Component should handle missing props
       expect(document.body).toBeInTheDocument();

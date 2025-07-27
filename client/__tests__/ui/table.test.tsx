@@ -1,81 +1,107 @@
-import { describe, it } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
 
-describe('table', () => {
-  
+describe("Table", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      renderWithMocks(
+        <Table>
+          <TableCaption>Test Table</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Header 1</TableHead>
+              <TableHead>Header 2</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell>Cell 1</TableCell>
+              <TableCell>Cell 2</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      );
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<table  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      expect(screen.getByText("Test Table")).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      renderWithMocks(
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Accessible Header</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell>Accessible Cell</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      );
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      const table = screen.getByRole("table");
+      expect(table).toBeInTheDocument();
     });
   });
 
-  
+  describe("Component Structure", () => {
+    it("should render table with headers and cells", () => {
+      renderWithMocks(
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Value</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell>Item 1</TableCell>
+              <TableCell>Value 1</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>Item 2</TableCell>
+              <TableCell>Value 2</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      );
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      expect(screen.getByText("Name")).toBeInTheDocument();
+      expect(screen.getByText("Value")).toBeInTheDocument();
+      expect(screen.getByText("Item 1")).toBeInTheDocument();
+      expect(screen.getByText("Value 1")).toBeInTheDocument();
     });
+  });
 
-    
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with minimal table
+      renderWithMocks(
+        <Table>
+          <TableBody>
+            <TableRow>
+              <TableCell>Minimal</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      );
+
+      expect(screen.getByText("Minimal")).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for table:
- * Path: ui/table.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<table />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<table {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

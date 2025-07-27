@@ -10,10 +10,35 @@ import DocumentSelect, {
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
 const mockProps: DocumentSelectProps = {
-  documents: [],
+  documents: [
+    {
+      id: "doc-1",
+      name: "Test Document 1",
+      filePath: "/test/path1",
+      mimeType: "text/plain",
+      type: "homework",
+      classified: false,
+      fileId: "file-1",
+      active: true,
+      createdAt: "2025-01-01T00:00:00Z",
+      updatedAt: "2025-01-01T00:00:00Z",
+    },
+    {
+      id: "doc-2",
+      name: "Test Document 2",
+      filePath: "/test/path2",
+      mimeType: "text/plain",
+      type: "project",
+      classified: true,
+      fileId: "file-2",
+      active: true,
+      createdAt: "2025-01-01T00:00:00Z",
+      updatedAt: "2025-01-01T00:00:00Z",
+    },
+  ],
   selectedDocumentId: null,
   onDocumentSelect: vi.fn(),
-  // placeholder: 'test-placeholder', /* optional */
+  placeholder: "test-placeholder",
 };
 // ------------------------------------------------------------------
 describe("DocumentSelect", () => {
@@ -35,9 +60,12 @@ describe("DocumentSelect", () => {
     it("should have correct accessibility attributes", () => {
       renderWithMocks(<DocumentSelect {...mockProps} />);
 
-      // Check for basic accessibility elements
-      const select = document.querySelector("select");
-      expect(select).toBeInTheDocument();
+      // Check for basic accessibility elements - this component uses a button with role="combobox"
+      const combobox = document.querySelector('[role="combobox"]');
+      expect(combobox).toBeInTheDocument();
+
+      // Check that the button shows the placeholder when no document is selected
+      expect(combobox).toHaveTextContent("test-placeholder");
     });
   });
 
@@ -46,25 +74,36 @@ describe("DocumentSelect", () => {
       const user = userEvent.setup();
       renderWithMocks(<DocumentSelect {...mockProps} />);
 
-      // Test select interactions if select exists
-      const select = document.querySelector("select");
-      if (select) {
-        await user.click(select);
-        // Select should be interactive
-        expect(select).toBeInTheDocument();
-      }
+      // Test button interactions
+      const combobox = document.querySelector(
+        '[role="combobox"]'
+      ) as HTMLElement;
+      expect(combobox).toBeInTheDocument();
+
+      // Click to open the popover
+      await user.click(combobox);
+
+      // The popover should be open and show the command list
+      expect(combobox).toHaveAttribute("aria-expanded", "true");
     });
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
       renderWithMocks(<DocumentSelect {...mockProps} />);
 
-      // Test button interactions if buttons exist
-      const buttons = document.querySelectorAll("button");
-      if (buttons.length > 0 && buttons[0]) {
-        await user.click(buttons[0]);
-        // Button should be clickable
-        expect(buttons[0]).toBeInTheDocument();
+      // Test document selection
+      const combobox = document.querySelector(
+        '[role="combobox"]'
+      ) as HTMLElement;
+      await user.click(combobox);
+
+      // Find and click on a document option
+      const documentOption = document.querySelector(
+        '[data-value="Test Document 1"]'
+      );
+      if (documentOption) {
+        await user.click(documentOption);
+        expect(mockProps.onDocumentSelect).toHaveBeenCalledWith("doc-1");
       }
     });
   });
@@ -86,8 +125,23 @@ describe("DocumentSelect", () => {
         />
       );
 
-      // Component should handle missing props
-      expect(document.body).toBeInTheDocument();
+      // Component should handle empty documents array
+      const combobox = document.querySelector('[role="combobox"]');
+      expect(combobox).toBeInTheDocument();
+      expect(combobox).toHaveTextContent("Select document...");
+    });
+
+    it("should display selected document name", () => {
+      const propsWithSelection = {
+        ...mockProps,
+        selectedDocumentId: "doc-1",
+      };
+
+      renderWithMocks(<DocumentSelect {...propsWithSelection} />);
+
+      // Should show the selected document name instead of placeholder
+      const combobox = document.querySelector('[role="combobox"]');
+      expect(combobox).toHaveTextContent("Test Document 1");
     });
   });
 });

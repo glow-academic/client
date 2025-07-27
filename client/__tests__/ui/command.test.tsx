@@ -1,81 +1,79 @@
-import { describe, it } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import {
+  Command,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
 
-describe('command', () => {
-  
+describe("Command", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      renderWithMocks(
+        <Command>
+          <CommandInput placeholder="Search..." />
+          <CommandList>
+            <CommandItem>Item 1</CommandItem>
+            <CommandItem>Item 2</CommandItem>
+          </CommandList>
+        </Command>
+      );
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<command  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      renderWithMocks(
+        <Command>
+          <CommandInput placeholder="Search..." />
+          <CommandList>
+            <CommandItem>Accessible Item</CommandItem>
+          </CommandList>
+        </Command>
+      );
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      const input = screen.getByPlaceholderText("Search...");
+      expect(input).toBeInTheDocument();
     });
   });
 
-  
+  describe("Component Structure", () => {
+    it("should render command with input and items", () => {
+      renderWithMocks(
+        <Command>
+          <CommandInput placeholder="Search..." />
+          <CommandList>
+            <CommandGroup>
+              <CommandItem>Item 1</CommandItem>
+              <CommandItem>Item 2</CommandItem>
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      );
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      expect(screen.getByPlaceholderText("Search...")).toBeInTheDocument();
+      expect(screen.getByText("Item 1")).toBeInTheDocument();
+      expect(screen.getByText("Item 2")).toBeInTheDocument();
     });
+  });
 
-    
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with minimal command
+      renderWithMocks(
+        <Command>
+          <CommandInput />
+          <CommandList />
+        </Command>
+      );
+
+      const command = document.querySelector('[data-slot="command"]');
+      expect(command).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for command:
- * Path: ui/command.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: Command, CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, CommandShortcut, CommandSeparator
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<command />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<command {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

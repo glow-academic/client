@@ -115,8 +115,8 @@ describe("SingleProfileBrightspaceExportButton", () => {
       const button = screen.getByRole("button", { name: /Brightspace Export/ });
       await user.click(button);
 
-      // Should open the popover
-      expect(screen.getByText("Brightspace Export")).toBeInTheDocument();
+      // Should open the popover - use getAllByText to handle multiple elements
+      expect(screen.getAllByText("Brightspace Export")).toHaveLength(2);
     });
 
     it("should handle export functionality", async () => {

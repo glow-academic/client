@@ -241,8 +241,11 @@ describe("SimulationPicker", () => {
     fireEvent.click(button);
 
     await waitFor(() => {
-      expect(screen.getByText("Default")).toBeInTheDocument();
+      // The Practice badge should be visible in the dropdown items
       expect(screen.getByText("Practice")).toBeInTheDocument();
+
+      // The Default badge is only shown in the hover card, not in dropdown items
+      // So we don't expect to find it in the dropdown
     });
   });
 });

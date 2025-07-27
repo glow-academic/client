@@ -1,6 +1,6 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
 import { Table } from "@tanstack/react-table";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
 import {
@@ -10,10 +10,50 @@ import {
 import { Profile } from "@/types";
 
 // ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
+// Create a proper mock table with required methods
+const createMockTable = (): Table<Profile> => {
+  const mockColumn = {
+    getFilterValue: vi.fn().mockReturnValue(""),
+    setFilterValue: vi.fn(),
+    getFacetedUniqueValues: vi.fn().mockReturnValue(new Map()),
+    getCanHide: vi.fn().mockReturnValue(true),
+    getIsVisible: vi.fn().mockReturnValue(true),
+    toggleVisibility: vi.fn(),
+    accessorFn: vi.fn(),
+    id: "firstName",
+  };
+
+  const mockRoleColumn = {
+    getFilterValue: vi.fn().mockReturnValue(""),
+    setFilterValue: vi.fn(),
+    getFacetedUniqueValues: vi.fn().mockReturnValue(new Map()),
+    getCanHide: vi.fn().mockReturnValue(true),
+    getIsVisible: vi.fn().mockReturnValue(true),
+    toggleVisibility: vi.fn(),
+    accessorFn: vi.fn(),
+    id: "role",
+  };
+
+  return {
+    getState: vi.fn().mockReturnValue({
+      columnFilters: [],
+    }),
+    getColumn: vi.fn().mockImplementation((columnId: string) => {
+      if (columnId === "firstName") return mockColumn;
+      if (columnId === "role") return mockRoleColumn;
+      return null;
+    }),
+    getAllColumns: vi.fn().mockReturnValue([mockColumn, mockRoleColumn]),
+    resetColumnFilters: vi.fn(),
+  } as unknown as Table<Profile>;
+};
+
 const mockProps: CohortStaffDataTableToolbarProps = {
-  table: {} as unknown as Table<Profile>,
-  roleOptions: [],
+  table: createMockTable(),
+  roleOptions: [
+    { value: "student", label: "Student" },
+    { value: "instructor", label: "Instructor" },
+  ],
 };
 // ------------------------------------------------------------------
 describe("CohortStaffDataTableToolbar", () => {
@@ -54,7 +94,7 @@ describe("CohortStaffDataTableToolbar", () => {
     it("should handle missing or invalid props", () => {
       renderWithMocks(
         <CohortStaffDataTableToolbar
-          table={{} as unknown as Table<Profile>}
+          table={createMockTable()}
           roleOptions={[]}
         />
       );

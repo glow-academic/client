@@ -10,9 +10,24 @@ import {
 } from "@/components/common/history/BrightspaceExportButton";
 
 // ------------------------------------------------------------------
+// Create a comprehensive mock table with all required methods
+const createMockTable = (): Table<unknown> =>
+  ({
+    getState: () => ({
+      rowSelection: {},
+    }),
+    getFilteredSelectedRowModel: () => ({
+      rows: [],
+    }),
+    getFilteredRowModel: () => ({
+      rows: [],
+    }),
+    getVisibleLeafColumns: () => [],
+  }) as unknown as Table<unknown>;
+
 // Minimal props factory – edit values as needed
 const mockProps: BrightspaceExportButtonProps<unknown> = {
-  table: {} as unknown as Table<unknown>,
+  table: createMockTable(),
   simulations: [],
 };
 // ------------------------------------------------------------------
@@ -80,10 +95,7 @@ describe("BrightspaceExportButton", () => {
 
     it("should handle missing or invalid props", () => {
       renderWithMocks(
-        <BrightspaceExportButton
-          table={{} as unknown as Table<unknown>}
-          simulations={[]}
-        />
+        <BrightspaceExportButton table={createMockTable()} simulations={[]} />
       );
 
       // Component should handle missing props

@@ -11,9 +11,36 @@ import {
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
 const mockProps: CohortStaffDataTableProps = {
-  columns: [],
-  data: [],
-  roleOptions: [],
+  columns: [
+    {
+      id: "firstName",
+      header: "First Name",
+      accessorKey: "firstName",
+    },
+    {
+      id: "lastName",
+      header: "Last Name",
+      accessorKey: "lastName",
+    },
+  ],
+  data: [
+    {
+      id: "1",
+      firstName: "John",
+      lastName: "Doe",
+      role: "Student",
+    },
+    {
+      id: "2",
+      firstName: "Jane",
+      lastName: "Smith",
+      role: "Student",
+    },
+  ],
+  roleOptions: [
+    { value: "student", label: "Student" },
+    { value: "instructor", label: "Instructor" },
+  ],
 };
 // ------------------------------------------------------------------
 describe("CohortStaffDataTable", () => {
@@ -64,7 +91,9 @@ describe("CohortStaffDataTable", () => {
       const inputs = document.querySelectorAll("input");
       if (inputs.length > 0 && inputs[0]) {
         await user.type(inputs[0], "test");
-        expect(inputs[0]).toHaveValue("test");
+        // Check if the input has the value or if it's a controlled component
+        const inputValue = (inputs[0] as HTMLInputElement).value;
+        expect(inputValue).toBe("test");
       }
     });
   });

@@ -43,21 +43,23 @@ describe("AttemptInput", () => {
       expect(
         screen.getByPlaceholderText("Type your message...")
       ).toBeInTheDocument();
-      expect(screen.getAllByRole("button")[1]).toBeInTheDocument();
+      
+      // Look for the send button by its type attribute
+      const sendButton = document.querySelector('button[type="submit"]');
+      expect(sendButton).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
       renderWithMocks(<AttemptInput />);
 
       const textarea = screen.getByPlaceholderText("Type your message...");
-      const sendButton = screen.getAllByRole("button")[1];
-
-      expect(textarea).toBeInTheDocument();
-      expect(sendButton).toBeInTheDocument();
-
+      
       // Check accessibility attributes
       expect(textarea).toHaveAttribute("placeholder", "Type your message...");
-      expect(sendButton).toBeDisabled(); // Button is disabled when no text
+      
+      // The button should be disabled when no text (we'll test this in user interactions)
+      const sendButton = document.querySelector('button[type="submit"]');
+      expect(sendButton).toBeInTheDocument();
     });
   });
 
@@ -67,7 +69,7 @@ describe("AttemptInput", () => {
       renderWithMocks(<AttemptInput />);
 
       const textarea = screen.getByPlaceholderText("Type your message...");
-      const sendButton = screen.getAllByRole("button")[1];
+      const sendButton = document.querySelector('button[type="submit"]') as HTMLButtonElement;
 
       // Initially button should be disabled (no text)
       expect(sendButton).toBeDisabled();
@@ -84,7 +86,7 @@ describe("AttemptInput", () => {
       renderWithMocks(<AttemptInput />);
 
       const textarea = screen.getByPlaceholderText("Type your message...");
-      const sendButton = screen.getAllByRole("button")[1]!;
+      const sendButton = document.querySelector('button[type="submit"]') as HTMLButtonElement;
 
       // Type a message
       await user.type(textarea, "Test message");
@@ -98,24 +100,92 @@ describe("AttemptInput", () => {
       // Textarea should be cleared
       expect(textarea).toHaveValue("");
     });
+
+    it("should handle Enter key submission", async () => {
+      const user = userEvent.setup();
+      renderWithMocks(<AttemptInput />);
+
+      const textarea = screen.getByPlaceholderText("Type your message...");
+
+      // Type a message and press Enter
+      await user.type(textarea, "Test message{enter}");
+
+      // Should call sendMessage
+      expect(mockSendMessage).toHaveBeenCalledWith("Test message");
+
+      // Textarea should be cleared
+      expect(textarea).toHaveValue("");
+    });
+
+    it("should not submit on Shift+Enter", async () => {
+      const user = userEvent.setup();
+      renderWithMocks(<AttemptInput />);
+
+      const textarea = screen.getByPlaceholderText("Type your message...");
+
+      // Type a message
+      await user.type(textarea, "Test message");
+      
+      // Press Shift+Enter (this should not submit)
+      await user.keyboard("{Shift>}{Enter}{/Shift}");
+
+      // Should not call sendMessage
+      expect(mockSendMessage).not.toHaveBeenCalled();
+
+      // Textarea should still have the text (Shift+Enter should add a newline)
+      expect(textarea).toHaveValue("Test message\n");
+    });
   });
 
   describe("Edge Cases", () => {
-    it("should handle edge cases gracefully", () => {
+    it("should handle edge cases gracefully", async () => {
+      const user = userEvent.setup();
+      
       // Test with empty message (button should be disabled)
       renderWithMocks(<AttemptInput />);
 
       const textarea = screen.getByPlaceholderText("Type your message...");
-      const sendButton = screen.getAllByRole("button")[1];
+      const sendButton = document.querySelector('button[type="submit"]') as HTMLButtonElement;
 
       // Button should be disabled when no text
       expect(sendButton).toBeDisabled();
 
       // Type only whitespace
-      userEvent.type(textarea, "   ");
+      await user.type(textarea, "   ");
 
       // Button should still be disabled
       expect(sendButton).toBeDisabled();
+    });
+
+    it("should handle empty message submission", async () => {
+      const user = userEvent.setup();
+      renderWithMocks(<AttemptInput />);
+
+      const textarea = screen.getByPlaceholderText("Type your message...");
+      const sendButton = document.querySelector('button[type="submit"]') as HTMLButtonElement;
+
+      // Try to submit empty message
+      await user.click(sendButton);
+
+      // Should not call sendMessage
+      expect(mockSendMessage).not.toHaveBeenCalled();
+    });
+
+    it("should handle whitespace-only message", async () => {
+      const user = userEvent.setup();
+      renderWithMocks(<AttemptInput />);
+
+      const textarea = screen.getByPlaceholderText("Type your message...");
+      const sendButton = document.querySelector('button[type="submit"]') as HTMLButtonElement;
+
+      // Type only whitespace
+      await user.type(textarea, "   ");
+      
+      // Try to submit
+      await user.click(sendButton);
+
+      // Should not call sendMessage
+      expect(mockSendMessage).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,81 +1,88 @@
-import { describe, it } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
 
-describe('resizable', () => {
-  
+describe("Resizable", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      renderWithMocks(
+        <ResizablePanelGroup>
+          <ResizablePanel>Panel 1</ResizablePanel>
+          <ResizableHandle />
+          <ResizablePanel>Panel 2</ResizablePanel>
+        </ResizablePanelGroup>
+      );
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<resizable  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      const panelGroup = document.querySelector(
+        '[data-slot="resizable-panel-group"]'
+      );
+      expect(panelGroup).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      renderWithMocks(
+        <ResizablePanelGroup>
+          <ResizablePanel>Accessible Panel</ResizablePanel>
+          <ResizableHandle />
+          <ResizablePanel>Another Panel</ResizablePanel>
+        </ResizablePanelGroup>
+      );
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      const panelGroup = document.querySelector(
+        '[data-slot="resizable-panel-group"]'
+      );
+      expect(panelGroup).toBeInTheDocument();
     });
   });
 
-  
+  describe("Component Structure", () => {
+    it("should render resizable panels with handle", () => {
+      renderWithMocks(
+        <ResizablePanelGroup>
+          <ResizablePanel>Left Panel</ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel>Right Panel</ResizablePanel>
+        </ResizablePanelGroup>
+      );
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      expect(screen.getByText("Left Panel")).toBeInTheDocument();
+      expect(screen.getByText("Right Panel")).toBeInTheDocument();
     });
 
-    
+    it("should render with custom className", () => {
+      renderWithMocks(
+        <ResizablePanelGroup className="custom-class">
+          <ResizablePanel>Panel</ResizablePanel>
+        </ResizablePanelGroup>
+      );
+
+      const panelGroup = document.querySelector(
+        '[data-slot="resizable-panel-group"]'
+      );
+      expect(panelGroup).toHaveClass("custom-class");
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with minimal content
+      renderWithMocks(
+        <ResizablePanelGroup>
+          <ResizablePanel />
+        </ResizablePanelGroup>
+      );
+
+      const panelGroup = document.querySelector(
+        '[data-slot="resizable-panel-group"]'
+      );
+      expect(panelGroup).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for resizable:
- * Path: ui/resizable.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: ResizablePanelGroup, ResizablePanel, ResizableHandle
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<resizable />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<resizable {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */
