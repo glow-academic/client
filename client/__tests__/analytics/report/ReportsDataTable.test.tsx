@@ -152,7 +152,8 @@ describe("ReportsDataTable", () => {
 
       // Should have proper table structure
       expect(screen.getByRole("table")).toBeInTheDocument();
-      expect(screen.getByRole("rowgroup")).toBeInTheDocument();
+      // Use getAllByRole since there are multiple rowgroups (thead and tbody)
+      expect(screen.getAllByRole("rowgroup")).toHaveLength(2);
     });
   });
 

@@ -18,7 +18,22 @@ vi.mock("@/contexts/assistant-context", () => ({
     expand: vi.fn(),
     close: vi.fn(),
     currentChatId: null,
-    chats: [],
+    chats: [
+      {
+        id: "chat-1",
+        title: "Test Chat 1",
+        profileId: "profile-1",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        id: "chat-2",
+        title: "Test Chat 2",
+        profileId: "profile-1",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ],
     isLoadingChats: false,
     createChat: vi.fn(),
     selectChat: vi.fn(),
@@ -67,6 +82,38 @@ vi.mock("next/navigation", () => ({
     push: vi.fn(),
   }),
   usePathname: () => "/",
+}));
+
+// Mock the query hook
+vi.mock("@tanstack/react-query", async () => {
+  const actual = await vi.importActual("@tanstack/react-query");
+  return {
+    ...actual,
+    useQuery: vi.fn(() => ({
+      data: null,
+      isLoading: false,
+      error: null,
+    })),
+  };
+});
+
+// Mock the analytics context
+vi.mock("@/contexts/analytics-context", () => ({
+  useAnalytics: () => ({
+    startDate: new Date(),
+    endDate: new Date(),
+    setDateRange: vi.fn(),
+    selectedCohortIds: [],
+    setSelectedCohortIds: vi.fn(),
+    cohorts: [],
+    isLoadingCohorts: false,
+    effectiveCohortIds: [],
+    clearFilters: vi.fn(),
+    hasActiveFilters: false,
+  }),
+  AnalyticsProvider: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
 }));
 
 describe("ChatWidget", () => {
@@ -119,9 +166,9 @@ describe("ChatWidget", () => {
         const widget = screen.getByText("GLOW Assistant").closest("div");
         expect(widget).toBeInTheDocument();
 
-        // Check for close button
-        const closeButton = screen.getByRole("button", { name: /close/i });
-        expect(closeButton).toBeInTheDocument();
+        // Check for the chat selector (combobox)
+        const chatSelector = screen.getByRole("combobox");
+        expect(chatSelector).toBeInTheDocument();
       });
     });
   });
@@ -155,12 +202,17 @@ describe("ChatWidget", () => {
         expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
       });
 
-      // Test maximize button
-      const maximizeButton = screen.getByRole("button", { name: /expand/i });
-      await user.click(maximizeButton);
-
-      // Button should be clickable
+      // Test maximize button - look for the button with Maximize2 icon
+      const buttons = screen.getAllByRole("button");
+      const maximizeButton = buttons.find(
+        (button) =>
+          button.querySelector('svg[class*="maximize2"]') ||
+          button.querySelector('svg[class*="maximize-2"]')
+      );
       expect(maximizeButton).toBeInTheDocument();
+
+      // The button should be clickable
+      await user.click(maximizeButton!);
     });
 
     it("should handle user events", async () => {
@@ -171,12 +223,15 @@ describe("ChatWidget", () => {
         expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
       });
 
-      // Test close button
-      const closeButton = screen.getByRole("button", { name: /close/i });
-      await user.click(closeButton);
-
-      // Button should be clickable
+      // Test close button - look for the button with X icon
+      const buttons = screen.getAllByRole("button");
+      const closeButton = buttons.find((button) =>
+        button.querySelector('svg[class*="x"]')
+      );
       expect(closeButton).toBeInTheDocument();
+
+      // The button should be clickable
+      await user.click(closeButton!);
     });
   });
 

@@ -16,20 +16,28 @@ const getCsrfToken = vi.fn();
 const getProviders = vi.fn();
 
 // Mock next-auth/react
-vi.mock("next-auth/react", async () => {
-  const actual =
-    await vi.importActual<typeof import("next-auth/react")>("next-auth/react");
+vi.mock("next-auth/react", () => ({
+  useSession,
+  signIn,
+  signOut,
+  getSession,
+  getCsrfToken,
+  getProviders,
+}));
 
-  return {
-    ...actual,
-    useSession,
-    signIn,
-    signOut,
-    getSession,
-    getCsrfToken,
-    getProviders,
-  };
-});
+// Mock next-auth to prevent module resolution issues
+vi.mock("next-auth", () => ({
+  default: vi.fn(() => ({
+    handlers: vi.fn(),
+    auth: vi.fn(),
+    signIn: vi.fn(),
+    signOut: vi.fn(),
+  })),
+  getServerSession: vi.fn(),
+  getToken: vi.fn(),
+  signIn: vi.fn(),
+  signOut: vi.fn(),
+}));
 
 // Mock auth helpers
 vi.mock("@/utils/auth/get-profile-by-alias", () => ({

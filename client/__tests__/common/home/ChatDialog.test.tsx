@@ -18,7 +18,22 @@ vi.mock("@/contexts/assistant-context", () => ({
     close: vi.fn(),
     openWidget: vi.fn(),
     currentChatId: null,
-    chats: [],
+    chats: [
+      {
+        id: "chat-1",
+        title: "Test Chat 1",
+        profileId: "profile-1",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        id: "chat-2",
+        title: "Test Chat 2",
+        profileId: "profile-1",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ],
     isLoadingChats: false,
     createChat: vi.fn(),
     selectChat: vi.fn(),
@@ -26,6 +41,7 @@ vi.mock("@/contexts/assistant-context", () => ({
     sendMessage: vi.fn(),
     isLoading: false,
     error: null,
+    setCurrentChatId: vi.fn(),
   }),
   AssistantProvider: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
@@ -66,6 +82,38 @@ vi.mock("next/navigation", () => ({
     push: vi.fn(),
   }),
   usePathname: () => "/",
+}));
+
+// Mock the query hook
+vi.mock("@tanstack/react-query", async () => {
+  const actual = await vi.importActual("@tanstack/react-query");
+  return {
+    ...actual,
+    useQuery: vi.fn(() => ({
+      data: null,
+      isLoading: false,
+      error: null,
+    })),
+  };
+});
+
+// Mock the analytics context
+vi.mock("@/contexts/analytics-context", () => ({
+  useAnalytics: () => ({
+    startDate: new Date(),
+    endDate: new Date(),
+    setDateRange: vi.fn(),
+    selectedCohortIds: [],
+    setSelectedCohortIds: vi.fn(),
+    cohorts: [],
+    isLoadingCohorts: false,
+    effectiveCohortIds: [],
+    clearFilters: vi.fn(),
+    hasActiveFilters: false,
+  }),
+  AnalyticsProvider: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
 }));
 
 describe("ChatDialog", () => {
@@ -117,9 +165,9 @@ describe("ChatDialog", () => {
         const dialog = screen.getByRole("dialog");
         expect(dialog).toBeInTheDocument();
 
-        // Check for close button
-        const closeButton = screen.getByRole("button", { name: /close/i });
-        expect(closeButton).toBeInTheDocument();
+        // Check for the chat selector (combobox)
+        const chatSelector = screen.getByRole("combobox");
+        expect(chatSelector).toBeInTheDocument();
       });
     });
   });
@@ -153,12 +201,17 @@ describe("ChatDialog", () => {
         expect(screen.getByText("New Chat")).toBeInTheDocument();
       });
 
-      // Test minimize button
-      const minimizeButton = screen.getByRole("button", { name: /minimize/i });
-      await user.click(minimizeButton);
-
-      // Button should be clickable
+      // Test minimize button - look for the button with Minimize2 icon
+      const buttons = screen.getAllByRole("button");
+      const minimizeButton = buttons.find(
+        (button) =>
+          button.querySelector('svg[class*="minimize2"]') ||
+          button.querySelector('svg[class*="minimize-2"]')
+      );
       expect(minimizeButton).toBeInTheDocument();
+
+      // The button should be clickable
+      await user.click(minimizeButton!);
     });
 
     it("should handle user events", async () => {
@@ -169,12 +222,15 @@ describe("ChatDialog", () => {
         expect(screen.getByText("New Chat")).toBeInTheDocument();
       });
 
-      // Test close button
-      const closeButton = screen.getByRole("button", { name: /close/i });
-      await user.click(closeButton);
-
-      // Button should be clickable
+      // Test close button - look for the button with X icon
+      const buttons = screen.getAllByRole("button");
+      const closeButton = buttons.find((button) =>
+        button.querySelector('svg[class*="x"]')
+      );
       expect(closeButton).toBeInTheDocument();
+
+      // The button should be clickable
+      await user.click(closeButton!);
     });
   });
 

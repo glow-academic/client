@@ -12,6 +12,30 @@ import "@/mocks/api";
 import "@/mocks/mutations";
 import "@/mocks/queries";
 
+// Mock the assistant context
+vi.mock("@/contexts/assistant-context", () => ({
+  useAssistant: () => ({
+    currentChatId: null,
+    isConnected: true,
+  }),
+  AssistantProvider: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+}));
+
+// Mock the query hook
+vi.mock("@tanstack/react-query", async () => {
+  const actual = await vi.importActual("@tanstack/react-query");
+  return {
+    ...actual,
+    useQuery: vi.fn(() => ({
+      data: [],
+      isLoading: false,
+      error: null,
+    })),
+  };
+});
+
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
 const mockProps: ChatMessagesProps = {};
@@ -43,9 +67,9 @@ describe("ChatMessages", () => {
       // ✨ All mocks are automatically set up via imports above
       renderWithMocks(<ChatMessages {...mockProps} />);
 
-      // Should render the component
+      // Should render the component with GlowHeader when no currentChatId
       await waitFor(() => {
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
       });
     });
 
@@ -60,7 +84,7 @@ describe("ChatMessages", () => {
       renderWithMocks(<ChatMessages {...propsWithCallbacks} />);
 
       await waitFor(() => {
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
       });
     });
 
@@ -68,9 +92,9 @@ describe("ChatMessages", () => {
       renderWithMocks(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
-        // Check for scroll area
-        const scrollArea = screen.getByRole("generic");
-        expect(scrollArea).toBeInTheDocument();
+        // Check for the main container
+        const container = screen.getByText("GLOW Assistant").closest("div");
+        expect(container).toBeInTheDocument();
       });
     });
   });
@@ -88,22 +112,22 @@ describe("ChatMessages", () => {
       renderWithMocks(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
       });
 
       // Component should still render even with API errors
-      expect(screen.getByText("GLOW")).toBeInTheDocument();
+      expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
     });
 
     it("should handle loading states", async () => {
       renderWithMocks(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
       });
 
       // Component should show loading states appropriately
-      expect(screen.getByText("GLOW")).toBeInTheDocument();
+      expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
     });
   });
 
@@ -112,11 +136,11 @@ describe("ChatMessages", () => {
       renderWithMocks(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
       });
 
       // Should render properly even with minimal props
-      expect(screen.getByText("GLOW")).toBeInTheDocument();
+      expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", async () => {
@@ -124,11 +148,11 @@ describe("ChatMessages", () => {
       renderWithMocks(<ChatMessages />);
 
       await waitFor(() => {
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
       });
 
       // Should render with default props
-      expect(screen.getByText("GLOW")).toBeInTheDocument();
+      expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
     });
   });
 });

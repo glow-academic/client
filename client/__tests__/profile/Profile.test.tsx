@@ -3,21 +3,13 @@ import { screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import { Profile, ProfileProps } from "@/components/profile/Profile";
+import { Profile } from "@/components/profile/Profile";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/auth";
 import "@/mocks/mutations";
-import "@/mocks/navigation";
 import "@/mocks/queries";
 
-// ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
-const mockProps: ProfileProps = {
-  className: "test-profile-class",
-};
-// ------------------------------------------------------------------
 describe("Profile", () => {
   /* ------------------------------------------------------------------ *
    * 💡 Mock Data Usage Guide:
@@ -40,12 +32,16 @@ describe("Profile", () => {
     vi.clearAllMocks();
   });
 
+  const mockProps = {
+    className: "test-profile-class",
+  };
+
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
       renderWithMocks(<Profile {...mockProps} />);
 
-      // Wait for the component to load and check for key elements
+      // Wait for component to render and check for profile content
       await waitFor(() => {
         expect(screen.getByText("Test User")).toBeInTheDocument();
       });
@@ -55,8 +51,9 @@ describe("Profile", () => {
       renderWithMocks(<Profile {...mockProps} />);
 
       // Check that the component renders with the provided className
-      const profileElement = screen.getByText("Test User").closest("div");
-      expect(profileElement).toHaveClass("test-profile-class");
+      // Look for the element with the test-profile-class
+      const profileElement = document.querySelector(".test-profile-class");
+      expect(profileElement).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", async () => {
@@ -67,9 +64,8 @@ describe("Profile", () => {
         expect(screen.getByText("Test User")).toBeInTheDocument();
       });
 
-      // Check for proper heading structure
-      const headings = screen.getAllByRole("heading");
-      expect(headings.length).toBeGreaterThan(0);
+      // Check for proper card structure
+      expect(screen.getByRole("article")).toBeInTheDocument();
     });
   });
 

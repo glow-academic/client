@@ -45,8 +45,11 @@ describe("Leaderboard", () => {
         ).not.toBeInTheDocument();
       });
 
-      // Should render the leaderboard container with cohort data
-      expect(screen.getByText("Fall 2024 Cohort")).toBeInTheDocument();
+      // Should render the leaderboard container with accolade cards
+      expect(screen.getByText("Perfect Score")).toBeInTheDocument();
+      expect(screen.getByText("Longest Convo")).toBeInTheDocument();
+      expect(screen.getByText("Most Improved")).toBeInTheDocument();
+      expect(screen.getByText("Quickest Pass")).toBeInTheDocument();
     });
 
     it("should render with cohortId prop", async () => {
@@ -59,8 +62,11 @@ describe("Leaderboard", () => {
         ).not.toBeInTheDocument();
       });
 
-      // Should render the leaderboard with cohort context
-      expect(screen.getByText("Fall 2024 Cohort")).toBeInTheDocument();
+      // Should render the leaderboard with accolade cards
+      expect(screen.getByText("Perfect Score")).toBeInTheDocument();
+      expect(screen.getByText("Longest Convo")).toBeInTheDocument();
+      expect(screen.getByText("Most Improved")).toBeInTheDocument();
+      expect(screen.getByText("Quickest Pass")).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", async () => {
@@ -73,8 +79,11 @@ describe("Leaderboard", () => {
         ).not.toBeInTheDocument();
       });
 
-      // Should have proper content structure
-      expect(screen.getByText("Fall 2024 Cohort")).toBeInTheDocument();
+      // Should have proper content structure with accolade cards
+      expect(screen.getByText("Perfect Score")).toBeInTheDocument();
+      expect(screen.getByText("Longest Convo")).toBeInTheDocument();
+      expect(screen.getByText("Most Improved")).toBeInTheDocument();
+      expect(screen.getByText("Quickest Pass")).toBeInTheDocument();
     });
   });
 
@@ -91,8 +100,11 @@ describe("Leaderboard", () => {
         ).not.toBeInTheDocument();
       });
 
-      // Should render the leaderboard structure
-      expect(screen.getByText("Fall 2024 Cohort")).toBeInTheDocument();
+      // Should render the leaderboard structure with accolade cards
+      expect(screen.getByText("Perfect Score")).toBeInTheDocument();
+      expect(screen.getByText("Longest Convo")).toBeInTheDocument();
+      expect(screen.getByText("Most Improved")).toBeInTheDocument();
+      expect(screen.getByText("Quickest Pass")).toBeInTheDocument();
     });
 
     it("should handle user events", async () => {
@@ -107,8 +119,11 @@ describe("Leaderboard", () => {
         ).not.toBeInTheDocument();
       });
 
-      // Should render interactive elements
-      expect(screen.getByText("Fall 2024 Cohort")).toBeInTheDocument();
+      // Should render the leaderboard structure
+      expect(screen.getByText("Perfect Score")).toBeInTheDocument();
+      expect(screen.getByText("Longest Convo")).toBeInTheDocument();
+      expect(screen.getByText("Most Improved")).toBeInTheDocument();
+      expect(screen.getByText("Quickest Pass")).toBeInTheDocument();
     });
   });
 
@@ -129,8 +144,11 @@ describe("Leaderboard", () => {
         ).not.toBeInTheDocument();
       });
 
-      // Should still render the leaderboard structure
-      expect(screen.getByText("Fall 2024 Cohort")).toBeInTheDocument();
+      // Should still render the leaderboard structure with accolade cards
+      expect(screen.getByText("Perfect Score")).toBeInTheDocument();
+      expect(screen.getByText("Longest Convo")).toBeInTheDocument();
+      expect(screen.getByText("Most Improved")).toBeInTheDocument();
+      expect(screen.getByText("Quickest Pass")).toBeInTheDocument();
     });
 
     it("should handle loading states", async () => {
@@ -148,8 +166,11 @@ describe("Leaderboard", () => {
         ).not.toBeInTheDocument();
       });
 
-      // Should render leaderboard components
-      expect(screen.getByText("Fall 2024 Cohort")).toBeInTheDocument();
+      // Should render leaderboard components with accolade cards
+      expect(screen.getByText("Perfect Score")).toBeInTheDocument();
+      expect(screen.getByText("Longest Convo")).toBeInTheDocument();
+      expect(screen.getByText("Most Improved")).toBeInTheDocument();
+      expect(screen.getByText("Quickest Pass")).toBeInTheDocument();
     });
   });
 
@@ -170,8 +191,11 @@ describe("Leaderboard", () => {
         ).not.toBeInTheDocument();
       });
 
-      // Should still render the leaderboard structure
-      expect(screen.getByText("Fall 2024 Cohort")).toBeInTheDocument();
+      // Should still render the leaderboard structure with accolade cards
+      expect(screen.getByText("Perfect Score")).toBeInTheDocument();
+      expect(screen.getByText("Longest Convo")).toBeInTheDocument();
+      expect(screen.getByText("Most Improved")).toBeInTheDocument();
+      expect(screen.getByText("Quickest Pass")).toBeInTheDocument();
     });
   });
 });
