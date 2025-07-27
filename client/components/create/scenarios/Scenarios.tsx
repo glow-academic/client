@@ -7,7 +7,7 @@
 "use client";
 import { logError, logInfo } from "@/utils/logger";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, Copy, Edit, Trash2, Users } from "lucide-react";
+import { Copy, Edit, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -217,20 +217,6 @@ export function Scenarios() {
       <div className="flex-grow"></div>
       <CardContent className="pt-0">
         <div className="grid grid-cols-2 gap-4 text-sm">
-          {scenario.crowdedness !== null && (
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Crowdedness:</span>
-              <span className="font-medium">{scenario.crowdedness}/10</span>
-            </div>
-          )}
-          {scenario.intensity !== null && (
-            <div className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Intensity:</span>
-              <span className="font-medium">{scenario.intensity}/10</span>
-            </div>
-          )}
           <div className="col-span-2">
             <span className="text-muted-foreground">Updated:</span>
             <span className="font-medium ml-2">

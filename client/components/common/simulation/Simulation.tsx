@@ -20,7 +20,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -499,15 +498,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
                           <p className="text-xs text-muted-foreground line-clamp-3">
                             {scenario.description || "No description provided"}
                           </p>
-
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Badge variant="outline" className="text-xs">
-                              Crowdedness: {scenario.crowdedness ?? "N/A"}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              Intensity: {scenario.intensity ?? "N/A"}
-                            </Badge>
-                          </div>
                         </div>
                       </div>
                     </div>

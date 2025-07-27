@@ -4,13 +4,7 @@ import { DataTableRowActions } from "@/components/common/history/DataTableRowAct
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  Persona,
-  Profile,
-  Scenario,
-  SimulationAttempt,
-  SimulationChat,
-} from "@/types";
+import { Persona, Profile, SimulationAttempt, SimulationChat } from "@/types";
 import { getPersonaConfig } from "@/utils/personas";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
@@ -34,7 +28,6 @@ interface EnhancedAttempt extends SimulationAttempt {
   personasTested: string[];
   simulationTitle: string;
   interactionIds: string[];
-  classIds: string[];
 }
 
 // Component to use the columns with data from queries
@@ -202,20 +195,6 @@ export function useHistoryColumns({
         (s) => s.id === attempt.simulationId
       );
 
-      // Derive all classIds from all scenarios in the chats
-      const derivedClassIds = [
-        ...new Set(
-          attemptChats
-            .map((chat) => {
-              const scenario = scenarios.find(
-                (s: Scenario) => s.id === chat.scenarioId
-              );
-              return scenario?.classId;
-            })
-            .filter((classId): classId is string => classId !== null)
-        ),
-      ];
-
       return {
         ...attempt,
         chats: attemptChats,
@@ -223,7 +202,6 @@ export function useHistoryColumns({
         simulationTitle:
           simulation?.title || `Simulation ${attempt.simulationId}`,
         interactionIds: simulation?.scenarioIds || [],
-        classIds: derivedClassIds, // Add all class IDs for display
       };
     });
   }, [attempts, chats, personas, simulations, scenarios]);
