@@ -10,7 +10,7 @@ import {
   SimulationPicker,
 } from "@/components/common/cohort/SimulationPicker";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the mutation observer hook
 vi.mock("@/hooks/use-mutation-observer", () => ({
@@ -83,7 +83,7 @@ describe("SimulationPicker", () => {
   });
 
   it("shows single simulation title when one is selected", () => {
-    const selectedSims = [mockSimulations[0]];
+    const selectedSims = [mockSimulations[0]!];
     render(
       <SimulationPicker {...defaultProps} selectedSimulations={selectedSims} />
     );

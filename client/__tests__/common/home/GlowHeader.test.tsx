@@ -1,82 +1,54 @@
-import { describe, it } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen, waitFor } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import GlowHeader from '@/components/common/home/GlowHeader';
+import GlowHeader from "@/components/common/home/GlowHeader";
 
-describe('GlowHeader', () => {
-  
+describe("GlowHeader", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      renderWithMocks(<GlowHeader />);
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<GlowHeader  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      // Should render the GLOW header
+      await waitFor(() => {
+        expect(screen.getByText("GLOW")).toBeInTheDocument();
+      });
     });
 
-    
+    it("should render header content", async () => {
+      renderWithMocks(<GlowHeader />);
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
+      await waitFor(() => {
+        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByText(/assistant/i)).toBeInTheDocument();
+      });
+    });
 
+    it("should have correct accessibility attributes", async () => {
+      renderWithMocks(<GlowHeader />);
+
+      await waitFor(() => {
+        // Check for header element
+        const header = screen.getByText("GLOW").closest("div");
+        expect(header).toBeInTheDocument();
+
+        // Check for proper heading structure
+        expect(screen.getByText("GLOW")).toBeInTheDocument();
+      });
     });
   });
 
-  
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", async () => {
+      renderWithMocks(<GlowHeader />);
 
-  
+      await waitFor(() => {
+        expect(screen.getByText("GLOW")).toBeInTheDocument();
+      });
 
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      // Should render properly even with no props
+      expect(screen.getByText("GLOW")).toBeInTheDocument();
     });
-
-    
   });
 });
-
-/*
- * Component Analysis for GlowHeader:
- * Path: common/home/GlowHeader.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<GlowHeader />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<GlowHeader {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

@@ -1,42 +1,15 @@
 /**
  * Staff.tsx
- * Used to display the staff page.
+ * Used to display the staff page with faceted filters and data table.
  * @AshokSaravanan222 & @siladiea
  * 06/07/2025
  */
 "use client";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Profile } from "@/types";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Activity,
-  Clock,
-  Pencil,
-  RefreshCw,
-  Search,
-  Shield,
-  User as UserIcon,
-} from "lucide-react";
+import { Activity, Shield, User as UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
 
