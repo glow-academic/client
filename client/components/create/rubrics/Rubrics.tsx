@@ -7,15 +7,7 @@
 "use client";
 import { logError, logInfo } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  BookOpen,
-  Copy,
-  Edit,
-  FileCheck,
-  Plus,
-  Star,
-  Trash2,
-} from "lucide-react";
+import { Copy, Edit, FileCheck, Star, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -57,7 +49,7 @@ export default function Rubrics() {
   const { effectiveProfile } = useProfile();
 
   // Fetch rubrics data
-  const { data: rubrics = [], refetch: refetchRubrics } = useQuery({
+  const { data: rubrics = [], refetch: refetchRubrics, isLoading: isRubricsLoading } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
   });
@@ -154,10 +146,6 @@ export default function Rubrics() {
     router.push(`/create/rubrics/r/${id}`);
   };
 
-  const handleCreateNew = () => {
-    router.push("/create/rubrics/new");
-  };
-
   const canDuplicate = (rubric: Rubric) => {
     // Can only duplicate default rubrics
     return rubric.defaultRubric;
@@ -241,28 +229,13 @@ export default function Rubrics() {
     );
   };
 
-  const renderEmptyState = () => (
-    <div className="col-span-full">
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">No rubrics yet</h3>
-          <p className="text-muted-foreground text-center mb-4">
-            Create your first evaluation rubric to define assessment criteria
-          </p>
-          <Button onClick={handleCreateNew}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Your First Rubric
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
   return (
     <div className="space-y-6">
-      {rubrics.length === 0 ? (
-        renderEmptyState()
+      {isRubricsLoading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading rubrics...</p>
+        </div>
       ) : (
         <RubricsDataTable
           columns={columns}

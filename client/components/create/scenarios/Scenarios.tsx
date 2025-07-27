@@ -22,7 +22,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useScenarioColumns } from "@/hooks/use-scenario-columns";
@@ -32,6 +31,7 @@ import { deleteScenario } from "@/utils/mutations/scenarios/delete-scenario";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { ScenariosDataTable } from "./ScenariosDataTable";
+import { Badge } from "@/components/ui/badge";
 
 export function Scenarios() {
   const router = useRouter();
@@ -160,11 +160,6 @@ export function Scenarios() {
                 {scenario.name || "Unnamed Scenario"}
               </CardTitle>
               <div className="flex gap-1 flex-wrap">
-                {scenario.defaultScenario && (
-                  <Badge variant="secondary" className="text-xs">
-                    Default
-                  </Badge>
-                )}
                 {scenario.generated === true && (
                   <Badge variant="outline" className="text-xs">
                     Generated
