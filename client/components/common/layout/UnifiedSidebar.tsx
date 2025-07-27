@@ -559,12 +559,14 @@ export function UnifiedSidebar({
       // Clear guest mode when switching back to own profile
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedRole");
+      localStorage.removeItem("simulatedProfileId");
     } else {
       // Otherwise, simulate the selected profile
       setSimulatedProfile(profileId, true);
       // Clear guest mode when switching to a different profile
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedRole");
+      localStorage.removeItem("simulatedProfileId");
     }
   };
 
@@ -610,6 +612,7 @@ export function UnifiedSidebar({
           localStorage.removeItem("guestAttemptIds");
           localStorage.removeItem("simulatedRole");
           localStorage.removeItem("guestMode");
+          localStorage.removeItem("simulatedProfileId");
           await signOut({ redirectTo: `${appPrefix}/` });
           return "Logged out successfully";
         } catch (error) {

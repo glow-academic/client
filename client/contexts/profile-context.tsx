@@ -171,8 +171,7 @@ export function ProfileProvider({
       };
     }
 
-    // Only fall back to guest if we're sure there's no active profile
-    // This prevents the guest -> superadmin flicker
+    // At this point we *know* we have no session *and* no profile. It's truly guest mode.
     return {
       effectiveProfile: GUEST_PROFILE,
       simulatedProfile: null,
@@ -207,7 +206,8 @@ export function ProfileProvider({
         localStorage.removeItem("simulatedProfileId");
       }
 
-      queryClient.invalidateQueries();
+      queryClient.invalidateQueries({ queryKey: ["simulatedProfile"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
 
       // Optional: Handle navigation after state change
       if (shouldNavigate && !profileId && activeProfile) {

@@ -204,6 +204,7 @@ export default function Login() {
       // Clear guest mode and simulated role from localStorage
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedRole");
+      localStorage.removeItem("simulatedProfileId");
 
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
 
@@ -243,6 +244,7 @@ export default function Login() {
       // Set guest mode in localStorage and redirect
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedRole");
+      localStorage.removeItem("simulatedProfileId");
       localStorage.setItem("guestMode", "true");
       localStorage.setItem("simulatedRole", "guest");
 
