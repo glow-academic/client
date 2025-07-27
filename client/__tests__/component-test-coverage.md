@@ -1,8 +1,8 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 149
-- **Tests Created**: 0
+- **Total Components**: 184
+- **Tests Created**: 35
 - **Tests Updated**: 0
 - **Tests Skipped** (already implemented): 149
 
@@ -159,6 +159,41 @@
 | Logs | system/logs/Logs.tsx | Logs.test.tsx | ✅ Implemented |
 | LogsDataTable | system/logs/LogsDataTable.tsx | LogsDataTable.test.tsx | ✅ Implemented |
 | LogsDataTableToolbar | system/logs/LogsDataTableToolbar.tsx | LogsDataTableToolbar.test.tsx | ✅ Implemented |
+| alert-dialog | ui/alert-dialog.tsx | alert-dialog.test.tsx | ✅ Implemented |
+| avatar | ui/avatar.tsx | avatar.test.tsx | ✅ Implemented |
+| badge | ui/badge.tsx | badge.test.tsx | ✅ Implemented |
+| breadcrumb | ui/breadcrumb.tsx | breadcrumb.test.tsx | ✅ Implemented |
+| button | ui/button.tsx | button.test.tsx | ✅ Implemented |
+| calendar | ui/calendar.tsx | calendar.test.tsx | ✅ Implemented |
+| card | ui/card.tsx | card.test.tsx | ✅ Implemented |
+| chart | ui/chart.tsx | chart.test.tsx | ✅ Implemented |
+| checkbox | ui/checkbox.tsx | checkbox.test.tsx | ✅ Implemented |
+| circular-progress | ui/circular-progress.tsx | circular-progress.test.tsx | ✅ Implemented |
+| collapsible | ui/collapsible.tsx | collapsible.test.tsx | ✅ Implemented |
+| command | ui/command.tsx | command.test.tsx | ✅ Implemented |
+| date-picker-range | ui/date-picker-range.tsx | date-picker-range.test.tsx | ✅ Implemented |
+| dialog | ui/dialog.tsx | dialog.test.tsx | ✅ Implemented |
+| dropdown-menu | ui/dropdown-menu.tsx | dropdown-menu.test.tsx | ✅ Implemented |
+| hover-card | ui/hover-card.tsx | hover-card.test.tsx | ✅ Implemented |
+| input | ui/input.tsx | input.test.tsx | ✅ Implemented |
+| label | ui/label.tsx | label.test.tsx | ✅ Implemented |
+| loading-dots | ui/loading-dots.tsx | loading-dots.test.tsx | ✅ Implemented |
+| popover | ui/popover.tsx | popover.test.tsx | ✅ Implemented |
+| progress | ui/progress.tsx | progress.test.tsx | ✅ Implemented |
+| resizable | ui/resizable.tsx | resizable.test.tsx | ✅ Implemented |
+| scroll-area | ui/scroll-area.tsx | scroll-area.test.tsx | ✅ Implemented |
+| select | ui/select.tsx | select.test.tsx | ✅ Implemented |
+| separator | ui/separator.tsx | separator.test.tsx | ✅ Implemented |
+| sheet | ui/sheet.tsx | sheet.test.tsx | ✅ Implemented |
+| sidebar | ui/sidebar.tsx | sidebar.test.tsx | ✅ Implemented |
+| skeleton | ui/skeleton.tsx | skeleton.test.tsx | ✅ Implemented |
+| slider | ui/slider.tsx | slider.test.tsx | ✅ Implemented |
+| sonner | ui/sonner.tsx | sonner.test.tsx | ✅ Implemented |
+| switch | ui/switch.tsx | switch.test.tsx | ✅ Implemented |
+| table | ui/table.tsx | table.test.tsx | ✅ Implemented |
+| tabs | ui/tabs.tsx | tabs.test.tsx | ✅ Implemented |
+| textarea | ui/textarea.tsx | textarea.test.tsx | ✅ Implemented |
+| tooltip | ui/tooltip.tsx | tooltip.test.tsx | ✅ Implemented |
 
 ## Directory Structure
 
@@ -356,6 +391,42 @@ __tests__/
 │   │   ├── Logs.test.tsx
 │   │   ├── LogsDataTable.test.tsx
 │   │   ├── LogsDataTableToolbar.test.tsx
+├── ui/
+│   ├── alert-dialog.test.tsx
+│   ├── avatar.test.tsx
+│   ├── badge.test.tsx
+│   ├── breadcrumb.test.tsx
+│   ├── button.test.tsx
+│   ├── calendar.test.tsx
+│   ├── card.test.tsx
+│   ├── chart.test.tsx
+│   ├── checkbox.test.tsx
+│   ├── circular-progress.test.tsx
+│   ├── collapsible.test.tsx
+│   ├── command.test.tsx
+│   ├── date-picker-range.test.tsx
+│   ├── dialog.test.tsx
+│   ├── dropdown-menu.test.tsx
+│   ├── hover-card.test.tsx
+│   ├── input.test.tsx
+│   ├── label.test.tsx
+│   ├── loading-dots.test.tsx
+│   ├── popover.test.tsx
+│   ├── progress.test.tsx
+│   ├── resizable.test.tsx
+│   ├── scroll-area.test.tsx
+│   ├── select.test.tsx
+│   ├── separator.test.tsx
+│   ├── sheet.test.tsx
+│   ├── sidebar.test.tsx
+│   ├── skeleton.test.tsx
+│   ├── slider.test.tsx
+│   ├── sonner.test.tsx
+│   ├── switch.test.tsx
+│   ├── table.test.tsx
+│   ├── tabs.test.tsx
+│   ├── textarea.test.tsx
+│   ├── tooltip.test.tsx
 
 ```
 

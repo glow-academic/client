@@ -12,7 +12,6 @@ const __dirname = path.dirname(__filename);
 // Path configurations
 const COMPONENTS_DIR = path.join(__dirname, "../components");
 const TESTS_DIR = path.join(__dirname, "../__tests__");
-const EXCLUDED_DIRS = ["ui"]; // External UI components to skip
 
 // Initialize TypeScript project for AST parsing
 const project = new Project({
@@ -35,13 +34,6 @@ function scanComponentFiles(dir, relativePath = "") {
       const stat = fs.statSync(fullPath);
 
       if (stat.isDirectory()) {
-        // Skip excluded directories
-        if (EXCLUDED_DIRS.includes(item)) {
-          console.log(`⏭️  Skipping excluded directory: ${itemRelativePath}`);
-          continue;
-        }
-
-        // Recursively scan subdirectories
         const subComponents = scanComponentFiles(fullPath, itemRelativePath);
         components.push(...subComponents);
       } else if (stat.isFile() && item.endsWith(".tsx")) {

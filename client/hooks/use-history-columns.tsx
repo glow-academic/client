@@ -18,6 +18,7 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
+import { isSimulationTimedOut } from "@/utils/simulation-utils";
 import { useQuery } from "@tanstack/react-query";
 import { Column, ColumnDef, Row, Table } from "@tanstack/react-table";
 import { useMemo } from "react";
@@ -255,6 +256,10 @@ export function useHistoryColumns({
       {
         value: "needs-improvement",
         label: "Needs Improvement (<70%)",
+      },
+      {
+        value: "incomplete",
+        label: "Incomplete (Timed Out)",
       },
       {
         value: "not-graded",
@@ -509,6 +514,20 @@ export function useHistoryColumns({
             if (completedChats.length > 0) {
               return <div className="text-amber-500">Grading in progress</div>;
             }
+
+            // Check if simulation timed out
+            const simulation = simulations?.find(
+              (s) => s.id === row.original.simulationId
+            );
+            const isTimedOut = isSimulationTimedOut({
+              attemptCreatedAt: row.original.createdAt,
+              simulationTimeLimit: simulation?.timeLimit || null,
+            });
+
+            if (isTimedOut) {
+              return <div className="text-red-500 font-medium">Incomplete</div>;
+            }
+
             return <div className="text-muted-foreground">Not graded</div>;
           }
 
@@ -564,6 +583,19 @@ export function useHistoryColumns({
             .filter(Boolean);
 
           if (chatGrades.length === 0) {
+            // Check if simulation timed out
+            const simulation = simulations?.find(
+              (s) => s.id === row.original.simulationId
+            );
+            const isTimedOut = isSimulationTimedOut({
+              attemptCreatedAt: row.original.createdAt,
+              simulationTimeLimit: simulation?.timeLimit || null,
+            });
+
+            if (isTimedOut) {
+              return value.includes("incomplete");
+            }
+
             return value.includes("not-graded");
           }
 

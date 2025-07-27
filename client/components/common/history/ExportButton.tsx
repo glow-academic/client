@@ -96,6 +96,44 @@ const getStatusLabel = (chat: ExportableData, statusValue?: string): string => {
   }
 };
 
+// Helper function to determine simulation status with time-based completion
+const getSimulationStatus = (
+  attempt: ExportableData,
+  simulation?: { timeLimit?: number | null }
+): string => {
+  // Check if there are grades
+  const attemptData = attempt as AttemptData;
+  const hasGrades = attemptData.chats?.some(
+    (chat: ChatData) => chat.hasRubric || (chat.score && chat.score > 0)
+  );
+
+  if (hasGrades) {
+    return "Completed";
+  }
+
+  // Check if chats are completed but not graded
+  const hasCompletedChats = attemptData.chats?.some(
+    (chat: ChatData) => chat.completed
+  );
+  if (hasCompletedChats) {
+    return "Grading";
+  }
+
+  // Check if simulation timed out
+  if (simulation?.timeLimit && attemptData.createdAt) {
+    const attemptStartTime = new Date(attemptData.createdAt);
+    const currentTime = new Date();
+    const elapsedMinutes =
+      (currentTime.getTime() - attemptStartTime.getTime()) / (1000 * 60);
+
+    if (elapsedMinutes > simulation.timeLimit) {
+      return "Incomplete";
+    }
+  }
+
+  return "Not Graded";
+};
+
 // Maximum rows to export without confirmation
 const MAX_ROWS_WITHOUT_CONFIRM = 100;
 
