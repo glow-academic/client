@@ -26,7 +26,7 @@ export interface LeaderboardProps {
 
 export default function Leaderboard({ cohortId }: LeaderboardProps) {
   const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
-  const { startDate, endDate, selectedCohortIds, cohorts } = useAnalytics();
+  const { startDate, endDate, effectiveCohortIds, cohorts } = useAnalytics();
   const router = useRouter();
 
   const handleViewReport = (profileId: string) => {
@@ -112,7 +112,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     if (!cohorts) return [];
 
     // If no cohorts are selected, show all available cohorts for the user
-    if (selectedCohortIds.length === 0) {
+    if (effectiveCohortIds.length === 0) {
       return cohorts.filter((cohort) => {
         // For instructors/admins, show all active cohorts
         if (shouldShowAll || effectiveProfile?.defaultProfile) {
@@ -129,10 +129,10 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     }
 
     // Otherwise, filter to only selected cohorts
-    return cohorts.filter((cohort) => selectedCohortIds.includes(cohort.id));
+    return cohorts.filter((cohort) => effectiveCohortIds.includes(cohort.id));
   }, [
     cohorts,
-    selectedCohortIds,
+    effectiveCohortIds,
     shouldShowAll,
     effectiveProfile?.defaultProfile,
     isTA,

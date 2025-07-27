@@ -11,7 +11,8 @@ import { Cohort } from "@/types";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { useQuery } from "@tanstack/react-query";
 import { subDays } from "date-fns";
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useMemo, useState } from "react";
+import { useProfile } from "./profile-context";
 
 interface AnalyticsContextType {
   // Date range state
@@ -26,6 +27,9 @@ interface AnalyticsContextType {
   // Available cohorts data
   cohorts: Cohort[];
   isLoadingCohorts: boolean;
+
+  // Effective cohort IDs for filtering (computed from selectedCohortIds and available cohorts)
+  effectiveCohortIds: string[];
 
   // Utility functions
   clearFilters: () => void;
@@ -50,13 +54,42 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   // Cohort filtering - empty array means all cohorts
   const [selectedCohortIds, setSelectedCohortIds] = useState<string[]>([]);
 
+  // Get profile context to check user role and ID
+  const { effectiveProfile } = useProfile();
+
   // Fetch available cohorts
-  const { data: cohorts = [], isLoading: isLoadingCohorts } = useQuery({
+  const { data: allCohorts = [], isLoading: isLoadingCohorts } = useQuery({
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
+
+  // Filter cohorts based on user role
+  const cohorts = useMemo(() => {
+    if (!effectiveProfile) return allCohorts;
+
+    // If user is instructional, only show cohorts they are part of
+    if (effectiveProfile.role === "instructional") {
+      return allCohorts.filter((cohort) =>
+        cohort.profileIds?.includes(effectiveProfile.id)
+      );
+    }
+
+    // For other roles (admin, etc.), show all cohorts
+    return allCohorts;
+  }, [allCohorts, effectiveProfile]);
+
+  // Compute effective cohort IDs for filtering
+  const effectiveCohortIds = useMemo(() => {
+    // If specific cohorts are selected, use those
+    if (selectedCohortIds.length > 0) {
+      return selectedCohortIds;
+    }
+
+    // If no cohorts are selected (All cohorts), use all available cohorts for the user
+    return cohorts.map((cohort) => cohort.id);
+  }, [selectedCohortIds, cohorts]);
 
   const setDateRange = (start: Date, end: Date) => {
     setStartDate(start);
@@ -79,6 +112,7 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     setSelectedCohortIds,
     cohorts,
     isLoadingCohorts,
+    effectiveCohortIds,
     clearFilters,
     hasActiveFilters,
   };

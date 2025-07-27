@@ -30,7 +30,7 @@ import { ReportsDataTable } from "./ReportsDataTable";
 
 export default function Reports() {
   const router = useRouter();
-  const { startDate, endDate, selectedCohortIds } = useAnalytics();
+  const { startDate, endDate, effectiveCohortIds } = useAnalytics();
 
   const handleViewReport = (profileId: string) => {
     router.push(`/analytics/reports/p/${profileId}`);
@@ -74,9 +74,9 @@ export default function Reports() {
     if (!profiles) return [];
     let tas = profiles.filter((profile) => !profile.defaultProfile);
 
-    if (selectedCohortIds.length > 0 && cohorts) {
+    if (effectiveCohortIds.length > 0 && cohorts) {
       const selectedCohorts = cohorts.filter((cohort) =>
-        selectedCohortIds.includes(cohort.id)
+        effectiveCohortIds.includes(cohort.id)
       );
       const cohortProfileIds = new Set<string>();
       selectedCohorts.forEach((cohort) => {
@@ -85,7 +85,7 @@ export default function Reports() {
       tas = tas.filter((profile) => cohortProfileIds.has(profile.id));
     }
     return tas;
-  }, [profiles, selectedCohortIds, cohorts]);
+  }, [profiles, effectiveCohortIds, cohorts]);
 
   const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
     queryKey: ["rubrics"],
@@ -163,9 +163,9 @@ export default function Reports() {
 
     // Filter simulations based on selected cohorts
     let filteredSimulations = simulations;
-    if (selectedCohortIds.length > 0) {
+    if (effectiveCohortIds.length > 0) {
       const selectedCohorts = cohorts.filter((cohort) =>
-        selectedCohortIds.includes(cohort.id)
+        effectiveCohortIds.includes(cohort.id)
       );
       const cohortSimulationIds = new Set<string>();
       selectedCohorts.forEach((cohort) => {
@@ -875,7 +875,7 @@ export default function Reports() {
     cohorts,
     startDate,
     endDate,
-    selectedCohortIds,
+    effectiveCohortIds,
     tas,
   ]);
 

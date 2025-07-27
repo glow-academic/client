@@ -44,7 +44,7 @@ interface DashboardProps {
 
 export default function Dashboard({ profileId }: DashboardProps) {
   // Use analytics context for date range and cohort filtering
-  const { startDate, endDate, selectedCohortIds } = useAnalytics();
+  const { startDate, endDate, effectiveCohortIds } = useAnalytics();
 
   // Threshold data
   const thresholds = {
@@ -98,7 +98,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
     <CompletionPercentage
       key="completion-percentage"
@@ -106,7 +106,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
     <FirstAttemptPassRate
       key="first-attempt-pass-rate"
@@ -114,7 +114,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
     <HighestScore
       key="highest-score"
@@ -122,7 +122,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
     <MessagesPerSession
       key="messages-per-session"
@@ -130,7 +130,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
     <PersonaResponseTimes
       key="persona-response-times"
@@ -138,7 +138,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
     <SessionEfficiency
       key="session-efficiency"
@@ -146,7 +146,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
     <StagnationRate
       key="stagnation-rate"
@@ -154,7 +154,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
     <TimeSpent
       key="time-spent"
@@ -162,7 +162,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
     <TotalAttempts
       key="total-attempts"
@@ -170,7 +170,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
   ];
 
@@ -181,7 +181,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
     <PersonaPerformance
       key="persona-performance"
@@ -189,7 +189,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
     <RubricHeatmap
       key="rubric-heatmap"
@@ -197,7 +197,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
   ];
 
@@ -208,7 +208,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
     <AttemptImprovement
       key="attempt-improvement"
@@ -216,7 +216,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
     <SkillPerformance
       key="skill-performance"
@@ -224,7 +224,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
   ];
 
@@ -235,7 +235,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
     <ScenarioStats
       key="scenario-stats"
@@ -243,7 +243,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
   ];
 
@@ -254,7 +254,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
     <SimulationComposition
       key="simulation-composition"
@@ -262,7 +262,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={selectedCohortIds}
+      cohortIds={effectiveCohortIds}
     />,
   ];
 
