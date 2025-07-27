@@ -80,7 +80,10 @@ export function ProfileProvider({
   isProfileLoading = false,
 }: ProfileProviderProps) {
   const [simulatedProfileId, setSimulatedProfileId] = useState<string | null>(
-    null
+    () =>
+      typeof window === "undefined"
+        ? null
+        : localStorage.getItem("simulatedProfileId")
   );
   const [isClient, setIsClient] = useState(false);
   const queryClient = useQueryClient();
@@ -89,10 +92,6 @@ export function ProfileProvider({
 
   useEffect(() => {
     setIsClient(true);
-    const storedId = localStorage.getItem("simulatedProfileId");
-    if (storedId) {
-      setSimulatedProfileId(storedId);
-    }
   }, []);
 
   const { data: simulatedProfileData, isLoading: isSimulatingProfileLoading } =

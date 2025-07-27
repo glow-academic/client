@@ -556,18 +556,13 @@ export function UnifiedSidebar({
     // If the user selects their own profile, clear the simulation
     if (profileId === activeProfile?.id) {
       setSimulatedProfile(null, true); // `null` resets to activeProfile
-      // Clear guest mode when switching back to own profile
-      localStorage.removeItem("guestMode");
-      localStorage.removeItem("simulatedRole");
-      localStorage.removeItem("simulatedProfileId");
     } else {
       // Otherwise, simulate the selected profile
       setSimulatedProfile(profileId, true);
-      // Clear guest mode when switching to a different profile
-      localStorage.removeItem("guestMode");
-      localStorage.removeItem("simulatedRole");
-      localStorage.removeItem("simulatedProfileId");
     }
+    // Clear guest flags (simulatedProfileId is managed by setSimulatedProfile)
+    localStorage.removeItem("guestMode");
+    localStorage.removeItem("simulatedRole");
   };
 
   // Watch for profile changes and redirect if current page is not accessible
