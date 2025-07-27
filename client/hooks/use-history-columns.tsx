@@ -649,7 +649,16 @@ export function useHistoryColumns({
   }
 
   // Apply practice simulation filtering
-  if (!showPractice) {
+  if (showPractice) {
+    // Filter in only practice simulations when showPractice is true
+    data = data.filter((attempt: unknown) => {
+      const attemptData = attempt as Record<string, unknown>;
+      const simulation = simulations?.find(
+        (s) => s.id === attemptData["simulationId"]
+      );
+      return simulation?.practiceSimulation;
+    });
+  } else {
     // Filter out practice simulations when showPractice is false
     data = data.filter((attempt: unknown) => {
       const attemptData = attempt as Record<string, unknown>;
