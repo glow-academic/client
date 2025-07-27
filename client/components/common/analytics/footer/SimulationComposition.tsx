@@ -22,19 +22,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
+import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { getAllScenarioClasses } from "@/utils/queries/scenario_classes/get-all-scenario-classes";
-import { getAllScenarioDeadlines } from "@/utils/queries/scenario_deadlines/get-all-scenario-deadlines";
-import { getAllScenarioLocations } from "@/utils/queries/scenario_locations/get-all-scenario-locations";
-import { getAllScenarioTimes } from "@/utils/queries/scenario_times/get-all-scenario-times";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import { getAllSystemAgents } from "@/utils/queries/system_agents/get-all-system-agents";
 import { useQuery } from "@tanstack/react-query";
 import { isAfter, isBefore } from "date-fns";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
@@ -66,6 +64,10 @@ interface SimulationAttribute {
   description: string;
   difference: number;
   significance: "high" | "medium" | "low" | "none";
+  parameterId: string;
+  parameterItemId: string;
+  value: string;
+  isNumerical: boolean;
 }
 
 interface SimulationDetail {
@@ -77,9 +79,11 @@ interface SimulationDetail {
   combinedScore: number;
   timeLimit: number | undefined;
   scenarioCount: number;
-  avgIntensity: number;
-  avgCrowdedness: number;
-  avgDocuments: number;
+  parameterBreakdown: Array<{
+    parameterName: string;
+    parameterValue: string;
+    isNumerical: boolean;
+  }>;
 }
 
 export default function SimulationComposition({
@@ -123,29 +127,19 @@ export default function SimulationComposition({
     queryFn: () => getAllPersonas(),
   });
 
-  const { data: systemAgents } = useQuery({
-    queryKey: ["systemAgents"],
-    queryFn: () => getAllSystemAgents(),
+  const { data: agents } = useQuery({
+    queryKey: ["agents"],
+    queryFn: () => getAllAgents(),
   });
 
-  const { data: scenarioClasses } = useQuery({
-    queryKey: ["scenarioClasses"],
-    queryFn: () => getAllScenarioClasses(),
+  const { data: parameters } = useQuery({
+    queryKey: ["parameters"],
+    queryFn: () => getAllParameters(),
   });
 
-  const { data: scenarioLocations } = useQuery({
-    queryKey: ["scenarioLocations"],
-    queryFn: () => getAllScenarioLocations(),
-  });
-
-  const { data: scenarioDeadlines } = useQuery({
-    queryKey: ["scenarioDeadlines"],
-    queryFn: () => getAllScenarioDeadlines(),
-  });
-
-  const { data: scenarioTimes } = useQuery({
-    queryKey: ["scenarioTimes"],
-    queryFn: () => getAllScenarioTimes(),
+  const { data: parameterItems } = useQuery({
+    queryKey: ["parameterItems"],
+    queryFn: () => getAllParameterItems(),
   });
 
   const { data: attempts } = useQuery({
@@ -218,11 +212,9 @@ export default function SimulationComposition({
       !attempts ||
       !profiles ||
       !personas ||
-      !systemAgents ||
-      !scenarioClasses ||
-      !scenarioLocations ||
-      !scenarioDeadlines ||
-      !scenarioTimes
+      !agents ||
+      !parameters ||
+      !parameterItems
     ) {
       return {
         highPerforming: [],
@@ -299,9 +291,11 @@ export default function SimulationComposition({
         totalAttempts: number;
         timeLimit: number | undefined;
         scenarioCount: number;
-        avgIntensity: number;
-        avgCrowdedness: number;
-        avgDocuments: number;
+        parameterBreakdown: Array<{
+          parameterName: string;
+          parameterValue: string;
+          isNumerical: boolean;
+        }>;
       }
     >();
 
@@ -325,9 +319,7 @@ export default function SimulationComposition({
           totalAttempts: 0,
           timeLimit: simulation.timeLimit ?? undefined,
           scenarioCount: simulation.scenarioIds?.length || 0,
-          avgIntensity: 0,
-          avgCrowdedness: 0,
-          avgDocuments: 0,
+          parameterBreakdown: [],
         });
       }
 
@@ -336,7 +328,7 @@ export default function SimulationComposition({
       performance.chats.push(chat);
     });
 
-    // Calculate performance metrics for each simulation
+    // Calculate performance metrics and parameter breakdown for each simulation
     simulationPerformance.forEach((performance) => {
       const completedChats = performance.chats.filter((chat) => chat.completed);
       performance.avgScore =
@@ -346,24 +338,54 @@ export default function SimulationComposition({
         (completedChats.length / performance.chats.length) * 100;
       performance.totalAttempts = performance.chats.length;
 
-      // Calculate scenario attributes
+      // Calculate parameter breakdown for this simulation
       const simScenarios = scenarios.filter((s) =>
         performance.simulation.scenarioIds?.includes(s.id)
       );
 
-      if (simScenarios.length > 0) {
-        performance.avgIntensity =
-          simScenarios.reduce((sum, s) => sum + (s.intensity || 0), 0) /
-          simScenarios.length;
-        performance.avgCrowdedness =
-          simScenarios.reduce((sum, s) => sum + (s.crowdedness || 0), 0) /
-          simScenarios.length;
-        performance.avgDocuments =
-          simScenarios.reduce(
-            (sum, s) => sum + (s.documentIds?.length || 0),
-            0
-          ) / simScenarios.length;
-      }
+      // Collect all parameter items used in this simulation's scenarios
+      const usedParameterItems = new Map<
+        string,
+        {
+          parameterName: string;
+          parameterValue: string;
+          isNumerical: boolean;
+          count: number;
+        }
+      >();
+
+      simScenarios.forEach((scenario) => {
+        scenario.parameterItemIds?.forEach((paramItemId) => {
+          const paramItem = parameterItems.find((pi) => pi.id === paramItemId);
+          if (paramItem) {
+            const parameter = parameters.find(
+              (p) => p.id === paramItem.parameterId
+            );
+            if (parameter) {
+              const key = `${paramItem.parameterId}-${paramItem.id}`;
+              if (usedParameterItems.has(key)) {
+                usedParameterItems.get(key)!.count++;
+              } else {
+                usedParameterItems.set(key, {
+                  parameterName: parameter.name,
+                  parameterValue: paramItem.value,
+                  isNumerical: parameter.numerical,
+                  count: 1,
+                });
+              }
+            }
+          }
+        });
+      });
+
+      // Convert to array and sort by frequency
+      performance.parameterBreakdown = Array.from(usedParameterItems.values())
+        .sort((a, b) => b.count - a.count)
+        .map(({ parameterName, parameterValue, isNumerical }) => ({
+          parameterName,
+          parameterValue,
+          isNumerical,
+        }));
     });
 
     // Calculate relative performance metrics
@@ -453,9 +475,7 @@ export default function SimulationComposition({
         combinedScore: Math.round(sim.combinedScore),
         timeLimit: sim.timeLimit,
         scenarioCount: sim.scenarioCount,
-        avgIntensity: Math.round(sim.avgIntensity * 10) / 10,
-        avgCrowdedness: Math.round(sim.avgCrowdedness * 10) / 10,
-        avgDocuments: Math.round(sim.avgDocuments * 10) / 10,
+        parameterBreakdown: sim.parameterBreakdown,
       })
     );
 
@@ -469,178 +489,103 @@ export default function SimulationComposition({
         combinedScore: Math.round(sim.combinedScore),
         timeLimit: sim.timeLimit,
         scenarioCount: sim.scenarioCount,
-        avgIntensity: Math.round(sim.avgIntensity * 10) / 10,
-        avgCrowdedness: Math.round(sim.avgCrowdedness * 10) / 10,
-        avgDocuments: Math.round(sim.avgDocuments * 10) / 10,
+        parameterBreakdown: sim.parameterBreakdown,
       })
     );
 
-    // Define comprehensive simulation attributes to analyze
-    const attributes: SimulationAttribute[] = [
-      {
-        id: "timeLimit",
-        name: "Time Pressure",
-        icon: "⏱️",
-        color: "#ef4444",
-        highPerforming: 0,
-        lowPerforming: 0,
-        description: "Simulations with time limits ≤30 min",
-        difference: 0,
-        significance: "none",
-      },
-      {
-        id: "intensity",
-        name: "High Intensity",
-        icon: "🔥",
-        color: "#f59e0b",
-        highPerforming: 0,
-        lowPerforming: 0,
-        description: "Scenarios with intensity ≥7",
-        difference: 0,
-        significance: "none",
-      },
-      {
-        id: "crowdedness",
-        name: "High Crowdedness",
-        icon: "👥",
-        color: "#8b5cf6",
-        highPerforming: 0,
-        lowPerforming: 0,
-        description: "Scenarios with crowdedness ≥6",
-        difference: 0,
-        significance: "none",
-      },
-      {
-        id: "documents",
-        name: "Document Heavy",
-        icon: "📚",
-        color: "#06b6d4",
-        highPerforming: 0,
-        lowPerforming: 0,
-        description: "Scenarios with ≥3 documents",
-        difference: 0,
-        significance: "none",
-      },
-      {
-        id: "scenarios",
-        name: "Multi-Scenario",
-        icon: "🎯",
-        color: "#10b981",
-        highPerforming: 0,
-        lowPerforming: 0,
-        description: "Simulations with ≥3 scenarios",
-        difference: 0,
-        significance: "none",
-      },
-      {
-        id: "complexity",
-        name: "High Complexity",
-        icon: "🧩",
-        color: "#ec4899",
-        highPerforming: 0,
-        lowPerforming: 0,
-        description: "Complex scenario combinations",
-        difference: 0,
-        significance: "none",
-      },
+    // Generate colors for attributes
+    const colors = [
+      "#3b82f6",
+      "#ef4444",
+      "#10b981",
+      "#f59e0b",
+      "#8b5cf6",
+      "#06b6d4",
+      "#84cc16",
+      "#f97316",
+      "#ec4899",
+      "#6366f1",
+      "#14b8a6",
+      "#f43f5e",
     ];
+
+    // Analyze parameter usage patterns
+    const parameterUsage = new Map<string, SimulationAttribute>();
+
+    // Helper function to get or create attribute
+    const getOrCreateAttribute = (
+      parameterId: string,
+      parameterItemId: string,
+      parameterName: string,
+      parameterValue: string,
+      isNumerical: boolean
+    ): SimulationAttribute => {
+      const key = `${parameterId}-${parameterItemId}`;
+      if (!parameterUsage.has(key)) {
+        const colorIndex = parameterUsage.size % colors.length;
+        parameterUsage.set(key, {
+          id: key,
+          name: `${parameterName}: ${parameterValue}`,
+          icon: isNumerical ? "📊" : "🏷️",
+          color: colors[colorIndex] || "#000000",
+          highPerforming: 0,
+          lowPerforming: 0,
+          description: `${parameterName} with value ${parameterValue}`,
+          difference: 0,
+          significance: "none",
+          parameterId,
+          parameterItemId,
+          value: parameterValue,
+          isNumerical,
+        });
+      }
+      return parameterUsage.get(key)!;
+    };
 
     // Analyze high performing simulations
     highPerformingSims.forEach((sim) => {
-      const simScenarios = scenarios.filter((s) =>
-        sim.simulation.scenarioIds?.includes(s.id)
-      );
+      sim.parameterBreakdown.forEach((param) => {
+        // Find the parameter item for this value
+        const paramItem = parameterItems.find(
+          (pi) => pi.value === param.parameterValue
+        );
 
-      // Time pressure
-      if (sim.timeLimit && sim.timeLimit <= 30) {
-        if (attributes[0]) attributes[0].highPerforming += 1;
-      }
-
-      // High intensity scenarios
-      const highIntensity = simScenarios.filter(
-        (s) => s.intensity && s.intensity >= 7
-      ).length;
-      if (attributes[1]) attributes[1].highPerforming += highIntensity;
-
-      // High crowdedness scenarios
-      const highCrowdedness = simScenarios.filter(
-        (s) => s.crowdedness && s.crowdedness >= 6
-      ).length;
-      if (attributes[2]) attributes[2].highPerforming += highCrowdedness;
-
-      // Document heavy scenarios
-      const documentHeavy = simScenarios.filter(
-        (s) => s.documentIds && s.documentIds.length >= 3
-      ).length;
-      if (attributes[3]) attributes[3].highPerforming += documentHeavy;
-
-      // Multi-scenario
-      if (sim.scenarioCount >= 3) {
-        if (attributes[4]) attributes[4].highPerforming += 1;
-      }
-
-      // Complexity (combination of factors)
-      const complexScenarios = simScenarios.filter(
-        (s) =>
-          s.intensity &&
-          s.intensity >= 6 &&
-          s.crowdedness &&
-          s.crowdedness >= 5 &&
-          s.documentIds &&
-          s.documentIds.length >= 2
-      ).length;
-      if (attributes[5]) attributes[5].highPerforming += complexScenarios;
+        if (paramItem && paramItem.parameterId) {
+          const attribute = getOrCreateAttribute(
+            paramItem.parameterId,
+            paramItem.id,
+            param.parameterName,
+            param.parameterValue,
+            param.isNumerical
+          );
+          attribute.highPerforming += 1;
+        }
+      });
     });
 
     // Analyze low performing simulations
     lowPerformingSims.forEach((sim) => {
-      const simScenarios = scenarios.filter((s) =>
-        sim.simulation.scenarioIds?.includes(s.id)
-      );
+      sim.parameterBreakdown.forEach((param) => {
+        // Find the parameter item for this value
+        const paramItem = parameterItems.find(
+          (pi) => pi.value === param.parameterValue
+        );
 
-      // Time pressure
-      if (sim.timeLimit && sim.timeLimit <= 30) {
-        if (attributes[0]) attributes[0].lowPerforming += 1;
-      }
-
-      // High intensity scenarios
-      const highIntensity = simScenarios.filter(
-        (s) => s.intensity && s.intensity >= 7
-      ).length;
-      if (attributes[1]) attributes[1].lowPerforming += highIntensity;
-
-      // High crowdedness scenarios
-      const highCrowdedness = simScenarios.filter(
-        (s) => s.crowdedness && s.crowdedness >= 6
-      ).length;
-      if (attributes[2]) attributes[2].lowPerforming += highCrowdedness;
-
-      // Document heavy scenarios
-      const documentHeavy = simScenarios.filter(
-        (s) => s.documentIds && s.documentIds.length >= 3
-      ).length;
-      if (attributes[3]) attributes[3].lowPerforming += documentHeavy;
-
-      // Multi-scenario
-      if (sim.scenarioCount >= 3) {
-        if (attributes[4]) attributes[4].lowPerforming += 1;
-      }
-
-      // Complexity (combination of factors)
-      const complexScenarios = simScenarios.filter(
-        (s) =>
-          s.intensity &&
-          s.intensity >= 6 &&
-          s.crowdedness &&
-          s.crowdedness >= 5 &&
-          s.documentIds &&
-          s.documentIds.length >= 2
-      ).length;
-      if (attributes[5]) attributes[5].lowPerforming += complexScenarios;
+        if (paramItem && paramItem.parameterId) {
+          const attribute = getOrCreateAttribute(
+            paramItem.parameterId,
+            paramItem.id,
+            param.parameterName,
+            param.parameterValue,
+            param.isNumerical
+          );
+          attribute.lowPerforming += 1;
+        }
+      });
     });
 
     // Calculate differences and significance
-    attributes.forEach((attr) => {
+    parameterUsage.forEach((attr) => {
       attr.difference = attr.highPerforming - attr.lowPerforming;
       const totalHigh = highPerformingSims.length;
       const totalLow = lowPerformingSims.length;
@@ -664,7 +609,7 @@ export default function SimulationComposition({
     });
 
     // Create separate attribute lists for high and low performing simulations
-    const highPerformingAttributes = attributes
+    const highPerformingAttributes = Array.from(parameterUsage.values())
       .filter((attr) => attr.highPerforming > 0)
       .sort((a, b) => {
         // Sort by significance first, then by high performing value
@@ -679,7 +624,7 @@ export default function SimulationComposition({
       })
       .slice(0, 5); // Show top 5 for high performing
 
-    const lowPerformingAttributes = attributes
+    const lowPerformingAttributes = Array.from(parameterUsage.values())
       .filter((attr) => attr.lowPerforming > 0)
       .sort((a, b) => {
         // Sort by significance first, then by low performing value
@@ -730,11 +675,9 @@ export default function SimulationComposition({
     attempts,
     profiles,
     personas,
-    systemAgents,
-    scenarioClasses,
-    scenarioLocations,
-    scenarioDeadlines,
-    scenarioTimes,
+    agents,
+    parameters,
+    parameterItems,
     dateStart,
     dateEnd,
     profileId,
@@ -1043,6 +986,27 @@ export default function SimulationComposition({
                             {sim.totalAttempts} attempts • {sim.scenarioCount}{" "}
                             scenarios
                           </p>
+                          {/* Parameter breakdown */}
+                          {sim.parameterBreakdown.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {sim.parameterBreakdown
+                                .slice(0, 3)
+                                .map((param, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="text-xs bg-blue-100 dark:bg-blue-900 px-1 rounded"
+                                  >
+                                    {param.parameterName}:{" "}
+                                    {param.parameterValue}
+                                  </span>
+                                ))}
+                              {sim.parameterBreakdown.length > 3 && (
+                                <span className="text-xs text-muted-foreground">
+                                  +{sim.parameterBreakdown.length - 3} more
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-medium">
@@ -1177,6 +1141,27 @@ export default function SimulationComposition({
                             {sim.totalAttempts} attempts • {sim.scenarioCount}{" "}
                             scenarios
                           </p>
+                          {/* Parameter breakdown */}
+                          {sim.parameterBreakdown.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {sim.parameterBreakdown
+                                .slice(0, 3)
+                                .map((param, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="text-xs bg-red-100 dark:bg-red-900 px-1 rounded"
+                                  >
+                                    {param.parameterName}:{" "}
+                                    {param.parameterValue}
+                                  </span>
+                                ))}
+                              {sim.parameterBreakdown.length > 3 && (
+                                <span className="text-xs text-muted-foreground">
+                                  +{sim.parameterBreakdown.length - 3} more
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-medium">

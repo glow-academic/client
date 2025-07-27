@@ -338,12 +338,6 @@ export function UnifiedSidebar({
       });
 
       managementItems.push({
-        title: "Context",
-        url: "#",
-        section: "context",
-      });
-
-      managementItems.push({
         title: "Staff",
         url: "#",
         section: "staff",
@@ -353,6 +347,12 @@ export function UnifiedSidebar({
         title: "Providers",
         url: "#",
         section: "providers",
+      });
+
+      managementItems.push({
+        title: "Parameters",
+        url: "#",
+        section: "parameters",
       });
     }
 
