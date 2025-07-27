@@ -11,23 +11,13 @@ import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { Profile } from "@/types";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import SimulationHistory from "../common/history/SimulationHistory";
 import { Skeleton } from "../ui/skeleton";
@@ -51,25 +41,6 @@ export default function Practice() {
     isLoading: isProfileLoading,
   } = useProfile();
 
-  // 1. EXPAND DATA FETCHING SCOPE FOR ADMINS/INSTRUCTORS
-  const isAdminView =
-    effectiveProfile?.role === "admin" ||
-    effectiveProfile?.role === "superadmin" ||
-    effectiveProfile?.role === "instructional";
-
-  // Fetch all profiles if admin, otherwise just the user's
-  const { data: profiles, isLoading: _loadingProfiles } = useQuery({
-    queryKey: ["allProfilesForHome", isAdminView],
-    queryFn: getAllProfiles,
-    enabled: !!effectiveProfile,
-  });
-
-  const profileIdsForQueries = useMemo(() => {
-    if (!profiles) return [];
-    if (isAdminView) return profiles.map((p: Profile) => p.id); // All users for admin
-    return [effectiveProfile!.id]; // Just self for TA/student
-  }, [profiles, isAdminView, effectiveProfile]);
-
   const { data: simulations, isLoading: simulationsLoading } = useQuery({
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
@@ -83,32 +54,6 @@ export default function Practice() {
   const { data: personas } = useQuery({
     queryKey: ["personas"],
     queryFn: () => getAllPersonas(),
-  });
-
-  // Fetch rubric-related data for real progress tracking
-
-  // 2. USE THE EXPANDED SCOPE IN SUBSEQUENT QUERIES
-  const { data: attempts, isLoading: _loadingAttempts } = useQuery({
-    queryKey: ["simulationAttemptsForHome", profileIdsForQueries],
-    queryFn: () => getSimulationAttemptsByProfiles(profileIdsForQueries),
-    enabled:
-      profileIdsForQueries.length > 0 &&
-      !!effectiveProfile &&
-      effectiveProfile.role !== "guest",
-  });
-
-  const { data: chats } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id) || []],
-    queryFn: () =>
-      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
-    enabled: !!attempts && attempts.length > 0,
-  });
-
-  const { data: grades } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0,
   });
 
   const practiceSimulations = useMemo(() => {
