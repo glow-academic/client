@@ -89,8 +89,8 @@ class Models(_Base, table=True):
     provider_id: Mapped[uuid.UUID] = Field(sa_column=Column('provider_id', Uuid(as_uuid=True)))
     active: bool = Field(sa_column=Column('active', Boolean, default=True))
 
+    agents: List['Agents'] = Relationship(back_populates='model')
     personas: List['Personas'] = Relationship(back_populates='model')
-    system_agents: List['SystemAgents'] = Relationship(back_populates='model')
 
 
 class Parameters(_Base, table=True):
@@ -104,6 +104,7 @@ class Parameters(_Base, table=True):
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     numerical: bool = Field(sa_column=Column('numerical', Boolean, default=False))
+    active: bool = Field(sa_column=Column('active', Boolean, default=False))
 
     parameter_items: List['ParameterItems'] = Relationship(back_populates='parameter')
 
@@ -178,6 +179,25 @@ class VerificationToken(_Base, table=True):
     token: str = Field(sa_column=Column('token', Text, primary_key=True))
 
 
+class Agents(_Base, table=True):
+    __table_args__ = (
+        ForeignKeyConstraint(['model_id'], ['models.id'], name='agents_model_id_fkey'),
+        PrimaryKeyConstraint('id', name='agents_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
+    name: str = Field(sa_column=Column('name', Text))
+    description: str = Field(sa_column=Column('description', Text))
+    system_prompt: str = Field(sa_column=Column('system_prompt', Text))
+    temperature: int = Field(sa_column=Column('temperature', Integer))
+    model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
+    reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('low', 'medium', 'high', name='reasoning_effort')))
+
+    model: Optional['Models'] = Relationship(back_populates='agents')
+
+
 class ParameterItems(_Base, table=True):
     __tablename__ = 'parameter_items'
     __table_args__ = (
@@ -192,6 +212,7 @@ class ParameterItems(_Base, table=True):
     description: str = Field(sa_column=Column('description', Text))
     value: str = Field(sa_column=Column('value', Text))
     parameter_id: Mapped[uuid.UUID] = Field(sa_column=Column('parameter_id', Uuid(as_uuid=True)))
+    default_item: bool = Field(sa_column=Column('default_item', Boolean, default=False))
 
     parameter: Optional['Parameters'] = Relationship(back_populates='parameter_items')
 
@@ -211,6 +232,7 @@ class Personas(_Base, table=True):
     temperature: int = Field(sa_column=Column('temperature', Integer))
     default_persona: bool = Field(sa_column=Column('default_persona', Boolean, default=False))
     color: str = Field(sa_column=Column('color', Text))
+    icon: str = Field(sa_column=Column('icon', Text))
     model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
     reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('low', 'medium', 'high', name='reasoning_effort')))
 
@@ -284,26 +306,6 @@ class StandardGroups(_Base, table=True):
 
     rubric: Optional['Rubrics'] = Relationship(back_populates='standard_groups')
     standards: List['Standards'] = Relationship(back_populates='standard_group')
-
-
-class SystemAgents(_Base, table=True):
-    __tablename__ = 'system_agents'
-    __table_args__ = (
-        ForeignKeyConstraint(['model_id'], ['models.id'], name='system_agents_model_id_fkey'),
-        PrimaryKeyConstraint('id', name='system_agents_pkey')
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-    system_prompt: str = Field(sa_column=Column('system_prompt', Text))
-    temperature: int = Field(sa_column=Column('temperature', Integer))
-    model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
-    reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('low', 'medium', 'high', name='reasoning_effort')))
-
-    model: Optional['Models'] = Relationship(back_populates='system_agents')
 
 
 class AppFeedback(_Base, table=True):

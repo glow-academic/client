@@ -11,6 +11,20 @@ vi.mock('@/utils/queries/accounts/get-all-accounts', () => ({
   getAllAccounts: vi.fn(() => mockSchema.accounts || []),
 }));
 
+// AGENTS QUERIES
+vi.mock('@/utils/queries/agents/get-agent', () => ({
+  getAgent: vi.fn(() => mockSchema.agents?.[0] || null),
+}));
+vi.mock('@/utils/queries/agents/get-agents-by-model', () => ({
+  getAgentsByModel: vi.fn(() => mockSchema.agents || []),
+}));
+vi.mock('@/utils/queries/agents/get-agents-by-models', () => ({
+  getAgentsByModels: vi.fn(() => mockSchema.agents || []),
+}));
+vi.mock('@/utils/queries/agents/get-all-agents', () => ({
+  getAllAgents: vi.fn(() => mockSchema.agents || []),
+}));
+
 // APP_FEEDBACK QUERIES
 vi.mock('@/utils/queries/app_feedback/get-all-app-feedback', () => ({
   getAllAppFeedback: vi.fn(() => mockSchema.appFeedback || []),
@@ -321,20 +335,6 @@ vi.mock('@/utils/queries/standards/get-standards-by-standardgroup', () => ({
 }));
 vi.mock('@/utils/queries/standards/get-standards-by-standardgroups', () => ({
   getStandardsByStandardgroups: vi.fn(() => mockSchema.standards || []),
-}));
-
-// SYSTEM_AGENTS QUERIES
-vi.mock('@/utils/queries/system_agents/get-all-system-agents', () => ({
-  getAllSystemAgents: vi.fn(() => mockSchema.systemAgents || []),
-}));
-vi.mock('@/utils/queries/system_agents/get-system-agent', () => ({
-  getSystemAgent: vi.fn(() => mockSchema.systemAgents?.[0] || null),
-}));
-vi.mock('@/utils/queries/system_agents/get-system-agents-by-model', () => ({
-  getSystemAgentsByModel: vi.fn(() => mockSchema.systemAgents || []),
-}));
-vi.mock('@/utils/queries/system_agents/get-system-agents-by-models', () => ({
-  getSystemAgentsByModels: vi.fn(() => mockSchema.systemAgents || []),
 }));
 
 // USERS QUERIES

@@ -15,7 +15,7 @@ import {
   assistantMessages as AssistantMessages,
   assistantToolCalls as AssistantToolCalls,
   personas as Personas,
-  systemAgents as SystemAgents,
+  agents as Agents,
   simulationAttempts as SimulationAttempts,
   parameters as Parameters,
   parameterItems as ParameterItems,
@@ -47,7 +47,7 @@ type AssistantChat = typeof AssistantChats.$inferSelect;
 type AssistantMessage = typeof AssistantMessages.$inferSelect;
 type AssistantToolCall = typeof AssistantToolCalls.$inferSelect;
 type Persona = typeof Personas.$inferSelect;
-type SystemAgent = typeof SystemAgents.$inferSelect;
+type Agent = typeof Agents.$inferSelect;
 type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
 type Parameter = typeof Parameters.$inferSelect;
 type ParameterItem = typeof ParameterItems.$inferSelect;
@@ -85,7 +85,7 @@ export type {
   AssistantMessage,
   AssistantToolCall,
   Persona,
-  SystemAgent,
+  Agent,
   SimulationAttempt,
   Parameter,
   ParameterItem,

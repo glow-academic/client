@@ -11,7 +11,8 @@ CREATE TABLE parameters (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
-  numerical BOOLEAN     NOT NULL DEFAULT FALSE
+  numerical BOOLEAN     NOT NULL DEFAULT FALSE,
+  active BOOLEAN     NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE parameter_items (
@@ -21,7 +22,8 @@ CREATE TABLE parameter_items (
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
   value TEXT        NOT NULL,
-  parameter_id UUID        NOT NULL REFERENCES parameters(id) ON DELETE CASCADE
+  parameter_id UUID        NOT NULL REFERENCES parameters(id) ON DELETE CASCADE,
+  default_item BOOLEAN     NOT NULL DEFAULT FALSE
 );
   
 CREATE TABLE scenarios (
@@ -40,67 +42,67 @@ CREATE TABLE scenarios (
   active BOOLEAN     NOT NULL DEFAULT TRUE
 );
 
-INSERT INTO parameters (id, name, description, numerical) VALUES
-  ('11111111-1111-1111-1111-111111111112', 'Crowdedness', 'The number of students in the room', TRUE),
-  ('22222222-2222-2222-2222-222222222229', 'Intensity', 'The intensity of the student', TRUE),
-  ('33333333-3333-3333-3333-333333333334', 'Location', 'The location of the student', FALSE),
-  ('44444444-4444-4444-4444-444444444445', 'Time', 'The time of the student', FALSE),
-  ('55555555-5555-5555-5555-555555555555', 'Document', 'The document of the student', FALSE),
-  ('66666666-6666-6666-6666-666666666667', 'Class', 'The class of the student', FALSE);
+INSERT INTO parameters (id, name, description, numerical, active) VALUES
+  ('11111111-1111-1111-1111-111111111112', 'Crowdedness', 'The number of students in the room', TRUE, TRUE),
+  ('22222222-2222-2222-2222-222222222229', 'Intensity', 'The intensity of the student', TRUE, TRUE),
+  ('33333333-3333-3333-3333-333333333334', 'Location', 'The location of the student', FALSE, TRUE),
+  ('44444444-4444-4444-4444-444444444445', 'Time', 'The time of the student', FALSE, TRUE),
+  ('55555555-5555-5555-5555-555555555555', 'Document', 'The document of the student', FALSE, TRUE),
+  ('66666666-6666-6666-6666-666666666667', 'Class', 'The class of the student', FALSE, TRUE);
 
 -- crowdedness
-INSERT INTO parameter_items (id, name, description, value, parameter_id) VALUES
-  ('11111111-1111-1111-1111-111111111112', 'Crowdedness (1)', 'The relative number of students in the room', '1', '11111111-1111-1111-1111-111111111112'),
-  ('22222222-2222-2222-2222-222222222221', 'Crowdedness (2)', 'The relative number of students in the room', '2', '11111111-1111-1111-1111-111111111112'),
-  ('33333333-3333-3333-3333-333333333331', 'Crowdedness (3)', 'The relative number of students in the room', '3', '11111111-1111-1111-1111-111111111112'),
-  ('44444444-4444-4444-4444-444444444441', 'Crowdedness (4)', 'The relative number of students in the room', '4', '11111111-1111-1111-1111-111111111112'),
-  ('55555555-5555-5555-5555-555555555551', 'Crowdedness (5)', 'The relative number of students in the room', '5', '11111111-1111-1111-1111-111111111112'),
-  ('66666666-6666-6666-6666-666666666661', 'Crowdedness (6)', 'The relative number of students in the room', '6', '11111111-1111-1111-1111-111111111112'),
-  ('77777777-7777-7777-7777-777777777777', 'Crowdedness (7)', 'The relative number of students in the room', '7', '11111111-1111-1111-1111-111111111112'),
-  ('88888888-8888-8888-8888-888888888888', 'Crowdedness (8)', 'The relative number of students in the room', '8', '11111111-1111-1111-1111-111111111112'),
-  ('99999999-9999-9999-9999-999999999999', 'Crowdedness (9)', 'The relative number of students in the room', '9', '11111111-1111-1111-1111-111111111112'),
-  ('10101010-1010-1010-1010-101010101010', 'Crowdedness (10)', 'The relative number of students in the room', '10', '11111111-1111-1111-1111-111111111112');
+INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
+  ('11111111-1111-1111-1111-111111111112', 'Crowdedness (1)', 'The relative number of students in the room', '1', '11111111-1111-1111-1111-111111111112', TRUE),
+  ('22222222-2222-2222-2222-222222222221', 'Crowdedness (2)', 'The relative number of students in the room', '2', '11111111-1111-1111-1111-111111111112', TRUE),
+  ('33333333-3333-3333-3333-333333333331', 'Crowdedness (3)', 'The relative number of students in the room', '3', '11111111-1111-1111-1111-111111111112', TRUE),
+  ('44444444-4444-4444-4444-444444444441', 'Crowdedness (4)', 'The relative number of students in the room', '4', '11111111-1111-1111-1111-111111111112', TRUE),
+  ('55555555-5555-5555-5555-555555555551', 'Crowdedness (5)', 'The relative number of students in the room', '5', '11111111-1111-1111-1111-111111111112', TRUE),
+  ('66666666-6666-6666-6666-666666666661', 'Crowdedness (6)', 'The relative number of students in the room', '6', '11111111-1111-1111-1111-111111111112', TRUE),
+  ('77777777-7777-7777-7777-777777777777', 'Crowdedness (7)', 'The relative number of students in the room', '7', '11111111-1111-1111-1111-111111111112', TRUE),
+  ('88888888-8888-8888-8888-888888888888', 'Crowdedness (8)', 'The relative number of students in the room', '8', '11111111-1111-1111-1111-111111111112', TRUE),
+  ('99999999-9999-9999-9999-999999999999', 'Crowdedness (9)', 'The relative number of students in the room', '9', '11111111-1111-1111-1111-111111111112', TRUE),
+  ('10101010-1010-1010-1010-101010101010', 'Crowdedness (10)', 'The relative number of students in the room', '10', '11111111-1111-1111-1111-111111111112', TRUE);
 
 -- intensity
-INSERT INTO parameter_items (id, name, description, value, parameter_id) VALUES
-  ('22222222-1111-1111-1111-111111111111', 'Intensity (1)', 'The relative intensity of the student', '1', '22222222-2222-2222-2222-222222222229'),
-  ('22222222-2222-2222-2222-222222222229', 'Intensity (2)', 'The relative intensity of the student', '2', '22222222-2222-2222-2222-222222222229'),
-  ('22222222-3333-3333-3333-333333333333', 'Intensity (3)', 'The relative intensity of the student', '3', '22222222-2222-2222-2222-222222222229'),
-  ('22222222-4444-4444-4444-444444444444', 'Intensity (4)', 'The relative intensity of the student', '4', '22222222-2222-2222-2222-222222222229'),
-  ('22222222-5555-5555-5555-555555555555', 'Intensity (5)', 'The relative intensity of the student', '5', '22222222-2222-2222-2222-222222222229'),
-  ('22222222-6666-6666-6666-666666666666', 'Intensity (6)', 'The relative intensity of the student', '6', '22222222-2222-2222-2222-222222222229'),
-  ('22222222-7777-7777-7777-777777777777', 'Intensity (7)', 'The relative intensity of the student', '7', '22222222-2222-2222-2222-222222222229'),
-  ('22222222-8888-8888-8888-888888888888', 'Intensity (8)', 'The relative intensity of the student', '8', '22222222-2222-2222-2222-222222222229'),
-  ('22222222-9999-9999-9999-999999999999', 'Intensity (9)', 'The relative intensity of the student', '9', '22222222-2222-2222-2222-222222222229'),
-  ('22222222-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Intensity (10)', 'The relative intensity of the student', '10', '22222222-2222-2222-2222-222222222229');
+INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
+  ('22222222-1111-1111-1111-111111111111', 'Intensity (1)', 'The relative intensity of the student', '1', '22222222-2222-2222-2222-222222222229', TRUE),
+  ('22222222-2222-2222-2222-222222222229', 'Intensity (2)', 'The relative intensity of the student', '2', '22222222-2222-2222-2222-222222222229', TRUE),
+  ('22222222-3333-3333-3333-333333333333', 'Intensity (3)', 'The relative intensity of the student', '3', '22222222-2222-2222-2222-222222222229', TRUE),
+  ('22222222-4444-4444-4444-444444444444', 'Intensity (4)', 'The relative intensity of the student', '4', '22222222-2222-2222-2222-222222222229', TRUE),
+  ('22222222-5555-5555-5555-555555555555', 'Intensity (5)', 'The relative intensity of the student', '5', '22222222-2222-2222-2222-222222222229', TRUE),
+  ('22222222-6666-6666-6666-666666666666', 'Intensity (6)', 'The relative intensity of the student', '6', '22222222-2222-2222-2222-222222222229', TRUE),
+  ('22222222-7777-7777-7777-777777777777', 'Intensity (7)', 'The relative intensity of the student', '7', '22222222-2222-2222-2222-222222222229', TRUE),
+  ('22222222-8888-8888-8888-888888888888', 'Intensity (8)', 'The relative intensity of the student', '8', '22222222-2222-2222-2222-222222222229', TRUE),
+  ('22222222-9999-9999-9999-999999999999', 'Intensity (9)', 'The relative intensity of the student', '9', '22222222-2222-2222-2222-222222222229', TRUE),
+  ('22222222-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Intensity (10)', 'The relative intensity of the student', '10', '22222222-2222-2222-2222-222222222229', TRUE);
 
 -- location
-INSERT INTO parameter_items (id, name, description, value, parameter_id) VALUES
-  ('33333333-1111-1111-1111-111111111111', 'Lawson Computer Science Building', 'An open, collaborative space in the Lawson building with high foot traffic.', 'Lawson', '33333333-3333-3333-3333-333333333334'),
-  ('33333333-2222-2222-2222-222222222222', 'Felix Haas Hall', 'A quiet, focused study environment in the lower level of the HAAS building.', 'HAAS', '33333333-3333-3333-3333-333333333334'),
-  ('33333333-3333-3333-3333-333333333335', 'Data Science and Artificial Intelligence Building', 'A specialized tech-focused lab environment in the basement of the Data Science/AI building.', 'DSAI', '33333333-3333-3333-3333-333333333334');
+INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
+  ('33333333-1111-1111-1111-111111111111', 'Lawson Computer Science Building', 'An open, collaborative space in the Lawson building with high foot traffic.', 'Lawson', '33333333-3333-3333-3333-333333333334', TRUE),
+  ('33333333-2222-2222-2222-222222222222', 'Felix Haas Hall', 'A quiet, focused study environment in the lower level of the HAAS building.', 'HAAS', '33333333-3333-3333-3333-333333333334', TRUE),
+  ('33333333-3333-3333-3333-333333333335', 'Data Science and Artificial Intelligence Building', 'A specialized tech-focused lab environment in the basement of the Data Science/AI building.', 'DSAI', '33333333-3333-3333-3333-333333333334', TRUE);
 
 -- class
-INSERT INTO parameter_items (id, name, description, value, parameter_id) VALUES
-  ('66666666-1111-1111-1111-111111111111', 'CS 180', 'Problem solving and algorithms, implementation of algorithms in a high level programming language, conditionals, the iterative approach and debugging, collections of data, searching and sorting, solving problems by decomposition, the object-oriented approach, subclasses of existing classes, handling exceptions that occur when the program is running, graphical user interfaces (GUIs), data stored in files, abstract data types, a glimpse at topics from other CS courses.', 'CS180', '66666666-6666-6666-6666-666666666667'),
-  ('66666666-2222-2222-2222-222222222222', 'CS 182', 'Logic and proofs; sets, functions, relations, sequences and summations; number representations; counting; fundamentals of the analysis of algorithms; graphs and trees; proof techniques; recursion; Boolean logic; finite state machines; pushdown automata; computability and undecidability.', 'CS182', '66666666-6666-6666-6666-666666666667'),
-  ('66666666-3333-3333-3333-333333333333', 'CS 251', 'Running time analysis of algorithms and their implementations, one-dimensional data structures, trees, heaps, additional sorting algorithms, binary search trees, hash tables, graphs, directed graphs, weighted graph algorithms, additional topics.', 'CS251', '66666666-6666-6666-6666-666666666667'),
-  ('66666666-4444-4444-4444-444444444444', 'CS 381', 'Techniques for analyzing the time and space requirements of algorithms. Application of these techniques to sorting, searching, pattern-matching, graph problems, and other selected problems. Brief introduction to the intractable (NP-hard) problems.', 'CS381', '66666666-6666-6666-6666-666666666667'),
-  ('66666666-5555-5555-5555-555555555555', 'CS 422', 'Network protocols, socket programming, network security, distributed systems, and network performance analysis. Covers TCP/IP, HTTP, DNS, and other networking fundamentals.', 'CS422', '66666666-6666-6666-6666-666666666667'),
-  ('66666666-6666-6666-6666-666666666667', 'CS 373', 'Introduction to machine learning algorithms, neural networks, feature engineering, model evaluation, and practical applications. Covers supervised and unsupervised learning techniques.', 'CS373', '66666666-6666-6666-6666-666666666667');
+INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
+  ('66666666-1111-1111-1111-111111111111', 'CS 180', 'Problem solving and algorithms, implementation of algorithms in a high level programming language, conditionals, the iterative approach and debugging, collections of data, searching and sorting, solving problems by decomposition, the object-oriented approach, subclasses of existing classes, handling exceptions that occur when the program is running, graphical user interfaces (GUIs), data stored in files, abstract data types, a glimpse at topics from other CS courses.', 'CS180', '66666666-6666-6666-6666-666666666667', TRUE),
+  ('66666666-2222-2222-2222-222222222222', 'CS 182', 'Logic and proofs; sets, functions, relations, sequences and summations; number representations; counting; fundamentals of the analysis of algorithms; graphs and trees; proof techniques; recursion; Boolean logic; finite state machines; pushdown automata; computability and undecidability.', 'CS182', '66666666-6666-6666-6666-666666666667', TRUE),
+  ('66666666-3333-3333-3333-333333333333', 'CS 251', 'Running time analysis of algorithms and their implementations, one-dimensional data structures, trees, heaps, additional sorting algorithms, binary search trees, hash tables, graphs, directed graphs, weighted graph algorithms, additional topics.', 'CS251', '66666666-6666-6666-6666-666666666667', TRUE),
+  ('66666666-4444-4444-4444-444444444444', 'CS 381', 'Techniques for analyzing the time and space requirements of algorithms. Application of these techniques to sorting, searching, pattern-matching, graph problems, and other selected problems. Brief introduction to the intractable (NP-hard) problems.', 'CS381', '66666666-6666-6666-6666-666666666667', TRUE),
+  ('66666666-5555-5555-5555-555555555555', 'CS 422', 'Network protocols, socket programming, network security, distributed systems, and network performance analysis. Covers TCP/IP, HTTP, DNS, and other networking fundamentals.', 'CS422', '66666666-6666-6666-6666-666666666667', TRUE),
+  ('66666666-6666-6666-6666-666666666667', 'CS 373', 'Introduction to machine learning algorithms, neural networks, feature engineering, model evaluation, and practical applications. Covers supervised and unsupervised learning techniques.', 'CS373', '66666666-6666-6666-6666-666666666667', TRUE);
 
 
 -- time
-INSERT INTO parameter_items (id, name, description, value, parameter_id) VALUES
-  ('44444444-1111-1111-1111-111111111111', '09:00:00', 'Early morning session, students may be tired but focused', '09:00:00', '44444444-4444-4444-4444-444444444445'),
-  ('44444444-2222-2222-2222-222222222222', '10:00:00', 'Mid-morning session, good energy levels', '10:00:00', '44444444-4444-4444-4444-444444444445'),
-  ('44444444-3333-3333-3333-333333333333', '11:00:00', 'Late morning session, students are alert and engaged', '11:00:00', '44444444-4444-4444-4444-444444444445'),
-  ('44444444-4444-4444-4444-444444444445', '12:00:00', 'Lunch time session, students may be hungry or rushed', '12:00:00', '44444444-4444-4444-4444-444444444445'),
-  ('44444444-5555-5555-5555-555555555555', '13:00:00', 'Early afternoon session, post-lunch energy dip possible', '13:00:00', '44444444-4444-4444-4444-444444444445'),
-  ('44444444-6666-6666-6666-666666666666', '14:00:00', 'Mid-afternoon session, good focus time', '14:00:00', '44444444-4444-4444-4444-444444444445'),
-  ('44444444-7777-7777-7777-777777777777', '15:00:00', 'Late afternoon session, sustained energy needed', '15:00:00', '44444444-4444-4444-4444-444444444445'),
-  ('44444444-8888-8888-8888-888888888888', '16:00:00', 'Evening session, students may be tired from the day', '16:00:00', '44444444-4444-4444-4444-444444444445'),
-  ('44444444-9999-9999-9999-999999999999', '17:00:00', 'End of day session, students eager to finish', '17:00:00', '44444444-4444-4444-4444-444444444445');
+INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
+  ('44444444-1111-1111-1111-111111111111', '9:00 AM', 'Early morning session, students may be tired but focused', '09:00:00', '44444444-4444-4444-4444-444444444445', TRUE),
+  ('44444444-2222-2222-2222-222222222222', '10:00 AM', 'Mid-morning session, good energy levels', '10:00:00', '44444444-4444-4444-4444-444444444445', TRUE),
+  ('44444444-3333-3333-3333-333333333333', '11:00 AM', 'Late morning session, students are alert and engaged', '11:00:00', '44444444-4444-4444-4444-444444444445', TRUE),
+  ('44444444-4444-4444-4444-444444444445', '12:00 PM', 'Lunch time session, students may be hungry or rushed', '12:00:00', '44444444-4444-4444-4444-444444444445', TRUE),
+  ('44444444-5555-5555-5555-555555555555', '1:00 PM', 'Early afternoon session, post-lunch energy dip possible', '13:00:00', '44444444-4444-4444-4444-444444444445', TRUE),
+  ('44444444-6666-6666-6666-666666666666', '2:00 PM', 'Mid-afternoon session, good focus time', '14:00:00', '44444444-4444-4444-4444-444444444445', TRUE),
+  ('44444444-7777-7777-7777-777777777777', '3:00 PM', 'Late afternoon session, sustained energy needed', '15:00:00', '44444444-4444-4444-4444-444444444445', TRUE),
+  ('44444444-8888-8888-8888-888888888888', '4:00 PM', 'Evening session, students may be tired from the day', '16:00:00', '44444444-4444-4444-4444-444444444445', TRUE),
+  ('44444444-9999-9999-9999-999999999999', '5:00 PM', 'End of day session, students eager to finish', '17:00:00', '44444444-4444-4444-4444-444444444445', TRUE);
 
 -- ============================================================================
 -- ESSENTIAL TEST DATA

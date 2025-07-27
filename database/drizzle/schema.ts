@@ -224,6 +224,7 @@ export const personas = pgTable("personas", {
 	temperature: integer().notNull(),
 	defaultPersona: boolean("default_persona").default(false).notNull(),
 	color: text().notNull(),
+	icon: text().notNull(),
 	modelId: uuid("model_id"),
 	reasoning: reasoningEffort(),
 }, (table) => [
@@ -234,7 +235,7 @@ export const personas = pgTable("personas", {
 		}),
 ]);
 
-export const systemAgents = pgTable("system_agents", {
+export const agents = pgTable("agents", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -248,7 +249,7 @@ export const systemAgents = pgTable("system_agents", {
 	foreignKey({
 			columns: [table.modelId],
 			foreignColumns: [models.id],
-			name: "system_agents_model_id_fkey"
+			name: "agents_model_id_fkey"
 		}),
 ]);
 
@@ -277,6 +278,7 @@ export const parameters = pgTable("parameters", {
 	name: text().notNull(),
 	description: text().notNull(),
 	numerical: boolean().default(false).notNull(),
+	active: boolean().default(false).notNull(),
 });
 
 export const parameterItems = pgTable("parameter_items", {
@@ -287,6 +289,7 @@ export const parameterItems = pgTable("parameter_items", {
 	description: text().notNull(),
 	value: text().notNull(),
 	parameterId: uuid("parameter_id").notNull(),
+	defaultItem: boolean("default_item").default(false).notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.parameterId],

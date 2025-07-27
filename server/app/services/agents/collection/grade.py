@@ -18,7 +18,7 @@ from app.models import (
     Simulations,
     StandardGroups,
     Standards,
-    SystemAgents,
+    Agents,
 )
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_simulation_conversation_history
@@ -100,7 +100,7 @@ async def run_grade_agent(
     """
     try:
         # find agent with name of "Grade"
-        agent = session.exec(select(SystemAgents).where(SystemAgents.name == "Grade")).one()
+        agent = session.exec(select(Agents).where(Agents.name == "Grade")).one()
         if not agent:
             raise ValueError("Grade agent not found")
 

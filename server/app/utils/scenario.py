@@ -3,14 +3,14 @@
 import logging
 import random
 import uuid
+from typing import List
 
 from agents.items import TResponseInputItem
-from app.models import (Personas, Documents, ScenarioClasses, ScenarioDeadlines,
-                        ScenarioLocations, Scenarios, ScenarioTimes)
+from app.models import (Documents, ParameterItems, Parameters, Personas,
+                        Scenarios)
 from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
-
 
 
 def get_parameter_item_info(parameter_item_ids: List[uuid.UUID], session: Session) -> TResponseInputItem:
@@ -23,89 +23,53 @@ def get_parameter_item_info(parameter_item_ids: List[uuid.UUID], session: Sessio
         "content": f"The following is the parameter item information: {parameter_items}",
     }
 
-def get_crowdedness_info(crowdedness: int) -> TResponseInputItem:
+
+def construct_scenario_description(scenario: Scenarios, session: Session) -> str:
     """
-    Get the crowdedness information for a given crowdedness.
+    Construct a comprehensive scenario description based on all parameter items and their associated parameters.
+    
+    Args:
+        scenario: The scenario object
+        session: Database session
+        
+    Returns:
+        Enhanced description with parameter context
     """
-
-    crowdedness_info_string = f"The scenario has a {crowdedness} level of crowdedness."
-
-    return {
-        "role": "user",
-        "content": f"The following is the crowdedness information, on a scale of 1 to 10 (1 being the least crowded and 10 being the most crowded): {crowdedness_info_string}",
-    }
-
-
-def get_intensity_info(intensity: int) -> TResponseInputItem:
-    """
-    Get the intensity information for a given intensity.
-    """
-
-    intensity_info_string = f"The scenario has a {intensity} level of intensity."
-
-    return {
-        "role": "user",
-        "content": f"The following is the intensity information, on a scale of 1 to 10 (1 being the least intense and 10 being the most intense): {intensity_info_string}",
-    }
-
-
-def get_class_info(class_id: uuid.UUID, session: Session) -> TResponseInputItem:
-    """
-    Get the class information for a given class id.
-    """
-
-    class_info = session.exec(select(ScenarioClasses).where(ScenarioClasses.id == class_id)).first()
-    if not class_info:
-        raise ValueError(f"Class not found for class {class_id}")
-
-    return {
-        "role": "user",
-        "content": f"The following is the class information: {class_info.name} (Class Code: {class_info.class_code}) - {class_info.description}",
-    }
-
-def get_location_info(location_id: uuid.UUID, session: Session) -> TResponseInputItem:
-    """
-    Get the location information for a given location.
-    """
-
-    location = session.exec(select(ScenarioLocations).where(ScenarioLocations.id == location_id)).one()
-
-    return {
-        "role": "user",
-        "content": f"The following is the location information: The interaction takes place in the {location.name} - {location.description}.",
-    }
-
-
-def get_time_info(time_id: uuid.UUID, session: Session) -> TResponseInputItem:
-    """
-    Get the time of day information for a given time.
-    """
-
-    time = session.exec(select(ScenarioTimes).where(ScenarioTimes.id == time_id)).one()
-
-    time_description = time.time_of_day.strftime("%H:%M") + " - " + time.description
-
-    return {
-        "role": "user",
-        "content": f"The following is the time information: This interaction occurs at {time_description}.",
-    }
-
-
-def get_deadline_info(deadline_id: uuid.UUID, session: Session) -> TResponseInputItem:
-    """
-    Get the deadline information for a given deadline.
-    """
-
-    deadline = session.exec(
-        select(ScenarioDeadlines).where(ScenarioDeadlines.id == deadline_id)
-    ).one()
-
-    deadline_description = deadline.deadline + " - " + deadline.description
-
-    return {
-        "role": "user",
-        "content": f"The following is the deadline information: {deadline_description}.",
-    }
+    base_description = scenario.description or ""
+    
+    if not scenario.parameter_item_ids:
+        return base_description
+    
+    # Get all parameter items
+    parameter_items = session.exec(
+        select(ParameterItems).where(ParameterItems.id.in_(scenario.parameter_item_ids))
+    ).all()
+    
+    if not parameter_items:
+        return base_description
+    
+    # Get the associated parameters
+    parameter_ids = [item.parameter_id for item in parameter_items]
+    parameters = session.exec(
+        select(Parameters).where(Parameters.id.in_(parameter_ids))
+    ).all()
+    
+    # Create a mapping of parameter_id to parameter
+    param_map = {param.id: param for param in parameters}
+    
+    # Build parameter context description
+    param_context = []
+    for param_item in parameter_items:
+        param = param_map.get(param_item.parameter_id)
+        if param:
+            param_context.append(f"{param.name}: {param_item.name} ({param_item.value})")
+    
+    # Combine base description with parameter context
+    if param_context:
+        enhanced_description = f"{base_description}\n\nContext Parameters:\n" + "\n".join(f"- {context}" for context in param_context)
+        return enhanced_description
+    
+    return base_description
 
 
 async def randomly_fill_scenario_attributes(
@@ -121,6 +85,7 @@ async def randomly_fill_scenario_attributes(
     Returns:
         Updated scenario object with randomly selected values for null attributes
     """
+
     # Random agent selection if agent_id is null
     if scenario.persona_id is None:
         all_personas = session.exec(select(Personas)).all()
@@ -131,17 +96,6 @@ async def randomly_fill_scenario_attributes(
             scenario_persona_id = None
     else:
         scenario_persona_id = scenario.persona_id
-
-    # Random class selection if class_id is null
-    if scenario.class_id is None:
-        all_classes = session.exec(select(ScenarioClasses)).all()
-        if all_classes:
-            scenario_class_id = random.choice(all_classes).id
-            logger.info(f"Randomly selected class_id: {scenario_class_id}")
-        else:
-            scenario_class_id = None
-    else:
-        scenario_class_id = scenario.class_id
 
     # Random document selection if documents is null
     if scenario.document_ids is None:
@@ -164,77 +118,38 @@ async def randomly_fill_scenario_attributes(
     else:
         scenario_documents = scenario.document_ids
 
-    # Random crowdedness selection if crowdedness is null (1-10 scale)
-    if scenario.crowdedness is None:
-        scenario_crowdedness = random.randint(1, 10)
-        logger.info(f"Randomly selected crowdedness: {scenario_crowdedness}")
-    else:
-        scenario_crowdedness = scenario.crowdedness
-
-    # Random intensity selection if intensity is null (1-10 scale)
-    if scenario.intensity is None:
-        scenario_intensity = random.randint(1, 10)
-        logger.info(f"Randomly selected intensity: {scenario_intensity}")
-    else:
-        scenario_intensity = scenario.intensity
-
-
-    # Random class selection if class is null
-    if scenario.class_id is None:
-        all_classes = session.exec(select(ScenarioClasses)).all()
-        if all_classes:
-            scenario_class_id = random.choice(all_classes).id
-            logger.info(f"Randomly selected class_id: {scenario_class_id}")
+    # Random parameter item selection if parameter_item_ids is null
+    if scenario.parameter_item_ids is None:
+        # Get all parameter items
+        all_parameter_items = session.exec(select(ParameterItems)).all()
+        if all_parameter_items:
+            # Randomly select 3-5 parameter items
+            num_params = random.randint(3, min(5, len(all_parameter_items)))
+            selected_param_items = random.sample(all_parameter_items, num_params)
+            scenario_parameter_item_ids = [item.id for item in selected_param_items]
+            logger.info(f"Randomly selected {len(scenario_parameter_item_ids)} parameter items: {scenario_parameter_item_ids}")
         else:
-            scenario_class_id = None
+            scenario_parameter_item_ids = []
+            logger.info("No parameter items found")
     else:
-        scenario_class_id = scenario.class_id
+        scenario_parameter_item_ids = scenario.parameter_item_ids
 
-    # Random location selection if location is null
-    if scenario.location_id is None:
-        all_locations = session.exec(select(ScenarioLocations)).all()
-        if all_locations:
-            scenario_location_id = random.choice(all_locations).id
-            logger.info(f"Randomly selected location_id: {scenario_location_id}")
-        else:
-            scenario_location_id = None
-    else:
-        scenario_location_id = scenario.location_id
-
-    # Random time of day selection if time of day is null
-    if scenario.time_id is None:
-        all_times = session.exec(select(ScenarioTimes)).all()
-        if all_times:
-            scenario_time_id = random.choice(all_times).id
-            logger.info(f"Randomly selected time_id: {scenario_time_id}")
-        else:
-            scenario_time_id = None
-    else:
-        scenario_time_id = scenario.time_id
-
-    # Random urgency selection if urgency is null
-    if scenario.deadline_id is None:
-        all_deadlines = session.exec(select(ScenarioDeadlines)).all()
-        if all_deadlines:
-            scenario_deadline_id = random.choice(all_deadlines).id
-            logger.info(f"Randomly selected deadline_id: {scenario_deadline_id}")
-        else:
-            scenario_deadline_id = None
-        logger.info(f"Randomly selected deadline_id: {scenario_deadline_id}")
-    else:
-        scenario_deadline_id = scenario.deadline_id
+    # Construct enhanced description with parameter context
+    enhanced_description = construct_scenario_description(
+        Scenarios(
+            name=scenario.name,
+            description=scenario.description,
+            parameter_item_ids=scenario_parameter_item_ids
+        ), 
+        session
+    )
 
     return Scenarios(
         name=scenario.name,
-        description=scenario.description,
+        description=enhanced_description,
         persona_id=scenario_persona_id,
-        class_id=scenario_class_id,
-        documents=scenario_documents,
-        crowdedness=scenario_crowdedness,
-        intensity=scenario_intensity,
-        location_id=scenario_location_id,
-        time_id=scenario_time_id,
-        deadline_id=scenario_deadline_id,
+        document_ids=scenario_documents,
+        parameter_item_ids=scenario_parameter_item_ids,
         generated=True,
         parent_id=scenario.id,  # since we are creating a new scenario, we need to set the parent_id to the original scenario
     )

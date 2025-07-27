@@ -5,7 +5,7 @@ from typing import List, Tuple
 from agents import Runner, gen_trace_id, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
-from app.models import Models, Personas, Providers, SystemAgents
+from app.models import Models, Personas, Providers, Agents
 from app.services.agents.generic import GenericAgent
 from app.utils.document import get_document_info
 from app.utils.personas import get_persona_info
@@ -63,7 +63,7 @@ async def run_scenario_agent(
         parameter_item_info = get_parameter_item_info(parameter_item_ids, session)
 
     # find agent with name of "Scenario"
-    scenario_agent = session.exec(select(SystemAgents).where(SystemAgents.name == "Scenario")).one()
+    scenario_agent = session.exec(select(Agents).where(Agents.name == "Scenario")).one()
     if not scenario_agent:
         raise ValueError("Scenario agent not found")
 
