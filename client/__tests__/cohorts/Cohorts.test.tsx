@@ -1,5 +1,4 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
-import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -52,7 +51,6 @@ describe("Cohorts", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      const _user = userEvent.setup();
       renderWithMocks(<Cohorts />);
 
       // Component should handle state changes without errors
@@ -60,7 +58,6 @@ describe("Cohorts", () => {
     });
 
     it("should handle user events", async () => {
-      const _user = userEvent.setup();
       renderWithMocks(<Cohorts />);
 
       // Component should handle user events without errors

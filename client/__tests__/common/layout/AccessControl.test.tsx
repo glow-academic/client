@@ -1,6 +1,5 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
 import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -59,7 +58,6 @@ describe("AccessControl", () => {
 
   describe("User Interactions", () => {
     it("should handle user events", async () => {
-      const _user = userEvent.setup();
       renderWithMocks(<AccessControl {...mockProps} />);
 
       await waitFor(() => {
@@ -102,7 +100,7 @@ describe("AccessControl", () => {
       renderWithMocks(
         <AccessControl pathname="test-pathname">
           <div>fallback</div>
-        </AccessControl>,
+        </AccessControl>
       );
 
       await waitFor(() => {
@@ -139,7 +137,7 @@ describe("AccessControl", () => {
       renderWithMocks(
         <AccessControl pathname="/admin">
           <div>admin-content</div>
-        </AccessControl>,
+        </AccessControl>
       );
 
       await waitFor(() => {

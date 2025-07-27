@@ -5,14 +5,14 @@ import { describe, expect, it, vi } from "vitest";
 
 // Mock the RubricsDataTableToolbar component
 vi.mock("@/components/create/rubrics/RubricsDataTableToolbar", () => ({
-  RubricsDataTableToolbar: ({ _table }: { _table: unknown }) => (
+  RubricsDataTableToolbar: () => (
     <div data-testid="rubrics-data-table-toolbar">Toolbar</div>
   ),
 }));
 
 // Mock the DataTablePagination component
 vi.mock("@/components/common/history/DataTablePagination", () => ({
-  DataTablePagination: ({ _table }: { _table: unknown }) => (
+  DataTablePagination: () => (
     <div data-testid="data-table-pagination">Pagination</div>
   ),
 }));
@@ -81,7 +81,7 @@ describe("RubricsDataTable", () => {
   it("renders the toolbar", () => {
     render(<RubricsDataTable {...defaultProps} />);
     expect(
-      screen.getByTestId("rubrics-data-table-toolbar"),
+      screen.getByTestId("rubrics-data-table-toolbar")
     ).toBeInTheDocument();
   });
 
@@ -99,7 +99,7 @@ describe("RubricsDataTable", () => {
   it("shows no results message when no data", () => {
     render(<RubricsDataTable {...defaultProps} data={[]} />);
     expect(
-      screen.getByText("No rubrics match the current filters."),
+      screen.getByText("No rubrics match the current filters.")
     ).toBeInTheDocument();
   });
 });

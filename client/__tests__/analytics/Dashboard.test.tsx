@@ -1,6 +1,5 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
 import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -59,8 +58,6 @@ describe("Dashboard", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      const _user = userEvent.setup();
-
       renderWithMocks(<Dashboard />);
 
       // Should render loading state initially
@@ -68,8 +65,6 @@ describe("Dashboard", () => {
     });
 
     it("should handle user events", async () => {
-      const _user = userEvent.setup();
-
       renderWithMocks(<Dashboard />);
 
       // Should show loading state initially
@@ -97,7 +92,7 @@ describe("Dashboard", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
       vi.mocked(getAllProfiles).mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve([]), 100)),
+        () => new Promise((resolve) => setTimeout(() => resolve([]), 100))
       );
 
       renderWithMocks(<Dashboard />);

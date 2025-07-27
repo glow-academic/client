@@ -79,7 +79,6 @@ describe("ScenarioSlider", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      const _user = userEvent.setup();
       const onValueChange = vi.fn();
 
       renderWithMocks(
@@ -87,7 +86,7 @@ describe("ScenarioSlider", () => {
           {...mockProps}
           onValueChange={onValueChange}
           defaultValue={[0.5]}
-        />,
+        />
       );
 
       // Component should render with initial value
@@ -111,7 +110,7 @@ describe("ScenarioSlider", () => {
           showReset={true}
           inlineTitle={true}
           defaultValue={[0.5]}
-        />,
+        />
       );
 
       // Test reset button functionality (only shows with inlineTitle)

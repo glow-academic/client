@@ -1,5 +1,4 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
-import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -44,7 +43,6 @@ describe("CohortsDataTable", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      const _user = userEvent.setup();
       renderWithMocks(<CohortsDataTable {...mockProps} />);
 
       // Component should handle state changes without errors
@@ -52,7 +50,6 @@ describe("CohortsDataTable", () => {
     });
 
     it("should handle user events", async () => {
-      const _user = userEvent.setup();
       renderWithMocks(<CohortsDataTable {...mockProps} />);
 
       // Component should handle user events without errors
@@ -77,7 +74,7 @@ describe("CohortsDataTable", () => {
           profileOptions={[]}
           simulationOptions={[]}
           renderCohortCard={vi.fn()}
-        />,
+        />
       );
       expect(document.body).toBeInTheDocument();
     });

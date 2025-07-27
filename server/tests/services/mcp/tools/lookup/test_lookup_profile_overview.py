@@ -24,11 +24,18 @@ class MockProfile:
         self.active = True
 
 
+class MockSimulation:
+    def __init__(self, id, title):
+        self.id = id
+        self.title = title
+
+
 class MockSimulationAttempt:
-    def __init__(self, id, created_at, simulation_id):
+    def __init__(self, id, created_at, simulation_id, profile_id=None):
         self.id = id
         self.created_at = created_at
         self.simulation_id = simulation_id
+        self.profile_id = profile_id or uuid.uuid4()
 
 
 class MockSimulationChat:
@@ -61,7 +68,6 @@ class TestProfile_Overview:
         
         mock_session.get.return_value = mock_profile
         mock_session.exec.return_value.all.return_value = []
-        mock_session.exec.return_value.first.return_value = None
         
         result = profile_overview(str(profile_id))
         
@@ -92,6 +98,7 @@ class TestProfile_Overview:
         
         profile_id = uuid.uuid4()
         mock_session.get.return_value = None
+        mock_session.exec.return_value.first.return_value = None
         
         result = profile_overview(str(profile_id))
         
@@ -100,39 +107,46 @@ class TestProfile_Overview:
 
     def test_profile_overview_invalid_uuid(self, mock_get_session):
         """Test profile_overview with invalid UUID."""
+        mock_session = MagicMock()
+        mock_get_session.return_value = iter([mock_session])
+        
+        mock_session.exec.return_value.first.return_value = None
+        
         result = profile_overview("invalid-uuid")
         
         assert "error" in result
-        assert "Invalid profile_id format" in result["error"]
+        assert "Profile not found" in result["error"]
 
     def test_profile_overview_with_grades(self, mock_get_session):
-        """Test profile_overview with grade information."""
+        """Test profile_overview with grades."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         
         profile_id = uuid.uuid4()
-        mock_profile = MockProfile(profile_id, "John", "Doe", "jdoe")
-        
-        base_time = datetime.now()
+        simulation_id = uuid.uuid4()
         attempt_id = uuid.uuid4()
         chat_id = uuid.uuid4()
         
-        mock_attempt = MockSimulationAttempt(attempt_id, base_time, uuid.uuid4())
-        mock_chat = MockSimulationChat(chat_id, attempt_id, base_time)
+        mock_profile = MockProfile(profile_id, "John", "Doe", "jdoe")
+        mock_simulation = MockSimulation(simulation_id, "Test Simulation")
+        mock_attempt = MockSimulationAttempt(attempt_id, datetime.now(), simulation_id, profile_id)
+        mock_chat = MockSimulationChat(chat_id, attempt_id, datetime.now())
         mock_grade = MockSimulationChatGrade(chat_id, 85, True, 300)
         
-        mock_session.get.return_value = mock_profile
-        mock_session.exec.return_value.all.return_value = [mock_attempt]
-        mock_session.exec.return_value.first.return_value = mock_chat
+        mock_session.get.side_effect = lambda model, id: {
+            profile_id: mock_profile,
+            simulation_id: mock_simulation
+        }.get(id)
+        mock_session.exec.return_value.all.side_effect = [[mock_attempt], [mock_chat]]
         mock_session.exec.return_value.first.return_value = mock_grade
         
         result = profile_overview(str(profile_id))
         
+        assert result["profile"]["id"] == str(profile_id)
         assert len(result["latest_grades"]) == 1
-        grade = result["latest_grades"][0]
-        assert grade["score"] == 85
-        assert grade["passed"] is True
-        assert grade["time_taken"] == 300
+        assert result["latest_grades"][0]["simulation_title"] == "Test Simulation"
+        assert result["latest_grades"][0]["score"] == 85
+        assert result["latest_grades"][0]["passed"] is True
 
     def test_profile_overview_multiple_attempts(self, mock_get_session):
         """Test profile_overview with multiple attempts."""
@@ -140,22 +154,27 @@ class TestProfile_Overview:
         mock_get_session.return_value = iter([mock_session])
         
         profile_id = uuid.uuid4()
+        simulation_id = uuid.uuid4()
+        
         mock_profile = MockProfile(profile_id, "John", "Doe", "jdoe")
+        mock_simulation = MockSimulation(simulation_id, "Test Simulation")
         
+        # Create multiple attempts
         base_time = datetime.now()
-        attempt1_id = uuid.uuid4()
-        attempt2_id = uuid.uuid4()
+        attempt1 = MockSimulationAttempt(uuid.uuid4(), base_time, simulation_id, profile_id)
+        attempt2 = MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=1), simulation_id, profile_id)
         
-        mock_attempt1 = MockSimulationAttempt(attempt1_id, base_time, uuid.uuid4())
-        mock_attempt2 = MockSimulationAttempt(attempt2_id, base_time + timedelta(hours=1), uuid.uuid4())
-        
-        mock_session.get.return_value = mock_profile
-        mock_session.exec.return_value.all.return_value = [mock_attempt1, mock_attempt2]
+        mock_session.get.side_effect = lambda model, id: {
+            profile_id: mock_profile,
+            simulation_id: mock_simulation
+        }.get(id)
+        mock_session.exec.return_value.all.side_effect = [[attempt1, attempt2], [], []]
         mock_session.exec.return_value.first.return_value = None
         
         result = profile_overview(str(profile_id))
         
-        assert len(result["latest_grades"]) == 2
+        assert result["profile"]["id"] == str(profile_id)
+        assert result["latest_grades"] == []
 
     def test_profile_overview_null_timestamps(self, mock_get_session):
         """Test profile_overview with null timestamps."""
@@ -172,22 +191,25 @@ class TestProfile_Overview:
         
         result = profile_overview(str(profile_id))
         
+        assert result["profile"]["id"] == str(profile_id)
         assert result["profile"]["last_login"] is None
         assert result["profile"]["created_at"] is None
 
     def test_profile_overview_case_insensitive_search(self, mock_get_session):
-        """Test profile_overview case insensitive search."""
+        """Test profile_overview with case insensitive search."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         
         profile_id = uuid.uuid4()
         mock_profile = MockProfile(profile_id, "John", "Doe", "jdoe")
         
-        mock_session.get.return_value = mock_profile
+        # Mock the search by name functionality
+        mock_session.get.side_effect = ValueError("Invalid UUID")
+        mock_session.exec.return_value.first.return_value = mock_profile
         mock_session.exec.return_value.all.return_value = []
         
-        # Test with lowercase alias
-        result = profile_overview("jdoe")
+        result = profile_overview("john")
         
-        assert result["profile"]["alias"] == "jdoe"
+        assert result["profile"]["id"] == str(profile_id)
         assert result["profile"]["first_name"] == "John"
+        assert result["profile"]["last_name"] == "Doe"

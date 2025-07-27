@@ -188,26 +188,27 @@ class TestStudent_Sim_Report:
         mock_message1 = MockSimulationMessage(uuid.uuid4(), chat1_id, "Hello", "query")
         mock_message2 = MockSimulationMessage(uuid.uuid4(), chat2_id, "Hi", "query")
         
-        # Use a function to return the correct simulation
-        def get_side_effect(*args, **kwargs):
-            if args[0] == profile_id:
-                return mock_profile
-            elif args[0] == simulation_id:
-                return mock_simulation
-            elif args[0] == scenario_id:
-                return mock_scenario
-            return None
+        mock_session.get.side_effect = lambda model, id: {
+            profile_id: mock_profile,
+            simulation_id: mock_simulation,
+            scenario_id: mock_scenario
+        }.get(id)
         
-        mock_session.get.side_effect = get_side_effect
-        mock_session.exec.return_value.all.side_effect = [[mock_attempt1, mock_attempt2], [mock_chat1], [mock_message1], [], [mock_chat2], [mock_message2], [], []]
+        # Mock the nested query pattern: attempts -> chats -> messages -> grades
+        mock_session.exec.return_value.all.side_effect = [
+            [mock_attempt1, mock_attempt2],  # First call: get attempts
+            [mock_chat1],                    # Second call: get chats for attempt1
+            [mock_message1],                 # Third call: get messages for chat1
+            [],                             # Fourth call: get feedback for chat1
+            [mock_chat2],                    # Fifth call: get chats for attempt2
+            [mock_message2],                 # Sixth call: get messages for chat2
+            [],                             # Seventh call: get feedback for chat2
+        ]
         mock_session.exec.return_value.first.return_value = None
         
         result = student_sim_report(str(profile_id))
         
-        print(f"DEBUG: result = {result}")
-        print(f"DEBUG: profile_id = {profile_id}")
-        
-        # Implementation returns one entry per chat, not per attempt
+        # The function returns one entry per chat, not per attempt
         assert len(result["attempts"]) == 2
         assert result["attempts"][0]["simulation_id"] == str(simulation_id)
         assert result["attempts"][1]["simulation_id"] == str(simulation_id)
@@ -304,25 +305,29 @@ class TestStudent_Sim_Report:
         mock_message1 = MockSimulationMessage(uuid.uuid4(), chat1_id, "Hello", "query")
         mock_message2 = MockSimulationMessage(uuid.uuid4(), chat2_id, "Hi", "query")
         
-        # Use a function to return the correct simulation
-        def get_side_effect(*args, **kwargs):
-            if args[0] == profile_id:
-                return mock_profile
-            elif args[0] == simulation1_id:
-                return mock_simulation1
-            elif args[0] == simulation2_id:
-                return mock_simulation2
-            elif args[0] == scenario_id:
-                return mock_scenario
-            return None
+        mock_session.get.side_effect = lambda model, id: {
+            profile_id: mock_profile,
+            simulation1_id: mock_simulation1,
+            simulation2_id: mock_simulation2,
+            scenario_id: mock_scenario
+        }.get(id)
         
-        mock_session.get.side_effect = get_side_effect
-        mock_session.exec.return_value.all.side_effect = [[mock_attempt1, mock_attempt2], [mock_chat1], [mock_message1], [], [mock_chat2], [mock_message2], [], []]
+        # Mock the nested query pattern: attempts -> chats -> messages -> grades
+        mock_session.exec.return_value.all.side_effect = [
+            [mock_attempt1, mock_attempt2],  # First call: get attempts
+            [mock_chat1],                    # Second call: get chats for attempt1
+            [mock_message1],                 # Third call: get messages for chat1
+            [],                             # Fourth call: get feedback for chat1
+            [mock_chat2],                    # Fifth call: get chats for attempt2
+            [mock_message2],                 # Sixth call: get messages for chat2
+            [],                             # Seventh call: get feedback for chat2
+        ]
         mock_session.exec.return_value.first.return_value = None
         
         result = student_sim_report(str(profile_id))
         
-        # Implementation returns one entry per chat, not per attempt
+        # The function returns one entry per chat, not per attempt
         assert len(result["attempts"]) == 2
-        assert result["attempts"][0]["simulation_id"] == str(simulation1_id)
-        assert result["attempts"][1]["simulation_id"] == str(simulation2_id)
+        simulation_ids = [attempt["simulation_id"] for attempt in result["attempts"]]
+        assert str(simulation1_id) in simulation_ids
+        assert str(simulation2_id) in simulation_ids

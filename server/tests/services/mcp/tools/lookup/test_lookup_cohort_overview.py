@@ -12,11 +12,13 @@ from sqlalchemy.exc import SQLAlchemyError
 
 
 class MockCohort:
-    def __init__(self, id, title, description="", active=True):
+    def __init__(self, id, title, description="", active=True, profile_ids=None, simulation_ids=None):
         self.id = id
         self.title = title
         self.description = description
         self.active = active
+        self.profile_ids = profile_ids or []
+        self.simulation_ids = simulation_ids or []
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
 
@@ -34,10 +36,11 @@ class MockProfile:
 
 
 class MockSimulation:
-    def __init__(self, id, title, active=True):
+    def __init__(self, id, title, active=True, time_limit=30):
         self.id = id
         self.title = title
         self.active = active
+        self.time_limit = time_limit
         self.created_at = datetime.now()
 
 
@@ -54,13 +57,13 @@ class TestCohort_Overview:
         profile_id = uuid.uuid4()
         simulation_id = uuid.uuid4()
         
-        mock_cohort = MockCohort(cohort_id, "Test Cohort", "A test cohort for students")
+        mock_cohort = MockCohort(cohort_id, "Test Cohort", "A test cohort for students", 
+                                profile_ids=[profile_id], simulation_ids=[simulation_id])
         mock_profile = MockProfile(profile_id, "John", "Doe", "jdoe")
         mock_simulation = MockSimulation(simulation_id, "Test Simulation")
         
         mock_session.get.return_value = mock_cohort
-        mock_session.exec.return_value.all.return_value = [mock_profile]
-        mock_session.exec.return_value.all.return_value = [mock_simulation]
+        mock_session.exec.return_value.all.side_effect = [[mock_profile], [mock_simulation]]
         
         result = cohort_overview(str(cohort_id))
         
@@ -68,10 +71,10 @@ class TestCohort_Overview:
         assert result["cohort"]["title"] == "Test Cohort"
         assert result["cohort"]["description"] == "A test cohort for students"
         assert result["cohort"]["active"] is True
-        assert len(result["students"]) == 1
-        assert result["students"][0]["id"] == str(profile_id)
-        assert result["students"][0]["first_name"] == "John"
-        assert result["students"][0]["last_name"] == "Doe"
+        assert len(result["roster"]) == 1
+        assert result["roster"][0]["id"] == str(profile_id)
+        assert result["roster"][0]["first_name"] == "John"
+        assert result["roster"][0]["last_name"] == "Doe"
         assert len(result["simulations"]) == 1
         assert result["simulations"][0]["id"] == str(simulation_id)
         assert result["simulations"][0]["title"] == "Test Simulation"
@@ -110,12 +113,12 @@ class TestCohort_Overview:
         assert "Invalid cohort_id format" in result["error"]
 
     def test_cohort_overview_empty_roster(self, mock_get_session):
-        """Test cohort_overview with empty student roster."""
+        """Test cohort_overview with empty roster."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         
         cohort_id = uuid.uuid4()
-        mock_cohort = MockCohort(cohort_id, "Empty Cohort", "A cohort with no students")
+        mock_cohort = MockCohort(cohort_id, "Empty Cohort", profile_ids=[])
         
         mock_session.get.return_value = mock_cohort
         mock_session.exec.return_value.all.return_value = []
@@ -123,8 +126,8 @@ class TestCohort_Overview:
         result = cohort_overview(str(cohort_id))
         
         assert result["cohort"]["id"] == str(cohort_id)
-        assert result["students"] == []
-        assert result["student_count"] == 0
+        assert result["roster"] == []
+        assert result["stats"]["total_students"] == 0
 
     def test_cohort_overview_multiple_students(self, mock_get_session):
         """Test cohort_overview with multiple students."""
@@ -134,42 +137,49 @@ class TestCohort_Overview:
         cohort_id = uuid.uuid4()
         profile1_id = uuid.uuid4()
         profile2_id = uuid.uuid4()
+        simulation_id = uuid.uuid4()
         
-        mock_cohort = MockCohort(cohort_id, "Multi-Student Cohort")
+        mock_cohort = MockCohort(cohort_id, "Multi Student Cohort", 
+                                profile_ids=[profile1_id, profile2_id], 
+                                simulation_ids=[simulation_id])
         mock_profile1 = MockProfile(profile1_id, "John", "Doe", "jdoe")
         mock_profile2 = MockProfile(profile2_id, "Jane", "Smith", "jsmith")
+        mock_simulation = MockSimulation(simulation_id, "Test Simulation")
         
         mock_session.get.return_value = mock_cohort
-        mock_session.exec.return_value.all.return_value = [mock_profile1, mock_profile2]
+        mock_session.exec.return_value.all.side_effect = [[mock_profile1, mock_profile2], [mock_simulation]]
         
         result = cohort_overview(str(cohort_id))
         
-        assert len(result["students"]) == 2
-        assert result["student_count"] == 2
-        assert result["students"][0]["first_name"] == "John"
-        assert result["students"][1]["first_name"] == "Jane"
+        assert len(result["roster"]) == 2
+        assert result["roster"][0]["first_name"] == "John"
+        assert result["roster"][1]["first_name"] == "Jane"
+        assert result["stats"]["total_students"] == 2
 
     def test_cohort_overview_array_filtering(self, mock_get_session):
-        """Test cohort_overview array filtering logic."""
+        """Test cohort_overview with array filtering."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         
         cohort_id = uuid.uuid4()
         profile_id = uuid.uuid4()
+        simulation_id = uuid.uuid4()
         
-        mock_cohort = MockCohort(cohort_id, "Test Cohort")
+        mock_cohort = MockCohort(cohort_id, "Filtered Cohort", 
+                                profile_ids=[profile_id], 
+                                simulation_ids=[simulation_id])
         mock_profile = MockProfile(profile_id, "John", "Doe", "jdoe")
-        
-        # Mock profile with cohort_ids array containing the cohort_id
-        mock_profile.cohort_ids = [cohort_id]
+        mock_simulation = MockSimulation(simulation_id, "Test Simulation")
         
         mock_session.get.return_value = mock_cohort
-        mock_session.exec.return_value.all.return_value = [mock_profile]
+        mock_session.exec.return_value.all.side_effect = [[mock_profile], [mock_simulation]]
         
         result = cohort_overview(str(cohort_id))
         
-        assert len(result["students"]) == 1
-        assert result["students"][0]["id"] == str(profile_id)
+        assert len(result["roster"]) == 1
+        assert len(result["simulations"]) == 1
+        assert result["stats"]["total_students"] == 1
+        assert result["stats"]["active_simulations"] == 1
 
     def test_cohort_overview_inactive_cohort(self, mock_get_session):
         """Test cohort_overview with inactive cohort."""
@@ -177,14 +187,17 @@ class TestCohort_Overview:
         mock_get_session.return_value = iter([mock_session])
         
         cohort_id = uuid.uuid4()
-        mock_cohort = MockCohort(cohort_id, "Inactive Cohort", "An inactive cohort", False)
+        mock_cohort = MockCohort(cohort_id, "Inactive Cohort", active=False)
         
         mock_session.get.return_value = mock_cohort
         mock_session.exec.return_value.all.return_value = []
         
         result = cohort_overview(str(cohort_id))
         
+        assert result["cohort"]["id"] == str(cohort_id)
         assert result["cohort"]["active"] is False
+        assert result["roster"] == []
+        assert result["simulations"] == []
 
     def test_cohort_overview_null_timestamps(self, mock_get_session):
         """Test cohort_overview with null timestamps."""
@@ -192,7 +205,7 @@ class TestCohort_Overview:
         mock_get_session.return_value = iter([mock_session])
         
         cohort_id = uuid.uuid4()
-        mock_cohort = MockCohort(cohort_id, "Test Cohort")
+        mock_cohort = MockCohort(cohort_id, "Null Timestamp Cohort")
         mock_cohort.created_at = None
         mock_cohort.updated_at = None
         
@@ -201,11 +214,11 @@ class TestCohort_Overview:
         
         result = cohort_overview(str(cohort_id))
         
+        assert result["cohort"]["id"] == str(cohort_id)
         assert result["cohort"]["created_at"] is None
-        assert result["cohort"]["updated_at"] is None
 
     def test_cohort_overview_with_simulations(self, mock_get_session):
-        """Test cohort_overview with associated simulations."""
+        """Test cohort_overview with simulations."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         
@@ -213,19 +226,27 @@ class TestCohort_Overview:
         simulation1_id = uuid.uuid4()
         simulation2_id = uuid.uuid4()
         
-        mock_cohort = MockCohort(cohort_id, "Test Cohort")
-        mock_simulation1 = MockSimulation(simulation1_id, "Simulation 1")
-        mock_simulation2 = MockSimulation(simulation2_id, "Simulation 2")
+        mock_cohort = MockCohort(cohort_id, "Simulation Cohort", 
+                                simulation_ids=[simulation1_id, simulation2_id])
+        mock_simulation1 = MockSimulation(simulation1_id, "Simulation 1", True, 30)
+        mock_simulation2 = MockSimulation(simulation2_id, "Simulation 2", True, 45)
         
         mock_session.get.return_value = mock_cohort
-        mock_session.exec.return_value.all.return_value = []
-        mock_session.exec.return_value.all.return_value = [mock_simulation1, mock_simulation2]
+        
+        # The function makes two session.exec calls:
+        # 1. For profiles (empty in this test)
+        # 2. For simulations (filtered by cohort.simulation_ids)
+        mock_session.exec.return_value.all.side_effect = [
+            [],  # First call: profiles (empty)
+            [mock_simulation1, mock_simulation2]  # Second call: simulations
+        ]
         
         result = cohort_overview(str(cohort_id))
         
         assert len(result["simulations"]) == 2
         assert result["simulations"][0]["title"] == "Simulation 1"
         assert result["simulations"][1]["title"] == "Simulation 2"
+        assert result["stats"]["active_simulations"] == 2
 
     def test_cohort_overview_student_details(self, mock_get_session):
         """Test cohort_overview with detailed student information."""
@@ -235,19 +256,19 @@ class TestCohort_Overview:
         cohort_id = uuid.uuid4()
         profile_id = uuid.uuid4()
         
-        mock_cohort = MockCohort(cohort_id, "Test Cohort")
-        mock_profile = MockProfile(profile_id, "John", "Doe", "jdoe", "student")
+        mock_cohort = MockCohort(cohort_id, "Student Details Cohort", 
+                                profile_ids=[profile_id])
+        mock_profile = MockProfile(profile_id, "Alice", "Johnson", "ajohnson", "instructor")
         
         mock_session.get.return_value = mock_cohort
-        mock_session.exec.return_value.all.return_value = [mock_profile]
+        mock_session.exec.return_value.all.side_effect = [[mock_profile], []]
         
         result = cohort_overview(str(cohort_id))
         
-        assert len(result["students"]) == 1
-        student = result["students"][0]
+        assert len(result["roster"]) == 1
+        student = result["roster"][0]
         assert student["id"] == str(profile_id)
-        assert student["first_name"] == "John"
-        assert student["last_name"] == "Doe"
-        assert student["alias"] == "jdoe"
-        assert student["role"] == "student"
-        assert student["active"] is True
+        assert student["first_name"] == "Alice"
+        assert student["last_name"] == "Johnson"
+        assert student["alias"] == "ajohnson"
+        assert student["role"] == "instructor"

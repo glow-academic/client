@@ -7,15 +7,15 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock(
   "@/components/management/parameters/ParametersDataTableToolbar",
   () => ({
-    ParametersDataTableToolbar: ({ _table }: { _table: unknown }) => (
+    ParametersDataTableToolbar: () => (
       <div data-testid="parameters-toolbar">Toolbar</div>
     ),
-  }),
+  })
 );
 
 // Mock the pagination component
 vi.mock("@/components/common/history/DataTablePagination", () => ({
-  DataTablePagination: ({ _table }: { _table: unknown }) => (
+  DataTablePagination: () => (
     <div data-testid="parameters-pagination">Pagination</div>
   ),
 }));
@@ -88,7 +88,7 @@ describe("ParametersDataTable", () => {
         statusOptions={mockOptions.statusOptions}
         scenarioOptions={mockOptions.scenarioOptions}
         renderParameterCard={mockRenderParameterCard}
-      />,
+      />
     );
   });
 
@@ -102,7 +102,7 @@ describe("ParametersDataTable", () => {
         statusOptions={mockOptions.statusOptions}
         scenarioOptions={mockOptions.scenarioOptions}
         renderParameterCard={mockRenderParameterCard}
-      />,
+      />
     );
 
     expect(getByTestId("parameters-toolbar")).toBeInTheDocument();
@@ -119,7 +119,7 @@ describe("ParametersDataTable", () => {
         statusOptions={mockOptions.statusOptions}
         scenarioOptions={mockOptions.scenarioOptions}
         renderParameterCard={mockRenderParameterCard}
-      />,
+      />
     );
 
     expect(getByTestId("parameter-card-param-1")).toBeInTheDocument();
@@ -136,11 +136,11 @@ describe("ParametersDataTable", () => {
         statusOptions={mockOptions.statusOptions}
         scenarioOptions={mockOptions.scenarioOptions}
         renderParameterCard={mockRenderParameterCard}
-      />,
+      />
     );
 
     expect(
-      getByText("No parameters match the current filters."),
+      getByText("No parameters match the current filters.")
     ).toBeInTheDocument();
   });
 });

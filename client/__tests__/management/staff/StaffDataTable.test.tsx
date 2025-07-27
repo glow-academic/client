@@ -1,4 +1,5 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
+import { Row } from "@tanstack/react-table";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -8,7 +9,7 @@ import {
   StaffDataTable,
   StaffDataTableProps,
 } from "@/components/management/staff/StaffDataTable";
-import { useStaffColumns } from "@/hooks/use-staff-columns";
+import { StaffData, useStaffColumns } from "@/hooks/use-staff-columns";
 
 // Import mocks
 import "@/mocks/api";
@@ -28,7 +29,7 @@ const mockColumns = [
   {
     accessorKey: "firstName",
     header: "Staff Member",
-    cell: ({ row }: any) => (
+    cell: ({ row }: { row: Row<StaffData> }) => (
       <div>
         {row.original.firstName} {row.original.lastName}
       </div>
@@ -39,20 +40,22 @@ const mockColumns = [
   {
     accessorKey: "role",
     header: "Role",
-    cell: ({ row }: any) => <div>{row.original.roleDisplayName}</div>,
+    cell: ({ row }: { row: Row<StaffData> }) => (
+      <div>{row.original.roleDisplayName}</div>
+    ),
     enableSorting: true,
     enableColumnFilter: true,
   },
   {
     accessorKey: "email",
     header: "Email",
-    cell: ({ row }: any) => <div>{row.original.email}</div>,
+    cell: ({ row }: { row: Row<StaffData> }) => <div>{row.original.email}</div>,
     enableSorting: true,
   },
   {
     accessorKey: "active",
     header: "Status",
-    cell: ({ row }: any) => (
+    cell: ({ row }: { row: Row<StaffData> }) => (
       <div>{row.original.active ? "Active" : "Inactive"}</div>
     ),
     enableSorting: true,
@@ -61,14 +64,16 @@ const mockColumns = [
   {
     accessorKey: "lastActive",
     header: "Last Active",
-    cell: ({ row }: any) => <div>{row.original.lastActiveFormatted}</div>,
+    cell: ({ row }: { row: Row<StaffData> }) => (
+      <div>{row.original.lastActiveFormatted}</div>
+    ),
     enableSorting: true,
     enableColumnFilter: true,
   },
   {
     accessorKey: "cohortNames",
     header: "Cohorts",
-    cell: ({ row }: any) => (
+    cell: ({ row }: { row: Row<StaffData> }) => (
       <div>{row.original.cohortNames.join(", ") || "None"}</div>
     ),
     enableSorting: true,
@@ -123,7 +128,7 @@ const mockProps: StaffDataTableProps = {
 };
 
 // Mock the useStaffColumns hook implementation
-const mockUseStaffColumns = useStaffColumns as any;
+const mockUseStaffColumns = useStaffColumns as ReturnType<typeof vi.fn>;
 mockUseStaffColumns.mockReturnValue({
   columns: mockColumns,
   roleOptions: mockProps.roleOptions,
@@ -170,7 +175,7 @@ describe("StaffDataTable", () => {
 
       // Look for search input
       const searchInput = screen.getByPlaceholderText(
-        /search staff by name or alias/i,
+        /search staff by name or alias/i
       );
       expect(searchInput).toBeInTheDocument();
 

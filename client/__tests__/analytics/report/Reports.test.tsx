@@ -1,6 +1,5 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
 import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -94,7 +93,7 @@ describe("Reports", () => {
       // Wait for loading to complete
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading reports..."),
+          screen.queryByText("Loading reports...")
         ).not.toBeInTheDocument();
       });
 
@@ -113,8 +112,6 @@ describe("Reports", () => {
 
   describe("User Interactions", () => {
     it("should handle user events", async () => {
-      const _user = userEvent.setup();
-
       // Mock data for interaction testing
       const mockProfiles = [
         {
@@ -145,7 +142,7 @@ describe("Reports", () => {
       // Wait for data to load
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading reports..."),
+          screen.queryByText("Loading reports...")
         ).not.toBeInTheDocument();
       });
 
@@ -216,7 +213,7 @@ describe("Reports", () => {
       // Wait for data to load
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading reports..."),
+          screen.queryByText("Loading reports...")
         ).not.toBeInTheDocument();
       });
 

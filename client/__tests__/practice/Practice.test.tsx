@@ -1,6 +1,5 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
 import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -62,7 +61,6 @@ describe("Practice", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      const _user = userEvent.setup();
       renderWithMocks(<Practice />);
 
       // Wait for component to load
@@ -74,7 +72,6 @@ describe("Practice", () => {
     });
 
     it("should handle user events", async () => {
-      const _user = userEvent.setup();
       renderWithMocks(<Practice />);
 
       // Wait for component to load
@@ -110,7 +107,7 @@ describe("Practice", () => {
         "@/utils/queries/personas/get-all-personas"
       );
       vi.mocked(getAllPersonas).mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve([]), 100)),
+        () => new Promise((resolve) => setTimeout(() => resolve([]), 100))
       );
 
       renderWithMocks(<Practice />);
@@ -213,7 +210,7 @@ describe("Practice", () => {
               </AssistantProvider>
             </AnalyticsProvider>
           </ProfileProvider>
-        </QueryClientProvider>,
+        </QueryClientProvider>
       );
 
       await waitFor(() => {
@@ -231,7 +228,7 @@ describe("Practice", () => {
         "@/utils/queries/simulations/get-all-simulations"
       );
       vi.mocked(getAllSimulations).mockImplementation(
-        () => new Promise(() => {}), // Never resolves
+        () => new Promise(() => {}) // Never resolves
       );
 
       renderWithMocks(<Practice />);

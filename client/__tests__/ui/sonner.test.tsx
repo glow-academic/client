@@ -1,11 +1,12 @@
 import { Toaster } from "@/components/ui/sonner";
 import { renderWithMocks } from "@/test/renderWithMocks";
 import { screen } from "@testing-library/react";
+import { ToasterProps } from "sonner";
 import { describe, expect, it, vi } from "vitest";
 
 // Mock the sonner package
 vi.mock("sonner", () => ({
-  Toaster: ({ className, ...props }: any) => (
+  Toaster: ({ className, ...props }: ToasterProps) => (
     <div className={className} data-testid="toaster" {...props} />
   ),
 }));

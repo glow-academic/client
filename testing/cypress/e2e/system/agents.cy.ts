@@ -6,271 +6,487 @@ describe("Agents End-to-End Tests", () => {
   });
 
   describe("Role-Based Access Control", () => {
-    it.skip("should allow admin users to edit agents", () => {
-      // Login as admin
+    it("should allow admin users to edit agents", () => {
+      // Login as admin using mock session
+      cy.mockSession({ role: "admin" });
+      cy.visit("/analytics/dashboard");
+
       // Navigate to system agents
-      // Verify can edit agent configurations
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Agents").click();
+      cy.url().should("include", "/system/agents");
+
       // Verify can view all agents
+      cy.get('[data-testid^="agent-card-"]').should("be.visible");
+
+      // Verify can edit agent configurations
+      cy.get('[data-testid^="agent-card-"]')
+        .first()
+        .within(() => {
+          cy.get("button").contains("Edit").click();
+        });
+      cy.url().should("include", "/system/agents/a/");
+
       // Verify can test agent functionality
+      cy.get('input[placeholder="e.g., Enthusiastic Student Agent"]').should(
+        "be.visible"
+      );
+      cy.get(
+        'textarea[placeholder="Detailed behavior description and personality traits"]'
+      ).should("be.visible");
     });
 
-    it.skip("should allow superadmin users to edit agents", () => {
-      // Login as superadmin
+    it("should allow superadmin users to edit agents", () => {
+      // Login as superadmin using mock session
+      cy.mockSession({ role: "superadmin" });
+      cy.visit("/analytics/dashboard");
+
       // Navigate to system agents
-      // Verify can edit agent configurations
+      cy.get('[data-sidebar="menu-sub-button"]').contains("Agents").click();
+      cy.url().should("include", "/system/agents");
+
       // Verify can view all agents
+      cy.get('[data-testid^="agent-card-"]').should("be.visible");
+
+      // Verify can edit agent configurations
+      cy.get('[data-testid^="agent-card-"]')
+        .first()
+        .within(() => {
+          cy.get("button").contains("Edit").click();
+        });
+      cy.url().should("include", "/system/agents/a/");
+
       // Verify can test agent functionality
+      cy.get('input[placeholder="e.g., Enthusiastic Student Agent"]').should(
+        "be.visible"
+      );
+      cy.get(
+        'textarea[placeholder="Detailed behavior description and personality traits"]'
+      ).should("be.visible");
     });
 
-    it.skip("should prevent instructional users from accessing agent management", () => {
-      // Login as instructional
-      // Try to navigate to system agents
-      // Verify access is denied
-      // Verify appropriate redirect or error message
+    it("should prevent instructional users from accessing agents", () => {
+      // Login as instructional using mock session
+      cy.mockSession({ role: "instructional" });
+      cy.visit("/analytics/dashboard");
+
+      // Try to navigate to system agents directly
+      cy.visit("/system/agents");
+      cy.url().should("include", "/access-denied");
+
+      // Verify System section is not visible in sidebar
+      cy.get('[data-sidebar="menu-button"]').should("not.contain", "System");
     });
 
-    it.skip("should prevent TA users from accessing agent management", () => {
-      // Login as TA
-      // Try to navigate to system agents
-      // Verify access is denied
-      // Verify appropriate redirect or error message
+    it("should prevent TA users from accessing agents", () => {
+      // Login as TA using mock session
+      cy.mockSession({ role: "ta" });
+      cy.visit("/home");
+
+      // Try to navigate to system agents directly
+      cy.visit("/system/agents");
+      cy.url().should("include", "/access-denied");
+
+      // Verify System section is not visible in sidebar
+      cy.get('[data-sidebar="menu-button"]').should("not.contain", "System");
     });
 
-    it.skip("should prevent guest users from accessing agent management", () => {
+    it("should prevent guest users from accessing agents", () => {
       // Login as guest
-      // Try to navigate to system agents
-      // Verify access is denied
-      // Verify appropriate redirect or error message
+      cy.visit("/");
+      cy.get('[data-testid="guest-login-button"]').click();
+      cy.visit("/practice");
+
+      // Try to navigate to system agents directly
+      cy.visit("/system/agents");
+      cy.url().should("include", "/access-denied");
+
+      // Verify System section is not visible in sidebar
+      cy.get('[data-sidebar="menu-button"]').should("not.contain", "System");
     });
   });
 
-  describe("Agent Editing", () => {
-    it.skip("should edit agent configuration", () => {
+  describe("Agent Management", () => {
+    it("should display all system agents", () => {
       // Login as admin/superadmin
-      // Navigate to system agents
-      // Select existing agent to edit
-      // Modify agent configuration:
-      // - System prompt
-      // - Temperature settings
-      // - Model selection
-      // - Behavior parameters
-      // Submit changes
-      // Verify changes are saved
-      // Verify updated configuration is displayed
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
+      // Verify agents are displayed
+      cy.get('[data-testid^="agent-card-"]').should("be.visible");
+      cy.get("h1").should("contain", "System Agents");
     });
 
-    it.skip("should edit agent system prompt", () => {
+    it("should search agents by name", () => {
       // Login as admin/superadmin
-      // Navigate to system agents
-      // Select existing agent to edit
-      // Modify system prompt
-      // Submit changes
-      // Verify system prompt is updated
-      // Verify new prompt is applied to agent behavior
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
+      // Search for specific agent
+      cy.get('input[placeholder="Search system agents..."]').type("Math Tutor");
+
+      // Verify search results
+      cy.get('[data-testid^="agent-card-"]').should("contain", "Math Tutor");
     });
 
-    it.skip("should edit agent temperature settings", () => {
+    it("should filter agents by reasoning level", () => {
       // Login as admin/superadmin
-      // Navigate to system agents
-      // Select existing agent to edit
-      // Adjust temperature slider
-      // Submit changes
-      // Verify temperature setting is updated
-      // Verify new temperature affects agent responses
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
+      // Filter by reasoning level
+      cy.get("button").contains("Reasoning").click();
+      cy.get("button").contains("Low").click();
+
+      // Verify filtered results
+      cy.get('[data-testid^="agent-card-"]').should("be.visible");
     });
 
-    it.skip("should edit agent model selection", () => {
+    it("should filter agents by model", () => {
       // Login as admin/superadmin
-      // Navigate to system agents
-      // Select existing agent to edit
-      // Change model selection
-      // Submit changes
-      // Verify model is updated
-      // Verify agent uses new model for responses
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
+      // Filter by model
+      cy.get("button").contains("Model").click();
+      cy.get("button").contains("GPT-4").click();
+
+      // Verify filtered results
+      cy.get('[data-testid^="agent-card-"]').should("be.visible");
     });
 
-    it.skip("should edit agent behavior parameters", () => {
+    it("should filter agents by temperature", () => {
       // Login as admin/superadmin
-      // Navigate to system agents
-      // Select existing agent to edit
-      // Modify behavior parameters:
-      // - Response length
-      // - Creativity level
-      // - Formality level
-      // - Specialization areas
-      // Submit changes
-      // Verify behavior parameters are updated
-      // Verify agent behavior reflects changes
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
+      // Filter by temperature
+      cy.get("button").contains("Temperature").click();
+      cy.get("button").contains("Low (0.0-0.33)").click();
+
+      // Verify filtered results
+      cy.get('[data-testid^="agent-card-"]').should("be.visible");
     });
 
-    it.skip("should validate changes during editing", () => {
+    it("should reset filters", () => {
       // Login as admin/superadmin
-      // Navigate to system agents
-      // Try to edit agent with invalid configuration
-      // Verify validation errors are displayed
-      // Verify changes are not saved
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
+      // Apply a filter
+      cy.get("button").contains("Reasoning").click();
+      cy.get("button").contains("Low").click();
+
+      // Reset filters
+      cy.get("button").contains("Reset").click();
+
+      // Verify all agents are visible again
+      cy.get('[data-testid^="agent-card-"]').should("be.visible");
     });
   });
 
-  describe("Agent Testing and Validation", () => {
-    it.skip("should test agent functionality after editing", () => {
+  describe("Agent Configuration", () => {
+    it("should edit agent name", () => {
       // Login as admin/superadmin
-      // Navigate to system agents
-      // Edit agent configuration
-      // Test agent with sample prompts
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
+      // Select existing agent to edit
+      cy.get('[data-testid^="agent-card-"]')
+        .first()
+        .within(() => {
+          cy.get("button").contains("Edit").click();
+        });
+
+      // Change agent name
+      cy.get('input[placeholder="e.g., Enthusiastic Student Agent"]')
+        .clear()
+        .type("Test Agent");
+
+      // Submit changes
+      cy.get("button").contains("Update Agent").click();
+
+      // Verify agent name is updated
+      cy.url().should("include", "/system/agents");
+      cy.get('[data-testid^="agent-card-"]').should("contain", "Test Agent");
+    });
+
+    it("should edit agent description", () => {
+      // Login as admin/superadmin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
+      // Select existing agent to edit
+      cy.get('[data-testid^="agent-card-"]')
+        .first()
+        .within(() => {
+          cy.get("button").contains("Edit").click();
+        });
+
+      // Change agent description
+      cy.get(
+        'textarea[placeholder="Detailed behavior description and personality traits"]'
+      )
+        .clear()
+        .type("Test description");
+
+      // Submit changes
+      cy.get("button").contains("Update Agent").click();
+
       // Verify agent responds according to new configuration
-      // Verify responses are appropriate and consistent
+      cy.url().should("include", "/system/agents");
+      cy.get('[data-testid^="agent-card-"]').should("contain", "Test Agent");
     });
 
-    it.skip("should validate agent system prompt", () => {
+    it("should validate agent system prompt", () => {
       // Login as admin/superadmin
-      // Navigate to system agents
-      // Edit agent system prompt
-      // Test prompt with various inputs
-      // Verify agent follows prompt instructions
-      // Verify prompt is clear and effective
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
+      // Select existing agent to edit
+      cy.get('[data-testid^="agent-card-"]')
+        .first()
+        .within(() => {
+          cy.get("button").contains("Edit").click();
+        });
+
+      // Verify system prompt field is required
+      cy.get('textarea[placeholder="Enter the system prompt..."]').should(
+        "have.attr",
+        "required"
+      );
     });
 
-    it.skip("should test agent temperature settings", () => {
+    it("should edit agent temperature setting", () => {
       // Login as admin/superadmin
-      // Navigate to system agents
-      // Set different temperature values
-      // Test agent responses
-      // Verify lower temperature produces more consistent responses
-      // Verify higher temperature produces more creative responses
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
+      // Select existing agent to edit
+      cy.get('[data-testid^="agent-card-"]')
+        .first()
+        .within(() => {
+          cy.get("button").contains("Edit").click();
+        });
+
+      // Adjust temperature slider
+      cy.get('[data-testid="temperature-slider"]').should("be.visible");
+
+      // Submit changes
+      cy.get("button").contains("Update Agent").click();
+
+      // Verify temperature setting is updated
+      cy.url().should("include", "/system/agents");
     });
 
-    it.skip("should test agent model performance", () => {
+    it("should edit agent model selection", () => {
       // Login as admin/superadmin
-      // Navigate to system agents
-      // Change agent model
-      // Test agent performance
-      // Verify new model works correctly
-      // Verify performance meets expectations
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
+      // Select existing agent to edit
+      cy.get('[data-testid^="agent-card-"]')
+        .first()
+        .within(() => {
+          cy.get("button").contains("Edit").click();
+        });
+
+      // Change model selection
+      cy.get("select").first().select("GPT-4");
+
+      // Submit changes
+      cy.get("button").contains("Update Agent").click();
+
+      // Verify model is updated
+      cy.url().should("include", "/system/agents");
+    });
+
+    it("should edit agent reasoning level", () => {
+      // Login as admin/superadmin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
+      // Select existing agent to edit
+      cy.get('[data-testid^="agent-card-"]')
+        .first()
+        .within(() => {
+          cy.get("button").contains("Edit").click();
+        });
+
+      // Change reasoning level
+      cy.get("select").contains("Reasoning").parent().select("High");
+
+      // Submit changes
+      cy.get("button").contains("Update Agent").click();
+
+      // Verify reasoning level is updated
+      cy.url().should("include", "/system/agents");
     });
   });
 
-  describe("Agent Configuration Management", () => {
-    it.skip("should save agent configuration changes", () => {
+  describe("Agent Testing", () => {
+    it("should test agent with new configuration", () => {
       // Login as admin/superadmin
-      // Navigate to system agents
-      // Make configuration changes
-      // Save changes
-      // Navigate away and back
-      // Verify changes are persisted
-      // Verify configuration is applied
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
+      // Select existing agent to edit
+      cy.get('[data-testid^="agent-card-"]')
+        .first()
+        .within(() => {
+          cy.get("button").contains("Edit").click();
+        });
+
+      // Update agent configuration
+      cy.get('input[placeholder="e.g., Enthusiastic Student Agent"]')
+        .clear()
+        .type("Test Agent");
+      cy.get(
+        'textarea[placeholder="Detailed behavior description and personality traits"]'
+      )
+        .clear()
+        .type("Test description");
+
+      // Submit changes
+      cy.get("button").contains("Update Agent").click();
+
+      // Verify agent responds according to new configuration
+      cy.url().should("include", "/system/agents");
+      cy.get('[data-testid^="agent-card-"]').should("contain", "Test Agent");
     });
 
-    it.skip("should revert agent configuration changes", () => {
+    it("should validate required fields", () => {
       // Login as admin/superadmin
-      // Navigate to system agents
-      // Make configuration changes
-      // Click revert/cancel
-      // Verify changes are discarded
-      // Verify original configuration is restored
-    });
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
 
-    it.skip("should preview agent configuration changes", () => {
-      // Login as admin/superadmin
-      // Navigate to system agents
-      // Make configuration changes
-      // Click preview
-      // Verify preview shows expected behavior
-      // Verify changes are not yet applied
-    });
-  });
+      // Select existing agent to edit
+      cy.get('[data-testid^="agent-card-"]')
+        .first()
+        .within(() => {
+          cy.get("button").contains("Edit").click();
+        });
 
-  describe("Agent Data Validation", () => {
-    it.skip("should validate system prompt length", () => {
-      // Login as admin/superadmin
-      // Navigate to system agents
-      // Try to set extremely long system prompt
-      // Verify validation error is displayed
-      // Verify form submission is prevented
-    });
+      // Clear required fields
+      cy.get('input[placeholder="e.g., Enthusiastic Student Agent"]').clear();
+      cy.get(
+        'textarea[placeholder="Detailed behavior description and personality traits"]'
+      ).clear();
 
-    it.skip("should validate temperature range", () => {
-      // Login as admin/superadmin
-      // Navigate to system agents
-      // Try to set temperature outside valid range
-      // Verify validation error is displayed
-      // Verify form submission is prevented
-    });
+      // Try to submit
+      cy.get("button").contains("Update Agent").click();
 
-    it.skip("should validate model selection", () => {
-      // Login as admin/superadmin
-      // Navigate to system agents
-      // Try to select invalid model
-      // Verify validation error is displayed
-      // Verify form submission is prevented
-    });
-
-    it.skip("should validate required fields", () => {
-      // Login as admin/superadmin
-      // Navigate to system agents
-      // Try to submit form with missing required fields
-      // Verify validation errors are displayed
-      // Verify form submission is prevented
+      // Verify validation errors
+      cy.get('input[placeholder="e.g., Enthusiastic Student Agent"]').should(
+        "have.attr",
+        "required"
+      );
+      cy.get(
+        'textarea[placeholder="Detailed behavior description and personality traits"]'
+      ).should("have.attr", "required");
     });
   });
 
   describe("Agent Error Handling", () => {
-    it.skip("should handle API errors gracefully", () => {
+    it("should handle API errors gracefully", () => {
       // Simulate API error
-      // Navigate to system agents
-      // Try to perform agent operation
-      // Verify appropriate error message is displayed
-      // Verify retry functionality works
-    });
+      cy.intercept("GET", "/api/agents", {
+        statusCode: 500,
+        body: { error: "API Error" },
+      });
 
-    it.skip("should handle network connectivity issues", () => {
-      // Simulate network disconnect
-      // Navigate to system agents
-      // Try to perform agent operation
-      // Verify appropriate error message
-      // Verify reconnection handling works
-    });
-
-    it.skip("should handle validation errors appropriately", () => {
       // Login as admin/superadmin
-      // Navigate to system agents
-      // Submit invalid configuration
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
+      // Verify appropriate error message is displayed
+      cy.get('[data-testid="error-toast"]').should(
+        "contain",
+        "Failed to load agents"
+      );
+    });
+
+    it("should handle network connectivity issues", () => {
+      // Simulate network disconnect
+      cy.intercept("GET", "/api/agents", { forceNetworkError: true });
+
+      // Login as admin/superadmin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
+      // Verify appropriate error message
+      cy.get('[data-testid="error-toast"]').should("contain", "Network error");
+    });
+
+    it("should handle validation errors", () => {
+      // Login as admin/superadmin
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
+      // Select existing agent to edit
+      cy.get('[data-testid^="agent-card-"]')
+        .first()
+        .within(() => {
+          cy.get("button").contains("Edit").click();
+        });
+
+      // Submit invalid data
+      cy.get('input[placeholder="e.g., Enthusiastic Student Agent"]').clear();
+      cy.get("button").contains("Update Agent").click();
+
       // Verify validation errors are displayed clearly
-      // Verify form state is preserved
+      cy.get('input[placeholder="e.g., Enthusiastic Student Agent"]').should(
+        "have.attr",
+        "required"
+      );
     });
   });
 
   describe("Agent Performance", () => {
-    it.skip("should load agent data efficiently", () => {
+    it("should load agents efficiently", () => {
       // Login as admin/superadmin
-      // Navigate to system agents
-      // Verify agent list loads within acceptable time
-      // Verify loading states are displayed appropriately
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
+      // Verify agents load within acceptable time
+      cy.get('[data-testid^="agent-card-"]', { timeout: 10000 }).should(
+        "be.visible"
+      );
     });
 
-    it.skip("should handle agent testing without performance degradation", () => {
+    it("should handle large numbers of agents without performance degradation", () => {
       // Login as admin/superadmin
-      // Navigate to system agents
-      // Test multiple agents
-      // Verify interface remains responsive
-      // Verify testing remains fast
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
+      // Verify interface remains responsive with many agents
+      cy.get('[data-testid^="agent-card-"]').should("be.visible");
+      cy.get('input[placeholder="Search system agents..."]').should(
+        "be.visible"
+      );
     });
   });
 
   describe("Agent Accessibility", () => {
-    it.skip("should support keyboard navigation", () => {
+    it("should support keyboard navigation", () => {
       // Login as admin/superadmin
-      // Navigate to system agents
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
       // Test tab navigation through all interactive elements
-      // Verify focus management works correctly
+      cy.get("body").tab();
+      cy.get('input[placeholder="Search system agents..."]').should(
+        "be.focused"
+      );
     });
 
-    it.skip("should provide appropriate ARIA labels", () => {
+    it("should provide appropriate ARIA labels", () => {
       // Login as admin/superadmin
-      // Navigate to system agents
-      // Verify form elements have appropriate ARIA labels
-      // Verify configuration panels are accessible
-      // Verify interactive elements are announced correctly
+      cy.mockSession({ role: "admin" });
+      cy.visit("/system/agents");
+
+      // Verify agent cards have proper accessibility
+      cy.get('[data-testid^="agent-card-"]').should("be.visible");
+      cy.get("button").contains("Edit").should("be.visible");
     });
   });
 });

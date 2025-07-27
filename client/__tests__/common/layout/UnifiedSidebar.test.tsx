@@ -1,6 +1,5 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
 import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -87,7 +86,6 @@ describe("UnifiedSidebar", () => {
 
   describe("User Interactions", () => {
     it("should handle navigation clicks", async () => {
-      const _user = userEvent.setup();
       renderWithMocks(<UnifiedSidebar {...mockProps} />);
 
       await waitFor(() => {
@@ -113,7 +111,6 @@ describe("UnifiedSidebar", () => {
     });
 
     it("should handle user events", async () => {
-      const _user = userEvent.setup();
       renderWithMocks(<UnifiedSidebar {...mockProps} />);
 
       await waitFor(() => {

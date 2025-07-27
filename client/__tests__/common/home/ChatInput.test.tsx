@@ -70,7 +70,7 @@ describe("ChatInput", () => {
         expect(sendButton).toBeInTheDocument();
         expect(textarea).toHaveAttribute(
           "placeholder",
-          "Start a conversation...",
+          "Start a conversation..."
         );
       });
     });
@@ -125,7 +125,6 @@ describe("ChatInput", () => {
     });
 
     it("should not submit empty messages", async () => {
-      const user = userEvent.setup();
       renderWithMocks(<ChatInput {...mockProps} />);
 
       await waitFor(() => {
@@ -162,7 +161,7 @@ describe("ChatInput", () => {
           {...mockProps}
           promptToSet="Set prompt"
           onPromptSet={onPromptSet}
-        />,
+        />
       );
 
       await waitFor(() => {
@@ -199,6 +198,13 @@ describe("ChatInput", () => {
         expand: vi.fn(),
         close: vi.fn(),
         setCurrentChatId: vi.fn(),
+        chats: [],
+        pastChats: [],
+        isLoadingChats: false,
+        selectChat: vi.fn(),
+        startBlankChat: vi.fn(),
+        isConnected: true,
+        createNewChat: vi.fn(),
       });
 
       renderWithMocks(<ChatInput {...mockProps} />);
@@ -247,11 +253,15 @@ describe("ChatInput", () => {
         setUiState: vi.fn(),
         openWidget: vi.fn(),
         expand: vi.fn(),
-        minimize: vi.fn(),
         close: vi.fn(),
-        toggle: vi.fn(),
         setCurrentChatId: vi.fn(),
-        clearCurrentChatId: vi.fn(),
+        chats: [],
+        pastChats: [],
+        isLoadingChats: false,
+        selectChat: vi.fn(),
+        startBlankChat: vi.fn(),
+        isConnected: true,
+        createNewChat: vi.fn(),
       });
 
       renderWithMocks(<ChatInput {...mockProps} />);

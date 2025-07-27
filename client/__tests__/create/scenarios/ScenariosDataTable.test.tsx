@@ -2,7 +2,6 @@ import { renderWithMocks } from "@/test/renderWithMocks";
 import { Scenario } from "@/types";
 import type { ColumnDef } from "@tanstack/react-table";
 import { screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -35,7 +34,7 @@ describe("ScenariosDataTable", () => {
 
       // Should render the component with no data message
       expect(
-        screen.getByText("No scenarios match the current filters."),
+        screen.getByText("No scenarios match the current filters.")
       ).toBeInTheDocument();
     });
 
@@ -85,31 +84,27 @@ describe("ScenariosDataTable", () => {
 
       // Should have proper accessibility attributes
       expect(
-        screen.getByText("No scenarios match the current filters."),
+        screen.getByText("No scenarios match the current filters.")
       ).toBeInTheDocument();
     });
   });
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      const _user = userEvent.setup();
-
       renderWithMocks(<ScenariosDataTable {...mockProps} />);
 
       // Should handle state changes properly
       expect(
-        screen.getByText("No scenarios match the current filters."),
+        screen.getByText("No scenarios match the current filters.")
       ).toBeInTheDocument();
     });
 
     it("should handle user events", async () => {
-      const _user = userEvent.setup();
-
       renderWithMocks(<ScenariosDataTable {...mockProps} />);
 
       // Should handle user events properly
       expect(
-        screen.getByText("No scenarios match the current filters."),
+        screen.getByText("No scenarios match the current filters.")
       ).toBeInTheDocument();
     });
   });
@@ -131,7 +126,7 @@ describe("ScenariosDataTable", () => {
 
       // Should render the component even with edge case props
       expect(
-        screen.getByText("No scenarios match the current filters."),
+        screen.getByText("No scenarios match the current filters.")
       ).toBeInTheDocument();
     });
 
@@ -151,7 +146,7 @@ describe("ScenariosDataTable", () => {
 
       // Should render with minimal props
       expect(
-        screen.getByText("No scenarios match the current filters."),
+        screen.getByText("No scenarios match the current filters.")
       ).toBeInTheDocument();
     });
   });

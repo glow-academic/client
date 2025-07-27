@@ -179,8 +179,6 @@ describe("ReportsDataTable", () => {
     });
 
     it("should handle state changes", async () => {
-      const _user = userEvent.setup();
-
       const propsWithData = {
         ...mockProps,
         columns: mockColumns,
@@ -195,8 +193,6 @@ describe("ReportsDataTable", () => {
     });
 
     it("should handle user events", async () => {
-      const _user = userEvent.setup();
-
       const propsWithData = {
         ...mockProps,
         columns: mockColumns,
