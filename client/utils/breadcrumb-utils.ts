@@ -15,7 +15,7 @@ import { getProvider } from "./queries/providers/get-provider";
 import { getRubric } from "./queries/rubrics/get-rubric";
 import { getSimulationAttempt } from "./queries/simulation_attempts/get-simulation-attempt";
 import { getSimulationChat } from "./queries/simulation_chats/get-simulation-chat";
-import { getSystemAgent } from "./queries/system_agents/get-system-agent";
+import { getAgent } from "./queries/agents/get-agent";
 
 interface BreadcrumbItem {
   title: string;
@@ -51,7 +51,7 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         const personaData = await getPersona(id);
         return personaData?.name || `Persona ${id.substring(0, 8)}...`;
       case "agent":
-        const agentData = await getSystemAgent(id);
+        const agentData = await getAgent(id);
         return agentData?.name || `Agent ${id.substring(0, 8)}...`;
       case "simulation":
         const simulationData = await getSimulation(id);

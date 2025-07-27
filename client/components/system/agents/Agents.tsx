@@ -1,6 +1,6 @@
 /**
- * SystemAgents.tsx
- * Used to display the system agents page.
+ * Agents.tsx
+ * Used to display the agents page.
  * @AshokSaravanan222 & @siladiea
  * 07/20/2025
  */
@@ -12,23 +12,23 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSystemAgentColumns } from "@/hooks/use-system-agent-columns";
-import { SystemAgent } from "@/types";
-import { getAllSystemAgents } from "@/utils/queries/system_agents/get-all-system-agents";
-import { SystemAgentsDataTable } from "./SystemAgentsDataTable";
+import { Agent } from "@/types";
+import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+import { AgentsDataTable } from "./AgentsDataTable";
+import { useAgentColumns } from "@/hooks/use-agent-columns";
 
-export default function SystemAgents() {
+export default function Agents() {
   const router = useRouter();
 
   // Fetch agents data
   const { data: agents = [] } = useQuery({
-    queryKey: ["systemAgents"],
-    queryFn: () => getAllSystemAgents(),
+    queryKey: ["agents"],
+    queryFn: () => getAllAgents(),
   });
 
   // Get table columns and filter options
   const { columns, reasoningOptions, modelOptions, temperatureOptions } =
-    useSystemAgentColumns();
+    useAgentColumns();
 
   const handleEdit = (id: string) => {
     router.push(`/system/agents/a/${id}`);
@@ -42,7 +42,7 @@ export default function SystemAgents() {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const renderAgentCard = (agent: SystemAgent) => (
+  const renderAgentCard = (agent: Agent) => (
     <Card key={agent.id} className="hover:shadow-md transition-shadow">
       <CardHeader>
         <div className="flex justify-between items-start">
@@ -95,7 +95,7 @@ export default function SystemAgents() {
 
   return (
     <div className="space-y-8">
-      <SystemAgentsDataTable
+      <AgentsDataTable
         columns={columns}
         data={agents}
         reasoningOptions={reasoningOptions}

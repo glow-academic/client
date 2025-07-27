@@ -35,6 +35,8 @@ import {
 import { cn } from "@/lib/utils";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
+import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
+import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -69,35 +71,11 @@ export interface ScenarioStatsProps {
   cohortIds: string[];
 }
 
-type MetricType = "intensity" | "crowdedness" | "documentCount";
-
 interface MetricOption {
-  id: MetricType;
+  id: string; // parameterId
   name: string;
   description: string;
-  icon: string;
 }
-
-const METRIC_OPTIONS: MetricOption[] = [
-  {
-    id: "intensity",
-    name: "Intensity Level",
-    description: "Scenario intensity rating (1-10)",
-    icon: "🔥",
-  },
-  {
-    id: "crowdedness",
-    name: "Crowdedness",
-    description: "Number of students in scenario (1-10)",
-    icon: "👥",
-  },
-  {
-    id: "documentCount",
-    name: "Document Count",
-    description: "Number of documents available",
-    icon: "📄",
-  },
-];
 
 export default function ScenarioStats({
   dateStart,
@@ -106,7 +84,7 @@ export default function ScenarioStats({
   cohortIds,
   thresholds,
 }: ScenarioStatsProps) {
-  const [selectedMetric, setSelectedMetric] = useState<MetricType>("intensity");
+  const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
 
   // Fetch data
@@ -145,6 +123,16 @@ export default function ScenarioStats({
     queryFn: () => getAllRubrics(),
   });
 
+  const { data: parameters, isLoading: parametersLoading } = useQuery({
+    queryKey: ["parameters"],
+    queryFn: () => getAllParameters(),
+  });
+
+  const { data: parameterItems, isLoading: parameterItemsLoading } = useQuery({
+    queryKey: ["parameterItems"],
+    queryFn: () => getAllParameterItems(),
+  });
+
   const { data: attempts, isLoading: attemptsLoading } = useQuery({
     queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
     queryFn: () =>
@@ -175,9 +163,45 @@ export default function ScenarioStats({
     cohortsLoading ||
     simulationsLoading ||
     rubricsLoading ||
+    parametersLoading ||
+    parameterItemsLoading ||
     attemptsLoading ||
     chatsLoading ||
     gradesLoading;
+
+  // Get numerical parameters only
+  const numericalParameters = useMemo(() => {
+    return parameters?.filter((p) => p.numerical && p.active) || [];
+  }, [parameters]);
+
+  // Set default selected parameter if none selected and we have numerical parameters
+  const selectedParameter = useMemo(() => {
+    if (!selectedParameterId && numericalParameters.length > 0) {
+      const firstParameter = numericalParameters[0];
+      if (firstParameter) {
+        setSelectedParameterId(firstParameter.id);
+        return firstParameter;
+      }
+    }
+    return numericalParameters.find((p) => p.id === selectedParameterId);
+  }, [selectedParameterId, numericalParameters]);
+
+  // Get parameter items for the selected parameter
+  const parameterItemsForSelected = useMemo(() => {
+    if (!parameterItems || !selectedParameter) return [];
+    return parameterItems
+      .filter((item) => item.parameterId === selectedParameter.id)
+      .sort((a, b) => parseFloat(a.value) - parseFloat(b.value));
+  }, [parameterItems, selectedParameter]);
+
+  // Generate metric options from numerical parameters
+  const METRIC_OPTIONS: MetricOption[] = useMemo(() => {
+    return numericalParameters.map((parameter) => ({
+      id: parameter.id,
+      name: parameter.name,
+      description: `Performance by ${parameter.name.toLowerCase()} value`,
+    }));
+  }, [numericalParameters]);
 
   // Calculate cohort-based filters
   const cohortFilters = useMemo(() => {
@@ -229,7 +253,9 @@ export default function ScenarioStats({
       !grades ||
       !simulations ||
       !profiles ||
-      !rubrics
+      !rubrics ||
+      !parameterItemsForSelected ||
+      !selectedParameter
     ) {
       return [];
     }
@@ -284,7 +310,7 @@ export default function ScenarioStats({
 
     // Group scenarios by metric level and calculate average performance
     const metricGroups: {
-      [key: number]: { scores: number[]; count: number; rubricPoints: number };
+      [key: string]: { scores: number[]; count: number; rubricPoints: number };
     } = {};
 
     scenarios.forEach((scenario) => {
@@ -297,49 +323,56 @@ export default function ScenarioStats({
 
       if (scenarioGrades.length === 0) return;
 
-      // Get metric value based on selected metric
-      let metricValue = 0;
-      switch (selectedMetric) {
-        case "intensity":
-          metricValue = scenario.intensity || 0;
-          break;
-        case "crowdedness":
-          metricValue = scenario.crowdedness || 0;
-          break;
-        case "documentCount":
-          metricValue = scenario.documentIds?.length || 0;
-          break;
-      }
-
-      if (metricValue > 0) {
-        // Calculate percentage scores based on rubric points
-        const percentageScores = scenarioGrades.map((grade) => {
-          const rubric = rubrics.find((r) => r.id === grade.rubricId);
-          if (!rubric || rubric.points === 0) return 0;
-
-          // Calculate percentage score (score out of rubric.points)
-          return Math.round((grade.score / rubric.points) * 100);
-        });
-
-        const avgScore = Math.round(
-          percentageScores.reduce((sum, score) => sum + score, 0) /
-            percentageScores.length
-        );
-
-        if (!metricGroups[metricValue]) {
-          metricGroups[metricValue] = { scores: [], count: 0, rubricPoints: 0 };
+      // Find the parameter item for this scenario that matches our selected parameter
+      const scenarioParameterItem = scenario.parameterItemIds?.find(
+        (itemId) => {
+          const item = parameterItemsForSelected.find((pi) => pi.id === itemId);
+          return item && item.parameterId === selectedParameter?.id;
         }
-        const group = metricGroups[metricValue];
-        if (group) {
-          group.scores.push(avgScore);
-          group.count += scenarioChats.length;
+      );
 
-          // Store rubric points for reference (use the first one found)
-          if (group.rubricPoints === 0) {
-            const firstGrade = scenarioGrades[0];
-            if (firstGrade) {
-              const rubric = rubrics.find((r) => r.id === firstGrade.rubricId);
-              group.rubricPoints = rubric?.points || 0;
+      if (scenarioParameterItem) {
+        const item = parameterItemsForSelected.find(
+          (pi) => pi.id === scenarioParameterItem
+        );
+        const metricValue = item?.value || "";
+
+        if (metricValue) {
+          // Calculate percentage scores based on rubric points
+          const percentageScores = scenarioGrades.map((grade) => {
+            const rubric = rubrics.find((r) => r.id === grade.rubricId);
+            if (!rubric || rubric.points === 0) return 0;
+
+            // Calculate percentage score (score out of rubric.points)
+            return Math.round((grade.score / rubric.points) * 100);
+          });
+
+          const avgScore = Math.round(
+            percentageScores.reduce((sum, score) => sum + score, 0) /
+              percentageScores.length
+          );
+
+          if (!metricGroups[metricValue]) {
+            metricGroups[metricValue] = {
+              scores: [],
+              count: 0,
+              rubricPoints: 0,
+            };
+          }
+          const group = metricGroups[metricValue];
+          if (group) {
+            group.scores.push(avgScore);
+            group.count += scenarioChats.length;
+
+            // Store rubric points for reference (use the first one found)
+            if (group.rubricPoints === 0) {
+              const firstGrade = scenarioGrades[0];
+              if (firstGrade) {
+                const rubric = rubrics.find(
+                  (r) => r.id === firstGrade.rubricId
+                );
+                group.rubricPoints = rubric?.points || 0;
+              }
             }
           }
         }
@@ -349,7 +382,7 @@ export default function ScenarioStats({
     // Convert to array format for chart
     const chartData = Object.entries(metricGroups)
       .map(([metricLevel, data]) => ({
-        metricLevel: parseInt(metricLevel),
+        metricLevel,
         avgScore: Math.round(
           data.scores.reduce((sum, score) => sum + score, 0) /
             data.scores.length
@@ -358,7 +391,7 @@ export default function ScenarioStats({
         totalAttempts: data.count,
         rubricPoints: data.rubricPoints,
       }))
-      .sort((a, b) => a.metricLevel - b.metricLevel)
+      .sort((a, b) => parseFloat(a.metricLevel) - parseFloat(b.metricLevel))
       .filter((item) => item.scenarioCount >= 1); // Show all levels with at least 1 scenario
 
     return chartData;
@@ -375,8 +408,9 @@ export default function ScenarioStats({
     dateStart,
     dateEnd,
     profileId,
-    selectedMetric,
     cohortFilters,
+    parameterItemsForSelected,
+    selectedParameter,
   ]);
 
   // Calculate correlation coefficient
@@ -385,7 +419,7 @@ export default function ScenarioStats({
 
     const n = aggregatedPerformanceData.length;
     const sumX = aggregatedPerformanceData.reduce(
-      (sum, item) => sum + item.metricLevel,
+      (sum, item) => sum + parseFloat(item.metricLevel),
       0
     );
     const sumY = aggregatedPerformanceData.reduce(
@@ -393,11 +427,11 @@ export default function ScenarioStats({
       0
     );
     const sumXY = aggregatedPerformanceData.reduce(
-      (sum, item) => sum + item.metricLevel * item.avgScore,
+      (sum, item) => sum + parseFloat(item.metricLevel) * item.avgScore,
       0
     );
     const sumX2 = aggregatedPerformanceData.reduce(
-      (sum, item) => sum + item.metricLevel * item.metricLevel,
+      (sum, item) => sum + Math.pow(parseFloat(item.metricLevel), 2),
       0
     );
     const sumY2 = aggregatedPerformanceData.reduce(
@@ -414,7 +448,7 @@ export default function ScenarioStats({
   }, [aggregatedPerformanceData]);
 
   const selectedMetricOption = METRIC_OPTIONS.find(
-    (m) => m.id === selectedMetric
+    (m) => m.id === selectedParameterId
   );
 
   // Generate insight text
@@ -497,6 +531,28 @@ export default function ScenarioStats({
     );
   }
 
+  // Show message if no numerical parameters available
+  if (numericalParameters.length === 0) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Scenario Performance Analysis
+          </CardTitle>
+          <CardDescription>
+            Performance correlation with scenario characteristics
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center flex-1">
+          <p className="text-muted-foreground">
+            No numerical parameters available for analysis.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!aggregatedPerformanceData.length) {
     return (
       <Card className="w-full h-full flex flex-col">
@@ -555,41 +611,39 @@ export default function ScenarioStats({
                     className="w-48 justify-between"
                   >
                     <div className="flex items-center gap-2">
-                      <span>{selectedMetricOption?.icon || "📊"}</span>
-                      <span>{selectedMetricOption?.name || "Metric"}</span>
+                      <span>
+                        {selectedMetricOption?.name || "Select Parameter"}
+                      </span>
                     </div>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-48 p-0">
                   <Command>
-                    <CommandInput placeholder="Search metrics..." />
-                    <CommandEmpty>No metric found.</CommandEmpty>
+                    <CommandInput placeholder="Search parameters..." />
+                    <CommandEmpty>No parameter found.</CommandEmpty>
                     <CommandGroup>
                       {METRIC_OPTIONS.map((metric) => (
                         <CommandItem
                           key={metric.id}
                           value={metric.id}
                           onSelect={() => {
-                            setSelectedMetric(metric.id);
+                            setSelectedParameterId(metric.id);
                             setPickerOpen(false);
                           }}
                         >
                           <Check
                             className={cn(
                               "mr-2 h-4 w-4",
-                              selectedMetric === metric.id
+                              selectedParameterId === metric.id
                                 ? "opacity-100"
                                 : "opacity-0"
                             )}
                           />
-                          <div className="flex items-center gap-2">
-                            <span>{metric.icon}</span>
-                            <div>
-                              <div className="font-medium">{metric.name}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {metric.description}
-                              </div>
+                          <div>
+                            <div className="font-medium">{metric.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {metric.description}
                             </div>
                           </div>
                         </CommandItem>
@@ -613,13 +667,9 @@ export default function ScenarioStats({
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="metricLevel"
-                  name={selectedMetricOption?.name || "Metric Level"}
+                  name={selectedMetricOption?.name || "Parameter Level"}
                   fontSize={12}
-                  tickFormatter={(value) => {
-                    if (selectedMetric === "documentCount")
-                      return value.toString();
-                    return value.toString();
-                  }}
+                  tickFormatter={(value) => value.toString()}
                 />
                 <YAxis
                   fontSize={12}
@@ -640,7 +690,8 @@ export default function ScenarioStats({
                     const dataPoint = aggregatedPerformanceData.find(
                       (item) => item.metricLevel === label
                     );
-                    const metricName = selectedMetricOption?.name || "Metric";
+                    const metricName =
+                      selectedMetricOption?.name || "Parameter";
                     return `${metricName} Level ${label} (${dataPoint?.scenarioCount || 0} scenarios)`;
                   }}
                 />
@@ -657,7 +708,7 @@ export default function ScenarioStats({
           {/* X-axis Label and Correlation */}
           <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground font-medium">
-              {selectedMetricOption?.name || "Metric Level"}
+              {selectedMetricOption?.name || "Parameter Level"}
             </div>
 
             {/* Correlation Component */}

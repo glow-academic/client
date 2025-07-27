@@ -16,26 +16,26 @@ import {
 import * as React from "react";
 
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
-import { SystemAgent } from "@/types";
-import { SystemAgentsDataTableToolbar } from "./SystemAgentsDataTableToolbar";
+import { Agent } from "@/types";
+import { AgentsDataTableToolbar } from "./AgentsDataTableToolbar";
 
-export interface SystemAgentsDataTableProps {
-  columns: ColumnDef<SystemAgent>[];
-  data: SystemAgent[];
+export interface AgentsDataTableProps {
+  columns: ColumnDef<Agent>[];
+  data: Agent[];
   reasoningOptions: { value: string; label: string }[];
   modelOptions: { value: string; label: string }[];
   temperatureOptions: { value: string; label: string }[];
-  renderAgentCard: (agent: SystemAgent) => React.ReactNode;
+  renderAgentCard: (agent: Agent) => React.ReactNode;
 }
 
-export function SystemAgentsDataTable({
+export function AgentsDataTable({
   columns,
   data,
   reasoningOptions,
   modelOptions,
   temperatureOptions,
   renderAgentCard,
-}: SystemAgentsDataTableProps) {
+}: AgentsDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -75,7 +75,7 @@ export function SystemAgentsDataTable({
 
   return (
     <div className="space-y-4">
-      <SystemAgentsDataTableToolbar
+      <AgentsDataTableToolbar
         table={table}
         reasoningOptions={reasoningOptions}
         modelOptions={modelOptions}

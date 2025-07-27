@@ -6,21 +6,21 @@ import { X } from "lucide-react";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SystemAgent } from "@/types";
+import { Agent } from "@/types";
 
-export interface SystemAgentsDataTableToolbarProps {
-  table: Table<SystemAgent>;
+export interface AgentsDataTableToolbarProps {
+  table: Table<Agent>;
   reasoningOptions: { value: string; label: string }[];
   modelOptions: { value: string; label: string }[];
   temperatureOptions: { value: string; label: string }[];
 }
 
-export function SystemAgentsDataTableToolbar({
+export function AgentsDataTableToolbar({
   table,
   reasoningOptions,
   modelOptions,
   temperatureOptions,
-}: SystemAgentsDataTableToolbarProps) {
+}: AgentsDataTableToolbarProps) {
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
 

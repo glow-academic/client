@@ -5,18 +5,18 @@
  * 06/09/2025
  */
 
-import SystemAgents from "@/components/system/agents/SystemAgents";
+import Agents from "@/components/system/agents/Agents";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "System Agents",
-  description: `System Agents in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+  title: "Agents",
+  description: `Agents in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
 
 export default function AgentsPage() {
   return (
     <div className="space-y-6">
-      <SystemAgents />
+      <Agents />
     </div>
   );
 }

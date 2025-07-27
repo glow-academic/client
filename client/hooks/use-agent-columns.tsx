@@ -4,10 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
-import { Model, SystemAgent } from "@/types";
+import { Model, Agent } from "@/types";
 import { getAllModels } from "@/utils/queries/models/get-all-models";
 
-export function useSystemAgentColumns() {
+export function useAgentColumns() {
   // Fetch data for filter options
   const { data: models = [] } = useQuery({
     queryKey: ["models"],
@@ -50,7 +50,7 @@ export function useSystemAgentColumns() {
   };
 
   // Create columns for the data table
-  const columns: ColumnDef<SystemAgent>[] = useMemo(
+  const columns: ColumnDef<Agent>[] = useMemo(
     () => [
       {
         accessorKey: "name",
