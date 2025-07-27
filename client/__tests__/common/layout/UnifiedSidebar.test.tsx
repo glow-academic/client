@@ -97,7 +97,7 @@ describe("UnifiedSidebar", () => {
 
       // Find and click navigation items
       const navItems = screen.getAllByRole("link");
-      if (navItems.length > 0) {
+      if (navItems.length > 0 && navItems[0]) {
         await user.click(navItems[0]);
         expect(navItems[0]).toBeInTheDocument();
       }
@@ -126,7 +126,7 @@ describe("UnifiedSidebar", () => {
 
       // Test navigation interactions
       const navItems = screen.getAllByRole("link");
-      if (navItems.length > 0) {
+      if (navItems.length > 0 && navItems[0]) {
         await user.click(navItems[0]);
         expect(navItems[0]).toBeInTheDocument();
       }

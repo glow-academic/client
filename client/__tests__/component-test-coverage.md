@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 144
-- **Tests Created**: 0
+- **Total Components**: 149
+- **Tests Created**: 1
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 144
+- **Tests Skipped** (already implemented): 148
 
 ## Component Coverage
 
@@ -130,6 +130,8 @@
 | EditParameter | management/parameters/EditParameter.tsx | EditParameter.test.tsx | ✅ Implemented |
 | NewParameter | management/parameters/NewParameter.tsx | NewParameter.test.tsx | ✅ Implemented |
 | Parameters | management/parameters/Parameters.tsx | Parameters.test.tsx | ✅ Implemented |
+| ParametersDataTable | management/parameters/ParametersDataTable.tsx | ParametersDataTable.test.tsx | ✅ Implemented |
+| ParametersDataTableToolbar | management/parameters/ParametersDataTableToolbar.tsx | ParametersDataTableToolbar.test.tsx | ✅ Implemented |
 | ModelEdit | management/providers/ModelEdit.tsx | ModelEdit.test.tsx | ✅ Implemented |
 | NewModel | management/providers/NewModel.tsx | NewModel.test.tsx | ✅ Implemented |
 | NewProvider | management/providers/NewProvider.tsx | NewProvider.test.tsx | ✅ Implemented |
@@ -139,7 +141,10 @@
 | ProvidersDataTableToolbar | management/providers/ProvidersDataTableToolbar.tsx | ProvidersDataTableToolbar.test.tsx | ✅ Implemented |
 | NewStaff | management/staff/NewStaff.tsx | NewStaff.test.tsx | ✅ Implemented |
 | Staff | management/staff/Staff.tsx | Staff.test.tsx | ✅ Implemented |
+| StaffDataTable | management/staff/StaffDataTable.tsx | StaffDataTable.test.tsx | ✅ Implemented |
+| StaffDataTableToolbar | management/staff/StaffDataTableToolbar.tsx | StaffDataTableToolbar.test.tsx | ✅ Implemented |
 | StaffEdit | management/staff/StaffEdit.tsx | StaffEdit.test.tsx | ✅ Implemented |
+| StaffFilterDialog | management/staff/StaffFilterDialog.tsx | StaffFilterDialog.test.tsx | ✅ Implemented |
 | Practice | practice/Practice.tsx | Practice.test.tsx | ✅ Implemented |
 | PracticeZone | practice/PracticeZone.tsx | PracticeZone.test.tsx | ✅ Implemented |
 | Profile | profile/Profile.tsx | Profile.test.tsx | ✅ Implemented |
@@ -313,6 +318,8 @@ __tests__/
 │   │   ├── EditParameter.test.tsx
 │   │   ├── NewParameter.test.tsx
 │   │   ├── Parameters.test.tsx
+│   │   ├── ParametersDataTable.test.tsx
+│   │   ├── ParametersDataTableToolbar.test.tsx
 │   ├── providers/
 │   │   ├── ModelEdit.test.tsx
 │   │   ├── NewModel.test.tsx
@@ -324,7 +331,10 @@ __tests__/
 │   ├── staff/
 │   │   ├── NewStaff.test.tsx
 │   │   ├── Staff.test.tsx
+│   │   ├── StaffDataTable.test.tsx
+│   │   ├── StaffDataTableToolbar.test.tsx
 │   │   ├── StaffEdit.test.tsx
+│   │   ├── StaffFilterDialog.test.tsx
 ├── practice/
 │   ├── Practice.test.tsx
 │   ├── PracticeZone.test.tsx

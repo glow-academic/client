@@ -49,6 +49,12 @@ const columnMap = {
   sessionEfficiency: "Efficiency",
   stagnationRate: "Stagnation",
   timeSpent: "Time Spent",
+  // Staff page columns
+  active: "Status",
+  lastActive: "Last Active",
+  cohortNames: "Cohorts",
+  email: "Email",
+  actions: "Actions",
 };
 
 export interface DataTableViewOptionsProps<TData> {
