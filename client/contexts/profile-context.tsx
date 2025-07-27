@@ -113,6 +113,26 @@ export function ProfileProvider({
       };
     }
 
+    // Check for guest mode in localStorage
+    const isGuestMode =
+      isClient && localStorage.getItem("guestMode") === "true";
+    const simulatedRole = isClient
+      ? localStorage.getItem("simulatedRole")
+      : null;
+
+    // If guest mode is active, use guest profile
+    if (isGuestMode) {
+      const guestProfile = {
+        ...GUEST_PROFILE,
+        role: (simulatedRole as ProfileRole) || "guest",
+      };
+      return {
+        effectiveProfile: guestProfile,
+        simulatedProfile: guestProfile,
+        isLoading: false,
+      };
+    }
+
     // If a simulation is active and loaded, it becomes the effective profile.
     if (simulatedProfileData) {
       return {

@@ -29,8 +29,8 @@ interface AccessControlProps {
 export function AccessControl({ children, pathname }: AccessControlProps) {
   const { effectiveProfile } = useProfile();
 
-  // If no profile or guest user, show access denied
-  if (!effectiveProfile || effectiveProfile.role === "guest") {
+  // If no profile, show access denied
+  if (!effectiveProfile) {
     return <AccessDeniedCard role="guest" pathname={pathname} />;
   }
 

@@ -40,7 +40,11 @@ import { getSimulatableProfiles } from "@/utils/auth/get-simulatable-profiles";
 import { logError } from "@/utils/logger";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAvailableSubsectionsForRole } from "@/utils/route-permissions";
+import {
+  getAvailableSubsectionsForRole,
+  getRedirectPathForRole,
+  hasRouteAccess,
+} from "@/utils/route-permissions";
 import { useQuery } from "@tanstack/react-query";
 import {
   Brain,
@@ -481,11 +485,28 @@ export function UnifiedSidebar({
     // If the user selects their own profile, clear the simulation
     if (profileId === activeProfile?.id) {
       setSimulatedProfile(null, true); // `null` resets to activeProfile
+      // Clear guest mode when switching back to own profile
+      localStorage.removeItem("guestMode");
+      localStorage.removeItem("simulatedRole");
     } else {
       // Otherwise, simulate the selected profile
       setSimulatedProfile(profileId, true);
+      // Clear guest mode when switching to a different profile
+      localStorage.removeItem("guestMode");
+      localStorage.removeItem("simulatedRole");
     }
   };
+
+  // Watch for profile changes and redirect if current page is not accessible
+  React.useEffect(() => {
+    if (effectiveProfile && !hasRouteAccess(pathname, effectiveProfile.role)) {
+      // Only redirect if we're not already on a redirect path
+      const redirectPath = getRedirectPathForRole(effectiveProfile.role);
+      if (pathname !== redirectPath) {
+        router.push(redirectPath);
+      }
+    }
+  }, [effectiveProfile, pathname, router]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);

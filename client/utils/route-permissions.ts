@@ -452,12 +452,13 @@ export const getSectionPermission = (
 export const getRedirectPathForRole = (role: ProfileRole): string => {
   switch (role) {
     case "guest":
-      return "/practice";
+      return "/practice"; // Guest users can access practice
     case "ta":
+      return "/home"; // TA users start at home
     case "instructional":
     case "admin":
     case "superadmin":
-      return "/home";
+      return "/analytics/dashboard"; // Staff and admins start at analytics dashboard
     default:
       return "/practice";
   }
