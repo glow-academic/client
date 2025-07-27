@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import ContextLocations from "@/components/management/context/ContextLocations";
+import ContextLocations from "@/components/management/parameters/ContextLocations";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
