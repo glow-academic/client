@@ -8,6 +8,7 @@ import { logError } from "@/utils/logger";
 import { getPersona } from "@/utils/queries/personas/get-persona";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
+import { getAgent } from "./queries/agents/get-agent";
 import { getCohort } from "./queries/cohorts/get-cohort";
 import { getModel } from "./queries/models/get-model";
 import { getProfile } from "./queries/profiles/get-profile";
@@ -15,7 +16,6 @@ import { getProvider } from "./queries/providers/get-provider";
 import { getRubric } from "./queries/rubrics/get-rubric";
 import { getSimulationAttempt } from "./queries/simulation_attempts/get-simulation-attempt";
 import { getSimulationChat } from "./queries/simulation_chats/get-simulation-chat";
-import { getAgent } from "./queries/agents/get-agent";
 
 interface BreadcrumbItem {
   title: string;
@@ -369,6 +369,9 @@ const getSectionFromSegments = (segments: string[]): string => {
           return `provider-${fourth}`;
         }
         return "providers";
+      }
+      if (second === "parameters") {
+        return "parameters";
       }
       if (second) {
         return second; // staff, context, logs, models, rubrics

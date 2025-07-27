@@ -3,7 +3,7 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import ActivityStatus from '@/components/management/activity/ActivityStatus';
+import Parameters from '@/components/management/parameters/Parameters';
 
 
 
@@ -11,7 +11,7 @@ import ActivityStatus from '@/components/management/activity/ActivityStatus';
 import '@/mocks/queries';
 import '@/mocks/mutations';
 import '@/mocks/api';
-describe('ActivityStatus', () => {
+describe('Parameters', () => {
   
   /* ------------------------------------------------------------------ *
    * 💡 Mock Data Usage Guide:
@@ -37,7 +37,7 @@ describe('ActivityStatus', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<ActivityStatus  />);
+      renderWithMocks(<Parameters  />);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
@@ -56,12 +56,7 @@ describe('ActivityStatus', () => {
   describe('User Interactions', () => {
     
 
-    it.skip('should handle state changes', async () => {
-      const user = userEvent.setup();
-      void user;
-      // TODO: state management assertions
-      // Mock data is available from @/mocks/schema for realistic testing
-    });
+    
 
     it.skip('should handle user events', async () => {
       const user = userEvent.setup();
@@ -74,9 +69,9 @@ describe('ActivityStatus', () => {
   describe('API Integration', () => {
     it.skip('should handle and display an API error state', async () => {
       // Arrange: Override the default success mock with an error for this test.
-      // Example: vi.mocked(getAllProfiles).mockRejectedValue(new Error('API Error'));
+      // Example: vi.mocked(getAllParameterItems).mockRejectedValue(new Error('API Error'));
 
-      renderWithMocks(<ActivityStatus  />);
+      renderWithMocks(<Parameters  />);
       
       // Assert: Check that your component shows an error message.
       // TODO: Add specific error state assertions
@@ -90,7 +85,13 @@ describe('ActivityStatus', () => {
     });
   });
 
-  
+  describe('Navigation', () => {
+    it.skip('should handle navigation', () => {
+      // TODO: Test navigation behavior
+      
+      // TODO: navigation assertions
+    });
+  });
 
   describe('Edge Cases', () => {
     it.skip('should handle edge cases gracefully', () => {
@@ -105,8 +106,8 @@ describe('ActivityStatus', () => {
 });
 
 /*
- * Component Analysis for ActivityStatus:
- * Path: management/activity/ActivityStatus.tsx
+ * Component Analysis for Parameters:
+ * Path: management/parameters/Parameters.tsx
  * 
  * Features detected:
  * - Default export: true
@@ -114,11 +115,11 @@ describe('ActivityStatus', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: useQuery, useQueryClient, useMemo, useState
- * - Uses router: false
+ * - Uses hooks: useQuery, useRouter
+ * - Uses router: true
  * - Has API calls: true
  * - Has form handling: false
- * - Uses state: true
+ * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
  * 
@@ -127,12 +128,12 @@ describe('ActivityStatus', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<ActivityStatus />);
+ * render(<Parameters />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<ActivityStatus {...props} />);
+ * render(<Parameters {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

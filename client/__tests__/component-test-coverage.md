@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 144
-- **Tests Created**: 4
+- **Total Components**: 139
+- **Tests Created**: 1
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 140
+- **Tests Skipped** (already implemented): 138
 
 ## Component Coverage
 
@@ -124,12 +124,7 @@
 | SimulationsDataTableToolbar | create/simulations/SimulationsDataTableToolbar.tsx | SimulationsDataTableToolbar.test.tsx | ✅ Implemented |
 | Home | home/Home.tsx | Home.test.tsx | ✅ Implemented |
 | TATour | home/TATour.tsx | TATour.test.tsx | ✅ Implemented |
-| ActivityStatus | management/activity/ActivityStatus.tsx | ActivityStatus.test.tsx | ✅ Implemented |
-| Context | management/context/Context.tsx | Context.test.tsx | ✅ Implemented |
-| ContextClasses | management/context/ContextClasses.tsx | ContextClasses.test.tsx | ✅ Implemented |
-| ContextDeadlines | management/context/ContextDeadlines.tsx | ContextDeadlines.test.tsx | ✅ Implemented |
-| ContextLocations | management/context/ContextLocations.tsx | ContextLocations.test.tsx | ✅ Implemented |
-| ContextTime | management/context/ContextTime.tsx | ContextTime.test.tsx | ✅ Implemented |
+| Parameters | management/parameters/Parameters.tsx | Parameters.test.tsx | ✅ Implemented |
 | ModelEdit | management/providers/ModelEdit.tsx | ModelEdit.test.tsx | ✅ Implemented |
 | NewModel | management/providers/NewModel.tsx | NewModel.test.tsx | ✅ Implemented |
 | NewProvider | management/providers/NewProvider.tsx | NewProvider.test.tsx | ✅ Implemented |
@@ -305,14 +300,8 @@ __tests__/
 │   ├── Home.test.tsx
 │   ├── TATour.test.tsx
 ├── management/
-│   ├── activity/
-│   │   ├── ActivityStatus.test.tsx
-│   ├── context/
-│   │   ├── Context.test.tsx
-│   │   ├── ContextClasses.test.tsx
-│   │   ├── ContextDeadlines.test.tsx
-│   │   ├── ContextLocations.test.tsx
-│   │   ├── ContextTime.test.tsx
+│   ├── parameters/
+│   │   ├── Parameters.test.tsx
 │   ├── providers/
 │   │   ├── ModelEdit.test.tsx
 │   │   ├── NewModel.test.tsx

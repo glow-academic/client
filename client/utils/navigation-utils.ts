@@ -59,6 +59,7 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
         "personas",
         "logs",
         "providers", // Management
+        "parameters", // Management
         "agents",
         "providers",
         "logs",
@@ -80,6 +81,7 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
         "personas",
         "logs",
         "providers", // Management
+        "parameters", // Management
         "agents",
         "providers",
         "logs",
@@ -195,8 +197,8 @@ export const getSectionRoute = (
     // Management routes
     case "management":
       return "/management";
-    case "context":
-      return "/management/context";
+    case "parameters":
+      return "/management/parameters";
     case "staff":
       return "/management/staff";
     case "providers":
