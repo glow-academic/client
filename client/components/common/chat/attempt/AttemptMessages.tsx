@@ -6,8 +6,8 @@
  */
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -153,9 +153,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                         <div className="flex justify-end mb-3">
                           <div className="max-w-[80%]">
                             <div className="bg-primary text-primary-foreground rounded-lg p-3">
-                              <Markdown>
-                                {message.content}
-                              </Markdown>
+                              <Markdown>{message.content}</Markdown>
                             </div>
                           </div>
                         </div>
@@ -165,8 +163,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                         <div className="flex justify-start mb-3">
                           <div className="max-w-[80%]">
                             {/* Show loading state for empty/incomplete messages, otherwise show content */}
-                            {!message.completed &&
-                            message.content === "" ? (
+                            {!message.completed && message.content === "" ? (
                               <div className="bg-muted rounded-lg p-3">
                                 <div className="flex items-center">
                                   <span className="text-gray-500 mr-2">
@@ -175,8 +172,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                   <LoadingDots />
                                 </div>
                               </div>
-                            ) : message.completed &&
-                              message.content === "" ? (
+                            ) : message.completed && message.content === "" ? (
                               // Show "No response" for completed messages with empty content
                               <div className="bg-muted rounded-lg p-3">
                                 <span className="text-gray-500 italic">
@@ -185,9 +181,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                               </div>
                             ) : (
                               <div className="bg-muted rounded-lg p-3 relative">
-                                <Markdown>
-                                  {message.content}
-                                </Markdown>
+                                <Markdown>{message.content}</Markdown>
                               </div>
                             )}
                           </div>

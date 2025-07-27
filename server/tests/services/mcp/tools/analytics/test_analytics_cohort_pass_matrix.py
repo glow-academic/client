@@ -1,16 +1,17 @@
 # test_cohort_pass_matrix.py
 import uuid
 from datetime import datetime
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
-from app.services.mcp.tools.analytics.cohort_pass_matrix import cohort_pass_matrix
+from app.services.mcp.tools.analytics.cohort_pass_matrix import \
+    cohort_pass_matrix
 
 
 # Mock classes to simulate SQLModel objects
 class MockCohort:
     def __init__(
-        self, id, title, profile_ids, description="", active=True, created_at=None
+        self, id, title, profile_ids, description="", active=True, created_at=None, simulation_ids=None
     ):
         (
             self.id,
@@ -19,7 +20,8 @@ class MockCohort:
             self.description,
             self.active,
             self.created_at,
-        ) = id, title, profile_ids, description, active, created_at or datetime.now()
+            self.simulation_ids,
+        ) = id, title, profile_ids, description, active, created_at or datetime.now(), simulation_ids or []
 
 
 class MockProfile:
@@ -34,12 +36,13 @@ class MockProfile:
 
 class MockSimulation:
     def __init__(self, id, title, cohort_ids):
-        self.id, self.title, self.cohort_ids, self.active, self.time_limit = (
+        self.id, self.title, self.cohort_ids, self.active, self.time_limit, self.created_at = (
             id,
             title,
             cohort_ids,
             True,
             60,
+            datetime.now(),
         )
 
 
@@ -88,15 +91,15 @@ class TestCohortPassMatrix:
         )
 
         # 1. Mock cohort and its members
-        mock_cohort = MockCohort(cohort_id, "Test Cohort", [student1_id, student2_id])
+        mock_cohort = MockCohort(cohort_id, "Test Cohort", [student1_id, student2_id], simulation_ids=[sim_id])
         mock_student1 = MockProfile(student1_id, "Jane", "Doe", "jdoe")
         mock_student2 = MockProfile(student2_id, "", "", "Matrixer")
 
-        # session.get for cohort, then for each profile in cohort
-        mock_db_session.get.side_effect = [mock_cohort, mock_student1, mock_student2]
-
         # 2. Mock simulations and attempts
         mock_sim = MockSimulation(sim_id, "Matrix Sim", [cohort_id])
+
+        # session.get for cohort, then for each profile in cohort, then for simulation
+        mock_db_session.get.side_effect = [mock_cohort, mock_student1, mock_student2, mock_sim]
 
         # Student 1 passes
         attempt_s1 = MockAttempt(uuid.uuid4(), student1_id, sim_id, datetime.now())

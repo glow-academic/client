@@ -28,16 +28,16 @@ class TestAgentEndpoints:
 
     @patch("app.routes.documents.run_classify_agent")
     def test_classify_documents_success(self, mock_run_agent, client, mock_session):
-        class_id = uuid4()
+        document_ids = [uuid4(), uuid4()]
         mock_run_agent.return_value = {
             "success": True,
             "message": "OK",
             "classified_count": 1,
             "total_count": 1,
         }
-        response = client.post(f"/documents/classify?class_id={class_id}")
+        response = client.post("/documents/classify", json={"document_ids": [str(doc_id) for doc_id in document_ids]})
         assert response.status_code == 200
-        mock_run_agent.assert_called_once_with(class_id, False, mock_session)
+        mock_run_agent.assert_called_once_with(document_ids, False, mock_session)
 
 
 class TestStandardUpload:

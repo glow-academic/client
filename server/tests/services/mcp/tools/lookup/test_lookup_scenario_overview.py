@@ -12,13 +12,12 @@ from sqlalchemy.exc import SQLAlchemyError
 
 
 class MockScenario:
-    def __init__(self, id, name, desc, default=False, agent_id=None, class_id=None):
+    def __init__(self, id, name, desc, default=False, persona_id=None):
         self.id = id
         self.name = name
         self.description = desc
         self.default_scenario = default
-        self.agent_id = agent_id
-        self.class_id = class_id
+        self.persona_id = persona_id
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
 
@@ -67,8 +66,7 @@ class TestScenarioOverview:
         assert result["name"] == "Test Scenario"
         assert result["description"] == "Desc"
         assert result["default_scenario"] is False
-        assert result["agent_id"] is None
-        assert result["class_id"] is None
+        assert result["persona_id"] is None
         assert result["simulation_count"] == 1
         assert len(result["simulations"]) == 1
         assert result["simulations"][0]["title"] == "Test Sim"
@@ -178,16 +176,15 @@ class TestScenarioOverview:
         assert result["simulations"][0]["title"] == "Sim 1"
         assert result["simulations"][1]["title"] == "Sim 3"
 
-    def test_scenario_overview_with_agent_and_class(self, mock_get_session):
-        """Test scenario_overview with associated agent and class."""
+    def test_scenario_overview_with_persona(self, mock_get_session):
+        """Test scenario_overview with associated persona."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
         scenario_id = uuid.uuid4()
-        agent_id = uuid.uuid4()
-        class_id = uuid.uuid4()
+        persona_id = uuid.uuid4()
 
         mock_scenario = MockScenario(
-            scenario_id, "Test Scenario", "Desc", agent_id=agent_id, class_id=class_id
+            scenario_id, "Test Scenario", "Desc", persona_id=persona_id
         )
         mock_sims = []
 
@@ -196,8 +193,7 @@ class TestScenarioOverview:
 
         result = scenario_overview(str(scenario_id))
 
-        assert result["agent_id"] == str(agent_id)
-        assert result["class_id"] == str(class_id)
+        assert result["persona_id"] == str(persona_id)
 
     def test_scenario_overview_default_scenario(self, mock_get_session):
         """Test scenario_overview with default scenario flag."""

@@ -24,18 +24,7 @@ class MockProfile:
         self.active = True
 
 
-class MockClass:
-    def __init__(
-        self, id, name, code, year=2025, term="Fall", desc="", profile_ids=None
-    ):
-        self.id = id
-        self.name = name
-        self.class_code = code
-        self.year = year
-        self.term = term
-        self.description = desc
-        self.profile_ids = profile_ids or []
-        self.created_at = datetime.now()
+
 
 
 class MockSimulation:
@@ -106,7 +95,6 @@ class TestProfileOverview:
         assert result["profile"]["first_name"] == "Nina"
         assert result["profile"]["last_name"] == "Park"
         assert result["profile"]["role"] == "student"
-        assert result["classes"] == []
         assert result["latest_grades"] == []
 
     def test_profile_overview_by_name(self, mock_get_session):
@@ -119,14 +107,13 @@ class TestProfileOverview:
         mock_session.exec.return_value.first.return_value = (
             mock_profile  # Name search succeeds
         )
-        mock_session.exec.return_value.all.return_value = []  # For classes and attempts
+        mock_session.exec.return_value.all.return_value = []  # For attempts
 
         result = profile_overview("Nina Park")
 
         assert result["profile"]["alias"] == "npark"
         assert result["profile"]["first_name"] == "Nina"
         assert result["profile"]["last_name"] == "Park"
-        assert result["classes"] == []
         assert result["latest_grades"] == []
 
     def test_profile_overview_by_alias(self, mock_get_session):
@@ -139,12 +126,11 @@ class TestProfileOverview:
         mock_session.exec.return_value.first.return_value = (
             mock_profile  # Alias search succeeds
         )
-        mock_session.exec.return_value.all.return_value = []  # For classes and attempts
+        mock_session.exec.return_value.all.return_value = []  # For attempts
 
         result = profile_overview("npark")
 
         assert result["profile"]["alias"] == "npark"
-        assert result["classes"] == []
         assert result["latest_grades"] == []
 
     def test_profile_overview_not_found(self, mock_get_session):
@@ -171,30 +157,7 @@ class TestProfileOverview:
         assert "error" in result
         assert "Database error" in result["error"]
 
-    def test_profile_overview_with_classes(self, mock_get_session):
-        """Test profile_overview with associated classes."""
-        mock_session = MagicMock()
-        mock_get_session.return_value = iter([mock_session])
-        profile_id = uuid.uuid4()
-        class_id = uuid.uuid4()
 
-        mock_profile = MockProfile(profile_id, "Nina", "Park", "npark")
-        mock_class = MockClass(
-            class_id, "Test Class", "CS101", profile_ids=[profile_id]
-        )
-
-        mock_session.get.return_value = mock_profile
-        # Mock the classes query: first call returns all classes, then attempts
-        mock_session.exec.return_value.all.side_effect = [
-            [mock_class],
-            [],
-        ]  # classes, attempts
-
-        result = profile_overview(str(profile_id))
-
-        assert len(result["classes"]) == 1
-        assert result["classes"][0]["name"] == "Test Class"
-        assert result["classes"][0]["class_code"] == "CS101"
 
     def test_profile_overview_with_grades(self, mock_get_session):
         """Test profile_overview with simulation grades."""
@@ -213,7 +176,7 @@ class TestProfileOverview:
 
         # Mock session.get to return profile first, then simulation
         mock_session.get.side_effect = [mock_profile, mock_sim]
-        # Mock session.exec calls: attempts, chats (classes call returns all classes, filtered by profile_id in profile_ids)
+        # Mock session.exec calls: attempts, chats
         mock_session.exec.return_value.all.side_effect = [
             [mock_attempt],  # attempts
             [mock_chat],  # chats
@@ -244,11 +207,14 @@ class TestProfileOverview:
             attempt.created_at = datetime(2025, 1, i + 1)  # Different dates
             mock_attempts.append(attempt)
 
-        mock_session.get.side_effect = [mock_profile, mock_sim]
+        # The function calls session.get for profile, then for each attempt it calls session.get for simulation
+        # So we need to provide simulation for each attempt
+        mock_session.get.side_effect = [mock_profile] + [mock_sim] * len(mock_attempts)
+        # The function loops through attempts and for each attempt, it gets chats
+        # So we need to provide chats for each attempt
         mock_session.exec.return_value.all.side_effect = [
-            [],  # classes
             mock_attempts,  # attempts
-        ]
+        ] + [[] for _ in mock_attempts]  # empty chats for each attempt
         mock_session.exec.return_value.first.return_value = None  # No grades
 
         result = profile_overview(str(profile_id))

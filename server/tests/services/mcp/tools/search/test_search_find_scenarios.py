@@ -4,9 +4,9 @@ Tests for app.services.mcp.tools.search.find_scenarios
 
 import uuid
 from unittest.mock import MagicMock, patch
-from sqlalchemy.exc import SQLAlchemyError
 
 from app.services.mcp.tools.search.find_scenarios import find_scenarios
+from sqlalchemy.exc import SQLAlchemyError
 
 
 class MockScenario:
@@ -17,16 +17,14 @@ class MockScenario:
         id,
         name,
         description=None,
-        agent_id=None,
-        class_id=None,
+        persona_id=None,
         default_scenario=False,
         practice_scenario=False,
     ):
         self.id = id
         self.name = name
         self.description = description
-        self.agent_id = agent_id
-        self.class_id = class_id
+        self.persona_id = persona_id
         self.default_scenario = default_scenario
         self.practice_scenario = practice_scenario
 

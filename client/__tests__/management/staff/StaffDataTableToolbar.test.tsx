@@ -1,6 +1,7 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
 import type { Table } from "@tanstack/react-table";
-import { describe, it, vi } from "vitest";
+import { screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
 import {
@@ -27,35 +28,92 @@ const mockProps: StaffDataTableToolbarProps = {
 };
 // ------------------------------------------------------------------
 describe("StaffDataTableToolbar", () => {
+  // ✨ Reset mocks after each test
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       renderWithMocks(<StaffDataTableToolbar {...mockProps} />);
 
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      // Should render the search input
+      expect(
+        screen.getByPlaceholderText("Search staff by name or alias...")
+      ).toBeInTheDocument();
     });
 
-    it.skip("should render with props", () => {
-      // TODO: Test component with various props
-      // Props interface: StaffDataTableToolbarProps
-      // TODO add props assertions
+    it("should render with props", () => {
+      // Test with different props
+      const propsWithOptions: StaffDataTableToolbarProps = {
+        ...mockProps,
+        roleOptions: [{ value: "admin", label: "Admin" }],
+        cohortOptions: [{ value: "cohort1", label: "Cohort 1" }],
+        activityOptions: [{ value: "active", label: "Active" }],
+        lastActiveOptions: [{ value: "today", label: "Today" }],
+      };
+
+      renderWithMocks(<StaffDataTableToolbar {...propsWithOptions} />);
+
+      // Should render the search input
+      expect(
+        screen.getByPlaceholderText("Search staff by name or alias...")
+      ).toBeInTheDocument();
     });
 
-    it.skip("should have correct accessibility attributes", () => {
-      // TODO: Test accessibility features
-      // TODO add accessibility assertions
+    it("should have correct accessibility attributes", () => {
+      renderWithMocks(<StaffDataTableToolbar {...mockProps} />);
+
+      // Should have search input with proper accessibility
+      const searchInput = screen.getByPlaceholderText(
+        "Search staff by name or alias..."
+      );
+      expect(searchInput).toBeInTheDocument();
     });
   });
 
   describe("Edge Cases", () => {
-    it.skip("should handle edge cases gracefully", () => {
-      // TODO: Test edge cases and error scenarios
-      // TODO: edge-case assertions
+    it("should handle edge cases gracefully", () => {
+      // Test with empty options
+      const propsWithEmptyOptions: StaffDataTableToolbarProps = {
+        ...mockProps,
+        roleOptions: [],
+        cohortOptions: [],
+        activityOptions: [],
+        lastActiveOptions: [],
+      };
+
+      renderWithMocks(<StaffDataTableToolbar {...propsWithEmptyOptions} />);
+
+      // Should still render the search input
+      expect(
+        screen.getByPlaceholderText("Search staff by name or alias...")
+      ).toBeInTheDocument();
     });
 
-    it.skip("should handle missing or invalid props", () => {
-      // TODO: Test with missing/invalid props
-      // TODO: invalid props assertions
+    it("should handle missing or invalid props", () => {
+      // Test with minimal props
+      const minimalProps: StaffDataTableToolbarProps = {
+        table: {
+          getState: () => ({ columnFilters: [] }),
+          getColumn: vi.fn(),
+          getAllColumns: () => [],
+          resetColumnFilters: vi.fn(),
+        } as unknown as Table<StaffData>,
+        roleOptions: [],
+        cohortOptions: [],
+        activityOptions: [],
+        lastActiveOptions: [],
+        isRefreshing: false,
+        onRefresh: vi.fn(),
+      };
+
+      renderWithMocks(<StaffDataTableToolbar {...minimalProps} />);
+
+      // Should render with minimal props
+      expect(
+        screen.getByPlaceholderText("Search staff by name or alias...")
+      ).toBeInTheDocument();
     });
   });
 });

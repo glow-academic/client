@@ -29,11 +29,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Icons
-import {
-  Clock,
-  FileText,
-  Table,
-} from "lucide-react";
+import { Clock, FileText, Table } from "lucide-react";
 
 // Tooltip
 import {
@@ -473,7 +469,7 @@ export default function AttemptChat() {
                               0 && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                <Button
+                                  <Button
                                     variant={
                                       showDocuments ? "default" : "outline"
                                     }
