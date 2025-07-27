@@ -1,75 +1,79 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import type { Table } from "@tanstack/react-table";
-import { describe, it } from "vitest";
+import { describe, it } from 'vitest';
+import { renderWithMocks } from '@/test/renderWithMocks';
+import type { Table } from '@tanstack/react-table';
 
 // ——————————————————————————————————————————
-import {
-  SystemAgentsDataTableToolbar,
-  SystemAgentsDataTableToolbarProps,
-} from "@/components/system/agents/AgentsDataTableToolbar";
+import { AgentsDataTableToolbar, AgentsDataTableToolbarProps } from '@/components/system/agents/AgentsDataTableToolbar';
+
+
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-const mockProps: SystemAgentsDataTableToolbarProps = {
-  table: {} as unknown as Table<{
-    name: string;
-    id: string;
-    createdAt: string;
-    updatedAt: string;
-    description: string;
-    systemPrompt: string;
-    temperature: number;
-    modelId: string | null;
-    reasoning: "low" | "medium" | "high" | null;
-  }>,
+const mockProps: AgentsDataTableToolbarProps = {
+  table: {} as unknown as Table<{ name: string; id: string; createdAt: string; updatedAt: string; description: string; systemPrompt: string; temperature: number; modelId: string | null; reasoning: "low" | "medium" | "high" | null; }>,
   reasoningOptions: [],
   modelOptions: [],
   temperatureOptions: [],
 };
 // ------------------------------------------------------------------
-describe("SystemAgentsDataTableToolbar", () => {
-  describe("basic render smoke-test", () => {
-    it("renders without crashing", async () => {
-      renderWithMocks(<SystemAgentsDataTableToolbar {...mockProps} />);
+describe('AgentsDataTableToolbar', () => {
+  
 
+  describe('basic render smoke-test', () => {
+    it('renders without crashing', async () => {
+      
+      renderWithMocks(<AgentsDataTableToolbar {...mockProps} />);
+      
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
     });
 
-    it.skip("should render with props", () => {
+    it.skip('should render with props', () => {
       // TODO: Test component with various props
-      // Props interface: SystemAgentsDataTableToolbarProps
+      // Props interface: AgentsDataTableToolbarProps
+      
       // TODO add props assertions
     });
 
-    it.skip("should have correct accessibility attributes", () => {
+    it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
+      
       // TODO add accessibility assertions
+
     });
   });
 
-  describe("Edge Cases", () => {
-    it.skip("should handle edge cases gracefully", () => {
+  
+
+  
+
+  
+
+  describe('Edge Cases', () => {
+    it.skip('should handle edge cases gracefully', () => {
       // TODO: Test edge cases and error scenarios
+      
       // TODO: edge-case assertions
+
     });
 
-    it.skip("should handle missing or invalid props", () => {
+    it.skip('should handle missing or invalid props', () => {
       // TODO: Test with missing/invalid props
+      
       // TODO: invalid props assertions
     });
   });
 });
 
 /*
- * Component Analysis for SystemAgentsDataTableToolbar:
- * Path: system/agents/SystemAgentsDataTableToolbar.tsx
- *
+ * Component Analysis for AgentsDataTableToolbar:
+ * Path: system/agents/AgentsDataTableToolbar.tsx
+ * 
  * Features detected:
  * - Default export: false
- * - Named exports: SystemAgentsDataTableToolbar, SystemAgentsDataTableToolbarProps
+ * - Named exports: AgentsDataTableToolbar, AgentsDataTableToolbarProps
  * - Has props: true
- * - Props interface: SystemAgentsDataTableToolbarProps
+ * - Props interface: AgentsDataTableToolbarProps
  * - Client component: true
  * - Uses hooks: None
  * - Uses router: false
@@ -78,20 +82,20 @@ describe("SystemAgentsDataTableToolbar", () => {
  * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
- *
+ * 
  * TODO: Implement the failing tests above with actual test logic
- *
+ * 
  * Example implementations:
- *
+ * 
  * Basic rendering:
- * render(<SystemAgentsDataTableToolbar {...mockProps} />);
+ * render(<AgentsDataTableToolbar {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
- *
+ * 
  * Props testing:
  * const props = { ... };
- * render(<SystemAgentsDataTableToolbar {...props} />);
+ * render(<AgentsDataTableToolbar {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
- *
+ * 
  * User interaction:
  * const button = screen.getByRole('button');
  * await user.click(button);
