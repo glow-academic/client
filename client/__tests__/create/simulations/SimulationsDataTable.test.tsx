@@ -1,23 +1,106 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
 import type {} from "@tanstack/react-table";
+import { ColumnDef } from "@tanstack/react-table";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
 import {
   SimulationsDataTable,
   SimulationsDataTableProps,
 } from "@/components/create/simulations/SimulationsDataTable";
+import { Simulation } from "@/types";
 
 // ------------------------------------------------------------------
+// Mock data that matches the Simulation type
+const mockSimulations: Simulation[] = [
+  {
+    id: "s36yq6bm-jmaa-jbvr-ow9f-k0gk9c14z",
+    createdAt: "2025-07-27T01:54:18.643Z",
+    updatedAt: "2025-07-27T01:54:18.643Z",
+    title: "Math Practice Simulation",
+    timeLimit: 30,
+    active: true,
+    scenarioIds: [
+      "eca3n264-18kl-slsf-5ckq-v9tihdi9nu",
+      "f8ch5wau-4ft7-r9mz-w5zs-c8cyrze9xfg",
+    ],
+    rubricId: "rubricId_1",
+    defaultSimulation: false,
+    practiceSimulation: true,
+  },
+  {
+    id: "fzkthewg-7eca-ggtr-tuka-169gib8wz5z",
+    createdAt: "2025-07-27T01:54:18.643Z",
+    updatedAt: "2025-07-27T01:54:18.643Z",
+    title: "Lab Safety Training",
+    timeLimit: 60,
+    active: false,
+    scenarioIds: [
+      "eca3n264-18kl-slsf-5ckq-v9tihdi9nu",
+      "f8ch5wau-4ft7-r9mz-w5zs-c8cyrze9xfg",
+    ],
+    rubricId: "rubricId_2",
+    defaultSimulation: true,
+    practiceSimulation: false,
+  },
+];
+
+// Mock columns for the table
+const mockColumns: ColumnDef<Simulation>[] = [
+  {
+    accessorKey: "title",
+    header: "Title",
+    cell: ({ row }) => row.getValue("title"),
+    filterFn: (row, _, value) => {
+      const title = (row.getValue("title") as string).toLowerCase();
+      return title.includes(value.toLowerCase());
+    },
+  },
+  {
+    id: "scenarios",
+    header: "Scenarios",
+    accessorFn: (simulation) => simulation.scenarioIds || [],
+  },
+  {
+    id: "rubric",
+    header: "Rubric",
+    accessorFn: (simulation) => simulation.rubricId,
+  },
+  {
+    id: "timeLimit",
+    header: "Time Limit",
+    accessorFn: (simulation) => simulation.timeLimit || 0,
+  },
+  {
+    accessorKey: "updatedAt",
+    header: "Updated At",
+    cell: ({ row }) => row.getValue("updatedAt"),
+  },
+];
+
 // Minimal props factory – edit values as needed
 const mockProps: SimulationsDataTableProps = {
-  columns: [],
-  data: [],
-  scenarioOptions: [],
-  rubricOptions: [],
-  timeLimitOptions: [],
-  renderSimulationCard: vi.fn(),
+  columns: mockColumns,
+  data: mockSimulations,
+  scenarioOptions: [
+    { value: "scenario1", label: "Scenario 1" },
+    { value: "scenario2", label: "Scenario 2" },
+  ],
+  rubricOptions: [
+    { value: "rubric1", label: "Rubric 1" },
+    { value: "rubric2", label: "Rubric 2" },
+  ],
+  timeLimitOptions: [
+    { value: "30", label: "30 minutes" },
+    { value: "60", label: "60 minutes" },
+  ],
+  renderSimulationCard: vi.fn((simulation) => (
+    <div data-testid={`simulation-card-${simulation.id}`}>
+      {simulation.title}
+    </div>
+  )),
 };
 // ------------------------------------------------------------------
 describe("SimulationsDataTable", () => {
@@ -25,83 +108,96 @@ describe("SimulationsDataTable", () => {
     it("renders without crashing", async () => {
       renderWithMocks(<SimulationsDataTable {...mockProps} />);
 
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      // Check that the component renders without crashing
+      expect(
+        screen.getByPlaceholderText("Search simulations...")
+      ).toBeInTheDocument();
     });
 
-    it.skip("should render with props", () => {
-      // TODO: Test component with various props
-      // Props interface: SimulationsDataTableProps
-      // TODO add props assertions
+    it("should render with props", () => {
+      renderWithMocks(<SimulationsDataTable {...mockProps} />);
+
+      // Check that the toolbar renders with search input
+      expect(
+        screen.getByPlaceholderText("Search simulations...")
+      ).toBeInTheDocument();
+
+      // Check that simulation cards are rendered
+      mockSimulations.forEach((simulation) => {
+        expect(
+          screen.getByTestId(`simulation-card-${simulation.id}`)
+        ).toBeInTheDocument();
+        expect(screen.getByText(simulation.title)).toBeInTheDocument();
+      });
     });
 
-    it.skip("should have correct accessibility attributes", () => {
-      // TODO: Test accessibility features
-      // TODO add accessibility assertions
+    it("should have correct accessibility attributes", () => {
+      renderWithMocks(<SimulationsDataTable {...mockProps} />);
+
+      // Check that search input has proper accessibility attributes
+      const searchInput = screen.getByPlaceholderText("Search simulations...");
+      expect(searchInput).toBeInTheDocument();
+
+      // Check that the component has proper structure
+      expect(screen.getByRole("textbox")).toBeInTheDocument();
     });
   });
 
   describe("User Interactions", () => {
-    it.skip("should handle state changes", async () => {
+    it("should handle state changes", async () => {
       const user = userEvent.setup();
-      void user;
-      // TODO: state management assertions
-      // Mock data is available from @/mocks/schema for realistic testing
+      renderWithMocks(<SimulationsDataTable {...mockProps} />);
+
+      // Test search functionality
+      const searchInput = screen.getByPlaceholderText("Search simulations...");
+      await user.type(searchInput, "Math");
+
+      // The search should update the input value
+      expect(searchInput).toHaveValue("Math");
     });
 
-    it.skip("should handle user events", async () => {
+    it("should handle user events", async () => {
       const user = userEvent.setup();
-      void user;
-      // TODO: interaction assertions
+      renderWithMocks(<SimulationsDataTable {...mockProps} />);
+
+      // Test search input interaction
+      const searchInput = screen.getByPlaceholderText("Search simulations...");
+      await user.click(searchInput);
+      await user.type(searchInput, "test search");
+
+      expect(searchInput).toHaveValue("test search");
     });
   });
 
   describe("Edge Cases", () => {
-    it.skip("should handle edge cases gracefully", () => {
-      // TODO: Test edge cases and error scenarios
-      // TODO: edge-case assertions
+    it("should handle edge cases gracefully", () => {
+      // Test with empty data
+      const emptyProps = {
+        ...mockProps,
+        data: [],
+      };
+
+      renderWithMocks(<SimulationsDataTable {...emptyProps} />);
+
+      // Should show "No simulations found" message
+      expect(screen.getByText("No simulations found.")).toBeInTheDocument();
     });
 
-    it.skip("should handle missing or invalid props", () => {
-      // TODO: Test with missing/invalid props
-      // TODO: invalid props assertions
+    it("should handle missing or invalid props", () => {
+      // Test with minimal required props
+      const minimalProps = {
+        columns: [],
+        data: [],
+        scenarioOptions: [],
+        rubricOptions: [],
+        timeLimitOptions: [],
+        renderSimulationCard: vi.fn(),
+      };
+
+      renderWithMocks(<SimulationsDataTable {...minimalProps} />);
+
+      // Should still render without crashing
+      expect(screen.getByText("No simulations found.")).toBeInTheDocument();
     });
   });
 });
-
-/*
- * Component Analysis for SimulationsDataTable:
- * Path: create/simulations/SimulationsDataTable.tsx
- *
- * Features detected:
- * - Default export: false
- * - Named exports: SimulationsDataTable, SimulationsDataTableProps
- * - Has props: true
- * - Props interface: SimulationsDataTableProps
- * - Client component: true
- * - Uses hooks: useReactTable, useState
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: true
- * - Uses effects: false
- * - Uses context: false
- *
- * TODO: Implement the failing tests above with actual test logic
- *
- * Example implementations:
- *
- * Basic rendering:
- * render(<SimulationsDataTable {...mockProps} />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- *
- * Props testing:
- * const props = { ... };
- * render(<SimulationsDataTable {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- *
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

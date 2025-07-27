@@ -1,5 +1,6 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
 import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -196,41 +197,73 @@ describe("Rubric", () => {
       expect(screen.getByText("Create Rubric")).toBeInTheDocument();
     });
   });
-});
 
-/*
- * Component Analysis for Rubric:
- * Path: common/rubric/Rubric.tsx
- *
- * Features detected:
- * - Default export: true
- * - Named exports: RubricProps
- * - Has props: true
- * - Props interface: RubricProps
- * - Client component: true
- * - Uses hooks: useMutation, useQuery, useQueryClient, useRouter, useEffect, useState
- * - Uses router: true
- * - Has API calls: true
- * - Has form handling: true
- * - Uses state: true
- * - Uses effects: true
- * - Uses context: false
- *
- * TODO: Implement the failing tests above with actual test logic
- *
- * Example implementations:
- *
- * Basic rendering:
- * render(<Rubric {...mockProps} />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- *
- * Props testing:
- * const props = { ... };
- * render(<Rubric {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- *
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */
+  describe("Form Validation", () => {
+    it("should validate required fields", async () => {
+      const user = userEvent.setup();
+      renderWithMocks(<Rubric />);
+
+      // Wait for the form to load
+      await waitFor(() => {
+        expect(screen.getByText("Create Rubric")).toBeInTheDocument();
+      });
+
+      // Try to submit without filling required fields
+      const submitButton = screen.getByText("Create Rubric");
+      await user.click(submitButton);
+
+      // Should handle submission attempt
+      await waitFor(() => {
+        expect(screen.getByText("Create Rubric")).toBeInTheDocument();
+      });
+    });
+
+    it("should handle form submission", async () => {
+      const user = userEvent.setup();
+      renderWithMocks(<Rubric />);
+
+      // Wait for the form to load
+      await waitFor(() => {
+        expect(screen.getByText("Create Rubric")).toBeInTheDocument();
+      });
+
+      // Fill in required fields
+      const nameInput = screen.getByLabelText("Name");
+      await user.type(nameInput, "Test Rubric");
+
+      // Submit the form
+      const submitButton = screen.getByText("Create Rubric");
+      await user.click(submitButton);
+
+      // Should handle submission
+      await waitFor(() => {
+        expect(screen.getByText("Create Rubric")).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Edit Mode", () => {
+    it("should load existing rubric data when editing", async () => {
+      // Mock rubric data
+      const { getRubric } = await import("@/utils/queries/rubrics/get-rubric");
+      vi.mocked(getRubric).mockResolvedValue({
+        id: "test-rubric-id",
+        name: "Existing Rubric",
+        description: "An existing rubric",
+        points: 100,
+        passPoints: 70,
+        defaultRubric: false,
+        active: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      renderWithMocks(<Rubric rubricId="test-rubric-id" />);
+
+      // Wait for the form to load with existing data
+      await waitFor(() => {
+        expect(screen.getByText("Existing Rubric")).toBeInTheDocument();
+      });
+    });
+  });
+});

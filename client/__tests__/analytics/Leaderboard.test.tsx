@@ -152,8 +152,14 @@ describe("Leaderboard", () => {
     });
 
     it("should handle loading states", async () => {
-      // TODO: Test loading states
-      // Mock data is automatically loaded from @/mocks/schema
+      // Mock loading state by delaying the response
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
+      );
+      vi.mocked(getAllProfiles).mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => resolve([]), 100))
+      );
+
       renderWithMocks(<Leaderboard />);
 
       // Should show loading state initially

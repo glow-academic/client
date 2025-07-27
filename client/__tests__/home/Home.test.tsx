@@ -167,41 +167,108 @@ describe("Home", () => {
       });
     });
   });
+
+  describe("Guest User Access", () => {
+    it("should show access denied for guest users", async () => {
+      // Mock guest profile
+      const guestProfile = {
+        id: "guest-profile-id",
+        userId: null,
+        firstName: "Guest",
+        lastName: "User",
+        alias: "guest",
+        role: "guest" as const,
+        active: true,
+        viewedIntro: true,
+        viewedChat: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastLogin: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        defaultProfile: false,
+      };
+
+      const queryClient = new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+        },
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <ProfileProvider activeProfile={guestProfile}>
+            <AnalyticsProvider>
+              <AssistantProvider>
+                <WebSocketProvider profileId="guest">
+                  <TourProvider>
+                    <SidebarProvider>
+                      <Home />
+                    </SidebarProvider>
+                  </TourProvider>
+                </WebSocketProvider>
+              </AssistantProvider>
+            </AnalyticsProvider>
+          </ProfileProvider>
+        </QueryClientProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Access Denied")).toBeInTheDocument();
+        expect(
+          screen.getByText("You need TA permissions to view this dashboard.")
+        ).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Cohort Display", () => {
+    it("should display no cohorts message when no cohorts are available", async () => {
+      // Mock empty cohort data
+      const { getAllCohorts } = await import(
+        "@/utils/queries/cohorts/get-all-cohorts"
+      );
+      vi.mocked(getAllCohorts).mockResolvedValue([]);
+
+      renderWithMocks(<Home />);
+
+      await waitFor(() => {
+        expect(screen.getByText("No Cohorts Available")).toBeInTheDocument();
+        expect(
+          screen.getByText(
+            "There are no cohorts assigned to you. Please contact an administrator."
+          )
+        ).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Loading States", () => {
+    it("should show loading skeleton when data is loading", async () => {
+      // Mock loading state
+      const { getAllCohorts } = await import(
+        "@/utils/queries/cohorts/get-all-cohorts"
+      );
+      vi.mocked(getAllCohorts).mockImplementation(
+        () => new Promise(() => {}) // Never resolves
+      );
+
+      renderWithMocks(<Home />);
+
+      // Check for skeleton elements
+      await waitFor(() => {
+        const skeletons = document.querySelectorAll('[class*="animate-pulse"]');
+        expect(skeletons.length).toBeGreaterThan(0);
+      });
+    });
+  });
 });
 
-/*
- * Component Analysis for Home:
- * Path: home/Home.tsx
- *
- * Features detected:
- * - Default export: true
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: useQuery, useRouter, useCallback, useEffect, useMemo, useState, useRole, useWebSocket, useSession, useRef, userId, user, userCohorts, userCohortIds
- * - Uses router: true
- * - Has API calls: true
- * - Has form handling: false
- * - Uses state: true
- * - Uses effects: true
- * - Uses context: false
- *
- * TODO: Implement the failing tests above with actual test logic
- *
- * Example implementations:
- *
- * Basic rendering:
- * render(<Home />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- *
- * Props testing:
- * const props = { ... };
- * render(<Home {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- *
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */
+// Import statements needed for the tests
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AnalyticsProvider } from "@/contexts/analytics-context";
+import { AssistantProvider } from "@/contexts/assistant-context";
+import { ProfileProvider } from "@/contexts/profile-context";
+import { TourProvider } from "@/contexts/tour-context";
+import { WebSocketProvider } from "@/contexts/websocket-context";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render } from "@testing-library/react";

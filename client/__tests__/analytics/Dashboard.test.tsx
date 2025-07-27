@@ -1,5 +1,5 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -91,13 +91,21 @@ describe("Dashboard", () => {
       expect(screen.getByText("Loading dashboard...")).toBeInTheDocument();
     });
 
-    it("should handle loading states", () => {
-      // TODO: Test loading states
-      // Mock data is automatically loaded from @/mocks/schema
+    it("should handle loading states", async () => {
+      // Mock loading state by delaying the response
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
+      );
+      vi.mocked(getAllProfiles).mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => resolve([]), 100))
+      );
+
       renderWithMocks(<Dashboard />);
 
-      // Should render dashboard components
-      expect(screen.getByText("Loading dashboard...")).toBeInTheDocument();
+      // Should show loading state initially
+      await waitFor(() => {
+        expect(screen.getByText("Loading dashboard...")).toBeInTheDocument();
+      });
     });
   });
 
