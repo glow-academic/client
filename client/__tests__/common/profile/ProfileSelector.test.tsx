@@ -172,16 +172,6 @@ describe("ProfileSelector", () => {
         writable: true,
       });
 
-      // Mock document.createElement
-      const mockAnchor = {
-        href: "",
-        download: "",
-        click: vi.fn(),
-      };
-      vi.spyOn(document, "createElement").mockReturnValue(
-        mockAnchor as unknown as HTMLAnchorElement
-      );
-
       renderWithMocks(<ProfileSelector {...mockProps} />);
 
       const downloadButton = screen.getByText("Download Template");

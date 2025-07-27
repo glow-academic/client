@@ -26,6 +26,7 @@ vi.mock("@/contexts/assistant-context", () => ({
     sendMessage: vi.fn(),
     isLoading: false,
     error: null,
+    setCurrentChatId: vi.fn(),
   }),
   AssistantProvider: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
@@ -97,7 +98,7 @@ describe("ChatWidget", () => {
 
       // The widget should render when uiState is "widget"
       await waitFor(() => {
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
       });
     });
 
@@ -105,7 +106,7 @@ describe("ChatWidget", () => {
       renderWithMocks(<ChatWidget up={false} />);
 
       await waitFor(() => {
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
         expect(screen.getByText("New Chat")).toBeInTheDocument();
       });
     });
@@ -115,7 +116,7 @@ describe("ChatWidget", () => {
 
       await waitFor(() => {
         // Check for widget container
-        const widget = screen.getByText("GLOW").closest("div");
+        const widget = screen.getByText("GLOW Assistant").closest("div");
         expect(widget).toBeInTheDocument();
 
         // Check for close button
@@ -131,7 +132,7 @@ describe("ChatWidget", () => {
       renderWithMocks(<ChatWidget up={false} />);
 
       await waitFor(() => {
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
       });
 
       // Find and click the chat selector
@@ -151,7 +152,7 @@ describe("ChatWidget", () => {
       renderWithMocks(<ChatWidget up={false} />);
 
       await waitFor(() => {
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
       });
 
       // Test maximize button
@@ -167,7 +168,7 @@ describe("ChatWidget", () => {
       renderWithMocks(<ChatWidget up={false} />);
 
       await waitFor(() => {
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
       });
 
       // Test close button
@@ -192,7 +193,7 @@ describe("ChatWidget", () => {
       renderWithMocks(<ChatWidget up={false} />);
 
       await waitFor(() => {
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
       });
 
       // Component should still render even with API errors
@@ -203,7 +204,7 @@ describe("ChatWidget", () => {
       renderWithMocks(<ChatWidget up={false} />);
 
       await waitFor(() => {
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
       });
 
       // Component should show loading states appropriately
@@ -216,7 +217,7 @@ describe("ChatWidget", () => {
       renderWithMocks(<ChatWidget up={false} />);
 
       await waitFor(() => {
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
       });
 
       // Should render widget content
@@ -229,7 +230,7 @@ describe("ChatWidget", () => {
       renderWithMocks(<ChatWidget up={false} />);
 
       await waitFor(() => {
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
       });
 
       // Should render properly even with minimal props
@@ -241,7 +242,7 @@ describe("ChatWidget", () => {
       renderWithMocks(<ChatWidget up={false} />);
 
       await waitFor(() => {
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
       });
 
       // Should render with default props

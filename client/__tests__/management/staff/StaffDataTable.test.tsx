@@ -8,18 +8,83 @@ import {
   StaffDataTable,
   StaffDataTableProps,
 } from "@/components/management/staff/StaffDataTable";
+import { useStaffColumns } from "@/hooks/use-staff-columns";
 
 // Import mocks
 import "@/mocks/api";
 import "@/mocks/mutations";
 import "@/mocks/queries";
 
+// Mock the useStaffColumns hook
+vi.mock("@/hooks/use-staff-columns", () => ({
+  useStaffColumns: vi.fn(),
+}));
+
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
 // Remove unused mockTable
 
+const mockColumns = [
+  {
+    accessorKey: "firstName",
+    header: "Staff Member",
+    cell: ({ row }: any) => (
+      <div>
+        {row.original.firstName} {row.original.lastName}
+      </div>
+    ),
+    enableSorting: true,
+    enableColumnFilter: true,
+  },
+  {
+    accessorKey: "role",
+    header: "Role",
+    cell: ({ row }: any) => <div>{row.original.roleDisplayName}</div>,
+    enableSorting: true,
+    enableColumnFilter: true,
+  },
+  {
+    accessorKey: "email",
+    header: "Email",
+    cell: ({ row }: any) => <div>{row.original.email}</div>,
+    enableSorting: true,
+  },
+  {
+    accessorKey: "active",
+    header: "Status",
+    cell: ({ row }: any) => (
+      <div>{row.original.active ? "Active" : "Inactive"}</div>
+    ),
+    enableSorting: true,
+    enableColumnFilter: true,
+  },
+  {
+    accessorKey: "lastActive",
+    header: "Last Active",
+    cell: ({ row }: any) => <div>{row.original.lastActiveFormatted}</div>,
+    enableSorting: true,
+    enableColumnFilter: true,
+  },
+  {
+    accessorKey: "cohortNames",
+    header: "Cohorts",
+    cell: ({ row }: any) => (
+      <div>{row.original.cohortNames.join(", ") || "None"}</div>
+    ),
+    enableSorting: true,
+    enableColumnFilter: true,
+  },
+  {
+    id: "actions",
+    header: "Actions",
+    cell: () => <div>Edit</div>,
+    enableSorting: false,
+    enableColumnFilter: false,
+  },
+];
+
 const mockProps: StaffDataTableProps = {
-  columns: [],
+  columns: mockColumns,
   data: [
     {
       id: "staff-1",
@@ -56,6 +121,17 @@ const mockProps: StaffDataTableProps = {
   isRefreshing: false,
   onRefresh: vi.fn(),
 };
+
+// Mock the useStaffColumns hook implementation
+const mockUseStaffColumns = useStaffColumns as any;
+mockUseStaffColumns.mockReturnValue({
+  columns: mockColumns,
+  roleOptions: mockProps.roleOptions,
+  cohortOptions: mockProps.cohortOptions,
+  activityOptions: mockProps.activityOptions,
+  lastActiveOptions: mockProps.lastActiveOptions,
+});
+
 // ------------------------------------------------------------------
 describe("StaffDataTable", () => {
   describe("basic render smoke-test", () => {
@@ -69,10 +145,9 @@ describe("StaffDataTable", () => {
     it("should render with props", () => {
       renderWithMocks(<StaffDataTable {...mockProps} />);
 
-      // Should render with the provided options
-      expect(screen.getByText("Admin")).toBeInTheDocument();
-      expect(screen.getByText("TA")).toBeInTheDocument();
-      expect(screen.getByText("Instructional")).toBeInTheDocument();
+      // Should render with the provided options - check for role display names instead of option labels
+      expect(screen.getByText("Administrator")).toBeInTheDocument();
+      expect(screen.getByText("John Doe")).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
@@ -82,7 +157,7 @@ describe("StaffDataTable", () => {
       const table = screen.getByRole("table");
       expect(table).toBeInTheDocument();
 
-      // Should have proper table structure
+      // Should have proper table structure with headers
       const headers = screen.getAllByRole("columnheader");
       expect(headers.length).toBeGreaterThan(0);
     });
@@ -94,23 +169,23 @@ describe("StaffDataTable", () => {
       renderWithMocks(<StaffDataTable {...mockProps} />);
 
       // Look for search input
-      const searchInput = screen.queryByPlaceholderText(/search/i);
-      if (searchInput) {
-        await user.type(searchInput, "test staff");
-        expect(searchInput).toHaveValue("test staff");
-      }
+      const searchInput = screen.getByPlaceholderText(
+        /search staff by name or alias/i
+      );
+      expect(searchInput).toBeInTheDocument();
+
+      await user.type(searchInput, "test staff");
+      expect(searchInput).toHaveValue("test staff");
     });
 
     it("should handle filter interactions", async () => {
       const user = userEvent.setup();
       renderWithMocks(<StaffDataTable {...mockProps} />);
 
-      // Click on filter buttons if they exist
-      const filterButtons = screen.queryAllByRole("button");
-      if (filterButtons.length > 0 && filterButtons[0]) {
-        await user.click(filterButtons[0]);
-        expect(filterButtons[0]).toBeInTheDocument();
-      }
+      // Click on one of the filter buttons (Role, Status, etc.)
+      const roleButton = screen.getByRole("button", { name: "Role" });
+      expect(roleButton).toBeInTheDocument();
+      await user.click(roleButton);
     });
   });
 

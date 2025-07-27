@@ -12,7 +12,7 @@ describe("GlowHeader", () => {
 
       // Should render the GLOW header
       await waitFor(() => {
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
       });
     });
 
@@ -20,8 +20,8 @@ describe("GlowHeader", () => {
       renderWithMocks(<GlowHeader />);
 
       await waitFor(() => {
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
-        expect(screen.getByText(/assistant/i)).toBeInTheDocument();
+        expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
+        expect(screen.getByText(/intelligent assistant/i)).toBeInTheDocument();
       });
     });
 
@@ -30,11 +30,11 @@ describe("GlowHeader", () => {
 
       await waitFor(() => {
         // Check for header element
-        const header = screen.getByText("GLOW").closest("div");
+        const header = screen.getByText("GLOW Assistant").closest("div");
         expect(header).toBeInTheDocument();
 
         // Check for proper heading structure
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByRole("heading", { level: 3 })).toBeInTheDocument();
       });
     });
   });
@@ -44,11 +44,11 @@ describe("GlowHeader", () => {
       renderWithMocks(<GlowHeader />);
 
       await waitFor(() => {
-        expect(screen.getByText("GLOW")).toBeInTheDocument();
+        expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
       });
 
       // Should render properly even with no props
-      expect(screen.getByText("GLOW")).toBeInTheDocument();
+      expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
     });
   });
 });

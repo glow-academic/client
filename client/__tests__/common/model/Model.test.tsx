@@ -115,7 +115,7 @@ describe("Model", () => {
 
       await waitFor(() => {
         // Check for form elements
-        const form = screen.getByRole("form");
+        const form = document.querySelector("form");
         expect(form).toBeInTheDocument();
 
         // Check for input fields
@@ -223,10 +223,10 @@ describe("Model", () => {
       renderWithMocks(<Model {...mockProps} />);
 
       // Check that loading states are handled - either skeleton or form
-      const skeleton = screen.queryByTestId("skeleton");
+      const skeletons = screen.queryAllByTestId("skeleton");
       const nameInput = screen.queryByLabelText("Name");
 
-      expect(skeleton || nameInput).toBeInTheDocument();
+      expect(skeletons.length > 0 || nameInput).toBeTruthy();
     });
   });
 
