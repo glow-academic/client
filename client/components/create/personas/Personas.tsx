@@ -14,7 +14,7 @@ import { toast } from "sonner";
 
 import { usePersonaColumns } from "@/hooks/use-persona-columns";
 import { deletePersona } from "@/utils/mutations/personas/delete-persona";
-import { getPersonaConfig } from "@/utils/personas";
+import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 
@@ -152,42 +152,31 @@ export default function Personas() {
   };
 
   const renderPersonaCard = (persona: Persona) => {
-    const personaConfig = getPersonaConfig(persona.name);
-    const IconComponent = personaConfig.icon;
+    // Get the icon component from the persona's stored icon name
+    const IconComponent = getPersonaIconComponent(persona.icon) || Brain;
 
-    // Extract color from the iconColor class and create explicit color classes
-    const colorMatch = personaConfig.colors.iconColor.match(/text-(\w+)-500/);
-    const colorName = colorMatch?.[1] || "slate";
+    // Use the hex color directly with CSS custom properties
+    const hexColor = persona.color || "#64748b"; // Default to slate if no color
 
-    // Explicit color mapping to ensure Tailwind recognizes the classes
-    const getColorClasses = (color: string) => {
-      switch (color) {
-        case "blue":
-          return { bg: "bg-blue-500", text: "text-blue-500" };
-        case "green":
-          return { bg: "bg-green-500", text: "text-green-500" };
-        case "red":
-          return { bg: "bg-red-500", text: "text-red-500" };
-        case "yellow":
-          return { bg: "bg-yellow-500", text: "text-yellow-500" };
-        case "purple":
-          return { bg: "bg-purple-500", text: "text-purple-500" };
-        case "pink":
-          return { bg: "bg-pink-500", text: "text-pink-500" };
-        case "indigo":
-          return { bg: "bg-indigo-500", text: "text-indigo-500" };
-        case "orange":
-          return { bg: "bg-orange-500", text: "text-orange-500" };
-        case "emerald":
-          return { bg: "bg-emerald-500", text: "text-emerald-500" };
-        case "amber":
-          return { bg: "bg-amber-500", text: "text-amber-500" };
-        default:
-          return { bg: "bg-slate-500", text: "text-slate-500" };
-      }
+    // Function to determine if a color is light or dark
+    const isLightColor = (hex: string) => {
+      // Remove # if present
+      const cleanHex = hex.replace("#", "");
+
+      // Convert to RGB
+      const r = parseInt(cleanHex.substr(0, 2), 16);
+      const g = parseInt(cleanHex.substr(2, 2), 16);
+      const b = parseInt(cleanHex.substr(4, 2), 16);
+
+      // Calculate luminance (perceived brightness)
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+      // Return true if light (luminance > 0.5), false if dark
+      return luminance > 0.5;
     };
 
-    const colors = getColorClasses(colorName);
+    // Choose icon color based on background brightness
+    const iconColor = isLightColor(hexColor) ? "#000000" : "#ffffff";
 
     return (
       <Card key={persona.id} className="hover:shadow-md transition-shadow">
@@ -195,8 +184,16 @@ export default function Personas() {
           <div className="flex justify-between items-start">
             <div className="space-y-2 flex-1">
               <div className="flex items-center gap-2">
-                <div className={`p-2 rounded-lg ${colors.bg} bg-opacity-10`}>
-                  <IconComponent className={`h-4 w-4 ${colors.text}`} />
+                <div
+                  className="p-2 rounded-lg"
+                  style={{
+                    backgroundColor: hexColor,
+                  }}
+                >
+                  <IconComponent
+                    className="h-4 w-4"
+                    style={{ color: iconColor }}
+                  />
                 </div>
                 <CardTitle className="text-base">
                   {persona.name || "Unnamed Persona"}

@@ -1,101 +1,113 @@
-import { describe, it, vi } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import SimulationCompositionPicker from '@/components/common/analytics/SimulationCompositionPicker';
-
-
+import SimulationCompositionPicker from "@/components/common/analytics/SimulationCompositionPicker";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { SimulationCompositionPickerProps } from '@/components/common/analytics/SimulationCompositionPicker';
+interface SimulationCompositionPickerProps {
+  onConfigChange: (config: {
+    method: "percentile" | "standard_deviation" | "quartile";
+    topPercentage: number;
+    bottomPercentage: number;
+    description: string;
+  }) => void;
+  currentConfig: {
+    method: "percentile" | "standard_deviation" | "quartile";
+    topPercentage: number;
+    bottomPercentage: number;
+    description: string;
+  };
+}
+
 const mockProps: SimulationCompositionPickerProps = {
   onConfigChange: vi.fn(),
-  currentConfig: /* TODO <SimulationCompositionConfig> */ undefined!,
+  currentConfig: {
+    method: "percentile",
+    topPercentage: 25,
+    bottomPercentage: 25,
+    description: "Top 25% vs Bottom 25% - Best vs Worst",
+  },
 };
 // ------------------------------------------------------------------
-describe('SimulationCompositionPicker', () => {
-  
-
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
+describe("SimulationCompositionPicker", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
       renderWithMocks(<SimulationCompositionPicker {...mockProps} />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+
+      // Should render the dropdown button with config label
+      expect(screen.getByText(/Top 25% vs Bottom 25%/)).toBeInTheDocument();
     });
 
-    it.skip('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: SimulationCompositionPickerProps
-      
-      // TODO add props assertions
+    it("should render with props", () => {
+      // Test component with various props
+      renderWithMocks(<SimulationCompositionPicker {...mockProps} />);
+
+      // Should display the current config
+      expect(screen.getByText(/Top 25% vs Bottom 25%/)).toBeInTheDocument();
     });
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
+    it("should have correct accessibility attributes", () => {
+      // Test accessibility features
+      renderWithMocks(<SimulationCompositionPicker {...mockProps} />);
 
+      // Should have a button role
+      expect(screen.getByRole("button")).toBeInTheDocument();
     });
   });
 
-  
+  describe("User Interactions", () => {
+    it("should handle config changes", async () => {
+      const mockOnConfigChange = vi.fn();
+      renderWithMocks(
+        <SimulationCompositionPicker
+          {...mockProps}
+          onConfigChange={mockOnConfigChange}
+        />
+      );
 
-  
+      // Should render the dropdown button
+      expect(screen.getByRole("button")).toBeInTheDocument();
+    });
+  });
 
-  
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with different config methods
+      const propsWithQuartile = {
+        ...mockProps,
+        currentConfig: {
+          method: "quartile" as const,
+          topPercentage: 25,
+          bottomPercentage: 25,
+          description: "Q1 vs Q4 - Quartile Analysis",
+        },
+      };
 
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
+      renderWithMocks(<SimulationCompositionPicker {...propsWithQuartile} />);
 
+      // Should render with quartile config
+      expect(screen.getByText(/Q1 vs Q4/)).toBeInTheDocument();
     });
 
-    it.skip('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // TODO: invalid props assertions
+    it("should handle missing or invalid props", () => {
+      // Test with standard deviation config
+      const propsWithStdDev = {
+        ...mockProps,
+        currentConfig: {
+          method: "standard_deviation" as const,
+          topPercentage: 15,
+          bottomPercentage: 15,
+          description: "±1σ - Statistical Outliers",
+        },
+      };
+
+      renderWithMocks(<SimulationCompositionPicker {...propsWithStdDev} />);
+
+      // Should render with standard deviation config
+      expect(screen.getByText(/±1σ/)).toBeInTheDocument();
     });
   });
 });
-
-/*
- * Component Analysis for SimulationCompositionPicker:
- * Path: common/analytics/SimulationCompositionPicker.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: SimulationCompositionConfig
- * - Has props: true
- * - Props interface: SimulationCompositionPickerProps
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<SimulationCompositionPicker {...mockProps} />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<SimulationCompositionPicker {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

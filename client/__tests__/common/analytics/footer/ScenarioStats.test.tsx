@@ -17,7 +17,13 @@ import "@/mocks/queries";
 const mockProps: ScenarioStatsProps = {
   dateStart: new Date(),
   dateEnd: new Date(),
-  // profileId: 'test-profileId', /* optional */
+  thresholds: {
+    danger: 50,
+    warning: 70,
+    success: 80,
+  },
+  profileId: "test-profile-id",
+  cohortIds: ["test-cohort-id"],
 };
 // ------------------------------------------------------------------
 describe("ScenarioStats", () => {

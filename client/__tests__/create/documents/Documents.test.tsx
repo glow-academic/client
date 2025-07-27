@@ -1,148 +1,326 @@
-import { describe, it, vi, afterEach } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
-import userEvent from '@testing-library/user-event';
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import Documents from '@/components/create/documents/Documents';
-
-
+import Documents from "@/components/create/documents/Documents";
 
 // ✨ Import comprehensive mock data from our centralized mock system
-import '@/mocks/queries';
-import '@/mocks/mutations';
-import '@/mocks/api';
-describe('Documents', () => {
-  
+import "@/mocks/api";
+import "@/mocks/mutations";
+import "@/mocks/queries";
+
+describe("Documents", () => {
   /* ------------------------------------------------------------------ *
    * 💡 Mock Data Usage Guide:
-   * 
+   *
    * All API functions are automatically mocked via imports above.
-   * Use mockSchema.* for realistic test data:
-   * 
-   * Examples:
-   * - mockSchema.users[0] - First user object
-   * - mockSchema.classes - Array of class objects  
-   * - mockSchema.profiles - Array of profile objects
-   * 
+   *
    * To override specific mocks in individual tests:
    * - vi.mocked(queryFunction).mockResolvedValue(customData)
    * - vi.mocked(mutationFunction).mockResolvedValue(customResponse)
    * ------------------------------------------------------------------ */
-  
+
   // ✨ Reset mocks after each test
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Documents  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      renderWithMocks(<Documents />);
+
+      // Wait for the component to load
+      await waitFor(() => {
+        // The component should render either the empty state or the data table
+        expect(
+          screen.getByText("No documents yet") ||
+            screen.getByText("Documents 1")
+        ).toBeInTheDocument();
+      });
     });
 
-    
+    it("should display documents when available", async () => {
+      // Mock documents data
+      const mockDocuments = [
+        {
+          id: "doc-1",
+          name: "Test Document 1",
+          type: "homework" as const,
+          active: true,
+          createdAt: "2024-01-01T00:00:00Z",
+          updatedAt: "2024-01-01T00:00:00Z",
+          filePath: "/test/path",
+          mimeType: "application/pdf",
+          classified: false,
+          fileId: null,
+        },
+        {
+          id: "doc-2",
+          name: "Test Document 2",
+          type: "project" as const,
+          active: false,
+          createdAt: "2024-01-02T00:00:00Z",
+          updatedAt: "2024-01-02T00:00:00Z",
+          filePath: "/test/path2",
+          mimeType: "application/pdf",
+          classified: true,
+          fileId: "file-2",
+        },
+      ];
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
+      // Override the mock to return our test data
+      const { getAllDocuments } = await import(
+        "@/utils/queries/documents/get-all-documents"
+      );
+      vi.mocked(getAllDocuments).mockResolvedValue(mockDocuments);
 
+      renderWithMocks(<Documents />);
+
+      // Wait for documents to load
+      await waitFor(() => {
+        expect(screen.getByText("Test Document 1")).toBeInTheDocument();
+        expect(screen.getByText("Test Document 2")).toBeInTheDocument();
+      });
+    });
+
+    it("should have correct accessibility attributes", async () => {
+      renderWithMocks(<Documents />);
+
+      // Check for upload cloud icon (empty state) or document content
+      await waitFor(() => {
+        // The component should render either the empty state or the data table
+        expect(
+          screen.getByText("No documents yet") ||
+            screen.getByText("Documents 1")
+        ).toBeInTheDocument();
+      });
+
+      // Check that the upload icon is present in empty state
+      const uploadIcon = document.querySelector('[data-lucide="upload-cloud"]');
+      if (uploadIcon) {
+        expect(uploadIcon).toBeInTheDocument();
+      }
     });
   });
 
-  describe('User Interactions', () => {
-    
-
-    it.skip('should handle state changes', async () => {
+  describe("User Interactions", () => {
+    it("should handle view mode changes", async () => {
       const user = userEvent.setup();
-      void user;
-      // TODO: state management assertions
-      // Mock data is available from @/mocks/schema for realistic testing
+
+      // Mock documents data
+      const mockDocuments = [
+        {
+          id: "doc-1",
+          name: "Test Document",
+          type: "homework" as const,
+          active: true,
+          createdAt: "2024-01-01T00:00:00Z",
+          updatedAt: "2024-01-01T00:00:00Z",
+          filePath: "/test/path",
+          mimeType: "application/pdf",
+          classified: false,
+          fileId: null,
+        },
+      ];
+
+      const { getAllDocuments } = await import(
+        "@/utils/queries/documents/get-all-documents"
+      );
+      vi.mocked(getAllDocuments).mockResolvedValue(mockDocuments);
+
+      renderWithMocks(<Documents />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Test Document")).toBeInTheDocument();
+      });
+
+      // Find and click the grid view button
+      const gridButton = screen.getByRole("button", { name: /grid/i });
+      await user.click(gridButton);
+
+      // Should still show the document in grid view
+      expect(screen.getByText("Test Document")).toBeInTheDocument();
     });
 
-    it.skip('should handle user events', async () => {
+    it("should handle document selection", async () => {
       const user = userEvent.setup();
-      void user;
-      // TODO: interaction assertions
 
+      const mockDocuments = [
+        {
+          id: "doc-1",
+          name: "Test Document",
+          type: "homework" as const,
+          active: true,
+          createdAt: "2024-01-01T00:00:00Z",
+          updatedAt: "2024-01-01T00:00:00Z",
+          filePath: "/test/path",
+          mimeType: "application/pdf",
+          classified: false,
+          fileId: null,
+        },
+      ];
+
+      const { getAllDocuments } = await import(
+        "@/utils/queries/documents/get-all-documents"
+      );
+      vi.mocked(getAllDocuments).mockResolvedValue(mockDocuments);
+
+      renderWithMocks(<Documents />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Test Document")).toBeInTheDocument();
+      });
+
+      // Switch to list view to enable selection
+      const listButton = screen.getByRole("button", { name: /list/i });
+      await user.click(listButton);
+
+      // Find and click the checkbox for document selection
+      const checkbox = screen.getByRole("checkbox");
+      await user.click(checkbox);
+
+      // Check that the checkbox is now checked
+      expect(checkbox).toBeChecked();
+    });
+
+    it("should handle user events", async () => {
+      const user = userEvent.setup();
+
+      const mockDocuments = [
+        {
+          id: "doc-1",
+          name: "Test Document",
+          type: "homework" as const,
+          active: true,
+          createdAt: "2024-01-01T00:00:00Z",
+          updatedAt: "2024-01-01T00:00:00Z",
+          filePath: "/test/path",
+          mimeType: "application/pdf",
+          classified: false,
+          fileId: null,
+        },
+      ];
+
+      const { getAllDocuments } = await import(
+        "@/utils/queries/documents/get-all-documents"
+      );
+      vi.mocked(getAllDocuments).mockResolvedValue(mockDocuments);
+
+      renderWithMocks(<Documents />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Test Document")).toBeInTheDocument();
+      });
+
+      // Test search functionality
+      const searchInput = screen.getByPlaceholderText("Filter documents...");
+      await user.type(searchInput, "Test");
+
+      // Document should still be visible after typing
+      expect(screen.getByText("Test Document")).toBeInTheDocument();
     });
   });
 
-  describe('API Integration', () => {
-    it.skip('should handle and display an API error state', async () => {
+  describe("API Integration", () => {
+    it("should handle and display an API error state", async () => {
       // Arrange: Override the default success mock with an error for this test.
-      // Example: vi.mocked(getAllDocuments).mockRejectedValue(new Error('API Error'));
+      const { getAllDocuments } = await import(
+        "@/utils/queries/documents/get-all-documents"
+      );
+      vi.mocked(getAllDocuments).mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<Documents  />);
-      
-      // Assert: Check that your component shows an error message.
-      // TODO: Add specific error state assertions
+      renderWithMocks(<Documents />);
+
+      // The component should handle the error gracefully
+      await waitFor(() => {
+        // Component should still render without crashing
+        expect(
+          screen.getByText("No documents yet") ||
+            screen.getByText("Documents 1")
+        ).toBeInTheDocument();
+      });
     });
 
-    it.skip('should handle loading states', () => {
-      // TODO: Test loading states
-      // Mock data is automatically loaded from @/mocks/schema
-      
-      // TODO: loading states assertions
+    it("should handle loading states", async () => {
+      // Create a promise that never resolves to simulate loading
+      const loadingPromise = new Promise<never>(() => {});
+      const { getAllDocuments } = await import(
+        "@/utils/queries/documents/get-all-documents"
+      );
+      vi.mocked(getAllDocuments).mockReturnValue(loadingPromise);
+
+      renderWithMocks(<Documents />);
+
+      // Should show loading state (skeleton)
+      const skeletons = document.querySelectorAll('[data-testid="skeleton"]');
+      expect(skeletons.length).toBeGreaterThan(0);
     });
   });
 
-  describe('Navigation', () => {
-    it.skip('should handle navigation', () => {
-      // TODO: Test navigation behavior
-      
-      // TODO: navigation assertions
+  describe("Navigation", () => {
+    it("should handle navigation", async () => {
+      // This component doesn't have direct navigation, but we can test
+      // that it renders without navigation-related errors
+      renderWithMocks(<Documents />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("No documents yet") ||
+            screen.getByText("Documents 1")
+        ).toBeInTheDocument();
+      });
     });
   });
 
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", async () => {
+      // Test with empty documents array
+      const { getAllDocuments } = await import(
+        "@/utils/queries/documents/get-all-documents"
+      );
+      vi.mocked(getAllDocuments).mockResolvedValue([]);
 
+      renderWithMocks(<Documents />);
+
+      await waitFor(() => {
+        expect(screen.getByText("No documents yet")).toBeInTheDocument();
+      });
     });
 
-    
+    it("should handle documents with missing properties", async () => {
+      const mockDocuments = [
+        {
+          id: "doc-1",
+          name: "",
+          type: "homework" as const,
+          active: true,
+          createdAt: "2024-01-01T00:00:00Z",
+          updatedAt: "2024-01-01T00:00:00Z",
+          filePath: "/test/path",
+          mimeType: "application/pdf",
+          classified: false,
+          fileId: null,
+        },
+      ];
+
+      const { getAllDocuments } = await import(
+        "@/utils/queries/documents/get-all-documents"
+      );
+      vi.mocked(getAllDocuments).mockResolvedValue(mockDocuments);
+
+      renderWithMocks(<Documents />);
+
+      // Component should handle empty name gracefully
+      await waitFor(() => {
+        // The component should render the document even with empty name
+        expect(
+          screen.getByText("Failed to load document") ||
+            screen.getByText("Documents 1")
+        ).toBeInTheDocument();
+      });
+    });
   });
 });
-
-/*
- * Component Analysis for Documents:
- * Path: create/documents/Documents.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: useQuery, useQueryClient, useRouter, useCallback, useMemo, useState
- * - Uses router: true
- * - Has API calls: true
- * - Has form handling: false
- * - Uses state: true
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<Documents />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<Documents {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

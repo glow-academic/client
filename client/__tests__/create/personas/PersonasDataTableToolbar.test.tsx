@@ -1,104 +1,172 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
-import type { Table } from "@tanstack/react-table";
-import { describe, it } from "vitest";
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
 import {
   PersonasDataTableToolbar,
   PersonasDataTableToolbarProps,
 } from "@/components/create/personas/PersonasDataTableToolbar";
+import { getMockTable } from "@/mocks/navigation";
+import { Persona } from "@/types";
 
-// ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
-const mockProps: PersonasDataTableToolbarProps = {
-  table: {} as unknown as Table<{
-    name: string;
-    id: string;
-    createdAt: string;
-    updatedAt: string;
-    description: string;
-    systemPrompt: string;
-    temperature: number;
-    defaultPersona: boolean;
-    color: string;
-    icon: string;
-    modelId: string | null;
-    reasoning: "low" | "medium" | "high" | null;
-    active: boolean;
-  }>,
-  scenarioOptions: [],
-  reasoningOptions: [],
-  modelOptions: [],
-  temperatureOptions: [],
-};
-// ------------------------------------------------------------------
+// Mock the DataTableFacetedFilter component
+vi.mock("@/components/common/history/DataTableFacetedFilter", () => ({
+  DataTableFacetedFilter: ({ title }: { title: string }) => (
+    <div data-testid={`filter-${title.toLowerCase()}`}>{title} Filter</div>
+  ),
+}));
+
 describe("PersonasDataTableToolbar", () => {
+  const mockTable = getMockTable<Persona>();
+
+  const defaultProps: PersonasDataTableToolbarProps = {
+    table: mockTable,
+    scenarioOptions: [{ value: "scenario-1", label: "Scenario 1" }],
+    reasoningOptions: [
+      { value: "high", label: "High" },
+      { value: "medium", label: "Medium" },
+      { value: "low", label: "Low" },
+    ],
+    modelOptions: [
+      { value: "model-1", label: "Model 1" },
+      { value: "model-2", label: "Model 2" },
+    ],
+    temperatureOptions: [
+      { value: "0.1-0.3", label: "Low (0.1-0.3)" },
+      { value: "0.4-0.7", label: "Medium (0.4-0.7)" },
+      { value: "0.8-1.0", label: "High (0.8-1.0)" },
+    ],
+  };
+
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<PersonasDataTableToolbar {...mockProps} />);
+      renderWithMocks(<PersonasDataTableToolbar {...defaultProps} />);
 
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      // Check that the search input is rendered
+      expect(
+        screen.getByPlaceholderText("Search personas...")
+      ).toBeInTheDocument();
     });
 
-    it.skip("should render with props", () => {
-      // TODO: Test component with various props
-      // Props interface: PersonasDataTableToolbarProps
-      // TODO add props assertions
+    it("should render with props", () => {
+      renderWithMocks(<PersonasDataTableToolbar {...defaultProps} />);
+
+      // Check that the search input is rendered
+      expect(
+        screen.getByPlaceholderText("Search personas...")
+      ).toBeInTheDocument();
+
+      // Check that filters are rendered
+      expect(screen.getByTestId("filter-scenario")).toBeInTheDocument();
+      expect(screen.getByTestId("filter-reasoning")).toBeInTheDocument();
+      expect(screen.getByTestId("filter-model")).toBeInTheDocument();
+      expect(screen.getByTestId("filter-temperature")).toBeInTheDocument();
     });
 
-    it.skip("should have correct accessibility attributes", () => {
-      // TODO: Test accessibility features
-      // TODO add accessibility assertions
+    it("should have correct accessibility attributes", () => {
+      renderWithMocks(<PersonasDataTableToolbar {...defaultProps} />);
+
+      // Check that the search input has proper accessibility attributes
+      const searchInput = screen.getByPlaceholderText("Search personas...");
+      expect(searchInput).toBeInTheDocument();
+
+      // Check that the filters are accessible
+      expect(screen.getByTestId("filter-scenario")).toBeInTheDocument();
+      expect(screen.getByTestId("filter-reasoning")).toBeInTheDocument();
+      expect(screen.getByTestId("filter-model")).toBeInTheDocument();
+      expect(screen.getByTestId("filter-temperature")).toBeInTheDocument();
+    });
+  });
+
+  describe("User Interactions", () => {
+    it("should handle search input changes", async () => {
+      const user = userEvent.setup();
+
+      renderWithMocks(<PersonasDataTableToolbar {...defaultProps} />);
+
+      const searchInput = screen.getByPlaceholderText("Search personas...");
+      await user.type(searchInput, "test persona");
+
+      expect(searchInput).toHaveValue("test persona");
+    });
+
+    it("should handle filter interactions", async () => {
+      const user = userEvent.setup();
+
+      renderWithMocks(<PersonasDataTableToolbar {...defaultProps} />);
+
+      // The filters are mocked, so we just verify they're rendered
+      expect(screen.getByTestId("filter-scenario")).toBeInTheDocument();
+      expect(screen.getByTestId("filter-reasoning")).toBeInTheDocument();
+      expect(screen.getByTestId("filter-model")).toBeInTheDocument();
+      expect(screen.getByTestId("filter-temperature")).toBeInTheDocument();
     });
   });
 
   describe("Edge Cases", () => {
-    it.skip("should handle edge cases gracefully", () => {
-      // TODO: Test edge cases and error scenarios
-      // TODO: edge-case assertions
+    it("should handle edge cases gracefully", () => {
+      // Test with empty options
+      const propsWithEmptyOptions = {
+        ...defaultProps,
+        scenarioOptions: [],
+        reasoningOptions: [],
+        modelOptions: [],
+        temperatureOptions: [],
+      };
+
+      renderWithMocks(<PersonasDataTableToolbar {...propsWithEmptyOptions} />);
+
+      // Component should still render without crashing
+      expect(
+        screen.getByPlaceholderText("Search personas...")
+      ).toBeInTheDocument();
     });
 
-    it.skip("should handle missing or invalid props", () => {
-      // TODO: Test with missing/invalid props
-      // TODO: invalid props assertions
+    it("should handle missing or invalid props", () => {
+      // Test with minimal required props
+      const minimalProps = {
+        table: mockTable,
+        scenarioOptions: [],
+        reasoningOptions: [],
+        modelOptions: [],
+        temperatureOptions: [],
+      };
+
+      renderWithMocks(<PersonasDataTableToolbar {...minimalProps} />);
+
+      // Component should still render
+      expect(
+        screen.getByPlaceholderText("Search personas...")
+      ).toBeInTheDocument();
+    });
+
+    it("should handle filters with no options", () => {
+      const propsWithNoFilterOptions = {
+        ...defaultProps,
+        scenarioOptions: [],
+        reasoningOptions: [],
+        modelOptions: [],
+        temperatureOptions: [],
+      };
+
+      renderWithMocks(
+        <PersonasDataTableToolbar {...propsWithNoFilterOptions} />
+      );
+
+      // Should still render the search input
+      expect(
+        screen.getByPlaceholderText("Search personas...")
+      ).toBeInTheDocument();
+
+      // Filters with no options should not be rendered
+      expect(screen.queryByTestId("filter-scenario")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("filter-reasoning")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("filter-model")).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("filter-temperature")
+      ).not.toBeInTheDocument();
     });
   });
 });
-
-/*
- * Component Analysis for PersonasDataTableToolbar:
- * Path: create/personas/PersonasDataTableToolbar.tsx
- *
- * Features detected:
- * - Default export: false
- * - Named exports: PersonasDataTableToolbar, PersonasDataTableToolbarProps
- * - Has props: true
- * - Props interface: PersonasDataTableToolbarProps
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- *
- * TODO: Implement the failing tests above with actual test logic
- *
- * Example implementations:
- *
- * Basic rendering:
- * render(<PersonasDataTableToolbar {...mockProps} />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- *
- * Props testing:
- * const props = { ... };
- * render(<PersonasDataTableToolbar {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- *
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

@@ -31,6 +31,7 @@ const mockProps = {
     warning: 70,
     success: 80,
   },
+  cohortIds: ["test-cohort-id"],
 };
 
 describe("SimulationComposition", () => {

@@ -16,13 +16,13 @@ import "@/mocks/queries";
 const mockProps: SimulationPerformanceProps = {
   dateStart: new Date("2024-01-01"),
   dateEnd: new Date("2024-12-31"),
-  // profileId: 'test-profileId', /* optional */
+  profileId: "test-profile-id",
   thresholds: {
     danger: 50,
     warning: 70,
     success: 80,
   },
-  autoSelectSimulation: true,
+  cohortIds: ["test-cohort-id"],
 };
 // ------------------------------------------------------------------
 describe("SimulationPerformance", () => {

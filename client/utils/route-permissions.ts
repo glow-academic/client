@@ -161,7 +161,7 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         redirectTo: "/create/personas",
       },
       {
-        path: "/create/personas/a/[personaId]",
+        path: "/create/personas/p/[personaId]",
         roles: ["instructional", "admin", "superadmin"],
         title: "Edit Persona",
         redirectTo: "/create/personas",
