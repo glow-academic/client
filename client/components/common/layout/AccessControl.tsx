@@ -27,11 +27,18 @@ interface AccessControlProps {
 }
 
 export function AccessControl({ children, pathname }: AccessControlProps) {
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, isLoading } = useProfile();
 
-  // If no profile, show access denied
-  if (!effectiveProfile) {
-    return <AccessDeniedCard role="guest" pathname={pathname} />;
+  // If still loading, show loading state instead of access denied
+  if (isLoading || !effectiveProfile) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   // Check if user has access to the current route

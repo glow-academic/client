@@ -46,7 +46,7 @@ const GUEST_PROFILE: Profile = {
 interface ProfileContextType {
   activeProfile: Profile | null;
   simulatedProfile: Profile | null;
-  effectiveProfile: Profile;
+  effectiveProfile: Profile | null;
   isSimulating: boolean;
   isLoading: boolean;
   setSimulatedProfile: (
@@ -104,10 +104,10 @@ export function ProfileProvider({
     });
 
   const { effectiveProfile, simulatedProfile, isLoading } = useMemo(() => {
-    // During hydration or while fetching a simulation, the user is a generic guest.
+    // During hydration or while fetching a simulation, don't default to guest
     if (!isClient || isSimulatingProfileLoading) {
       return {
-        effectiveProfile: GUEST_PROFILE,
+        effectiveProfile: null,
         simulatedProfile: null,
         isLoading: true,
       };
@@ -195,10 +195,10 @@ export function ProfileProvider({
 
   const isSectionAvailable = React.useCallback(
     (section: string, role?: ProfileRole) => {
-      const targetRole = role || effectiveProfile.role;
+      const targetRole = role || effectiveProfile?.role || "guest";
       return isSectionAvailableForRole(section, targetRole);
     },
-    [effectiveProfile.role]
+    [effectiveProfile?.role]
   );
 
   const value: ProfileContextType = {

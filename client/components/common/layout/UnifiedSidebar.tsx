@@ -265,21 +265,21 @@ export function UnifiedSidebar({
   });
 
   // Extract stable profile ID to avoid complex dependency expressions
-  const stableProfileId = effectiveProfile?.id || "";
+  const stableProfileId = effectiveProfile!.id || "";
 
   const getCohortSubItems = React.useMemo(() => {
     if (!cohorts) return [];
 
     let profileCohorts: Cohort[] = [];
 
-    switch (effectiveProfile.role) {
+    switch (effectiveProfile!.role) {
       case "superadmin":
       case "admin":
         profileCohorts = cohorts;
         break;
       case "instructional":
       case "ta":
-        if (effectiveProfile.defaultProfile) {
+        if (effectiveProfile!.defaultProfile) {
           profileCohorts = cohorts;
           break;
         }
@@ -297,18 +297,13 @@ export function UnifiedSidebar({
       section: `cohort-${c.id}`,
       isSubItem: true,
     }));
-  }, [
-    cohorts,
-    effectiveProfile.role,
-    stableProfileId,
-    effectiveProfile.defaultProfile,
-  ]);
+  }, [cohorts, effectiveProfile, stableProfileId]);
 
   // Build navigation menu based on role with search filtering
   const navMain = useMemo(() => {
     const menu: NavSection[] = [];
     const availableSections = getAvailableSubsectionsForRole(
-      effectiveProfile.role
+      effectiveProfile!.role
     );
 
     // Home - Only for non guest users
@@ -323,7 +318,7 @@ export function UnifiedSidebar({
 
     // Cohorts sections based on role
     if (availableSections.includes("cohorts")) {
-      if (["ta"].includes(effectiveProfile.role)) {
+      if (["ta"].includes(effectiveProfile!.role)) {
         // TA/Instructor view - collapsible with sub-items
         menu.push({
           title: "Cohorts",
@@ -534,7 +529,7 @@ export function UnifiedSidebar({
     }
 
     return menu;
-  }, [effectiveProfile.role, searchTerm, getCohortSubItems]);
+  }, [effectiveProfile, searchTerm, getCohortSubItems]);
 
   const handleSectionChange = createFlexibleSectionChangeHandler(
     router,
@@ -590,9 +585,8 @@ export function UnifiedSidebar({
     }
   }, [effectiveProfile, pathname, router]);
 
-  // Show skeleton while profile is loading or while we have a guest profile without a real user
-  const shouldShowSkeleton =
-    isProfileLoading || (effectiveProfile?.role === "guest" && !activeProfile);
+  // Show skeleton while profile is loading or while we don't have a profile yet
+  const shouldShowSkeleton = isProfileLoading || !effectiveProfile;
 
   if (shouldShowSkeleton) {
     return <SidebarSkeleton />;
