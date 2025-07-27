@@ -590,8 +590,11 @@ export function UnifiedSidebar({
     }
   }, [effectiveProfile, pathname, router]);
 
-  // Show skeleton while profile is loading
-  if (isProfileLoading) {
+  // Show skeleton while profile is loading or while we have a guest profile without a real user
+  const shouldShowSkeleton =
+    isProfileLoading || (effectiveProfile?.role === "guest" && !activeProfile);
+
+  if (shouldShowSkeleton) {
     return <SidebarSkeleton />;
   }
 
