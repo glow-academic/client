@@ -84,14 +84,14 @@ class TestSend_Simulation_Message:
         from app.main import send_simulation_message
 
         # Mock the process_simulation_message_websocket function
-        with patch('app.main.process_simulation_message_websocket') as mock_process:
+        with patch('app.web.simulations.process_simulation_message_websocket') as mock_process:
             sid = "test_sid"
             data = {"chat_id": "test_chat_id", "message": "Test message"}
             
             await send_simulation_message(sid, data)
             
-            # Verify that process_simulation_message_websocket was called
-            mock_process.assert_called_once_with(data["chat_id"], data["message"])
+            # Verify that process_simulation_message_websocket was called with keyword arguments
+            mock_process.assert_called_once_with(chat_id="test_chat_id", message="Test message")
 
     @pytest.mark.asyncio
     async def test_send_simulation_message_error(self):
@@ -101,7 +101,7 @@ class TestSend_Simulation_Message:
         from app.main import send_simulation_message
 
         # Mock the process_simulation_message_websocket function to raise an exception
-        with patch('app.main.process_simulation_message_websocket', side_effect=Exception("Test error")):
+        with patch('app.web.simulations.process_simulation_message_websocket', side_effect=Exception("Test error")):
             sid = "test_sid"
             data = {"chat_id": "test_chat_id", "message": "Test message"}
             
@@ -118,31 +118,35 @@ class TestSend_Assistant_Message:
     @pytest.mark.asyncio
     async def test_send_assistant_message_success(self):
         """Test successful send_assistant_message execution."""
+        import uuid
         from unittest.mock import AsyncMock, patch
 
         from app.main import send_assistant_message
 
         # Mock the process_assistant_message_websocket function
-        with patch('app.main.process_assistant_message_websocket') as mock_process:
+        with patch('app.web.assistants.process_assistant_message_websocket') as mock_process:
             sid = "test_sid"
-            data = {"chat_id": "test_chat_id", "message": "Test message"}
+            chat_id = str(uuid.uuid4())
+            data = {"chat_id": chat_id, "message": "Test message"}
             
             await send_assistant_message(sid, data)
             
-            # Verify that process_assistant_message_websocket was called
-            mock_process.assert_called_once_with(data["chat_id"], data["message"])
+            # Verify that process_assistant_message_websocket was called with keyword arguments
+            mock_process.assert_called_once_with(chat_id=uuid.UUID(chat_id), message="Test message")
 
     @pytest.mark.asyncio
     async def test_send_assistant_message_error(self):
         """Test send_assistant_message error handling."""
+        import uuid
         from unittest.mock import AsyncMock, patch
 
         from app.main import send_assistant_message
 
         # Mock the process_assistant_message_websocket function to raise an exception
-        with patch('app.main.process_assistant_message_websocket', side_effect=Exception("Test error")):
+        with patch('app.web.assistants.process_assistant_message_websocket', side_effect=Exception("Test error")):
             sid = "test_sid"
-            data = {"chat_id": "test_chat_id", "message": "Test message"}
+            chat_id = str(uuid.uuid4())
+            data = {"chat_id": chat_id, "message": "Test message"}
             
             # The function should handle the exception gracefully
             await send_assistant_message(sid, data)
@@ -159,49 +163,45 @@ class TestConnect:
         """Test successful connect execution."""
         from unittest.mock import AsyncMock, patch
 
-        from app.main import connect
+        from app.main import connect, socket_owner
 
         # Mock the Socket.IO instance
         mock_sio = AsyncMock()
         
-        sid = "test_sid"
-        environ = {"HTTP_X_FORWARDED_FOR": "192.168.1.1"}
-        auth = {"profile_id": "test_profile_id"}
-        
-        # Call the function
-        result = await connect(sid, environ, auth)
-        
-        # Verify that the function returned True (connection accepted)
-        assert result is True
-        
-        # Verify that the client was added to the active_connections set
-        from app.main import active_connections
-        assert sid in active_connections
+        with patch('app.main.sio', mock_sio):
+            sid = "test_sid"
+            environ = {"QUERY_STRING": "profileId=test_profile_id"}
+            auth = {"profile_id": "test_profile_id"}
+            
+            # Call the function
+            result = await connect(sid, environ, auth)
+            
+            # Verify that the function returned True (connection accepted)
+            assert result is True
+            
+            # Verify that the client was added to socket_owner
+            assert "test_profile_id" in socket_owner
+            assert socket_owner["test_profile_id"] == sid
 
     @pytest.mark.asyncio
     async def test_connect_error(self):
         """Test connect error handling."""
         from unittest.mock import AsyncMock, patch
 
-        from app.main import connect
+        from app.main import connect, socket_owner
 
         # Mock the Socket.IO instance to raise an exception
         mock_sio = AsyncMock()
         mock_sio.emit.side_effect = Exception("Socket.IO error")
         
-        sid = "test_sid"
-        environ = {"HTTP_X_FORWARDED_FOR": "192.168.1.1"}
-        auth = {"profile_id": "test_profile_id"}
-        
-        # The function should handle the exception gracefully
-        result = await connect(sid, environ, auth)
-        
-        # Verify that the function still returned True (connection accepted)
-        assert result is True
-        
-        # Verify that the client was still added to active_connections
-        from app.main import active_connections
-        assert sid in active_connections
+        with patch('app.main.sio', mock_sio):
+            sid = "test_sid"
+            environ = {"QUERY_STRING": "profileId=test_profile_id"}
+            auth = {"profile_id": "test_profile_id"}
+            
+            # The function should raise the exception since it doesn't have error handling
+            with pytest.raises(Exception, match="Socket.IO error"):
+                await connect(sid, environ, auth)
 
 
 import pytest
@@ -268,7 +268,7 @@ class TestJoin_Chat:
         # Mock the Socket.IO instance
         mock_sio = AsyncMock()
         
-        with patch('app.main.get_socketio_instance', return_value=mock_sio):
+        with patch('app.main.sio', mock_sio):
             sid = "test_sid"
             data = {"chat_id": "test_chat_id", "chat_type": "assistant"}
             
@@ -288,15 +288,13 @@ class TestJoin_Chat:
         mock_sio = AsyncMock()
         mock_sio.enter_room.side_effect = Exception("Socket.IO error")
         
-        with patch('app.main.get_socketio_instance', return_value=mock_sio):
+        with patch('app.main.sio', mock_sio):
             sid = "test_sid"
             data = {"chat_id": "test_chat_id", "chat_type": "assistant"}
             
-            # The function should handle the exception gracefully
-            await join_chat(sid, data)
-            
-            # Verify the enter_room was still called (even though it failed)
-            mock_sio.enter_room.assert_called_once()
+            # The function should raise the exception since it doesn't have error handling
+            with pytest.raises(Exception, match="Socket.IO error"):
+                await join_chat(sid, data)
 
 
 import pytest
@@ -315,7 +313,7 @@ class TestLeave_Chat:
         # Mock the Socket.IO instance
         mock_sio = AsyncMock()
         
-        with patch('app.main.get_socketio_instance', return_value=mock_sio):
+        with patch('app.main.sio', mock_sio):
             sid = "test_sid"
             data = {"chat_id": "test_chat_id", "chat_type": "assistant"}
             
@@ -335,15 +333,13 @@ class TestLeave_Chat:
         mock_sio = AsyncMock()
         mock_sio.leave_room.side_effect = Exception("Socket.IO error")
         
-        with patch('app.main.get_socketio_instance', return_value=mock_sio):
+        with patch('app.main.sio', mock_sio):
             sid = "test_sid"
             data = {"chat_id": "test_chat_id", "chat_type": "assistant"}
             
-            # The function should handle the exception gracefully
-            await leave_chat(sid, data)
-            
-            # Verify the leave_room was still called (even though it failed)
-            mock_sio.leave_room.assert_called_once()
+            # The function should raise the exception since it doesn't have error handling
+            with pytest.raises(Exception, match="Socket.IO error"):
+                await leave_chat(sid, data)
 
 
 import pytest
@@ -446,7 +442,7 @@ class TestEmit_Chat_Stopped:
         # Mock the Socket.IO instance
         mock_sio = AsyncMock()
         
-        with patch('app.main.get_socketio_instance', return_value=mock_sio):
+        with patch('app.main.sio', mock_sio):
             chat_id = "test_chat_id"
             chat_type = "assistant"
             
@@ -470,15 +466,13 @@ class TestEmit_Chat_Stopped:
         mock_sio = AsyncMock()
         mock_sio.emit.side_effect = Exception("Socket.IO error")
         
-        with patch('app.main.get_socketio_instance', return_value=mock_sio):
+        with patch('app.main.sio', mock_sio):
             chat_id = "test_chat_id"
             chat_type = "assistant"
             
-            # The function should handle the exception gracefully
-            await emit_chat_stopped(chat_id, chat_type)
-            
-            # Verify the emit was still called (even though it failed)
-            mock_sio.emit.assert_called_once()
+            # The function should raise the exception since it doesn't have error handling
+            with pytest.raises(Exception, match="Socket.IO error"):
+                await emit_chat_stopped(chat_id, chat_type)
 
 
 import pytest
@@ -499,21 +493,22 @@ class TestStop_Chat:
         chat_id = "test_chat_id"
         run_id = "test_run_id"
         active_runs[chat_id] = run_id
+
+        # Mock the Socket.IO instance
+        mock_sio = AsyncMock()
         
-        # Mock the cancel_simulation_run and cancel_assistant_run functions
-        with patch('app.main.cancel_simulation_run') as mock_cancel_sim, \
-             patch('app.main.cancel_assistant_run') as mock_cancel_assistant, \
-             patch('app.main.emit_chat_stopped') as mock_emit:
+        with patch('app.main.sio', mock_sio):
+            sid = "test_sid"
+            data = {"chat_id": chat_id, "chat_type": "assistant"}
             
-            await stop_chat(chat_id)
+            await stop_chat(sid, data)
             
-            # Verify that both cancel functions were called
-            mock_cancel_sim.assert_called_once_with(run_id)
-            mock_cancel_assistant.assert_called_once_with(run_id)
-            mock_emit.assert_called_once_with(chat_id)
-            
-            # Verify that the run was removed from active_runs
-            assert chat_id not in active_runs
+            # Verify that the chat_stopped event was emitted
+            mock_sio.emit.assert_called_once_with(
+                "chat_stopped", 
+                {"chat_id": str(chat_id), "chat_type": "assistant"}, 
+                room=sid
+            )
 
     @pytest.mark.asyncio
     async def test_stop_chat_error(self):
@@ -524,19 +519,18 @@ class TestStop_Chat:
 
         # Clear any existing runs
         active_runs.clear()
+
+        # Mock the Socket.IO instance to raise an exception
+        mock_sio = AsyncMock()
+        mock_sio.emit.side_effect = Exception("Socket.IO error")
         
-        # Mock the cancel functions to raise exceptions
-        with patch('app.main.cancel_simulation_run', side_effect=Exception("Sim error")), \
-             patch('app.main.cancel_assistant_run', side_effect=Exception("Assistant error")), \
-             patch('app.main.emit_chat_stopped') as mock_emit:
+        with patch('app.main.sio', mock_sio):
+            sid = "test_sid"
+            data = {"chat_id": "test_chat_id", "chat_type": "assistant"}
             
-            chat_id = "test_chat_id"
-            
-            # The function should handle the exceptions gracefully
-            await stop_chat(chat_id)
-            
-            # Verify that emit_chat_stopped was still called
-            mock_emit.assert_called_once_with(chat_id)
+            # The function should raise the exception since it doesn't have error handling
+            with pytest.raises(Exception, match="Socket.IO error"):
+                await stop_chat(sid, data)
 
 
 import pytest

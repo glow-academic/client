@@ -1,101 +1,192 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
-import userEvent from '@testing-library/user-event';
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import error from '@/app/error';
+import Error from "@/app/error";
 
-describe('error', () => {
-  
+// Mock Next.js router
+const mockPush = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
+}));
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<error  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-    });
+// Mock profile context
+const mockUseProfile = vi.fn();
+vi.mock("@/contexts/profile-context", () => ({
+  useProfile: () => mockUseProfile(),
+  ProfileProvider: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="profile-provider">{children}</div>
+  ),
+}));
 
-    
+describe("Error", () => {
+  const mockError = { message: "Test error message" } as Error;
+  const mockReset = vi.fn();
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUseProfile.mockReturnValue({
+      effectiveProfile: { role: "admin" },
     });
   });
 
-  describe('User Interactions', () => {
-    
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      renderWithMocks(<Error error={mockError} reset={mockReset} />);
 
-    
+      expect(screen.getByText("Error")).toBeInTheDocument();
+      expect(screen.getByText("An error occurred")).toBeInTheDocument();
+      expect(screen.getByText("Test error message")).toBeInTheDocument();
+    });
 
-    it.skip('should handle user events', async () => {
+    it("should have correct accessibility attributes", () => {
+      renderWithMocks(<Error error={mockError} reset={mockReset} />);
+
+      // Check for proper heading structure
+      expect(
+        screen.getByRole("heading", { name: "Error" })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: "An error occurred" })
+      ).toBeInTheDocument();
+
+      // Check for buttons
+      expect(
+        screen.getByRole("button", { name: "Try Again" })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Back to Glow" })
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe("User Interactions", () => {
+    it("should handle Try Again button click", async () => {
       const user = userEvent.setup();
-      void user;
-      // TODO: interaction assertions
+      renderWithMocks(<Error error={mockError} reset={mockReset} />);
 
+      const tryAgainButton = screen.getByRole("button", { name: "Try Again" });
+      await user.click(tryAgainButton);
+
+      expect(mockReset).toHaveBeenCalledTimes(1);
+    });
+
+    it("should handle Back to Glow button click for admin role", async () => {
+      const user = userEvent.setup();
+      mockUseProfile.mockReturnValue({
+        effectiveProfile: { role: "admin" },
+      });
+
+      renderWithMocks(<Error error={mockError} reset={mockReset} />);
+
+      const backButton = screen.getByRole("button", { name: "Back to Glow" });
+      await user.click(backButton);
+
+      expect(mockPush).toHaveBeenCalledWith("/analytics");
+    });
+
+    it("should handle Back to Glow button click for ta role", async () => {
+      const user = userEvent.setup();
+      mockUseProfile.mockReturnValue({
+        effectiveProfile: { role: "ta" },
+      });
+
+      renderWithMocks(<Error error={mockError} reset={mockReset} />);
+
+      const backButton = screen.getByRole("button", { name: "Back to Glow" });
+      await user.click(backButton);
+
+      expect(mockPush).toHaveBeenCalledWith("/home");
+    });
+
+    it("should handle Back to Glow button click for guest role", async () => {
+      const user = userEvent.setup();
+      mockUseProfile.mockReturnValue({
+        effectiveProfile: { role: "guest" },
+      });
+
+      renderWithMocks(<Error error={mockError} reset={mockReset} />);
+
+      const backButton = screen.getByRole("button", { name: "Back to Glow" });
+      await user.click(backButton);
+
+      expect(mockPush).toHaveBeenCalledWith("/home");
     });
   });
 
-  
+  describe("Navigation", () => {
+    it("should navigate to analytics for non-ta/non-guest roles", async () => {
+      const user = userEvent.setup();
+      mockUseProfile.mockReturnValue({
+        effectiveProfile: { role: "instructional" },
+      });
 
-  describe('Navigation', () => {
-    it.skip('should handle navigation', () => {
-      // TODO: Test navigation behavior
-      
-      // TODO: navigation assertions
+      renderWithMocks(<Error error={mockError} reset={mockReset} />);
+
+      const backButton = screen.getByRole("button", { name: "Back to Glow" });
+      await user.click(backButton);
+
+      expect(mockPush).toHaveBeenCalledWith("/analytics");
     });
   });
 
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
+  describe("Edge Cases", () => {
+    it("should handle missing profile gracefully", async () => {
+      const user = userEvent.setup();
+      mockUseProfile.mockReturnValue({
+        effectiveProfile: null,
+      });
 
+      renderWithMocks(<Error error={mockError} reset={mockReset} />);
+
+      const backButton = screen.getByRole("button", { name: "Back to Glow" });
+      await user.click(backButton);
+
+      // Should default to analytics when no profile
+      expect(mockPush).toHaveBeenCalledWith("/analytics");
     });
 
-    
+    it("should handle undefined profile role gracefully", async () => {
+      const user = userEvent.setup();
+      mockUseProfile.mockReturnValue({
+        effectiveProfile: { role: undefined },
+      });
+
+      renderWithMocks(<Error error={mockError} reset={mockReset} />);
+
+      const backButton = screen.getByRole("button", { name: "Back to Glow" });
+      await user.click(backButton);
+
+      // Should default to analytics when role is undefined
+      expect(mockPush).toHaveBeenCalledWith("/analytics");
+    });
+
+    it("should display error message correctly", () => {
+      const customError = {
+        message: "Custom error message with special characters: !@#$%",
+      } as Error;
+      renderWithMocks(<Error error={customError} reset={mockReset} />);
+
+      expect(
+        screen.getByText("Custom error message with special characters: !@#$%")
+      ).toBeInTheDocument();
+    });
+
+    it("should handle empty error message", () => {
+      const emptyError = { message: "" } as Error;
+      renderWithMocks(<Error error={emptyError} reset={mockReset} />);
+
+      expect(screen.getByText("An error occurred")).toBeInTheDocument();
+      // Check that the error message paragraph exists (even if empty)
+      const errorMessageElement = screen
+        .getByText("An error occurred")
+        .closest("div")
+        ?.querySelector("p");
+      expect(errorMessageElement).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for error:
- * Path: error.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: useProfile, useRouter
- * - Uses router: true
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<error />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<error {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

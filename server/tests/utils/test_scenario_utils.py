@@ -130,29 +130,49 @@ class TestRandomly_Fill_Scenario_Attributes:
         )
         
         # Mock database queries - need to handle the random selection logic
+        call_count = 0
         def mock_all_side_effect(*args, **kwargs):
-            # This is a simplified mock that returns the first item for random.choice
-            if len(args) > 0 and "Personas" in str(args[0]):
+            nonlocal call_count
+            call_count += 1
+            # Return different data based on call order
+            if call_count == 1:  # First call - personas
                 return [mock_persona]
-            elif len(args) > 0 and "Documents" in str(args[0]):
+            elif call_count == 2:  # Second call - documents
                 return [mock_document]
-            elif len(args) > 0 and "Parameters" in str(args[0]):
+            elif call_count == 3:  # Third call - parameters
                 return [mock_param]
-            elif len(args) > 0 and "ParameterItems" in str(args[0]):
+            elif call_count == 4:  # Fourth call - parameter items
                 return [mock_param_item]
-            return []
+            else:
+                return []
         
+        # Set up the mock to return the expected data
         mock_session.exec.return_value.all.side_effect = mock_all_side_effect
         
-        result = await randomly_fill_scenario_attributes(scenario, mock_session)
-        
-        assert result.name == "Test Scenario"
-        assert result.description == "A test scenario"
-        assert result.persona_id == persona_id
-        assert result.document_ids == [doc_id]
-        assert result.parameter_item_ids == [param_item_id]
-        assert result.generated is True
-        assert result.parent_id == scenario_id
+        # Mock random.choice to return the first item
+        with patch('app.utils.scenario.random.choice') as mock_choice, \
+             patch('app.utils.scenario.random.randint') as mock_randint, \
+             patch('app.utils.scenario.random.sample') as mock_sample:
+            
+            # Mock random.choice to return the first item from the list
+            def choice_side_effect(items):
+                if items:
+                    return items[0]
+                return None
+            
+            mock_choice.side_effect = choice_side_effect
+            mock_randint.return_value = 1  # Return 1 document
+            mock_sample.return_value = [mock_document]  # Return the mock document
+            
+            result = await randomly_fill_scenario_attributes(scenario, mock_session)
+            
+            assert result.name == "Test Scenario"
+            assert result.description == "A test scenario"
+            assert result.persona_id == persona_id
+            assert result.document_ids == [doc_id]
+            assert result.parameter_item_ids == [param_item_id]
+            assert result.generated is True
+            assert result.parent_id == scenario_id
 
     @pytest.mark.asyncio
     async def test_randomly_fill_scenario_attributes_error(self, mock_session):

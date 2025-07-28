@@ -1,83 +1,161 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+
+// Mock Google fonts
+vi.mock("next/font/google", () => ({
+  Geist: vi.fn(() => ({
+    variable: "mock-geist-sans",
+    style: { fontFamily: "mock-geist-sans" },
+  })),
+  Geist_Mono: vi.fn(() => ({
+    variable: "mock-geist-mono",
+    style: { fontFamily: "mock-geist-mono" },
+  })),
+}));
+
+// Mock Providers component
+vi.mock("@/app/providers", () => ({
+  Providers: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="providers">{children}</div>
+  ),
+}));
 
 // ——————————————————————————————————————————
-import layout, { metadata } from '@/app/layout';
+import RootLayout, { metadata } from "@/app/layout";
 
-describe('layout', () => {
-  
+describe("RootLayout", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      renderWithMocks(
+        <RootLayout>
+          <div data-testid="test-child">Test Content</div>
+        </RootLayout>
+      );
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<layout  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      expect(screen.getByTestId("test-child")).toBeInTheDocument();
+      expect(screen.getByText("Test Content")).toBeInTheDocument();
     });
 
-    
+    it("should have correct HTML structure", () => {
+      renderWithMocks(
+        <RootLayout>
+          <div data-testid="test-child">Test Content</div>
+        </RootLayout>
+      );
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
+      // Check that the layout renders with proper HTML structure
+      const htmlElement = document.querySelector("html");
+      expect(htmlElement).toHaveAttribute("lang", "en");
 
+      const bodyElement = document.querySelector("body");
+      expect(bodyElement).toBeInTheDocument();
+      expect(bodyElement).toHaveAttribute("suppressHydrationWarning", "true");
+    });
+
+    it("should have correct accessibility attributes", () => {
+      renderWithMocks(
+        <RootLayout>
+          <div data-testid="test-child">Test Content</div>
+        </RootLayout>
+      );
+
+      // Check for proper HTML lang attribute
+      expect(document.documentElement).toHaveAttribute("lang", "en");
+
+      // Check that body has proper class names
+      const bodyElement = document.querySelector("body");
+      expect(bodyElement).toHaveClass("antialiased");
     });
   });
 
-  
+  describe("Metadata", () => {
+    it("should export correct metadata", () => {
+      expect(metadata).toBeDefined();
+      expect(metadata.title).toBeDefined();
+      expect(metadata.description).toBeDefined();
 
-  
+      // Check metadata structure without type assertions
+      expect(metadata.description).toBe(
+        "Graduate Learning Orientation Workshop"
+      );
+    });
+  });
 
-  
+  describe("Font Classes", () => {
+    it("should apply font classes to body", () => {
+      renderWithMocks(
+        <RootLayout>
+          <div data-testid="test-child">Test Content</div>
+        </RootLayout>
+      );
 
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
+      const bodyElement = document.querySelector("body");
+      expect(bodyElement).toHaveClass("antialiased");
 
+      // Check for font variable classes (these are applied by the font objects)
+      // The actual class names depend on the font configuration
+      expect(bodyElement?.className).toContain("antialiased");
+    });
+  });
+
+  describe("Children Rendering", () => {
+    it("should render children correctly", () => {
+      const testContent = "This is test content";
+      renderWithMocks(
+        <RootLayout>
+          <div data-testid="test-child">{testContent}</div>
+        </RootLayout>
+      );
+
+      expect(screen.getByTestId("test-child")).toBeInTheDocument();
+      expect(screen.getByText(testContent)).toBeInTheDocument();
     });
 
-    
+    it("should render multiple children", () => {
+      renderWithMocks(
+        <RootLayout>
+          <div data-testid="child-1">Child 1</div>
+          <div data-testid="child-2">Child 2</div>
+          <div data-testid="child-3">Child 3</div>
+        </RootLayout>
+      );
+
+      expect(screen.getByTestId("child-1")).toBeInTheDocument();
+      expect(screen.getByTestId("child-2")).toBeInTheDocument();
+      expect(screen.getByTestId("child-3")).toBeInTheDocument();
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle empty children gracefully", () => {
+      renderWithMocks(<RootLayout>{null}</RootLayout>);
+
+      // Should still render the HTML structure
+      expect(document.querySelector("html")).toBeInTheDocument();
+      expect(document.querySelector("body")).toBeInTheDocument();
+    });
+
+    it("should handle undefined children gracefully", () => {
+      renderWithMocks(<RootLayout>{undefined}</RootLayout>);
+
+      // Should still render the HTML structure
+      expect(document.querySelector("html")).toBeInTheDocument();
+      expect(document.querySelector("body")).toBeInTheDocument();
+    });
+
+    it("should handle complex nested children", () => {
+      renderWithMocks(
+        <RootLayout>
+          <div>
+            <span>Nested</span>
+            <span>Content</span>
+          </div>
+        </RootLayout>
+      );
+
+      expect(screen.getByText("Nested")).toBeInTheDocument();
+      expect(screen.getByText("Content")).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for layout:
- * Path: layout.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: metadata
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<layout />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<layout {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

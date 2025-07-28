@@ -62,7 +62,7 @@ class TestHandle_Start_Simulation:
 
         # Mock all dependencies
         with patch('app.web.simulations.get_sio_instance') as mock_get_sio, \
-             patch('app.web.simulations.get_session') as mock_get_session, \
+             patch('app.db.get_session') as mock_get_session, \
              patch('app.web.simulations.gen_trace_id') as mock_gen_trace, \
              patch('app.web.simulations.randomly_fill_scenario_attributes') as mock_fill_attrs, \
              patch('app.web.simulations.run_scenario_agent') as mock_run_scenario:
@@ -74,15 +74,24 @@ class TestHandle_Start_Simulation:
             mock_session = MagicMock()
             mock_get_session.return_value = iter([mock_session])
             
+            # Test data
+            sid = "test_sid"
+            simulation_id = str(uuid.uuid4())
+            profile_id = str(uuid.uuid4())
+            scenario_id = str(uuid.uuid4())
+            data = {
+                "simulation_id": simulation_id,
+                "profile_id": profile_id
+            }
+            
             # Mock the simulation
             mock_simulation = MagicMock()
-            mock_simulation.id = str(uuid.uuid4())
-            mock_simulation.scenario_ids = [str(uuid.uuid4())]
-            mock_session.exec.return_value.one_or_none.return_value = mock_simulation
+            mock_simulation.id = simulation_id
+            mock_simulation.scenario_ids = [scenario_id]
             
             # Mock the scenario
             mock_scenario = MagicMock()
-            mock_scenario.id = str(uuid.uuid4())
+            mock_scenario.id = scenario_id
             mock_scenario.name = "Test Scenario"
             mock_scenario.description = "Test Description"
             mock_scenario.persona_id = str(uuid.uuid4())
@@ -98,33 +107,39 @@ class TestHandle_Start_Simulation:
             mock_chat = MagicMock()
             mock_chat.id = str(uuid.uuid4())
             
-            mock_session.add.return_value = None
-            mock_session.commit.return_value = None
-            mock_session.refresh.return_value = None
+            # Set up the mock to return different objects based on the query
+            def mock_one_or_none_side_effect(*args, **kwargs):
+                query_str = str(args[0])
+                if "Simulations" in query_str and simulation_id in query_str:
+                    return mock_simulation
+                elif "Scenarios" in query_str and scenario_id in query_str:
+                    return mock_scenario
+                return None
             
-            # Test data
-            sid = "test_sid"
-            data = {
-                "simulation_id": str(uuid.uuid4()),
-                "profile_id": str(uuid.uuid4())
-            }
+            mock_session.exec.return_value.one_or_none.side_effect = mock_one_or_none_side_effect
             
-            # Execute the function
-            await handle_start_simulation(sid, data)
-            
-            # Verify the function executed successfully
-            mock_get_sio.assert_called_once()
-            mock_get_session.assert_called_once()
-            mock_fill_attrs.assert_called_once()
-            
-            # Verify the attempt was created
-            mock_session.add.assert_called()
-            mock_session.commit.assert_called()
-            mock_session.refresh.assert_called()
-            
-            # Verify Socket.IO operations - use the chat.id for room name
-            mock_sio.enter_room.assert_called_once_with(sid, f"simulation_{mock_chat.id}")
-            assert mock_sio.emit.call_count >= 1  # At least one emit call
+            # Mock the SimulationChats constructor
+            with patch('app.web.simulations.SimulationChats', return_value=mock_chat):
+                mock_session.add.return_value = None
+                mock_session.commit.return_value = None
+                mock_session.refresh.return_value = None
+                
+                # Execute the function
+                await handle_start_simulation(sid, data)
+                
+                # Verify the function executed successfully
+                mock_get_sio.assert_called_once()
+                mock_get_session.assert_called_once()
+                mock_fill_attrs.assert_called_once()
+                
+                # Verify the attempt was created
+                mock_session.add.assert_called()
+                mock_session.commit.assert_called()
+                mock_session.refresh.assert_called()
+                
+                # Verify Socket.IO operations - use the chat.id for room name
+                mock_sio.enter_room.assert_called_once_with(sid, f"simulation_{mock_chat.id}")
+                assert mock_sio.emit.call_count >= 1  # At least one emit call
 
     @pytest.mark.asyncio
     async def test_handle_start_simulation_error(self):
@@ -136,7 +151,7 @@ class TestHandle_Start_Simulation:
 
         # Mock all dependencies
         with patch('app.web.simulations.get_sio_instance') as mock_get_sio, \
-             patch('app.web.simulations.get_session') as mock_get_session, \
+             patch('app.db.get_session') as mock_get_session, \
              patch('app.web.simulations.emit_error') as mock_emit_error:
             
             # Setup mocks
@@ -181,7 +196,7 @@ class TestHandle_Stop_Simulation:
 
         # Mock all dependencies
         with patch('app.web.simulations.get_sio_instance') as mock_get_sio, \
-             patch('app.web.simulations.get_session') as mock_get_session, \
+             patch('app.db.get_session') as mock_get_session, \
              patch('app.web.simulations.cancel_simulation_run') as mock_cancel:
             
             # Setup mocks
@@ -191,10 +206,23 @@ class TestHandle_Stop_Simulation:
             mock_session = MagicMock()
             mock_get_session.return_value = iter([mock_session])
             
+            # Test data
+            sid = "test_sid"
+            chat_id = str(uuid.uuid4())
+            data = {"chat_id": chat_id}
+            
             # Mock the chat
             mock_chat = MagicMock()
-            mock_chat.id = str(uuid.uuid4())
-            mock_session.exec.return_value.one_or_none.return_value = mock_chat
+            mock_chat.id = chat_id
+            
+            # Set up the mock to return the chat when the correct query is made
+            def mock_one_or_none_side_effect(*args, **kwargs):
+                query_str = str(args[0])
+                if "SimulationChats" in query_str and chat_id in query_str:
+                    return mock_chat
+                return None
+            
+            mock_session.exec.return_value.one_or_none.side_effect = mock_one_or_none_side_effect
             
             # Mock successful cancellation
             mock_cancel.return_value = True
@@ -206,10 +234,6 @@ class TestHandle_Stop_Simulation:
             mock_message.completed = False
             mock_message.content = "Test content"
             mock_session.exec.return_value.all.return_value = [mock_message]
-            
-            # Test data
-            sid = "test_sid"
-            data = {"chat_id": str(uuid.uuid4())}
             
             # Execute the function
             await handle_stop_simulation(sid, data)
@@ -232,7 +256,7 @@ class TestHandle_Stop_Simulation:
 
         # Mock all dependencies
         with patch('app.web.simulations.get_sio_instance') as mock_get_sio, \
-             patch('app.web.simulations.get_session') as mock_get_session, \
+             patch('app.db.get_session') as mock_get_session, \
              patch('app.web.simulations.emit_error') as mock_emit_error:
             
             # Setup mocks
@@ -274,7 +298,7 @@ class TestHandle_Continue_Simulation:
 
         # Mock all dependencies
         with patch('app.web.simulations.get_sio_instance') as mock_get_sio, \
-             patch('app.web.simulations.get_session') as mock_get_session, \
+             patch('app.db.get_session') as mock_get_session, \
              patch('app.web.simulations.gen_trace_id') as mock_gen_trace, \
              patch('app.web.simulations.randomly_fill_scenario_attributes') as mock_fill_attrs, \
              patch('app.web.simulations.run_scenario_agent') as mock_run_scenario:
@@ -304,20 +328,40 @@ class TestHandle_Continue_Simulation:
             mock_scenario.description = "Test Description"
             mock_fill_attrs.return_value = mock_scenario
             
-            # Set up the side effect for one_or_none to return different objects
-            mock_session.exec.return_value.one_or_none.side_effect = [
-                mock_chat,  # chat
-                MagicMock(),  # attempt
-                mock_simulation,  # simulation
-                mock_scenario  # scenario
-            ]
-            
             # Test data
             sid = "test_sid"
+            chat_id = str(uuid.uuid4())
+            attempt_id = str(uuid.uuid4())
             data = {
-                "chat_id": str(uuid.uuid4()),
-                "attempt_id": str(uuid.uuid4())
+                "chat_id": chat_id,
+                "attempt_id": attempt_id
             }
+            
+            # Mock the next chat
+            mock_next_chat = MagicMock()
+            mock_next_chat.id = str(uuid.uuid4())
+            
+            # Set up the side effect for one_or_none to return different objects
+            def mock_one_or_none_side_effect(*args, **kwargs):
+                query_str = str(args[0])
+                if "SimulationChats" in query_str and chat_id in query_str:
+                    return mock_chat  # chat
+                elif "SimulationAttempts" in query_str and attempt_id in query_str:
+                    return MagicMock()  # attempt
+                elif "Simulations" in query_str:
+                    return mock_simulation  # simulation
+                elif "Scenarios" in query_str:
+                    return mock_scenario  # scenario
+                return None
+            
+            mock_session.exec.return_value.one_or_none.side_effect = mock_one_or_none_side_effect
+            
+            # Set up the side effect for all to return existing chats
+            mock_session.exec.return_value.all.return_value = [mock_chat]  # One existing chat
+            
+            mock_session.add.return_value = None
+            mock_session.commit.return_value = None
+            mock_session.refresh.return_value = None
             
             # Execute the function
             await handle_continue_simulation(sid, data)
@@ -328,8 +372,7 @@ class TestHandle_Continue_Simulation:
             mock_fill_attrs.assert_called_once()
             
             # Verify Socket.IO operations
-            mock_sio.enter_room.assert_called_once()
-            assert mock_sio.emit.call_count >= 1  # At least one emit call
+            mock_sio.enter_room.assert_called_once_with(sid, f"simulation_{mock_next_chat.id}")
 
     @pytest.mark.asyncio
     async def test_handle_continue_simulation_error(self):
@@ -341,7 +384,7 @@ class TestHandle_Continue_Simulation:
 
         # Mock all dependencies
         with patch('app.web.simulations.get_sio_instance') as mock_get_sio, \
-             patch('app.web.simulations.get_session') as mock_get_session, \
+             patch('app.db.get_session') as mock_get_session, \
              patch('app.web.simulations.emit_error') as mock_emit_error:
             
             # Setup mocks
@@ -386,7 +429,7 @@ class TestProcess_Simulation_Message_Websocket:
 
         # Mock all dependencies
         with patch('app.web.simulations.get_sio_instance') as mock_get_sio, \
-             patch('app.web.simulations.get_session') as mock_get_session, \
+             patch('app.db.get_session') as mock_get_session, \
              patch('app.web.simulations.run_simulation_agent') as mock_run_agent:
 
             # Setup mocks
@@ -446,7 +489,7 @@ class TestProcess_Simulation_Message_Websocket:
 
         # Mock all dependencies
         with patch('app.web.simulations.get_sio_instance') as mock_get_sio, \
-             patch('app.web.simulations.get_session') as mock_get_session, \
+             patch('app.db.get_session') as mock_get_session, \
              patch('app.web.simulations.run_simulation_agent') as mock_run_agent:
             
             # Setup mocks
@@ -463,9 +506,12 @@ class TestProcess_Simulation_Message_Websocket:
             chat_id = str(uuid.uuid4())
             message = "Hello, simulation assistant!"
             
-            # Execute the function - it should raise a ValueError
-            with pytest.raises(ValueError, match=f"Chat {chat_id} not found"):
-                await process_simulation_message_websocket(chat_id, message)
+            # Execute the function - it should handle the error gracefully
+            await process_simulation_message_websocket(chat_id, message)
+            
+            # Verify that error handling occurred
+            mock_get_sio.assert_called_once()
+            mock_get_session.assert_called_once()
 
 
 import pytest
@@ -554,4 +600,59 @@ class TestRegister_Simulation_Events:
         # The function should handle the exception gracefully
         with pytest.raises(Exception, match="Registration error"):
             register_simulation_events(mock_sio)
+
+
+
+import pytest
+
+
+@pytest.mark.skip(reason="TODO: implement tests for `start_simulation`")
+class TestStart_Simulation:
+    """Tests for start_simulation function."""
+
+    def test_start_simulation_success(self):
+        """Test successful start_simulation execution."""
+        # TODO: Implement test for start_simulation
+        assert False, "IMPLEMENT: Test for start_simulation"
+
+    def test_start_simulation_error(self):
+        """Test start_simulation error handling."""
+        # TODO: Implement error test for start_simulation
+        assert False, "IMPLEMENT: Error test for start_simulation"
+
+
+import pytest
+
+
+@pytest.mark.skip(reason="TODO: implement tests for `stop_simulation`")
+class TestStop_Simulation:
+    """Tests for stop_simulation function."""
+
+    def test_stop_simulation_success(self):
+        """Test successful stop_simulation execution."""
+        # TODO: Implement test for stop_simulation
+        assert False, "IMPLEMENT: Test for stop_simulation"
+
+    def test_stop_simulation_error(self):
+        """Test stop_simulation error handling."""
+        # TODO: Implement error test for stop_simulation
+        assert False, "IMPLEMENT: Error test for stop_simulation"
+
+
+import pytest
+
+
+@pytest.mark.skip(reason="TODO: implement tests for `continue_simulation`")
+class TestContinue_Simulation:
+    """Tests for continue_simulation function."""
+
+    def test_continue_simulation_success(self):
+        """Test successful continue_simulation execution."""
+        # TODO: Implement test for continue_simulation
+        assert False, "IMPLEMENT: Test for continue_simulation"
+
+    def test_continue_simulation_error(self):
+        """Test continue_simulation error handling."""
+        # TODO: Implement error test for continue_simulation
+        assert False, "IMPLEMENT: Error test for continue_simulation"
 

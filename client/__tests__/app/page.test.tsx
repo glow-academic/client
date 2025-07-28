@@ -1,83 +1,61 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import page, { metadata } from '@/app/page';
+import LoginPage, { metadata } from "@/app/page";
 
-describe('page', () => {
-  
+// Mock the Login component
+vi.mock("@/components/common/login/Login", () => ({
+  default: () => <div data-testid="login-component">Login Component</div>,
+}));
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<page  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+describe("LoginPage", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      renderWithMocks(<LoginPage />);
+
+      expect(screen.getByTestId("login-component")).toBeInTheDocument();
+      expect(screen.getByText("Login Component")).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      renderWithMocks(<LoginPage />);
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      // Check that the login component is rendered
+      expect(screen.getByTestId("login-component")).toBeInTheDocument();
     });
   });
 
-  
+  describe("Metadata", () => {
+    it("should export correct metadata", () => {
+      expect(metadata).toBeDefined();
+      expect(metadata.title).toBeDefined();
+      expect(metadata.description).toBeDefined();
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      // Check metadata structure
+      expect(metadata.description).toContain("Login to GLOW");
+      expect(metadata.description).toContain(
+        "Graduate Learning Orientation Workshop"
+      );
     });
+  });
 
-    
+  describe("Component Structure", () => {
+    it("should render Login component", () => {
+      renderWithMocks(<LoginPage />);
+
+      // Verify the Login component is rendered
+      expect(screen.getByTestId("login-component")).toBeInTheDocument();
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle component rendering gracefully", () => {
+      renderWithMocks(<LoginPage />);
+
+      // Should render without errors
+      expect(screen.getByTestId("login-component")).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for page:
- * Path: page.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: metadata
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<page />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<page {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

@@ -134,7 +134,7 @@ describe("Report", () => {
         "@/utils/queries/profiles/get-profile"
       );
       vi.mocked(getProfile).mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve(null), 1000)),
+        () => new Promise((resolve) => setTimeout(() => resolve(null), 1000))
       );
 
       renderWithMocks(<Report {...mockProps} />);
