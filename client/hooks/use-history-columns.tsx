@@ -87,9 +87,14 @@ export function useHistoryColumns({
   }, [attempts, startDate, endDate]);
 
   const { data: chats, isLoading: isLoadingChats } = useQuery({
-    queryKey: ["simulationChats", filteredAttempts?.map((attempt) => attempt.id)],
+    queryKey: [
+      "simulationChats",
+      filteredAttempts?.map((attempt) => attempt.id),
+    ],
     queryFn: () =>
-      getSimulationChatsByAttempts(filteredAttempts!.map((attempt) => attempt.id)),
+      getSimulationChatsByAttempts(
+        filteredAttempts!.map((attempt) => attempt.id)
+      ),
     enabled: !!filteredAttempts && filteredAttempts.length > 0,
   });
 
@@ -348,9 +353,12 @@ export function useHistoryColumns({
           const chats = row.getValue("scenarios") as SimulationChat[];
           const interactionIds = row.original.interactionIds;
 
+          // Ensure chats is an array
+          const chatsArray = Array.isArray(chats) ? chats : [];
+
           const completedChats =
-            chats?.filter((chat) => chat.completed).length || 0;
-          const totalChats = interactionIds?.length || chats?.length || 0;
+            chatsArray.filter((chat) => chat.completed).length || 0;
+          const totalChats = interactionIds?.length || chatsArray.length || 0;
 
           return (
             <div className="text-center">
@@ -365,9 +373,13 @@ export function useHistoryColumns({
         accessorFn: (row: EnhancedAttempt) => {
           const chats = row.scenarios;
           const interactionIds = row.interactionIds;
+
+          // Ensure chats is an array
+          const chatsArray = Array.isArray(chats) ? chats : [];
+
           const completedChats =
-            chats?.filter((chat) => chat.completed).length || 0;
-          const totalChats = interactionIds?.length || chats?.length || 0;
+            chatsArray.filter((chat) => chat.completed).length || 0;
+          const totalChats = interactionIds?.length || chatsArray.length || 0;
           return totalChats > 0 ? completedChats / totalChats : 0;
         },
         filterFn: (row, id, value) => {
@@ -375,9 +387,12 @@ export function useHistoryColumns({
 
           const chats = row.getValue(id) as SimulationChat[];
 
+          // Ensure chats is an array
+          const chatsArray = Array.isArray(chats) ? chats : [];
+
           // Check if any of the selected scenario IDs are present in the attempt's scenarios
           const attemptScenarioIds =
-            chats?.map((chat) => chat.scenarioId) || [];
+            chatsArray.map((chat) => chat.scenarioId) || [];
           const hasSelectedScenario = value.some((scenarioId: string) =>
             attemptScenarioIds.includes(scenarioId)
           );
@@ -441,9 +456,12 @@ export function useHistoryColumns({
         ),
         accessorFn: (row: EnhancedAttempt) => {
           const chats = row.scenarios;
-          if (!chats || chats.length === 0) return 0;
 
-          const chatGrades = chats
+          // Ensure chats is an array
+          const chatsArray = Array.isArray(chats) ? chats : [];
+          if (chatsArray.length === 0) return 0;
+
+          const chatGrades = chatsArray
             .map((chat) =>
               grades?.find((grade) => grade.simulationChatId === chat.id)
             )
@@ -459,20 +477,21 @@ export function useHistoryColumns({
         },
         cell: ({ row }) => {
           const chats = row.getValue("scenarios") as SimulationChat[];
-          if (!chats || chats.length === 0) {
+
+          // Ensure chats is an array
+          const chatsArray = Array.isArray(chats) ? chats : [];
+          if (chatsArray.length === 0) {
             return <div className="text-muted-foreground">No chats</div>;
           }
 
-          const chatGrades = chats
+          const chatGrades = chatsArray
             .map((chat: SimulationChat) =>
               grades?.find((grade) => grade.simulationChatId === chat.id)
             )
             .filter(Boolean);
 
           if (chatGrades.length === 0) {
-            const completedChats = (chats || []).filter(
-              (chat) => chat.completed
-            );
+            const completedChats = chatsArray.filter((chat) => chat.completed);
             if (completedChats.length > 0) {
               return <div className="text-amber-500">Grading in progress</div>;
             }
@@ -534,11 +553,14 @@ export function useHistoryColumns({
         enableSorting: true,
         filterFn: (row, _, value) => {
           const chats = row.getValue("scenarios") as SimulationChat[];
-          if (!chats || chats.length === 0) {
+
+          // Ensure chats is an array
+          const chatsArray = Array.isArray(chats) ? chats : [];
+          if (chatsArray.length === 0) {
             return value.includes("not-graded");
           }
 
-          const chatGrades = chats
+          const chatGrades = chatsArray
             .map((chat: SimulationChat) =>
               grades?.find((grade) => grade.simulationChatId === chat.id)
             )

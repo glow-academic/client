@@ -12,8 +12,8 @@ import { SingleProfileBrightspaceExportButton } from "./SingleProfileBrightspace
 
 export interface DataTableToolbarProps<TData> {
   table: Table<TData>;
-  profileOptions: { value: string; label: string }[];
-  simulationOptions: { value: string; label: string }[];
+  profileOptions?: { value: string; label: string }[];
+  simulationOptions?: { value: string; label: string }[];
   scenarioOptions?: { value: string; label: string }[];
   isAdmin?: boolean;
   showExport?: boolean;
@@ -22,8 +22,8 @@ export interface DataTableToolbarProps<TData> {
 
 export function DataTableToolbar<TData>({
   table,
-  profileOptions,
-  simulationOptions,
+  profileOptions = [],
+  simulationOptions = [],
   scenarioOptions = [],
   isAdmin = false,
   showExport = true,

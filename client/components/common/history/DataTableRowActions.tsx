@@ -23,8 +23,10 @@ export function DataTableRowActions({
   const isCurrentUser = effectiveProfile?.id === profileId;
 
   // Check if simulation is complete (all chats are completed)
-  const completedChats = scenarios.filter((chat) => chat.completed).length;
-  const totalChats = interactionIds?.length || scenarios.length;
+  // Ensure scenarios is an array
+  const scenariosArray = Array.isArray(scenarios) ? scenarios : [];
+  const completedChats = scenariosArray.filter((chat) => chat.completed).length;
+  const totalChats = interactionIds?.length || scenariosArray.length;
   const isComplete = completedChats === totalChats && totalChats > 0;
 
   // Show "Continue" if it's the current user and simulation is not complete
