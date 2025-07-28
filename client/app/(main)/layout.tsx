@@ -302,16 +302,20 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     return pathname.startsWith("/analytics");
   }, [pathname]);
 
+  const isHomePage = useMemo(() => {
+    return pathname.startsWith("/home");
+  }, [pathname]);
+
   const canShowAnalyticsFilters = useMemo(() => {
     const allowedRoles = ["instructional", "admin", "superadmin"];
     return (
       effectiveProfile?.role &&
       allowedRoles.includes(effectiveProfile.role) &&
-      isAnalyticsPage &&
+      (isAnalyticsPage || isHomePage) &&
       !pathname.includes("/edit") &&
-      !isLoading // Add loading state check
+      !isLoading
     );
-  }, [effectiveProfile?.role, isAnalyticsPage, pathname, isLoading]);
+  }, [effectiveProfile?.role, isAnalyticsPage, pathname, isLoading, isHomePage]);
 
   // Load enhanced breadcrumbs with async ID resolution
   React.useEffect(() => {

@@ -270,14 +270,14 @@ export default function Dashboard({ profileId }: DashboardProps) {
   // Header pagination logic
   const HEADER_CARDS_PER_PAGE = 5;
   const totalHeaderPages = Math.ceil(
-    headerComponents.length / HEADER_CARDS_PER_PAGE,
+    headerComponents.length / HEADER_CARDS_PER_PAGE
   );
 
   const getVisibleHeaderComponents = () => {
     const startIndex = headerCarouselIndex * HEADER_CARDS_PER_PAGE;
     return headerComponents.slice(
       startIndex,
-      startIndex + HEADER_CARDS_PER_PAGE,
+      startIndex + HEADER_CARDS_PER_PAGE
     );
   };
 
@@ -285,7 +285,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const navigateHeader = (direction: "prev" | "next") => {
     if (direction === "prev") {
       setHeaderCarouselIndex(
-        (prev: number) => (prev - 1 + totalHeaderPages) % totalHeaderPages,
+        (prev: number) => (prev - 1 + totalHeaderPages) % totalHeaderPages
       );
     } else {
       setHeaderCarouselIndex((prev: number) => (prev + 1) % totalHeaderPages);
@@ -320,7 +320,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
 
     if (direction === "prev") {
       setLeftFooterCarouselIndex(
-        (prev: number) => (prev - 1 + length) % length,
+        (prev: number) => (prev - 1 + length) % length
       );
     } else {
       setLeftFooterCarouselIndex((prev: number) => (prev + 1) % length);
@@ -333,7 +333,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
 
     if (direction === "prev") {
       setRightFooterCarouselIndex(
-        (prev: number) => (prev - 1 + length) % length,
+        (prev: number) => (prev - 1 + length) % length
       );
     } else {
       setRightFooterCarouselIndex((prev: number) => (prev + 1) % length);
@@ -702,11 +702,13 @@ export default function Dashboard({ profileId }: DashboardProps) {
       )}
 
       <SimulationHistory
-          showAll={true}
-          cohortIds={effectiveCohortIds}
-          showExport={false}
-          showPractice={false}
-        />
+        showAll={true}
+        cohortIds={effectiveCohortIds}
+        showExport={false}
+        showPractice={false}
+        startDate={startDate}
+        endDate={endDate}
+      />
     </div>
   );
 }

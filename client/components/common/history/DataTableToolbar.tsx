@@ -2,11 +2,9 @@
 
 import { Table } from "@tanstack/react-table";
 import { X } from "lucide-react";
-import { DateRange } from "react-day-picker";
 
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
 import { Button } from "@/components/ui/button";
-import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { Input } from "@/components/ui/input";
 
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
@@ -17,8 +15,6 @@ export interface DataTableToolbarProps<TData> {
   profileOptions: { value: string; label: string }[];
   scoreRangeOptions: { value: string; label: string }[];
   isAdmin?: boolean;
-  dateRange?: DateRange | undefined;
-  setDateRange?: (range: DateRange | undefined) => void;
   showExport?: boolean;
   showAll?: boolean;
 }
@@ -28,15 +24,11 @@ export function DataTableToolbar<TData>({
   profileOptions,
   scoreRangeOptions,
   isAdmin = false,
-  dateRange,
-  setDateRange,
   showExport = true,
   showAll = false,
 }: DataTableToolbarProps<TData>) {
-  // Check if any filters other than the date range are active
-  const isFiltered =
-    table.getState().columnFilters.filter((filter) => filter.id !== "createdAt")
-      .length > 0;
+  // Check if any filters are active
+  const isFiltered = table.getState().columnFilters.length > 0;
 
   const profileIdColumn = showAll ? table.getColumn("profileId") : null;
   const averageScoreColumn = table.getColumn("averageScore");
@@ -88,15 +80,6 @@ export function DataTableToolbar<TData>({
           )}
         </div>
         <div className="flex items-center space-x-2">
-          {/* Date range picker */}
-          {setDateRange && (
-            <DatePickerWithRange
-              dateRange={dateRange}
-              setDateRange={setDateRange}
-              className="w-auto"
-            />
-          )}
-
           {showExport && (
             <SingleProfileBrightspaceExportButton
               table={table}

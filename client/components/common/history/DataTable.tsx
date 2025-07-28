@@ -36,6 +36,8 @@ export interface DataTableProps<TData, TValue> {
   scoreRangeOptions: { value: string; label: string }[];
   showExport?: boolean;
   showAll?: boolean;
+  startDate?: Date | undefined;
+  endDate?: Date | undefined;
 }
 
 export function DataTable<TData, TValue>({
@@ -45,17 +47,26 @@ export function DataTable<TData, TValue>({
   scoreRangeOptions,
   showExport = true,
   showAll = false,
+  startDate,
+  endDate,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "createdAt", desc: true }, // Default to descending order by date
   ]);
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
+
+  // Initialize dateRange from props if provided
+  React.useEffect(() => {
+    if (startDate && endDate) {
+      setDateRange({ from: startDate, to: endDate });
+    }
+  }, [startDate, endDate]);
 
   const table = useReactTable({
     data,
@@ -107,8 +118,6 @@ export function DataTable<TData, TValue>({
         table={table}
         profileOptions={profileOptions}
         scoreRangeOptions={scoreRangeOptions}
-        dateRange={dateRange}
-        setDateRange={setDateRange}
         showExport={showExport}
         showAll={showAll}
       />
@@ -128,7 +137,7 @@ export function DataTable<TData, TValue>({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext(),
+                            header.getContext()
                           )}
                     </TableHead>
                   );
@@ -147,7 +156,7 @@ export function DataTable<TData, TValue>({
                     <TableCell key={cell.id} className="px-6">
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext(),
+                        cell.getContext()
                       )}
                     </TableCell>
                   ))}

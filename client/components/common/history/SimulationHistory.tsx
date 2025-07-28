@@ -13,6 +13,8 @@ export interface SimulationHistoryProps {
   cohortIds?: string[];
   showExport?: boolean;
   showPractice?: boolean;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 export default function SimulationHistory({
@@ -20,6 +22,8 @@ export default function SimulationHistory({
   showExport = true,
   cohortIds = undefined,
   showPractice = false,
+  startDate,
+  endDate,
 }: SimulationHistoryProps) {
   const { columns, data, profileOptions, scoreRangeOptions } =
     useHistoryColumns({
@@ -37,6 +41,8 @@ export default function SimulationHistory({
       scoreRangeOptions={scoreRangeOptions}
       showExport={showExport}
       showAll={showAll}
+      startDate={startDate}
+      endDate={endDate}
     />
   );
 }
