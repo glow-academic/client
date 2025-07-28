@@ -366,7 +366,7 @@ export default function Practice() {
         {effectiveProfile?.role !== "guest" && (
           <div className="space-y-2">
             <SimulationHistory
-              showAll={false}
+              profileId={effectiveProfile.id}
               showExport={false}
               showPractice={true}
             />

@@ -9,7 +9,7 @@ import { useHistoryColumns } from "@/hooks/use-history-columns";
 import { DataTable } from "./DataTable";
 
 export interface SimulationHistoryProps {
-  showAll: boolean;
+  profileId?: string | null;
   cohortIds?: string[];
   showExport?: boolean;
   showPractice?: boolean;
@@ -18,7 +18,7 @@ export interface SimulationHistoryProps {
 }
 
 export default function SimulationHistory({
-  showAll,
+  profileId,
   showExport = true,
   cohortIds = undefined,
   showPractice = false,
@@ -27,7 +27,7 @@ export default function SimulationHistory({
 }: SimulationHistoryProps) {
   const { columns, data, profileOptions, scoreRangeOptions } =
     useHistoryColumns({
-      showAll,
+      profileId: profileId || null,
       showExport,
       cohortIds,
       showPractice,
@@ -40,7 +40,7 @@ export default function SimulationHistory({
       profileOptions={profileOptions}
       scoreRangeOptions={scoreRangeOptions}
       showExport={showExport}
-      showAll={showAll}
+      showAll={!profileId} // showAll is true when profileId is null/undefined
       startDate={startDate}
       endDate={endDate}
     />

@@ -962,11 +962,10 @@ export default function Home() {
         </div>
       )}
 
-      {/* History Section */}
+      {/* History Section. Always show current user's history */}
       <div className="mt-12">
         <SimulationHistory
-          
-          showAll={false}
+          profileId={effectiveProfile.id}
           cohortIds={effectiveCohortIds}
           showExport={!shouldShowAll}
           showPractice={false}

@@ -9,7 +9,7 @@ import SimulationHistory, {
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
 const mockProps: SimulationHistoryProps = {
-  showAll: false,
+  profileId: "test-profile-id",
   // showExport: false, /* optional */
 };
 // ------------------------------------------------------------------
@@ -49,7 +49,7 @@ describe("SimulationHistory", () => {
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(<SimulationHistory showAll={false} />);
+      renderWithMocks(<SimulationHistory profileId={null} />);
 
       // Component should handle missing props
       expect(document.body).toBeInTheDocument();

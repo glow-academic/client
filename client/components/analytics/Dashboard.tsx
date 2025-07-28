@@ -702,7 +702,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       )}
 
       <SimulationHistory
-        showAll={true}
+        profileId={profileId || null}
         cohortIds={effectiveCohortIds}
         showExport={false}
         showPractice={false}
