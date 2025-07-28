@@ -31,7 +31,6 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { Eye, Grid3X3, List, Trash2, UploadCloud } from "lucide-react";
-import { useRouter } from "next/navigation";
 import CohortAddStaff from "./CohortAddStaff";
 
 // A new type to represent a profile that is either saved or new
@@ -64,8 +63,6 @@ export default function CohortStaff({
   isLoading = false,
   effectiveProfile,
 }: CohortStaffProps) {
-  const router = useRouter();
-
   // View mode state
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
 
@@ -117,13 +114,10 @@ export default function CohortStaff({
     }
   };
 
-  const viewProfile = useCallback(
-    (profile: EditableProfile) => {
-      // Navigate to the profile report page
-      router.push(`/analytics/reports/p/${profile.id}`);
-    },
-    [router]
-  );
+  const viewProfile = useCallback((profile: EditableProfile) => {
+    // Open the profile report page in a new tab
+    window.open(`/analytics/reports/p/${profile.id}`, "_blank");
+  }, []);
 
   // Check permissions for actions
   const canDeleteProfile = useCallback(

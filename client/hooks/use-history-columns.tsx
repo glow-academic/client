@@ -350,7 +350,7 @@ export function useHistoryColumns({
           <DataTableColumnHeader column={column} title="Scenarios" />
         ),
         cell: ({ row }) => {
-          const chats = row.getValue("scenarios") as SimulationChat[];
+          const chats = row.original.scenarios;
           const interactionIds = row.original.interactionIds;
 
           // Ensure chats is an array
@@ -476,7 +476,7 @@ export function useHistoryColumns({
           return totalScore / chatGrades.length;
         },
         cell: ({ row }) => {
-          const chats = row.getValue("scenarios") as SimulationChat[];
+          const chats = row.original.scenarios;
 
           // Ensure chats is an array
           const chatsArray = Array.isArray(chats) ? chats : [];

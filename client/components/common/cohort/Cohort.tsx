@@ -430,7 +430,7 @@ export default function Cohort({ cohortId }: CohortProps) {
   };
 
   const editSimulation = (simulationId: string) => {
-    router.push(`/create/simulations/s/${simulationId}`);
+    window.open(`/create/simulations/s/${simulationId}`, "_blank");
   };
 
   return (

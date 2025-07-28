@@ -510,6 +510,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
         <div className="flex justify-end gap-3">
           <Button
             variant="outline"
+            type="button"
             onClick={() => router.push("/create/simulations")}
           >
             Back
