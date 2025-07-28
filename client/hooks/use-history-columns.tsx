@@ -26,7 +26,6 @@ import { useMemo } from "react";
 interface EnhancedAttempt extends SimulationAttempt {
   chats: SimulationChat[];
   personasTested: string[];
-  simulationTitle: string;
   interactionIds: string[];
 }
 
@@ -197,8 +196,6 @@ export function useHistoryColumns({
         ...attempt,
         chats: attemptChats,
         personasTested,
-        simulationTitle:
-          simulation?.title || `Simulation ${attempt.simulationId}`,
         interactionIds: simulation?.scenarioIds || [],
       };
     });
@@ -247,6 +244,15 @@ export function useHistoryColumns({
       label: simulation.title,
     }));
   }, [simulations]);
+
+  // Create scenario options for filtering
+  const scenarioOptions = useMemo(() => {
+    if (!scenarios) return [];
+    return scenarios.map((scenario) => ({
+      value: scenario.id,
+      label: scenario.name,
+    }));
+  }, [scenarios]);
 
   // Define columns - only attempts view
   const columns = useMemo(() => {
@@ -367,40 +373,58 @@ export function useHistoryColumns({
       {
         accessorKey: "simulationId",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Simulation ID" />
+          <DataTableColumnHeader column={column} title="Simulation" />
         ),
         cell: ({ row }) => {
+          const simulation = simulations?.find(
+            (s) => s.id === row.getValue("simulationId")
+          );
           return (
             <div className="flex space-x-2">
               <span className="max-w-[500px] truncate font-medium">
-                {row.getValue("simulationId") || "Unknown Simulation"}
+                {simulation?.title || "Unknown Simulation"}
               </span>
             </div>
           );
         },
         enableHiding: true,
-      },
-      // Simulation Title column
-      {
-        accessorKey: "simulationTitle",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Simulation" />
-        ),
-        cell: ({ row }) => {
-          return (
-            <div className="flex space-x-2">
-              <span className="max-w-[500px] truncate font-medium">
-                {row.getValue("simulationTitle") || "Unknown Simulation"}
-              </span>
-            </div>
+        filterFn: (row, id, value) => {
+          if (!value) return true;
+
+          const searchTerm = value.toLowerCase();
+          const simulationId = row.getValue(id) as string;
+          const simulation = simulations?.find((s) => s.id === simulationId);
+          const simulationTitle = simulation?.title?.toLowerCase() || "";
+
+          // Search in simulation title
+          if (simulationTitle.includes(searchTerm)) return true;
+
+          // Search in profile name
+          const profileId = row.getValue("profileId") as string;
+          const profileOption = profileOptions.find(
+            (p) => p.value === profileId
           );
+          const profileName = profileOption?.label?.toLowerCase() || "";
+          if (profileName.includes(searchTerm)) return true;
+
+          // Search in scenarios (chats)
+          const chats = row.getValue("chats") as SimulationChat[];
+          const scenarioIds = chats.map((chat) => chat.scenarioId);
+          const scenarioNames = scenarioIds.map((scenarioId) => {
+            const scenario = scenarios?.find((s) => s.id === scenarioId);
+            return scenario?.name?.toLowerCase() || "";
+          });
+          if (scenarioNames.some((name) => name.includes(searchTerm)))
+            return true;
+
+          return false;
         },
       },
-      // Chats completion column
+      // Scenarios completion column
       {
         accessorKey: "chats",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Chats" />
+          <DataTableColumnHeader column={column} title="Scenarios" />
         ),
         cell: ({ row }) => {
           const chats = row.getValue("chats") as SimulationChat[];
@@ -420,6 +444,31 @@ export function useHistoryColumns({
           );
         },
         enableSorting: false,
+        filterFn: (row, id, value) => {
+          if (!value || value.length === 0) return true;
+
+          const chats = row.getValue(id) as SimulationChat[];
+          const totalChats = chats?.length || 0;
+          const completedChats =
+            chats?.filter((chat) => chat.completed).length || 0;
+
+          if (
+            value.includes("completed") &&
+            completedChats === totalChats &&
+            totalChats > 0
+          )
+            return true;
+          if (
+            value.includes("in-progress") &&
+            completedChats > 0 &&
+            completedChats < totalChats
+          )
+            return true;
+          if (value.includes("not-started") && completedChats === 0)
+            return true;
+
+          return false;
+        },
       },
       // Agents tested column
       {
@@ -639,6 +688,7 @@ export function useHistoryColumns({
     showExport,
     grades,
     simulations,
+    scenarios,
     validRubrics,
     profileId,
   ]);
@@ -739,6 +789,7 @@ export function useHistoryColumns({
     skillCategories,
     scoreOptions,
     simulationOptions,
+    scenarioOptions,
     showAll: profileId === null, // This will now always be true when profileId is null
   };
 }

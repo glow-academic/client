@@ -57,11 +57,11 @@ const columnMap = {
   profileId: "Name",
   persona: "Persona",
   title: "Title",
-  simulationTitle: "Simulation",
+  simulationId: "Simulation",
   status: "Status",
   score: "Score",
   averageScore: "Score",
-  chats: "Chats",
+  chats: "Scenarios",
   personasTested: "Personas",
   // Reports page columns
   firstName: "Name",
@@ -186,7 +186,7 @@ export function ExportButton<TData>({
 
             if (column.id === "profileId" && cellValue) {
               const profileOption = profileOptions.find(
-                (profile) => profile.value === cellValue,
+                (profile) => profile.value === cellValue
               );
               return profileOption
                 ? `"${profileOption.label}"`

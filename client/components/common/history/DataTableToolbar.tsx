@@ -38,15 +38,14 @@ export function DataTableToolbar<TData>({
       <div className="flex items-center justify-between">
         <div className="flex flex-1 items-center space-x-2">
           <Input
-            placeholder="Filter simulations..."
+            placeholder="Search by name, simulation, or scenarios..."
             value={
-              (table
-                .getColumn("simulationTitle")
-                ?.getFilterValue() as string) ?? ""
+              (table.getColumn("simulationId")?.getFilterValue() as string) ??
+              ""
             }
             onChange={(event) =>
               table
-                .getColumn("simulationTitle")
+                .getColumn("simulationId")
                 ?.setFilterValue(event.target.value)
             }
             className="h-8 w-[150px] lg:w-[250px]"
@@ -68,6 +67,20 @@ export function DataTableToolbar<TData>({
               options={simulationOptions}
             />
           )}
+
+          {/* Scenarios filter */}
+          {table.getColumn("chats") && (
+            <DataTableFacetedFilter
+              column={table.getColumn("chats")!}
+              title="Scenarios"
+              options={[
+                { value: "completed", label: "Completed" },
+                { value: "in-progress", label: "In Progress" },
+                { value: "not-started", label: "Not Started" },
+              ]}
+            />
+          )}
+
           {isFiltered && (
             <Button
               variant="ghost"

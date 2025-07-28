@@ -17,11 +17,12 @@ const columnMap = {
   createdAt: "Date",
   profileId: "Name",
   userId: "Name",
-  simulationTitle: "Simulation",
+  simulationId: "Simulation",
   classCode: "Classes",
   classIds: "Classes",
   personasTested: "Personas",
   averageScore: "Score",
+  chats: "Scenarios",
   // Reports page columns
   firstName: "Name",
   username: "Alias",
@@ -55,7 +56,6 @@ const columnMap = {
   cohortNames: "Cohorts",
   email: "Email",
   actions: "Actions",
-  
 };
 
 export interface DataTableViewOptionsProps<TData> {
@@ -85,7 +85,7 @@ export function DataTableViewOptions<TData>({
           .getAllColumns()
           .filter(
             (column) =>
-              typeof column.accessorFn !== "undefined" && column.getCanHide(),
+              typeof column.accessorFn !== "undefined" && column.getCanHide()
           )
           .map((column) => {
             return (

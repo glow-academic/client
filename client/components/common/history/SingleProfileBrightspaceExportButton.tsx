@@ -21,7 +21,6 @@ interface EnhancedAttempt {
   id: string;
   profileId: string;
   simulationId: string;
-  simulationTitle: string;
   createdAt: string;
   chats: Array<{
     id: string;
@@ -78,13 +77,13 @@ export function SingleProfileBrightspaceExportButton<TData>({
       }
       const profileId = firstRow.getValue("profileId") as string;
       const profileOption = profileOptions.find(
-        (profile) => profile.value === profileId,
+        (profile) => profile.value === profileId
       );
       const profileAlias = profileOption?.label || profileId;
 
       // Find all cohorts that contain this profile
       const profileCohorts = cohorts.filter((cohort) =>
-        cohort.profileIds.includes(profileId),
+        cohort.profileIds.includes(profileId)
       );
 
       // Get all simulation IDs assigned to this profile through their cohorts
@@ -100,7 +99,7 @@ export function SingleProfileBrightspaceExportButton<TData>({
 
       // Get simulation titles for all assigned simulations
       const assignedSimulations = simulations.filter((sim) =>
-        assignedSimulationIds.has(sim.id),
+        assignedSimulationIds.has(sim.id)
       );
 
       // Group attempts by simulation and find the highest score for each
