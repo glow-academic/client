@@ -7,12 +7,18 @@ from agents import Runner, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
-from app.models import (Documents, Models, Personas, Providers, Scenarios,
-                        SimulationAttempts, SimulationChats,
-                        SimulationMessages)
+from app.models import (
+    Documents,
+    Models,
+    Personas,
+    Providers,
+    Scenarios,
+    SimulationAttempts,
+    SimulationChats,
+    SimulationMessages,
+)
 from app.services.agents.generic import GenericAgent
-from app.utils.chat import (get_chat_scenario,
-                            get_simulation_conversation_history)
+from app.utils.chat import get_chat_scenario, get_simulation_conversation_history
 from fastapi import Depends
 from openai.types.responses import ResponseTextDeltaEvent
 from sqlmodel import Session, select
@@ -88,7 +94,9 @@ async def _handle_simulation_chat(
     if not scenario.persona_id:
         raise ValueError(f"Scenario {scenario.id} has no persona_id")
 
-    persona = session.exec(select(Personas).where(Personas.id == scenario.persona_id)).one()
+    persona = session.exec(
+        select(Personas).where(Personas.id == scenario.persona_id)
+    ).one()
     if not persona:
         raise ValueError(f"Persona not found for scenario {scenario.id}")
 

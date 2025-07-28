@@ -12,7 +12,7 @@ from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
 from app.models import Documents
 from app.services.agents.collection.classify import run_classify_agent
-from fastapi import (APIRouter, Depends, File, Form, HTTPException, Request,
+from fastapi import (APIRouter, Depends, File, HTTPException, Request,
                      Response, UploadFile)
 from fastapi.responses import FileResponse, JSONResponse
 from sqlmodel import Session, select
@@ -37,11 +37,11 @@ async def documents_health_check() -> JSONResponse:
         # Check if upload folder exists and is writable
         if not os.path.exists(UPLOAD_FOLDER):
             os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-        
+
         # Check if TUS uploads directory exists and is writable
         if not os.path.exists(TUS_UPLOADS_DIR):
             os.makedirs(TUS_UPLOADS_DIR, exist_ok=True)
-        
+
         return JSONResponse(
             status_code=200,
             content={
@@ -49,17 +49,13 @@ async def documents_health_check() -> JSONResponse:
                 "service": "documents",
                 "upload_folder": str(UPLOAD_FOLDER),
                 "tus_uploads_dir": str(TUS_UPLOADS_DIR),
-            }
+            },
         )
     except Exception as e:
         logger.error(f"Documents health check failed: {str(e)}")
         return JSONResponse(
             status_code=500,
-            content={
-                "status": "error",
-                "service": "documents",
-                "error": str(e)
-            }
+            content={"status": "error", "service": "documents", "error": str(e)},
         )
 
 
@@ -400,7 +396,6 @@ async def finalize_upload(
         # Parse request body
         body = await request.json()
         file_id = body.get("fileId")
-        profile = body.get("profile")
         is_csv = body.get("csv", False)
         test = body.get("test", False)
 
@@ -617,9 +612,7 @@ async def finalize_upload(
                             run_classify_agent
 
                         # Get document IDs for classification
-                        document_ids = [
-                            UUID(doc["id"]) for doc in extracted_documents
-                        ]
+                        document_ids = [UUID(doc["id"]) for doc in extracted_documents]
                         classification_result = await run_classify_agent(
                             document_ids,
                             test,

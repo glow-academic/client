@@ -36,7 +36,9 @@ class TestAgentEndpoints:
             "total_count": 1,
         }
         # Fix: Send document_ids as a JSON array since the route expects list[uuid.UUID] directly
-        response = client.post("/documents/classify", json=[str(doc_id) for doc_id in document_ids])
+        response = client.post(
+            "/documents/classify", json=[str(doc_id) for doc_id in document_ids]
+        )
         assert response.status_code == 200
         mock_run_agent.assert_called_once_with(document_ids, False, mock_session)
 
@@ -227,9 +229,11 @@ class TestClassify_Documents:
             "classified_count": 2,
             "total_count": 2,
         }
-        
-        response = client.post("/documents/classify", json=[str(doc_id) for doc_id in document_ids])
-        
+
+        response = client.post(
+            "/documents/classify", json=[str(doc_id) for doc_id in document_ids]
+        )
+
         assert response.status_code == 200
         assert response.json()["status"] == "success"
         assert response.json()["classified_count"] == 2
@@ -243,9 +247,11 @@ class TestClassify_Documents:
             "success": False,
             "message": "Classification failed",
         }
-        
-        response = client.post("/documents/classify", json=[str(doc_id) for doc_id in document_ids])
-        
+
+        response = client.post(
+            "/documents/classify", json=[str(doc_id) for doc_id in document_ids]
+        )
+
         assert response.status_code == 400
         assert response.json()["status"] == "error"
         assert "Classification failed" in response.json()["message"]
@@ -276,9 +282,9 @@ class TestUpload_Document:
     def test_upload_document_success(self, mock_file, mock_join, client, mock_session):
         """Test successful upload_document request."""
         files = {"files": ("test.pdf", io.BytesIO(b"content"), "application/pdf")}
-        
+
         response = client.post("/documents/upload", files=files)
-        
+
         assert response.status_code == 200
         assert response.json()["status"] == "success"
         assert response.json()["count"] == 1
@@ -289,7 +295,7 @@ class TestUpload_Document:
         """Test upload_document error handling."""
         # Test with no files
         response = client.post("/documents/upload")
-        
+
         assert response.status_code == 422  # Validation error for missing files
 
 
@@ -298,7 +304,9 @@ class TestGet_Document:
 
     @patch("app.routes.documents.FileResponse")
     @patch("app.routes.documents.os.path.exists", return_value=True)
-    def test_get_document_success(self, mock_exists, mock_file_response, client, mock_session):
+    def test_get_document_success(
+        self, mock_exists, mock_file_response, client, mock_session
+    ):
         """Test successful get_document request."""
         doc_id = uuid4()
         mock_document = Documents(
@@ -347,7 +355,9 @@ class TestTus_Creation:
 
     @patch("app.routes.documents.os.makedirs")
     @patch("builtins.open", new_callable=mock_open)
-    def test_tus_creation_success(self, mock_file, mock_mkdirs, client, temp_tus_uploads):
+    def test_tus_creation_success(
+        self, mock_file, mock_mkdirs, client, temp_tus_uploads
+    ):
         """Test successful tus_creation request."""
         headers = {
             "Tus-Resumable": "1.0.0",
@@ -501,7 +511,9 @@ class TestDelete_Document:
 
     @patch("app.routes.documents.os.remove")
     @patch("app.routes.documents.os.path.exists", return_value=True)
-    def test_delete_document_success(self, mock_exists, mock_remove, client, mock_session):
+    def test_delete_document_success(
+        self, mock_exists, mock_remove, client, mock_session
+    ):
         """Test successful delete_document request."""
         doc_id = uuid4()
         mock_document = Documents(id=doc_id, name="file.txt", file_path=f"{doc_id}.txt")
@@ -536,11 +548,12 @@ class TestDocuments_Health_Check:
         assert response.json()["service"] == "documents"
 
     @patch("app.routes.documents.os.path.exists", return_value=False)
-    @patch("app.routes.documents.os.makedirs", side_effect=Exception("Permission denied"))
+    @patch(
+        "app.routes.documents.os.makedirs", side_effect=Exception("Permission denied")
+    )
     def test_documents_health_check_error(self, mock_makedirs, mock_exists, client):
         """Test documents_health_check error handling."""
         response = client.get("/documents/health")
         assert response.status_code == 500
         assert response.json()["status"] == "error"
         assert response.json()["service"] == "documents"
-

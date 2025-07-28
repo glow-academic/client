@@ -10,7 +10,9 @@ def get_persona_info(persona_id: uuid.UUID, session: Session) -> TResponseInputI
     """
     Get the persona information for a given persona.
     """
-    persona = session.exec(select(Personas).where(Personas.id == persona_id)).one_or_none()
+    persona = session.exec(
+        select(Personas).where(Personas.id == persona_id)
+    ).one_or_none()
     if not persona:
         raise ValueError(f"Persona with ID {persona_id} not found")
 

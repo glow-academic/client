@@ -6,9 +6,7 @@ import uuid
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
-import pytest
-from app.services.mcp.tools.analytics.simulation_attempts import \
-    simulation_attempts
+from app.services.mcp.tools.analytics.simulation_attempts import simulation_attempts
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -58,32 +56,41 @@ class TestSimulation_Attempts:
         """Test successful simulation_attempts execution."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         simulation_id = uuid.uuid4()
         mock_simulation = MockSimulation(simulation_id, "Conflict Resolution")
-        
+
         # Mock attempts
         base_time = datetime.now()
         profile1_id = uuid.uuid4()
         profile2_id = uuid.uuid4()
-        
+
         mock_attempts = [
             MockSimulationAttempt(uuid.uuid4(), base_time, profile1_id, simulation_id),
-            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=1), profile2_id, simulation_id),
-            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=2), profile1_id, simulation_id),
+            MockSimulationAttempt(
+                uuid.uuid4(), base_time + timedelta(hours=1), profile2_id, simulation_id
+            ),
+            MockSimulationAttempt(
+                uuid.uuid4(), base_time + timedelta(hours=2), profile1_id, simulation_id
+            ),
         ]
-        
+
         mock_profiles = [
             MockProfile(profile1_id, "John", "Doe"),
             MockProfile(profile2_id, "Jane", "Smith"),
         ]
-        
-        mock_session.get.side_effect = [mock_simulation, mock_profiles[0], mock_profiles[1], mock_profiles[0]]
+
+        mock_session.get.side_effect = [
+            mock_simulation,
+            mock_profiles[0],
+            mock_profiles[1],
+            mock_profiles[0],
+        ]
         mock_session.exec.return_value.all.side_effect = [mock_attempts, [], [], []]
         mock_session.exec.return_value.first.return_value = None
-        
+
         result = simulation_attempts(str(simulation_id))
-        
+
         assert len(result) == 3
         assert result[0]["student"] == "John Doe"
         assert result[1]["student"] == "Jane Smith"
@@ -93,12 +100,12 @@ class TestSimulation_Attempts:
         """Test simulation_attempts error handling."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         simulation_id = uuid.uuid4()
         mock_session.get.side_effect = SQLAlchemyError("Database connection failed")
-        
+
         result = simulation_attempts(str(simulation_id))
-        
+
         assert len(result) == 1
         assert "error" in result[0]
         assert "Database error" in result[0]["error"]
@@ -107,12 +114,12 @@ class TestSimulation_Attempts:
         """Test simulation_attempts with non-existent simulation."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         simulation_id = uuid.uuid4()
         mock_session.get.return_value = None
-        
+
         result = simulation_attempts(str(simulation_id))
-        
+
         assert len(result) == 1
         assert "error" in result[0]
         assert "Simulation not found" in result[0]["error"]
@@ -120,7 +127,7 @@ class TestSimulation_Attempts:
     def test_simulation_attempts_invalid_uuid(self, mock_get_session):
         """Test simulation_attempts with invalid UUID."""
         result = simulation_attempts("invalid-uuid")
-        
+
         assert len(result) == 1
         assert "error" in result[0]
         assert "Invalid sim_id format" in result[0]["error"]
@@ -129,42 +136,51 @@ class TestSimulation_Attempts:
         """Test simulation_attempts with no attempts."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         simulation_id = uuid.uuid4()
         mock_simulation = MockSimulation(simulation_id, "Test Simulation")
-        
+
         mock_session.get.return_value = mock_simulation
         mock_session.exec.return_value.all.return_value = []
-        
+
         result = simulation_attempts(str(simulation_id))
-        
+
         assert result == []
 
     def test_simulation_attempts_single_student(self, mock_get_session):
         """Test simulation_attempts with single student multiple attempts."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         simulation_id = uuid.uuid4()
         mock_simulation = MockSimulation(simulation_id, "Test Simulation")
-        
+
         profile_id = uuid.uuid4()
         base_time = datetime.now()
-        
+
         mock_attempts = [
             MockSimulationAttempt(uuid.uuid4(), base_time, profile_id, simulation_id),
-            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=1), profile_id, simulation_id),
-            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=2), profile_id, simulation_id),
+            MockSimulationAttempt(
+                uuid.uuid4(), base_time + timedelta(hours=1), profile_id, simulation_id
+            ),
+            MockSimulationAttempt(
+                uuid.uuid4(), base_time + timedelta(hours=2), profile_id, simulation_id
+            ),
         ]
-        
+
         mock_profile = MockProfile(profile_id, "John", "Doe")
-        
-        mock_session.get.side_effect = [mock_simulation, mock_profile, mock_profile, mock_profile]
+
+        mock_session.get.side_effect = [
+            mock_simulation,
+            mock_profile,
+            mock_profile,
+            mock_profile,
+        ]
         mock_session.exec.return_value.all.side_effect = [mock_attempts, [], [], []]
         mock_session.exec.return_value.first.return_value = None
-        
+
         result = simulation_attempts(str(simulation_id))
-        
+
         assert len(result) == 3
         assert all(attempt["student"] == "John Doe" for attempt in result)
 
@@ -172,35 +188,47 @@ class TestSimulation_Attempts:
         """Test simulation_attempts with multiple students."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         simulation_id = uuid.uuid4()
         mock_simulation = MockSimulation(simulation_id, "Test Simulation")
-        
+
         profile1_id = uuid.uuid4()
         profile2_id = uuid.uuid4()
         profile3_id = uuid.uuid4()
-        
+
         base_time = datetime.now()
-        
+
         mock_attempts = [
             MockSimulationAttempt(uuid.uuid4(), base_time, profile1_id, simulation_id),
-            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=1), profile2_id, simulation_id),
-            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=2), profile3_id, simulation_id),
-            MockSimulationAttempt(uuid.uuid4(), base_time + timedelta(hours=3), profile1_id, simulation_id),
+            MockSimulationAttempt(
+                uuid.uuid4(), base_time + timedelta(hours=1), profile2_id, simulation_id
+            ),
+            MockSimulationAttempt(
+                uuid.uuid4(), base_time + timedelta(hours=2), profile3_id, simulation_id
+            ),
+            MockSimulationAttempt(
+                uuid.uuid4(), base_time + timedelta(hours=3), profile1_id, simulation_id
+            ),
         ]
-        
+
         mock_profiles = [
             MockProfile(profile1_id, "John", "Doe"),
             MockProfile(profile2_id, "Jane", "Smith"),
             MockProfile(profile3_id, "Bob", "Johnson"),
         ]
-        
-        mock_session.get.side_effect = [mock_simulation, mock_profiles[0], mock_profiles[1], mock_profiles[2], mock_profiles[0]]
+
+        mock_session.get.side_effect = [
+            mock_simulation,
+            mock_profiles[0],
+            mock_profiles[1],
+            mock_profiles[2],
+            mock_profiles[0],
+        ]
         mock_session.exec.return_value.all.side_effect = [mock_attempts, [], [], [], []]
         mock_session.exec.return_value.first.return_value = None
-        
+
         result = simulation_attempts(str(simulation_id))
-        
+
         assert len(result) == 4
         assert result[0]["student"] == "John Doe"
         assert result[1]["student"] == "Jane Smith"
@@ -211,23 +239,25 @@ class TestSimulation_Attempts:
         """Test simulation_attempts with detailed attempt information."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         simulation_id = uuid.uuid4()
         mock_simulation = MockSimulation(simulation_id, "Test Simulation")
-        
+
         profile_id = uuid.uuid4()
         attempt_id = uuid.uuid4()
         base_time = datetime.now()
-        
-        mock_attempt = MockSimulationAttempt(attempt_id, base_time, profile_id, simulation_id)
+
+        mock_attempt = MockSimulationAttempt(
+            attempt_id, base_time, profile_id, simulation_id
+        )
         mock_profile = MockProfile(profile_id, "John", "Doe")
-        
+
         mock_session.get.side_effect = [mock_simulation, mock_profile]
         mock_session.exec.return_value.all.side_effect = [[mock_attempt], []]
         mock_session.exec.return_value.first.return_value = None
-        
+
         result = simulation_attempts(str(simulation_id))
-        
+
         assert len(result) == 1
         attempt = result[0]
         assert attempt["id"] == str(attempt_id)

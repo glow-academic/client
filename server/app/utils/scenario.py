@@ -13,7 +13,9 @@ from sqlmodel import Session, select
 logger = logging.getLogger(__name__)
 
 
-def get_parameter_item_info(parameter_item_ids: List[uuid.UUID], session: Session) -> TResponseInputItem:
+def get_parameter_item_info(
+    parameter_item_ids: List[uuid.UUID], session: Session
+) -> TResponseInputItem:
     """
     Get the parameter item information for a given parameter item ids.
     """
@@ -23,25 +25,28 @@ def get_parameter_item_info(parameter_item_ids: List[uuid.UUID], session: Sessio
         .join(Parameters, ParameterItems.parameter_id == Parameters.id)
         .where(ParameterItems.id.in_(parameter_item_ids))
     ).all()
-    
+
     if not parameter_items_with_params:
         return {
             "role": "user",
             "content": "No parameter items found.",
         }
-    
+
     # Format each parameter item using the template
     formatted_items = []
     for param_item, param in parameter_items_with_params:
         formatted_item = f"This is the {param.name} ({param.description}) for this chat: {param_item.name}. Description: {param_item.description}"
         formatted_items.append(formatted_item)
-    
-    content = "The following is the parameter item information:\n" + "\n".join(formatted_items)
-    
+
+    content = "The following is the parameter item information:\n" + "\n".join(
+        formatted_items
+    )
+
     return {
         "role": "user",
         "content": content,
     }
+
 
 async def randomly_fill_scenario_attributes(
     scenario: Scenarios, session: Session
@@ -60,7 +65,9 @@ async def randomly_fill_scenario_attributes(
     # Random agent selection if agent_id is null
     if scenario.persona_id is None:
         # Only select from active personas
-        active_personas = session.exec(select(Personas).where(Personas.active == True)).all()
+        active_personas = session.exec(
+            select(Personas).where(Personas.active)
+        ).all()
         if active_personas:
             scenario_persona_id = random.choice(active_personas).id
             logger.info(f"Randomly selected persona_id: {scenario_persona_id}")
@@ -73,7 +80,9 @@ async def randomly_fill_scenario_attributes(
     # Random document selection if documents is null
     if scenario.document_ids is None:
         # Only select from active documents
-        active_documents = session.exec(select(Documents).where(Documents.active == True)).all()
+        active_documents = session.exec(
+            select(Documents).where(Documents.active)
+        ).all()
         if active_documents:
             # Randomly select 0-3 documents
             num_docs = random.randint(0, min(3, len(active_documents)))
@@ -95,45 +104,57 @@ async def randomly_fill_scenario_attributes(
     # Random parameter item selection if parameter_item_ids is null or empty
     if scenario.parameter_item_ids is None or len(scenario.parameter_item_ids) == 0:
         # Get all active parameters
-        active_parameters = session.exec(select(Parameters).where(Parameters.active == True)).all()
-        
+        active_parameters = session.exec(
+            select(Parameters).where(Parameters.active)
+        ).all()
+
         if active_parameters:
             # For each active parameter, randomly select one parameter item
             scenario_parameter_item_ids = []
             for param in active_parameters:
                 # Get all parameter items for this parameter
                 param_items = session.exec(
-                    select(ParameterItems).where(ParameterItems.parameter_id == param.id)
+                    select(ParameterItems).where(
+                        ParameterItems.parameter_id == param.id
+                    )
                 ).all()
-                
+
                 if param_items:
                     # Randomly select one parameter item from this parameter
                     selected_item = random.choice(param_items)
                     scenario_parameter_item_ids.append(selected_item.id)
-                    logger.info(f"Selected parameter item for {param.name}: {selected_item.name}")
-            
-            logger.info(f"Randomly selected {len(scenario_parameter_item_ids)} parameter items (one per active parameter): {scenario_parameter_item_ids}")
+                    logger.info(
+                        f"Selected parameter item for {param.name}: {selected_item.name}"
+                    )
+
+            logger.info(
+                f"Randomly selected {len(scenario_parameter_item_ids)} parameter items (one per active parameter): {scenario_parameter_item_ids}"
+            )
         else:
             scenario_parameter_item_ids = []
             logger.info("No active parameters found")
     else:
         # If parameter_item_ids are provided, ensure we only have one per active parameter
         # Get all active parameters
-        active_parameters = session.exec(select(Parameters).where(Parameters.active == True)).all()
+        active_parameters = session.exec(
+            select(Parameters).where(Parameters.active)
+        ).all()
         active_param_ids = {param.id for param in active_parameters}
-        
+
         # Get all parameter items for the provided IDs
         all_param_items = session.exec(
-            select(ParameterItems).where(ParameterItems.id.in_(scenario.parameter_item_ids))
+            select(ParameterItems).where(
+                ParameterItems.id.in_(scenario.parameter_item_ids)
+            )
         ).all()
-        
+
         # Group parameter items by their parameter_id
         param_items_by_param: dict[uuid.UUID, list[ParameterItems]] = {}
         for item in all_param_items:
             if item.parameter_id not in param_items_by_param:
                 param_items_by_param[item.parameter_id] = []
             param_items_by_param[item.parameter_id].append(item)
-        
+
         # For each active parameter, randomly select one parameter item if multiple exist
         scenario_parameter_item_ids = []
         for param_id in active_param_ids:
@@ -143,13 +164,19 @@ async def randomly_fill_scenario_attributes(
                     # Multiple items for this parameter, randomly select one
                     selected_item = random.choice(items)
                     scenario_parameter_item_ids.append(selected_item.id)
-                    logger.info(f"Multiple items for parameter {param_id}, selected: {selected_item.name}")
+                    logger.info(
+                        f"Multiple items for parameter {param_id}, selected: {selected_item.name}"
+                    )
                 else:
                     # Only one item for this parameter
                     scenario_parameter_item_ids.append(items[0].id)
-                    logger.info(f"Single item for parameter {param_id}: {items[0].name}")
-        
-        logger.info(f"Filtered to {len(scenario_parameter_item_ids)} parameter items (one per active parameter): {scenario_parameter_item_ids}")
+                    logger.info(
+                        f"Single item for parameter {param_id}: {items[0].name}"
+                    )
+
+        logger.info(
+            f"Filtered to {len(scenario_parameter_item_ids)} parameter items (one per active parameter): {scenario_parameter_item_ids}"
+        )
 
     return Scenarios(
         name=scenario.name,

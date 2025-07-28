@@ -1,6 +1,5 @@
 import json
 import logging
-import random
 from datetime import datetime
 from typing import Any, Dict, List
 

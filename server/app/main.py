@@ -125,9 +125,9 @@ sio = socketio.AsyncServer(
     },
 )
 
-from app.web.assistants import register_assistant_events
+from app.web.assistants import register_assistant_events  # noqa: E402
 # Import and register WebSocket events after sio is created to avoid circular imports
-from app.web.simulations import register_simulation_events
+from app.web.simulations import register_simulation_events  # noqa: E402
 
 # Register simulation and assistant WebSocket events
 register_simulation_events(sio)
@@ -407,7 +407,6 @@ async def stop_chat(sid: str, data: dict[str, Any]) -> None:
     )  # Default to assistant for backward compatibility
 
     if chat_id:
-        room_name = f"{chat_type}_{chat_id}"
         await sio.emit(
             "chat_stopped", {"chat_id": str(chat_id), "chat_type": chat_type}, room=sid
         )
@@ -425,11 +424,11 @@ def get_socketio_instance() -> socketio.AsyncServer:
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
     async with contextlib.AsyncExitStack() as stack:
-        from app.services.mcp.server import server
+        from app.services.mcp.server import server  # noqa: E402
 
         # Initialize database
         init_db()
-        
+
         await stack.enter_async_context(server.session_manager.run())
 
         yield
@@ -453,7 +452,7 @@ fastapi_app.include_router(scenarios_router, prefix="/scenarios")
 fastapi_app.include_router(csv_router, prefix="/csv")
 
 # mounting the mcp servers - ensure trailing slashes for proper routing
-from app.services.mcp.server import server
+from app.services.mcp.server import server  # noqa: E402
 
 fastapi_app.mount("/domain", server.streamable_http_app(), name="MCP Server")
 

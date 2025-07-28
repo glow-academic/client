@@ -4,6 +4,7 @@ from typing import List
 from agents.items import TResponseInputItem
 from app.models import Rubrics, StandardGroups, Standards
 
+
 def get_dynamic_rubric(
     rubric_obj: Rubrics,
     standard_groups: List[StandardGroups],

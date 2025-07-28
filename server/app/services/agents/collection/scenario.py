@@ -46,7 +46,9 @@ async def run_scenario_agent(
     if persona_id is None:
         persona_info = None
     else:
-        persona = session.exec(select(Personas).where(Personas.id == persona_id)).one_or_none()
+        persona = session.exec(
+            select(Personas).where(Personas.id == persona_id)
+        ).one_or_none()
         if not persona:
             raise ValueError(f"Persona with ID {persona_id} not found")
         persona_info = get_persona_info(persona.id, session)
@@ -55,7 +57,6 @@ async def run_scenario_agent(
         document_info = None
     else:
         document_info = get_document_info(document_ids, session)
-
 
     if parameter_item_ids is None or len(parameter_item_ids) == 0:
         parameter_item_info = None
@@ -68,7 +69,9 @@ async def run_scenario_agent(
         raise ValueError("Scenario agent not found")
 
     # getting the model from the agent's model_id
-    model = session.exec(select(Models).where(Models.id == scenario_agent.model_id)).one()
+    model = session.exec(
+        select(Models).where(Models.id == scenario_agent.model_id)
+    ).one()
     if not model:
         raise ValueError(f"Model with ID {scenario_agent.model_id} not found")
 
@@ -87,7 +90,7 @@ async def run_scenario_agent(
         model_provider=provider.name,
         api_key=provider.api_key,
         reasoning=scenario_agent.reasoning,
-        output_type=Scenario
+        output_type=Scenario,
     )
 
     agent_instance = scenario_agent_generic.agent()

@@ -4,13 +4,14 @@ Tests for app.services.agents.collection.grade
 
 import uuid
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
-from agents import Runner
-from app.services.agents.collection.grade import (create_dynamic_rubric_model,
-                                                  create_safe_field_name,
-                                                  run_grade_agent)
+from app.services.agents.collection.grade import (
+    create_dynamic_rubric_model,
+    create_safe_field_name,
+    run_grade_agent,
+)
 from sqlmodel import Session
 
 
@@ -70,7 +71,9 @@ class MockRubric:
 
 
 class MockStandardGroup:
-    def __init__(self, id, name, short_name, description, points, pass_points, rubric_id):
+    def __init__(
+        self, id, name, short_name, description, points, pass_points, rubric_id
+    ):
         self.id = id
         self.name = name
         self.short_name = short_name
@@ -118,11 +121,11 @@ class TestCreate_Safe_Field_Name:
         # Test basic functionality
         result = create_safe_field_name("Communication Skills")
         assert result == "communication_skills"
-        
+
         # Test with special characters
         result = create_safe_field_name("Problem-Solving & Analysis")
         assert result == "problem_solving_analysis"
-        
+
         # Test with numbers
         result = create_safe_field_name("Math 101")
         assert result == "math_101"
@@ -132,7 +135,7 @@ class TestCreate_Safe_Field_Name:
         # Test with empty string
         result = create_safe_field_name("")
         assert result == ""
-        
+
         # Test with only special characters
         result = create_safe_field_name("!@#$%")
         assert result == ""
@@ -144,23 +147,39 @@ class TestCreate_Dynamic_Rubric_Model:
     def test_create_dynamic_rubric_model_success(self):
         """Test successful create_dynamic_rubric_model execution."""
         standard_groups = [
-            MockStandardGroup(uuid.uuid4(), "Communication", "comm", "Communication skills", 10, 7, uuid.uuid4()),
-            MockStandardGroup(uuid.uuid4(), "Problem Solving", "prob", "Problem solving skills", 15, 10, uuid.uuid4())
+            MockStandardGroup(
+                uuid.uuid4(),
+                "Communication",
+                "comm",
+                "Communication skills",
+                10,
+                7,
+                uuid.uuid4(),
+            ),
+            MockStandardGroup(
+                uuid.uuid4(),
+                "Problem Solving",
+                "prob",
+                "Problem solving skills",
+                15,
+                10,
+                uuid.uuid4(),
+            ),
         ]
-        
+
         DynamicRubric = create_dynamic_rubric_model(standard_groups)
-        
+
         # Test that the model has the expected fields
         instance = DynamicRubric(
-            overall_score=85, 
-            passed=True, 
-            comm_score=4, 
-            comm_feedback="Good", 
-            prob_score=5, 
+            overall_score=85,
+            passed=True,
+            comm_score=4,
+            comm_feedback="Good",
+            prob_score=5,
             prob_feedback="Excellent",
-            summary="Overall good performance"
+            summary="Overall good performance",
         )
-        
+
         assert instance.overall_score == 85
         assert instance.passed is True
         assert instance.comm_score == 4
@@ -191,50 +210,76 @@ class TestRun_Grade_Agent:
         agent_id = uuid.uuid4()
         model_id = uuid.uuid4()
         provider_id = uuid.uuid4()
-        
+
         mock_chat = MockSimulationChat(chat_id, attempt_id, "Test Chat")
         mock_attempt = MockSimulationAttempt(attempt_id, simulation_id)
         mock_simulation = MockSimulation(simulation_id, "Test Simulation", rubric_id)
         mock_rubric = MockRubric(rubric_id, "Test Rubric", 100, 70)
-        mock_agent = MockAgent(agent_id, "Grade", "Grade the conversation", 0.7, model_id, "medium")
+        mock_agent = MockAgent(
+            agent_id, "Grade", "Grade the conversation", 0.7, model_id, "medium"
+        )
         mock_model = MockModel(model_id, "gpt-4", provider_id)
-        mock_provider = MockProvider(provider_id, "openai", "dGVzdF9hcGlfa2V5")  # base64 encoded "test_api_key"
+        mock_provider = MockProvider(
+            provider_id, "openai", "dGVzdF9hcGlfa2V5"
+        )  # base64 encoded "test_api_key"
         mock_standard_groups = [
-            MockStandardGroup(uuid.uuid4(), "Communication", "comm", "Communication skills", 10, 7, rubric_id)
+            MockStandardGroup(
+                uuid.uuid4(),
+                "Communication",
+                "comm",
+                "Communication skills",
+                10,
+                7,
+                rubric_id,
+            )
         ]
         mock_standards = [
-            MockStandard(uuid.uuid4(), "Clear Communication", "Speaks clearly", 5, mock_standard_groups[0].id)
+            MockStandard(
+                uuid.uuid4(),
+                "Clear Communication",
+                "Speaks clearly",
+                5,
+                mock_standard_groups[0].id,
+            )
         ]
         mock_messages = [
             MockSimulationMessage(uuid.uuid4(), chat_id, "Hello", "query"),
-            MockSimulationMessage(uuid.uuid4(), chat_id, "Hi there", "response")
+            MockSimulationMessage(uuid.uuid4(), chat_id, "Hi there", "response"),
         ]
-        
+
         # Mock the database queries in the correct order
         mock_session.exec.return_value.one.side_effect = [
             mock_agent,  # select(Agents).where(Agents.name == "Grade")
-            mock_chat,   # select(SimulationChats).where(SimulationChats.id == simulation_chat_id)
-            mock_attempt, # select(SimulationAttempts).where(SimulationAttempts.id == chat.attempt_id)
-            mock_simulation, # select(Simulations).where(Simulations.id == attempt.simulation_id)
+            mock_chat,  # select(SimulationChats).where(SimulationChats.id == simulation_chat_id)
+            mock_attempt,  # select(SimulationAttempts).where(SimulationAttempts.id == chat.attempt_id)
+            mock_simulation,  # select(Simulations).where(Simulations.id == attempt.simulation_id)
             mock_rubric,  # select(Rubrics).where(Rubrics.id == rubric_id)
-            mock_model,   # select(Models).where(Models.id == agent.model_id)
-            mock_provider # select(Providers).where(Providers.id == model.provider_id)
+            mock_model,  # select(Models).where(Models.id == agent.model_id)
+            mock_provider,  # select(Providers).where(Providers.id == model.provider_id)
         ]
         mock_session.exec.return_value.all.side_effect = [
-            mock_messages,      # select(SimulationMessages).where(SimulationMessages.chat_id == simulation_chat_id)
-            mock_standard_groups, # select(StandardGroups).where(StandardGroups.rubric_id == rubric_id)
-            mock_standards       # select(Standards).where(Standards.standard_group_id.in_(standard_group_ids))
+            mock_messages,  # select(SimulationMessages).where(SimulationMessages.chat_id == simulation_chat_id)
+            mock_standard_groups,  # select(StandardGroups).where(StandardGroups.rubric_id == rubric_id)
+            mock_standards,  # select(Standards).where(Standards.standard_group_id.in_(standard_group_ids))
         ]
-        
+
         # Mock the Runner.run
         mock_result = MagicMock()
-        mock_result.final_output_as.return_value = MockDynamicRubric(overall_score=85, passed=True)
-        
+        mock_result.final_output_as.return_value = MockDynamicRubric(
+            overall_score=85, passed=True
+        )
+
         # Mock the GenericAgent constructor to prevent real API calls
         mock_agent_instance = MagicMock()
-        
-        with patch('app.services.agents.collection.grade.GenericAgent', return_value=mock_agent_instance):
-            with patch('app.services.agents.generic.decrypt_api_key', return_value="decrypted_key"):
+
+        with patch(
+            "app.services.agents.collection.grade.GenericAgent",
+            return_value=mock_agent_instance,
+        ):
+            with patch(
+                "app.services.agents.generic.decrypt_api_key",
+                return_value="decrypted_key",
+            ):
                 result = await run_grade_agent(chat_id, mock_session)
                 assert isinstance(result, str)
 
@@ -242,9 +287,9 @@ class TestRun_Grade_Agent:
     async def test_run_grade_agent_error(self, mock_session):
         """Test run_grade_agent error handling."""
         chat_id = uuid.uuid4()
-        
+
         # Mock agent not found
         mock_session.exec.return_value.one.side_effect = [None]
-        
+
         with pytest.raises(ValueError, match="Grade agent not found"):
             await run_grade_agent(chat_id, mock_session)

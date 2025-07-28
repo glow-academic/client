@@ -6,14 +6,15 @@ import uuid
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
-import pytest
 from app.services.mcp.tools.lookup.simulation_overview import \
     simulation_overview
 from sqlalchemy.exc import SQLAlchemyError
 
 
 class MockSimulation:
-    def __init__(self, id, title, active=True, time_limit=30, rubric_id=None, scenario_ids=None):
+    def __init__(
+        self, id, title, active=True, time_limit=30, rubric_id=None, scenario_ids=None
+    ):
         self.id = id
         self.title = title
         self.active = active
@@ -77,24 +78,26 @@ class TestSimulation_Overview:
         """Test successful simulation_overview execution."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         simulation_id = uuid.uuid4()
         rubric_id = uuid.uuid4()
-        
-        mock_simulation = MockSimulation(simulation_id, "Conflict Resolution", True, 30, rubric_id)
+
+        mock_simulation = MockSimulation(
+            simulation_id, "Conflict Resolution", True, 30, rubric_id
+        )
         mock_rubric = MockRubric(rubric_id, "Communication Skills", 100, 70)
-        
+
         # Set up side_effect to return different objects for different session.get() calls
         mock_session.get.side_effect = lambda model, id: {
             simulation_id: mock_simulation,
-            rubric_id: mock_rubric
+            rubric_id: mock_rubric,
         }.get(id)
-        
+
         mock_session.exec.return_value.all.return_value = []
         mock_session.exec.return_value.first.return_value = None
-        
+
         result = simulation_overview(str(simulation_id))
-        
+
         assert result["simulation"]["id"] == str(simulation_id)
         assert result["simulation"]["title"] == "Conflict Resolution"
         assert result["simulation"]["active"] is True
@@ -110,12 +113,12 @@ class TestSimulation_Overview:
         """Test simulation_overview error handling."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         simulation_id = uuid.uuid4()
         mock_session.get.side_effect = SQLAlchemyError("Database connection failed")
-        
+
         result = simulation_overview(str(simulation_id))
-        
+
         assert "error" in result
         assert "Database error" in result["error"]
 
@@ -123,19 +126,19 @@ class TestSimulation_Overview:
         """Test simulation_overview with non-existent simulation."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         simulation_id = uuid.uuid4()
         mock_session.get.return_value = None
-        
+
         result = simulation_overview(str(simulation_id))
-        
+
         assert "error" in result
         assert "Simulation not found" in result["error"]
 
     def test_simulation_overview_invalid_uuid(self, mock_get_session):
         """Test simulation_overview with invalid UUID."""
         result = simulation_overview("invalid-uuid")
-        
+
         assert "error" in result
         assert "Invalid sim_id format" in result["error"]
 
@@ -143,17 +146,17 @@ class TestSimulation_Overview:
         """Test simulation_overview with no associated rubric."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         simulation_id = uuid.uuid4()
         mock_simulation = MockSimulation(simulation_id, "Test Simulation")
-        
+
         mock_session.get.side_effect = lambda model, id: {
             simulation_id: mock_simulation
         }.get(id)
         mock_session.exec.return_value.all.return_value = []
-        
+
         result = simulation_overview(str(simulation_id))
-        
+
         assert result["simulation"]["id"] == str(simulation_id)
         assert result["rubric"] == {}
         assert result["cohorts"] == []
@@ -163,23 +166,27 @@ class TestSimulation_Overview:
         """Test simulation_overview with associated cohorts."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         simulation_id = uuid.uuid4()
         rubric_id = uuid.uuid4()
         cohort_id = uuid.uuid4()
-        
-        mock_simulation = MockSimulation(simulation_id, "Test Simulation", rubric_id=rubric_id)
+
+        mock_simulation = MockSimulation(
+            simulation_id, "Test Simulation", rubric_id=rubric_id
+        )
         mock_rubric = MockRubric(rubric_id, "Test Rubric", 100, 70)
-        mock_cohort = MockCohort(cohort_id, "Test Cohort", simulation_ids=[simulation_id])
-        
+        mock_cohort = MockCohort(
+            cohort_id, "Test Cohort", simulation_ids=[simulation_id]
+        )
+
         mock_session.get.side_effect = lambda model, id: {
             simulation_id: mock_simulation,
-            rubric_id: mock_rubric
+            rubric_id: mock_rubric,
         }.get(id)
         mock_session.exec.return_value.all.return_value = [mock_cohort]
-        
+
         result = simulation_overview(str(simulation_id))
-        
+
         assert result["simulation"]["id"] == str(simulation_id)
         assert result["rubric"]["id"] == str(rubric_id)
         assert len(result["cohorts"]) == 1
@@ -190,23 +197,28 @@ class TestSimulation_Overview:
         """Test simulation_overview with associated scenarios."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         simulation_id = uuid.uuid4()
         rubric_id = uuid.uuid4()
         scenario_id = uuid.uuid4()
-        
-        mock_simulation = MockSimulation(simulation_id, "Test Simulation", rubric_id=rubric_id, scenario_ids=[scenario_id])
+
+        mock_simulation = MockSimulation(
+            simulation_id,
+            "Test Simulation",
+            rubric_id=rubric_id,
+            scenario_ids=[scenario_id],
+        )
         mock_rubric = MockRubric(rubric_id, "Test Rubric", 100, 70)
         mock_scenario = MockScenario(scenario_id, "Test Scenario", "A test scenario")
-        
+
         mock_session.get.side_effect = lambda model, id: {
             simulation_id: mock_simulation,
-            rubric_id: mock_rubric
+            rubric_id: mock_rubric,
         }.get(id)
         mock_session.exec.return_value.all.return_value = [mock_scenario]
-        
+
         result = simulation_overview(str(simulation_id))
-        
+
         assert result["simulation"]["id"] == str(simulation_id)
         assert result["rubric"]["id"] == str(rubric_id)
         assert len(result["scenarios"]) == 1
@@ -217,32 +229,33 @@ class TestSimulation_Overview:
         """Test simulation_overview pass rate calculation."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         simulation_id = uuid.uuid4()
         rubric_id = uuid.uuid4()
         attempt_id = uuid.uuid4()
         chat_id = uuid.uuid4()
-        
-        mock_simulation = MockSimulation(simulation_id, "Test Simulation", rubric_id=rubric_id)
+
+        mock_simulation = MockSimulation(
+            simulation_id, "Test Simulation", rubric_id=rubric_id
+        )
         mock_rubric = MockRubric(rubric_id, "Test Rubric", 100, 70)
         mock_attempt = MockSimulationAttempt(attempt_id, simulation_id)
         mock_chat = MockSimulationChat(chat_id, attempt_id)
         mock_grade = MockSimulationChatGrade(uuid.uuid4(), 85, True, 300)
-        
+
         mock_session.get.side_effect = lambda model, id: {
             simulation_id: mock_simulation,
-            rubric_id: mock_rubric
+            rubric_id: mock_rubric,
         }.get(id)
-        
+
         # Custom exec mock to handle .all() and .first() for each call, using a call counter
         def exec_side_effect(stmt, *args, **kwargs):
             m = MagicMock()
-            stmt_str = str(stmt)
-            if not hasattr(exec_side_effect, 'call_count'):
+            if not hasattr(exec_side_effect, "call_count"):
                 exec_side_effect.call_count = 0
             call = exec_side_effect.call_count
             exec_side_effect.call_count += 1
-            
+
             # The order of calls is:
             # 0: cohorts (select Cohorts)
             # 1: attempts (select SimulationAttempts)
@@ -264,6 +277,7 @@ class TestSimulation_Overview:
                 m.all.return_value = []
                 m.first.return_value = None
             return m
+
         exec_side_effect.call_count = 0
         mock_session.exec.side_effect = exec_side_effect
 
@@ -275,21 +289,23 @@ class TestSimulation_Overview:
         """Test simulation_overview with no grades."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         simulation_id = uuid.uuid4()
         rubric_id = uuid.uuid4()
-        
-        mock_simulation = MockSimulation(simulation_id, "Test Simulation", rubric_id=rubric_id)
+
+        mock_simulation = MockSimulation(
+            simulation_id, "Test Simulation", rubric_id=rubric_id
+        )
         mock_rubric = MockRubric(rubric_id, "Test Rubric", 100, 70)
-        
+
         mock_session.get.side_effect = lambda model, id: {
             simulation_id: mock_simulation,
-            rubric_id: mock_rubric
+            rubric_id: mock_rubric,
         }.get(id)
         mock_session.exec.return_value.all.return_value = []
-        
+
         result = simulation_overview(str(simulation_id))
-        
+
         assert result["simulation"]["id"] == str(simulation_id)
         assert result["stats"]["total_attempts"] == 0
         assert result["stats"]["total_graded"] == 0
@@ -299,50 +315,49 @@ class TestSimulation_Overview:
         """Test simulation_overview with multiple chats per attempt."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         simulation_id = uuid.uuid4()
         rubric_id = uuid.uuid4()
         attempt_id = uuid.uuid4()
         chat1_id = uuid.uuid4()
         chat2_id = uuid.uuid4()
-        
-        mock_simulation = MockSimulation(simulation_id, "Test Simulation", rubric_id=rubric_id)
+
+        mock_simulation = MockSimulation(
+            simulation_id, "Test Simulation", rubric_id=rubric_id
+        )
         mock_rubric = MockRubric(rubric_id, "Test Rubric", 100, 70)
         mock_attempt = MockSimulationAttempt(attempt_id, simulation_id)
         mock_chat1 = MockSimulationChat(chat1_id, attempt_id)
         mock_chat2 = MockSimulationChat(chat2_id, attempt_id)
         mock_grade1 = MockSimulationChatGrade(uuid.uuid4(), 85, True, 300)
         mock_grade2 = MockSimulationChatGrade(uuid.uuid4(), 75, True, 350)
-        
+
         mock_session.get.side_effect = lambda model, id: {
             simulation_id: mock_simulation,
-            rubric_id: mock_rubric
+            rubric_id: mock_rubric,
         }.get(id)
-        
+
         # Custom exec mock to handle .all() and .first() for each call, using a call counter
         def exec_side_effect(stmt, *args, **kwargs):
             m = MagicMock()
-            stmt_str = str(stmt)
-            if not hasattr(exec_side_effect, 'call_count'):
+            if not hasattr(exec_side_effect, "call_count"):
                 exec_side_effect.call_count = 0
             call = exec_side_effect.call_count
             exec_side_effect.call_count += 1
             # 0: attempts, 1: chats, 2: grade1, 3: grade2
-            if 'FROM simulationattempts' in stmt_str:
+            if call == 0:  # attempts
                 m.all.return_value = [mock_attempt]
-            elif 'FROM simulationchats' in stmt_str:
+            elif call == 1:  # chats
                 m.all.return_value = [mock_chat1, mock_chat2]
-            elif 'FROM simulationchatgrades' in stmt_str:
-                if call == 2:
-                    m.first.return_value = mock_grade1
-                elif call == 3:
-                    m.first.return_value = mock_grade2
-                else:
-                    m.first.return_value = None
+            elif call == 2:  # grade1
+                m.first.return_value = mock_grade1
+            elif call == 3:  # grade2
+                m.first.return_value = mock_grade2
             else:
                 m.all.return_value = []
                 m.first.return_value = None
             return m
+
         exec_side_effect.call_count = 0
         mock_session.exec.side_effect = exec_side_effect
 
@@ -350,23 +365,25 @@ class TestSimulation_Overview:
         """Test simulation_overview with null timestamps."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         simulation_id = uuid.uuid4()
         rubric_id = uuid.uuid4()
-        
-        mock_simulation = MockSimulation(simulation_id, "Test Simulation", rubric_id=rubric_id)
+
+        mock_simulation = MockSimulation(
+            simulation_id, "Test Simulation", rubric_id=rubric_id
+        )
         mock_simulation.created_at = None
         mock_simulation.updated_at = None
         mock_rubric = MockRubric(rubric_id, "Test Rubric", 100, 70)
-        
+
         mock_session.get.side_effect = lambda model, id: {
             simulation_id: mock_simulation,
-            rubric_id: mock_rubric
+            rubric_id: mock_rubric,
         }.get(id)
         mock_session.exec.return_value.all.return_value = []
-        
+
         result = simulation_overview(str(simulation_id))
-        
+
         assert result["simulation"]["id"] == str(simulation_id)
         assert result["simulation"]["created_at"] is None
         assert result["rubric"]["id"] == str(rubric_id)
@@ -375,15 +392,17 @@ class TestSimulation_Overview:
         """Test simulation_overview with complex statistics."""
         mock_session = MagicMock()
         mock_get_session.return_value = iter([mock_session])
-        
+
         simulation_id = uuid.uuid4()
         rubric_id = uuid.uuid4()
         attempt1_id = uuid.uuid4()
         attempt2_id = uuid.uuid4()
         chat1_id = uuid.uuid4()
         chat2_id = uuid.uuid4()
-        
-        mock_simulation = MockSimulation(simulation_id, "Complex Simulation", True, 45, rubric_id)
+
+        mock_simulation = MockSimulation(
+            simulation_id, "Complex Simulation", True, 45, rubric_id
+        )
         mock_rubric = MockRubric(rubric_id, "Complex Rubric", 150, 105)
         mock_attempt1 = MockSimulationAttempt(attempt1_id, simulation_id)
         mock_attempt2 = MockSimulationAttempt(attempt2_id, simulation_id)
@@ -391,40 +410,34 @@ class TestSimulation_Overview:
         mock_chat2 = MockSimulationChat(chat2_id, attempt2_id)
         mock_grade1 = MockSimulationChatGrade(uuid.uuid4(), 95, True, 200)
         mock_grade2 = MockSimulationChatGrade(uuid.uuid4(), 72, False, 450)
-        
+
         mock_session.get.side_effect = lambda model, id: {
             simulation_id: mock_simulation,
-            rubric_id: mock_rubric
+            rubric_id: mock_rubric,
         }.get(id)
-        
+
         # Custom exec mock to handle .all() and .first() for each call, using a call counter
         def exec_side_effect(stmt, *args, **kwargs):
             m = MagicMock()
-            stmt_str = str(stmt)
-            if not hasattr(exec_side_effect, 'call_count'):
+            if not hasattr(exec_side_effect, "call_count"):
                 exec_side_effect.call_count = 0
             call = exec_side_effect.call_count
             exec_side_effect.call_count += 1
             # 0: attempts, 1: chats1, 2: grade1, 3: chats2, 4: grade2
-            if 'FROM simulationattempts' in stmt_str:
+            if call == 0:  # attempts
                 m.all.return_value = [mock_attempt1, mock_attempt2]
-            elif 'FROM simulationchats' in stmt_str:
-                if call == 1:
-                    m.all.return_value = [mock_chat1]
-                elif call == 3:
-                    m.all.return_value = [mock_chat2]
-                else:
-                    m.all.return_value = []
-            elif 'FROM simulationchatgrades' in stmt_str:
-                if call == 2:
-                    m.first.return_value = mock_grade1
-                elif call == 4:
-                    m.first.return_value = mock_grade2
-                else:
-                    m.first.return_value = None
+            elif call == 1:  # chats1
+                m.all.return_value = [mock_chat1]
+            elif call == 2:  # grade1
+                m.first.return_value = mock_grade1
+            elif call == 3:  # chats2
+                m.all.return_value = [mock_chat2]
+            elif call == 4:  # grade2
+                m.first.return_value = mock_grade2
             else:
                 m.all.return_value = []
                 m.first.return_value = None
             return m
+
         exec_side_effect.call_count = 0
         mock_session.exec.side_effect = exec_side_effect

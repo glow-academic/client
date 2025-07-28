@@ -6,13 +6,20 @@ import uuid
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
-import pytest
 from app.services.mcp.tools.lookup.persona_overview import persona_overview
 from sqlalchemy.exc import SQLAlchemyError
 
 
 class MockPersona:
-    def __init__(self, id, name, description, system_prompt, temperature=0.7, default_persona=False):
+    def __init__(
+        self,
+        id,
+        name,
+        description,
+        system_prompt,
+        temperature=0.7,
+        default_persona=False,
+    ):
         self.id = id
         self.name = name
         self.description = description
@@ -44,16 +51,16 @@ class TestPersona_Overview:
         scenario_id = uuid.uuid4()
 
         mock_persona = MockPersona(
-            persona_id, 
-            "Aggressive Manager", 
-            "A challenging persona for conflict resolution", 
-            "You are an aggressive manager..."
+            persona_id,
+            "Aggressive Manager",
+            "A challenging persona for conflict resolution",
+            "You are an aggressive manager...",
         )
         mock_scenario = MockScenario(
             scenario_id,
             "Conflict Resolution",
             "Handle a difficult employee situation",
-            False
+            False,
         )
 
         mock_session.get.return_value = mock_persona
@@ -113,10 +120,10 @@ class TestPersona_Overview:
         persona_id = uuid.uuid4()
 
         mock_persona = MockPersona(
-            persona_id, 
-            "Friendly Manager", 
-            "A supportive persona for mentoring", 
-            "You are a friendly manager..."
+            persona_id,
+            "Friendly Manager",
+            "A supportive persona for mentoring",
+            "You are a friendly manager...",
         )
 
         mock_session.get.return_value = mock_persona
@@ -138,16 +145,23 @@ class TestPersona_Overview:
         scenario2_id = uuid.uuid4()
 
         mock_persona = MockPersona(
-            persona_id, 
-            "Versatile Manager", 
-            "A flexible persona for various situations", 
-            "You are a versatile manager..."
+            persona_id,
+            "Versatile Manager",
+            "A flexible persona for various situations",
+            "You are a versatile manager...",
         )
-        mock_scenario1 = MockScenario(scenario1_id, "Scenario 1", "First scenario", True)
-        mock_scenario2 = MockScenario(scenario2_id, "Scenario 2", "Second scenario", False)
+        mock_scenario1 = MockScenario(
+            scenario1_id, "Scenario 1", "First scenario", True
+        )
+        mock_scenario2 = MockScenario(
+            scenario2_id, "Scenario 2", "Second scenario", False
+        )
 
         mock_session.get.return_value = mock_persona
-        mock_session.exec.return_value.all.return_value = [mock_scenario1, mock_scenario2]
+        mock_session.exec.return_value.all.return_value = [
+            mock_scenario1,
+            mock_scenario2,
+        ]
 
         result = persona_overview(str(persona_id))
 
@@ -163,10 +177,7 @@ class TestPersona_Overview:
         persona_id = uuid.uuid4()
 
         mock_persona = MockPersona(
-            persona_id, 
-            "Test Persona", 
-            "Test description", 
-            "Test prompt"
+            persona_id, "Test Persona", "Test description", "Test prompt"
         )
         mock_persona.created_at = None
         mock_persona.updated_at = None
@@ -178,4 +189,3 @@ class TestPersona_Overview:
 
         assert result["created_at"] is None
         assert result["updated_at"] is None
-

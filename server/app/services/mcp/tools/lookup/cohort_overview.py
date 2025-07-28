@@ -66,7 +66,9 @@ def cohort_overview(cohort_id: str) -> Dict[str, Any]:
         # Fetch simulations for this cohort using cohort.simulation_ids
         cohort_sims: list[Simulations] = []
         if hasattr(cohort, "simulation_ids") and cohort.simulation_ids:
-            sims_stmt = select(Simulations).where(Simulations.id.in_(cohort.simulation_ids), Simulations.active == True)
+            sims_stmt = select(Simulations).where(
+                Simulations.id.in_(cohort.simulation_ids), Simulations.active
+            )
             cohort_sims = list(session.exec(sims_stmt).all())
 
         simulations_data = [

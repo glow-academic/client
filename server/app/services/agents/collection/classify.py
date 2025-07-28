@@ -23,7 +23,10 @@ class Classify(BaseModel):
     syllabi: list[str] = []
 
 
-async def run_classify_agent(document_ids: list[uuid.UUID], test: bool = False, session: Session = Depends(get_session)
+async def run_classify_agent(
+    document_ids: list[uuid.UUID],
+    test: bool = False,
+    session: Session = Depends(get_session),
 ) -> dict[str, Any]:
     """
     This function is used to run the classify agent.
@@ -66,7 +69,9 @@ async def run_classify_agent(document_ids: list[uuid.UUID], test: bool = False, 
 
     formatted_documents = "\n".join(document_list)
 
-    logger.info(f"Classifying {len(documents)} documents for document_ids {document_ids}")
+    logger.info(
+        f"Classifying {len(documents)} documents for document_ids {document_ids}"
+    )
 
     # getting the model from the agent's model_id
     model = session.exec(select(Models).where(Models.id == agent.model_id)).one()

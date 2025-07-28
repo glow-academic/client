@@ -7,8 +7,13 @@ import uuid
 from typing import Any, Dict
 
 from app.db import get_session
-from app.models import (Profiles, SimulationAttempts, SimulationChatGrades,
-                        SimulationChats, Simulations)
+from app.models import (
+    Profiles,
+    SimulationAttempts,
+    SimulationChatGrades,
+    SimulationChats,
+    Simulations,
+)
 from sqlalchemy import func, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select
