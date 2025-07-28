@@ -622,7 +622,7 @@ export default function RubricHeatmap({
   }
 
   return (
-    <Card className="w-full h-full flex flex-col relative">
+    <Card className="w-full h-full flex flex-col relative gap-0">
       <div
         className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
           thresholdStatus === "success"
@@ -675,13 +675,13 @@ export default function RubricHeatmap({
                       <TableHead
                         key={group.id}
                         className={cn(
-                          "p-1 h-16 w-10 relative", // Reduced height and fixed width
+                          "p-1 h-30 w-24 relative", // Increased width from w-16 to w-24
                           hoveredCell.col === colIndex && "bg-muted" // Highlight on hover
                         )}
                       >
                         {/* MODIFIED: Rotated Label */}
                         <div
-                          className="absolute bottom-1 left-1/2 -translate-x-1/2"
+                          className="absolute bottom-2 left-1/2 -translate-x-1/2"
                           style={{ writingMode: "vertical-rl" }}
                         >
                           <span className="text-xs font-normal text-muted-foreground whitespace-nowrap">
@@ -720,7 +720,7 @@ export default function RubricHeatmap({
                           return (
                             <TableCell
                               key={colIndex}
-                              className="text-center p-1 w-10"
+                              className="text-center p-1 w-24"
                               onMouseEnter={() =>
                                 setHoveredCell({ row: rowIndex, col: colIndex })
                               }
@@ -728,7 +728,7 @@ export default function RubricHeatmap({
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div
-                                    className="w-10 h-8 rounded-sm flex items-center justify-center text-xs font-mono"
+                                    className="w-24 h-8 rounded-sm flex items-center justify-center text-xs font-mono"
                                     style={{ backgroundColor: cell.color }}
                                   >
                                     <span
