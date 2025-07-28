@@ -86,7 +86,7 @@ const ToolCallCard = ({
 
   const getToolDescription = (
     toolName: string,
-    args: Record<string, unknown>,
+    args: Record<string, unknown>
   ) => {
     const descriptions: Record<
       string,
@@ -164,7 +164,7 @@ const ToolCallCard = ({
               <span className="text-xs text-muted-foreground">
                 {getToolDescription(
                   toolCall.toolName,
-                  toolCall.toolArguments as Record<string, unknown>,
+                  toolCall.toolArguments as Record<string, unknown>
                 )}
               </span>
             </div>
@@ -270,7 +270,7 @@ export default function ChatMessages({
       });
     }
     return timeline.sort(
-      (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
+      (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
     );
   }, [messages, toolCalls]);
 
@@ -338,7 +338,7 @@ export default function ChatMessages({
 
   if ((isLoadingMessages || isLoadingToolCalls) && currentChatId) {
     return (
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4" data-testid="skeleton">
         <div className="flex justify-between items-center">
           <Skeleton className="h-4 w-32" />
         </div>
@@ -365,6 +365,7 @@ export default function ChatMessages({
             <ChatStarterPrompts
               onPromptClick={onPromptClick || (() => {})}
               variant="expanded"
+              data-testid="chat-starter-prompts"
             />
           </div>
         </div>
@@ -376,7 +377,11 @@ export default function ChatMessages({
 
   return (
     <div className="relative h-full">
-      <ScrollArea className="h-full" ref={scrollAreaRef}>
+      <ScrollArea
+        className="h-full"
+        ref={scrollAreaRef}
+        data-testid="scroll-area"
+      >
         {/* MODIFIED: Conditional padding and spacing */}
         <div
           className={

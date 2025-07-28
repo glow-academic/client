@@ -15,19 +15,12 @@ from typing import Any, Dict
 import socketio  # type: ignore
 from agents import gen_trace_id
 from app.db import get_session
-from app.models import (
-    Scenarios,
-    SimulationAttempts,
-    SimulationChats,
-    SimulationMessages,
-    Simulations,
-)
+from app.models import (Scenarios, SimulationAttempts, SimulationChats,
+                        SimulationMessages, Simulations)
 from app.services.agents.collection.grade import run_grade_agent
 from app.services.agents.collection.scenario import run_scenario_agent
-from app.services.agents.collection.simulation import (
-    cancel_simulation_run,
-    run_simulation_agent,
-)
+from app.services.agents.collection.simulation import (cancel_simulation_run,
+                                                       run_simulation_agent)
 from app.utils.scenario import randomly_fill_scenario_attributes
 from sqlmodel import select
 
@@ -432,7 +425,7 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
 
 
 async def process_simulation_message_websocket(
-    chat_id: str,
+    chat_id: uuid.UUID,
     message: str = "",
 ) -> None:
     """
@@ -520,7 +513,7 @@ async def process_simulation_message_websocket(
         cancelled = False
 
         try:
-            async for token in run_simulation_agent(uuid.UUID(chat_id), db_session):
+            async for token in run_simulation_agent(chat_id, db_session):
                 # Regular content token
                 accumulated_content += token
 

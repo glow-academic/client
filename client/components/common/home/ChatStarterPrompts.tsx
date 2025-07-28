@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 export interface ChatStarterPromptsProps {
   onPromptClick: (prompt: string) => void;
   variant?: "expanded" | "minimized";
+  "data-testid"?: string;
 }
 
 const allPrompts = [
@@ -53,6 +54,7 @@ const allPrompts = [
 export default function ChatStarterPrompts({
   onPromptClick,
   variant = "expanded",
+  "data-testid": testId,
 }: ChatStarterPromptsProps) {
   const PROMPT_COUNT = variant === "expanded" ? 4 : 2;
 
@@ -63,7 +65,7 @@ export default function ChatStarterPrompts({
   };
 
   const [selectedPrompts, setSelectedPrompts] = useState<string[]>(() =>
-    getRandomPrompts(PROMPT_COUNT),
+    getRandomPrompts(PROMPT_COUNT)
   );
 
   useEffect(() => {
@@ -91,6 +93,7 @@ export default function ChatStarterPrompts({
   return (
     <div
       className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-${PROMPT_COUNT} gap-4`}
+      data-testid={testId}
     >
       {selectedPrompts.map((prompt, index) => (
         <PromptCard prompt={prompt} index={index} key={prompt} />

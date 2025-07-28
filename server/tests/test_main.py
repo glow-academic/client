@@ -78,13 +78,14 @@ class TestSend_Simulation_Message:
             "app.web.simulations.process_simulation_message_websocket"
         ) as mock_process:
             sid = "test_sid"
-            data = {"chat_id": "test_chat_id", "message": "Test message"}
+            chat_id = str(uuid.uuid4())
+            data = {"chat_id": chat_id, "message": "Test message"}
 
             await send_simulation_message(sid, data)
 
             # Verify that process_simulation_message_websocket was called with keyword arguments
             mock_process.assert_called_once_with(
-                chat_id="test_chat_id", message="Test message"
+                chat_id=uuid.UUID(chat_id), message="Test message"
             )
 
     @pytest.mark.asyncio
@@ -97,7 +98,8 @@ class TestSend_Simulation_Message:
             side_effect=Exception("Test error"),
         ):
             sid = "test_sid"
-            data = {"chat_id": "test_chat_id", "message": "Test message"}
+            chat_id = str(uuid.uuid4())
+            data = {"chat_id": chat_id, "message": "Test message"}
 
             # The function should handle the exception gracefully
             await send_simulation_message(sid, data)

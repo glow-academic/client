@@ -126,7 +126,6 @@ sio = socketio.AsyncServer(
 )
 
 from app.web.assistants import register_assistant_events  # noqa: E402
-
 # Import and register WebSocket events after sio is created to avoid circular imports
 from app.web.simulations import register_simulation_events  # noqa: E402
 
@@ -173,7 +172,7 @@ async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
         from app.web.simulations import process_simulation_message_websocket
 
         await process_simulation_message_websocket(
-            chat_id=chat_id,
+            chat_id=uuid.UUID(chat_id),
             message=message or "",
         )
 

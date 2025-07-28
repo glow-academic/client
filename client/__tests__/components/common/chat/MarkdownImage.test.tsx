@@ -1,34 +1,330 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
-import { describe, expect, it } from "vitest";
+import { screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
 import MarkdownImage from "@/components/common/chat/MarkdownImage";
 
 describe("MarkdownImage", () => {
   describe("basic render smoke-test", () => {
-    it("renders without crashing", async () => {
-      renderWithMocks(<MarkdownImage />);
-
-      // Basic render test - component should render without errors
+    it("renders without crashing", () => {
+      renderWithMocks(
+        <MarkdownImage src="https://example.com/image.png" alt="Test image" />
+      );
       expect(document.body).toBeInTheDocument();
     });
 
-    it("should have correct accessibility attributes", () => {
-      renderWithMocks(<MarkdownImage />);
+    it("should render with src and alt props", () => {
+      renderWithMocks(
+        <MarkdownImage src="https://example.com/image.png" alt="Test image" />
+      );
 
-      // Check for basic accessibility elements
-      const image =
-        document.querySelector("img") || document.querySelector("div");
+      const image = screen.getByAltText("Test image");
+      expect(image).toBeInTheDocument();
+      expect(image).toHaveAttribute("src", "https://example.com/image.png");
+    });
+
+    it("should not render when src is empty", () => {
+      renderWithMocks(<MarkdownImage src="" alt="Test image" />);
+
+      const image = screen.queryByAltText("Test image");
+      expect(image).not.toBeInTheDocument();
+    });
+
+    it("should not render when src is undefined", () => {
+      renderWithMocks(<MarkdownImage alt="Test image" />);
+
+      const image = screen.queryByAltText("Test image");
+      expect(image).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Image Properties", () => {
+    it("should render with correct Next.js Image props", () => {
+      renderWithMocks(
+        <MarkdownImage src="https://example.com/image.png" alt="Test image" />
+      );
+
+      const image = screen.getByAltText("Test image");
+      expect(image).toHaveAttribute("width", "0");
+      expect(image).toHaveAttribute("height", "0");
+      expect(image).toHaveAttribute("sizes", "100vw");
+    });
+
+    it("should render with custom style properties", () => {
+      renderWithMocks(
+        <MarkdownImage src="https://example.com/image.png" alt="Test image" />
+      );
+
+      const image = screen.getByAltText("Test image");
+      expect(image).toHaveStyle({
+        width: "70%",
+        height: "auto",
+        objectFit: "contain",
+      });
+    });
+
+    it("should render with unoptimized prop", () => {
+      renderWithMocks(
+        <MarkdownImage src="https://example.com/image.png" alt="Test image" />
+      );
+
+      const image = screen.getByAltText("Test image");
+      // Note: unoptimized is a boolean prop that may not be visible as an attribute
+      expect(image).toBeInTheDocument();
+    });
+  });
+
+  describe("Different Image Sources", () => {
+    it("should render local images", () => {
+      renderWithMocks(
+        <MarkdownImage src="/images/local-image.png" alt="Local image" />
+      );
+
+      const image = screen.getByAltText("Local image");
+      expect(image).toBeInTheDocument();
+      expect(image).toHaveAttribute("src", "/images/local-image.png");
+    });
+
+    it("should render remote CDN images", () => {
+      renderWithMocks(
+        <MarkdownImage
+          src="https://cdn.example.com/image.jpg"
+          alt="CDN image"
+        />
+      );
+
+      const image = screen.getByAltText("CDN image");
+      expect(image).toBeInTheDocument();
+      expect(image).toHaveAttribute("src", "https://cdn.example.com/image.jpg");
+    });
+
+    it("should render Supabase storage images", () => {
+      renderWithMocks(
+        <MarkdownImage
+          src="https://supabase.co/storage/v1/object/public/bucket/image.png"
+          alt="Supabase image"
+        />
+      );
+
+      const image = screen.getByAltText("Supabase image");
+      expect(image).toBeInTheDocument();
+      expect(image).toHaveAttribute(
+        "src",
+        "https://supabase.co/storage/v1/object/public/bucket/image.png"
+      );
+    });
+
+    it("should render data URLs", () => {
+      const dataUrl =
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+      renderWithMocks(<MarkdownImage src={dataUrl} alt="Data URL image" />);
+
+      const image = screen.getByAltText("Data URL image");
+      expect(image).toBeInTheDocument();
+      expect(image).toHaveAttribute("src", dataUrl);
+    });
+  });
+
+  describe("Alt Text Handling", () => {
+    it("should render with empty alt text", () => {
+      renderWithMocks(
+        <MarkdownImage src="https://example.com/image.png" alt="" />
+      );
+
+      const image = screen.getByAltText("");
+      expect(image).toBeInTheDocument();
+    });
+
+    it("should render with descriptive alt text", () => {
+      renderWithMocks(
+        <MarkdownImage
+          src="https://example.com/image.png"
+          alt="A beautiful sunset over the mountains"
+        />
+      );
+
+      const image = screen.getByAltText(
+        "A beautiful sunset over the mountains"
+      );
+      expect(image).toBeInTheDocument();
+    });
+
+    it("should render with undefined alt text", () => {
+      renderWithMocks(<MarkdownImage src="https://example.com/image.png" />);
+
+      const image = screen.getByAltText("");
+      expect(image).toBeInTheDocument();
+      expect(image).toHaveAttribute("alt", "");
+    });
+  });
+
+  describe("Additional Props", () => {
+    it("should pass through additional props", () => {
+      renderWithMocks(
+        <MarkdownImage
+          src="https://example.com/image.png"
+          alt="Test image"
+          className="custom-class"
+          data-testid="custom-image"
+        />
+      );
+
+      const image = screen.getByTestId("custom-image");
+      expect(image).toBeInTheDocument();
+      expect(image).toHaveClass("custom-class");
+    });
+
+    it("should handle onClick prop", () => {
+      const handleClick = vi.fn();
+      renderWithMocks(
+        <MarkdownImage
+          src="https://example.com/image.png"
+          alt="Test image"
+          onClick={handleClick}
+        />
+      );
+
+      const image = screen.getByAltText("Test image");
+      expect(image).toBeInTheDocument();
+    });
+
+    it("should handle onLoad prop", () => {
+      const handleLoad = vi.fn();
+      renderWithMocks(
+        <MarkdownImage
+          src="https://example.com/image.png"
+          alt="Test image"
+          onLoad={handleLoad}
+        />
+      );
+
+      const image = screen.getByAltText("Test image");
+      expect(image).toBeInTheDocument();
+    });
+
+    it("should handle onError prop", () => {
+      const handleError = vi.fn();
+      renderWithMocks(
+        <MarkdownImage
+          src="https://example.com/image.png"
+          alt="Test image"
+          onError={handleError}
+        />
+      );
+
+      const image = screen.getByAltText("Test image");
       expect(image).toBeInTheDocument();
     });
   });
 
   describe("Edge Cases", () => {
-    it("should handle edge cases gracefully", () => {
-      renderWithMocks(<MarkdownImage />);
+    it("should handle very long URLs", () => {
+      const longUrl = "https://example.com/" + "a".repeat(1000) + ".png";
+      renderWithMocks(<MarkdownImage src={longUrl} alt="Long URL image" />);
 
-      // Component should handle edge cases
-      expect(document.body).toBeInTheDocument();
+      const image = screen.getByAltText("Long URL image");
+      expect(image).toBeInTheDocument();
+      expect(image).toHaveAttribute("src", longUrl);
+    });
+
+    it("should handle special characters in URLs", () => {
+      const specialUrl =
+        "https://example.com/image with spaces & special chars.png";
+      renderWithMocks(
+        <MarkdownImage src={specialUrl} alt="Special chars image" />
+      );
+
+      const image = screen.getByAltText("Special chars image");
+      expect(image).toBeInTheDocument();
+      expect(image).toHaveAttribute("src", specialUrl);
+    });
+
+    it("should handle relative URLs", () => {
+      renderWithMocks(
+        <MarkdownImage src="./relative/path/image.png" alt="Relative image" />
+      );
+
+      const image = screen.getByAltText("Relative image");
+      expect(image).toBeInTheDocument();
+      expect(image).toHaveAttribute("src", "./relative/path/image.png");
+    });
+
+    it("should handle protocol-relative URLs", () => {
+      renderWithMocks(
+        <MarkdownImage
+          src="//example.com/image.png"
+          alt="Protocol relative image"
+        />
+      );
+
+      const image = screen.getByAltText("Protocol relative image");
+      expect(image).toBeInTheDocument();
+      expect(image).toHaveAttribute("src", "//example.com/image.png");
+    });
+
+    it("should handle malformed URLs gracefully", () => {
+      renderWithMocks(
+        <MarkdownImage src="not-a-valid-url" alt="Malformed URL image" />
+      );
+
+      const image = screen.getByAltText("Malformed URL image");
+      expect(image).toBeInTheDocument();
+      expect(image).toHaveAttribute("src", "not-a-valid-url");
+    });
+  });
+
+  describe("Responsive Design", () => {
+    it("should have responsive sizing attributes", () => {
+      renderWithMocks(
+        <MarkdownImage
+          src="https://example.com/image.png"
+          alt="Responsive image"
+        />
+      );
+
+      const image = screen.getByAltText("Responsive image");
+      expect(image).toHaveAttribute("sizes", "100vw");
+    });
+
+    it("should have correct width and height attributes for responsive design", () => {
+      renderWithMocks(
+        <MarkdownImage
+          src="https://example.com/image.png"
+          alt="Responsive image"
+        />
+      );
+
+      const image = screen.getByAltText("Responsive image");
+      expect(image).toHaveAttribute("width", "0");
+      expect(image).toHaveAttribute("height", "0");
+    });
+  });
+
+  describe("Accessibility", () => {
+    it("should have proper alt text for accessibility", () => {
+      renderWithMocks(
+        <MarkdownImage
+          src="https://example.com/image.png"
+          alt="Accessible image"
+        />
+      );
+
+      const image = screen.getByAltText("Accessible image");
+      expect(image).toBeInTheDocument();
+    });
+
+    it("should be focusable when needed", () => {
+      renderWithMocks(
+        <MarkdownImage
+          src="https://example.com/image.png"
+          alt="Focusable image"
+          tabIndex={0}
+        />
+      );
+
+      const image = screen.getByAltText("Focusable image");
+      expect(image).toHaveAttribute("tabIndex", "0");
     });
   });
 });

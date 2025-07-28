@@ -2,7 +2,7 @@ import base64
 import os
 
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import hashes, padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from dotenv import load_dotenv
@@ -52,8 +52,8 @@ def decrypt_api_key(encrypted_key: str) -> str:
     # Decrypt the data
     decrypted_padded = decryptor.update(encrypted_data) + decryptor.finalize()
 
-    # Remove PKCS7 padding
-    padding_length = decrypted_padded[-1]
-    decrypted = decrypted_padded[:-padding_length]
+    # Remove PKCS7 padding using standard unpadder
+    unpadder = padding.PKCS7(algorithms.AES.block_size).unpadder()
+    decrypted = unpadder.update(decrypted_padded) + unpadder.finalize()
 
     return decrypted.decode("utf-8")

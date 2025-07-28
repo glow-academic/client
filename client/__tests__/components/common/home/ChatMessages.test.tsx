@@ -106,7 +106,7 @@ describe("ChatMessages", () => {
         "@/utils/queries/assistant_messages/get-assistant-messages-by-chat"
       );
       vi.mocked(getAssistantMessagesByChat).mockRejectedValue(
-        new Error("API Error"),
+        new Error("API Error")
       );
 
       renderWithMocks(<ChatMessages {...mockProps} />);
