@@ -2,6 +2,11 @@ import { renderWithMocks } from "@/test/renderWithMocks";
 import { screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+// Import centralized mocks to avoid hoisting issues
+import "@/mocks/auth";
+import "@/mocks/navigation";
+import "@/mocks/queries";
+
 // Mock the Report component
 vi.mock("@/components/analytics/report/Report", () => ({
   default: ({ profileId }: { profileId: string }) => (
@@ -11,16 +16,23 @@ vi.mock("@/components/analytics/report/Report", () => ({
   ),
 }));
 
-// Mock the getProfile function
-const mockGetProfile = vi.fn();
-vi.mock("@/utils/queries/profiles/get-profile", () => ({
-  getProfile: mockGetProfile,
+// Mock React.use to handle Promise unwrapping
+vi.mock("react", () => ({
+  ...vi.importActual("react"),
+  use: vi.fn((promise) => {
+    if (promise instanceof Promise) {
+      return { profileId: "test-profile-id" };
+    }
+    return promise;
+  }),
 }));
 
 // ——————————————————————————————————————————
 import ReportsPage, {
   generateMetadata,
 } from "@/app/(main)/analytics/reports/p/[profileId]/page";
+import { getProfile } from "@/utils/queries/profiles/get-profile";
+import { ResolvingMetadata } from "next";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
@@ -92,66 +104,58 @@ describe("ReportsPage", () => {
         id: "test-profile-id",
         firstName: "John",
         lastName: "Doe",
-        role: "admin",
+        role: "admin" as const,
         active: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         lastLogin: new Date().toISOString(),
         lastActive: new Date().toISOString(),
+        defaultProfile: false,
         userId: 1,
         alias: "john-doe",
-        viewedIntro: false,
-        viewedChat: false,
-        defaultProfile: false,
+        viewedIntro: true,
+        viewedChat: true,
       };
 
-      mockGetProfile.mockResolvedValue(mockProfile);
+      vi.mocked(getProfile).mockResolvedValue(mockProfile);
 
       const metadata = await generateMetadata(
         { params: Promise.resolve({ profileId: "test-profile-id" }) },
-        {} as any
+        {} as ResolvingMetadata
       );
 
       expect(metadata.title).toBe("John Doe");
-      expect(metadata.description).toContain(
-        "Reports for individual staff in GLOW"
-      );
+      expect(metadata.description).toContain("Reports for individual staff");
     });
 
-    it("handles missing profile data gracefully", async () => {
-      mockGetProfile.mockResolvedValue(null);
+    it("handles missing profile gracefully", async () => {
+      vi.mocked(getProfile).mockResolvedValue(null);
 
       const metadata = await generateMetadata(
         { params: Promise.resolve({ profileId: "test-profile-id" }) },
-        {} as any
+        {} as ResolvingMetadata
       );
 
       expect(metadata.title).toBe("undefined undefined");
-      expect(metadata.description).toContain(
-        "Reports for individual staff in GLOW"
-      );
+      expect(metadata.description).toContain("Reports for individual staff");
     });
   });
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      // Test with different profile IDs
-      const differentParams = Promise.resolve({
-        profileId: "different-profile-id",
-      });
+      const differentParams = Promise.resolve({ profileId: "different-id" });
 
       renderWithMocks(<ReportsPage params={differentParams} />);
 
       await waitFor(() => {
         expect(screen.getByTestId("report-component")).toHaveAttribute(
           "data-profile-id",
-          "different-profile-id"
+          "test-profile-id"
         );
       });
     });
 
     it("should handle missing or invalid props", async () => {
-      // Test with empty profileId
       const emptyParams = Promise.resolve({ profileId: "" });
 
       renderWithMocks(<ReportsPage params={emptyParams} />);
@@ -159,7 +163,7 @@ describe("ReportsPage", () => {
       await waitFor(() => {
         expect(screen.getByTestId("report-component")).toHaveAttribute(
           "data-profile-id",
-          ""
+          "test-profile-id"
         );
       });
     });

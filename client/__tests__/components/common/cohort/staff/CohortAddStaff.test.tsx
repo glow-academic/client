@@ -124,7 +124,7 @@ describe("CohortAddStaff", () => {
 
     it("should handle missing or invalid props", () => {
       renderWithMocks(
-        <CohortAddStaff onAddProfiles={vi.fn()} existingProfileIds={[]} />,
+        <CohortAddStaff onAddProfiles={vi.fn()} existingProfileIds={[]} />
       );
 
       // Component should handle missing props

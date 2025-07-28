@@ -9,6 +9,22 @@ import "@/mocks/api";
 import "@/mocks/mutations";
 import "@/mocks/queries";
 
+// Mock React Query to return empty arrays for models and providers
+vi.mock("@tanstack/react-query", () => ({
+  useQuery: vi.fn(({ queryKey }) => {
+    if (queryKey[0] === "models") {
+      return { data: [], isLoading: false, refetch: vi.fn() };
+    }
+    if (queryKey[0] === "providers") {
+      return { data: [], isLoading: false };
+    }
+    return { data: null, isLoading: false };
+  }),
+  useQueryClient: vi.fn(() => ({
+    invalidateQueries: vi.fn(),
+  })),
+}));
+
 describe("Providers", () => {
   /* ------------------------------------------------------------------ *
    * 💡 Mock Data Usage Guide:

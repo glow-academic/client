@@ -1,17 +1,17 @@
+import { redirect } from "next/navigation";
 import { describe, expect, it, vi } from "vitest";
 
-// Mock next/navigation redirect - define before import to avoid hoisting issues
-const mockRedirect = vi.fn();
-vi.mock("next/navigation", () => ({
-  redirect: mockRedirect,
-}));
+// Import centralized mocks to avoid hoisting issues
+import "@/mocks/navigation";
 
-import ReportsPage, { metadata } from "@/app/(main)/analytics/reports/p/page";
+import AnalyticsReportsPage, {
+  metadata,
+} from "@/app/(main)/analytics/reports/p/page";
 
-describe("ReportsPage", () => {
+describe("AnalyticsReportsPage", () => {
   it("calls redirect to /analytics/reports", () => {
-    ReportsPage();
-    expect(mockRedirect).toHaveBeenCalledWith("/analytics/reports");
+    AnalyticsReportsPage();
+    expect(vi.mocked(redirect)).toHaveBeenCalledWith("/analytics/reports");
   });
 
   it("exports correct metadata", () => {

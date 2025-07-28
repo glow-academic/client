@@ -5,7 +5,7 @@ Tests for app.utils.csv
 from unittest.mock import MagicMock
 
 import pytest
-from app.utils.csv import *
+from app.utils.csv import process_csv_file, validate_csv_format
 from sqlmodel import Session
 
 
@@ -15,17 +15,11 @@ def mock_session():
     return MagicMock(spec=Session)
 
 
-import pytest
-
-
 class TestProcess_Csv_File:
     """Tests for process_csv_file function."""
 
     def test_process_csv_file_success(self, mock_session, tmp_path):
         """Test successful process_csv_file execution."""
-
-        from app.utils.csv import process_csv_file
-
         # Create a temporary CSV file
         csv_content = "name,username\nJohn Doe,john_doe\nJane Smith,jane_smith"
         csv_file = tmp_path / "test_users.csv"
@@ -50,8 +44,6 @@ class TestProcess_Csv_File:
 
     def test_process_csv_file_error(self, mock_session, tmp_path):
         """Test process_csv_file error handling."""
-        from app.utils.csv import process_csv_file
-
         # Test with non-existent file
         result = process_csv_file("non_existent_file.csv", mock_session)
 
@@ -61,16 +53,11 @@ class TestProcess_Csv_File:
         assert result["users_skipped"] == 0
 
 
-import pytest
-
-
 class TestValidate_Csv_Format:
     """Tests for validate_csv_format function."""
 
     def test_validate_csv_format_success(self, tmp_path):
         """Test successful validate_csv_format execution."""
-        from app.utils.csv import validate_csv_format
-
         # Create a temporary CSV file
         csv_content = "name,username\nJohn Doe,john_doe\nJane Smith,jane_smith"
         csv_file = tmp_path / "test_users.csv"
@@ -85,8 +72,6 @@ class TestValidate_Csv_Format:
 
     def test_validate_csv_format_error(self, tmp_path):
         """Test validate_csv_format error handling."""
-        from app.utils.csv import validate_csv_format
-
         # Test with non-existent file
         result = validate_csv_format("non_existent_file.csv")
 

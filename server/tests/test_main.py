@@ -2,10 +2,28 @@
 Tests for app.main
 """
 
+import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from app.main import *
+from app.main import (
+    active_connections,
+    active_runs,
+    cancel_active_run,
+    cleanup_profile_connection,
+    connect,
+    disconnect,
+    emit_chat_stopped,
+    get_socketio_instance,
+    join_chat,
+    leave_chat,
+    send_assistant_message,
+    send_simulation_message,
+    socket_owner,
+    stop_chat,
+    store_active_run,
+)
+from fastapi import FastAPI
 from sqlmodel import Session
 
 
@@ -15,18 +33,12 @@ def mock_session():
     return MagicMock(spec=Session)
 
 
-import pytest
-
-
 class TestCleanup_Profile_Connection:
     """Tests for cleanup_profile_connection function."""
 
     @pytest.mark.asyncio
     async def test_cleanup_profile_connection_success(self):
         """Test successful cleanup_profile_connection execution."""
-        import uuid
-
-        from app.main import cleanup_profile_connection
 
         # Mock the database session
         with patch("app.db.get_session") as mock_get_session:
@@ -49,9 +61,6 @@ class TestCleanup_Profile_Connection:
     @pytest.mark.asyncio
     async def test_cleanup_profile_connection_error(self):
         """Test cleanup_profile_connection error handling."""
-        import uuid
-
-        from app.main import cleanup_profile_connection
 
         # Mock the database session to raise an exception
         with patch("app.db.get_session") as mock_get_session:
@@ -68,17 +77,12 @@ class TestCleanup_Profile_Connection:
             mock_get_session.assert_called_once()
 
 
-import pytest
-
-
 class TestSend_Simulation_Message:
     """Tests for send_simulation_message function."""
 
     @pytest.mark.asyncio
     async def test_send_simulation_message_success(self):
         """Test successful send_simulation_message execution."""
-
-        from app.main import send_simulation_message
 
         # Mock the process_simulation_message_websocket function
         with patch(
@@ -98,8 +102,6 @@ class TestSend_Simulation_Message:
     async def test_send_simulation_message_error(self):
         """Test send_simulation_message error handling."""
 
-        from app.main import send_simulation_message
-
         # Mock the process_simulation_message_websocket function to raise an exception
         with patch(
             "app.web.simulations.process_simulation_message_websocket",
@@ -112,18 +114,12 @@ class TestSend_Simulation_Message:
             await send_simulation_message(sid, data)
 
 
-import pytest
-
-
 class TestSend_Assistant_Message:
     """Tests for send_assistant_message function."""
 
     @pytest.mark.asyncio
     async def test_send_assistant_message_success(self):
         """Test successful send_assistant_message execution."""
-        import uuid
-
-        from app.main import send_assistant_message
 
         # Mock the process_assistant_message_websocket function
         with patch(
@@ -143,9 +139,6 @@ class TestSend_Assistant_Message:
     @pytest.mark.asyncio
     async def test_send_assistant_message_error(self):
         """Test send_assistant_message error handling."""
-        import uuid
-
-        from app.main import send_assistant_message
 
         # Mock the process_assistant_message_websocket function to raise an exception
         with patch(
@@ -160,17 +153,12 @@ class TestSend_Assistant_Message:
             await send_assistant_message(sid, data)
 
 
-import pytest
-
-
 class TestConnect:
     """Tests for connect function."""
 
     @pytest.mark.asyncio
     async def test_connect_success(self):
         """Test successful connect execution."""
-
-        from app.main import connect, socket_owner
 
         # Mock the Socket.IO instance
         mock_sio = AsyncMock()
@@ -194,8 +182,6 @@ class TestConnect:
     async def test_connect_error(self):
         """Test connect error handling."""
 
-        from app.main import connect
-
         # Mock the Socket.IO instance to raise an exception
         mock_sio = AsyncMock()
         mock_sio.emit.side_effect = Exception("Socket.IO error")
@@ -210,17 +196,12 @@ class TestConnect:
                 await connect(sid, environ, auth)
 
 
-import pytest
-
-
 class TestDisconnect:
     """Tests for disconnect function."""
 
     @pytest.mark.asyncio
     async def test_disconnect_success(self):
         """Test successful disconnect execution."""
-
-        from app.main import active_connections, disconnect
 
         # Add a test client to active_connections first
         test_sid = "test_sid"
@@ -239,8 +220,6 @@ class TestDisconnect:
     async def test_disconnect_error(self):
         """Test disconnect error handling."""
 
-        from app.main import active_connections, disconnect
-
         # Add a test client to active_connections first
         test_sid = "test_sid"
         active_connections["test_chat_id"] = test_sid
@@ -256,17 +235,12 @@ class TestDisconnect:
             assert "test_chat_id" not in active_connections
 
 
-import pytest
-
-
 class TestJoin_Chat:
     """Tests for join_chat function."""
 
     @pytest.mark.asyncio
     async def test_join_chat_success(self):
         """Test successful join_chat execution."""
-
-        from app.main import join_chat
 
         # Mock the Socket.IO instance
         mock_sio = AsyncMock()
@@ -284,8 +258,6 @@ class TestJoin_Chat:
     async def test_join_chat_error(self):
         """Test join_chat error handling."""
 
-        from app.main import join_chat
-
         # Mock the Socket.IO instance to raise an exception
         mock_sio = AsyncMock()
         mock_sio.enter_room.side_effect = Exception("Socket.IO error")
@@ -299,17 +271,12 @@ class TestJoin_Chat:
                 await join_chat(sid, data)
 
 
-import pytest
-
-
 class TestLeave_Chat:
     """Tests for leave_chat function."""
 
     @pytest.mark.asyncio
     async def test_leave_chat_success(self):
         """Test successful leave_chat execution."""
-
-        from app.main import leave_chat
 
         # Mock the Socket.IO instance
         mock_sio = AsyncMock()
@@ -327,8 +294,6 @@ class TestLeave_Chat:
     async def test_leave_chat_error(self):
         """Test leave_chat error handling."""
 
-        from app.main import leave_chat
-
         # Mock the Socket.IO instance to raise an exception
         mock_sio = AsyncMock()
         mock_sio.leave_room.side_effect = Exception("Socket.IO error")
@@ -342,15 +307,11 @@ class TestLeave_Chat:
                 await leave_chat(sid, data)
 
 
-import pytest
-
-
 class TestStore_Active_Run:
     """Tests for store_active_run function."""
 
     def test_store_active_run_success(self):
         """Test successful store_active_run execution."""
-        from app.main import active_runs, store_active_run
 
         # Clear any existing runs
         active_runs.clear()
@@ -366,7 +327,6 @@ class TestStore_Active_Run:
 
     def test_store_active_run_error(self):
         """Test store_active_run error handling."""
-        from app.main import active_runs, store_active_run
 
         # Clear any existing runs
         active_runs.clear()
@@ -385,17 +345,11 @@ class TestStore_Active_Run:
         assert active_runs[chat_id] == new_run_id
 
 
-import pytest
-
-
 class TestCancel_Active_Run:
     """Tests for cancel_active_run function."""
 
     def test_cancel_active_run_success(self):
         """Test successful cancel_active_run execution."""
-        from unittest.mock import MagicMock
-
-        from app.main import active_runs, cancel_active_run
 
         # Clear any existing runs and add a test run
         active_runs.clear()
@@ -413,7 +367,6 @@ class TestCancel_Active_Run:
 
     def test_cancel_active_run_error(self):
         """Test cancel_active_run error handling."""
-        from app.main import active_runs, cancel_active_run
 
         # Clear any existing runs
         active_runs.clear()
@@ -426,17 +379,12 @@ class TestCancel_Active_Run:
         assert result is False
 
 
-import pytest
-
-
 class TestEmit_Chat_Stopped:
     """Tests for emit_chat_stopped function."""
 
     @pytest.mark.asyncio
     async def test_emit_chat_stopped_success(self):
         """Test successful emit_chat_stopped execution."""
-
-        from app.main import emit_chat_stopped
 
         # Mock the Socket.IO instance
         mock_sio = AsyncMock()
@@ -462,8 +410,6 @@ class TestEmit_Chat_Stopped:
     async def test_emit_chat_stopped_error(self):
         """Test emit_chat_stopped error handling."""
 
-        from app.main import emit_chat_stopped
-
         # Mock the Socket.IO instance to raise an exception
         mock_sio = AsyncMock()
         mock_sio.emit.side_effect = Exception("Socket.IO error")
@@ -477,17 +423,12 @@ class TestEmit_Chat_Stopped:
                 await emit_chat_stopped(chat_id, chat_type)
 
 
-import pytest
-
-
 class TestStop_Chat:
     """Tests for stop_chat function."""
 
     @pytest.mark.asyncio
     async def test_stop_chat_success(self):
         """Test successful stop_chat execution."""
-
-        from app.main import active_runs, stop_chat
 
         # Clear any existing runs and add a test run
         active_runs.clear()
@@ -515,8 +456,6 @@ class TestStop_Chat:
     async def test_stop_chat_error(self):
         """Test stop_chat error handling."""
 
-        from app.main import active_runs, stop_chat
-
         # Clear any existing runs
         active_runs.clear()
 
@@ -533,16 +472,11 @@ class TestStop_Chat:
                 await stop_chat(sid, data)
 
 
-import pytest
-
-
 class TestGet_Socketio_Instance:
     """Tests for get_socketio_instance function."""
 
     def test_get_socketio_instance_success(self):
         """Test successful get_socketio_instance execution."""
-        from app.main import get_socketio_instance
-
         sio_instance = get_socketio_instance()
         assert sio_instance is not None
         # Verify it's the same instance as the global sio
@@ -553,14 +487,11 @@ class TestGet_Socketio_Instance:
     def test_get_socketio_instance_error(self):
         """Test get_socketio_instance error handling."""
         # This function doesn't typically have error cases, but we can test it returns the expected type
+        # type: ignore[import-untyped]
         import socketio
-        from app.main import get_socketio_instance
 
         sio_instance = get_socketio_instance()
         assert isinstance(sio_instance, socketio.AsyncServer)
-
-
-import pytest
 
 
 class TestLifespan:
@@ -569,8 +500,6 @@ class TestLifespan:
     @pytest.mark.asyncio
     async def test_lifespan_success(self):
         """Test successful lifespan execution."""
-
-        from fastapi import FastAPI
 
         app = FastAPI()
 
@@ -614,8 +543,6 @@ class TestLifespan:
     async def test_lifespan_error(self):
         """Test lifespan error handling."""
 
-        from fastapi import FastAPI
-
         app = FastAPI()
 
         # Mock the entire MCP server module to avoid singleton issues
@@ -649,9 +576,6 @@ class TestLifespan:
 
             # Verify that init_db was called even when session manager fails
             mock_init_db.assert_called_once()
-
-
-import pytest
 
 
 class TestRoot_Info:

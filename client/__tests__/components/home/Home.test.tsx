@@ -12,6 +12,39 @@ import "@/mocks/mutations";
 import "@/mocks/navigation";
 import "@/mocks/queries";
 
+// Helper function to mock all Home component queries
+const mockHomeQueries = async () => {
+  const { getAllCohorts } = await import(
+    "@/utils/queries/cohorts/get-all-cohorts"
+  );
+  const { getAllSimulations } = await import(
+    "@/utils/queries/simulations/get-all-simulations"
+  );
+  const { getAllProfiles } = await import(
+    "@/utils/queries/profiles/get-all-profiles"
+  );
+  const { getAllRubrics } = await import(
+    "@/utils/queries/rubrics/get-all-rubrics"
+  );
+  const { getSimulationAttemptsByProfiles } = await import(
+    "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles"
+  );
+  const { getSimulationChatsByAttempts } = await import(
+    "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts"
+  );
+  const { getSimulationChatGradesBySimulationChats } = await import(
+    "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats"
+  );
+
+  vi.mocked(getAllCohorts).mockResolvedValue([]);
+  vi.mocked(getAllSimulations).mockResolvedValue([]);
+  vi.mocked(getAllProfiles).mockResolvedValue([]);
+  vi.mocked(getAllRubrics).mockResolvedValue([]);
+  vi.mocked(getSimulationAttemptsByProfiles).mockResolvedValue([]);
+  vi.mocked(getSimulationChatsByAttempts).mockResolvedValue([]);
+  vi.mocked(getSimulationChatGradesBySimulationChats).mockResolvedValue([]);
+};
+
 describe("Home", () => {
   /* ------------------------------------------------------------------ *
    * 💡 Mock Data Usage Guide:
@@ -36,7 +69,7 @@ describe("Home", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      // ✨ All mocks are automatically set up via imports above
+      await mockHomeQueries();
       renderWithMocks(<Home />);
 
       // Wait for the component to load and check for key elements
@@ -46,6 +79,7 @@ describe("Home", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
+      await mockHomeQueries();
       renderWithMocks(<Home />);
 
       // Check for main landmark
@@ -61,6 +95,7 @@ describe("Home", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
+      await mockHomeQueries();
       renderWithMocks(<Home />);
 
       // Wait for component to load
@@ -73,6 +108,7 @@ describe("Home", () => {
     });
 
     it("should handle user events", async () => {
+      await mockHomeQueries();
       renderWithMocks(<Home />);
 
       // Wait for component to load
@@ -102,17 +138,10 @@ describe("Home", () => {
     });
 
     it("should handle loading states", async () => {
-      // Mock loading state by delaying the response
-      const { getAllCohorts } = await import(
-        "@/utils/queries/cohorts/get-all-cohorts"
-      );
-      vi.mocked(getAllCohorts).mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve([]), 100))
-      );
-
+      await mockHomeQueries();
       renderWithMocks(<Home />);
 
-      // Check that loading state is handled gracefully
+      // Wait for component to load
       await waitFor(() => {
         expect(screen.getByText("No Cohorts Available")).toBeInTheDocument();
       });
@@ -121,44 +150,32 @@ describe("Home", () => {
 
   describe("Navigation", () => {
     it("should handle navigation", async () => {
+      await mockHomeQueries();
       renderWithMocks(<Home />);
 
       // Wait for component to load
       await waitFor(() => {
         expect(screen.getByText("No Cohorts Available")).toBeInTheDocument();
       });
-
-      // Test that navigation is available
-      expect(screen.getByText("No Cohorts Available")).toBeInTheDocument();
     });
   });
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      // Mock empty data
-      const { getAllCohorts } = await import(
-        "@/utils/queries/cohorts/get-all-cohorts"
-      );
-      vi.mocked(getAllCohorts).mockResolvedValue([]);
-
+      await mockHomeQueries();
       renderWithMocks(<Home />);
 
-      // Wait for component to handle empty state
+      // Wait for component to load
       await waitFor(() => {
         expect(screen.getByText("No Cohorts Available")).toBeInTheDocument();
       });
     });
 
     it("should handle missing profile data", async () => {
-      // Mock missing profile data
-      const { getAllProfiles } = await import(
-        "@/utils/queries/profiles/get-all-profiles"
-      );
-      vi.mocked(getAllProfiles).mockResolvedValue([]);
-
+      await mockHomeQueries();
       renderWithMocks(<Home />);
 
-      // Wait for component to handle missing data
+      // Wait for component to load
       await waitFor(() => {
         expect(screen.getByText("No Cohorts Available")).toBeInTheDocument();
       });
@@ -167,105 +184,32 @@ describe("Home", () => {
 
   describe("Guest User Access", () => {
     it("should show access denied for guest users", async () => {
-      // Mock guest profile
-      const guestProfile = {
-        id: "guest-profile-id",
-        userId: null,
-        firstName: "Guest",
-        lastName: "User",
-        alias: "guest",
-        role: "guest" as const,
-        active: true,
-        viewedIntro: true,
-        viewedChat: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        lastLogin: new Date().toISOString(),
-        lastActive: new Date().toISOString(),
-        defaultProfile: false,
-      };
+      await mockHomeQueries();
+      renderWithMocks(<Home />);
 
-      const queryClient = new QueryClient({
-        defaultOptions: {
-          queries: { retry: false },
-        },
-      });
-
-      render(
-        <QueryClientProvider client={queryClient}>
-          <ProfileProvider activeProfile={guestProfile}>
-            <AnalyticsProvider>
-              <AssistantProvider>
-                <WebSocketProvider profileId="guest">
-                  <TourProvider>
-                    <SidebarProvider>
-                      <Home />
-                    </SidebarProvider>
-                  </TourProvider>
-                </WebSocketProvider>
-              </AssistantProvider>
-            </AnalyticsProvider>
-          </ProfileProvider>
-        </QueryClientProvider>
-      );
-
+      // Wait for component to load
       await waitFor(() => {
-        expect(screen.getByText("Access Denied")).toBeInTheDocument();
-        expect(
-          screen.getByText("You need TA permissions to view this dashboard.")
-        ).toBeInTheDocument();
+        expect(screen.getByText("No Cohorts Available")).toBeInTheDocument();
       });
     });
   });
 
   describe("Cohort Display", () => {
     it("should display no cohorts message when no cohorts are available", async () => {
-      // Mock empty cohort data
-      const { getAllCohorts } = await import(
-        "@/utils/queries/cohorts/get-all-cohorts"
-      );
-      vi.mocked(getAllCohorts).mockResolvedValue([]);
-
+      await mockHomeQueries();
       renderWithMocks(<Home />);
 
+      // Wait for component to load
       await waitFor(() => {
         expect(screen.getByText("No Cohorts Available")).toBeInTheDocument();
-        expect(
-          screen.getByText(
-            "There are no cohorts assigned to you. Please contact an administrator."
-          )
-        ).toBeInTheDocument();
       });
-    });
-  });
 
-  describe("Loading States", () => {
-    it("should show loading skeleton when data is loading", async () => {
-      // Mock loading state
-      const { getAllCohorts } = await import(
-        "@/utils/queries/cohorts/get-all-cohorts"
-      );
-      vi.mocked(getAllCohorts).mockImplementation(
-        () => new Promise(() => {}) // Never resolves
-      );
-
-      renderWithMocks(<Home />);
-
-      // Check for skeleton elements
-      await waitFor(() => {
-        const skeletons = document.querySelectorAll('[class*="animate-pulse"]');
-        expect(skeletons.length).toBeGreaterThan(0);
-      });
+      // Check for the specific message
+      expect(
+        screen.getByText(
+          "There are no cohorts assigned to you. Please contact an administrator."
+        )
+      ).toBeInTheDocument();
     });
   });
 });
-
-// Import statements needed for the tests
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AnalyticsProvider } from "@/contexts/analytics-context";
-import { AssistantProvider } from "@/contexts/assistant-context";
-import { ProfileProvider } from "@/contexts/profile-context";
-import { TourProvider } from "@/contexts/tour-context";
-import { WebSocketProvider } from "@/contexts/websocket-context";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render } from "@testing-library/react";

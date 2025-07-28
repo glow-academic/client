@@ -9,6 +9,25 @@ import "@/mocks/api";
 import "@/mocks/mutations";
 import "@/mocks/queries";
 
+// Mock React Query to return empty arrays for parameters and parameter-items
+vi.mock("@tanstack/react-query", () => ({
+  useQuery: vi.fn(({ queryKey }) => {
+    if (queryKey[0] === "parameters") {
+      return { data: [], isLoading: false };
+    }
+    if (queryKey[0] === "parameter-items") {
+      return { data: [], isLoading: false };
+    }
+    if (queryKey[0] === "scenarios") {
+      return { data: [], isLoading: false };
+    }
+    return { data: null, isLoading: false };
+  }),
+  useQueryClient: vi.fn(() => ({
+    invalidateQueries: vi.fn(),
+  })),
+}));
+
 describe("Parameters", () => {
   /* ------------------------------------------------------------------ *
    * 💡 Mock Data Usage Guide:

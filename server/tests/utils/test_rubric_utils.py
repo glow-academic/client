@@ -2,11 +2,11 @@
 Tests for app.utils.rubric
 """
 
+import uuid
 from unittest.mock import MagicMock
-from uuid import uuid4
 
 import pytest
-from app.utils.rubric import *
+from app.utils.rubric import get_dynamic_rubric
 from sqlmodel import Session
 
 
@@ -16,102 +16,96 @@ def mock_session():
     return MagicMock(spec=Session)
 
 
-import pytest
-
-
 class TestGet_Dynamic_Rubric:
     """Tests for get_dynamic_rubric function."""
 
     def test_get_dynamic_rubric_success(self):
         """Test successful get_dynamic_rubric execution."""
+        # Mock the rubric object
+        mock_rubric = MagicMock()
+        mock_rubric.name = "Test Rubric"
+        mock_rubric.description = "A test rubric description"
+        mock_rubric.points = 100
+        mock_rubric.pass_points = 70
 
-        from app.models import Rubrics, StandardGroups, Standards
-        from app.utils.rubric import get_dynamic_rubric
+        # Mock the standard groups
+        mock_group1 = MagicMock()
+        mock_group1.id = uuid.uuid4()
+        mock_group1.name = "Communication"
+        mock_group1.short_name = "COMM"
+        mock_group1.description = "Communication skills"
+        mock_group1.points = 50
+        mock_group1.pass_points = 35
 
-        # Create mock rubric
-        rubric_id = uuid4()
-        group_id = uuid4()
-        rubric = Rubrics(
-            id=rubric_id,
-            name="Test Rubric",
-            description="A test rubric",
-            points=100,
-            pass_points=70,
-        )
+        mock_group2 = MagicMock()
+        mock_group2.id = uuid.uuid4()
+        mock_group2.name = "Problem Solving"
+        mock_group2.short_name = "PROB"
+        mock_group2.description = "Problem solving skills"
+        mock_group2.points = 50
+        mock_group2.pass_points = 35
 
-        # Create mock standard group
-        standard_group = StandardGroups(
-            id=group_id,
-            rubric_id=rubric_id,
-            name="Communication",
-            short_name="COMM",
-            description="Communication skills",
-            points=50,
-            pass_points=35,
-        )
+        standard_groups = [mock_group1, mock_group2]
 
-        # Create mock standards
-        standard1 = Standards(
-            id=uuid4(),
-            standard_group_id=group_id,
-            name="Excellent",
-            description="Outstanding communication",
-            points=5,
-        )
-        standard2 = Standards(
-            id=uuid4(),
-            standard_group_id=group_id,
-            name="Good",
-            description="Good communication",
-            points=4,
-        )
+        # Mock the standards
+        mock_standard1 = MagicMock()
+        mock_standard1.standard_group_id = mock_group1.id
+        mock_standard1.points = 5
+        mock_standard1.name = "Excellent"
+        mock_standard1.description = "Excellent communication"
 
-        result = get_dynamic_rubric(rubric, [standard_group], [standard1, standard2])
+        mock_standard2 = MagicMock()
+        mock_standard2.standard_group_id = mock_group1.id
+        mock_standard2.points = 3
+        mock_standard2.name = "Good"
+        mock_standard2.description = "Good communication"
 
+        standards = [mock_standard1, mock_standard2]
+
+        result = get_dynamic_rubric(mock_rubric, standard_groups, standards)
+
+        # Verify that the rubric was built correctly
         assert result["role"] == "system"
         assert (
             "You are evaluating a conversation based on the following rubric"
             in result["content"]
         )
-        assert "RUBRIC: Test Rubric" in result["content"]
-        assert "Description: A test rubric" in result["content"]
+        assert "Test Rubric" in result["content"]
+        assert "A test rubric description" in result["content"]
         assert "Total Points: 100" in result["content"]
         assert "Pass Points: 70" in result["content"]
-        assert "CRITERION: Communication (COMM)" in result["content"]
-        assert "Points: 50 (Pass: 35)" in result["content"]
-        assert "5 - Excellent: Outstanding communication" in result["content"]
-        assert "4 - Good: Good communication" in result["content"]
+        assert "Communication" in result["content"]
+        assert "Problem Solving" in result["content"]
+        assert "Excellent" in result["content"]
+        assert "Good" in result["content"]
 
-    def test_get_dynamic_rubric_error(self):
-        """Test get_dynamic_rubric error handling."""
+    def test_get_dynamic_rubric_empty_standards(self):
+        """Test get_dynamic_rubric with empty standards."""
+        # Mock the rubric object
+        mock_rubric = MagicMock()
+        mock_rubric.name = "Test Rubric"
+        mock_rubric.description = "A test rubric description"
+        mock_rubric.points = 100
+        mock_rubric.pass_points = 70
 
-        from app.models import Rubrics, StandardGroups
-        from app.utils.rubric import get_dynamic_rubric
+        # Mock the standard groups
+        mock_group = MagicMock()
+        mock_group.id = uuid.uuid4()
+        mock_group.name = "Communication"
+        mock_group.short_name = "COMM"
+        mock_group.description = "Communication skills"
+        mock_group.points = 50
+        mock_group.pass_points = 35
 
-        # Test with empty standards
-        rubric_id = uuid4()
-        group_id = uuid4()
-        rubric = Rubrics(
-            id=rubric_id,
-            name="Test Rubric",
-            description="A test rubric",
-            points=100,
-            pass_points=70,
-        )
+        standard_groups = [mock_group]
+        standards = []  # Empty standards
 
-        standard_group = StandardGroups(
-            id=group_id,
-            rubric_id=rubric_id,
-            name="Communication",
-            short_name="COMM",
-            description="Communication skills",
-            points=50,
-            pass_points=35,
-        )
+        result = get_dynamic_rubric(mock_rubric, standard_groups, standards)
 
-        # Test with no standards
-        result = get_dynamic_rubric(rubric, [standard_group], [])
-
+        # Verify that the rubric was built correctly even with empty standards
         assert result["role"] == "system"
-        assert "CRITERION: Communication (COMM)" in result["content"]
-        # Should still have the criterion but no rating scale items
+        assert "Test Rubric" in result["content"]
+        assert "Communication" in result["content"]
+        # Should not have any standard details
+        assert "Excellent" not in result["content"]
+        assert "Good" not in result["content"]

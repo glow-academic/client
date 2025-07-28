@@ -1,6 +1,19 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// Mock React's use hook to avoid suspension
+vi.mock("react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react")>();
+  return {
+    ...actual,
+    use: vi.fn((promise) => {
+      if (promise instanceof Promise) {
+        return { cohortId: "test-cohort-id" };
+      }
+      return promise;
+    }),
+  };
+});
 
 // Mock CohortEdit component
 vi.mock("@/components/cohorts/CohortEdit", () => ({
@@ -31,16 +44,15 @@ describe("CohortEditPage", () => {
   });
 
   it("renders without crashing", async () => {
-    renderWithMocks(<CohortEditPage params={mockParams} />);
+    render(<CohortEditPage params={mockParams} />);
 
-    await waitFor(() => {
-      expect(screen.getByTestId("cohort-edit-component")).toBeInTheDocument();
-    });
+    // The component should render immediately since we mocked the use hook
+    expect(screen.getByTestId("cohort-edit-component")).toBeInTheDocument();
     expect(screen.getByText("Cohort Edit Component")).toBeInTheDocument();
   });
 
   it("passes cohortId to CohortEdit component", async () => {
-    renderWithMocks(<CohortEditPage params={mockParams} />);
+    render(<CohortEditPage params={mockParams} />);
 
     await waitFor(() => {
       const cohortEdit = screen.getByTestId("cohort-edit-component");
@@ -49,7 +61,7 @@ describe("CohortEditPage", () => {
   });
 
   it("renders the CohortEdit component inside a wrapper", async () => {
-    renderWithMocks(<CohortEditPage params={mockParams} />);
+    render(<CohortEditPage params={mockParams} />);
 
     await waitFor(() => {
       const wrapper = screen.getByTestId("cohort-edit-component").parentElement;

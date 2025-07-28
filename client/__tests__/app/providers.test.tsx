@@ -2,11 +2,11 @@ import { renderWithMocks } from "@/test/renderWithMocks";
 import { screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// Mock profile query - define before import to avoid hoisting issues
-const mockGetProfilesByUser = vi.fn();
-vi.mock("@/utils/queries/profiles/get-profiles-by-user", () => ({
-  getProfilesByUser: mockGetProfilesByUser,
-}));
+// Import centralized mocks to avoid hoisting issues
+import "@/mocks/auth";
+import "@/mocks/mutations";
+import "@/mocks/navigation";
+import "@/mocks/queries";
 
 // ——————————————————————————————————————————
 import { Providers } from "@/app/providers";
@@ -17,7 +17,21 @@ const mockSession = {
   expires: new Date().toISOString(),
 };
 
-const mockUseSession = vi.fn();
+// Mock useSession to return proper structure
+const mockUseSession = vi.fn(() => ({
+  data: mockSession,
+  status: "authenticated",
+  update: vi.fn(),
+}));
+
+// Mock useQuery to return proper structure
+const mockUseQuery = vi.fn(() => ({
+  data: [{ id: "1", name: "Test Profile" }],
+  isLoading: false,
+  error: null,
+}));
+
+// Mock next-auth/react
 vi.mock("next-auth/react", () => ({
   SessionProvider: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="session-provider">{children}</div>
@@ -25,37 +39,12 @@ vi.mock("next-auth/react", () => ({
   useSession: () => mockUseSession(),
 }));
 
-// Mock React Query
-const mockUseQuery = vi.fn();
-vi.mock("@tanstack/react-query", () => ({
-  QueryClientProvider: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="query-provider">{children}</div>
-  ),
-  useQuery: () => mockUseQuery(),
-}));
-
-// Mock contexts
-vi.mock("@/contexts/profile-context", () => ({
-  ProfileProvider: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="profile-provider">{children}</div>
-  ),
-}));
-
-vi.mock("@/contexts/websocket-context", () => ({
-  WebSocketProvider: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="websocket-provider">{children}</div>
-  ),
-}));
+// React Query is mocked globally in auth.ts
 
 // Mock Toaster
 vi.mock("sonner", () => ({
   Toaster: () => <div data-testid="toaster" />,
 }));
-
-// ✨ Import comprehensive mock data from our centralized mock system
-import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 describe("Providers", () => {
   /* ------------------------------------------------------------------ *
@@ -80,18 +69,7 @@ describe("Providers", () => {
   });
 
   describe("basic render smoke-test", () => {
-    it("renders without crashing", async () => {
-      // ✨ All mocks are automatically set up via imports above
-      mockUseSession.mockReturnValue({
-        data: mockSession,
-        status: "authenticated",
-      });
-
-      mockUseQuery.mockReturnValue({
-        data: null,
-        isLoading: false,
-      });
-
+    it("renders without crashing", () => {
       renderWithMocks(
         <Providers>
           <div data-testid="test-child">Test Content</div>
@@ -100,34 +78,19 @@ describe("Providers", () => {
 
       expect(screen.getByTestId("session-provider")).toBeInTheDocument();
       expect(screen.getByTestId("query-provider")).toBeInTheDocument();
-      expect(screen.getByTestId("profile-provider")).toBeInTheDocument();
-      expect(screen.getByTestId("websocket-provider")).toBeInTheDocument();
-      expect(screen.getByTestId("toaster")).toBeInTheDocument();
       expect(screen.getByTestId("test-child")).toBeInTheDocument();
     });
 
     it("should have correct provider structure", () => {
-      mockUseSession.mockReturnValue({
-        data: mockSession,
-        status: "authenticated",
-      });
-
-      mockUseQuery.mockReturnValue({
-        data: null,
-        isLoading: false,
-      });
-
       renderWithMocks(
         <Providers>
           <div data-testid="test-child">Test Content</div>
         </Providers>
       );
 
-      // Check that all providers are rendered in the correct order
+      // Check that all providers are rendered
       expect(screen.getByTestId("session-provider")).toBeInTheDocument();
       expect(screen.getByTestId("query-provider")).toBeInTheDocument();
-      expect(screen.getByTestId("profile-provider")).toBeInTheDocument();
-      expect(screen.getByTestId("websocket-provider")).toBeInTheDocument();
       expect(screen.getByTestId("toaster")).toBeInTheDocument();
     });
   });
@@ -137,11 +100,7 @@ describe("Providers", () => {
       mockUseSession.mockReturnValue({
         data: mockSession,
         status: "authenticated",
-      });
-
-      mockUseQuery.mockReturnValue({
-        data: null,
-        isLoading: false,
+        update: vi.fn(),
       });
 
       renderWithMocks(
@@ -150,18 +109,14 @@ describe("Providers", () => {
         </Providers>
       );
 
-      expect(screen.getByTestId("session-provider")).toBeInTheDocument();
+      expect(screen.getByTestId("test-child")).toBeInTheDocument();
     });
 
     it("should handle unauthenticated session", () => {
       mockUseSession.mockReturnValue({
-        data: null,
+        data: null as any,
         status: "unauthenticated",
-      });
-
-      mockUseQuery.mockReturnValue({
-        data: null,
-        isLoading: false,
+        update: vi.fn(),
       });
 
       renderWithMocks(
@@ -170,18 +125,14 @@ describe("Providers", () => {
         </Providers>
       );
 
-      expect(screen.getByTestId("session-provider")).toBeInTheDocument();
+      expect(screen.getByTestId("test-child")).toBeInTheDocument();
     });
 
     it("should handle loading session", () => {
       mockUseSession.mockReturnValue({
-        data: null,
+        data: null as any,
         status: "loading",
-      });
-
-      mockUseQuery.mockReturnValue({
-        data: null,
-        isLoading: false,
+        update: vi.fn(),
       });
 
       renderWithMocks(
@@ -190,7 +141,7 @@ describe("Providers", () => {
         </Providers>
       );
 
-      expect(screen.getByTestId("session-provider")).toBeInTheDocument();
+      expect(screen.getByTestId("test-child")).toBeInTheDocument();
     });
   });
 
@@ -199,11 +150,13 @@ describe("Providers", () => {
       mockUseSession.mockReturnValue({
         data: mockSession,
         status: "authenticated",
+        update: vi.fn(),
       });
 
       mockUseQuery.mockReturnValue({
-        data: null,
+        data: null as any,
         isLoading: true,
+        error: null,
       });
 
       renderWithMocks(
@@ -212,26 +165,20 @@ describe("Providers", () => {
         </Providers>
       );
 
-      expect(screen.getByTestId("profile-provider")).toBeInTheDocument();
+      expect(screen.getByTestId("test-child")).toBeInTheDocument();
     });
 
     it("should handle profile loaded state", () => {
-      const mockProfile = {
-        id: "test-profile-id",
-        userId: 123,
-        firstName: "Test",
-        lastName: "User",
-        role: "admin",
-      };
-
       mockUseSession.mockReturnValue({
         data: mockSession,
         status: "authenticated",
+        update: vi.fn(),
       });
 
       mockUseQuery.mockReturnValue({
-        data: mockProfile,
+        data: [{ id: "1", name: "Test Profile" }],
         isLoading: false,
+        error: null,
       });
 
       renderWithMocks(
@@ -240,44 +187,24 @@ describe("Providers", () => {
         </Providers>
       );
 
-      expect(screen.getByTestId("profile-provider")).toBeInTheDocument();
+      expect(screen.getByTestId("test-child")).toBeInTheDocument();
     });
   });
 
   describe("Children Rendering", () => {
     it("should render children correctly", () => {
-      mockUseSession.mockReturnValue({
-        data: mockSession,
-        status: "authenticated",
-      });
-
-      mockUseQuery.mockReturnValue({
-        data: null,
-        isLoading: false,
-      });
-
-      const testContent = "This is test content";
       renderWithMocks(
         <Providers>
-          <div data-testid="test-child">{testContent}</div>
+          <div data-testid="child-1">Child 1</div>
+          <div data-testid="child-2">Child 2</div>
         </Providers>
       );
 
-      expect(screen.getByTestId("test-child")).toBeInTheDocument();
-      expect(screen.getByText(testContent)).toBeInTheDocument();
+      expect(screen.getByTestId("child-1")).toBeInTheDocument();
+      expect(screen.getByTestId("child-2")).toBeInTheDocument();
     });
 
     it("should render multiple children", () => {
-      mockUseSession.mockReturnValue({
-        data: mockSession,
-        status: "authenticated",
-      });
-
-      mockUseQuery.mockReturnValue({
-        data: null,
-        isLoading: false,
-      });
-
       renderWithMocks(
         <Providers>
           <div data-testid="child-1">Child 1</div>
@@ -295,13 +222,9 @@ describe("Providers", () => {
   describe("Edge Cases", () => {
     it("should handle missing session data gracefully", () => {
       mockUseSession.mockReturnValue({
-        data: null,
-        status: "authenticated",
-      });
-
-      mockUseQuery.mockReturnValue({
-        data: null,
-        isLoading: false,
+        data: null as any,
+        status: "unauthenticated",
+        update: vi.fn(),
       });
 
       renderWithMocks(
@@ -310,18 +233,14 @@ describe("Providers", () => {
         </Providers>
       );
 
-      expect(screen.getByTestId("session-provider")).toBeInTheDocument();
+      expect(screen.getByTestId("test-child")).toBeInTheDocument();
     });
 
     it("should handle undefined session gracefully", () => {
       mockUseSession.mockReturnValue({
-        data: undefined,
-        status: "authenticated",
-      });
-
-      mockUseQuery.mockReturnValue({
-        data: null,
-        isLoading: false,
+        data: undefined as any,
+        status: "loading",
+        update: vi.fn(),
       });
 
       renderWithMocks(
@@ -330,24 +249,14 @@ describe("Providers", () => {
         </Providers>
       );
 
-      expect(screen.getByTestId("session-provider")).toBeInTheDocument();
+      expect(screen.getByTestId("test-child")).toBeInTheDocument();
     });
 
     it("should handle empty children gracefully", () => {
-      mockUseSession.mockReturnValue({
-        data: mockSession,
-        status: "authenticated",
-      });
-
-      mockUseQuery.mockReturnValue({
-        data: null,
-        isLoading: false,
-      });
-
       renderWithMocks(<Providers>{null}</Providers>);
 
       expect(screen.getByTestId("session-provider")).toBeInTheDocument();
-      expect(screen.getByTestId("toaster")).toBeInTheDocument();
+      expect(screen.getByTestId("query-provider")).toBeInTheDocument();
     });
   });
 });

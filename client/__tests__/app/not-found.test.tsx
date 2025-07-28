@@ -12,6 +12,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mockPush,
   }),
+  usePathname: () => "/not-found",
 }));
 
 // Mock profile context
@@ -157,7 +158,7 @@ describe("NotFound", () => {
       ).toBeInTheDocument();
       expect(
         screen.getByText(
-          "Please check the URL or use the button below to return to the main application."
+          "If you believe this is an error, please contact support or try refreshing the page."
         )
       ).toBeInTheDocument();
     });
