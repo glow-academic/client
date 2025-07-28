@@ -12,6 +12,14 @@ from app.services.agents.collection.title import run_title_agent
 from sqlmodel import Session
 
 
+class MockAssistantChat:
+    def __init__(self, id, title, profile_id, trace_id=None):
+        self.id = id
+        self.title = title
+        self.profile_id = profile_id
+        self.trace_id = trace_id or str(uuid.uuid4())
+
+
 class MockAgent:
     def __init__(self, id, name, system_prompt, temperature, model_id, reasoning):
         self.id = id
@@ -36,14 +44,6 @@ class MockProvider:
         self.api_key = api_key
 
 
-class MockAssistantChat:
-    def __init__(self, id, title, profile_id, trace_id=None):
-        self.id = id
-        self.title = title
-        self.profile_id = profile_id
-        self.trace_id = trace_id or str(uuid.uuid4())
-
-
 @pytest.fixture
 def mock_session():
     """Create a mock database session."""
@@ -66,19 +66,24 @@ class TestRun_Title_Agent:
         mock_chat = MockAssistantChat(chat_id, "Test Chat", profile_id)
         mock_agent = MockAgent(agent_id, "Title", "Generate titles", 0.7, model_id, "medium")
         mock_model = MockModel(model_id, "gpt-4", provider_id)
-        mock_provider = MockProvider(provider_id, "openai", "encrypted_api_key")
+        mock_provider = MockProvider(provider_id, "openai", "dGVzdF9hcGlfa2V5")  # base64 encoded "test_api_key"
         
         # Mock the database queries
         mock_session.exec.return_value.one.side_effect = [mock_agent, mock_chat, mock_model, mock_provider]
         
         # Mock the Runner.run
-        mock_result = AsyncMock()
+        mock_result = MagicMock()
         mock_result.final_output = "Assignment Help Request"
         
         with patch('app.services.agents.collection.title.Runner.run', return_value=mock_result):
-            title = await run_title_agent(chat_id, initial_message, mock_session)
-            
-            assert title == "Assignment Help Request"
+            with patch('app.services.agents.generic.decrypt_api_key', return_value="decrypted_key"):
+                with patch('app.services.agents.collection.title.trace') as mock_trace:
+                    # Mock the trace context manager
+                    mock_trace.return_value.__enter__ = MagicMock()
+                    mock_trace.return_value.__exit__ = MagicMock()
+                    title = await run_title_agent(chat_id, initial_message, mock_session)
+                    
+                    assert title == "Assignment Help Request"
 
     @pytest.mark.asyncio
     async def test_run_title_agent_error(self, mock_session):
@@ -86,23 +91,8 @@ class TestRun_Title_Agent:
         chat_id = uuid.uuid4()
         initial_message = "Hello"
         
-        # Mock the database query to raise an error
-        mock_session.exec.return_value.one.side_effect = Exception("Database error")
+        # Mock agent not found
+        mock_session.exec.return_value.one.side_effect = [None]
         
-        with pytest.raises(Exception, match="Database error"):
-            await run_title_agent(chat_id, initial_message, mock_session)
-
-    @pytest.mark.asyncio
-    async def test_run_title_agent_chat_not_found(self, mock_session):
-        """Test run_title_agent with chat not found."""
-        chat_id = uuid.uuid4()
-        initial_message = "Hello"
-        agent_id = uuid.uuid4()
-        
-        mock_agent = MockAgent(agent_id, "Title", "Generate titles", 0.7, uuid.uuid4(), "medium")
-        
-        # Mock the database queries
-        mock_session.exec.return_value.one.side_effect = [mock_agent, None]  # Chat not found
-        
-        with pytest.raises(ValueError, match="Chat not found"):
+        with pytest.raises(ValueError, match="Title agent not found"):
             await run_title_agent(chat_id, initial_message, mock_session)

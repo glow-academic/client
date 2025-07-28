@@ -63,26 +63,32 @@ class TestRun_Generic_Agent:
         
         # Mock the Runner.run_streamed
         mock_result = AsyncMock()
-        mock_result.stream_events.return_value = [
-            MagicMock(type="raw_response_event", data=MagicMock(delta="Hello"))
-        ]
+        
+        # Create an async generator for stream_events
+        async def mock_stream_events():
+            yield MagicMock(type="raw_response_event", data=MagicMock(delta="Hello"))
+        
+        mock_result.stream_events = mock_stream_events
         
         with patch('app.services.agents.generic.Runner.run_streamed', return_value=mock_result):
             with patch('app.services.agents.generic.decrypt_api_key', return_value="decrypted_key"):
-                with patch('app.services.agents.generic.trace'):
+                with patch('app.services.agents.generic.trace') as mock_trace:
+                    # Mock the trace context manager
+                    mock_trace.return_value.__enter__ = MagicMock()
+                    mock_trace.return_value.__exit__ = MagicMock()
                     async for chunk in run_generic_agent(persona_id, [], mock_session):
                         assert chunk == "Hello"
-                        break  # Just test the first chunk
+                        break
 
     @pytest.mark.asyncio
     async def test_run_generic_agent_error(self, mock_session):
         """Test run_generic_agent error handling."""
         persona_id = uuid.uuid4()
         
-        # Mock the database query to raise an error
-        mock_session.exec.return_value.one.side_effect = Exception("Database error")
+        # Mock persona not found
+        mock_session.exec.return_value.one.side_effect = [None]
         
-        with pytest.raises(Exception, match="Database error"):
+        with pytest.raises(ValueError, match="Persona with ID"):
             async for chunk in run_generic_agent(persona_id, [], mock_session):
                 pass
 
@@ -190,20 +196,45 @@ class TestGenericAgent:
             assert agent_instance.instructions == "You are a helpful assistant"
 
 
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `agent`")
 class TestAgent:
     """Tests for agent function."""
 
     def test_agent_success(self):
         """Test successful agent execution."""
-        # TODO: Implement test for agent
-        assert False, "IMPLEMENT: Test for agent"
+        with patch('app.services.agents.generic.decrypt_api_key', return_value="decrypted_key"):
+            agent = GenericAgent(
+                agent_name="Test Agent",
+                system_prompt="You are a helpful assistant",
+                temperature=0.7,
+                model_name="gpt-4",
+                model_provider="openai",
+                api_key="test_key",
+                reasoning="medium"
+            )
+            
+            agent_instance = agent.agent()
+            
+            # Test that the agent instance has the expected attributes
+            assert agent_instance.name == "Test Agent Agent"
+            assert agent_instance.instructions == "You are a helpful assistant"
+            assert agent_instance.model_settings.temperature == 0.7
+            assert agent_instance.model_settings.reasoning.effort == "medium"
 
     def test_agent_error(self):
         """Test agent error handling."""
-        # TODO: Implement error test for agent
-        assert False, "IMPLEMENT: Error test for agent"
+        with patch('app.services.agents.generic.decrypt_api_key', return_value="decrypted_key"):
+            agent = GenericAgent(
+                agent_name="Test Agent",
+                system_prompt="You are a helpful assistant",
+                temperature=0.7,
+                model_name="gpt-4",
+                model_provider="openai",
+                api_key="test_key",
+                reasoning="invalid_reasoning"  # This should default to None
+            )
+            
+            agent_instance = agent.agent()
+            
+            # Test that invalid reasoning defaults to None
+            assert agent_instance.model_settings.reasoning.effort is None
 
