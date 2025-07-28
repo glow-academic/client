@@ -36,11 +36,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Rubric, Scenario } from "@/types";
 import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
 import { updateSimulation } from "@/utils/mutations/simulations/update-simulation";
+import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
+import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { GripVertical, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import {
+  SimulationScenario,
+  SimulationScenarioPicker,
+} from "./SimulationScenarioPicker";
 
 export interface SimulationProps {
   simulationId?: string;
@@ -67,7 +73,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
-    null,
+    null
   );
   const [draggedScenario, setDraggedScenario] = useState<string | null>(null);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
@@ -84,7 +90,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
       scenarioIds: [],
       active: true,
     }),
-    [],
+    []
   );
 
   const [formData, setFormData] = useState<FormData>();
@@ -108,8 +114,23 @@ export default function Simulation({ simulationId }: SimulationProps) {
     queryFn: () => getAllScenarios(),
   });
 
+  const { data: parameters = [], isLoading: isLoadingParameters } = useQuery({
+    queryKey: ["parameters"],
+    queryFn: () => getAllParameters(),
+  });
+
+  const { data: parameterItems = [], isLoading: isLoadingParameterItems } =
+    useQuery({
+      queryKey: ["parameter-items"],
+      queryFn: () => getAllParameterItems(),
+    });
+
   const isLoading =
-    isLoadingSimulation || isLoadingRubrics || isLoadingScenarios;
+    isLoadingSimulation ||
+    isLoadingRubrics ||
+    isLoadingScenarios ||
+    isLoadingParameters ||
+    isLoadingParameterItems;
 
   useEffect(() => {
     if (simulation && isEditMode) {
@@ -147,28 +168,12 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | number | boolean | string[] | null,
+    value: string | number | boolean | string[] | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
-  };
-
-  const addScenario = (scenarioId: string) => {
-    if (!formData?.scenarioIds?.includes(scenarioId)) {
-      setFormData((prev) => ({
-        ...prev,
-        scenarioIds: [...(prev?.scenarioIds || []), scenarioId],
-      }));
-    }
-  };
-
-  const removeScenario = (scenarioId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      scenarioIds: prev?.scenarioIds?.filter((id) => id !== scenarioId) || [],
-    }));
   };
 
   const handleDragStartScenario = (e: React.DragEvent, scenarioId: string) => {
@@ -270,7 +275,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
     } catch (error) {
       const targetSimulationId = simulationId || editingSimulationId;
       toast.error(
-        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsSubmitting(false);
@@ -292,7 +297,39 @@ export default function Simulation({ simulationId }: SimulationProps) {
   };
 
   const editScenario = (scenarioId: string) => {
-    router.push(`/create/scenarios/s/${scenarioId}`);
+    window.open(`/create/scenarios/s/${scenarioId}`, "_blank");
+  };
+
+  // Transform scenarios to match SimulationScenarioPicker interface
+  const transformedScenarios: SimulationScenario[] = useMemo(() => {
+    return scenarios.map((scenario) => ({
+      id: scenario.id,
+      title: scenario.name,
+      description: scenario.description,
+      active: scenario.active,
+      defaultScenario: scenario.defaultScenario,
+      practiceScenario: scenario.practiceScenario,
+      parameterItemIds: scenario.parameterItemIds || [],
+    }));
+  }, [scenarios]);
+
+  // Compute selected scenarios from formData
+  const selectedScenarios = useMemo(() => {
+    if (!formData?.scenarioIds || scenarios.length === 0) {
+      return [];
+    }
+    return transformedScenarios.filter((scenario) =>
+      formData.scenarioIds?.includes(scenario.id)
+    );
+  }, [formData?.scenarioIds, transformedScenarios, scenarios.length]);
+
+  // Handle scenario selection from picker
+  const handleScenarioSelection = (selectedScenarios: SimulationScenario[]) => {
+    const scenarioIds = selectedScenarios.map((scenario) => scenario.id);
+    setFormData((prev) => ({
+      ...prev,
+      scenarioIds,
+    }));
   };
 
   return (
@@ -381,100 +418,58 @@ export default function Simulation({ simulationId }: SimulationProps) {
                 </p>
               )}
             </div>
-            <div className="flex gap-2">
-              {formData?.scenarioIds !== undefined && !isLoading ? (
-                <Select
-                  value=""
-                  onValueChange={(value: string) => {
-                    if (value) addScenario(value);
-                  }}
-                >
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Add scenario" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {scenarios
-                      .filter(
-                        (scenario: Scenario) =>
-                          !formData.scenarioIds?.includes(scenario.id),
-                      )
-                      .map((scenario: Scenario) => (
-                        <SelectItem key={scenario.id} value={scenario.id}>
-                          {scenario.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
-            </div>
           </div>
 
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Card key={i} className="p-3 min-h-[180px]">
-                  <div className="space-y-3 h-full flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <Skeleton className="h-4 w-1/2" />
-                        <div className="flex items-center gap-2">
-                          <Skeleton className="h-6 w-6 rounded" />
-                          <Skeleton className="h-6 w-6 rounded" />
-                          <Skeleton className="h-4 w-4 rounded" />
-                        </div>
-                      </div>
-                      <div className="space-y-2 mt-2">
-                        <Skeleton className="h-3 w-full" />
-                        <div className="flex items-center gap-2">
-                          <Skeleton className="h-5 w-20 rounded" />
-                          <Skeleton className="h-5 w-20 rounded" />
-                        </div>
-                        <Skeleton className="h-5 w-16 rounded" />
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          ) : formData?.scenarioIds?.length === 0 ? (
-            <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
-              <div>
-                <p className="font-medium mb-1">No scenarios selected</p>
-              </div>
-            </div>
+            <Skeleton className="h-10 w-full" />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {formData?.scenarioIds?.map((scenarioId) => {
-                const scenario = scenarios.find(
-                  (s: Scenario) => s.id === scenarioId,
+            <SimulationScenarioPicker
+              scenarios={transformedScenarios}
+              parameters={parameters}
+              parameterItems={parameterItems}
+              label=""
+              placeholder="Select scenarios..."
+              description="Choose scenarios to include in this simulation"
+              onSelect={handleScenarioSelection}
+              selectedScenarios={selectedScenarios}
+              hideSelectedChips={true}
+              showOnlyActive={true}
+              showLabel={false}
+            />
+          )}
+
+          {/* Display selected scenarios with preview functionality */}
+          {selectedScenarios.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
+              {selectedScenarios.map((scenario) => {
+                const originalScenario = scenarios.find(
+                  (s: Scenario) => s.id === scenario.id
                 );
-                if (!scenario) return null;
+                if (!originalScenario) return null;
 
                 return (
                   <Card
-                    key={scenarioId}
+                    key={scenario.id}
                     className={`p-3 min-h-[180px] cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
-                      draggedScenario === scenarioId ? "opacity-50" : ""
+                      draggedScenario === scenario.id ? "opacity-50" : ""
                     }`}
                     draggable
-                    onDragStart={(e) => handleDragStartScenario(e, scenarioId)}
+                    onDragStart={(e) => handleDragStartScenario(e, scenario.id)}
                     onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, scenarioId)}
+                    onDrop={(e) => handleDrop(e, scenario.id)}
                   >
                     <div className="space-y-3 h-full flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium text-sm">
-                            {scenario.name || "Unnamed Scenario"}
+                            {scenario.title || "Unnamed Scenario"}
                           </h4>
                           <div className="flex items-center gap-2">
                             <Button
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => editScenario(scenarioId)}
+                              onClick={() => editScenario(scenario.id)}
                               className="h-6 w-6 p-0"
                             >
                               <Pencil className="h-3 w-3" />
@@ -483,7 +478,13 @@ export default function Simulation({ simulationId }: SimulationProps) {
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => removeScenario(scenarioId)}
+                              onClick={() => {
+                                const newSelectedScenarios =
+                                  selectedScenarios.filter(
+                                    (s) => s.id !== scenario.id
+                                  );
+                                handleScenarioSelection(newSelectedScenarios);
+                              }}
                               className="h-6 w-6 p-0"
                             >
                               <Trash2 className="h-3 w-3" />

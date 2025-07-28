@@ -1,5 +1,5 @@
-import { vi } from "vitest";
 import * as mockSchema from "@/mocks/schema";
+import { vi } from "vitest";
 
 // Generated automatically by generate-mocks.js
 
@@ -59,13 +59,13 @@ vi.mock("@/utils/mutations/agents/update-agents", () => ({
 
 // APP_FEEDBACK MUTATIONS
 export const createAppFeedbackMock = vi.fn(
-  () => mockSchema.appFeedback?.[0] || {},
+  () => mockSchema.appFeedback?.[0] || {}
 );
 export const deleteAppFeedbackMock = vi.fn(
-  () => mockSchema.appFeedback?.[0] || {},
+  () => mockSchema.appFeedback?.[0] || {}
 );
 export const updateAppFeedbackMock = vi.fn(
-  () => mockSchema.appFeedback?.[0] || {},
+  () => mockSchema.appFeedback?.[0] || {}
 );
 
 vi.mock("@/utils/mutations/app_feedback/create-app-feedback", () => ({
@@ -107,22 +107,22 @@ vi.mock("@/utils/mutations/app_logs/update-app-logs", () => ({
 
 // ASSISTANT_CHATS MUTATIONS
 export const createAssistantChatMock = vi.fn(
-  () => mockSchema.assistantChats?.[0] || {},
+  () => mockSchema.assistantChats?.[0] || {}
 );
 export const createAssistantChatsMock = vi.fn(
-  () => mockSchema.assistantChats || [],
+  () => mockSchema.assistantChats || []
 );
 export const deleteAssistantChatMock = vi.fn(
-  () => mockSchema.assistantChats?.[0] || {},
+  () => mockSchema.assistantChats?.[0] || {}
 );
 export const deleteAssistantChatsMock = vi.fn(
-  () => mockSchema.assistantChats || [],
+  () => mockSchema.assistantChats || []
 );
 export const updateAssistantChatMock = vi.fn(
-  () => mockSchema.assistantChats?.[0] || {},
+  () => mockSchema.assistantChats?.[0] || {}
 );
 export const updateAssistantChatsMock = vi.fn(
-  () => mockSchema.assistantChats || [],
+  () => mockSchema.assistantChats || []
 );
 
 vi.mock("@/utils/mutations/assistant_chats/create-assistant-chat", () => ({
@@ -146,92 +146,92 @@ vi.mock("@/utils/mutations/assistant_chats/update-assistant-chats", () => ({
 
 // ASSISTANT_MESSAGES MUTATIONS
 export const createAssistantMessageMock = vi.fn(
-  () => mockSchema.assistantMessages?.[0] || {},
+  () => mockSchema.assistantMessages?.[0] || {}
 );
 export const createAssistantMessagesMock = vi.fn(
-  () => mockSchema.assistantMessages || [],
+  () => mockSchema.assistantMessages || []
 );
 export const deleteAssistantMessageMock = vi.fn(
-  () => mockSchema.assistantMessages?.[0] || {},
+  () => mockSchema.assistantMessages?.[0] || {}
 );
 export const deleteAssistantMessagesMock = vi.fn(
-  () => mockSchema.assistantMessages || [],
+  () => mockSchema.assistantMessages || []
 );
 export const updateAssistantMessageMock = vi.fn(
-  () => mockSchema.assistantMessages?.[0] || {},
+  () => mockSchema.assistantMessages?.[0] || {}
 );
 export const updateAssistantMessagesMock = vi.fn(
-  () => mockSchema.assistantMessages || [],
+  () => mockSchema.assistantMessages || []
 );
 
 vi.mock(
   "@/utils/mutations/assistant_messages/create-assistant-message",
-  () => ({ createAssistantMessage: createAssistantMessageMock }),
+  () => ({ createAssistantMessage: createAssistantMessageMock })
 );
 vi.mock(
   "@/utils/mutations/assistant_messages/create-assistant-messages",
-  () => ({ createAssistantMessages: createAssistantMessagesMock }),
+  () => ({ createAssistantMessages: createAssistantMessagesMock })
 );
 vi.mock(
   "@/utils/mutations/assistant_messages/delete-assistant-message",
-  () => ({ deleteAssistantMessage: deleteAssistantMessageMock }),
+  () => ({ deleteAssistantMessage: deleteAssistantMessageMock })
 );
 vi.mock(
   "@/utils/mutations/assistant_messages/delete-assistant-messages",
-  () => ({ deleteAssistantMessages: deleteAssistantMessagesMock }),
+  () => ({ deleteAssistantMessages: deleteAssistantMessagesMock })
 );
 vi.mock(
   "@/utils/mutations/assistant_messages/update-assistant-message",
-  () => ({ updateAssistantMessage: updateAssistantMessageMock }),
+  () => ({ updateAssistantMessage: updateAssistantMessageMock })
 );
 vi.mock(
   "@/utils/mutations/assistant_messages/update-assistant-messages",
-  () => ({ updateAssistantMessages: updateAssistantMessagesMock }),
+  () => ({ updateAssistantMessages: updateAssistantMessagesMock })
 );
 
 // ASSISTANT_TOOL_CALLS MUTATIONS
 export const createAssistantToolCallMock = vi.fn(
-  () => mockSchema.assistantToolCalls?.[0] || {},
+  () => mockSchema.assistantToolCalls?.[0] || {}
 );
 export const createAssistantToolCallsMock = vi.fn(
-  () => mockSchema.assistantToolCalls || [],
+  () => mockSchema.assistantToolCalls || []
 );
 export const deleteAssistantToolCallMock = vi.fn(
-  () => mockSchema.assistantToolCalls?.[0] || {},
+  () => mockSchema.assistantToolCalls?.[0] || {}
 );
 export const deleteAssistantToolCallsMock = vi.fn(
-  () => mockSchema.assistantToolCalls || [],
+  () => mockSchema.assistantToolCalls || []
 );
 export const updateAssistantToolCallMock = vi.fn(
-  () => mockSchema.assistantToolCalls?.[0] || {},
+  () => mockSchema.assistantToolCalls?.[0] || {}
 );
 export const updateAssistantToolCallsMock = vi.fn(
-  () => mockSchema.assistantToolCalls || [],
+  () => mockSchema.assistantToolCalls || []
 );
 
 vi.mock(
   "@/utils/mutations/assistant_tool_calls/create-assistant-tool-call",
-  () => ({ createAssistantToolCall: createAssistantToolCallMock }),
+  () => ({ createAssistantToolCall: createAssistantToolCallMock })
 );
 vi.mock(
   "@/utils/mutations/assistant_tool_calls/create-assistant-tool-calls",
-  () => ({ createAssistantToolCalls: createAssistantToolCallsMock }),
+  () => ({ createAssistantToolCalls: createAssistantToolCallsMock })
 );
 vi.mock(
   "@/utils/mutations/assistant_tool_calls/delete-assistant-tool-call",
-  () => ({ deleteAssistantToolCall: deleteAssistantToolCallMock }),
+  () => ({ deleteAssistantToolCall: deleteAssistantToolCallMock })
 );
 vi.mock(
   "@/utils/mutations/assistant_tool_calls/delete-assistant-tool-calls",
-  () => ({ deleteAssistantToolCalls: deleteAssistantToolCallsMock }),
+  () => ({ deleteAssistantToolCalls: deleteAssistantToolCallsMock })
 );
 vi.mock(
   "@/utils/mutations/assistant_tool_calls/update-assistant-tool-call",
-  () => ({ updateAssistantToolCall: updateAssistantToolCallMock }),
+  () => ({ updateAssistantToolCall: updateAssistantToolCallMock })
 );
 vi.mock(
   "@/utils/mutations/assistant_tool_calls/update-assistant-tool-calls",
-  () => ({ updateAssistantToolCalls: updateAssistantToolCallsMock }),
+  () => ({ updateAssistantToolCalls: updateAssistantToolCallsMock })
 );
 
 // COHORTS MUTATIONS
@@ -317,22 +317,22 @@ vi.mock("@/utils/mutations/models/update-models", () => ({
 
 // PARAMETER_ITEMS MUTATIONS
 export const createParameterItemMock = vi.fn(
-  () => mockSchema.parameterItems?.[0] || {},
+  () => mockSchema.parameterItems?.[0] || {}
 );
 export const createParameterItemsMock = vi.fn(
-  () => mockSchema.parameterItems || [],
+  () => mockSchema.parameterItems || []
 );
 export const deleteParameterItemMock = vi.fn(
-  () => mockSchema.parameterItems?.[0] || {},
+  () => mockSchema.parameterItems?.[0] || {}
 );
 export const deleteParameterItemsMock = vi.fn(
-  () => mockSchema.parameterItems || [],
+  () => mockSchema.parameterItems || []
 );
 export const updateParameterItemMock = vi.fn(
-  () => mockSchema.parameterItems?.[0] || {},
+  () => mockSchema.parameterItems?.[0] || {}
 );
 export const updateParameterItemsMock = vi.fn(
-  () => mockSchema.parameterItems || [],
+  () => mockSchema.parameterItems || []
 );
 
 vi.mock("@/utils/mutations/parameter_items/create-parameter-item", () => ({
@@ -356,15 +356,15 @@ vi.mock("@/utils/mutations/parameter_items/update-parameter-items", () => ({
 
 // PARAMETERS MUTATIONS
 export const createParameterMock = vi.fn(
-  () => mockSchema.parameters?.[0] || {},
+  () => mockSchema.parameters?.[0] || {}
 );
 export const createParametersMock = vi.fn(() => mockSchema.parameters || []);
 export const deleteParameterMock = vi.fn(
-  () => mockSchema.parameters?.[0] || {},
+  () => mockSchema.parameters?.[0] || {}
 );
 export const deleteParametersMock = vi.fn(() => mockSchema.parameters || []);
 export const updateParameterMock = vi.fn(
-  () => mockSchema.parameters?.[0] || {},
+  () => mockSchema.parameters?.[0] || {}
 );
 export const updateParametersMock = vi.fn(() => mockSchema.parameters || []);
 
@@ -475,6 +475,7 @@ export const deleteRubricMock = vi.fn(() => mockSchema.rubrics?.[0] || {});
 export const deleteRubricsMock = vi.fn(() => mockSchema.rubrics || []);
 export const updateRubricMock = vi.fn(() => mockSchema.rubrics?.[0] || {});
 export const updateRubricsMock = vi.fn(() => mockSchema.rubrics || []);
+export const duplicateRubricMock = vi.fn(() => mockSchema.rubrics?.[0] || {});
 
 vi.mock("@/utils/mutations/rubrics/create-rubric", () => ({
   createRubric: createRubricMock,
@@ -493,6 +494,9 @@ vi.mock("@/utils/mutations/rubrics/update-rubric", () => ({
 }));
 vi.mock("@/utils/mutations/rubrics/update-rubrics", () => ({
   updateRubrics: updateRubricsMock,
+}));
+vi.mock("@/utils/mutations/rubrics/duplicate-rubric", () => ({
+  duplicateRubric: duplicateRubricMock,
 }));
 
 // SCENARIOS MUTATIONS
@@ -551,157 +555,157 @@ vi.mock("@/utils/mutations/sessions/update-sessions", () => ({
 
 // SIMULATION_ATTEMPTS MUTATIONS
 export const createSimulationAttemptMock = vi.fn(
-  () => mockSchema.simulationAttempts?.[0] || {},
+  () => mockSchema.simulationAttempts?.[0] || {}
 );
 export const createSimulationAttemptsMock = vi.fn(
-  () => mockSchema.simulationAttempts || [],
+  () => mockSchema.simulationAttempts || []
 );
 export const deleteSimulationAttemptMock = vi.fn(
-  () => mockSchema.simulationAttempts?.[0] || {},
+  () => mockSchema.simulationAttempts?.[0] || {}
 );
 export const deleteSimulationAttemptsMock = vi.fn(
-  () => mockSchema.simulationAttempts || [],
+  () => mockSchema.simulationAttempts || []
 );
 export const updateSimulationAttemptMock = vi.fn(
-  () => mockSchema.simulationAttempts?.[0] || {},
+  () => mockSchema.simulationAttempts?.[0] || {}
 );
 export const updateSimulationAttemptsMock = vi.fn(
-  () => mockSchema.simulationAttempts || [],
+  () => mockSchema.simulationAttempts || []
 );
 
 vi.mock(
   "@/utils/mutations/simulation_attempts/create-simulation-attempt",
-  () => ({ createSimulationAttempt: createSimulationAttemptMock }),
+  () => ({ createSimulationAttempt: createSimulationAttemptMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_attempts/create-simulation-attempts",
-  () => ({ createSimulationAttempts: createSimulationAttemptsMock }),
+  () => ({ createSimulationAttempts: createSimulationAttemptsMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_attempts/delete-simulation-attempt",
-  () => ({ deleteSimulationAttempt: deleteSimulationAttemptMock }),
+  () => ({ deleteSimulationAttempt: deleteSimulationAttemptMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_attempts/delete-simulation-attempts",
-  () => ({ deleteSimulationAttempts: deleteSimulationAttemptsMock }),
+  () => ({ deleteSimulationAttempts: deleteSimulationAttemptsMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_attempts/update-simulation-attempt",
-  () => ({ updateSimulationAttempt: updateSimulationAttemptMock }),
+  () => ({ updateSimulationAttempt: updateSimulationAttemptMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_attempts/update-simulation-attempts",
-  () => ({ updateSimulationAttempts: updateSimulationAttemptsMock }),
+  () => ({ updateSimulationAttempts: updateSimulationAttemptsMock })
 );
 
 // SIMULATION_CHAT_FEEDBACKS MUTATIONS
 export const createSimulationChatFeedbackMock = vi.fn(
-  () => mockSchema.simulationChatFeedbacks?.[0] || {},
+  () => mockSchema.simulationChatFeedbacks?.[0] || {}
 );
 export const createSimulationChatFeedbacksMock = vi.fn(
-  () => mockSchema.simulationChatFeedbacks || [],
+  () => mockSchema.simulationChatFeedbacks || []
 );
 export const deleteSimulationChatFeedbackMock = vi.fn(
-  () => mockSchema.simulationChatFeedbacks?.[0] || {},
+  () => mockSchema.simulationChatFeedbacks?.[0] || {}
 );
 export const deleteSimulationChatFeedbacksMock = vi.fn(
-  () => mockSchema.simulationChatFeedbacks || [],
+  () => mockSchema.simulationChatFeedbacks || []
 );
 export const updateSimulationChatFeedbackMock = vi.fn(
-  () => mockSchema.simulationChatFeedbacks?.[0] || {},
+  () => mockSchema.simulationChatFeedbacks?.[0] || {}
 );
 export const updateSimulationChatFeedbacksMock = vi.fn(
-  () => mockSchema.simulationChatFeedbacks || [],
+  () => mockSchema.simulationChatFeedbacks || []
 );
 
 vi.mock(
   "@/utils/mutations/simulation_chat_feedbacks/create-simulation-chat-feedback",
-  () => ({ createSimulationChatFeedback: createSimulationChatFeedbackMock }),
+  () => ({ createSimulationChatFeedback: createSimulationChatFeedbackMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_chat_feedbacks/create-simulation-chat-feedbacks",
-  () => ({ createSimulationChatFeedbacks: createSimulationChatFeedbacksMock }),
+  () => ({ createSimulationChatFeedbacks: createSimulationChatFeedbacksMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_chat_feedbacks/delete-simulation-chat-feedback",
-  () => ({ deleteSimulationChatFeedback: deleteSimulationChatFeedbackMock }),
+  () => ({ deleteSimulationChatFeedback: deleteSimulationChatFeedbackMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_chat_feedbacks/delete-simulation-chat-feedbacks",
-  () => ({ deleteSimulationChatFeedbacks: deleteSimulationChatFeedbacksMock }),
+  () => ({ deleteSimulationChatFeedbacks: deleteSimulationChatFeedbacksMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_chat_feedbacks/update-simulation-chat-feedback",
-  () => ({ updateSimulationChatFeedback: updateSimulationChatFeedbackMock }),
+  () => ({ updateSimulationChatFeedback: updateSimulationChatFeedbackMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_chat_feedbacks/update-simulation-chat-feedbacks",
-  () => ({ updateSimulationChatFeedbacks: updateSimulationChatFeedbacksMock }),
+  () => ({ updateSimulationChatFeedbacks: updateSimulationChatFeedbacksMock })
 );
 
 // SIMULATION_CHAT_GRADES MUTATIONS
 export const createSimulationChatGradeMock = vi.fn(
-  () => mockSchema.simulationChatGrades?.[0] || {},
+  () => mockSchema.simulationChatGrades?.[0] || {}
 );
 export const createSimulationChatGradesMock = vi.fn(
-  () => mockSchema.simulationChatGrades || [],
+  () => mockSchema.simulationChatGrades || []
 );
 export const deleteSimulationChatGradeMock = vi.fn(
-  () => mockSchema.simulationChatGrades?.[0] || {},
+  () => mockSchema.simulationChatGrades?.[0] || {}
 );
 export const deleteSimulationChatGradesMock = vi.fn(
-  () => mockSchema.simulationChatGrades || [],
+  () => mockSchema.simulationChatGrades || []
 );
 export const updateSimulationChatGradeMock = vi.fn(
-  () => mockSchema.simulationChatGrades?.[0] || {},
+  () => mockSchema.simulationChatGrades?.[0] || {}
 );
 export const updateSimulationChatGradesMock = vi.fn(
-  () => mockSchema.simulationChatGrades || [],
+  () => mockSchema.simulationChatGrades || []
 );
 
 vi.mock(
   "@/utils/mutations/simulation_chat_grades/create-simulation-chat-grade",
-  () => ({ createSimulationChatGrade: createSimulationChatGradeMock }),
+  () => ({ createSimulationChatGrade: createSimulationChatGradeMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_chat_grades/create-simulation-chat-grades",
-  () => ({ createSimulationChatGrades: createSimulationChatGradesMock }),
+  () => ({ createSimulationChatGrades: createSimulationChatGradesMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_chat_grades/delete-simulation-chat-grade",
-  () => ({ deleteSimulationChatGrade: deleteSimulationChatGradeMock }),
+  () => ({ deleteSimulationChatGrade: deleteSimulationChatGradeMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_chat_grades/delete-simulation-chat-grades",
-  () => ({ deleteSimulationChatGrades: deleteSimulationChatGradesMock }),
+  () => ({ deleteSimulationChatGrades: deleteSimulationChatGradesMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_chat_grades/update-simulation-chat-grade",
-  () => ({ updateSimulationChatGrade: updateSimulationChatGradeMock }),
+  () => ({ updateSimulationChatGrade: updateSimulationChatGradeMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_chat_grades/update-simulation-chat-grades",
-  () => ({ updateSimulationChatGrades: updateSimulationChatGradesMock }),
+  () => ({ updateSimulationChatGrades: updateSimulationChatGradesMock })
 );
 
 // SIMULATION_CHATS MUTATIONS
 export const createSimulationChatMock = vi.fn(
-  () => mockSchema.simulationChats?.[0] || {},
+  () => mockSchema.simulationChats?.[0] || {}
 );
 export const createSimulationChatsMock = vi.fn(
-  () => mockSchema.simulationChats || [],
+  () => mockSchema.simulationChats || []
 );
 export const deleteSimulationChatMock = vi.fn(
-  () => mockSchema.simulationChats?.[0] || {},
+  () => mockSchema.simulationChats?.[0] || {}
 );
 export const deleteSimulationChatsMock = vi.fn(
-  () => mockSchema.simulationChats || [],
+  () => mockSchema.simulationChats || []
 );
 export const updateSimulationChatMock = vi.fn(
-  () => mockSchema.simulationChats?.[0] || {},
+  () => mockSchema.simulationChats?.[0] || {}
 );
 export const updateSimulationChatsMock = vi.fn(
-  () => mockSchema.simulationChats || [],
+  () => mockSchema.simulationChats || []
 );
 
 vi.mock("@/utils/mutations/simulation_chats/create-simulation-chat", () => ({
@@ -725,60 +729,60 @@ vi.mock("@/utils/mutations/simulation_chats/update-simulation-chats", () => ({
 
 // SIMULATION_MESSAGES MUTATIONS
 export const createSimulationMessageMock = vi.fn(
-  () => mockSchema.simulationMessages?.[0] || {},
+  () => mockSchema.simulationMessages?.[0] || {}
 );
 export const createSimulationMessagesMock = vi.fn(
-  () => mockSchema.simulationMessages || [],
+  () => mockSchema.simulationMessages || []
 );
 export const deleteSimulationMessageMock = vi.fn(
-  () => mockSchema.simulationMessages?.[0] || {},
+  () => mockSchema.simulationMessages?.[0] || {}
 );
 export const deleteSimulationMessagesMock = vi.fn(
-  () => mockSchema.simulationMessages || [],
+  () => mockSchema.simulationMessages || []
 );
 export const updateSimulationMessageMock = vi.fn(
-  () => mockSchema.simulationMessages?.[0] || {},
+  () => mockSchema.simulationMessages?.[0] || {}
 );
 export const updateSimulationMessagesMock = vi.fn(
-  () => mockSchema.simulationMessages || [],
+  () => mockSchema.simulationMessages || []
 );
 
 vi.mock(
   "@/utils/mutations/simulation_messages/create-simulation-message",
-  () => ({ createSimulationMessage: createSimulationMessageMock }),
+  () => ({ createSimulationMessage: createSimulationMessageMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_messages/create-simulation-messages",
-  () => ({ createSimulationMessages: createSimulationMessagesMock }),
+  () => ({ createSimulationMessages: createSimulationMessagesMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_messages/delete-simulation-message",
-  () => ({ deleteSimulationMessage: deleteSimulationMessageMock }),
+  () => ({ deleteSimulationMessage: deleteSimulationMessageMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_messages/delete-simulation-messages",
-  () => ({ deleteSimulationMessages: deleteSimulationMessagesMock }),
+  () => ({ deleteSimulationMessages: deleteSimulationMessagesMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_messages/update-simulation-message",
-  () => ({ updateSimulationMessage: updateSimulationMessageMock }),
+  () => ({ updateSimulationMessage: updateSimulationMessageMock })
 );
 vi.mock(
   "@/utils/mutations/simulation_messages/update-simulation-messages",
-  () => ({ updateSimulationMessages: updateSimulationMessagesMock }),
+  () => ({ updateSimulationMessages: updateSimulationMessagesMock })
 );
 
 // SIMULATIONS MUTATIONS
 export const createSimulationMock = vi.fn(
-  () => mockSchema.simulations?.[0] || {},
+  () => mockSchema.simulations?.[0] || {}
 );
 export const createSimulationsMock = vi.fn(() => mockSchema.simulations || []);
 export const deleteSimulationMock = vi.fn(
-  () => mockSchema.simulations?.[0] || {},
+  () => mockSchema.simulations?.[0] || {}
 );
 export const deleteSimulationsMock = vi.fn(() => mockSchema.simulations || []);
 export const updateSimulationMock = vi.fn(
-  () => mockSchema.simulations?.[0] || {},
+  () => mockSchema.simulations?.[0] || {}
 );
 export const updateSimulationsMock = vi.fn(() => mockSchema.simulations || []);
 
@@ -803,22 +807,22 @@ vi.mock("@/utils/mutations/simulations/update-simulations", () => ({
 
 // STANDARD_GROUPS MUTATIONS
 export const createStandardGroupMock = vi.fn(
-  () => mockSchema.standardGroups?.[0] || {},
+  () => mockSchema.standardGroups?.[0] || {}
 );
 export const createStandardGroupsMock = vi.fn(
-  () => mockSchema.standardGroups || [],
+  () => mockSchema.standardGroups || []
 );
 export const deleteStandardGroupMock = vi.fn(
-  () => mockSchema.standardGroups?.[0] || {},
+  () => mockSchema.standardGroups?.[0] || {}
 );
 export const deleteStandardGroupsMock = vi.fn(
-  () => mockSchema.standardGroups || [],
+  () => mockSchema.standardGroups || []
 );
 export const updateStandardGroupMock = vi.fn(
-  () => mockSchema.standardGroups?.[0] || {},
+  () => mockSchema.standardGroups?.[0] || {}
 );
 export const updateStandardGroupsMock = vi.fn(
-  () => mockSchema.standardGroups || [],
+  () => mockSchema.standardGroups || []
 );
 
 vi.mock("@/utils/mutations/standard_groups/create-standard-group", () => ({
@@ -896,10 +900,10 @@ vi.mock("@/utils/mutations/users/update-users", () => ({
 
 // VERIFICATION_TOKEN MUTATIONS
 export const createVerificationTokenMock = vi.fn(
-  () => mockSchema.verificationToken?.[0] || {},
+  () => mockSchema.verificationToken?.[0] || {}
 );
 
 vi.mock(
   "@/utils/mutations/verification_token/create-verification-token",
-  () => ({ createVerificationToken: createVerificationTokenMock }),
+  () => ({ createVerificationToken: createVerificationTokenMock })
 );

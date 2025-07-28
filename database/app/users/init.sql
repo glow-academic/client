@@ -94,15 +94,12 @@ INSERT INTO profiles (id, first_name, last_name, alias, role) VALUES
 
 -- Admin Users
 INSERT INTO profiles (id, first_name, last_name, alias, role) VALUES
-  ('c7c6f71a-2a4b-4e87-9320-4f444a603519', 'Justin', 'Gillingham', 'jdgillin','admin');
-
-  -- Instructional Users
-INSERT INTO profiles (id, first_name, last_name, alias, role) VALUES
-  ('a1bc0cb2-c9a2-4c80-8dd5-75156eb58ce1', 'Houyame', 'Lkhider-Hudson', 'hlkhider', 'instructional'),
-  ('b44a9d96-2b2e-4bcc-88e7-58cb6214aac1', 'Quiondriya', 'Gee', 'qgee', 'instructional'),
-  ('34a3c43e-27ee-4924-9f61-be4ac9e370f2', 'Jonathan', 'Morris', 'morrisjb', 'instructional'),
-  ('fed71b5d-6170-4462-b919-e992f7716338', 'Max', 'Rees', 'mcrees', 'instructional'),
-  ('37ed3d71-c381-4933-a1eb-66e3d4e0b0ac', 'Nicholas', 'Brasovan', 'nbrasova', 'instructional');
+  ('c7c6f71a-2a4b-4e87-9320-4f444a603519', 'Justin', 'Gillingham', 'jdgillin','admin')
+  ('a1bc0cb2-c9a2-4c80-8dd5-75156eb58ce1', 'Houyame', 'Lkhider-Hudson', 'hlkhider', 'admin'),
+  ('b44a9d96-2b2e-4bcc-88e7-58cb6214aac1', 'Quiondriya', 'Gee', 'qgee', 'admin'),
+  ('34a3c43e-27ee-4924-9f61-be4ac9e370f2', 'Jonathan', 'Morris', 'morrisjb', 'admin'),
+  ('fed71b5d-6170-4462-b919-e992f7716338', 'Max', 'Rees', 'mcrees', 'admin'),
+  ('37ed3d71-c381-4933-a1eb-66e3d4e0b0ac', 'Nicholas', 'Brasovan', 'nbrasova', 'admin');
 
 -- TAs for CS 180 (Problem Solving And Object-Oriented Programming)
 INSERT INTO profiles (id, first_name, last_name, alias, role) VALUES

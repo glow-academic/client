@@ -70,10 +70,9 @@ export default function Rubrics() {
 
   // Check if user can edit (admin/superadmin or rubric not in use)
   const canEditRubric = (rubricId: string) => {
-    const isAdmin =
-      effectiveProfile?.role === "admin" ||
+    const isSuperAdmin =
       effectiveProfile?.role === "superadmin";
-    return isAdmin || !isRubricInUse(rubricId);
+    return isSuperAdmin || !isRubricInUse(rubricId);
   };
 
   // Get table columns and filter options

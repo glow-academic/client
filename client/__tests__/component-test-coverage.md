@@ -1,8 +1,8 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 270
-- **Tests Created**: 0
+- **Total Components**: 271
+- **Tests Created**: 1
 - **Tests Updated**: 0
 - **Tests Skipped** (already implemented): 270
 
@@ -102,6 +102,7 @@
 | ScenarioSlider | components/common/scenario/ScenarioSlider.tsx | ScenarioSlider.test.tsx | ✅ Implemented |
 | Simulation | components/common/simulation/Simulation.tsx | Simulation.test.tsx | ✅ Implemented |
 | SimulationCard | components/common/simulation/SimulationCard.tsx | SimulationCard.test.tsx | ✅ Implemented |
+| SimulationScenarioPicker | components/common/simulation/SimulationScenarioPicker.tsx | SimulationScenarioPicker.test.tsx | ✅ Implemented |
 | Documents | components/create/documents/Documents.tsx | Documents.test.tsx | ✅ Implemented |
 | DocumentsDataTable | components/create/documents/DocumentsDataTable.tsx | DocumentsDataTable.test.tsx | ✅ Implemented |
 | DocumentsDataTableToolbar | components/create/documents/DocumentsDataTableToolbar.tsx | DocumentsDataTableToolbar.test.tsx | ✅ Implemented |
@@ -403,6 +404,7 @@ __tests__/
 │   │   ├── simulation/
 │   │   │   ├── Simulation.test.tsx
 │   │   │   ├── SimulationCard.test.tsx
+│   │   │   ├── SimulationScenarioPicker.test.tsx
 │   ├── create/
 │   │   ├── documents/
 │   │   │   ├── Documents.test.tsx

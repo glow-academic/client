@@ -1,6 +1,6 @@
 /**
- * SimulationPicker.tsx
- * Used to pick a certain item as part of the simulation
+ * ScenarioPicker.tsx
+ * Used to pick a certain item as part of the scenario
  * @AshokSaravanan222 & @siladiea
  * 05/20/2025
  */
