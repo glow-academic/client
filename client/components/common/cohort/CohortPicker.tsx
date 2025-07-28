@@ -133,7 +133,7 @@ export function CohortPicker({
       <Popover open={open} onOpenChange={setOpen} {...props}>
         <PopoverTrigger asChild>
           <Button
-            variant="outline"
+            variant="secondary"
             role="combobox"
             aria-expanded={open}
             aria-label="Select cohorts"

@@ -5,7 +5,6 @@
  * 07/20/2025
  */
 "use client";
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -13,10 +12,10 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { logError, logInfo } from "@/utils/logger";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -28,20 +27,19 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Cohort, CohortPicker } from "../common/cohort/CohortPicker";
 import SimulationProgress from "../common/cohort/SimulationProgress";
 import SimulationHistory from "../common/history/SimulationHistory";
 import SimulationCard from "../common/simulation/SimulationCard";
 
 export default function Home() {
   const { effectiveProfile, activeProfile } = useProfile();
-  const [selectedCohorts, setSelectedCohorts] = useState<Cohort[]>([]);
+  const { effectiveCohortIds, cohorts, isLoadingCohorts } = useAnalytics();
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [loadingSimulation, setLoadingSimulation] = useState<string | null>(
-    null,
+    null
   );
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
-    null,
+    null
   );
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
@@ -55,21 +53,13 @@ export default function Home() {
   // Check if user is a TA
   const isTA = effectiveProfile?.role === "ta";
 
-  // 1. Fetch all cohorts
-  const { data: allCohorts, isLoading: loadingCohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: getAllCohorts,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  });
-
-  // 2. Fetch all simulations
+  // 1. Fetch all simulations
   const { data: allSimulations, isLoading: loadingSimulations } = useQuery({
     queryKey: ["simulations"],
     queryFn: getAllSimulations,
   });
 
-  // 3. Fetch all profiles
+  // 2. Fetch all profiles
   const { data: allProfiles, isLoading: loadingProfiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: getAllProfiles,
@@ -77,13 +67,13 @@ export default function Home() {
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  // 4. Fetch all rubrics
+  // 3. Fetch all rubrics
   const { data: allRubrics, isLoading: loadingRubrics } = useQuery({
     queryKey: ["rubrics"],
     queryFn: getAllRubrics,
   });
 
-  // 5. Fetch all attempts
+  // 4. Fetch all attempts
   const { data: allAttempts, isLoading: loadingAttempts } = useQuery({
     queryKey: ["simulationAttempts"],
     queryFn: () => {
@@ -93,14 +83,14 @@ export default function Home() {
     enabled: !!allProfiles && allProfiles.length > 0,
   });
 
-  // 6. Fetch all chats
+  // 5. Fetch all chats
   const { data: allChats, isLoading: loadingChats } = useQuery({
     queryKey: ["simulationChats", allAttempts?.map((a) => a.id)?.sort() || []],
     queryFn: () => getSimulationChatsByAttempts(allAttempts!.map((a) => a.id)),
     enabled: !!allAttempts && allAttempts.length > 0,
   });
 
-  // 7. Fetch all grades
+  // 6. Fetch all grades
   const { data: allGrades, isLoading: loadingGrades } = useQuery({
     queryKey: ["simulationGrades", allChats?.map((c) => c.id)?.sort() || []],
     queryFn: () =>
@@ -108,10 +98,10 @@ export default function Home() {
     enabled: !!allChats && allChats.length > 0,
   });
 
-  // Transform cohorts for the picker with completion status
-  const cohortsForPicker = useMemo(() => {
+  // Transform cohorts for display with completion status
+  const cohortsForDisplay = useMemo(() => {
     if (
-      !allCohorts ||
+      !cohorts ||
       !allSimulations ||
       !allProfiles ||
       !allAttempts ||
@@ -122,17 +112,17 @@ export default function Home() {
     }
 
     // Filter to only active cohorts
-    const activeCohorts = allCohorts.filter((cohort) => cohort.active);
+    const activeCohorts = cohorts.filter((cohort) => cohort.active);
 
     return activeCohorts.map((cohort) => {
       // Get simulations for this cohort
       const cohortSimulations = allSimulations.filter((sim) =>
-        cohort.simulationIds?.includes(sim.id),
+        cohort.simulationIds?.includes(sim.id)
       );
 
       // Get the profiles of members in this cohort
       const cohortMembers = allProfiles.filter((p) =>
-        cohort.profileIds?.includes(p.id),
+        cohort.profileIds?.includes(p.id)
       );
 
       // Calculate completion status
@@ -144,15 +134,15 @@ export default function Home() {
           (att) =>
             att.profileId &&
             cohort.profileIds?.includes(att.profileId) &&
-            cohortSimulations.some((sim) => sim.id === att.simulationId),
+            cohortSimulations.some((sim) => sim.id === att.simulationId)
         );
 
         const cohortAttemptIds = cohortAttempts.map((att) => att.id);
         const cohortChats = allChats?.filter((c) =>
-          cohortAttemptIds.includes(c.attemptId),
+          cohortAttemptIds.includes(c.attemptId)
         );
         const cohortGrades = allGrades.filter((g) =>
-          cohortChats?.some((c) => c.id === g.simulationChatId),
+          cohortChats?.some((c) => c.id === g.simulationChatId)
         );
 
         const passedCount = cohortGrades.filter((g) => g.passed).length || 0;
@@ -168,15 +158,15 @@ export default function Home() {
           const taAttempts = allAttempts.filter(
             (att) =>
               att.profileId === effectiveProfile.id! &&
-              cohortSimulations.some((sim) => sim.id === att.simulationId),
+              cohortSimulations.some((sim) => sim.id === att.simulationId)
           );
 
           const taAttemptIds = taAttempts.map((att) => att.id);
           const taChats = allChats?.filter((c) =>
-            taAttemptIds.includes(c.attemptId),
+            taAttemptIds.includes(c.attemptId)
           );
           const taGrades = allGrades.filter((g) =>
-            taChats?.some((c) => c.id === g.simulationChatId),
+            taChats?.some((c) => c.id === g.simulationChatId)
           );
 
           const passedCount = taGrades.filter((g) => g.passed).length || 0;
@@ -193,7 +183,7 @@ export default function Home() {
       };
     });
   }, [
-    allCohorts,
+    cohorts,
     allSimulations,
     allProfiles,
     allAttempts,
@@ -205,102 +195,97 @@ export default function Home() {
 
   // Get available cohorts based on user role
   const availableCohorts = useMemo(() => {
-    if (!cohortsForPicker) return [];
+    if (!cohortsForDisplay) return [];
 
     if (shouldShowAll || effectiveProfile?.defaultProfile) {
       // Instructors see all active cohorts
-      return cohortsForPicker;
+      return cohortsForDisplay;
     } else if (isTA && effectiveProfile?.id) {
       // TAs see only their assigned active cohorts
-      return cohortsForPicker.filter((cohort) => {
-        const originalCohort = allCohorts?.find((c) => c.id === cohort.id);
+      return cohortsForDisplay.filter((cohort) => {
+        const originalCohort = cohorts?.find((c) => c.id === cohort.id);
         return originalCohort?.profileIds?.includes(effectiveProfile.id);
       });
     }
 
     return [];
   }, [
-    cohortsForPicker,
+    cohortsForDisplay,
     shouldShowAll,
     isTA,
     effectiveProfile?.id,
-    allCohorts,
+    cohorts,
     effectiveProfile?.defaultProfile,
   ]);
 
-  // Get selected cohort IDs
-  const selectedCohortIds = useMemo(() => {
-    return selectedCohorts.map((cohort) => cohort.id);
-  }, [selectedCohorts]);
+  // Filter cohorts to only selected ones from analytics context, or show all available cohorts if none selected
+  const filteredCohorts = useMemo(() => {
+    if (!cohorts) return [];
 
-  // Filter cohorts to only selected ones, or show all available cohorts if none selected
-  // This ensures users always see data by default, similar to analytics filters
-  const cohorts = useMemo(() => {
-    if (!allCohorts) return [];
-
-    // If no cohorts are selected, show all available cohorts for the user
-    if (selectedCohortIds.length === 0) {
-      return allCohorts.filter((cohort) => {
-        // For instructors/admins, show all active cohorts
-        if (shouldShowAll || effectiveProfile?.defaultProfile) {
-          return cohort.active;
-        }
-        // For TAs, show only their assigned active cohorts
-        if (isTA && effectiveProfile?.id) {
-          return (
-            cohort.active && cohort.profileIds?.includes(effectiveProfile.id)
-          );
-        }
-        return false;
-      });
+    // If specific cohorts are selected in analytics context, filter to those
+    if (
+      effectiveCohortIds.length > 0 &&
+      effectiveCohortIds.length < cohorts.length
+    ) {
+      return cohorts.filter((cohort) => effectiveCohortIds.includes(cohort.id));
     }
 
-    // Otherwise, filter to only selected cohorts
-    return allCohorts.filter((cohort) => selectedCohortIds.includes(cohort.id));
+    // Otherwise, show all available cohorts for the user
+    return cohorts.filter((cohort) => {
+      // For instructors/admins, show all active cohorts
+      if (shouldShowAll || effectiveProfile?.defaultProfile) {
+        return cohort.active;
+      }
+      // For TAs, show only their assigned active cohorts
+      if (isTA && effectiveProfile?.id) {
+        return (
+          cohort.active && cohort.profileIds?.includes(effectiveProfile.id)
+        );
+      }
+      return false;
+    });
   }, [
-    allCohorts,
-    selectedCohortIds,
+    cohorts,
+    effectiveCohortIds,
     shouldShowAll,
     effectiveProfile?.defaultProfile,
     isTA,
     effectiveProfile?.id,
   ]);
 
-  // Note: cohortMemberIds is no longer needed since we fetch all data upfront
-
-  // Filter profiles to only include those in the selected cohorts
+  // Filter profiles to only include those in the filtered cohorts
   const cohortProfiles = useMemo(() => {
-    if (!allProfiles || !cohorts) return [];
+    if (!allProfiles || !filteredCohorts) return [];
 
-    // Get all profile IDs from all selected cohorts
+    // Get all profile IDs from all filtered cohorts
     const allCohortProfileIds = new Set<string>();
-    cohorts.forEach((cohort) => {
+    filteredCohorts.forEach((cohort) => {
       cohort.profileIds?.forEach((id) => allCohortProfileIds.add(id));
     });
 
     // Filter profiles to only include those in the cohort
     const filteredProfiles = allProfiles.filter((profile) =>
-      allCohortProfileIds.has(profile.id),
+      allCohortProfileIds.has(profile.id)
     );
 
     return filteredProfiles;
-  }, [allProfiles, cohorts]);
+  }, [allProfiles, filteredCohorts]);
 
-  // Filter attempts to only include those from selected cohorts
+  // Filter attempts to only include those from filtered cohorts
   const attempts = useMemo(() => {
-    if (!allAttempts || !cohorts) return [];
+    if (!allAttempts || !filteredCohorts) return [];
 
     const cohortProfileIds = new Set<string>();
-    cohorts.forEach((cohort) => {
+    filteredCohorts.forEach((cohort) => {
       cohort.profileIds?.forEach((id) => cohortProfileIds.add(id));
     });
 
     return allAttempts.filter(
-      (attempt) => attempt.profileId && cohortProfileIds.has(attempt.profileId),
+      (attempt) => attempt.profileId && cohortProfileIds.has(attempt.profileId)
     );
-  }, [allAttempts, cohorts]);
+  }, [allAttempts, filteredCohorts]);
 
-  // Filter chats to only include those from selected cohort attempts
+  // Filter chats to only include those from filtered cohort attempts
   const chats = useMemo(() => {
     if (!allChats || !attempts) return [];
 
@@ -308,7 +293,7 @@ export default function Home() {
     return allChats.filter((chat) => attemptIds.has(chat.attemptId));
   }, [allChats, attempts]);
 
-  // Filter grades to only include those from selected cohort chats
+  // Filter grades to only include those from filtered cohort chats
   const grades = useMemo(() => {
     if (!allGrades || !chats) return [];
 
@@ -350,14 +335,14 @@ export default function Home() {
 
     window.addEventListener(
       "simulationStarted",
-      handleSimulationStarted as EventListener,
+      handleSimulationStarted as EventListener
     );
     window.addEventListener("simulationError", handleSimulationError);
 
     return () => {
       window.removeEventListener(
         "simulationStarted",
-        handleSimulationStarted as EventListener,
+        handleSimulationStarted as EventListener
       );
       window.removeEventListener("simulationError", handleSimulationError);
       if (timeoutRef.current) {
@@ -377,7 +362,7 @@ export default function Home() {
 
         if (!isConnected) {
           toast.error(
-            "WebSocket not connected. Please wait for connection or refresh the page.",
+            "WebSocket not connected. Please wait for connection or refresh the page."
           );
           logError("WebSocket not connected when trying to start simulation", {
             simulationId,
@@ -428,7 +413,7 @@ export default function Home() {
       isConnected,
       emitStartSimulation,
       loadingToastId,
-    ],
+    ]
   );
 
   // Note: attempts and grades can be empty/undefined when no simulations have been started yet
@@ -438,7 +423,7 @@ export default function Home() {
   // Data processing logic
   const processedCohortData = useMemo(() => {
     // Debug logging to help identify missing data
-    if (!cohorts) {
+    if (!filteredCohorts) {
       return [];
     }
     if (!allSimulations) {
@@ -448,15 +433,15 @@ export default function Home() {
       return [];
     }
 
-    return cohorts.map((cohort) => {
+    return filteredCohorts.map((cohort) => {
       // Get simulations for this specific cohort (and exclude default/practice ones)
       const cohortSimulations = allSimulations.filter((sim) =>
-        cohort.simulationIds?.includes(sim.id),
+        cohort.simulationIds?.includes(sim.id)
       );
 
       // Get the profiles of members in this cohort
       const cohortMembers = cohortProfiles.filter((p) =>
-        cohort.profileIds?.includes(p.id),
+        cohort.profileIds?.includes(p.id)
       );
 
       // For each simulation, calculate progress based on user role
@@ -467,15 +452,15 @@ export default function Home() {
             (att) =>
               att.profileId &&
               cohort.profileIds?.includes(att.profileId) &&
-              att.simulationId === simulation.id,
+              att.simulationId === simulation.id
           );
 
           const cohortAttemptIds = cohortAttempts.map((att) => att.id);
           const cohortChats = chats?.filter((c) =>
-            cohortAttemptIds.includes(c.attemptId),
+            cohortAttemptIds.includes(c.attemptId)
           );
           const cohortGrades = safeGrades.filter((g) =>
-            cohortChats?.some((c) => c.id === g.simulationChatId),
+            cohortChats?.some((c) => c.id === g.simulationChatId)
           );
 
           const passedCount = cohortGrades.filter((g) => g.passed).length || 0;
@@ -496,10 +481,10 @@ export default function Home() {
                   ?.filter((g) => g.passed)
                   .map((g) => {
                     const chat = cohortChats?.find(
-                      (c) => c.id === g.simulationChatId,
+                      (c) => c.id === g.simulationChatId
                     );
                     const attempt = cohortAttempts.find(
-                      (a) => a.id === chat?.attemptId,
+                      (a) => a.id === chat?.attemptId
                     );
                     return attempt?.profileId || "";
                   })
@@ -509,10 +494,10 @@ export default function Home() {
                   ?.filter((g) => !g.passed)
                   .map((g) => {
                     const chat = cohortChats?.find(
-                      (c) => c.id === g.simulationChatId,
+                      (c) => c.id === g.simulationChatId
                     );
                     const attempt = cohortAttempts.find(
-                      (a) => a.id === chat?.attemptId,
+                      (a) => a.id === chat?.attemptId
                     );
                     return attempt?.profileId || "";
                   })
@@ -540,7 +525,7 @@ export default function Home() {
           const taAttempts = safeAttempts.filter(
             (att) =>
               att.profileId === effectiveProfile.id! &&
-              att.simulationId === simulation.id,
+              att.simulationId === simulation.id
           );
 
           const taProgress = {
@@ -557,10 +542,10 @@ export default function Home() {
 
             // Find chats and grades related to these attempts
             const taChats = chats?.filter((c) =>
-              taAttemptIds.includes(c.attemptId),
+              taAttemptIds.includes(c.attemptId)
             );
             const taGrades = safeGrades.filter((g) =>
-              taChats?.some((c) => c.id === g.simulationChatId),
+              taChats?.some((c) => c.id === g.simulationChatId)
             );
 
             const hasPassed = taGrades.some((g) => g.passed);
@@ -595,7 +580,7 @@ export default function Home() {
       };
     });
   }, [
-    cohorts,
+    filteredCohorts,
     allSimulations,
     cohortProfiles,
     safeAttempts,
@@ -629,16 +614,16 @@ export default function Home() {
           const userAttempts = safeAttempts.filter(
             (att) =>
               att.profileId === effectiveProfile.id! &&
-              att.simulationId === simulation.id,
+              att.simulationId === simulation.id
           );
 
           if (userAttempts.length > 0) {
             const userAttemptIds = userAttempts.map((att) => att.id);
             const userChats = chats?.filter((c) =>
-              userAttemptIds.includes(c.attemptId),
+              userAttemptIds.includes(c.attemptId)
             );
             const userGrades = safeGrades.filter((g) =>
-              userChats?.some((c) => c.id === g.simulationChatId),
+              userChats?.some((c) => c.id === g.simulationChatId)
             );
 
             if (userGrades.length > 0) {
@@ -647,7 +632,7 @@ export default function Home() {
               highestScore = Math.round(
                 (Math.max(...userGrades.map((g) => g.score)) /
                   rubricTotalPoints) *
-                  100,
+                  100
               );
               hasPassed = userGrades.some((g) => g.passed);
             }
@@ -699,8 +684,6 @@ export default function Home() {
       return a.cohort.title.localeCompare(b.cohort.title);
     });
   }, [enhancedSimulations]);
-
-  // Note: We could separate completed and non-completed simulations here if needed for future features
 
   // Sort progress data the same way as the cards (non-completed first, then by cohort)
   const sortedProgressData = useMemo(() => {
@@ -754,7 +737,7 @@ export default function Home() {
 
   // Loading state
   const isLoading =
-    loadingCohorts ||
+    isLoadingCohorts ||
     loadingSimulations ||
     loadingProfiles ||
     loadingRubrics ||
@@ -768,7 +751,6 @@ export default function Home() {
         {/* Header skeleton */}
         <div className="flex items-center justify-between">
           <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-10 w-48" />
         </div>
 
         {/* Progress Visualization Section skeleton */}
@@ -893,35 +875,11 @@ export default function Home() {
 
   return (
     <div className="container mx-auto p-4 space-y-8">
-      {/* Header with title and cohort picker */}
+      {/* Header with title */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">
           Welcome back, {effectiveProfile?.firstName}!
         </h2>
-        <CohortPicker
-          cohorts={availableCohorts.map((cohort) => ({
-            ...cohort,
-            title: cohort.isCompleted ? (
-              <div className="flex items-center gap-2">
-                <span>{cohort.title}</span>
-                <Badge
-                  variant="secondary"
-                  className="bg-green-100 text-green-800 border-green-200"
-                >
-                  Complete
-                </Badge>
-              </div>
-            ) : (
-              cohort.title
-            ),
-          }))}
-          placeholder={
-            selectedCohorts.length === 0 ? "All cohorts" : "Select cohorts..."
-          }
-          onSelect={setSelectedCohorts}
-          selectedCohorts={selectedCohorts}
-          hideSelectedChips={true}
-        />
       </div>
 
       {/* Progress Visualization Section - All progress bars grouped together */}
@@ -1007,8 +965,9 @@ export default function Home() {
       {/* History Section */}
       <div className="mt-12">
         <SimulationHistory
+          
           showAll={false}
-          cohortIds={selectedCohortIds}
+          cohortIds={effectiveCohortIds}
           showExport={!shouldShowAll}
           showPractice={false}
         />

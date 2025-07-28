@@ -1,11 +1,10 @@
 "use client";
 
-import * as React from "react";
 import { format, subMonths } from "date-fns";
 import { CalendarIcon } from "lucide-react";
+import * as React from "react";
 import { DateRange } from "react-day-picker";
 
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -13,6 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 // Default date range for the past month
 const getDefaultDateRange = (): DateRange => {
@@ -56,17 +56,28 @@ export function DatePickerWithRange({
 
   const displayRange = dateRange || localDateRange;
 
+  // Calculate the best default month to show - prioritize the start date if it exists
+  const getDefaultMonth = () => {
+    if (displayRange?.from) {
+      return displayRange.from;
+    }
+    if (displayRange?.to) {
+      return displayRange.to;
+    }
+    return new Date();
+  };
+
   return (
     <div className={cn("flex", className)}>
       <Popover>
         <PopoverTrigger asChild>
           <Button
             id="date"
-            variant={"outline"}
+            variant={"secondary"}
             size="sm"
             className={cn(
               "justify-start text-left font-normal h-8",
-              !displayRange && "text-muted-foreground",
+              !displayRange && "text-muted-foreground"
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
@@ -88,7 +99,7 @@ export function DatePickerWithRange({
           <Calendar
             initialFocus
             mode="range"
-            defaultMonth={displayRange?.from || new Date()}
+            defaultMonth={getDefaultMonth()}
             selected={displayRange}
             onSelect={handleDateChange}
             numberOfMonths={2}
