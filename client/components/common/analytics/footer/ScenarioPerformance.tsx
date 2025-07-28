@@ -40,6 +40,7 @@ import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
 import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
@@ -154,6 +155,11 @@ export default function ScenarioPerformance({
     queryFn: () => getAllParameterItems(),
   });
 
+  const { data: rubrics } = useQuery({
+    queryKey: ["rubrics"],
+    queryFn: () => getAllRubrics(),
+  });
+
   const { data: attempts } = useQuery({
     queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
     queryFn: () =>
@@ -217,7 +223,7 @@ export default function ScenarioPerformance({
 
     // Filter cohorts to only those in cohortIds
     const filteredCohorts = cohorts.filter((cohort) =>
-      cohortIds.includes(cohort.id),
+      cohortIds.includes(cohort.id)
     );
 
     if (filteredCohorts.length === 0) {
@@ -227,7 +233,7 @@ export default function ScenarioPerformance({
     // If profileId is provided, check if profile belongs to any of the filtered cohorts
     if (profileId) {
       const profileInCohorts = filteredCohorts.some((cohort) =>
-        cohort.profileIds.includes(profileId),
+        cohort.profileIds.includes(profileId)
       );
 
       if (!profileInCohorts) {
@@ -270,7 +276,7 @@ export default function ScenarioPerformance({
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId,
+        (s) => s.id === attempt?.simulationId
       );
       const profile = profiles?.find((p) => p.id === attempt?.profileId);
 
@@ -317,11 +323,23 @@ export default function ScenarioPerformance({
     });
 
     const attemptedScenarios = scenarios.filter((scenario) =>
-      attemptedScenarioIds.has(scenario.id),
+      attemptedScenarioIds.has(scenario.id)
     );
 
-    // Calculate total scenarios for percentage calculation
-    const totalScenarios = attemptedScenarios.length;
+    // Calculate total parameter item occurrences for percentage calculation
+    let totalParameterOccurrences = 0;
+    attemptedScenarios.forEach((scenario) => {
+      if (scenario.parameterItemIds) {
+        // Count how many of the selected parameter's items are used in this scenario
+        const scenarioParameterItems = scenario.parameterItemIds.filter(
+          (itemId) =>
+            parameterItemsForSelected.some(
+              (paramItem) => paramItem.id === itemId
+            )
+        );
+        totalParameterOccurrences += scenarioParameterItems.length;
+      }
+    });
 
     // Generate colors for each attribute
     const colors = [
@@ -342,14 +360,19 @@ export default function ScenarioPerformance({
     // Analyze each parameter item
     const elements: AttributeElement[] = parameterItemsForSelected.map(
       (paramItem, index) => {
-        // Find scenarios that use this parameter item
-        const scenariosWithAttribute = attemptedScenarios.filter((scenario) => {
-          return scenario.parameterItemIds?.includes(paramItem.id);
+        // Count total occurrences of this parameter item across all scenarios
+        let totalOccurrences = 0;
+        attemptedScenarios.forEach((scenario) => {
+          if (scenario.parameterItemIds?.includes(paramItem.id)) {
+            totalOccurrences++;
+          }
         });
 
-        const count = scenariosWithAttribute.length;
+        const count = totalOccurrences;
         const percentage =
-          totalScenarios > 0 ? (count / totalScenarios) * 100 : 0;
+          totalParameterOccurrences > 0
+            ? (count / totalParameterOccurrences) * 100
+            : 0;
 
         // Calculate performance metrics for this attribute
         let totalScore = 0;
@@ -360,9 +383,14 @@ export default function ScenarioPerformance({
         // Collect grades for trend data
         const attributeGrades: Array<{ score: number; createdAt: string }> = [];
 
+        // Find scenarios that use this parameter item
+        const scenariosWithAttribute = attemptedScenarios.filter((scenario) => {
+          return scenario.parameterItemIds?.includes(paramItem.id);
+        });
+
         scenariosWithAttribute.forEach((scenario) => {
           const scenarioChats = chats.filter(
-            (chat) => chat.scenarioId === scenario.id,
+            (chat) => chat.scenarioId === scenario.id
           );
           const scenarioGrades = filteredGrades.filter((grade) => {
             const chat = chats.find((c) => c.id === grade.simulationChatId);
@@ -370,10 +398,22 @@ export default function ScenarioPerformance({
           });
 
           scenarioGrades.forEach((grade) => {
-            totalScore += grade.score;
+            // Convert raw score to percentage using rubric points
+            const chat = chats.find((c) => c.id === grade.simulationChatId);
+            const attempt = attempts.find((a) => a.id === chat?.attemptId);
+            const simulation = simulations.find(
+              (s) => s.id === attempt?.simulationId
+            );
+            const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
+            const rubricTotalPoints = rubric?.points || 100;
+            const scorePercent = Math.round(
+              (grade.score / rubricTotalPoints) * 100
+            );
+
+            totalScore += scorePercent;
             gradeCount++;
             attributeGrades.push({
-              score: grade.score,
+              score: scorePercent,
               createdAt: grade.createdAt,
             });
           });
@@ -446,7 +486,7 @@ export default function ScenarioPerformance({
           trendData,
           insight,
         };
-      },
+      }
     );
 
     // Filter out attributes with no usage and sort by percentage descending
@@ -460,6 +500,7 @@ export default function ScenarioPerformance({
     grades,
     attempts,
     profiles,
+    rubrics,
     dateStart,
     dateEnd,
     profileId,
@@ -485,7 +526,7 @@ export default function ScenarioPerformance({
   const thresholdStatus = getThresholdStatus();
 
   const selectedParameterOption = PARAMETER_OPTIONS.find(
-    (p) => p.id === selectedParameterId,
+    (p) => p.id === selectedParameterId
   );
 
   return (
@@ -550,7 +591,7 @@ export default function ScenarioPerformance({
                             "mr-2 h-4 w-4",
                             selectedParameterId === parameter.id
                               ? "opacity-100"
-                              : "opacity-0",
+                              : "opacity-0"
                           )}
                         />
                         <div>
@@ -605,10 +646,10 @@ export default function ScenarioPerformance({
                     formatter={(
                       value: number,
                       name: string,
-                      _props: unknown,
+                      _props: unknown
                     ) => {
                       const element = attributeElements.find(
-                        (e) => e.name === name,
+                        (e) => e.name === name
                       );
                       if (!element) return [value, name];
 
@@ -632,16 +673,16 @@ export default function ScenarioPerformance({
                   />
                   <Legend
                     verticalAlign="bottom"
-                    height={36}
+                    height={80}
                     content={({ payload }) => (
-                      <div className="flex items-center justify-center gap-4 pt-3">
+                      <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
                         {payload?.map((entry, index) => {
                           const element = attributeElements[index];
                           if (!element) return null;
                           return (
                             <Dialog key={entry.value}>
                               <DialogTrigger asChild>
-                                <span className="text-xs cursor-pointer hover:text-primary transition-colors flex items-center gap-1 px-2 py-1 rounded border border-border hover:border-primary/50 hover:bg-muted/50">
+                                <span className="text-xs cursor-pointer hover:text-primary transition-colors flex items-center gap-1 px-2 py-1 rounded border border-border hover:border-primary/50 hover:bg-muted/50 whitespace-nowrap">
                                   <span style={{ color: element.color }}>
                                     ●
                                   </span>

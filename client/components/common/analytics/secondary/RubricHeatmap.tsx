@@ -25,6 +25,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -64,7 +71,7 @@ function calculateCorrelation(x: number[], y: number[]): number {
 
   const numerator = n * sumXY - sumX * sumY;
   const denominator = Math.sqrt(
-    (n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY),
+    (n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY)
   );
 
   return denominator === 0 ? 0 : numerator / denominator;
@@ -78,6 +85,12 @@ export default function RubricHeatmap({
   cohortIds,
 }: RubricHeatmapProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<Rubric[]>([]);
+
+  // ADDED: State to track hovered cell for highlighting
+  const [hoveredCell, setHoveredCell] = useState<{
+    row: number | null;
+    col: number | null;
+  }>({ row: null, col: null });
 
   // Fetch data
   const { data: rubrics, isLoading: rubricsLoading } = useQuery({
@@ -125,7 +138,7 @@ export default function RubricHeatmap({
     queryKey: ["feedbacks", grades?.map((g) => g.id) || []],
     queryFn: () =>
       getSimulationChatFeedbacksBySimulationChatGrades(
-        grades?.map((g) => g.id) || [],
+        grades?.map((g) => g.id) || []
       ),
     enabled: !!grades && grades.length > 0,
   });
@@ -145,14 +158,14 @@ export default function RubricHeatmap({
     // If profileId is provided, filter to cohorts that contain this profile
     if (profileId) {
       availableCohorts = availableCohorts.filter((cohort) =>
-        cohort.profileIds.includes(profileId),
+        cohort.profileIds.includes(profileId)
       );
     }
 
     // If cohortIds are provided, filter to only those cohorts
     if (cohortIds && cohortIds.length > 0) {
       availableCohorts = availableCohorts.filter((cohort) =>
-        cohortIds.includes(cohort.id),
+        cohortIds.includes(cohort.id)
       );
     }
 
@@ -230,7 +243,7 @@ export default function RubricHeatmap({
             if (profile) {
               // Check if this profile belongs to any of the filtered cohorts
               cohortMatch = filteredCohorts.some((cohort) =>
-                cohort.profileIds.includes(profile.id),
+                cohort.profileIds.includes(profile.id)
               );
             } else {
               cohortMatch = false;
@@ -251,8 +264,8 @@ export default function RubricHeatmap({
     // Filter feedbacks to only include those from filtered grades
     const filteredFeedbacks = feedbacks.filter((feedback) =>
       filteredGrades.some(
-        (grade) => grade.id === feedback.simulationChatGradeId,
-      ),
+        (grade) => grade.id === feedback.simulationChatGradeId
+      )
     );
 
     // Get all standard groups that have feedback data
@@ -260,7 +273,7 @@ export default function RubricHeatmap({
       filteredFeedbacks.some((feedback) => {
         const standard = standards.find((s) => s.id === feedback.standardId);
         return standard && standard.standardGroupId === group.id;
-      }),
+      })
     );
 
     if (standardGroupsWithData.length < 2)
@@ -302,7 +315,7 @@ export default function RubricHeatmap({
         // Get all grades that have feedback for both standard groups
         const gradesWithBothGroups = filteredGrades.filter((grade) => {
           const gradeFeedbacks = filteredFeedbacks.filter(
-            (f) => f.simulationChatGradeId === grade.id,
+            (f) => f.simulationChatGradeId === grade.id
           );
 
           const hasGroup1 = gradeFeedbacks.some((f) => {
@@ -629,7 +642,7 @@ export default function RubricHeatmap({
               Skill Area Correlation Matrix
             </CardTitle>
             <CardDescription className="text-xs">
-              Statistical correlation between skill areas (standard groups)
+              Correlation between skill areas (standard groups)
             </CardDescription>
           </div>
           {rubrics && rubrics.length > 0 && (
@@ -650,66 +663,104 @@ export default function RubricHeatmap({
       </CardHeader>
       <CardContent className="flex-1 p-3">
         <div className="space-y-3">
-          {/* Correlation Matrix Table */}
-          <div className="overflow-x-auto">
-            <Table className="min-w-fit">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-16 text-xs p-1">
-                    Skill Areas
-                  </TableHead>
-                  {correlationMatrix.standardGroups.map((group) => (
-                    <TableHead
-                      key={group.id}
-                      className="text-center w-12 text-xs p-1"
-                    >
-                      {group.shortName}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {correlationMatrix.standardGroups.map((group, rowIndex) => (
-                  <TableRow key={group.id}>
-                    <TableCell className="font-medium text-xs p-1">
-                      {group.shortName}
-                    </TableCell>
-                    {correlationMatrix.standardGroups.map((_, colIndex) => {
-                      const cell =
-                        correlationMatrix.matrix[rowIndex]?.[colIndex];
-                      const colGroup =
-                        correlationMatrix.standardGroups[colIndex];
-                      if (!cell || !colGroup)
-                        return <TableCell key={colIndex} className="p-1" />;
-
-                      return (
-                        <TableCell key={colIndex} className="text-center p-1">
-                          <div
-                            className="w-10 h-6 rounded-sm flex items-center justify-center text-xs font-mono relative"
-                            style={{ backgroundColor: cell.color }}
-                            title={`${group.shortName} ↔ ${colGroup.shortName}: ${cell.correlation} (${cell.dataPoints} data points)`}
-                          >
-                            <span
-                              className={`${
-                                cell.correlation > 0
-                                  ? "text-green-900"
-                                  : cell.correlation < 0
-                                    ? "text-red-900"
-                                    : "text-gray-600"
-                              }`}
-                            >
-                              {cell.correlation > 0 ? "+" : ""}
-                              {cell.correlation}
-                            </span>
-                          </div>
-                        </TableCell>
-                      );
-                    })}
+          {/* MODIFIED: Correlation Matrix Table for a more compact, square layout */}
+          <TooltipProvider delayDuration={150}>
+            <div className="overflow-x-auto">
+              <Table className="w-auto border-collapse">
+                <TableHeader>
+                  <TableRow>
+                    {/* The first empty cell for alignment */}
+                    <TableHead className="p-1 w-12"></TableHead>
+                    {correlationMatrix.standardGroups.map((group, colIndex) => (
+                      <TableHead
+                        key={group.id}
+                        className={cn(
+                          "p-1 h-16 w-10 relative", // Reduced height and fixed width
+                          hoveredCell.col === colIndex && "bg-muted" // Highlight on hover
+                        )}
+                      >
+                        {/* MODIFIED: Rotated Label */}
+                        <div
+                          className="absolute bottom-1 left-1/2 -translate-x-1/2"
+                          style={{ writingMode: "vertical-rl" }}
+                        >
+                          <span className="text-xs font-normal text-muted-foreground whitespace-nowrap">
+                            {group.shortName}
+                          </span>
+                        </div>
+                      </TableHead>
+                    ))}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {correlationMatrix.standardGroups.map((group, rowIndex) => (
+                    <TableRow
+                      key={group.id}
+                      onMouseLeave={() =>
+                        setHoveredCell({ row: null, col: null })
+                      }
+                    >
+                      {/* MODIFIED: This is now the row header, not part of the grid */}
+                      <TableCell
+                        className={cn(
+                          "font-medium text-xs p-1 text-right text-muted-foreground",
+                          hoveredCell.row === rowIndex && "bg-muted" // Highlight on hover
+                        )}
+                      >
+                        {group.shortName}
+                      </TableCell>
+                      {correlationMatrix.standardGroups.map(
+                        (colGroup, colIndex) => {
+                          const cell =
+                            correlationMatrix.matrix[rowIndex]?.[colIndex];
+                          if (!cell) {
+                            return <TableCell key={colIndex} className="p-1" />;
+                          }
+
+                          return (
+                            <TableCell
+                              key={colIndex}
+                              className="text-center p-1 w-10"
+                              onMouseEnter={() =>
+                                setHoveredCell({ row: rowIndex, col: colIndex })
+                              }
+                            >
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div
+                                    className="w-10 h-8 rounded-sm flex items-center justify-center text-xs font-mono"
+                                    style={{ backgroundColor: cell.color }}
+                                  >
+                                    <span
+                                      className={cn(
+                                        "font-semibold",
+                                        Math.abs(cell.correlation) >= 0.7
+                                          ? "text-white"
+                                          : "text-gray-800"
+                                      )}
+                                    >
+                                      {cell.correlation.toFixed(2)}
+                                    </span>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{`${group.shortName} ↔ ${colGroup.shortName}`}</p>
+                                  <p>
+                                    Correlation: {cell.correlation.toFixed(2)}
+                                  </p>
+                                  <p>Data points: {cell.dataPoints}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TableCell>
+                          );
+                        }
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TooltipProvider>
 
           {/* Legend */}
           <div className="flex items-center gap-3 text-xs text-muted-foreground">

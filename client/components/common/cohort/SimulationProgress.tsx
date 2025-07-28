@@ -17,6 +17,11 @@ interface SimulationProgressProps {
       passedMembers: string[];
       inProgressMembers: string[];
     };
+    cohort?: {
+      id: string;
+      title: string;
+      description: string | null;
+    };
   };
 }
 
@@ -69,10 +74,17 @@ export default function SimulationProgress({
       className={`flex items-center space-x-4 p-3 rounded-lg border ${statusInfo.bgColor} ${statusInfo.borderColor}`}
       data-testid="simulation-progress"
     >
-      {/* Title */}
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-0 flex-shrink-0 w-64">
-        {simulation.title}
-      </span>
+      {/* Title and Cohort Name */}
+      <div className="min-w-0 flex-shrink-0 w-64">
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 block">
+          {simulation.title}
+        </span>
+        {simulation.cohort && (
+          <span className="text-xs text-gray-500 dark:text-gray-400 block mt-1">
+            {simulation.cohort.title}
+          </span>
+        )}
+      </div>
 
       {/* Progress Bar */}
       <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">

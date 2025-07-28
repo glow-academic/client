@@ -1,6 +1,6 @@
 "use client";
 
-import { format, subMonths } from "date-fns";
+import { format, isBefore, subMonths } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import * as React from "react";
 import { DateRange } from "react-day-picker";
@@ -39,6 +39,13 @@ export function DatePickerWithRange({
     DateRange | undefined
   >(dateRange || getDefaultDateRange());
 
+  // Sync local state with prop changes
+  React.useEffect(() => {
+    if (dateRange) {
+      setLocalDateRange(dateRange);
+    }
+  }, [dateRange]);
+
   // Set default date range on initial mount if using external state - disabled to prevent auto filter
   // React.useEffect(() => {
   //   if (setDateRange && !dateRange) {
@@ -46,11 +53,29 @@ export function DatePickerWithRange({
   //   }
   // }, [setDateRange, dateRange])
 
-  const handleDateChange = (range: DateRange | undefined) => {
+  const handleDateChange = (incoming: DateRange | undefined) => {
+    if (!incoming?.from) {
+      return;
+    }
+
+    const base = dateRange ?? localDateRange;
+    let next: DateRange | undefined = incoming;
+
+    // Check if we need to extend the range backwards
+    if (
+      !incoming.to && // DayPicker reset the range (no end date)
+      base?.from &&
+      base?.to && // We had a complete range
+      isBefore(incoming.from, base.from) // New date is before current start
+    ) {
+      next = { from: incoming.from, to: base.to };
+    }
+
+    // Update state
     if (setDateRange) {
-      setDateRange(range);
+      setDateRange(next);
     } else {
-      setLocalDateRange(range);
+      setLocalDateRange(next);
     }
   };
 

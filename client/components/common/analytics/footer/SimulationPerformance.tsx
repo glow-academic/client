@@ -111,7 +111,7 @@ export default function SimulationPerformance({
 
     // Filter cohorts based on provided cohortIds
     const matchingCohorts = cohorts.filter((cohort) =>
-      cohortIds.includes(cohort.id),
+      cohortIds.includes(cohort.id)
     );
 
     if (matchingCohorts.length === 0) {
@@ -180,7 +180,7 @@ export default function SimulationPerformance({
     // Apply cohort-based simulation filtering
     const cohortFilteredSimulations = cohortFilters.allowedSimulationIds
       ? activeSimulations.filter((sim) =>
-          cohortFilters.allowedSimulationIds!.includes(sim.id),
+          cohortFilters.allowedSimulationIds!.includes(sim.id)
         )
       : activeSimulations;
 
@@ -188,20 +188,20 @@ export default function SimulationPerformance({
     const simulationsWithData = cohortFilteredSimulations.filter((sim) => {
       // Check if this simulation has any attempts in the date range
       const simulationAttempts = attempts.filter(
-        (attempt) => attempt.simulationId === sim.id,
+        (attempt) => attempt.simulationId === sim.id
       );
 
       if (simulationAttempts.length === 0) return false;
 
       // Check if any of these attempts have grades in the date range
       const simulationChats = chats.filter((chat) =>
-        simulationAttempts.some((attempt) => attempt.id === chat.attemptId),
+        simulationAttempts.some((attempt) => attempt.id === chat.attemptId)
       );
 
       const simulationGrades = grades.filter((grade) => {
         const gradeDate = new Date(grade.createdAt);
         const chat = simulationChats.find(
-          (c) => c.id === grade.simulationChatId,
+          (c) => c.id === grade.simulationChatId
         );
         if (!chat) return false;
 
@@ -257,7 +257,7 @@ export default function SimulationPerformance({
       } else {
         // If selected simulation is no longer available, select the first available one
         const isStillAvailable = availableSimulations.some(
-          (sim) => sim.id === selectedSimulation.id,
+          (sim) => sim.id === selectedSimulation.id
         );
         if (!isStillAvailable) {
           const firstSimulation = availableSimulations[0];
@@ -326,24 +326,24 @@ export default function SimulationPerformance({
 
     // Get scenarios for the selected simulation
     const simulationScenarios = scenarios.filter((scenario) =>
-      selectedSimulation.scenarioIds.includes(scenario.id),
+      selectedSimulation.scenarioIds.includes(scenario.id)
     );
 
     // Calculate performance for each scenario
     const scenarioData = simulationScenarios
       .map((scenario) => {
         const scenarioChats = chats.filter(
-          (chat) => chat.scenarioId === scenario.id,
+          (chat) => chat.scenarioId === scenario.id
         );
         const scenarioGrades = filteredGrades.filter((grade) =>
-          scenarioChats.some((chat) => chat.id === grade.simulationChatId),
+          scenarioChats.some((chat) => chat.id === grade.simulationChatId)
         );
 
         if (scenarioGrades.length === 0) return null;
 
         const completedChats = scenarioChats.filter((chat) => chat.completed);
         const successRate = Math.round(
-          (completedChats.length / scenarioChats.length) * 100,
+          (completedChats.length / scenarioChats.length) * 100
         );
 
         // Calculate average score as percentage
@@ -351,18 +351,18 @@ export default function SimulationPerformance({
           (scenarioGrades.reduce((sum, grade) => sum + grade.score, 0) /
             scenarioGrades.length /
             rubricTotalPoints) *
-            100,
+            100
         );
 
         // Calculate performance trend (simple comparison with previous period)
         const midPoint = new Date(
-          (dateStart.getTime() + dateEnd.getTime()) / 2,
+          (dateStart.getTime() + dateEnd.getTime()) / 2
         );
         const recentGrades = scenarioGrades.filter(
-          (grade) => new Date(grade.createdAt) >= midPoint,
+          (grade) => new Date(grade.createdAt) >= midPoint
         );
         const olderGrades = scenarioGrades.filter(
-          (grade) => new Date(grade.createdAt) < midPoint,
+          (grade) => new Date(grade.createdAt) < midPoint
         );
 
         let performanceChange = 0;
@@ -374,7 +374,7 @@ export default function SimulationPerformance({
             olderGrades.reduce((sum, grade) => sum + grade.score, 0) /
             olderGrades.length;
           performanceChange = Math.round(
-            ((recentAvg - olderAvg) / rubricTotalPoints) * 100,
+            ((recentAvg - olderAvg) / rubricTotalPoints) * 100
           );
         }
 
@@ -396,7 +396,7 @@ export default function SimulationPerformance({
       })
       .filter(
         (item): item is NonNullable<typeof item> =>
-          item !== null && item.totalAttempts >= 1, // Reduced from 2 to 1
+          item !== null && item.totalAttempts >= 1 // Reduced from 2 to 1
       )
       .sort((a, b) => b.avgScore - a.avgScore);
 
@@ -424,7 +424,7 @@ export default function SimulationPerformance({
 
     const totalChange = scenarioPerformanceData.reduce(
       (sum, scenario) => sum + scenario.performanceChange,
-      0,
+      0
     );
     const avgChange = Math.round(totalChange / scenarioPerformanceData.length);
 
@@ -435,8 +435,8 @@ export default function SimulationPerformance({
     const avgScore = Math.round(
       scenarioPerformanceData.reduce(
         (sum, scenario) => sum + scenario.avgScore,
-        0,
-      ) / scenarioPerformanceData.length,
+        0
+      ) / scenarioPerformanceData.length
     );
 
     let insightText = "";
@@ -459,14 +459,14 @@ export default function SimulationPerformance({
     const avgPerformance =
       scenarioPerformanceData.reduce(
         (sum, scenario) => sum + scenario.avgScore,
-        0,
+        0
       ) / scenarioPerformanceData.length;
 
     // Consider both average score and success rate
     const avgSuccessRate =
       scenarioPerformanceData.reduce(
         (sum, scenario) => sum + scenario.successRate,
-        0,
+        0
       ) / scenarioPerformanceData.length;
 
     const combinedScore = avgPerformance * 0.7 + avgSuccessRate * 0.3;
@@ -601,7 +601,7 @@ export default function SimulationPerformance({
                             "mr-2 h-4 w-4 shrink-0",
                             selectedSimulation?.id === simulation.id
                               ? "opacity-100"
-                              : "opacity-0",
+                              : "opacity-0"
                           )}
                         />
                         <div className="flex-1 min-w-0">
@@ -665,6 +665,10 @@ export default function SimulationPerformance({
                       backgroundColor: "hsl(var(--background))",
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "6px",
+                      color: "#000000",
+                    }}
+                    labelStyle={{
+                      color: "#000000",
                     }}
                     formatter={(value: number, name: string) => [
                       `${value}%`,

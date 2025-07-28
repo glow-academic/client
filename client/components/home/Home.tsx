@@ -33,7 +33,8 @@ import SimulationCard from "../common/simulation/SimulationCard";
 
 export default function Home() {
   const { effectiveProfile, activeProfile } = useProfile();
-  const { effectiveCohortIds, cohorts, isLoadingCohorts } = useAnalytics();
+  const { effectiveCohortIds, cohorts, isLoadingCohorts, startDate, endDate } =
+    useAnalytics();
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [loadingSimulation, setLoadingSimulation] = useState<string | null>(
     null
@@ -459,9 +460,18 @@ export default function Home() {
           const cohortChats = chats?.filter((c) =>
             cohortAttemptIds.includes(c.attemptId)
           );
-          const cohortGrades = safeGrades.filter((g) =>
+
+          // Filter grades by date range if dates are provided
+          let cohortGrades = safeGrades.filter((g) =>
             cohortChats?.some((c) => c.id === g.simulationChatId)
           );
+
+          if (startDate && endDate) {
+            cohortGrades = cohortGrades.filter((grade) => {
+              const gradeDate = new Date(grade.createdAt);
+              return gradeDate >= startDate && gradeDate <= endDate;
+            });
+          }
 
           const passedCount = cohortGrades.filter((g) => g.passed).length || 0;
           const inProgressCount =
@@ -544,9 +554,17 @@ export default function Home() {
             const taChats = chats?.filter((c) =>
               taAttemptIds.includes(c.attemptId)
             );
-            const taGrades = safeGrades.filter((g) =>
+            let taGrades = safeGrades.filter((g) =>
               taChats?.some((c) => c.id === g.simulationChatId)
             );
+
+            // Filter grades by date range if dates are provided
+            if (startDate && endDate) {
+              taGrades = taGrades.filter((grade) => {
+                const gradeDate = new Date(grade.createdAt);
+                return gradeDate >= startDate && gradeDate <= endDate;
+              });
+            }
 
             const hasPassed = taGrades.some((g) => g.passed);
 
@@ -588,6 +606,8 @@ export default function Home() {
     safeGrades,
     effectiveProfile,
     shouldShowAll,
+    startDate,
+    endDate,
   ]);
 
   // Enhanced simulation data with completion status and rubric data
@@ -969,6 +989,8 @@ export default function Home() {
           cohortIds={effectiveCohortIds}
           showExport={!shouldShowAll}
           showPractice={false}
+          startDate={startDate}
+          endDate={endDate}
         />
       </div>
     </div>

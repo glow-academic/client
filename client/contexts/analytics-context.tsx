@@ -37,7 +37,7 @@ interface AnalyticsContextType {
 }
 
 const AnalyticsContext = createContext<AnalyticsContextType | undefined>(
-  undefined,
+  undefined
 );
 
 interface AnalyticsProviderProps {
@@ -45,15 +45,6 @@ interface AnalyticsProviderProps {
 }
 
 export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
-  // Default to last 30 days
-  const [startDate, setStartDate] = useState<Date>(() =>
-    subDays(new Date(), 30),
-  );
-  const [endDate, setEndDate] = useState<Date>(() => new Date());
-
-  // Cohort filtering - empty array means all cohorts
-  const [selectedCohortIds, setSelectedCohortIds] = useState<string[]>([]);
-
   // Get profile context to check user role and ID
   const { effectiveProfile } = useProfile();
 
@@ -72,13 +63,61 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     // If user is instructional, only show cohorts they are part of
     if (effectiveProfile.role === "instructional") {
       return allCohorts.filter((cohort) =>
-        cohort.profileIds?.includes(effectiveProfile.id),
+        cohort.profileIds?.includes(effectiveProfile.id)
       );
     }
 
     // For other roles (admin, etc.), show all cohorts
     return allCohorts;
   }, [allCohorts, effectiveProfile]);
+
+  // Calculate the earliest cohort creation date to use as default start date
+  const earliestCohortDate = useMemo(() => {
+    if (cohorts.length === 0) {
+      // Fallback to 30 days ago if no cohorts available
+      return subDays(new Date(), 30);
+    }
+
+    const activeCohorts = cohorts.filter((cohort) => cohort.active);
+    if (activeCohorts.length === 0) {
+      // Fallback to 30 days ago if no active cohorts
+      return subDays(new Date(), 30);
+    }
+
+    // Find the earliest creation date among active cohorts
+    const creationDates = activeCohorts
+      .map((cohort) => new Date(cohort.createdAt))
+      .filter((date) => !isNaN(date.getTime())); // Filter out invalid dates
+
+    if (creationDates.length === 0) {
+      // Fallback to 30 days ago if no valid creation dates
+      return subDays(new Date(), 30);
+    }
+
+    const earliestDate = new Date(
+      Math.min(...creationDates.map((d) => d.getTime()))
+    );
+    return earliestDate;
+  }, [cohorts]);
+
+  // Default to earliest cohort creation date instead of last 30 days
+  const [startDate, setStartDate] = useState<Date>(() => earliestCohortDate);
+  const [endDate, setEndDate] = useState<Date>(() => new Date());
+  const [hasUserSetDateRange, setHasUserSetDateRange] = useState(false);
+
+  // Update start date when cohorts change and earliest date is different
+  // Only auto-update if user hasn't manually set a date range
+  React.useEffect(() => {
+    if (
+      !hasUserSetDateRange &&
+      earliestCohortDate.getTime() !== startDate.getTime()
+    ) {
+      setStartDate(earliestCohortDate);
+    }
+  }, [earliestCohortDate, startDate, hasUserSetDateRange]);
+
+  // Cohort filtering - empty array means all cohorts
+  const [selectedCohortIds, setSelectedCohortIds] = useState<string[]>([]);
 
   // Compute effective cohort IDs for filtering
   const effectiveCohortIds = useMemo(() => {
@@ -94,12 +133,14 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   const setDateRange = (start: Date, end: Date) => {
     setStartDate(start);
     setEndDate(end);
+    setHasUserSetDateRange(true); // Mark that the user has set the date range
   };
 
   const clearFilters = () => {
-    setStartDate(subDays(new Date(), 30));
+    setStartDate(earliestCohortDate);
     setEndDate(new Date());
     setSelectedCohortIds([]);
+    setHasUserSetDateRange(false); // Reset user-set date range
   };
 
   const hasActiveFilters = selectedCohortIds.length > 0;

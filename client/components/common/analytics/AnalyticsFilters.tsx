@@ -13,6 +13,7 @@ import {
 } from "@/components/common/cohort/CohortPicker";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { useAnalytics } from "@/contexts/analytics-context";
+import { useEffect, useMemo } from "react";
 import { DateRange } from "react-day-picker";
 
 export function AnalyticsFilters() {
@@ -51,8 +52,44 @@ export function AnalyticsFilters() {
 
   // Get selected cohorts for the picker
   const selectedCohorts = cohortOptions.filter((cohort) =>
-    selectedCohortIds.includes(cohort.id),
+    selectedCohortIds.includes(cohort.id)
   );
+
+  // Calculate the earliest creation date of selected cohorts
+  const selectedCohortsEarliestDate = useMemo(() => {
+    if (selectedCohortIds.length === 0) {
+      // If no specific cohorts selected, use all active cohorts
+      const activeCohortDates = activeCohorts
+        .map((cohort) => new Date(cohort.createdAt))
+        .filter((date) => !isNaN(date.getTime()));
+
+      if (activeCohortDates.length === 0) return null;
+      return new Date(Math.min(...activeCohortDates.map((d) => d.getTime())));
+    }
+
+    // Get the earliest creation date among selected cohorts
+    const selectedCohortDates = activeCohorts
+      .filter((cohort) => selectedCohortIds.includes(cohort.id))
+      .map((cohort) => new Date(cohort.createdAt))
+      .filter((date) => !isNaN(date.getTime()));
+
+    if (selectedCohortDates.length === 0) return null;
+    return new Date(Math.min(...selectedCohortDates.map((d) => d.getTime())));
+  }, [selectedCohortIds, activeCohorts]);
+
+  // Automatically adjust date range when cohort selection changes
+  useEffect(() => {
+    if (
+      selectedCohortsEarliestDate &&
+      selectedCohortsEarliestDate.getTime() !== startDate.getTime()
+    ) {
+      // Only adjust if the new earliest date is different from current start date
+      // and if the new date is earlier than current start date
+      if (selectedCohortsEarliestDate < startDate) {
+        setDateRange(selectedCohortsEarliestDate, endDate);
+      }
+    }
+  }, [selectedCohortsEarliestDate, startDate, endDate, setDateRange]);
 
   const handleCohortSelect = (selectedCohorts: CohortPickerCohort[]) => {
     setSelectedCohortIds(selectedCohorts.map((cohort) => cohort.id));
