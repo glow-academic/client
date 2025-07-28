@@ -1007,7 +1007,7 @@ export default function Home() {
       {/* History Section */}
       <div className="mt-12">
         <SimulationHistory
-          showAll={shouldShowAll}
+          showAll={false}
           cohortIds={selectedCohortIds}
           showExport={!shouldShowAll}
           showPractice={false}

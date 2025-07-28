@@ -37,6 +37,7 @@ import PersonaPerformance from "../common/analytics/primary/PersonaPerformance";
 import CohortPerformance from "../common/analytics/secondary/CohortPerformance";
 import RubricHeatmap from "../common/analytics/secondary/RubricHeatmap";
 import SkillPerformance from "../common/analytics/secondary/SkillPerformance";
+import SimulationHistory from "../common/history/SimulationHistory";
 
 interface DashboardProps {
   profileId?: string;
@@ -699,6 +700,13 @@ export default function Dashboard({ profileId }: DashboardProps) {
           </div>
         </div>
       )}
+
+      <SimulationHistory
+          showAll={true}
+          cohortIds={effectiveCohortIds}
+          showExport={false}
+          showPractice={false}
+        />
     </div>
   );
 }
