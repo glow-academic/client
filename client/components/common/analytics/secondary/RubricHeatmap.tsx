@@ -661,12 +661,12 @@ export default function RubricHeatmap({
           )}
         </div>
       </CardHeader>
-      <CardContent className="flex-1 p-3">
-        <div className="space-y-3">
+      <CardContent className="flex-1 overflow-hidden">
+        <div className="space-y-3 flex flex-col items-center h-full">
           {/* MODIFIED: Correlation Matrix Table for a more compact, square layout */}
           <TooltipProvider delayDuration={150}>
-            <div className="overflow-x-auto">
-              <Table className="w-auto border-collapse">
+            <div className="overflow-x-auto flex-1">
+              <Table className="w-auto border-collapse h-full">
                 <TableHeader>
                   <TableRow>
                     {/* The first empty cell for alignment */}
@@ -763,7 +763,7 @@ export default function RubricHeatmap({
           </TooltipProvider>
 
           {/* Legend */}
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground justify-center flex-shrink-0">
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full bg-green-500" />
               <span>Strong Positive</span>
@@ -780,7 +780,7 @@ export default function RubricHeatmap({
 
           {/* Actionable Insights */}
           {correlationMatrix.insights && (
-            <div className="p-3 bg-muted rounded-lg">
+            <div className="p-3 bg-muted rounded-lg text-center flex-shrink-0">
               <p className="text-xs text-muted-foreground">
                 {correlationMatrix.insights}
               </p>

@@ -594,7 +594,7 @@ export default function AttemptImprovement({
       <CardContent className="flex-1 overflow-hidden">
         <div className="space-y-3">
           {/* Composed Chart with Secondary Y-Axis for Time */}
-          <div className="h-64">
+          <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={improvementData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -604,7 +604,6 @@ export default function AttemptImprovement({
                   label={{
                     value: "Score & Pass Rate (%)",
                     angle: -90,
-                    position: "insideLeft",
                   }}
                 />
                 <YAxis
@@ -614,7 +613,6 @@ export default function AttemptImprovement({
                   label={{
                     value: "Time (minutes)",
                     angle: 90,
-                    position: "insideRight",
                   }}
                 />
                 <Tooltip
@@ -622,6 +620,7 @@ export default function AttemptImprovement({
                     backgroundColor: "hsl(var(--background))",
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "6px",
+                    color: "black",
                   }}
                   formatter={(value: number, name: string) => [
                     name === "Average Time" ? `${value} min` : `${value}%`,
