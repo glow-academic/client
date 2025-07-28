@@ -1,10 +1,9 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, vi, afterEach } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import type {  } from '@tanstack/react-table';
 
 // ——————————————————————————————————————————
-import { useReportColumns, TAPerformanceData, UseReportColumnsProps } from '@/hooks/use-report-columns';
+import { UseReportColumnsProps } from '@/hooks/use-report-columns';
 
 
 

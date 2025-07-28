@@ -1,10 +1,9 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import type {  } from '@tanstack/react-table';
 
 // ——————————————————————————————————————————
-import { useSimulationColumns, UseSimulationColumnsProps } from '@/hooks/use-simulation-columns';
+import { UseSimulationColumnsProps } from '@/hooks/use-simulation-columns';
 
 
 

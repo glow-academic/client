@@ -1,8 +1,9 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { Table } from "@tanstack/react-table";
 import { Download } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAnalytics } from "@/contexts/analytics-context";
 import { logError } from "@/utils/logger";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { toast } from "sonner";
 
 // TAPerformanceData interface for Reports page
@@ -47,6 +50,7 @@ interface TAPerformanceData {
 
 // Metric options for the select dropdown
 const metricOptions = [
+  { value: "highestScore", label: "Highest Score", unit: "%" },
   { value: "averageScore", label: "Average Score", unit: "%" },
   { value: "completionPercentage", label: "Completion Percentage", unit: "%" },
   {
@@ -54,7 +58,6 @@ const metricOptions = [
     label: "First Attempt Pass Rate",
     unit: "%",
   },
-  { value: "highestScore", label: "Highest Score", unit: "%" },
   { value: "messagesPerSession", label: "Messages Per Session", unit: "" },
   { value: "personaResponseTimes", label: "Persona Response Times", unit: "m" },
   { value: "sessionEfficiency", label: "Session Efficiency", unit: "%" },
@@ -76,6 +79,42 @@ export function BrightspaceExportButton<TData>({
   const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<string>("");
 
+  // Get analytics context for cohort filtering
+  const { effectiveCohortIds } = useAnalytics();
+
+  // Fetch cohorts to filter simulations based on effective cohort IDs
+  const { data: cohorts = [] } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
+  });
+
+  // Filter simulations based on effective cohort IDs
+  const filteredSimulations = useMemo(() => {
+    if (!effectiveCohortIds || effectiveCohortIds.length === 0) {
+      return simulations; // If no cohort filtering, return all simulations
+    }
+
+    // Get all simulation IDs from the effective cohorts
+    const cohortSimulationIds = new Set<string>();
+    const selectedCohorts = cohorts.filter((cohort) =>
+      effectiveCohortIds.includes(cohort.id)
+    );
+
+    selectedCohorts.forEach((cohort) => {
+      cohort.simulationIds.forEach((simId) => {
+        if (simId !== "RAY") {
+          // Exclude placeholder
+          cohortSimulationIds.add(simId);
+        }
+      });
+    });
+
+    // Filter simulations to only include those in the effective cohorts
+    return simulations.filter((simulation) =>
+      cohortSimulationIds.has(simulation.id)
+    );
+  }, [simulations, effectiveCohortIds, cohorts]);
+
   // Function to export to CSV for Brightspace
   const handleBrightspaceExport = () => {
     if (!selectedMetric) {
@@ -92,17 +131,21 @@ export function BrightspaceExportButton<TData>({
 
       // Get the metric option
       const metricOption = metricOptions.find(
-        (m) => m.value === selectedMetric,
+        (m) => m.value === selectedMetric
       );
       if (!metricOption) {
         toast?.error("Invalid metric selected");
         return;
       }
 
-      // Create CSV header: Alias, Simulation1, Simulation2, etc.
-      const headerRow = ["Alias", ...simulations.map((sim) => sim.title)].join(
-        ",",
-      );
+      // Create CSV header: Username, Simulation1 Points Grade, Simulation2 Points Grade, etc.
+      const headerRow = [
+        "Username",
+        ...filteredSimulations.map(
+          (sim: { id: string; title: string }) => `${sim.title} Points Grade <Numeric MaxPoints:100>`
+        ),
+        "End-of-Line Indicator",
+      ].join(",");
 
       // Create CSV rows
       const csvRows = selectedData.map((row) => {
@@ -110,33 +153,35 @@ export function BrightspaceExportButton<TData>({
         const alias = ta.username;
 
         // For each simulation, check if the user has attempted it
-        const simulationValues = simulations.map((simulation) => {
-          const hasAttempted = ta.simulationIds.includes(simulation.id);
-          if (!hasAttempted) {
-            return ""; // Empty cell if not attempted
+        const simulationValues = filteredSimulations.map(
+          (simulation: { id: string; title: string }) => {
+            const hasAttempted = ta.simulationIds.includes(simulation.id);
+            if (!hasAttempted) {
+              return ""; // Empty cell if not attempted
+            }
+
+            // Get the metric value
+            const metricValue = ta[selectedMetric];
+            if (metricValue === undefined || metricValue === null) {
+              return "";
+            }
+
+            // Format the value based on the metric type
+            if (ta.hasNoSessions) {
+              return "N/A";
+            }
+
+            if (typeof metricValue === "number") {
+              return metricOption.unit
+                ? `${metricValue}${metricOption.unit}`
+                : `${metricValue}`;
+            }
+
+            return String(metricValue);
           }
+        );
 
-          // Get the metric value
-          const metricValue = ta[selectedMetric];
-          if (metricValue === undefined || metricValue === null) {
-            return "";
-          }
-
-          // Format the value based on the metric type
-          if (ta.hasNoSessions) {
-            return "N/A";
-          }
-
-          if (typeof metricValue === "number") {
-            return metricOption.unit
-              ? `${metricValue}${metricOption.unit}`
-              : `${metricValue}`;
-          }
-
-          return String(metricValue);
-        });
-
-        return [alias, ...simulationValues].join(",");
+        return [alias, ...simulationValues, "#"].join(",");
       });
 
       // Combine header and rows
@@ -205,8 +250,11 @@ export function BrightspaceExportButton<TData>({
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Exports CSV with alias names as first column and simulation names
-              as headers. Empty cells indicate no attempts for that simulation.
+              Exports CSV with usernames as first column and simulation names
+              with "Points Grade" suffix as headers. Only includes simulations
+              from selected cohorts. Empty cells indicate no attempts for that
+              simulation. Includes an "End Of Line Indicator" column with "#"
+              for each row.
             </p>
 
             <div className="pt-2 flex justify-end">

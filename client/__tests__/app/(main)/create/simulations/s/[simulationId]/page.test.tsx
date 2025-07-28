@@ -1,9 +1,7 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, vi, afterEach } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import page, { generateMetadata } from '@/app/(main)/create/simulations/s/[simulationId]/page';
 
 
 

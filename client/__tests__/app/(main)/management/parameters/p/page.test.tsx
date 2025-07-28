@@ -1,9 +1,7 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
-import page, { metadata } from '@/app/(main)/management/parameters/p/page';
 
 describe('page', () => {
   
