@@ -6,12 +6,23 @@ import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from app.main import (active_connections, active_runs, cancel_active_run,
-                      cleanup_profile_connection, connect, disconnect,
-                      emit_chat_stopped, get_socketio_instance, join_chat,
-                      leave_chat, send_assistant_message,
-                      send_simulation_message, socket_owner, stop_chat,
-                      store_active_run)
+from app.main import (
+    active_connections,
+    active_runs,
+    cancel_active_run,
+    cleanup_profile_connection,
+    connect,
+    disconnect,
+    emit_chat_stopped,
+    get_socketio_instance,
+    join_chat,
+    leave_chat,
+    send_assistant_message,
+    send_simulation_message,
+    socket_owner,
+    stop_chat,
+    store_active_run,
+)
 from fastapi import FastAPI
 from sqlmodel import Session
 

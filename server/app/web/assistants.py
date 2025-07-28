@@ -15,8 +15,10 @@ import socketio  # type: ignore
 from agents import gen_trace_id
 from app.db import get_session
 from app.models import AssistantChats, AssistantMessages, AssistantToolCalls
-from app.services.agents.collection.assistant import (cancel_assistant_run,
-                                                      run_assistant_agent)
+from app.services.agents.collection.assistant import (
+    cancel_assistant_run,
+    run_assistant_agent,
+)
 from app.services.agents.collection.title import run_title_agent
 from sqlmodel import select
 
@@ -318,18 +320,16 @@ async def process_assistant_message_websocket(
                     )
 
                 except json.JSONDecodeError:
-                    logger.error(
-                        f"Failed to parse tool call JSON: {tool_call_json}"
-                    )
+                    logger.error(f"Failed to parse tool call JSON: {tool_call_json}")
 
             elif token.startswith("<tool_call_result>") and token.endswith(
                 "</tool_call_result>"
             ):
                 logger.info(f"Received tool call result token: {token}")
                 # Extract tool call result data
-                tool_result_json = token.replace(
-                    "<tool_call_result>", ""
-                ).replace("</tool_call_result>", "")
+                tool_result_json = token.replace("<tool_call_result>", "").replace(
+                    "</tool_call_result>", ""
+                )
                 try:
                     tool_result_data = json.loads(tool_result_json)
                     tool_call_id = tool_result_data.get("id")
@@ -438,14 +438,14 @@ async def process_assistant_message_websocket(
         # Handle cancellation gracefully
         if "cancelled" in str(e).lower() or "canceled" in str(e).lower():
             logger.info(f"Assistant run for chat {chat_id} was cancelled")
-            
+
             # Finalize the message with the content received so far
             if current_message:
                 current_message.content = accumulated_content
                 current_message.completed = True
                 db_session.add(current_message)
                 db_session.commit()
-                
+
                 # Emit a cancellation event
                 await sio_instance.emit(
                     "assistant_message_cancelled",
@@ -458,7 +458,10 @@ async def process_assistant_message_websocket(
                 )
         else:
             # Handle all other errors
-            logger.error(f"Error in process_assistant_message_websocket for chat {chat_id}: {e}", exc_info=True)
+            logger.error(
+                f"Error in process_assistant_message_websocket for chat {chat_id}: {e}",
+                exc_info=True,
+            )
             await sio_instance.emit(
                 "assistant_error",
                 {"chat_id": str(chat_id), "error": str(e)},

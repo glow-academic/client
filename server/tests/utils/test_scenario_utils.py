@@ -6,8 +6,10 @@ import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
-from app.utils.scenario import (get_parameter_item_info,
-                                randomly_fill_scenario_attributes)
+from app.utils.scenario import (
+    get_parameter_item_info,
+    randomly_fill_scenario_attributes,
+)
 from sqlmodel import Session
 
 
@@ -139,7 +141,10 @@ class TestRandomly_Fill_Scenario_Attributes:
 
         # Mock random choices with proper return values
         with (
-            patch("random.choice", side_effect=[mock_persona1, mock_param_item1, mock_param_item2]),
+            patch(
+                "random.choice",
+                side_effect=[mock_persona1, mock_param_item1, mock_param_item2],
+            ),
             patch("random.randint", return_value=1),
             patch("random.sample", return_value=[mock_doc1]),
         ):
@@ -152,7 +157,10 @@ class TestRandomly_Fill_Scenario_Attributes:
             assert result.description == mock_scenario.description
             assert result.persona_id == mock_persona1.id
             assert result.document_ids == [mock_doc1.id]
-            assert result.parameter_item_ids == [mock_param_item1.id, mock_param_item2.id]
+            assert result.parameter_item_ids == [
+                mock_param_item1.id,
+                mock_param_item2.id,
+            ]
             assert result.generated is True
             assert result.parent_id == mock_scenario.id
 

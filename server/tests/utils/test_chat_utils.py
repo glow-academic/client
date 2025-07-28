@@ -8,11 +8,18 @@ from datetime import datetime
 from unittest.mock import MagicMock
 
 import pytest
-from app.models import (AssistantMessages, AssistantToolCalls, Scenarios,
-                        SimulationChats, SimulationMessages)
-from app.utils.chat import (get_assistant_conversation_history,
-                            get_chat_scenario,
-                            get_simulation_conversation_history)
+from app.models import (
+    AssistantMessages,
+    AssistantToolCalls,
+    Scenarios,
+    SimulationChats,
+    SimulationMessages,
+)
+from app.utils.chat import (
+    get_assistant_conversation_history,
+    get_chat_scenario,
+    get_simulation_conversation_history,
+)
 from sqlmodel import Session
 
 
@@ -191,7 +198,7 @@ class TestGet_Chat_Scenario:
         # Create test data
         chat_id = uuid.uuid4()
         scenario_id = uuid.uuid4()
-        
+
         chat = SimulationChats(
             id=chat_id,
             scenario_id=scenario_id,
@@ -230,7 +237,7 @@ class TestGet_Chat_Scenario:
         # Create test data
         chat_id = uuid.uuid4()
         scenario_id = uuid.uuid4()
-        
+
         chat = SimulationChats(
             id=chat_id,
             scenario_id=scenario_id,
