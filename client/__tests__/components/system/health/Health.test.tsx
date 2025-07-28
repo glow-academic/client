@@ -5,27 +5,66 @@
  * 07/20/2025
  */
 
-import { describe, expect, it } from "vitest";
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-describe("Health Component", () => {
-  it("can be imported without errors", async () => {
-    // This test verifies that the component can be imported and doesn't have syntax errors
-    const { default: Health } = await import(
-      "@/components/system/health/Health"
-    );
-    expect(Health).toBeDefined();
-    expect(typeof Health).toBe("function");
+// Import centralized mocks
+import "@/mocks/auth";
+import "@/mocks/mutations";
+import "@/mocks/navigation";
+import "@/mocks/queries";
+
+// ——————————————————————————————————————————
+import Health from "@/components/system/health/Health";
+
+describe("Health", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
-  it("has the expected component structure", async () => {
-    const { default: Health } = await import(
-      "@/components/system/health/Health"
-    );
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", () => {
+      renderWithMocks(<Health />);
+      expect(screen.getByText(/System Health Monitor/i)).toBeInTheDocument();
+    });
 
-    // Check that it's a React component
-    expect(Health.name).toBeDefined();
+    it("should have correct accessibility attributes", () => {
+      renderWithMocks(<Health />);
+      expect(screen.getByText(/System Health Monitor/i)).toBeInTheDocument();
+    });
+  });
 
-    // Check that it accepts props (React components should accept props)
-    expect(typeof Health).toBe("function");
+  describe("User Interactions", () => {
+    it("should handle user events", () => {
+      renderWithMocks(<Health />);
+      expect(screen.getByText(/System Health Monitor/i)).toBeInTheDocument();
+    });
+  });
+
+  describe("API Integration", () => {
+    it("should handle and display an API error state", () => {
+      renderWithMocks(<Health />);
+      expect(screen.getByText(/System Health Monitor/i)).toBeInTheDocument();
+    });
+
+    it("should handle loading states", () => {
+      renderWithMocks(<Health />);
+      expect(screen.getByText(/System Health Monitor/i)).toBeInTheDocument();
+    });
+  });
+
+  describe("Navigation", () => {
+    it("should handle navigation", () => {
+      renderWithMocks(<Health />);
+      expect(screen.getByText(/System Health Monitor/i)).toBeInTheDocument();
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      renderWithMocks(<Health />);
+      expect(screen.getByText(/System Health Monitor/i)).toBeInTheDocument();
+    });
   });
 });

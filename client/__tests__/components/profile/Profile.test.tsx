@@ -171,8 +171,7 @@ describe("Profile", () => {
 
       // Should handle empty names gracefully
       await waitFor(() => {
-        expect(screen.getByText("testuser")).toBeInTheDocument();
-        expect(screen.getByText("@")).toBeInTheDocument();
+        expect(screen.getByText("testuser@example.edu")).toBeInTheDocument();
       });
     });
 
@@ -196,8 +195,7 @@ describe("Profile", () => {
         expect(screen.getByText("Test User")).toBeInTheDocument();
 
         // Check for email
-        expect(screen.getByText("testuser")).toBeInTheDocument();
-        expect(screen.getByText("@")).toBeInTheDocument();
+        expect(screen.getByText("testuser@example.edu")).toBeInTheDocument();
 
         // Check for role badge
         expect(screen.getByText("Administrator")).toBeInTheDocument();

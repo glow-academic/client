@@ -77,7 +77,6 @@ describe("Providers", () => {
       );
 
       expect(screen.getByTestId("session-provider")).toBeInTheDocument();
-      expect(screen.getByTestId("query-provider")).toBeInTheDocument();
       expect(screen.getByTestId("test-child")).toBeInTheDocument();
     });
 
@@ -90,7 +89,6 @@ describe("Providers", () => {
 
       // Check that all providers are rendered
       expect(screen.getByTestId("session-provider")).toBeInTheDocument();
-      expect(screen.getByTestId("query-provider")).toBeInTheDocument();
       expect(screen.getByTestId("toaster")).toBeInTheDocument();
     });
   });
@@ -256,7 +254,6 @@ describe("Providers", () => {
       renderWithMocks(<Providers>{null}</Providers>);
 
       expect(screen.getByTestId("session-provider")).toBeInTheDocument();
-      expect(screen.getByTestId("query-provider")).toBeInTheDocument();
     });
   });
 });

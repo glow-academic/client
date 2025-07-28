@@ -1,5 +1,7 @@
+import { useProfile } from "@/contexts/profile-context";
 import { renderWithMocks } from "@/test/renderWithMocks";
 import { screen } from "@testing-library/react";
+import { usePathname } from "next/navigation";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Import centralized mocks to avoid hoisting issues
@@ -18,8 +20,104 @@ vi.mock("@/contexts/simulation-context", () => ({
   })),
 }));
 
+// Mock profile context
+vi.mock("@/contexts/profile-context", () => ({
+  ProfileProvider: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="profile-provider">{children}</div>
+  ),
+  useProfile: vi.fn(() => ({
+    activeProfile: {
+      id: "test-profile-id",
+      userId: 1,
+      firstName: "Test",
+      lastName: "User",
+      alias: "testuser",
+      role: "admin",
+      active: true,
+      viewedIntro: true,
+      viewedChat: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastLogin: new Date().toISOString(),
+      lastActive: new Date().toISOString(),
+      defaultProfile: false,
+    },
+    simulatedProfile: null,
+    effectiveProfile: {
+      id: "test-profile-id",
+      userId: 1,
+      firstName: "Test",
+      lastName: "User",
+      alias: "testuser",
+      role: "admin",
+      active: true,
+      viewedIntro: true,
+      viewedChat: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastLogin: new Date().toISOString(),
+      lastActive: new Date().toISOString(),
+      defaultProfile: false,
+    },
+    isSimulating: false,
+    isLoading: false,
+    setSimulatedProfile: vi.fn(),
+    clearSimulation: vi.fn(),
+    navigateToDefault: vi.fn(),
+    isSectionAvailable: vi.fn(() => true),
+  })),
+}));
+
 // Mock query client
 vi.mock("@tanstack/react-query", () => ({
+  useQuery: vi.fn(({ queryKey }) => {
+    // Return different data based on query key
+    if (queryKey && Array.isArray(queryKey) && queryKey[0] === "cohorts") {
+      return {
+        data: [],
+        isLoading: false,
+        error: null,
+      };
+    }
+    if (
+      queryKey &&
+      Array.isArray(queryKey) &&
+      queryKey[0] === "simulatedProfile"
+    ) {
+      return {
+        data: null,
+        isLoading: false,
+        error: null,
+      };
+    }
+    // Default profile data for other queries
+    return {
+      data: {
+        id: "test-profile-id",
+        userId: 1,
+        firstName: "Test",
+        lastName: "User",
+        alias: "testuser",
+        role: "admin",
+        active: true,
+        viewedIntro: true,
+        viewedChat: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastLogin: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        defaultProfile: false,
+      },
+      isLoading: false,
+      error: null,
+    };
+  }),
+  useMutation: vi.fn(() => ({
+    mutate: vi.fn(),
+    mutateAsync: vi.fn(),
+    isLoading: false,
+    error: null,
+  })),
   useQueryClient: vi.fn(() => ({
     invalidateQueries: vi.fn(),
   })),
@@ -100,7 +198,7 @@ describe("MainLayout", () => {
         </MainLayout>
       );
 
-      expect(screen.getByTestId("sidebar-provider")).toBeInTheDocument();
+      expect(screen.getAllByTestId("sidebar-provider")).toHaveLength(2);
       expect(screen.getByTestId("sidebar-inset")).toBeInTheDocument();
       expect(screen.getByTestId("test-content")).toBeInTheDocument();
     });
@@ -119,25 +217,31 @@ describe("MainLayout", () => {
     });
 
     it("should show analytics filters for analytics pages with admin role", () => {
+      // Mock usePathname to return an analytics path
+      vi.mocked(usePathname).mockReturnValue("/analytics/overview");
+
       renderWithMocks(
         <MainLayout>
           <div data-testid="test-content">Test Content</div>
         </MainLayout>
       );
 
-      // Analytics filters should be present for admin role
+      // Analytics filters should be present for admin role on analytics pages
       expect(screen.getByTestId("analytics-filters")).toBeInTheDocument();
     });
 
     it("should not show analytics filters for non-analytics pages", () => {
+      // Mock usePathname to return a non-analytics path
+      vi.mocked(usePathname).mockReturnValue("/home");
+
       renderWithMocks(
         <MainLayout>
           <div data-testid="test-content">Test Content</div>
         </MainLayout>
       );
 
-      // Analytics filters should still be present as they're always rendered
-      expect(screen.getByTestId("analytics-filters")).toBeInTheDocument();
+      // Analytics filters should not be present on non-analytics pages
+      expect(screen.queryByTestId("analytics-filters")).not.toBeInTheDocument();
     });
   });
 
@@ -170,6 +274,49 @@ describe("MainLayout", () => {
 
   describe("TA Tour", () => {
     it("should show TA tour for ta role", () => {
+      // Mock useProfile to return a TA profile
+      vi.mocked(useProfile).mockReturnValue({
+        activeProfile: {
+          id: "test-profile-id",
+          userId: 1,
+          firstName: "Test",
+          lastName: "User",
+          alias: "testuser",
+          role: "ta",
+          active: true,
+          viewedIntro: true,
+          viewedChat: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
+          lastActive: new Date().toISOString(),
+          defaultProfile: false,
+        },
+        simulatedProfile: null,
+        effectiveProfile: {
+          id: "test-profile-id",
+          userId: 1,
+          firstName: "Test",
+          lastName: "User",
+          alias: "testuser",
+          role: "ta",
+          active: true,
+          viewedIntro: true,
+          viewedChat: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
+          lastActive: new Date().toISOString(),
+          defaultProfile: false,
+        },
+        isSimulating: false,
+        isLoading: false,
+        setSimulatedProfile: vi.fn(),
+        clearSimulation: vi.fn(),
+        navigateToDefault: vi.fn(),
+        isSectionAvailable: vi.fn(() => true),
+      });
+
       renderWithMocks(
         <MainLayout>
           <div data-testid="test-content">Test Content</div>
@@ -180,14 +327,56 @@ describe("MainLayout", () => {
     });
 
     it("should not show TA tour for non-ta roles", () => {
+      // Reset useProfile to return admin profile
+      vi.mocked(useProfile).mockReturnValue({
+        activeProfile: {
+          id: "test-profile-id",
+          userId: 1,
+          firstName: "Test",
+          lastName: "User",
+          alias: "testuser",
+          role: "admin",
+          active: true,
+          viewedIntro: true,
+          viewedChat: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
+          lastActive: new Date().toISOString(),
+          defaultProfile: false,
+        },
+        simulatedProfile: null,
+        effectiveProfile: {
+          id: "test-profile-id",
+          userId: 1,
+          firstName: "Test",
+          lastName: "User",
+          alias: "testuser",
+          role: "admin",
+          active: true,
+          viewedIntro: true,
+          viewedChat: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
+          lastActive: new Date().toISOString(),
+          defaultProfile: false,
+        },
+        isSimulating: false,
+        isLoading: false,
+        setSimulatedProfile: vi.fn(),
+        clearSimulation: vi.fn(),
+        navigateToDefault: vi.fn(),
+        isSectionAvailable: vi.fn(() => true),
+      });
+
       renderWithMocks(
         <MainLayout>
           <div data-testid="test-content">Test Content</div>
         </MainLayout>
       );
 
-      // TA tour should still be present as it's always rendered
-      expect(screen.getByTestId("ta-tour")).toBeInTheDocument();
+      expect(screen.queryByTestId("ta-tour")).not.toBeInTheDocument();
     });
   });
 
@@ -265,7 +454,7 @@ describe("MainLayout", () => {
     it("should handle empty children gracefully", () => {
       renderWithMocks(<MainLayout>{null}</MainLayout>);
 
-      expect(screen.getByTestId("sidebar-provider")).toBeInTheDocument();
+      expect(screen.getAllByTestId("sidebar-provider")).toHaveLength(2);
       expect(screen.getByTestId("sidebar-inset")).toBeInTheDocument();
     });
   });

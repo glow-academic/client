@@ -17,15 +17,18 @@ vi.mock("@/components/analytics/report/Report", () => ({
 }));
 
 // Mock React.use to handle Promise unwrapping
-vi.mock("react", () => ({
-  ...vi.importActual("react"),
-  use: vi.fn((promise) => {
-    if (promise instanceof Promise) {
-      return { profileId: "test-profile-id" };
-    }
-    return promise;
-  }),
-}));
+vi.mock("react", async () => {
+  const actual = await vi.importActual("react");
+  return {
+    ...actual,
+    use: vi.fn((promise) => {
+      if (promise instanceof Promise) {
+        return { profileId: "test-profile-id" };
+      }
+      return promise;
+    }),
+  };
+});
 
 // ——————————————————————————————————————————
 import ReportsPage, {
