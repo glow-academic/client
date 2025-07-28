@@ -9,9 +9,47 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Path configurations
-const COMPONENTS_DIR = path.join(__dirname, "../components");
-const TESTS_DIR = path.join(__dirname, "../__tests__");
+// Path configurations - updated to include more directories
+const ROOT_DIR = path.join(__dirname, "..");
+const COMPONENTS_DIR = path.join(ROOT_DIR, "components");
+const APP_DIR = path.join(ROOT_DIR, "app");
+const UTILS_DIR = path.join(ROOT_DIR, "utils");
+const HOOKS_DIR = path.join(ROOT_DIR, "hooks");
+const LIB_DIR = path.join(ROOT_DIR, "lib");
+const CONTEXTS_DIR = path.join(ROOT_DIR, "contexts");
+const TESTS_DIR = path.join(ROOT_DIR, "__tests__");
+
+// Directories to scan for .tsx files
+const SCAN_DIRECTORIES = [
+  { dir: COMPONENTS_DIR, name: "components" },
+  { dir: APP_DIR, name: "app" },
+  { dir: UTILS_DIR, name: "utils" },
+  { dir: HOOKS_DIR, name: "hooks" },
+  { dir: LIB_DIR, name: "lib" },
+  { dir: CONTEXTS_DIR, name: "contexts" },
+];
+
+// Directories to exclude from scanning
+const EXCLUDE_DIRECTORIES = [
+  "queries",
+  "mutations",
+  "drizzle",
+  "api",
+  "auth",
+  "model",
+  "logs",
+  "analytics",
+  "breadcrumb-utils.ts",
+  "logger.ts",
+  "navigation-utils.ts",
+  "date-utils.ts",
+  "string-utils.ts",
+  "validation-utils.ts",
+  "format-utils.ts",
+  "storage-utils.ts",
+  "constants.ts",
+  "types.ts",
+];
 
 // Initialize TypeScript project for AST parsing
 const project = new Project({
@@ -20,9 +58,21 @@ const project = new Project({
 });
 
 /**
+ * Check if a path should be excluded
+ */
+function shouldExcludePath(relativePath) {
+  const pathParts = relativePath.split(path.sep);
+  return EXCLUDE_DIRECTORIES.some(
+    (exclude) =>
+      pathParts.includes(exclude) ||
+      pathParts.some((part) => part.endsWith(exclude))
+  );
+}
+
+/**
  * Recursively scan directory for .tsx files
  */
-function scanComponentFiles(dir, relativePath = "") {
+function scanComponentFiles(dir, relativePath = "", sourceName = "") {
   const components = [];
 
   try {
@@ -34,12 +84,23 @@ function scanComponentFiles(dir, relativePath = "") {
       const stat = fs.statSync(fullPath);
 
       if (stat.isDirectory()) {
-        const subComponents = scanComponentFiles(fullPath, itemRelativePath);
+        // Skip excluded directories
+        if (shouldExcludePath(itemRelativePath)) {
+          continue;
+        }
+
+        const subComponents = scanComponentFiles(
+          fullPath,
+          itemRelativePath,
+          sourceName
+        );
         components.push(...subComponents);
       } else if (stat.isFile() && item.endsWith(".tsx")) {
         const componentName = item.replace(".tsx", "");
         const testFileName = `${componentName}.test.tsx`;
-        const testDir = path.join(TESTS_DIR, relativePath);
+
+        // Create test directory structure that mirrors the source structure
+        const testDir = path.join(TESTS_DIR, sourceName, relativePath);
         const testFilePath = path.join(testDir, testFileName);
         const componentPath = path.join(relativePath, item);
 
@@ -51,6 +112,7 @@ function scanComponentFiles(dir, relativePath = "") {
           testDir,
           testFilePath,
           relativePath,
+          sourceName, // Track which source directory this came from
         });
       }
     }
@@ -59,6 +121,25 @@ function scanComponentFiles(dir, relativePath = "") {
   }
 
   return components;
+}
+
+/**
+ * Scan all directories for components
+ */
+function scanAllComponentFiles() {
+  const allComponents = [];
+
+  for (const { dir, name } of SCAN_DIRECTORIES) {
+    if (fs.existsSync(dir)) {
+      console.log(`📁 Scanning ${name} directory...`);
+      const components = scanComponentFiles(dir, "", name);
+      allComponents.push(...components);
+    } else {
+      console.log(`⚠️  Directory ${name} not found: ${dir}`);
+    }
+  }
+
+  return allComponents;
 }
 /**
  * Analyze component file using TypeScript AST to extract props, exports, and hooks
@@ -104,7 +185,7 @@ function analyzeComponent(componentPath) {
 
     // Extract named exports (excluding default)
     const namedExports = Array.from(exports.keys()).filter(
-      (n) => n !== "default",
+      (n) => n !== "default"
     );
 
     // Check for various hooks and patterns using AST
@@ -113,7 +194,7 @@ function analyzeComponent(componentPath) {
 
     const uses = {
       useRouter: identifierTexts.some((text) =>
-        ["useRouter", "usePathname", "useSearchParams"].includes(text),
+        ["useRouter", "usePathname", "useSearchParams"].includes(text)
       ),
       useState: identifierTexts.includes("useState"),
       useEffect: identifierTexts.includes("useEffect"),
@@ -158,7 +239,7 @@ function analyzeComponent(componentPath) {
   } catch (error) {
     console.error(
       `❌ Error analyzing component ${componentPath}:`,
-      error.message,
+      error.message
     );
     return {
       content: "",
@@ -188,10 +269,22 @@ function analyzeComponent(componentPath) {
  * every spec imports the shared helper `@/tests/renderWithMocks`
  */
 function generateTestTemplate(component, analysis) {
-  const { componentName, componentPath } = component;
+  const { componentName, componentPath, sourceName } = component;
   const { queryNames, mutationNames } = analysis; // Get the function names from analysis
-  const importPath =
-    `@/components/${componentPath.replace(/\\/g, "/")}`.replace(".tsx", "");
+
+  // Generate import path based on source directory
+  let importPath;
+  if (sourceName === "components") {
+    importPath = `@/components/${componentPath.replace(/\\/g, "/")}`.replace(
+      ".tsx",
+      ""
+    );
+  } else {
+    importPath = `@/${sourceName}/${componentPath.replace(/\\/g, "/")}`.replace(
+      ".tsx",
+      ""
+    );
+  }
 
   /* ──────────────────────────────────────────────────────────
    * 2.  Build the test file
@@ -246,7 +339,7 @@ import userEvent from '@testing-library/user-event';`;
   }
 
   const needsTAPerformanceData = mockPropLines.some((l) =>
-    l.includes("TAPerformanceData"),
+    l.includes("TAPerformanceData")
   );
   if (needsTAPerformanceData) {
     template += `\nimport type { TAPerformanceData } from '@/hooks/use-report-columns';`;
@@ -260,7 +353,7 @@ import userEvent from '@testing-library/user-event';`;
 // ——————————————————————————————————————————
 import ${
     analysis.hasDefaultExport
-      ? `${componentName}${analysis.namedExports.length > 0 ? `, { ${analysis.namedExports.join(", ")} }` : ""}`
+      ? `${componentName.includes("-") ? `{ default as ${componentName.replace(/-/g, "")} }` : componentName}${analysis.namedExports.length > 0 ? `, { ${analysis.namedExports.join(", ")} }` : ""}`
       : `{ ${analysis.namedExports.join(", ")} }`
   } from '${importPath}';
 
@@ -336,7 +429,7 @@ ${mockPropLines.join("\n")}
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       ${hasMocks ? "// ✨ All mocks are automatically set up via imports above" : ""}
-      renderWithMocks(<${componentName} ${analysis.hasProps ? "{...mockProps}" : ""} />);
+      renderWithMocks(<${componentName.includes("-") ? componentName.replace(/-/g, "") : componentName} ${analysis.hasProps ? "{...mockProps}" : ""} />);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
@@ -407,7 +500,7 @@ ${mockPropLines.join("\n")}
           : ""
       }
 
-      renderWithMocks(<${componentName} ${analysis.hasProps ? "{...mockProps}" : ""} />);
+      renderWithMocks(<${componentName.includes("-") ? componentName.replace(/-/g, "") : componentName} ${analysis.hasProps ? "{...mockProps}" : ""} />);
       
       // Assert: Check that your component shows an error message.
       // TODO: Add specific error state assertions
@@ -501,11 +594,14 @@ ${mockPropLines.join("\n")}
  */
 function generateRenderExample(component, analysis) {
   const { componentName } = component;
+  const safeComponentName = componentName.includes("-")
+    ? componentName.replace(/-/g, "")
+    : componentName;
 
   if (analysis.hasProps) {
-    return `<${componentName} {...mockProps} />`;
+    return `<${safeComponentName} {...mockProps} />`;
   } else {
-    return `<${componentName} />`;
+    return `<${safeComponentName} />`;
   }
 }
 
@@ -540,7 +636,7 @@ function generateTestFiles(components) {
 
     if (isTestImplemented(testFilePath)) {
       console.log(
-        `⏭️  Skipping ${component.testFileName} (already implemented)`,
+        `⏭️  Skipping ${component.testFileName} (already implemented)`
       );
       skipped++;
     } else {
@@ -555,7 +651,7 @@ function generateTestFiles(components) {
 
       if (existed) {
         console.log(
-          `✨ Updated ${component.testFileName} (was empty/incomplete)`,
+          `✨ Updated ${component.testFileName} (was empty/incomplete)`
         );
         updated++;
       } else {
@@ -573,7 +669,9 @@ function generateTestFiles(components) {
  */
 function cleanupOrphanedTests(components) {
   const existingComponentPaths = new Set(
-    components.map((c) => c.componentPath.replace(/\\/g, "/")),
+    components.map((c) =>
+      `${c.sourceName}/${c.componentPath}`.replace(/\\/g, "/")
+    )
   );
 
   let cleanedUp = 0;
@@ -593,12 +691,12 @@ function cleanupOrphanedTests(components) {
         const componentName = item.replace(".test.tsx", "");
         const expectedComponentPath = path.join(
           relativePath,
-          `${componentName}.tsx`,
+          `${componentName}.tsx`
         );
 
         if (!existingComponentPaths.has(expectedComponentPath)) {
           console.log(
-            `🗑️  Removing orphaned test: ${path.join(relativePath, item)}`,
+            `🗑️  Removing orphaned test: ${path.join(relativePath, item)}`
           );
           fs.unlinkSync(fullPath);
           cleanedUp++;
@@ -635,7 +733,7 @@ function generateCoverageReport(components, stats) {
     const status = isTestImplemented(component.testFilePath)
       ? "✅ Implemented"
       : "❌ Needs Implementation";
-    report += `| ${component.componentName} | ${component.componentPath} | ${component.testFileName} | ${status} |\n`;
+    report += `| ${component.componentName} | ${component.sourceName}/${component.componentPath} | ${component.testFileName} | ${status} |\n`;
   });
 
   report += `
@@ -730,9 +828,14 @@ function generateDirectoryTree(components) {
   const tree = {};
 
   components.forEach((component) => {
-    const parts = component.relativePath.split(path.sep).filter((p) => p);
-    let current = tree;
+    // Start with source directory
+    if (!tree[component.sourceName]) {
+      tree[component.sourceName] = {};
+    }
+    let current = tree[component.sourceName];
 
+    // Add relative path parts
+    const parts = component.relativePath.split(path.sep).filter((p) => p);
     parts.forEach((part) => {
       if (!current[part]) {
         current[part] = {};
@@ -765,7 +868,7 @@ function generateDirectoryTree(components) {
 function main() {
   console.log("🚀 Generating Jest/Vitest tests for React components...\n");
 
-  const components = scanComponentFiles(COMPONENTS_DIR);
+  const components = scanAllComponentFiles();
 
   if (components.length === 0) {
     console.log("⚠️  No .tsx components found");
@@ -793,7 +896,7 @@ function main() {
 
   console.log("\n✅ Component test generation complete!");
   console.log(
-    '💡 Run "npm run test:components" to execute all component tests',
+    '💡 Run "npm run test:components" to execute all component tests'
   );
 }
 
@@ -847,7 +950,7 @@ function getPropsGenericInfo(sourceText, ifaceName) {
   } catch (error) {
     console.error(
       `❌ Error detecting generics for ${ifaceName}:`,
-      error.message,
+      error.message
     );
     return { isGeneric: false, paramCount: 0 };
   }
@@ -970,7 +1073,7 @@ function buildMockProps(sourceText, ifaceName) {
             name.includes("data-") ||
             (name.startsWith("on") &&
               name.length > 2 &&
-              name[2] === name[2].toUpperCase()),
+              name[2] === name[2].toUpperCase())
         )
       ) {
         return null;
@@ -1101,7 +1204,7 @@ function buildMockProps(sourceText, ifaceName) {
   } catch (error) {
     console.error(
       `❌ Error building mock props for ${ifaceName}:`,
-      error.message,
+      error.message
     );
     return [];
   }

@@ -18,199 +18,525 @@ def mock_session():
 import pytest
 
 
-@pytest.mark.skip(reason="TODO: implement tests for `cleanup_profile_connection`")
 class TestCleanup_Profile_Connection:
     """Tests for cleanup_profile_connection function."""
 
-    def test_cleanup_profile_connection_success(self):
+    @pytest.mark.asyncio
+    async def test_cleanup_profile_connection_success(self):
         """Test successful cleanup_profile_connection execution."""
-        # TODO: Implement test for cleanup_profile_connection
-        assert False, "IMPLEMENT: Test for cleanup_profile_connection"
+        import uuid
+        from unittest.mock import AsyncMock, patch
 
-    def test_cleanup_profile_connection_error(self):
+        from app.main import cleanup_profile_connection
+
+        # Mock the database session
+        with patch('app.db.get_session') as mock_get_session:
+            mock_session = MagicMock()
+            mock_get_session.return_value = iter([mock_session])
+            
+            # Mock the profile
+            mock_profile = MagicMock()
+            mock_session.exec.return_value.one_or_none.return_value = mock_profile
+            
+            profile_id = str(uuid.uuid4())
+
+            await cleanup_profile_connection(profile_id)
+
+            # Verify that the profile was updated
+            mock_session.add.assert_called_once_with(mock_profile)
+            mock_session.commit.assert_called_once()
+            assert mock_profile.active is False
+
+    @pytest.mark.asyncio
+    async def test_cleanup_profile_connection_error(self):
         """Test cleanup_profile_connection error handling."""
-        # TODO: Implement error test for cleanup_profile_connection
-        assert False, "IMPLEMENT: Error test for cleanup_profile_connection"
+        import uuid
+        from unittest.mock import AsyncMock, patch
+
+        from app.main import cleanup_profile_connection
+
+        # Mock the database session to raise an exception
+        with patch('app.db.get_session') as mock_get_session:
+            mock_session = MagicMock()
+            mock_get_session.return_value = iter([mock_session])
+            mock_session.exec.side_effect = Exception("Database error")
+            
+            profile_id = str(uuid.uuid4())
+
+            # The function should handle the exception gracefully
+            await cleanup_profile_connection(profile_id)
+
+            # Verify that the database was still accessed
+            mock_get_session.assert_called_once()
 
 
 import pytest
 
 
-@pytest.mark.skip(reason="TODO: implement tests for `send_simulation_message`")
 class TestSend_Simulation_Message:
     """Tests for send_simulation_message function."""
 
-    def test_send_simulation_message_success(self):
+    @pytest.mark.asyncio
+    async def test_send_simulation_message_success(self):
         """Test successful send_simulation_message execution."""
-        # TODO: Implement test for send_simulation_message
-        assert False, "IMPLEMENT: Test for send_simulation_message"
+        from unittest.mock import AsyncMock, patch
 
-    def test_send_simulation_message_error(self):
+        from app.main import send_simulation_message
+
+        # Mock the process_simulation_message_websocket function
+        with patch('app.main.process_simulation_message_websocket') as mock_process:
+            sid = "test_sid"
+            data = {"chat_id": "test_chat_id", "message": "Test message"}
+            
+            await send_simulation_message(sid, data)
+            
+            # Verify that process_simulation_message_websocket was called
+            mock_process.assert_called_once_with(data["chat_id"], data["message"])
+
+    @pytest.mark.asyncio
+    async def test_send_simulation_message_error(self):
         """Test send_simulation_message error handling."""
-        # TODO: Implement error test for send_simulation_message
-        assert False, "IMPLEMENT: Error test for send_simulation_message"
+        from unittest.mock import AsyncMock, patch
+
+        from app.main import send_simulation_message
+
+        # Mock the process_simulation_message_websocket function to raise an exception
+        with patch('app.main.process_simulation_message_websocket', side_effect=Exception("Test error")):
+            sid = "test_sid"
+            data = {"chat_id": "test_chat_id", "message": "Test message"}
+            
+            # The function should handle the exception gracefully
+            await send_simulation_message(sid, data)
 
 
 import pytest
 
 
-@pytest.mark.skip(reason="TODO: implement tests for `send_assistant_message`")
 class TestSend_Assistant_Message:
     """Tests for send_assistant_message function."""
 
-    def test_send_assistant_message_success(self):
+    @pytest.mark.asyncio
+    async def test_send_assistant_message_success(self):
         """Test successful send_assistant_message execution."""
-        # TODO: Implement test for send_assistant_message
-        assert False, "IMPLEMENT: Test for send_assistant_message"
+        from unittest.mock import AsyncMock, patch
 
-    def test_send_assistant_message_error(self):
+        from app.main import send_assistant_message
+
+        # Mock the process_assistant_message_websocket function
+        with patch('app.main.process_assistant_message_websocket') as mock_process:
+            sid = "test_sid"
+            data = {"chat_id": "test_chat_id", "message": "Test message"}
+            
+            await send_assistant_message(sid, data)
+            
+            # Verify that process_assistant_message_websocket was called
+            mock_process.assert_called_once_with(data["chat_id"], data["message"])
+
+    @pytest.mark.asyncio
+    async def test_send_assistant_message_error(self):
         """Test send_assistant_message error handling."""
-        # TODO: Implement error test for send_assistant_message
-        assert False, "IMPLEMENT: Error test for send_assistant_message"
+        from unittest.mock import AsyncMock, patch
+
+        from app.main import send_assistant_message
+
+        # Mock the process_assistant_message_websocket function to raise an exception
+        with patch('app.main.process_assistant_message_websocket', side_effect=Exception("Test error")):
+            sid = "test_sid"
+            data = {"chat_id": "test_chat_id", "message": "Test message"}
+            
+            # The function should handle the exception gracefully
+            await send_assistant_message(sid, data)
 
 
 import pytest
 
 
-@pytest.mark.skip(reason="TODO: implement tests for `connect`")
 class TestConnect:
     """Tests for connect function."""
 
-    def test_connect_success(self):
+    @pytest.mark.asyncio
+    async def test_connect_success(self):
         """Test successful connect execution."""
-        # TODO: Implement test for connect
-        assert False, "IMPLEMENT: Test for connect"
+        from unittest.mock import AsyncMock, patch
 
-    def test_connect_error(self):
+        from app.main import connect
+
+        # Mock the Socket.IO instance
+        mock_sio = AsyncMock()
+        
+        sid = "test_sid"
+        environ = {"HTTP_X_FORWARDED_FOR": "192.168.1.1"}
+        auth = {"profile_id": "test_profile_id"}
+        
+        # Call the function
+        result = await connect(sid, environ, auth)
+        
+        # Verify that the function returned True (connection accepted)
+        assert result is True
+        
+        # Verify that the client was added to the active_connections set
+        from app.main import active_connections
+        assert sid in active_connections
+
+    @pytest.mark.asyncio
+    async def test_connect_error(self):
         """Test connect error handling."""
-        # TODO: Implement error test for connect
-        assert False, "IMPLEMENT: Error test for connect"
+        from unittest.mock import AsyncMock, patch
+
+        from app.main import connect
+
+        # Mock the Socket.IO instance to raise an exception
+        mock_sio = AsyncMock()
+        mock_sio.emit.side_effect = Exception("Socket.IO error")
+        
+        sid = "test_sid"
+        environ = {"HTTP_X_FORWARDED_FOR": "192.168.1.1"}
+        auth = {"profile_id": "test_profile_id"}
+        
+        # The function should handle the exception gracefully
+        result = await connect(sid, environ, auth)
+        
+        # Verify that the function still returned True (connection accepted)
+        assert result is True
+        
+        # Verify that the client was still added to active_connections
+        from app.main import active_connections
+        assert sid in active_connections
 
 
 import pytest
 
 
-@pytest.mark.skip(reason="TODO: implement tests for `disconnect`")
 class TestDisconnect:
     """Tests for disconnect function."""
 
-    def test_disconnect_success(self):
+    @pytest.mark.asyncio
+    async def test_disconnect_success(self):
         """Test successful disconnect execution."""
-        # TODO: Implement test for disconnect
-        assert False, "IMPLEMENT: Test for disconnect"
+        from unittest.mock import AsyncMock, patch
 
-    def test_disconnect_error(self):
+        from app.main import active_connections, disconnect
+
+        # Add a test client to active_connections first
+        test_sid = "test_sid"
+        active_connections["test_chat_id"] = test_sid
+        
+        # Mock the Socket.IO instance
+        mock_sio = AsyncMock()
+        
+        with patch('app.main.get_socketio_instance', return_value=mock_sio):
+            await disconnect(test_sid)
+            
+            # Verify that the client was removed from active_connections
+            assert "test_chat_id" not in active_connections
+
+    @pytest.mark.asyncio
+    async def test_disconnect_error(self):
         """Test disconnect error handling."""
-        # TODO: Implement error test for disconnect
-        assert False, "IMPLEMENT: Error test for disconnect"
+        from unittest.mock import AsyncMock, patch
+
+        from app.main import active_connections, disconnect
+
+        # Add a test client to active_connections first
+        test_sid = "test_sid"
+        active_connections["test_chat_id"] = test_sid
+        
+        # Mock the Socket.IO instance to raise an exception
+        mock_sio = AsyncMock()
+        mock_sio.emit.side_effect = Exception("Socket.IO error")
+        
+        with patch('app.main.get_socketio_instance', return_value=mock_sio):
+            await disconnect(test_sid)
+            
+            # Verify that the client was still removed from active_connections
+            assert "test_chat_id" not in active_connections
 
 
 import pytest
 
 
-@pytest.mark.skip(reason="TODO: implement tests for `join_chat`")
 class TestJoin_Chat:
     """Tests for join_chat function."""
 
-    def test_join_chat_success(self):
+    @pytest.mark.asyncio
+    async def test_join_chat_success(self):
         """Test successful join_chat execution."""
-        # TODO: Implement test for join_chat
-        assert False, "IMPLEMENT: Test for join_chat"
+        from unittest.mock import AsyncMock, patch
 
-    def test_join_chat_error(self):
+        from app.main import join_chat
+
+        # Mock the Socket.IO instance
+        mock_sio = AsyncMock()
+        
+        with patch('app.main.get_socketio_instance', return_value=mock_sio):
+            sid = "test_sid"
+            data = {"chat_id": "test_chat_id", "chat_type": "assistant"}
+            
+            await join_chat(sid, data)
+            
+            # Verify that the client was added to the chat room
+            mock_sio.enter_room.assert_called_once_with(sid, "assistant_test_chat_id")
+
+    @pytest.mark.asyncio
+    async def test_join_chat_error(self):
         """Test join_chat error handling."""
-        # TODO: Implement error test for join_chat
-        assert False, "IMPLEMENT: Error test for join_chat"
+        from unittest.mock import AsyncMock, patch
+
+        from app.main import join_chat
+
+        # Mock the Socket.IO instance to raise an exception
+        mock_sio = AsyncMock()
+        mock_sio.enter_room.side_effect = Exception("Socket.IO error")
+        
+        with patch('app.main.get_socketio_instance', return_value=mock_sio):
+            sid = "test_sid"
+            data = {"chat_id": "test_chat_id", "chat_type": "assistant"}
+            
+            # The function should handle the exception gracefully
+            await join_chat(sid, data)
+            
+            # Verify the enter_room was still called (even though it failed)
+            mock_sio.enter_room.assert_called_once()
 
 
 import pytest
 
 
-@pytest.mark.skip(reason="TODO: implement tests for `leave_chat`")
 class TestLeave_Chat:
     """Tests for leave_chat function."""
 
-    def test_leave_chat_success(self):
+    @pytest.mark.asyncio
+    async def test_leave_chat_success(self):
         """Test successful leave_chat execution."""
-        # TODO: Implement test for leave_chat
-        assert False, "IMPLEMENT: Test for leave_chat"
+        from unittest.mock import AsyncMock, patch
 
-    def test_leave_chat_error(self):
+        from app.main import leave_chat
+
+        # Mock the Socket.IO instance
+        mock_sio = AsyncMock()
+        
+        with patch('app.main.get_socketio_instance', return_value=mock_sio):
+            sid = "test_sid"
+            data = {"chat_id": "test_chat_id", "chat_type": "assistant"}
+            
+            await leave_chat(sid, data)
+            
+            # Verify that the client was removed from the chat room
+            mock_sio.leave_room.assert_called_once_with(sid, "assistant_test_chat_id")
+
+    @pytest.mark.asyncio
+    async def test_leave_chat_error(self):
         """Test leave_chat error handling."""
-        # TODO: Implement error test for leave_chat
-        assert False, "IMPLEMENT: Error test for leave_chat"
+        from unittest.mock import AsyncMock, patch
+
+        from app.main import leave_chat
+
+        # Mock the Socket.IO instance to raise an exception
+        mock_sio = AsyncMock()
+        mock_sio.leave_room.side_effect = Exception("Socket.IO error")
+        
+        with patch('app.main.get_socketio_instance', return_value=mock_sio):
+            sid = "test_sid"
+            data = {"chat_id": "test_chat_id", "chat_type": "assistant"}
+            
+            # The function should handle the exception gracefully
+            await leave_chat(sid, data)
+            
+            # Verify the leave_room was still called (even though it failed)
+            mock_sio.leave_room.assert_called_once()
 
 
 import pytest
 
 
-@pytest.mark.skip(reason="TODO: implement tests for `store_active_run`")
 class TestStore_Active_Run:
     """Tests for store_active_run function."""
 
     def test_store_active_run_success(self):
         """Test successful store_active_run execution."""
-        # TODO: Implement test for store_active_run
-        assert False, "IMPLEMENT: Test for store_active_run"
+        from app.main import active_runs, store_active_run
+
+        # Clear any existing runs
+        active_runs.clear()
+        
+        chat_id = "test_chat_id"
+        run_id = "test_run_id"
+        
+        store_active_run(chat_id, run_id)
+        
+        # Verify that the run was stored
+        assert chat_id in active_runs
+        assert active_runs[chat_id] == run_id
 
     def test_store_active_run_error(self):
         """Test store_active_run error handling."""
-        # TODO: Implement error test for store_active_run
-        assert False, "IMPLEMENT: Error test for store_active_run"
+        from app.main import active_runs, store_active_run
+
+        # Clear any existing runs
+        active_runs.clear()
+        
+        chat_id = "test_chat_id"
+        run_id = "test_run_id"
+        
+        # Store a run
+        store_active_run(chat_id, run_id)
+        
+        # Store another run for the same chat_id (should overwrite)
+        new_run_id = "new_run_id"
+        store_active_run(chat_id, new_run_id)
+        
+        # Verify that the run was updated
+        assert active_runs[chat_id] == new_run_id
 
 
 import pytest
 
 
-@pytest.mark.skip(reason="TODO: implement tests for `cancel_active_run`")
 class TestCancel_Active_Run:
     """Tests for cancel_active_run function."""
 
     def test_cancel_active_run_success(self):
         """Test successful cancel_active_run execution."""
-        # TODO: Implement test for cancel_active_run
-        assert False, "IMPLEMENT: Test for cancel_active_run"
+        from unittest.mock import MagicMock
+
+        from app.main import active_runs, cancel_active_run
+
+        # Clear any existing runs and add a test run
+        active_runs.clear()
+        chat_id = "test_chat_id"
+        mock_run = MagicMock()
+        active_runs[chat_id] = mock_run
+        
+        # Cancel the run
+        result = cancel_active_run(chat_id)
+        
+        # Verify that the run was removed and True was returned
+        assert chat_id not in active_runs
+        assert result is True
+        mock_run.cancel.assert_called_once()
 
     def test_cancel_active_run_error(self):
         """Test cancel_active_run error handling."""
-        # TODO: Implement error test for cancel_active_run
-        assert False, "IMPLEMENT: Error test for cancel_active_run"
+        from app.main import active_runs, cancel_active_run
+
+        # Clear any existing runs
+        active_runs.clear()
+        
+        # Try to cancel a non-existent run
+        chat_id = "non_existent_chat_id"
+        result = cancel_active_run(chat_id)
+        
+        # Verify that False was returned (no run to cancel)
+        assert result is False
 
 
 import pytest
 
 
-@pytest.mark.skip(reason="TODO: implement tests for `emit_chat_stopped`")
 class TestEmit_Chat_Stopped:
     """Tests for emit_chat_stopped function."""
 
-    def test_emit_chat_stopped_success(self):
+    @pytest.mark.asyncio
+    async def test_emit_chat_stopped_success(self):
         """Test successful emit_chat_stopped execution."""
-        # TODO: Implement test for emit_chat_stopped
-        assert False, "IMPLEMENT: Test for emit_chat_stopped"
+        from unittest.mock import AsyncMock, patch
 
-    def test_emit_chat_stopped_error(self):
+        from app.main import emit_chat_stopped
+
+        # Mock the Socket.IO instance
+        mock_sio = AsyncMock()
+        
+        with patch('app.main.get_socketio_instance', return_value=mock_sio):
+            chat_id = "test_chat_id"
+            chat_type = "assistant"
+            
+            await emit_chat_stopped(chat_id, chat_type)
+            
+            # Verify that the chat_stopped event was emitted to the chat room
+            mock_sio.emit.assert_called_once_with(
+                "chat_stopped",
+                {"chat_id": chat_id, "chat_type": chat_type, "message": "Chat stopped successfully"},
+                room=f"{chat_type}_{chat_id}"
+            )
+
+    @pytest.mark.asyncio
+    async def test_emit_chat_stopped_error(self):
         """Test emit_chat_stopped error handling."""
-        # TODO: Implement error test for emit_chat_stopped
-        assert False, "IMPLEMENT: Error test for emit_chat_stopped"
+        from unittest.mock import AsyncMock, patch
+
+        from app.main import emit_chat_stopped
+
+        # Mock the Socket.IO instance to raise an exception
+        mock_sio = AsyncMock()
+        mock_sio.emit.side_effect = Exception("Socket.IO error")
+        
+        with patch('app.main.get_socketio_instance', return_value=mock_sio):
+            chat_id = "test_chat_id"
+            chat_type = "assistant"
+            
+            # The function should handle the exception gracefully
+            await emit_chat_stopped(chat_id, chat_type)
+            
+            # Verify the emit was still called (even though it failed)
+            mock_sio.emit.assert_called_once()
 
 
 import pytest
 
 
-@pytest.mark.skip(reason="TODO: implement tests for `stop_chat`")
 class TestStop_Chat:
     """Tests for stop_chat function."""
 
-    def test_stop_chat_success(self):
+    @pytest.mark.asyncio
+    async def test_stop_chat_success(self):
         """Test successful stop_chat execution."""
-        # TODO: Implement test for stop_chat
-        assert False, "IMPLEMENT: Test for stop_chat"
+        from unittest.mock import AsyncMock, patch
 
-    def test_stop_chat_error(self):
+        from app.main import active_runs, stop_chat
+
+        # Clear any existing runs and add a test run
+        active_runs.clear()
+        chat_id = "test_chat_id"
+        run_id = "test_run_id"
+        active_runs[chat_id] = run_id
+        
+        # Mock the cancel_simulation_run and cancel_assistant_run functions
+        with patch('app.main.cancel_simulation_run') as mock_cancel_sim, \
+             patch('app.main.cancel_assistant_run') as mock_cancel_assistant, \
+             patch('app.main.emit_chat_stopped') as mock_emit:
+            
+            await stop_chat(chat_id)
+            
+            # Verify that both cancel functions were called
+            mock_cancel_sim.assert_called_once_with(run_id)
+            mock_cancel_assistant.assert_called_once_with(run_id)
+            mock_emit.assert_called_once_with(chat_id)
+            
+            # Verify that the run was removed from active_runs
+            assert chat_id not in active_runs
+
+    @pytest.mark.asyncio
+    async def test_stop_chat_error(self):
         """Test stop_chat error handling."""
-        # TODO: Implement error test for stop_chat
-        assert False, "IMPLEMENT: Error test for stop_chat"
+        from unittest.mock import AsyncMock, patch
+
+        from app.main import active_runs, stop_chat
+
+        # Clear any existing runs
+        active_runs.clear()
+        
+        # Mock the cancel functions to raise exceptions
+        with patch('app.main.cancel_simulation_run', side_effect=Exception("Sim error")), \
+             patch('app.main.cancel_assistant_run', side_effect=Exception("Assistant error")), \
+             patch('app.main.emit_chat_stopped') as mock_emit:
+            
+            chat_id = "test_chat_id"
+            
+            # The function should handle the exceptions gracefully
+            await stop_chat(chat_id)
+            
+            # Verify that emit_chat_stopped was still called
+            mock_emit.assert_called_once_with(chat_id)
 
 
 import pytest
@@ -281,7 +607,10 @@ class TestLifespan:
         
         # Mock the MCP server to raise an exception
         with patch('app.main.server') as mock_server:
-            mock_server.session_manager.run.side_effect = Exception("Test error")
+            mock_context = MagicMock()
+            mock_server.session_manager.run.return_value = mock_context
+            mock_context.__aenter__ = MagicMock(side_effect=Exception("Test error"))
+            mock_context.__aexit__ = MagicMock(return_value=None)
             
             # Import lifespan after mocking to avoid the singleton issue
             from app.main import lifespan

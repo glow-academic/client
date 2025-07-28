@@ -75,7 +75,6 @@ import pytest
 class TestRandomly_Fill_Scenario_Attributes:
     """Tests for randomly_fill_scenario_attributes function."""
 
-    @pytest.mark.skip(reason="TODO: Fix complex mocking for random selection logic")
     @pytest.mark.asyncio
     async def test_randomly_fill_scenario_attributes_success(self, mock_session):
         """Test successful randomly_fill_scenario_attributes execution."""

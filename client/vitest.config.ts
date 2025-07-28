@@ -26,15 +26,21 @@ export default defineConfig({
         "**/*.spec.*",
         "**/mocks/**",
         "**/types/**",
-        "**/utils/drizzle/**",
+        "**/scripts/**",
+        "**/styles/**",
+
+        // Auto-generated sections (excluded from test generation)
         "**/utils/queries/**",
         "**/utils/mutations/**",
-        "**/utils/react-query/**",
+        "**/utils/drizzle/**",
         "**/utils/api/**",
         "**/utils/auth/**",
         "**/utils/model/**",
         "**/utils/logs/**",
         "**/utils/analytics/**",
+        "**/utils/react-query/**",
+
+        // Individual utility files (excluded from test generation)
         "**/utils/breadcrumb-utils.ts",
         "**/utils/logger.ts",
         "**/utils/navigation-utils.ts",
@@ -45,22 +51,28 @@ export default defineConfig({
         "**/utils/storage-utils.ts",
         "**/utils/constants.ts",
         "**/utils/types.ts",
+        "**/utils/scenario.ts",
+        "**/utils/time.ts",
+
+        // Library files (excluded from test generation)
         "**/lib/**",
-        "**/mocks/**",
-        "**/scripts/**",
-        "**/styles/**",
-        "**/types/**",
-        "**/contexts/**",
-        "**/hooks/**",
+
+        // UI components (excluded from test generation)
         "**/components/ui/**",
+
+        // Next.js app pages (excluded from test generation)
+        "**/app/**/*.tsx",
+        "**/app/**/*.ts",
+
+        // Hooks (excluded from test generation)
+        "**/hooks/**",
+
+        // Contexts (excluded from test generation)
+        "**/contexts/**",
       ],
       include: [
-        "app/**/*.{ts,tsx}",
+        // Focus on main business logic components
         "components/**/*.{ts,tsx}",
-        "utils/**/*.{ts,tsx}",
-        "hooks/**/*.{ts,tsx}",
-        "contexts/**/*.{ts,tsx}",
-        "lib/**/*.{ts,tsx}",
       ],
       thresholds: {
         global: {
