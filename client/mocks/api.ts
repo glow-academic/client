@@ -41,18 +41,18 @@ const mockReportResponse = {
 
 // DOCUMENTS API MOCKS
 export const deleteDocumentMock = vi.fn(() =>
-  Promise.resolve(mockErrorResponse),
+  Promise.resolve(mockErrorResponse)
 );
 export const finalizeDocumentUploadMock = vi.fn(() =>
-  Promise.resolve(mockDocumentResponse),
+  Promise.resolve(mockDocumentResponse)
 );
 
 // SCENARIOS API MOCKS
 export const newScenarioMock = vi.fn(() =>
-  Promise.resolve(mockScenarioResponse),
+  Promise.resolve(mockScenarioResponse)
 );
 export const testScenarioMock = vi.fn(() =>
-  Promise.resolve(mockReportResponse),
+  Promise.resolve(mockReportResponse)
 );
 
 vi.mock("@/utils/api/documents/delete-document", () => ({
@@ -78,14 +78,14 @@ export const resetAllApiMocks = () => {
 
 export const setApiMockResponse = (
   mockFn: ReturnType<typeof vi.fn>,
-  response: unknown,
+  response: unknown
 ) => {
   mockFn.mockResolvedValue(response);
 };
 
 export const setApiMockError = (
   mockFn: ReturnType<typeof vi.fn>,
-  error: unknown,
+  error: unknown
 ) => {
   mockFn.mockRejectedValue(error);
 };

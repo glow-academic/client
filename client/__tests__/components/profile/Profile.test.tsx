@@ -101,7 +101,7 @@ describe("Profile", () => {
               </AssistantProvider>
             </AnalyticsProvider>
           </ProfileProvider>
-        </QueryClientProvider>,
+        </QueryClientProvider>
       );
 
       // Check that guest user message is displayed
@@ -109,8 +109,8 @@ describe("Profile", () => {
         expect(screen.getByText("Guest User")).toBeInTheDocument();
         expect(
           screen.getByText(
-            "You are browsing as a guest. Please log in to access your profile.",
-          ),
+            "You are browsing as a guest. Please log in to access your profile."
+          )
         ).toBeInTheDocument();
       });
     });
@@ -166,12 +166,13 @@ describe("Profile", () => {
               </AssistantProvider>
             </AnalyticsProvider>
           </ProfileProvider>
-        </QueryClientProvider>,
+        </QueryClientProvider>
       );
 
       // Should handle empty names gracefully
       await waitFor(() => {
-        expect(screen.getByText("testuser@")).toBeInTheDocument();
+        expect(screen.getByText("testuser")).toBeInTheDocument();
+        expect(screen.getByText("@")).toBeInTheDocument();
       });
     });
 
@@ -195,7 +196,8 @@ describe("Profile", () => {
         expect(screen.getByText("Test User")).toBeInTheDocument();
 
         // Check for email
-        expect(screen.getByText("testuser@")).toBeInTheDocument();
+        expect(screen.getByText("testuser")).toBeInTheDocument();
+        expect(screen.getByText("@")).toBeInTheDocument();
 
         // Check for role badge
         expect(screen.getByText("Administrator")).toBeInTheDocument();
