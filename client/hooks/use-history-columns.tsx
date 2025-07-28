@@ -239,32 +239,14 @@ export function useHistoryColumns({
     }));
   }, [validStandardGroups]);
 
-  // Create score range options for filtering
-  const scoreRangeOptions = useMemo(
-    () => [
-      {
-        value: "excellent",
-        label: "Excellent (80%+)",
-      },
-      {
-        value: "good",
-        label: "Good (70-79%)",
-      },
-      {
-        value: "needs-improvement",
-        label: "Needs Improvement (<70%)",
-      },
-      {
-        value: "incomplete",
-        label: "Incomplete (Timed Out)",
-      },
-      {
-        value: "not-graded",
-        label: "Not Graded",
-      },
-    ],
-    []
-  );
+  // Create simulation options for filtering
+  const simulationOptions = useMemo(() => {
+    if (!simulations) return [];
+    return simulations.map((simulation) => ({
+      value: simulation.id,
+      label: simulation.title,
+    }));
+  }, [simulations]);
 
   // Define columns - only attempts view
   const columns = useMemo(() => {
@@ -381,6 +363,23 @@ export function useHistoryColumns({
             },
           ]
         : []),
+      // Simulation ID column (hidden, used for filtering)
+      {
+        accessorKey: "simulationId",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Simulation ID" />
+        ),
+        cell: ({ row }) => {
+          return (
+            <div className="flex space-x-2">
+              <span className="max-w-[500px] truncate font-medium">
+                {row.getValue("simulationId") || "Unknown Simulation"}
+              </span>
+            </div>
+          );
+        },
+        enableHiding: true,
+      },
       // Simulation Title column
       {
         accessorKey: "simulationTitle",
@@ -739,7 +738,7 @@ export function useHistoryColumns({
     personaTypes,
     skillCategories,
     scoreOptions,
-    scoreRangeOptions,
+    simulationOptions,
     showAll: profileId === null, // This will now always be true when profileId is null
   };
 }

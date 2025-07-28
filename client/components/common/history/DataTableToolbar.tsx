@@ -13,7 +13,7 @@ import { SingleProfileBrightspaceExportButton } from "./SingleProfileBrightspace
 export interface DataTableToolbarProps<TData> {
   table: Table<TData>;
   profileOptions: { value: string; label: string }[];
-  scoreRangeOptions: { value: string; label: string }[];
+  simulationOptions: { value: string; label: string }[];
   isAdmin?: boolean;
   showExport?: boolean;
   showAll?: boolean;
@@ -22,7 +22,7 @@ export interface DataTableToolbarProps<TData> {
 export function DataTableToolbar<TData>({
   table,
   profileOptions,
-  scoreRangeOptions,
+  simulationOptions,
   isAdmin = false,
   showExport = true,
   showAll = false,
@@ -31,7 +31,7 @@ export function DataTableToolbar<TData>({
   const isFiltered = table.getState().columnFilters.length > 0;
 
   const profileIdColumn = showAll ? table.getColumn("profileId") : null;
-  const averageScoreColumn = table.getColumn("averageScore");
+  const simulationIdColumn = table.getColumn("simulationId");
 
   return (
     <>
@@ -60,12 +60,12 @@ export function DataTableToolbar<TData>({
             />
           )}
 
-          {/* Score filter */}
-          {averageScoreColumn && scoreRangeOptions.length > 0 && (
+          {/* Simulation filter */}
+          {simulationIdColumn && simulationOptions.length > 0 && (
             <DataTableFacetedFilter
-              column={averageScoreColumn}
-              title="Score"
-              options={scoreRangeOptions}
+              column={simulationIdColumn}
+              title="Simulation"
+              options={simulationOptions}
             />
           )}
           {isFiltered && (

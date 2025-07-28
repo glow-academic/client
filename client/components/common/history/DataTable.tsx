@@ -33,7 +33,7 @@ export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   profileOptions: { value: string; label: string }[];
-  scoreRangeOptions: { value: string; label: string }[];
+  simulationOptions: { value: string; label: string }[];
   showExport?: boolean;
   showAll?: boolean;
   startDate?: Date | undefined;
@@ -44,7 +44,7 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   profileOptions,
-  scoreRangeOptions,
+  simulationOptions,
   showExport = true,
   showAll = false,
   startDate,
@@ -52,7 +52,9 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+    React.useState<VisibilityState>({
+      simulationId: false, // Hide the simulation ID column by default
+    });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
@@ -117,7 +119,7 @@ export function DataTable<TData, TValue>({
       <DataTableToolbar
         table={table}
         profileOptions={profileOptions}
-        scoreRangeOptions={scoreRangeOptions}
+        simulationOptions={simulationOptions}
         showExport={showExport}
         showAll={showAll}
       />

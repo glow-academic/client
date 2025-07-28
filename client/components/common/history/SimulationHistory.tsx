@@ -25,7 +25,7 @@ export default function SimulationHistory({
   startDate,
   endDate,
 }: SimulationHistoryProps) {
-  const { columns, data, profileOptions, scoreRangeOptions } =
+  const { columns, data, profileOptions, simulationOptions } =
     useHistoryColumns({
       profileId: profileId || null,
       showExport,
@@ -38,7 +38,7 @@ export default function SimulationHistory({
       data={data || []}
       columns={columns as never}
       profileOptions={profileOptions}
-      scoreRangeOptions={scoreRangeOptions}
+      simulationOptions={simulationOptions}
       showExport={showExport}
       showAll={!profileId} // showAll is true when profileId is null/undefined
       startDate={startDate}
