@@ -43,38 +43,38 @@ CREATE TABLE scenarios (
 );
 
 INSERT INTO parameters (id, name, description, numerical, active) VALUES
-  ('11111111-1111-1111-1111-111111111112', 'Crowdedness', 'The number of students in the room', TRUE, TRUE),
-  ('22222222-2222-2222-2222-222222222229', 'Intensity', 'The intensity of the student', TRUE, TRUE),
-  ('33333333-3333-3333-3333-333333333334', 'Location', 'The location of the student', FALSE, TRUE),
-  ('44444444-4444-4444-4444-444444444445', 'Time', 'The time of the student', FALSE, TRUE),
-  ('55555555-5555-5555-5555-555555555555', 'Deadline', 'The deadline of the student', FALSE, TRUE),
-  ('66666666-6666-6666-6666-666666666667', 'Class', 'The class of the student', FALSE, TRUE);
+  ('11111111-1111-1111-1111-111111111112', 'Crowdedness', 'How many students are present in the room', TRUE, TRUE),
+  ('22222222-2222-2222-2222-222222222229', 'Intensity', 'How emotionally charged or urgent the situation feels', TRUE, TRUE),
+  ('33333333-3333-3333-3333-333333333334', 'Location', 'Where the interaction is taking place', FALSE, TRUE),
+  ('44444444-4444-4444-4444-444444444445', 'Time', 'When the scenario occurs', FALSE, TRUE),
+  ('55555555-5555-5555-5555-555555555555', 'Deadline', 'How close it is to an assignment or project deadline', FALSE, TRUE),
+  ('66666666-6666-6666-6666-666666666667', 'Class', 'Which course or subject the scenario is about', FALSE, TRUE);
 
--- crowdedness
+-- crowdedness (scale: 1 = almost empty, 10 = extremely crowded)
 INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
-  ('11111111-1111-1111-1111-111111111112', 'Crowdedness (1)', 'The relative number of students in the room', '1', '11111111-1111-1111-1111-111111111112', TRUE),
-  ('22222222-2222-2222-2222-222222222221', 'Crowdedness (2)', 'The relative number of students in the room', '2', '11111111-1111-1111-1111-111111111112', TRUE),
-  ('33333333-3333-3333-3333-333333333331', 'Crowdedness (3)', 'The relative number of students in the room', '3', '11111111-1111-1111-1111-111111111112', TRUE),
-  ('44444444-4444-4444-4444-444444444441', 'Crowdedness (4)', 'The relative number of students in the room', '4', '11111111-1111-1111-1111-111111111112', TRUE),
-  ('55555555-5555-5555-5555-555555555551', 'Crowdedness (5)', 'The relative number of students in the room', '5', '11111111-1111-1111-1111-111111111112', TRUE),
-  ('66666666-6666-6666-6666-666666666661', 'Crowdedness (6)', 'The relative number of students in the room', '6', '11111111-1111-1111-1111-111111111112', TRUE),
-  ('77777777-7777-7777-7777-777777777777', 'Crowdedness (7)', 'The relative number of students in the room', '7', '11111111-1111-1111-1111-111111111112', TRUE),
-  ('88888888-8888-8888-8888-888888888888', 'Crowdedness (8)', 'The relative number of students in the room', '8', '11111111-1111-1111-1111-111111111112', TRUE),
-  ('99999999-9999-9999-9999-999999999999', 'Crowdedness (9)', 'The relative number of students in the room', '9', '11111111-1111-1111-1111-111111111112', TRUE),
-  ('10101010-1010-1010-1010-101010101010', 'Crowdedness (10)', 'The relative number of students in the room', '10', '11111111-1111-1111-1111-111111111112', TRUE);
+  ('11111111-1111-1111-1111-111111111112', 'Almost Empty', 'There are almost no students present; the room is quiet and you can get help immediately.', '1', '11111111-1111-1111-1111-111111111112', TRUE),
+  ('22222222-2222-2222-2222-222222222221', 'Very Few Students', 'Only a couple of students are present; no wait for help.', '2', '11111111-1111-1111-1111-111111111112', TRUE),
+  ('33333333-3333-3333-3333-333333333331', 'Sparse', 'A few students scattered around; very short or no wait.', '3', '11111111-1111-1111-1111-111111111112', TRUE),
+  ('44444444-4444-4444-4444-444444444441', 'Some Students', 'Several students are present, but it is still easy to get help.', '4', '11111111-1111-1111-1111-111111111112', TRUE),
+  ('55555555-5555-5555-5555-555555555551', 'Moderately Busy', 'A moderate number of students; you may have to wait a bit for help.', '5', '11111111-1111-1111-1111-111111111112', TRUE),
+  ('66666666-6666-6666-6666-666666666661', 'Busy', 'The room is active with many students; expect a noticeable wait.', '6', '11111111-1111-1111-1111-111111111112', TRUE),
+  ('77777777-7777-7777-7777-777777777777', 'Very Busy', 'There is a line of students waiting for help; the room feels crowded.', '7', '11111111-1111-1111-1111-111111111112', TRUE),
+  ('88888888-8888-8888-8888-888888888888', 'Crowded', 'The room is packed, and you will have to wait a significant amount of time.', '8', '11111111-1111-1111-1111-111111111112', TRUE),
+  ('99999999-9999-9999-9999-999999999999', 'Extremely Crowded', 'There are many students and a long line; it is difficult to get help.', '9', '11111111-1111-1111-1111-111111111112', TRUE),
+  ('10101010-1010-1010-1010-101010101010', 'Hectic', 'The room is overflowing with students, with a hectic atmosphere and a very long wait.', '10', '11111111-1111-1111-1111-111111111112', TRUE);
 
--- intensity
+-- intensity (scale: 1 = very calm, 10 = extremely intense)
 INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
-  ('22222222-1111-1111-1111-111111111111', 'Intensity (1)', 'The relative intensity of the student', '1', '22222222-2222-2222-2222-222222222229', TRUE),
-  ('22222222-2222-2222-2222-222222222229', 'Intensity (2)', 'The relative intensity of the student', '2', '22222222-2222-2222-2222-222222222229', TRUE),
-  ('22222222-3333-3333-3333-333333333333', 'Intensity (3)', 'The relative intensity of the student', '3', '22222222-2222-2222-2222-222222222229', TRUE),
-  ('22222222-4444-4444-4444-444444444444', 'Intensity (4)', 'The relative intensity of the student', '4', '22222222-2222-2222-2222-222222222229', TRUE),
-  ('22222222-5555-5555-5555-555555555555', 'Intensity (5)', 'The relative intensity of the student', '5', '22222222-2222-2222-2222-222222222229', TRUE),
-  ('22222222-6666-6666-6666-666666666666', 'Intensity (6)', 'The relative intensity of the student', '6', '22222222-2222-2222-2222-222222222229', TRUE),
-  ('22222222-7777-7777-7777-777777777777', 'Intensity (7)', 'The relative intensity of the student', '7', '22222222-2222-2222-2222-222222222229', TRUE),
-  ('22222222-8888-8888-8888-888888888888', 'Intensity (8)', 'The relative intensity of the student', '8', '22222222-2222-2222-2222-222222222229', TRUE),
-  ('22222222-9999-9999-9999-999999999999', 'Intensity (9)', 'The relative intensity of the student', '9', '22222222-2222-2222-2222-222222222229', TRUE),
-  ('22222222-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Intensity (10)', 'The relative intensity of the student', '10', '22222222-2222-2222-2222-222222222229', TRUE);
+  ('22222222-1111-1111-1111-111111111111', 'Very Calm', 'The conversation is relaxed, with no signs of stress or urgency.', '1', '22222222-2222-2222-2222-222222222229', TRUE),
+  ('22222222-2222-2222-2222-222222222229', 'Calm', 'The conversation is easygoing, with minimal tension or pressure.', '2', '22222222-2222-2222-2222-222222222229', TRUE),
+  ('22222222-3333-3333-3333-333333333333', 'Mild', 'The conversation is mostly relaxed, but with occasional hints of concern or focus.', '3', '22222222-2222-2222-2222-222222222229', TRUE),
+  ('22222222-4444-4444-4444-444444444444', 'Slightly Tense', 'There is some urgency or emotional energy, but it remains manageable.', '4', '22222222-2222-2222-2222-222222222229', TRUE),
+  ('22222222-5555-5555-5555-555555555555', 'Moderate', 'The conversation is active, with clear engagement and some stress or excitement.', '5', '22222222-2222-2222-2222-222222222229', TRUE),
+  ('22222222-6666-6666-6666-666666666666', 'Noticeably Intense', 'The conversation is energetic, with raised voices or strong emotions.', '6', '22222222-2222-2222-2222-222222222229', TRUE),
+  ('22222222-7777-7777-7777-777777777777', 'Tense', 'The conversation is heated, with clear signs of frustration, urgency, or pressure.', '7', '22222222-2222-2222-2222-222222222229', TRUE),
+  ('22222222-8888-8888-8888-888888888888', 'Very Tense', 'The conversation is highly charged, with strong emotions and little calm.', '8', '22222222-2222-2222-2222-222222222229', TRUE),
+  ('22222222-9999-9999-9999-999999999999', 'Extremely Intense', 'The conversation is on the verge of conflict, with high stress and urgency.', '9', '22222222-2222-2222-2222-222222222229', TRUE),
+  ('22222222-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Maximum Intensity', 'The conversation is explosive, with overwhelming emotion or confrontation.', '10', '22222222-2222-2222-2222-222222222229', TRUE);
 
 -- location
 INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
@@ -84,31 +84,33 @@ INSERT INTO parameter_items (id, name, description, value, parameter_id, default
 
 -- class
 INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
-  ('66666666-1111-1111-1111-111111111111', 'CS 180', 'Problem solving and algorithms, implementation of algorithms in a high level programming language, conditionals, the iterative approach and debugging, collections of data, searching and sorting, solving problems by decomposition, the object-oriented approach, subclasses of existing classes, handling exceptions that occur when the program is running, graphical user interfaces (GUIs), data stored in files, abstract data types, a glimpse at topics from other CS courses.', 'CS180', '66666666-6666-6666-6666-666666666667', TRUE),
-  ('66666666-2222-2222-2222-222222222222', 'CS 182', 'Logic and proofs; sets, functions, relations, sequences and summations; number representations; counting; fundamentals of the analysis of algorithms; graphs and trees; proof techniques; recursion; Boolean logic; finite state machines; pushdown automata; computability and undecidability.', 'CS182', '66666666-6666-6666-6666-666666666667', TRUE),
-  ('66666666-3333-3333-3333-333333333333', 'CS 251', 'Running time analysis of algorithms and their implementations, one-dimensional data structures, trees, heaps, additional sorting algorithms, binary search trees, hash tables, graphs, directed graphs, weighted graph algorithms, additional topics.', 'CS251', '66666666-6666-6666-6666-666666666667', TRUE),
-  ('66666666-4444-4444-4444-444444444444', 'CS 381', 'Techniques for analyzing the time and space requirements of algorithms. Application of these techniques to sorting, searching, pattern-matching, graph problems, and other selected problems. Brief introduction to the intractable (NP-hard) problems.', 'CS381', '66666666-6666-6666-6666-666666666667', TRUE),
-  ('66666666-5555-5555-5555-555555555555', 'CS 422', 'Network protocols, socket programming, network security, distributed systems, and network performance analysis. Covers TCP/IP, HTTP, DNS, and other networking fundamentals.', 'CS422', '66666666-6666-6666-6666-666666666667', TRUE),
-  ('66666666-6666-6666-6666-666666666667', 'CS 373', 'Introduction to machine learning algorithms, neural networks, feature engineering, model evaluation, and practical applications. Covers supervised and unsupervised learning techniques.', 'CS373', '66666666-6666-6666-6666-666666666667', TRUE);
+  ('66666666-1111-1111-1111-111111111111', 'Problem Solving And Object-Oriented Programming', 'Problem solving and algorithms, implementation of algorithms in a high level programming language, conditionals, the iterative approach and debugging, collections of data, searching and sorting, solving problems by decomposition, the object-oriented approach, subclasses of existing classes, handling exceptions that occur when the program is running, graphical user interfaces (GUIs), data stored in files, abstract data types, a glimpse at topics from other CS courses.', 'CS180', '66666666-6666-6666-6666-666666666667', TRUE),
+  ('66666666-2222-2222-2222-222222222222', 'Foundations Of Computer Science', 'Logic and proofs; sets, functions, relations, sequences and summations; number representations; counting; fundamentals of the analysis of algorithms; graphs and trees; proof techniques; recursion; Boolean logic; finite state machines; pushdown automata; computability and undecidability.', 'CS182', '66666666-6666-6666-6666-666666666667', TRUE),
+  ('66666666-3333-3333-3333-333333333333', 'Data Structures And Algorithms', 'Running time analysis of algorithms and their implementations, one-dimensional data structures, trees, heaps, additional sorting algorithms, binary search trees, hash tables, graphs, directed graphs, weighted graph algorithms, additional topics.', 'CS251', '66666666-6666-6666-6666-666666666667', TRUE),
+  ('66666666-4444-4444-4444-444444444444', 'Introduction To The Analysis Of Algorithms', 'Techniques for analyzing the time and space requirements of algorithms. Application of these techniques to sorting, searching, pattern-matching, graph problems, and other selected problems. Brief introduction to the intractable (NP-hard) problems.', 'CS381', '66666666-6666-6666-6666-666666666667', TRUE),
+  ('66666666-5555-5555-5555-555555555555', 'Computer Networks', 'Network protocols, socket programming, network security, distributed systems, and network performance analysis. Covers TCP/IP, HTTP, DNS, and other networking fundamentals.', 'CS422', '66666666-6666-6666-6666-666666666667', TRUE),
+  ('66666666-6666-6666-6666-666666666667', 'Machine Learning', 'Introduction to machine learning algorithms, neural networks, feature engineering, model evaluation, and practical applications. Covers supervised and unsupervised learning techniques.', 'CS373', '66666666-6666-6666-6666-666666666667', TRUE);
 
 
 -- time
 INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
-  ('44444444-1111-1111-1111-111111111111', '9:00 AM', 'Early morning session, students may be tired but focused', '09:00:00', '44444444-4444-4444-4444-444444444445', TRUE),
-  ('44444444-2222-2222-2222-222222222222', '10:00 AM', 'Mid-morning session, good energy levels', '10:00:00', '44444444-4444-4444-4444-444444444445', TRUE),
-  ('44444444-3333-3333-3333-333333333333', '11:00 AM', 'Late morning session, students are alert and engaged', '11:00:00', '44444444-4444-4444-4444-444444444445', TRUE),
-  ('44444444-4444-4444-4444-444444444445', '12:00 PM', 'Lunch time session, students may be hungry or rushed', '12:00:00', '44444444-4444-4444-4444-444444444445', TRUE),
-  ('44444444-5555-5555-5555-555555555555', '1:00 PM', 'Early afternoon session, post-lunch energy dip possible', '13:00:00', '44444444-4444-4444-4444-444444444445', TRUE),
-  ('44444444-6666-6666-6666-666666666666', '2:00 PM', 'Mid-afternoon session, good focus time', '14:00:00', '44444444-4444-4444-4444-444444444445', TRUE),
-  ('44444444-7777-7777-7777-777777777777', '3:00 PM', 'Late afternoon session, sustained energy needed', '15:00:00', '44444444-4444-4444-4444-444444444445', TRUE),
-  ('44444444-8888-8888-8888-888888888888', '4:00 PM', 'Evening session, students may be tired from the day', '16:00:00', '44444444-4444-4444-4444-444444444445', TRUE),
-  ('44444444-9999-9999-9999-999999999999', '5:00 PM', 'End of day session, students eager to finish', '17:00:00', '44444444-4444-4444-4444-444444444445', TRUE);
+  ('44444444-1111-1111-1111-111111111111', '9:00 AM', 'Early morning session, students may be tired but focused.', '9:00 AM', '44444444-4444-4444-4444-444444444445', TRUE),
+  ('44444444-2222-2222-2222-222222222222', '10:00 AM', 'Mid-morning session, good energy levels.', '10:00 AM', '44444444-4444-4444-4444-444444444445', TRUE),
+  ('44444444-3333-3333-3333-333333333333', '11:00 AM', 'Late morning session, students are alert and engaged.', '11:00 AM', '44444444-4444-4444-4444-444444444445', TRUE),
+  ('44444444-4444-4444-4444-444444444445', '12:00 PM', 'Lunch time session, students may be hungry or rushed.', '12:00 PM', '44444444-4444-4444-4444-444444444445', TRUE),
+  ('44444444-5555-5555-5555-555555555555', '1:00 PM', 'Early afternoon session, post-lunch energy dip possible.', '1:00 PM', '44444444-4444-4444-4444-444444444445', TRUE),
+  ('44444444-6666-6666-6666-666666666666', '2:00 PM', 'Mid-afternoon session, good focus time.', '2:00 PM', '44444444-4444-4444-4444-444444444445', TRUE),
+  ('44444444-7777-7777-7777-777777777777', '3:00 PM', 'Late afternoon session, sustained energy needed.', '3:00 PM', '44444444-4444-4444-4444-444444444445', TRUE),
+  ('44444444-8888-8888-8888-888888888888', '4:00 PM', 'Evening session, students may be tired from the day.', '4:00 PM', '44444444-4444-4444-4444-444444444445', TRUE),
+  ('44444444-9999-9999-9999-999999999999', '5:00 PM', 'End of day session, students eager to finish.', '5:00 PM', '44444444-4444-4444-4444-444444444445', TRUE);
 
 -- deadline
 INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
-  ('55555555-1111-1111-1111-111111111111', 'Few hours', 'This is a high-stress situation requiring immediate help', 'Few hours', '55555555-5555-5555-5555-555555555555', TRUE),
-  ('55555555-2222-2222-2222-222222222222', 'Next day', 'This is a moderate stress situation requiring immediate help', 'Next day', '55555555-5555-5555-5555-555555555555', TRUE),
-  ('55555555-3333-3333-3333-333333333333', 'Couple of days', 'This is a low stress situation requiring immediate help', 'Couple of days', '55555555-5555-5555-5555-555555555555', TRUE);
+  ('55555555-1111-1111-1111-111111111111', 'Few hours', 'Deadline is in a few hours. Immediate help is required; this is a high-stress situation.', 'Few hours', '55555555-5555-5555-5555-555555555555', TRUE),
+  ('55555555-2222-2222-2222-222222222222', 'Next day', 'Deadline is tomorrow. Prompt help is needed; this is a moderate-stress situation.', 'Next day', '55555555-5555-5555-5555-555555555555', TRUE),
+  ('55555555-3333-3333-3333-333333333333', 'Couple of days', 'Deadline is in a couple of days. Some urgency, but stress is low.', 'Couple of days', '55555555-5555-5555-5555-555555555555', TRUE),
+  ('55555555-4444-4444-4444-444444444444', 'End of week', 'Deadline is at the end of the week. Ample time remains; stress is minimal.', 'End of week', '55555555-5555-5555-5555-555555555555', TRUE),
+  ('55555555-5555-5555-5555-555555555556', 'No deadline', 'There is no specific deadline. The situation is relaxed and stress-free.', 'No deadline', '55555555-5555-5555-5555-555555555555', TRUE);
 
 -- ============================================================================
 -- ESSENTIAL TEST DATA

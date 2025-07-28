@@ -32,7 +32,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Rubric, Scenario } from "@/types";
 import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
 import { updateSimulation } from "@/utils/mutations/simulations/update-simulation";
@@ -332,6 +339,40 @@ export default function Simulation({ simulationId }: SimulationProps) {
     }));
   };
 
+  // Get parameter badges for a scenario
+  const getScenarioParameterBadges = (scenario: Scenario) => {
+    if (!scenario.parameterItemIds || scenario.parameterItemIds.length === 0) {
+      return [];
+    }
+
+    const badges: {
+      parameterName: string;
+      value: string;
+      parameterId: string;
+    }[] = [];
+
+    scenario.parameterItemIds.forEach((parameterItemId) => {
+      const parameterItem = parameterItems.find(
+        (item) => item.id === parameterItemId
+      );
+      if (parameterItem) {
+        const parameter = parameters.find(
+          (param) => param.id === parameterItem.parameterId
+        );
+        if (parameter && !parameter.numerical) {
+          // Only show non-numerical parameters
+          badges.push({
+            parameterName: parameter.name,
+            value: parameterItem.value,
+            parameterId: parameter.id,
+          });
+        }
+      }
+    });
+
+    return badges;
+  };
+
   return (
     <div className="space-y-6">
       <form onSubmit={handleFormSubmit} className="space-y-6">
@@ -497,6 +538,43 @@ export default function Simulation({ simulationId }: SimulationProps) {
                           <p className="text-xs text-muted-foreground line-clamp-3">
                             {scenario.description || "No description provided"}
                           </p>
+                          {/* Parameter badges */}
+                          {(() => {
+                            const parameterBadges =
+                              getScenarioParameterBadges(originalScenario);
+                            if (parameterBadges.length > 0) {
+                              return (
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  {parameterBadges.slice(0, 4).map((badge) => (
+                                    <TooltipProvider key={badge.parameterId}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Badge
+                                            variant="secondary"
+                                            className="text-xs"
+                                          >
+                                            {badge.value}
+                                          </Badge>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>{badge.parameterName}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  ))}
+                                  {parameterBadges.length > 4 && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs"
+                                    >
+                                      +{parameterBadges.length - 4}
+                                    </Badge>
+                                  )}
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                       </div>
                     </div>

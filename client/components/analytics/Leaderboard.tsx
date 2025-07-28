@@ -16,7 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Award, Crown, MessageSquareText, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import AccoladeCard from "../common/cohort/AccoladeCard";
 import LeaderboardTable from "../common/cohort/LeaderboardTable";
 
@@ -96,7 +96,10 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   });
 
   // 9. Fetch all rubrics (for accolades and leaderboard calculation)
-  const { data: rubrics, isLoading: loadingRubrics } = useQuery({
+  const {
+    data: rubrics,
+    isLoading: loadingRubrics,
+  } = useQuery({
     queryKey: ["allRubrics"],
     queryFn: async () => {
       const { getAllRubrics } = await import(
@@ -149,9 +152,9 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       cohort.profileIds?.forEach((id) => allCohortProfileIds.add(id));
     });
 
-    // Filter profiles to only include those in the cohort
-    const filteredProfiles = allProfiles.filter((profile) =>
-      allCohortProfileIds.has(profile.id),
+    // Filter profiles to only include those in the cohort AND with role "ta"
+    const filteredProfiles = allProfiles.filter(
+      (profile) => allCohortProfileIds.has(profile.id) && profile.role === "ta"
     );
 
     return filteredProfiles;
@@ -166,7 +169,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       cohort.profileIds?.forEach((id) => cohortProfileIds.add(id));
     });
 
-    return allAttempts.filter((attempt) => {
+    const filteredAttempts = allAttempts.filter((attempt) => {
       // Filter by cohort membership
       if (!attempt.profileId || !cohortProfileIds.has(attempt.profileId)) {
         return false;
@@ -180,6 +183,8 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
 
       return true;
     });
+
+    return filteredAttempts;
   }, [allAttempts, filteredCohorts, startDate, endDate]);
 
   // Filter chats to only include those from selected cohort attempts
@@ -195,7 +200,11 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     if (!allGrades || !chats) return [];
 
     const chatIds = new Set(chats.map((c) => c.id));
-    return allGrades.filter((grade) => chatIds.has(grade.simulationChatId));
+    const filteredGrades = allGrades.filter((grade) =>
+      chatIds.has(grade.simulationChatId)
+    );
+
+    return filteredGrades;
   }, [allGrades, chats]);
 
   const safeAttempts = useMemo(() => attempts || [], [attempts]);
@@ -225,11 +234,11 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       if (rubric && grade.score === rubric.points) {
         const attempt = safeAttempts.find((a) =>
           chats.some(
-            (c) => c.id === grade.simulationChatId && c.attemptId === a.id,
-          ),
+            (c) => c.id === grade.simulationChatId && c.attemptId === a.id
+          )
         );
         perfectScoreHolder = cohortProfiles.find(
-          (p) => p.id === attempt?.profileId,
+          (p) => p.id === attempt?.profileId
         );
         perfectScoreDetails = `on a simulation.`;
         break;
@@ -243,10 +252,10 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     }));
     const longestChat = chatMessageCounts.sort((a, b) => b.count - a.count)[0];
     const longestChatAttempt = safeAttempts.find((a) =>
-      chats.some((c) => c.id === longestChat?.chatId && c.attemptId === a.id),
+      chats.some((c) => c.id === longestChat?.chatId && c.attemptId === a.id)
     );
     const longestConvoHolder = cohortProfiles.find(
-      (p) => p.id === longestChatAttempt?.profileId,
+      (p) => p.id === longestChatAttempt?.profileId
     );
 
     // 3. Most Improved (Simplified: Biggest score jump on any simulation)
@@ -256,15 +265,15 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     // 4. Quickest Pass
     const passedGrades = safeGrades.filter((g) => g.passed);
     const quickestGrade = passedGrades.sort(
-      (a, b) => a.timeTaken - b.timeTaken,
+      (a, b) => a.timeTaken - b.timeTaken
     )[0];
     const quickestPassAttempt = safeAttempts.find((a) =>
       chats.some(
-        (c) => c.id === quickestGrade?.simulationChatId && c.attemptId === a.id,
-      ),
+        (c) => c.id === quickestGrade?.simulationChatId && c.attemptId === a.id
+      )
     );
     const quickestPassHolder = cohortProfiles.find(
-      (p) => p.id === quickestPassAttempt?.profileId,
+      (p) => p.id === quickestPassAttempt?.profileId
     );
 
     return {
@@ -317,8 +326,8 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       const userGrades = safeGrades.filter((g) => {
         const attempt = safeAttempts.find((a) =>
           chats?.some(
-            (c) => c.id === g.simulationChatId && c.attemptId === a.id,
-          ),
+            (c) => c.id === g.simulationChatId && c.attemptId === a.id
+          )
         );
         return attempt?.profileId === profile.id;
       });
@@ -326,8 +335,8 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       // Calculate metrics
       const totalSims = new Set(
         userGrades.map(
-          (g) => chats?.find((c) => c.id === g.simulationChatId)?.attemptId,
-        ),
+          (g) => chats?.find((c) => c.id === g.simulationChatId)?.attemptId
+        )
       ).size;
 
       const passRate =
@@ -356,12 +365,14 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     });
 
     // Sort by average score (highest first), then by name for users with same score
-    return ranked.sort((a, b) => {
+    const sorted = ranked.sort((a, b) => {
       if (b.avgScore !== a.avgScore) {
         return b.avgScore - a.avgScore;
       }
       return a.name.localeCompare(b.name);
     });
+
+    return sorted;
   }, [
     cohortProfiles,
     effectiveProfile,

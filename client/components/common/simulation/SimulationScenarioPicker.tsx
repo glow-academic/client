@@ -87,10 +87,10 @@ export function SimulationScenarioPicker({
     SimulationScenario | undefined
   >(scenarios[0]);
 
-  // Filter scenarios to show only active ones if requested
-  const filteredScenarios = showOnlyActive
-    ? scenarios.filter((scenario) => scenario.active)
-    : scenarios;
+  // Filter scenarios to show only active ones if requested, and exclude practice scenarios
+  const filteredScenarios = (
+    showOnlyActive ? scenarios.filter((scenario) => scenario.active) : scenarios
+  ).filter((scenario) => !scenario.practiceScenario);
 
   // Create a map of parameter items by ID for quick lookup
   const parameterItemsMap = React.useMemo(() => {
@@ -272,11 +272,7 @@ export function SimulationScenarioPicker({
                           Default
                         </Badge>
                       )}
-                      {peekedScenario.practiceScenario && (
-                        <Badge variant="secondary" className="text-xs">
-                          Practice
-                        </Badge>
-                      )}
+
                       {peekedScenario.active && (
                         <Badge
                           variant="outline"
@@ -390,12 +386,7 @@ function ScenarioItem({
           <div className="flex-1 min-w-0">
             <div className="truncate">{scenario.title}</div>
             <div className="flex items-center gap-1 mt-1">
-              {scenario.practiceScenario && (
-                <Badge variant="default" className="text-xs">
-                  Practice
-                </Badge>
-              )}
-              {parameterBadges.slice(0, 2).map((badge) => (
+              {parameterBadges.slice(0, 4).map((badge) => (
                 <TooltipProvider key={badge.parameterId}>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -409,9 +400,9 @@ function ScenarioItem({
                   </Tooltip>
                 </TooltipProvider>
               ))}
-              {parameterBadges.length > 2 && (
+              {parameterBadges.length > 4 && (
                 <Badge variant="outline" className="text-xs">
-                  +{parameterBadges.length - 2}
+                  +{parameterBadges.length - 4}
                 </Badge>
               )}
             </div>
