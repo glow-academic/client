@@ -69,37 +69,35 @@ export default function SimulationProgress({
       className={`flex items-center space-x-4 p-3 rounded-lg border ${statusInfo.bgColor} ${statusInfo.borderColor}`}
       data-testid="simulation-progress"
     >
-      {/* Title and Progress Bar in flex layout */}
-      <div className="flex-1 flex items-center space-x-4">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-0 flex-1">
-          {simulation.title}
+      {/* Title */}
+      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-0 flex-shrink-0 w-64">
+        {simulation.title}
+      </span>
+
+      {/* Progress Bar */}
+      <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+        <div
+          className={`h-2 rounded-full transition-all duration-300 ${
+            isComplete
+              ? "bg-green-500"
+              : progress.passedCount > 0
+                ? "bg-blue-500"
+                : "bg-gray-400"
+          }`}
+          style={{ width: `${completionPercentage}%` }}
+        />
+      </div>
+
+      {/* Status and Percentage */}
+      <div className="flex items-center space-x-2 min-w-[8rem]">
+        <span
+          className={`text-xs font-medium px-2 py-1 rounded-full border ${statusInfo.color} ${statusInfo.bgColor} ${statusInfo.borderColor}`}
+        >
+          {statusInfo.text}
         </span>
-
-        {/* Progress Bar */}
-        <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-          <div
-            className={`h-2 rounded-full transition-all duration-300 ${
-              isComplete
-                ? "bg-green-500"
-                : progress.passedCount > 0
-                  ? "bg-blue-500"
-                  : "bg-gray-400"
-            }`}
-            style={{ width: `${completionPercentage}%` }}
-          />
-        </div>
-
-        {/* Status and Percentage */}
-        <div className="flex items-center space-x-2 min-w-[8rem] justify-end">
-          <span
-            className={`text-xs font-medium px-2 py-1 rounded-full border ${statusInfo.color} ${statusInfo.bgColor} ${statusInfo.borderColor}`}
-          >
-            {statusInfo.text}
-          </span>
-          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-            {completionPercentage}%
-          </span>
-        </div>
+        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+          {completionPercentage}%
+        </span>
       </div>
 
       {/* Detailed counts */}
