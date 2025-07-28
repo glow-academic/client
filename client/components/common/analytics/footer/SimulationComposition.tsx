@@ -22,6 +22,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
@@ -37,7 +45,6 @@ import { useQuery } from "@tanstack/react-query";
 import { isAfter, isBefore } from "date-fns";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import SimulationCompositionPicker, {
   SimulationCompositionConfig,
 } from "../SimulationCompositionPicker";
@@ -175,7 +182,7 @@ export default function SimulationComposition({
 
     // Filter cohorts based on provided cohortIds
     const matchingCohorts = cohorts.filter((cohort) =>
-      cohortIds.includes(cohort.id),
+      cohortIds.includes(cohort.id)
     );
 
     if (matchingCohorts.length === 0) {
@@ -231,7 +238,7 @@ export default function SimulationComposition({
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId,
+        (s) => s.id === attempt?.simulationId
       );
       const profile = profiles?.find((p) => p.id === attempt?.profileId);
 
@@ -340,7 +347,7 @@ export default function SimulationComposition({
 
       // Calculate parameter breakdown for this simulation
       const simScenarios = scenarios.filter((s) =>
-        performance.simulation.scenarioIds?.includes(s.id),
+        performance.simulation.scenarioIds?.includes(s.id)
       );
 
       // Collect all parameter items used in this simulation's scenarios
@@ -359,7 +366,7 @@ export default function SimulationComposition({
           const paramItem = parameterItems.find((pi) => pi.id === paramItemId);
           if (paramItem) {
             const parameter = parameters.find(
-              (p) => p.id === paramItem.parameterId,
+              (p) => p.id === paramItem.parameterId
             );
             if (parameter) {
               const key = `${paramItem.parameterId}-${paramItem.id}`;
@@ -417,10 +424,10 @@ export default function SimulationComposition({
     switch (config.method) {
       case "percentile":
         const topCount = Math.ceil(
-          (simulationsWithScore.length * config.topPercentage) / 100,
+          (simulationsWithScore.length * config.topPercentage) / 100
         );
         const bottomCount = Math.ceil(
-          (simulationsWithScore.length * config.bottomPercentage) / 100,
+          (simulationsWithScore.length * config.bottomPercentage) / 100
         );
         highPerformingSims = simulationsWithScore.slice(0, topCount);
         lowPerformingSims = simulationsWithScore.slice(-bottomCount);
@@ -446,19 +453,19 @@ export default function SimulationComposition({
         const lowerThreshold = mean - stdDev;
 
         highPerformingSims = simulationsWithScore.filter(
-          (sim) => sim.combinedScore >= upperThreshold,
+          (sim) => sim.combinedScore >= upperThreshold
         );
         lowPerformingSims = simulationsWithScore.filter(
-          (sim) => sim.combinedScore <= lowerThreshold,
+          (sim) => sim.combinedScore <= lowerThreshold
         );
         break;
 
       default:
         const fallbackTopCount = Math.ceil(
-          (simulationsWithScore.length * 25) / 100,
+          (simulationsWithScore.length * 25) / 100
         );
         const fallbackBottomCount = Math.ceil(
-          (simulationsWithScore.length * 25) / 100,
+          (simulationsWithScore.length * 25) / 100
         );
         highPerformingSims = simulationsWithScore.slice(0, fallbackTopCount);
         lowPerformingSims = simulationsWithScore.slice(-fallbackBottomCount);
@@ -476,7 +483,7 @@ export default function SimulationComposition({
         timeLimit: sim.timeLimit,
         scenarioCount: sim.scenarioCount,
         parameterBreakdown: sim.parameterBreakdown,
-      }),
+      })
     );
 
     const lowPerformingDetails: SimulationDetail[] = lowPerformingSims.map(
@@ -490,7 +497,7 @@ export default function SimulationComposition({
         timeLimit: sim.timeLimit,
         scenarioCount: sim.scenarioCount,
         parameterBreakdown: sim.parameterBreakdown,
-      }),
+      })
     );
 
     // Generate colors for attributes
@@ -518,7 +525,7 @@ export default function SimulationComposition({
       parameterItemId: string,
       parameterName: string,
       parameterValue: string,
-      isNumerical: boolean,
+      isNumerical: boolean
     ): SimulationAttribute => {
       const key = `${parameterId}-${parameterItemId}`;
       if (!parameterUsage.has(key)) {
@@ -547,7 +554,7 @@ export default function SimulationComposition({
       sim.parameterBreakdown.forEach((param) => {
         // Find the parameter item for this value
         const paramItem = parameterItems.find(
-          (pi) => pi.value === param.parameterValue,
+          (pi) => pi.value === param.parameterValue
         );
 
         if (paramItem && paramItem.parameterId) {
@@ -556,7 +563,7 @@ export default function SimulationComposition({
             paramItem.id,
             param.parameterName,
             param.parameterValue,
-            param.isNumerical,
+            param.isNumerical
           );
           attribute.highPerforming += 1;
         }
@@ -568,7 +575,7 @@ export default function SimulationComposition({
       sim.parameterBreakdown.forEach((param) => {
         // Find the parameter item for this value
         const paramItem = parameterItems.find(
-          (pi) => pi.value === param.parameterValue,
+          (pi) => pi.value === param.parameterValue
         );
 
         if (paramItem && paramItem.parameterId) {
@@ -577,7 +584,7 @@ export default function SimulationComposition({
             paramItem.id,
             param.parameterName,
             param.parameterValue,
-            param.isNumerical,
+            param.isNumerical
           );
           attribute.lowPerforming += 1;
         }
@@ -749,13 +756,13 @@ export default function SimulationComposition({
     const highPerformingAvg =
       simulationComposition.highPerformingDetails.reduce(
         (sum, sim) => sum + sim.avgScore,
-        0,
+        0
       ) / Math.max(simulationComposition.highPerformingDetails.length, 1);
 
     const lowPerformingAvg =
       simulationComposition.lowPerformingDetails.reduce(
         (sum, sim) => sum + sim.avgScore,
-        0,
+        0
       ) / Math.max(simulationComposition.lowPerformingDetails.length, 1);
 
     const performanceGap = highPerformingAvg - lowPerformingAvg;
@@ -874,317 +881,255 @@ export default function SimulationComposition({
             </div>
           )}
 
-        {/* Compact Side-by-side Charts */}
-        <div className="flex-1 min-h-[300px] grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* High Performing Simulations */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <div className="cursor-pointer hover:bg-muted/50 rounded-lg p-3 transition-all duration-200 border-2 border-transparent hover:border-green-200 hover:shadow-sm">
-                <div className="text-center mb-3">
-                  <h3 className="font-semibold text-green-600 flex items-center justify-center gap-2 text-sm">
-                    <TrendingUp className="h-4 w-4" />
-                    {getMethodLabel(true)}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    {simulationComposition.highPerformingCount} simulations
-                  </p>
-                </div>
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={simulationComposition.highPerforming}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={60}
-                        innerRadius={30}
-                        paddingAngle={2}
-                      >
-                        {simulationComposition.highPerforming.map(
-                          (entry, index) => (
-                            <Cell
-                              key={`high-cell-${index}`}
-                              fill={entry.color}
-                            />
-                          ),
-                        )}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--background))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "6px",
-                        }}
-                        formatter={(value: number, name: string) => [
-                          `${value} instances`,
-                          name,
-                        ]}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                {/* Compact Legend */}
-                <div className="space-y-1 mt-2">
-                  {simulationComposition.highPerforming
-                    .slice(0, 3)
-                    .map((item, index) => (
-                      <div
-                        key={`high-legend-${index}`}
-                        className="flex items-center justify-between text-xs"
-                      >
-                        <div className="flex items-center gap-1">
-                          <div
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: item.color }}
-                          />
-                          <span className="truncate">
-                            {item.icon} {item.name}
-                          </span>
-                        </div>
-                        <span className="font-medium text-xs">
-                          {item.value}
-                        </span>
-                      </div>
-                    ))}
-                  {simulationComposition.highPerforming.length > 3 && (
-                    <div className="text-xs text-muted-foreground text-center">
-                      +{simulationComposition.highPerforming.length - 3} more
-                    </div>
-                  )}
-                </div>
-              </div>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-green-600" />
-                  {getMethodLabel(true)} Performing Simulations
-                </DialogTitle>
-                <DialogDescription>
-                  Detailed breakdown of top performing simulations and their
-                  characteristics
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-6">
-                {/* Simulation List */}
-                <div className="space-y-3">
-                  <h4 className="font-medium">
-                    Simulations (
-                    {simulationComposition.highPerformingDetails.length})
-                  </h4>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {simulationComposition.highPerformingDetails.map((sim) => (
-                      <div
-                        key={sim.id}
-                        className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                      >
-                        <div>
-                          <p className="font-medium text-sm">{sim.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {sim.totalAttempts} attempts • {sim.scenarioCount}{" "}
-                            scenarios
-                          </p>
-                          {/* Parameter breakdown */}
-                          {sim.parameterBreakdown.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {sim.parameterBreakdown
-                                .slice(0, 3)
-                                .map((param, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="text-xs bg-blue-100 dark:bg-blue-900 px-1 rounded"
-                                  >
-                                    {param.parameterName}:{" "}
-                                    {param.parameterValue}
-                                  </span>
-                                ))}
-                              {sim.parameterBreakdown.length > 3 && (
-                                <span className="text-xs text-muted-foreground">
-                                  +{sim.parameterBreakdown.length - 3} more
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium">
-                            {sim.avgScore}% avg
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {sim.completionRate}% completion
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+        {/* Parameter Comparison Table */}
+        <div className="flex-1 min-h-[300px]">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
+            {/* High Performing Side */}
+            <Dialog>
+              <DialogTrigger asChild>
+                <div className="cursor-pointer hover:bg-muted/50 rounded-lg p-3 transition-all duration-200 border-2 border-transparent hover:border-green-200 hover:shadow-sm h-full">
+                  <div className="text-center mb-3">
+                    <h3 className="font-semibold text-green-600 flex items-center justify-center gap-2 text-sm">
+                      <TrendingUp className="h-4 w-4" />
+                      {getMethodLabel(true)}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {simulationComposition.highPerformingCount} simulations
+                    </p>
+                  </div>
+
+                  <div className="overflow-x-auto flex-1">
+                    <Table className="w-full">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="p-2 text-xs">
+                            Parameter
+                          </TableHead>
+                          <TableHead className="p-2 text-xs text-center">
+                            Count
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {simulationComposition.highPerforming
+                          .slice(0, 8)
+                          .map((item, index) => (
+                            <TableRow key={`high-${index}`}>
+                              <TableCell className="p-2 text-xs">
+                                <div className="flex items-center gap-1">
+                                  <span>{item.icon}</span>
+                                  <span className="truncate">{item.name}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="p-2 text-xs text-center font-mono">
+                                {item.value}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 </div>
-
-                {/* Insight */}
-                <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
-                  <p className="text-sm text-green-800 dark:text-green-200">
-                    {getInsightText(true)}
-                  </p>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          {/* Low Performing Simulations */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <div className="cursor-pointer hover:bg-muted/50 rounded-lg p-3 transition-all duration-200 border-2 border-transparent hover:border-red-200 hover:shadow-sm">
-                <div className="text-center mb-3">
-                  <h3 className="font-semibold text-red-600 flex items-center justify-center gap-2 text-sm">
-                    <TrendingDown className="h-4 w-4" />
-                    {getMethodLabel(false)}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    {simulationComposition.lowPerformingCount} simulations
-                  </p>
-                </div>
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={simulationComposition.lowPerforming}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={60}
-                        innerRadius={30}
-                        paddingAngle={2}
-                      >
-                        {simulationComposition.lowPerforming.map(
-                          (entry, index) => (
-                            <Cell
-                              key={`low-cell-${index}`}
-                              fill={entry.color}
-                            />
-                          ),
-                        )}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--background))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "6px",
-                        }}
-                        formatter={(value: number, name: string) => [
-                          `${value} instances`,
-                          name,
-                        ]}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                {/* Compact Legend */}
-                <div className="space-y-1 mt-2">
-                  {simulationComposition.lowPerforming
-                    .slice(0, 3)
-                    .map((item, index) => (
-                      <div
-                        key={`low-legend-${index}`}
-                        className="flex items-center justify-between text-xs"
-                      >
-                        <div className="flex items-center gap-1">
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-green-600" />
+                    {getMethodLabel(true)} Performing Simulations
+                  </DialogTitle>
+                  <DialogDescription>
+                    Detailed breakdown of top performing simulations and their
+                    characteristics
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-6">
+                  {/* Simulation List */}
+                  <div className="space-y-3">
+                    <h4 className="font-medium">
+                      Simulations (
+                      {simulationComposition.highPerformingDetails.length})
+                    </h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {simulationComposition.highPerformingDetails.map(
+                        (sim) => (
                           <div
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: item.color }}
-                          />
-                          <span className="truncate">
-                            {item.icon} {item.name}
-                          </span>
-                        </div>
-                        <span className="font-medium text-xs">
-                          {item.value}
-                        </span>
-                      </div>
-                    ))}
-                  {simulationComposition.lowPerforming.length > 3 && (
-                    <div className="text-xs text-muted-foreground text-center">
-                      +{simulationComposition.lowPerforming.length - 3} more
-                    </div>
-                  )}
-                </div>
-              </div>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <TrendingDown className="h-5 w-5 text-red-600" />
-                  {getMethodLabel(false)} Performing Simulations
-                </DialogTitle>
-                <DialogDescription>
-                  Detailed breakdown of low performing simulations and their
-                  characteristics
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-6">
-                {/* Simulation List */}
-                <div className="space-y-3">
-                  <h4 className="font-medium">
-                    Simulations (
-                    {simulationComposition.lowPerformingDetails.length})
-                  </h4>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {simulationComposition.lowPerformingDetails.map((sim) => (
-                      <div
-                        key={sim.id}
-                        className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                      >
-                        <div>
-                          <p className="font-medium text-sm">{sim.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {sim.totalAttempts} attempts • {sim.scenarioCount}{" "}
-                            scenarios
-                          </p>
-                          {/* Parameter breakdown */}
-                          {sim.parameterBreakdown.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {sim.parameterBreakdown
-                                .slice(0, 3)
-                                .map((param, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="text-xs bg-red-100 dark:bg-red-900 px-1 rounded"
-                                  >
-                                    {param.parameterName}:{" "}
-                                    {param.parameterValue}
-                                  </span>
-                                ))}
-                              {sim.parameterBreakdown.length > 3 && (
-                                <span className="text-xs text-muted-foreground">
-                                  +{sim.parameterBreakdown.length - 3} more
-                                </span>
+                            key={sim.id}
+                            className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                          >
+                            <div>
+                              <p className="font-medium text-sm">{sim.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {sim.totalAttempts} attempts •{" "}
+                                {sim.scenarioCount} scenarios
+                              </p>
+                              {/* Parameter breakdown */}
+                              {sim.parameterBreakdown.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {sim.parameterBreakdown
+                                    .slice(0, 3)
+                                    .map((param, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="text-xs bg-blue-100 dark:bg-blue-900 px-1 rounded"
+                                      >
+                                        {param.parameterName}:{" "}
+                                        {param.parameterValue}
+                                      </span>
+                                    ))}
+                                  {sim.parameterBreakdown.length > 3 && (
+                                    <span className="text-xs text-muted-foreground">
+                                      +{sim.parameterBreakdown.length - 3} more
+                                    </span>
+                                  )}
+                                </div>
                               )}
                             </div>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium">
-                            {sim.avgScore}% avg
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {sim.completionRate}% completion
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                            <div className="text-right">
+                              <p className="text-sm font-medium">
+                                {sim.avgScore}% avg
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {sim.completionRate}% completion
+                              </p>
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Insight */}
+                  <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                    <p className="text-sm text-green-800 dark:text-green-200">
+                      {getInsightText(true)}
+                    </p>
                   </div>
                 </div>
+              </DialogContent>
+            </Dialog>
 
-                {/* Insight */}
-                <div className="p-3 bg-red-50 dark:bg-red-950 rounded-lg">
-                  <p className="text-sm text-red-800 dark:text-red-200">
-                    {getInsightText(false)}
-                  </p>
+            {/* Low Performing Side */}
+            <Dialog>
+              <DialogTrigger asChild>
+                <div className="cursor-pointer hover:bg-muted/50 rounded-lg p-3 transition-all duration-200 border-2 border-transparent hover:border-red-200 hover:shadow-sm h-full">
+                  <div className="text-center mb-3">
+                    <h3 className="font-semibold text-red-600 flex items-center justify-center gap-2 text-sm">
+                      <TrendingDown className="h-4 w-4" />
+                      {getMethodLabel(false)}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {simulationComposition.lowPerformingCount} simulations
+                    </p>
+                  </div>
+
+                  <div className="overflow-x-auto flex-1">
+                    <Table className="w-full">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="p-2 text-xs">
+                            Parameter
+                          </TableHead>
+                          <TableHead className="p-2 text-xs text-center">
+                            Count
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {simulationComposition.lowPerforming
+                          .slice(0, 8)
+                          .map((item, index) => (
+                            <TableRow key={`low-${index}`}>
+                              <TableCell className="p-2 text-xs">
+                                <div className="flex items-center gap-1">
+                                  <span>{item.icon}</span>
+                                  <span className="truncate">{item.name}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="p-2 text-xs text-center font-mono">
+                                {item.value}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <TrendingDown className="h-5 w-5 text-red-600" />
+                    {getMethodLabel(false)} Performing Simulations
+                  </DialogTitle>
+                  <DialogDescription>
+                    Detailed breakdown of low performing simulations and their
+                    characteristics
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-6">
+                  {/* Simulation List */}
+                  <div className="space-y-3">
+                    <h4 className="font-medium">
+                      Simulations (
+                      {simulationComposition.lowPerformingDetails.length})
+                    </h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {simulationComposition.lowPerformingDetails.map((sim) => (
+                        <div
+                          key={sim.id}
+                          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                        >
+                          <div>
+                            <p className="font-medium text-sm">{sim.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {sim.totalAttempts} attempts • {sim.scenarioCount}{" "}
+                              scenarios
+                            </p>
+                            {/* Parameter breakdown */}
+                            {sim.parameterBreakdown.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {sim.parameterBreakdown
+                                  .slice(0, 3)
+                                  .map((param, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="text-xs bg-red-100 dark:bg-red-900 px-1 rounded"
+                                    >
+                                      {param.parameterName}:{" "}
+                                      {param.parameterValue}
+                                    </span>
+                                  ))}
+                                {sim.parameterBreakdown.length > 3 && (
+                                  <span className="text-xs text-muted-foreground">
+                                    +{sim.parameterBreakdown.length - 3} more
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium">
+                              {sim.avgScore}% avg
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {sim.completionRate}% completion
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Insight */}
+                  <div className="p-3 bg-red-50 dark:bg-red-950 rounded-lg">
+                    <p className="text-sm text-red-800 dark:text-red-200">
+                      {getInsightText(false)}
+                    </p>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </CardContent>
     </Card>
