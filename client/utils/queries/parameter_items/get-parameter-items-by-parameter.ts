@@ -7,10 +7,7 @@ import { logError } from "@/utils/logger";
 
 export async function getParameterItemsByParameter(parameterId: string) {
   try {
-    return await db
-      .select()
-      .from(parameterItems)
-      .where(eq(parameterItems.parameterId, parameterId));
+    return await db.select().from(parameterItems).where(eq(parameterItems.parameterId, parameterId));
   } catch (error) {
     logError("Error fetching parameter_items by parameter:", error);
     throw error;

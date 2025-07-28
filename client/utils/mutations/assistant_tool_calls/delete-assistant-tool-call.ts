@@ -7,10 +7,7 @@ import { logError } from "@/utils/logger";
 
 export async function deleteAssistantToolCall(id: string) {
   try {
-    const result = await db
-      .delete(assistantToolCalls)
-      .where(eq(assistantToolCalls.id, id))
-      .returning();
+    const result = await db.delete(assistantToolCalls).where(eq(assistantToolCalls.id, id)).returning();
     return result[0];
   } catch (error) {
     logError("Error deleting assistantToolCall:", error);

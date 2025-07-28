@@ -7,10 +7,7 @@ import { logError } from "@/utils/logger";
 
 export async function deleteSessions(ids: number[]) {
   try {
-    return await db
-      .delete(sessions)
-      .where(inArray(sessions.id, ids))
-      .returning();
+    return await db.delete(sessions).where(inArray(sessions.id, ids)).returning();
   } catch (error) {
     logError("Error deleting multiple sessions:", error);
     throw error;

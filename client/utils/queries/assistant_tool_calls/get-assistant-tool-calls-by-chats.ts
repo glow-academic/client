@@ -7,10 +7,7 @@ import { logError } from "@/utils/logger";
 
 export async function getAssistantToolCallsByChats(chatIds: string[]) {
   try {
-    return await db
-      .select()
-      .from(assistantToolCalls)
-      .where(inArray(assistantToolCalls.chatId, chatIds));
+    return await db.select().from(assistantToolCalls).where(inArray(assistantToolCalls.chatId, chatIds));
   } catch (error) {
     logError("Error fetching assistant_tool_calls by chats:", error);
     throw error;

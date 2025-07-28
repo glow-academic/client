@@ -5,19 +5,11 @@ import { simulationChatGrades } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 
-export async function getSimulationChatGradesBySimulationChats(
-  simulationChatIds: string[],
-) {
+export async function getSimulationChatGradesBySimulationChats(simulationChatIds: string[]) {
   try {
-    return await db
-      .select()
-      .from(simulationChatGrades)
-      .where(inArray(simulationChatGrades.simulationChatId, simulationChatIds));
+    return await db.select().from(simulationChatGrades).where(inArray(simulationChatGrades.simulationChatId, simulationChatIds));
   } catch (error) {
-    logError(
-      "Error fetching simulation_chat_grades by simulationChats:",
-      error,
-    );
+    logError("Error fetching simulation_chat_grades by simulationChats:", error);
     throw error;
   }
 }

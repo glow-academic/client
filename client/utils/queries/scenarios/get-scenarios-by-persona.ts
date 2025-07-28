@@ -7,10 +7,7 @@ import { logError } from "@/utils/logger";
 
 export async function getScenariosByPersona(personaId: string) {
   try {
-    return await db
-      .select()
-      .from(scenarios)
-      .where(eq(scenarios.personaId, personaId));
+    return await db.select().from(scenarios).where(eq(scenarios.personaId, personaId));
   } catch (error) {
     logError("Error fetching scenarios by persona:", error);
     throw error;

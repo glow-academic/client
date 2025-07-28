@@ -7,10 +7,7 @@ import { logError } from "@/utils/logger";
 
 export async function getAgentsByModels(modelIds: string[]) {
   try {
-    return await db
-      .select()
-      .from(agents)
-      .where(inArray(agents.modelId, modelIds));
+    return await db.select().from(agents).where(inArray(agents.modelId, modelIds));
   } catch (error) {
     logError("Error fetching agents by models:", error);
     throw error;

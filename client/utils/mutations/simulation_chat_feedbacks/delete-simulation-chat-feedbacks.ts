@@ -7,10 +7,7 @@ import { logError } from "@/utils/logger";
 
 export async function deleteSimulationChatFeedbacks(ids: string[]) {
   try {
-    return await db
-      .delete(simulationChatFeedbacks)
-      .where(inArray(simulationChatFeedbacks.id, ids))
-      .returning();
+    return await db.delete(simulationChatFeedbacks).where(inArray(simulationChatFeedbacks.id, ids)).returning();
   } catch (error) {
     logError("Error deleting multiple simulation_chat_feedbacks:", error);
     throw error;

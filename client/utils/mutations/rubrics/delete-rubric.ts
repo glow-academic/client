@@ -7,10 +7,7 @@ import { logError } from "@/utils/logger";
 
 export async function deleteRubric(id: string) {
   try {
-    const result = await db
-      .delete(rubrics)
-      .where(eq(rubrics.id, id))
-      .returning();
+    const result = await db.delete(rubrics).where(eq(rubrics.id, id)).returning();
     return result[0];
   } catch (error) {
     logError("Error deleting rubric:", error);

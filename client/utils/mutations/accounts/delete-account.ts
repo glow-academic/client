@@ -7,10 +7,7 @@ import { logError } from "@/utils/logger";
 
 export async function deleteAccount(id: number) {
   try {
-    const result = await db
-      .delete(accounts)
-      .where(eq(accounts.id, id))
-      .returning();
+    const result = await db.delete(accounts).where(eq(accounts.id, id)).returning();
     return result[0];
   } catch (error) {
     logError("Error deleting account:", error);

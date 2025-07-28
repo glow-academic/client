@@ -7,10 +7,7 @@ import { logError } from "@/utils/logger";
 
 export async function getStandardsByStandardGroups(standardGroupIds: string[]) {
   try {
-    return await db
-      .select()
-      .from(standards)
-      .where(inArray(standards.standardGroupId, standardGroupIds));
+    return await db.select().from(standards).where(inArray(standards.standardGroupId, standardGroupIds));
   } catch (error) {
     logError("Error fetching standards by standardGroups:", error);
     throw error;

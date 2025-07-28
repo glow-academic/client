@@ -7,10 +7,7 @@ import { logError } from "@/utils/logger";
 
 export async function deletePersonas(ids: string[]) {
   try {
-    return await db
-      .delete(personas)
-      .where(inArray(personas.id, ids))
-      .returning();
+    return await db.delete(personas).where(inArray(personas.id, ids)).returning();
   } catch (error) {
     logError("Error deleting multiple personas:", error);
     throw error;

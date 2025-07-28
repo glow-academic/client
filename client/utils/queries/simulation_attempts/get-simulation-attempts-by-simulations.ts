@@ -5,14 +5,9 @@ import { simulationAttempts } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 
-export async function getSimulationAttemptsBySimulations(
-  simulationIds: string[],
-) {
+export async function getSimulationAttemptsBySimulations(simulationIds: string[]) {
   try {
-    return await db
-      .select()
-      .from(simulationAttempts)
-      .where(inArray(simulationAttempts.simulationId, simulationIds));
+    return await db.select().from(simulationAttempts).where(inArray(simulationAttempts.simulationId, simulationIds));
   } catch (error) {
     logError("Error fetching simulation_attempts by simulations:", error);
     throw error;

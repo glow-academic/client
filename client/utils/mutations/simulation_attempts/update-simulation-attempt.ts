@@ -5,16 +5,9 @@ import { simulationAttempts } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 
-export async function updateSimulationAttempt(
-  id: string,
-  data: Partial<typeof simulationAttempts.$inferInsert>,
-) {
+export async function updateSimulationAttempt(id: string, data: Partial<typeof simulationAttempts.$inferInsert>) {
   try {
-    const result = await db
-      .update(simulationAttempts)
-      .set(data)
-      .where(eq(simulationAttempts.id, id))
-      .returning();
+    const result = await db.update(simulationAttempts).set(data).where(eq(simulationAttempts.id, id)).returning();
     return result[0];
   } catch (error) {
     logError("Error updating simulationAttempt:", error);

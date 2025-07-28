@@ -7,10 +7,7 @@ import { logError } from "@/utils/logger";
 
 export async function getSimulationChatGradesByRubrics(rubricIds: string[]) {
   try {
-    return await db
-      .select()
-      .from(simulationChatGrades)
-      .where(inArray(simulationChatGrades.rubricId, rubricIds));
+    return await db.select().from(simulationChatGrades).where(inArray(simulationChatGrades.rubricId, rubricIds));
   } catch (error) {
     logError("Error fetching simulation_chat_grades by rubrics:", error);
     throw error;

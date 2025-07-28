@@ -7,10 +7,7 @@ import { logError } from "@/utils/logger";
 
 export async function deleteSession(id: number) {
   try {
-    const result = await db
-      .delete(sessions)
-      .where(eq(sessions.id, id))
-      .returning();
+    const result = await db.delete(sessions).where(eq(sessions.id, id)).returning();
     return result[0];
   } catch (error) {
     logError("Error deleting session:", error);

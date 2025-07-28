@@ -7,10 +7,7 @@ import { logError } from "@/utils/logger";
 
 export async function getPersonasByModel(modelId: string) {
   try {
-    return await db
-      .select()
-      .from(personas)
-      .where(eq(personas.modelId, modelId));
+    return await db.select().from(personas).where(eq(personas.modelId, modelId));
   } catch (error) {
     logError("Error fetching personas by model:", error);
     throw error;

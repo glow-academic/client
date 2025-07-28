@@ -7,10 +7,7 @@ import { logError } from "@/utils/logger";
 
 export async function getAppFeedbackByProfiles(profileIds: string[]) {
   try {
-    return await db
-      .select()
-      .from(appFeedback)
-      .where(inArray(appFeedback.profileId, profileIds));
+    return await db.select().from(appFeedback).where(inArray(appFeedback.profileId, profileIds));
   } catch (error) {
     logError("Error fetching app_feedback by profiles:", error);
     throw error;

@@ -4,9 +4,7 @@ import { db } from "@/utils/drizzle/db";
 import { simulationChats } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 
-export async function createSimulationChat(
-  data: typeof simulationChats.$inferInsert,
-) {
+export async function createSimulationChat(data: typeof simulationChats.$inferInsert) {
   try {
     const result = await db.insert(simulationChats).values(data).returning();
     return result[0];

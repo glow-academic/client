@@ -78,8 +78,8 @@ INSERT INTO profiles (id, first_name, last_name, alias, role, default_profile, v
   ('e1a1b2c3-d4e5-6789-0123-456789abcdef', 'Default', 'Superadmin', 'superadmin', 'superadmin', true, true, true),
   ('f2b2c3d4-e5f6-7890-1234-567890abcdef', 'Default', 'Admin', 'admin', 'admin', true, true, true),
   ('a3c3d4e5-f6a7-8901-2345-67890abcdef1', 'Default', 'Instructional', 'instructional', 'instructional', true, true, true),
-  ('b4d4e5f6-a7b8-9012-3456-7890abcdef12', 'Default', 'TA', 'ta', true, true, true),
-  ('c5e5f6a7-b8c9-0123-4567-890abcdef123', 'Default', 'Guest', 'guest', true, true, true);
+  ('b4d4e5f6-a7b8-9012-3456-7890abcdef12', 'Default', 'TA', 'ta', 'ta', true, true, true),
+  ('c5e5f6a7-b8c9-0123-4567-890abcdef123', 'Default', 'Guest', 'guest', 'guest', true, true, true);
 
 -- Insert ZZ demo student (for testing purposes)
 INSERT INTO profiles (id, first_name, last_name, alias, role) VALUES
@@ -99,7 +99,7 @@ INSERT INTO profiles (id, first_name, last_name, alias, role) VALUES
 
 -- Admin Users
 INSERT INTO profiles (id, first_name, last_name, alias, role) VALUES
-  ('c7c6f71a-2a4b-4e87-9320-4f444a603519', 'Justin', 'Gillingham', 'jdgillin','admin')
+  ('c7c6f71a-2a4b-4e87-9320-4f444a603519', 'Justin', 'Gillingham', 'jdgillin','admin'),
   ('a1bc0cb2-c9a2-4c80-8dd5-75156eb58ce1', 'Houyame', 'Lkhider-Hudson', 'hlkhider', 'admin'),
   ('b44a9d96-2b2e-4bcc-88e7-58cb6214aac1', 'Quiondriya', 'Gee', 'qgee', 'admin'),
   ('34a3c43e-27ee-4924-9f61-be4ac9e370f2', 'Jonathan', 'Morris', 'morrisjb', 'admin'),

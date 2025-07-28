@@ -7,10 +7,7 @@ import { logError } from "@/utils/logger";
 
 export async function deleteParameterItem(id: string) {
   try {
-    const result = await db
-      .delete(parameterItems)
-      .where(eq(parameterItems.id, id))
-      .returning();
+    const result = await db.delete(parameterItems).where(eq(parameterItems.id, id)).returning();
     return result[0];
   } catch (error) {
     logError("Error deleting parameterItem:", error);

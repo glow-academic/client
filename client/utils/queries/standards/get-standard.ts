@@ -7,10 +7,7 @@ import { logError } from "@/utils/logger";
 
 export async function getStandard(id: string) {
   try {
-    const result = await db
-      .select()
-      .from(standards)
-      .where(eq(standards.id, id));
+    const result = await db.select().from(standards).where(eq(standards.id, id));
     return result[0] || null;
   } catch (error) {
     logError("Error fetching standard:", error);

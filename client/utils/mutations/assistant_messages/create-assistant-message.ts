@@ -4,9 +4,7 @@ import { db } from "@/utils/drizzle/db";
 import { assistantMessages } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 
-export async function createAssistantMessage(
-  data: typeof assistantMessages.$inferInsert,
-) {
+export async function createAssistantMessage(data: typeof assistantMessages.$inferInsert) {
   try {
     const result = await db.insert(assistantMessages).values(data).returning();
     return result[0];

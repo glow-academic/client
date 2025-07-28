@@ -4,9 +4,7 @@ import { db } from "@/utils/drizzle/db";
 import { assistantChats } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 
-export async function createAssistantChat(
-  data: typeof assistantChats.$inferInsert,
-) {
+export async function createAssistantChat(data: typeof assistantChats.$inferInsert) {
   try {
     const result = await db.insert(assistantChats).values(data).returning();
     return result[0];

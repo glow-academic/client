@@ -7,10 +7,7 @@ import { logError } from "@/utils/logger";
 
 export async function deleteStandard(id: string) {
   try {
-    const result = await db
-      .delete(standards)
-      .where(eq(standards.id, id))
-      .returning();
+    const result = await db.delete(standards).where(eq(standards.id, id)).returning();
     return result[0];
   } catch (error) {
     logError("Error deleting standard:", error);

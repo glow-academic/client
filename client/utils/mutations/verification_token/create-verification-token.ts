@@ -4,9 +4,7 @@ import { db } from "@/utils/drizzle/db";
 import { verificationToken } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 
-export async function createVerificationToken(
-  data: (typeof verificationToken.$inferInsert)[],
-) {
+export async function createVerificationToken(data: (typeof verificationToken.$inferInsert)[]) {
   try {
     return await db.insert(verificationToken).values(data).returning();
   } catch (error) {

@@ -7,10 +7,7 @@ import { logError } from "@/utils/logger";
 
 export async function getAssistantMessage(id: string) {
   try {
-    const result = await db
-      .select()
-      .from(assistantMessages)
-      .where(eq(assistantMessages.id, id));
+    const result = await db.select().from(assistantMessages).where(eq(assistantMessages.id, id));
     return result[0] || null;
   } catch (error) {
     logError("Error fetching assistantMessage:", error);
