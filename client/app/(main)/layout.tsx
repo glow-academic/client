@@ -102,7 +102,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         progress: 0,
         toastId: toastId as string,
         status: "uploading",
-      }),
+      })
     );
 
     try {
@@ -175,7 +175,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             const result = await finalizeDocumentUpload(
               fileId,
               isZipFile, // zip parameter
-              shouldAutoClassify, // autoClassify parameter
+              shouldAutoClassify // autoClassify parameter
             );
 
             if (result.success) {
@@ -315,7 +315,13 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       !pathname.includes("/edit") &&
       !isLoading
     );
-  }, [effectiveProfile?.role, isAnalyticsPage, pathname, isLoading, isHomePage]);
+  }, [
+    effectiveProfile?.role,
+    isAnalyticsPage,
+    pathname,
+    isLoading,
+    isHomePage,
+  ]);
 
   // Load enhanced breadcrumbs with async ID resolution
   React.useEffect(() => {
@@ -537,7 +543,11 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
             {actionButton && <div className="px-4">{actionButton}</div>}
           </header>
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <div
+            className={`flex flex-1 flex-col gap-4 p-4 pt-0 ${
+              shouldShowChatComponents && canShowChatComponents ? "pb-18" : ""
+            }`}
+          >
             <AccessControl pathname={pathname}>{children}</AccessControl>
           </div>
         </SidebarInset>

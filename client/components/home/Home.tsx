@@ -971,9 +971,6 @@ export default function Home() {
           showPractice={false}
         />
       </div>
-
-      {/* Tour Component - Only for TAs */}
-      {/* TATour component is now handled in the layout */}
     </div>
   );
 }

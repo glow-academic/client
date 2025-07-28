@@ -74,12 +74,17 @@ CREATE TABLE profiles (
 );
 
 -- Insert the default users, which will be used for emulation
-INSERT INTO profiles (first_name, last_name, alias, role, default_profile, viewed_intro, viewed_chat) VALUES
-  ('Default', 'Superadmin', 'superadmin', 'superadmin', true, true, true),
-  ('Default', 'Admin', 'admin', 'admin', true, true, true),
-  ('Default', 'Instructional', 'instructional', 'instructional', true, true, true),
-  ('Default', 'TA', 'ta', 'ta', true, true, true),
-  ('Default', 'Guest', 'guest', 'guest', true, true, true);
+INSERT INTO profiles (id, first_name, last_name, alias, role, default_profile, viewed_intro, viewed_chat) VALUES
+  ('e1a1b2c3-d4e5-6789-0123-456789abcdef', 'Default', 'Superadmin', 'superadmin', 'superadmin', true, true, true),
+  ('f2b2c3d4-e5f6-7890-1234-567890abcdef', 'Default', 'Admin', 'admin', 'admin', true, true, true),
+  ('a3c3d4e5-f6a7-8901-2345-67890abcdef1', 'Default', 'Instructional', 'instructional', 'instructional', true, true, true),
+  ('b4d4e5f6-a7b8-9012-3456-7890abcdef12', 'Default', 'TA', 'ta', true, true, true),
+  ('c5e5f6a7-b8c9-0123-4567-890abcdef123', 'Default', 'Guest', 'guest', true, true, true);
+
+-- Insert ZZ demo student (for testing purposes)
+INSERT INTO profiles (id, first_name, last_name, alias, role) VALUES
+  ('b7e2c1d4-3f5a-4c8e-9a2b-1d6e7f8c9b0a', 'ZZ', 'Demo Student', 'ZZDemo.Student.dev_sp24_ta_training_dev', 'ta');
+
 
 -- ============================================================================
 -- SEED DATA
