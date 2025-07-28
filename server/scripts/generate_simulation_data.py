@@ -110,9 +110,7 @@ def fetch_source_data(session: Session) -> dict:
 
     # Fetch the default rubric and its full structure
     rubric_statement = (
-        select(Rubrics)
-        .where(Rubrics.default_rubric)
-        .where(Rubrics.active)
+        select(Rubrics).where(Rubrics.default_rubric).where(Rubrics.active)
     )
     default_rubric = session.exec(rubric_statement).first()
     if not default_rubric:

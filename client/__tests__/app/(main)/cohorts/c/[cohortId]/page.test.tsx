@@ -1,109 +1,97 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// ——————————————————————————————————————————
-import page, { generateMetadata } from '@/app/(main)/cohorts/c/[cohortId]/page';
+// Mock Leaderboard component
+vi.mock("@/components/analytics/Leaderboard", () => ({
+  __esModule: true,
+  default: ({ cohortId }: { cohortId: string }) => (
+    <div data-testid="leaderboard-component" data-cohort-id={cohortId}>
+      Leaderboard Component
+    </div>
+  ),
+}));
 
+// Mock getCohort function
+vi.mock("@/utils/queries/cohorts/get-cohort", () => ({
+  getCohort: vi.fn(),
+}));
 
+import CohortDashboardPage, {
+  generateMetadata,
+} from "@/app/(main)/cohorts/c/[cohortId]/page";
+import { getCohort } from "@/utils/queries/cohorts/get-cohort";
+import type { ResolvingMetadata } from "next";
 
-// ✨ Import comprehensive mock data from our centralized mock system
-import '@/mocks/queries';
-import '@/mocks/mutations';
-import '@/mocks/api';
-describe('page', () => {
-  
-  /* ------------------------------------------------------------------ *
-   * 💡 Mock Data Usage Guide:
-   * 
-   * All API functions are automatically mocked via imports above.
-   * Use mockSchema.* for realistic test data:
-   * 
-   * Examples:
-   * - mockSchema.users[0] - First user object
-   * - mockSchema.classes - Array of class objects  
-   * - mockSchema.profiles - Array of profile objects
-   * 
-   * To override specific mocks in individual tests:
-   * - vi.mocked(queryFunction).mockResolvedValue(customData)
-   * - vi.mocked(mutationFunction).mockResolvedValue(customResponse)
-   * ------------------------------------------------------------------ */
-  
-  // ✨ Reset mocks after each test
-  afterEach(() => {
+describe("CohortDashboardPage", () => {
+  const mockParams = Promise.resolve({ cohortId: "test-cohort-id" });
+
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<page  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+  it("renders without crashing", async () => {
+    renderWithMocks(<CohortDashboardPage params={mockParams} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("leaderboard-component")).toBeInTheDocument();
     });
+    expect(screen.getByText("Leaderboard Component")).toBeInTheDocument();
+  });
 
-    
+  it("passes cohortId to Leaderboard component", async () => {
+    renderWithMocks(<CohortDashboardPage params={mockParams} />);
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+    await waitFor(() => {
+      const leaderboard = screen.getByTestId("leaderboard-component");
+      expect(leaderboard).toHaveAttribute("data-cohort-id", "test-cohort-id");
     });
   });
 
-  
+  it("renders the Leaderboard component inside a wrapper", async () => {
+    renderWithMocks(<CohortDashboardPage params={mockParams} />);
 
-  
+    await waitFor(() => {
+      const wrapper = screen.getByTestId("leaderboard-component").parentElement;
+      expect(wrapper).toHaveClass("space-y-6");
+    });
+  });
 
-  
+  describe("generateMetadata", () => {
+    it("generates metadata with cohort data", async () => {
+      const mockCohort = {
+        id: "test-id",
+        title: "Test Cohort",
+        description: "Test Description",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        active: true,
+        profileIds: [],
+        defaultCohort: false,
+        simulationIds: [],
+      };
+      vi.mocked(getCohort).mockResolvedValue(mockCohort);
 
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
+      const metadata = await generateMetadata(
+        { params: mockParams },
+        {} as ResolvingMetadata
+      );
 
+      expect(metadata.title).toBe("Test Cohort");
+      expect(metadata.description).toContain("Test Cohort Test Description");
+      expect(metadata.description).toContain("in GLOW");
     });
 
-    
+    it("handles missing cohort data gracefully", async () => {
+      vi.mocked(getCohort).mockResolvedValue(null);
+
+      const metadata = await generateMetadata(
+        { params: mockParams },
+        {} as ResolvingMetadata
+      );
+
+      expect(metadata.title).toBe("Cohort");
+      expect(metadata.description).toContain("Cohort in GLOW");
+    });
   });
 });
-
-/*
- * Component Analysis for page:
- * Path: (main)/cohorts/c/[cohortId]/page.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: generateMetadata
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<page />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<page {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

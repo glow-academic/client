@@ -3,6 +3,7 @@ Pytest configuration and shared fixtures (Simplified for Mock-based Testing).
 """
 
 import os
+
 # 1. Standard library imports and path setup FIRST
 import sys
 import types
@@ -20,6 +21,7 @@ sys.path.insert(0, str(server_dir))
 import pytest  # noqa: E402
 from agents import Runner  # noqa: E402
 from app.db import get_session  # noqa: E402
+
 # Import the correct FastAPI instance directly from your main application file
 from app.main import fastapi_app as app  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

@@ -1,109 +1,116 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// ——————————————————————————————————————————
-import page, { generateMetadata } from '@/app/(main)/practice/a/[attemptId]/page';
+// Mock AttemptChat component
+vi.mock("@/components/common/chat/attempt/AttemptChat", () => ({
+  __esModule: true,
+  default: () => (
+    <div data-testid="attempt-chat-component">Attempt Chat Component</div>
+  ),
+}));
 
+// Mock query functions
+vi.mock("@/utils/queries/simulation_attempts/get-simulation-attempt", () => ({
+  getSimulationAttempt: vi.fn(),
+}));
 
+vi.mock("@/utils/queries/simulations/get-simulation", () => ({
+  getSimulation: vi.fn(),
+}));
 
-// ✨ Import comprehensive mock data from our centralized mock system
-import '@/mocks/queries';
-import '@/mocks/mutations';
-import '@/mocks/api';
-describe('page', () => {
-  
-  /* ------------------------------------------------------------------ *
-   * 💡 Mock Data Usage Guide:
-   * 
-   * All API functions are automatically mocked via imports above.
-   * Use mockSchema.* for realistic test data:
-   * 
-   * Examples:
-   * - mockSchema.users[0] - First user object
-   * - mockSchema.classes - Array of class objects  
-   * - mockSchema.profiles - Array of profile objects
-   * 
-   * To override specific mocks in individual tests:
-   * - vi.mocked(queryFunction).mockResolvedValue(customData)
-   * - vi.mocked(mutationFunction).mockResolvedValue(customResponse)
-   * ------------------------------------------------------------------ */
-  
-  // ✨ Reset mocks after each test
-  afterEach(() => {
+import PracticeAttemptPage, {
+  generateMetadata,
+} from "@/app/(main)/practice/a/[attemptId]/page";
+import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulation-attempt";
+import { getSimulation } from "@/utils/queries/simulations/get-simulation";
+import type { ResolvingMetadata } from "next";
+
+describe("PracticeAttemptPage", () => {
+  const mockParams = Promise.resolve({ attemptId: "test-attempt-id" });
+
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<page  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-    });
-
-    
-
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
-    });
+  it("renders without crashing", async () => {
+    renderWithMocks(<PracticeAttemptPage params={mockParams} />);
+    expect(screen.getByTestId("attempt-chat-component")).toBeInTheDocument();
+    expect(screen.getByText("Attempt Chat Component")).toBeInTheDocument();
   });
 
-  
+  it("renders the AttemptChat component inside a wrapper", async () => {
+    renderWithMocks(<PracticeAttemptPage params={mockParams} />);
+    const wrapper = screen.getByTestId("attempt-chat-component").parentElement;
+    expect(wrapper).toHaveClass("space-y-6");
+  });
 
-  
+  describe("generateMetadata", () => {
+    it("generates metadata with attempt and simulation data", async () => {
+      const mockAttempt = {
+        id: "test-attempt-id",
+        simulationId: "test-simulation-id",
+        createdAt: new Date().toISOString(),
+        profileId: "test-profile-id",
+      };
+      const mockSimulation = {
+        id: "test-simulation-id",
+        title: "Test Simulation",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        timeLimit: 30,
+        active: true,
+        scenarioIds: [],
+        rubricId: "test-rubric-id",
+        defaultSimulation: false,
+        practiceSimulation: true,
+      };
 
-  
+      vi.mocked(getSimulationAttempt).mockResolvedValue(mockAttempt);
+      vi.mocked(getSimulation).mockResolvedValue(mockSimulation);
 
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
+      const metadata = await generateMetadata(
+        { params: mockParams },
+        {} as ResolvingMetadata
+      );
 
+      expect(metadata.title).toBe("Practice Test Simulation");
+      expect(metadata.description).toContain("Practice Test Simulation");
+      expect(metadata.description).toContain("in GLOW");
     });
 
-    
+    it("handles missing attempt data gracefully", async () => {
+      vi.mocked(getSimulationAttempt).mockResolvedValue(null);
+
+      const metadata = await generateMetadata(
+        { params: mockParams },
+        {} as ResolvingMetadata
+      );
+
+      expect(metadata.title).toBe("Practice Attempt test-att...");
+      expect(metadata.description).toContain("Practice Attempt test-att...");
+      expect(metadata.description).toContain("in GLOW");
+    });
+
+    it("handles missing simulation data gracefully", async () => {
+      const mockAttempt = {
+        id: "test-attempt-id",
+        simulationId: "test-simulation-id",
+        createdAt: new Date().toISOString(),
+        profileId: "test-profile-id",
+      };
+
+      vi.mocked(getSimulationAttempt).mockResolvedValue(mockAttempt);
+      vi.mocked(getSimulation).mockResolvedValue(null);
+
+      const metadata = await generateMetadata(
+        { params: mockParams },
+        {} as ResolvingMetadata
+      );
+
+      expect(metadata.title).toBe("Practice Attempt");
+      expect(metadata.description).toContain("Practice Attempt");
+      expect(metadata.description).toContain("in GLOW");
+    });
   });
 });
-
-/*
- * Component Analysis for page:
- * Path: (main)/practice/a/[attemptId]/page.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: generateMetadata
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<page />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<page {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

@@ -1,83 +1,31 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
-// ——————————————————————————————————————————
-import page, { metadata } from '@/app/(main)/system/agents/page';
+// Mock Agents component
+vi.mock("@/components/system/agents/Agents", () => ({
+  __esModule: true,
+  default: () => <div data-testid="agents-component">Agents Component</div>,
+}));
 
-describe('page', () => {
-  
+import AgentsPage, { metadata } from "@/app/(main)/system/agents/page";
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<page  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-    });
-
-    
-
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
-    });
+describe("AgentsPage", () => {
+  it("renders without crashing", () => {
+    renderWithMocks(<AgentsPage />);
+    expect(screen.getByTestId("agents-component")).toBeInTheDocument();
+    expect(screen.getByText("Agents Component")).toBeInTheDocument();
   });
 
-  
+  it("exports correct metadata", () => {
+    expect(metadata).toBeDefined();
+    expect(metadata.title).toBe("Agents");
+    expect(metadata.description).toContain("Agents in GLOW");
+  });
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
-    });
-
-    
+  it("renders the Agents component inside a wrapper", () => {
+    renderWithMocks(<AgentsPage />);
+    const wrapper = screen.getByTestId("agents-component").parentElement;
+    expect(wrapper).toHaveClass("space-y-6");
   });
 });
-
-/*
- * Component Analysis for page:
- * Path: (main)/system/agents/page.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: metadata
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<page />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<page {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

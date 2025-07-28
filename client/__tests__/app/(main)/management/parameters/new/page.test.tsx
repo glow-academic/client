@@ -1,83 +1,43 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
-// ——————————————————————————————————————————
-import page, { metadata } from '@/app/(main)/management/parameters/new/page';
+// Mock Parameter component
+vi.mock("@/components/common/parameter/Parameter", () => ({
+  __esModule: true,
+  default: ({ mode }: { mode: string }) => (
+    <div data-testid="parameter-component" data-mode={mode}>
+      Parameter Component
+    </div>
+  ),
+}));
 
-describe('page', () => {
-  
+import NewParameterPage, {
+  metadata,
+} from "@/app/(main)/management/parameters/new/page";
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<page  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-    });
-
-    
-
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
-    });
+describe("NewParameterPage", () => {
+  it("renders without crashing", () => {
+    renderWithMocks(<NewParameterPage />);
+    expect(screen.getByTestId("parameter-component")).toBeInTheDocument();
+    expect(screen.getByText("Parameter Component")).toBeInTheDocument();
   });
 
-  
+  it("passes create mode to Parameter component", () => {
+    renderWithMocks(<NewParameterPage />);
+    const parameter = screen.getByTestId("parameter-component");
+    expect(parameter).toHaveAttribute("data-mode", "create");
+  });
 
-  
+  it("exports correct metadata", () => {
+    expect(metadata).toBeDefined();
+    expect(metadata.title).toBe("New Parameter");
+    expect(metadata.description).toContain("New parameter creation page");
+  });
 
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
-    });
-
-    
+  it("renders the Parameter component inside a wrapper", () => {
+    renderWithMocks(<NewParameterPage />);
+    const wrapper = screen.getByTestId("parameter-component").parentElement;
+    expect(wrapper).toHaveClass("space-y-6");
   });
 });
-
-/*
- * Component Analysis for page:
- * Path: (main)/management/parameters/new/page.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: metadata
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<page />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<page {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

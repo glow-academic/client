@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-// Mock next/navigation redirect
+// Mock next/navigation redirect - define before import to avoid hoisting issues
 const mockRedirect = vi.fn();
 vi.mock("next/navigation", () => ({
   redirect: mockRedirect,

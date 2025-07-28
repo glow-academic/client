@@ -6,8 +6,7 @@ import uuid
 from typing import List
 
 from agents.items import TResponseInputItem
-from app.models import (Documents, ParameterItems, Parameters, Personas,
-                        Scenarios)
+from app.models import Documents, ParameterItems, Parameters, Personas, Scenarios
 from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
@@ -65,9 +64,7 @@ async def randomly_fill_scenario_attributes(
     # Random agent selection if agent_id is null
     if scenario.persona_id is None:
         # Only select from active personas
-        active_personas = session.exec(
-            select(Personas).where(Personas.active)
-        ).all()
+        active_personas = session.exec(select(Personas).where(Personas.active)).all()
         if active_personas:
             scenario_persona_id = random.choice(active_personas).id
             logger.info(f"Randomly selected persona_id: {scenario_persona_id}")
@@ -80,9 +77,7 @@ async def randomly_fill_scenario_attributes(
     # Random document selection if documents is null
     if scenario.document_ids is None:
         # Only select from active documents
-        active_documents = session.exec(
-            select(Documents).where(Documents.active)
-        ).all()
+        active_documents = session.exec(select(Documents).where(Documents.active)).all()
         if active_documents:
             # Randomly select 0-3 documents
             num_docs = random.randint(0, min(3, len(active_documents)))

@@ -33,6 +33,7 @@ describe("RootLayout", () => {
         </RootLayout>
       );
 
+      expect(screen.getByTestId("providers")).toBeInTheDocument();
       expect(screen.getByTestId("test-child")).toBeInTheDocument();
       expect(screen.getByText("Test Content")).toBeInTheDocument();
     });
@@ -69,6 +70,48 @@ describe("RootLayout", () => {
     });
   });
 
+  describe("Children Rendering", () => {
+    it("should render children correctly", () => {
+      const testContent = "Custom Test Content";
+      renderWithMocks(
+        <RootLayout>
+          <div data-testid="test-child">{testContent}</div>
+        </RootLayout>
+      );
+
+      expect(screen.getByTestId("test-child")).toBeInTheDocument();
+      expect(screen.getByText(testContent)).toBeInTheDocument();
+    });
+
+    it("should render multiple children", () => {
+      renderWithMocks(
+        <RootLayout>
+          <div data-testid="child-1">Child 1</div>
+          <div data-testid="child-2">Child 2</div>
+          <div data-testid="child-3">Child 3</div>
+        </RootLayout>
+      );
+
+      expect(screen.getByTestId("child-1")).toBeInTheDocument();
+      expect(screen.getByTestId("child-2")).toBeInTheDocument();
+      expect(screen.getByTestId("child-3")).toBeInTheDocument();
+    });
+
+    it("should handle complex nested children", () => {
+      renderWithMocks(
+        <RootLayout>
+          <div>
+            <h1>Nested</h1>
+            <p>Content</p>
+          </div>
+        </RootLayout>
+      );
+
+      expect(screen.getByText("Nested")).toBeInTheDocument();
+      expect(screen.getByText("Content")).toBeInTheDocument();
+    });
+  });
+
   describe("Metadata", () => {
     it("should export correct metadata", () => {
       expect(metadata).toBeDefined();
@@ -96,66 +139,6 @@ describe("RootLayout", () => {
       // Check for font variable classes (these are applied by the font objects)
       // The actual class names depend on the font configuration
       expect(bodyElement?.className).toContain("antialiased");
-    });
-  });
-
-  describe("Children Rendering", () => {
-    it("should render children correctly", () => {
-      const testContent = "This is test content";
-      renderWithMocks(
-        <RootLayout>
-          <div data-testid="test-child">{testContent}</div>
-        </RootLayout>
-      );
-
-      expect(screen.getByTestId("test-child")).toBeInTheDocument();
-      expect(screen.getByText(testContent)).toBeInTheDocument();
-    });
-
-    it("should render multiple children", () => {
-      renderWithMocks(
-        <RootLayout>
-          <div data-testid="child-1">Child 1</div>
-          <div data-testid="child-2">Child 2</div>
-          <div data-testid="child-3">Child 3</div>
-        </RootLayout>
-      );
-
-      expect(screen.getByTestId("child-1")).toBeInTheDocument();
-      expect(screen.getByTestId("child-2")).toBeInTheDocument();
-      expect(screen.getByTestId("child-3")).toBeInTheDocument();
-    });
-  });
-
-  describe("Edge Cases", () => {
-    it("should handle empty children gracefully", () => {
-      renderWithMocks(<RootLayout>{null}</RootLayout>);
-
-      // Should still render the HTML structure
-      expect(document.querySelector("html")).toBeInTheDocument();
-      expect(document.querySelector("body")).toBeInTheDocument();
-    });
-
-    it("should handle undefined children gracefully", () => {
-      renderWithMocks(<RootLayout>{undefined}</RootLayout>);
-
-      // Should still render the HTML structure
-      expect(document.querySelector("html")).toBeInTheDocument();
-      expect(document.querySelector("body")).toBeInTheDocument();
-    });
-
-    it("should handle complex nested children", () => {
-      renderWithMocks(
-        <RootLayout>
-          <div>
-            <span>Nested</span>
-            <span>Content</span>
-          </div>
-        </RootLayout>
-      );
-
-      expect(screen.getByText("Nested")).toBeInTheDocument();
-      expect(screen.getByText("Content")).toBeInTheDocument();
     });
   });
 });

@@ -244,7 +244,16 @@ def main():
     (tests_dir / "utils").mkdir(exist_ok=True)
     (tests_dir / "web").mkdir(exist_ok=True)
 
-    stats = {"routes": 0, "services": 0, "utils": 0, "web": 0, "main": 0, "created": 0, "updated": 0, "deleted": 0}
+    stats = {
+        "routes": 0,
+        "services": 0,
+        "utils": 0,
+        "web": 0,
+        "main": 0,
+        "created": 0,
+        "updated": 0,
+        "deleted": 0,
+    }
     expected_test_files = set()
 
     # --- Process Routes ---
@@ -468,7 +477,7 @@ def main():
         test_file = tests_dir / "test_main.py"
         expected_test_files.add(test_file.resolve())
 
-        print(f"  📄 Syncing tests for main.py...")
+        print("  📄 Syncing tests for main.py...")
         source_functions = analyze_service_file(str(main_file))
         if not source_functions:
             print("    ⚠️  No functions found in main.py")
@@ -504,7 +513,13 @@ def main():
 
     # --- Clean up orphan test files ---
     print("\n🗑️  Cleaning up orphan test files...")
-    test_search_paths = [tests_dir / "routes", tests_dir / "services", tests_dir / "utils", tests_dir / "web", tests_dir]
+    test_search_paths = [
+        tests_dir / "routes",
+        tests_dir / "services",
+        tests_dir / "utils",
+        tests_dir / "web",
+        tests_dir,
+    ]
     for path in test_search_paths:
         if path.exists():
             for test_file in path.rglob("test_*.py"):
@@ -526,7 +541,9 @@ def main():
 
     # --- Summary ---
     print("\n📊 Summary:")
-    print(f"  Processed: {stats['routes']} routes, {stats['services']} services, {stats['utils']} utils, {stats['web']} web, {stats['main']} main")
+    print(
+        f"  Processed: {stats['routes']} routes, {stats['services']} services, {stats['utils']} utils, {stats['web']} web, {stats['main']} main"
+    )
     print(
         f"  ✨ Created: {stats['created']} | 🔄 Updated: {stats['updated']} | 🔥 Deleted: {stats['deleted']}"
     )

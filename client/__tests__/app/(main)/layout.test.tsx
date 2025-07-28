@@ -2,10 +2,7 @@ import { renderWithMocks } from "@/test/renderWithMocks";
 import { screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// ——————————————————————————————————————————
-import MainLayout from "@/app/(main)/layout";
-
-// Mock Next.js router and pathname
+// Mock Next.js router and pathname - define before import to avoid hoisting issues
 const mockPush = vi.fn();
 const mockPathname = "/home";
 const mockUsePathname = vi.fn().mockReturnValue(mockPathname);
@@ -102,6 +99,9 @@ vi.mock("@/contexts/tour-context", () => ({
     <div data-testid="tour-provider">{children}</div>
   ),
 }));
+
+// ——————————————————————————————————————————
+import MainLayout from "@/app/(main)/layout";
 
 // Mock utilities
 vi.mock("@/utils/breadcrumb-utils", () => ({

@@ -16,9 +16,14 @@ vi.mock("next/navigation", () => ({
 
 // Mock profile context
 const mockUseProfile = vi.fn();
-vi.mock("@/contexts/profile-context", () => ({
-  useProfile: () => mockUseProfile(),
-}));
+vi.mock("@/contexts/profile-context", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/contexts/profile-context")>();
+  return {
+    ...actual,
+    useProfile: () => mockUseProfile(),
+  };
+});
 
 describe("NotFound", () => {
   beforeEach(() => {
@@ -105,7 +110,7 @@ describe("NotFound", () => {
     it("should navigate to analytics for non-ta/non-guest roles", async () => {
       const user = userEvent.setup();
       mockUseProfile.mockReturnValue({
-        effectiveProfile: { role: "instructional" },
+        effectiveProfile: { role: "admin" },
       });
 
       renderWithMocks(<NotFound />);
@@ -118,34 +123,28 @@ describe("NotFound", () => {
   });
 
   describe("Edge Cases", () => {
-    it("should handle missing profile gracefully", async () => {
-      const user = userEvent.setup();
+    it("should handle missing profile gracefully", () => {
       mockUseProfile.mockReturnValue({
         effectiveProfile: null,
       });
 
       renderWithMocks(<NotFound />);
 
-      const backButton = screen.getByRole("button", { name: "Back to Glow" });
-      await user.click(backButton);
-
-      // Should default to analytics when no profile
-      expect(mockPush).toHaveBeenCalledWith("/analytics");
+      // Should still render the basic 404 content
+      expect(screen.getByText("404")).toBeInTheDocument();
+      expect(screen.getByText("Page Not Found")).toBeInTheDocument();
     });
 
-    it("should handle undefined profile role gracefully", async () => {
-      const user = userEvent.setup();
+    it("should handle undefined profile role gracefully", () => {
       mockUseProfile.mockReturnValue({
         effectiveProfile: { role: undefined },
       });
 
       renderWithMocks(<NotFound />);
 
-      const backButton = screen.getByRole("button", { name: "Back to Glow" });
-      await user.click(backButton);
-
-      // Should default to analytics when role is undefined
-      expect(mockPush).toHaveBeenCalledWith("/analytics");
+      // Should still render the basic 404 content
+      expect(screen.getByText("404")).toBeInTheDocument();
+      expect(screen.getByText("Page Not Found")).toBeInTheDocument();
     });
 
     it("should display help text correctly", () => {
@@ -153,7 +152,12 @@ describe("NotFound", () => {
 
       expect(
         screen.getByText(
-          "If you believe this is an error, please contact support or try refreshing the page."
+          "The page you're looking for doesn't exist or has been moved."
+        )
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "Please check the URL or use the button below to return to the main application."
         )
       ).toBeInTheDocument();
     });

@@ -12,8 +12,15 @@ from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
 from app.models import Documents
 from app.services.agents.collection.classify import run_classify_agent
-from fastapi import (APIRouter, Depends, File, HTTPException, Request,
-                     Response, UploadFile)
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+)
 from fastapi.responses import FileResponse, JSONResponse
 from sqlmodel import Session, select
 
@@ -608,8 +615,9 @@ async def finalize_upload(
                 if auto_classify:
                     try:
                         # Call the classify agent directly
-                        from app.services.agents.collection.classify import \
-                            run_classify_agent
+                        from app.services.agents.collection.classify import (
+                            run_classify_agent,
+                        )
 
                         # Get document IDs for classification
                         document_ids = [UUID(doc["id"]) for doc in extracted_documents]

@@ -1,83 +1,31 @@
-import { screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
-// ——————————————————————————————————————————
-import page, { metadata } from '@/app/(main)/create/personas/page';
+// Mock Personas component
+vi.mock("@/components/create/personas/Personas", () => ({
+  __esModule: true,
+  default: () => <div data-testid="personas-component">Personas Component</div>,
+}));
 
-describe('page', () => {
-  
+import PersonasPage, { metadata } from "@/app/(main)/create/personas/page";
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<page  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-    });
-
-    
-
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
-    });
+describe("PersonasPage", () => {
+  it("renders without crashing", () => {
+    renderWithMocks(<PersonasPage />);
+    expect(screen.getByTestId("personas-component")).toBeInTheDocument();
+    expect(screen.getByText("Personas Component")).toBeInTheDocument();
   });
 
-  
+  it("exports correct metadata", () => {
+    expect(metadata).toBeDefined();
+    expect(metadata.title).toBe("Personas");
+    expect(metadata.description).toContain("Personas in GLOW");
+  });
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
-    });
-
-    
+  it("renders the Personas component inside a wrapper", () => {
+    renderWithMocks(<PersonasPage />);
+    const wrapper = screen.getByTestId("personas-component").parentElement;
+    expect(wrapper).toHaveClass("space-y-6");
   });
 });
-
-/*
- * Component Analysis for page:
- * Path: (main)/create/personas/page.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: metadata
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<page />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<page {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

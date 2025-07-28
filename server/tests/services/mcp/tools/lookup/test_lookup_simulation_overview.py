@@ -6,8 +6,7 @@ import uuid
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
-from app.services.mcp.tools.lookup.simulation_overview import \
-    simulation_overview
+from app.services.mcp.tools.lookup.simulation_overview import simulation_overview
 from sqlalchemy.exc import SQLAlchemyError
 
 

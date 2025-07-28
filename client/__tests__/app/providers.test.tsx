@@ -2,6 +2,12 @@ import { renderWithMocks } from "@/test/renderWithMocks";
 import { screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+// Mock profile query - define before import to avoid hoisting issues
+const mockGetProfilesByUser = vi.fn();
+vi.mock("@/utils/queries/profiles/get-profiles-by-user", () => ({
+  getProfilesByUser: mockGetProfilesByUser,
+}));
+
 // ——————————————————————————————————————————
 import { Providers } from "@/app/providers";
 
@@ -26,12 +32,6 @@ vi.mock("@tanstack/react-query", () => ({
     <div data-testid="query-provider">{children}</div>
   ),
   useQuery: () => mockUseQuery(),
-}));
-
-// Mock profile query
-const mockGetProfilesByUser = vi.fn();
-vi.mock("@/utils/queries/profiles/get-profiles-by-user", () => ({
-  getProfilesByUser: mockGetProfilesByUser,
 }));
 
 // Mock contexts

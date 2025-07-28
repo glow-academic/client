@@ -7,8 +7,10 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from app.services.agents.collection.simulation import (cancel_simulation_run,
-                                                       run_simulation_agent)
+from app.services.agents.collection.simulation import (
+    cancel_simulation_run,
+    run_simulation_agent,
+)
 from sqlmodel import Session
 
 
