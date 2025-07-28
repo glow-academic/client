@@ -80,19 +80,6 @@ export function DataTableToolbar<TData>({
             />
           )}
 
-          {/* Completion filter */}
-          {scenariosColumn && (
-            <DataTableFacetedFilter
-              column={scenariosColumn}
-              title="Completion"
-              options={[
-                { value: "completed", label: "Completed" },
-                { value: "in-progress", label: "In Progress" },
-                { value: "not-started", label: "Not Started" },
-              ]}
-            />
-          )}
-
           {isFiltered && (
             <Button
               variant="ghost"

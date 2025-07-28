@@ -73,11 +73,24 @@ export function useHistoryColumns({
     enabled: !!profiles && profiles.length > 0,
   });
 
+  const filteredAttempts = useMemo(() => {
+    if (!attempts) return [];
+    return attempts.filter((attempt) => {
+      if (startDate && endDate) {
+        return (
+          new Date(attempt.createdAt) >= startDate &&
+          new Date(attempt.createdAt) <= endDate
+        );
+      }
+      return true;
+    });
+  }, [attempts, startDate, endDate]);
+
   const { data: chats, isLoading: isLoadingChats } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
+    queryKey: ["simulationChats", filteredAttempts?.map((attempt) => attempt.id)],
     queryFn: () =>
-      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
-    enabled: !!attempts && attempts.length > 0,
+      getSimulationChatsByAttempts(filteredAttempts!.map((attempt) => attempt.id)),
+    enabled: !!filteredAttempts && filteredAttempts.length > 0,
   });
 
   const { data: grades, isLoading: isLoadingGrades } = useQuery({
@@ -114,7 +127,7 @@ export function useHistoryColumns({
       return [];
 
     return attempts.map((attempt: SimulationAttempt): EnhancedAttempt => {
-      const attemptChats = chats.filter(
+      const attemptChats = (chats || []).filter(
         (chat) => chat.attemptId === attempt.id
       );
 
@@ -235,15 +248,6 @@ export function useHistoryColumns({
         },
         enableSorting: true,
         sortDescFirst: true, // Default to descending order
-        filterFn: (row, id, value) => {
-          if (!value || value.length === 0) return true;
-          const rowDate = new Date(row.getValue(id) as string);
-          const [fromDate, toDate] = value as [Date, Date];
-          if (fromDate && toDate) {
-            return rowDate >= fromDate && rowDate <= toDate;
-          }
-          return true;
-        },
       },
       // User Name column - only show if profileId is null (showing all data)
       ...(profileId === null
@@ -357,7 +361,15 @@ export function useHistoryColumns({
             </div>
           );
         },
-        enableSorting: false,
+        enableSorting: true,
+        accessorFn: (row: EnhancedAttempt) => {
+          const chats = row.scenarios;
+          const interactionIds = row.interactionIds;
+          const completedChats =
+            chats?.filter((chat) => chat.completed).length || 0;
+          const totalChats = interactionIds?.length || chats?.length || 0;
+          return totalChats > 0 ? completedChats / totalChats : 0;
+        },
         filterFn: (row, id, value) => {
           if (!value || value.length === 0) return true;
 
@@ -458,7 +470,9 @@ export function useHistoryColumns({
             .filter(Boolean);
 
           if (chatGrades.length === 0) {
-            const completedChats = chats.filter((chat) => chat.completed);
+            const completedChats = (chats || []).filter(
+              (chat) => chat.completed
+            );
             if (completedChats.length > 0) {
               return <div className="text-amber-500">Grading in progress</div>;
             }
@@ -580,7 +594,14 @@ export function useHistoryColumns({
         cell: ({ row }) => {
           const attempt = row.original;
 
-          return <DataTableRowActions id={attempt.id} />;
+          return (
+            <DataTableRowActions
+              id={attempt.id}
+              profileId={attempt.profileId || ""}
+              scenarios={attempt.scenarios}
+              interactionIds={attempt.interactionIds}
+            />
+          );
         },
       },
     ];
@@ -654,15 +675,6 @@ export function useHistoryColumns({
         (s) => s.id === attemptData["simulationId"]
       );
       return !simulation?.practiceSimulation;
-    });
-  }
-
-  // Apply date filtering
-  if (startDate && endDate) {
-    data = data.filter((attempt: unknown) => {
-      const attemptData = attempt as Record<string, unknown>;
-      const attemptDate = new Date(attemptData["createdAt"] as string);
-      return attemptDate >= startDate && attemptDate <= endDate;
     });
   }
 
