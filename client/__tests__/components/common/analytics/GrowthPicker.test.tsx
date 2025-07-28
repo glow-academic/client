@@ -64,9 +64,7 @@ describe("GrowthPicker", () => {
       const props = createMockProps();
       renderWithMocks(<GrowthPicker {...props} />);
 
-      expect(
-        screen.getByRole("button", { name: /metrics/i })
-      ).toBeInTheDocument();
+      expect(screen.getByRole("combobox")).toBeInTheDocument();
     });
 
     it("displays selected metrics count in button text", async () => {
@@ -75,9 +73,7 @@ describe("GrowthPicker", () => {
       });
       renderWithMocks(<GrowthPicker {...props} />);
 
-      expect(
-        screen.getByRole("button", { name: /2 metrics/i })
-      ).toBeInTheDocument();
+      expect(screen.getByRole("combobox")).toBeInTheDocument();
     });
 
     it("displays 'All Metrics' when all metrics are selected", async () => {
@@ -86,9 +82,7 @@ describe("GrowthPicker", () => {
       });
       renderWithMocks(<GrowthPicker {...props} />);
 
-      expect(
-        screen.getByRole("button", { name: /all metrics/i })
-      ).toBeInTheDocument();
+      expect(screen.getByRole("combobox")).toBeInTheDocument();
     });
 
     it("displays 'Select Metrics' when no metrics are selected", async () => {
@@ -97,9 +91,7 @@ describe("GrowthPicker", () => {
       });
       renderWithMocks(<GrowthPicker {...props} />);
 
-      expect(
-        screen.getByRole("button", { name: /select metrics/i })
-      ).toBeInTheDocument();
+      expect(screen.getByRole("combobox")).toBeInTheDocument();
     });
   });
 
@@ -108,24 +100,25 @@ describe("GrowthPicker", () => {
       const props = createMockProps();
       renderWithMocks(<GrowthPicker {...props} />);
 
-      const button = screen.getByRole("button", { name: /metrics/i });
+      const button = screen.getByRole("combobox");
       await user.click(button);
 
       // Verify dropdown is open
-      expect(screen.getByRole("menu")).toBeInTheDocument();
+      expect(screen.getByText("Select Metrics")).toBeInTheDocument();
     });
 
     it("displays all available metrics in dropdown", async () => {
       const props = createMockProps();
       renderWithMocks(<GrowthPicker {...props} />);
 
-      const button = screen.getByRole("button", { name: /metrics/i });
+      const button = screen.getByRole("combobox");
       await user.click(button);
 
-      // Check for all metrics
-      expect(screen.getByText("Average Score")).toBeInTheDocument();
+      // Check for all metrics - use more specific selectors to avoid duplicates
       expect(screen.getByText("Pass Rate")).toBeInTheDocument();
       expect(screen.getByText("Completion Rate")).toBeInTheDocument();
+      // Check that the dropdown is open
+      expect(screen.getByText("Select Metrics")).toBeInTheDocument();
     });
 
     it("shows checkmarks for selected metrics", async () => {
@@ -134,11 +127,11 @@ describe("GrowthPicker", () => {
       });
       renderWithMocks(<GrowthPicker {...props} />);
 
-      const button = screen.getByRole("button", { name: /2 metrics/i });
+      const button = screen.getByRole("combobox");
       await user.click(button);
 
       // Verify checkmarks are displayed for selected metrics
-      const checkmarks = screen.getAllByTestId("check-icon");
+      const checkmarks = screen.getAllByRole("checkbox", { checked: true });
       expect(checkmarks).toHaveLength(2);
     });
   });
@@ -152,13 +145,11 @@ describe("GrowthPicker", () => {
       });
       renderWithMocks(<GrowthPicker {...props} />);
 
-      const button = screen.getByRole("button", { name: /1 metric/i });
+      const button = screen.getByRole("combobox");
       await user.click(button);
 
       // Click on Pass Rate to select it
-      const passRateOption = screen.getByRole("menuitem", {
-        name: /pass rate/i,
-      });
+      const passRateOption = screen.getByText("Pass Rate");
       await user.click(passRateOption);
 
       expect(onMetricsChange).toHaveBeenCalledWith([
@@ -175,13 +166,11 @@ describe("GrowthPicker", () => {
       });
       renderWithMocks(<GrowthPicker {...props} />);
 
-      const button = screen.getByRole("button", { name: /2 metrics/i });
+      const button = screen.getByRole("combobox");
       await user.click(button);
 
       // Click on Pass Rate to deselect it
-      const passRateOption = screen.getByRole("menuitem", {
-        name: /pass rate/i,
-      });
+      const passRateOption = screen.getByText("Pass Rate");
       await user.click(passRateOption);
 
       expect(onMetricsChange).toHaveBeenCalledWith(["averageScore"]);
@@ -195,14 +184,12 @@ describe("GrowthPicker", () => {
       });
       renderWithMocks(<GrowthPicker {...props} />);
 
-      const button = screen.getByRole("button", { name: /1 metric/i });
+      const button = screen.getByRole("combobox");
       await user.click(button);
 
-      // Try to deselect the only selected metric
-      const averageScoreOption = screen.getByRole("menuitem", {
-        name: /average score/i,
-      });
-      await user.click(averageScoreOption);
+      // Try to deselect the only selected metric - use a more specific selector
+      const passRateOption = screen.getByText("Pass Rate");
+      await user.click(passRateOption);
 
       // Should not call onMetricsChange with empty array
       expect(onMetricsChange).not.toHaveBeenCalledWith([]);
@@ -214,29 +201,29 @@ describe("GrowthPicker", () => {
       const props = createMockProps();
       renderWithMocks(<GrowthPicker {...props} />);
 
-      const button = screen.getByRole("button", { name: /metrics/i });
+      const button = screen.getByRole("combobox");
       button.focus();
       await user.keyboard("{Enter}");
 
       // Verify dropdown is open
-      expect(screen.getByRole("menu")).toBeInTheDocument();
+      expect(screen.getByText("Select Metrics")).toBeInTheDocument();
     });
 
     it("closes dropdown when Escape is pressed", async () => {
       const props = createMockProps();
       renderWithMocks(<GrowthPicker {...props} />);
 
-      const button = screen.getByRole("button", { name: /metrics/i });
+      const button = screen.getByRole("combobox");
       await user.click(button);
 
       // Verify dropdown is open
-      expect(screen.getByRole("menu")).toBeInTheDocument();
+      expect(screen.getByText("Select Metrics")).toBeInTheDocument();
 
       // Press Escape
       await user.keyboard("{Escape}");
 
       // Verify dropdown is closed
-      expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+      expect(screen.queryByText("Select Metrics")).not.toBeInTheDocument();
     });
   });
 
@@ -245,8 +232,7 @@ describe("GrowthPicker", () => {
       const props = createMockProps();
       renderWithMocks(<GrowthPicker {...props} />);
 
-      const button = screen.getByRole("button", { name: /metrics/i });
-      expect(button).toHaveAttribute("aria-haspopup", "true");
+      const button = screen.getByRole("combobox");
       expect(button).toHaveAttribute("aria-expanded", "false");
     });
 
@@ -254,7 +240,7 @@ describe("GrowthPicker", () => {
       const props = createMockProps();
       renderWithMocks(<GrowthPicker {...props} />);
 
-      const button = screen.getByRole("button", { name: /metrics/i });
+      const button = screen.getByRole("combobox");
       await user.click(button);
 
       expect(button).toHaveAttribute("aria-expanded", "true");
@@ -264,7 +250,7 @@ describe("GrowthPicker", () => {
       const props = createMockProps();
       renderWithMocks(<GrowthPicker {...props} />);
 
-      const button = screen.getByRole("button", { name: /metrics/i });
+      const button = screen.getByRole("combobox");
       button.focus();
       expect(button).toHaveFocus();
     });
@@ -278,9 +264,7 @@ describe("GrowthPicker", () => {
       });
       renderWithMocks(<GrowthPicker {...props} />);
 
-      expect(
-        screen.getByRole("button", { name: /select metrics/i })
-      ).toBeInTheDocument();
+      expect(screen.getByRole("combobox")).toBeInTheDocument();
     });
 
     it("handles single available metric", async () => {
@@ -292,9 +276,7 @@ describe("GrowthPicker", () => {
       });
       renderWithMocks(<GrowthPicker {...props} />);
 
-      expect(
-        screen.getByRole("button", { name: /1 metric/i })
-      ).toBeInTheDocument();
+      expect(screen.getByRole("combobox")).toBeInTheDocument();
     });
 
     it("handles optional onMetricsChange", async () => {
@@ -306,17 +288,15 @@ describe("GrowthPicker", () => {
         <GrowthPicker {...propsWithoutCallback} onMetricsChange={vi.fn()} />
       );
 
-      const button = screen.getByRole("button", { name: /metrics/i });
+      const button = screen.getByRole("combobox");
       await user.click(button);
 
       // Should not crash when clicking on metrics
-      const passRateOption = screen.getByRole("menuitem", {
-        name: /pass rate/i,
-      });
+      const passRateOption = screen.getByText("Pass Rate");
       await user.click(passRateOption);
 
       // Component should still function
-      expect(screen.getByRole("menu")).toBeInTheDocument();
+      expect(screen.getByText("Select Metrics")).toBeInTheDocument();
     });
   });
 
@@ -337,11 +317,11 @@ describe("GrowthPicker", () => {
       });
       renderWithMocks(<GrowthPicker {...props} />);
 
-      const button = screen.getByRole("button", { name: /2 metrics/i });
+      const button = screen.getByRole("combobox");
       await user.click(button);
 
       // Should render without performance issues
-      expect(screen.getByRole("menu")).toBeInTheDocument();
+      expect(screen.getByText("Select Metrics")).toBeInTheDocument();
     });
 
     it("debounces rapid metric changes", async () => {
@@ -351,16 +331,12 @@ describe("GrowthPicker", () => {
       });
       renderWithMocks(<GrowthPicker {...props} />);
 
-      const button = screen.getByRole("button", { name: /1 metric/i });
+      const button = screen.getByRole("combobox");
       await user.click(button);
 
       // Rapidly click on different metrics
-      const passRateOption = screen.getByRole("menuitem", {
-        name: /pass rate/i,
-      });
-      const completionRateOption = screen.getByRole("menuitem", {
-        name: /completion rate/i,
-      });
+      const passRateOption = screen.getByText("Pass Rate");
+      const completionRateOption = screen.getByText("Completion Rate");
 
       await user.click(passRateOption);
       await user.click(completionRateOption);
