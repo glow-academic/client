@@ -2,7 +2,7 @@ import os
 import uuid
 from typing import AsyncGenerator
 
-import PyPDF2
+import pypdf
 from agents import Runner, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
@@ -110,7 +110,7 @@ async def _handle_simulation_chat(
                 # Handle PDF files
                 try:
                     with open(full_path, "rb") as file:
-                        pdf_reader = PyPDF2.PdfReader(file)
+                        pdf_reader = pypdf.PdfReader(file)
                         for page in pdf_reader.pages:
                             content += page.extract_text() + "\n"
                 except Exception as e:

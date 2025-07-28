@@ -12,7 +12,7 @@ lxml==6.0.0
 numpy==1.24.4
 psycopg2-binary==2.9.10
 gunicorn==23.0.0
-PyPDF2==3.0.1
+pypdf==5.9.0
 
 python-socketio==5.10.0
 redis==5.0.4

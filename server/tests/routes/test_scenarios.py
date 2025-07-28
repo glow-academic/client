@@ -172,13 +172,13 @@ class TestTest_Scenario:
     def test_test_scenario_missing_persona_id(self, client, mock_session):
         """Test test_scenario error handling - missing persona_id."""
         # Use proper form format for missing required field
-        from urllib.parse import urlencode
-        data = urlencode([
-            ("description", "Test description"),
-            ("query", "What should I do?")
-        ])
+        data = {
+            "description": "Test description",
+            "query": "What should I do?"
+            # persona_id is intentionally omitted to test missing required field
+        }
         
-        response = client.post("/scenarios/test", data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
+        response = client.post("/scenarios/test", data=data)
         
         # FastAPI will return 422 for missing required fields
         assert response.status_code == 422

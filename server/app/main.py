@@ -12,9 +12,9 @@ from typing import Any, AsyncIterator, Dict
 
 import socketio  # type: ignore
 from app.db import init_db
+from app.routes.csv import router as csv_router
 from app.routes.documents import router as documents_router
 from app.routes.scenarios import router as scenarios_router
-from app.routes.csv import router as csv_router
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -126,7 +126,6 @@ sio = socketio.AsyncServer(
 )
 
 from app.web.assistants import register_assistant_events
-
 # Import and register WebSocket events after sio is created to avoid circular imports
 from app.web.simulations import register_simulation_events
 
@@ -428,13 +427,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
     async with contextlib.AsyncExitStack() as stack:
         from app.services.mcp.server import server
 
+        # Initialize database
+        init_db()
+        
         await stack.enter_async_context(server.session_manager.run())
 
         yield
 
 
 # Create FastAPI app
-fastapi_app = FastAPI(title="GLOW API", on_startup=[init_db], lifespan=lifespan)
+fastapi_app = FastAPI(title="GLOW API", lifespan=lifespan)
 
 # Add CORS middleware FIRST
 fastapi_app.add_middleware(
