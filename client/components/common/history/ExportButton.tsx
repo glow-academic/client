@@ -61,7 +61,7 @@ const columnMap = {
   status: "Status",
   score: "Score",
   averageScore: "Score",
-  chats: "Scenarios",
+  scenarios: "Scenarios",
   personasTested: "Personas",
   // Reports page columns
   firstName: "Name",

@@ -14,6 +14,7 @@ export interface DataTableToolbarProps<TData> {
   table: Table<TData>;
   profileOptions: { value: string; label: string }[];
   simulationOptions: { value: string; label: string }[];
+  scenarioOptions?: { value: string; label: string }[];
   isAdmin?: boolean;
   showExport?: boolean;
   showAll?: boolean;
@@ -23,6 +24,7 @@ export function DataTableToolbar<TData>({
   table,
   profileOptions,
   simulationOptions,
+  scenarioOptions = [],
   isAdmin = false,
   showExport = true,
   showAll = false,
@@ -32,6 +34,7 @@ export function DataTableToolbar<TData>({
 
   const profileIdColumn = showAll ? table.getColumn("profileId") : null;
   const simulationIdColumn = table.getColumn("simulationId");
+  const scenariosColumn = table.getColumn("scenarios");
 
   return (
     <>
@@ -69,10 +72,19 @@ export function DataTableToolbar<TData>({
           )}
 
           {/* Scenarios filter */}
-          {table.getColumn("chats") && (
+          {scenariosColumn && scenarioOptions.length > 0 && (
             <DataTableFacetedFilter
-              column={table.getColumn("chats")!}
+              column={scenariosColumn}
               title="Scenarios"
+              options={scenarioOptions}
+            />
+          )}
+
+          {/* Completion filter */}
+          {scenariosColumn && (
+            <DataTableFacetedFilter
+              column={scenariosColumn}
+              title="Completion"
               options={[
                 { value: "completed", label: "Completed" },
                 { value: "in-progress", label: "In Progress" },

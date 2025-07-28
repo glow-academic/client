@@ -25,12 +25,14 @@ export default function SimulationHistory({
   startDate,
   endDate,
 }: SimulationHistoryProps) {
-  const { columns, data, profileOptions, simulationOptions } =
+  const { columns, data, profileOptions, simulationOptions, scenarioOptions } =
     useHistoryColumns({
       profileId: profileId || null,
       showExport,
       cohortIds,
       showPractice,
+      ...(startDate && { startDate }),
+      ...(endDate && { endDate }),
     });
 
   return (
@@ -39,6 +41,7 @@ export default function SimulationHistory({
       columns={columns as never}
       profileOptions={profileOptions}
       simulationOptions={simulationOptions}
+      scenarioOptions={scenarioOptions}
       showExport={showExport}
       showAll={!profileId} // showAll is true when profileId is null/undefined
       startDate={startDate}

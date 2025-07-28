@@ -22,7 +22,7 @@ const columnMap = {
   classIds: "Classes",
   personasTested: "Personas",
   averageScore: "Score",
-  chats: "Scenarios",
+  scenarios: "Scenarios",
   // Reports page columns
   firstName: "Name",
   username: "Alias",

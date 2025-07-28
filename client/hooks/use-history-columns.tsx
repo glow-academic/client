@@ -3,20 +3,16 @@ import { DataTableColumnHeader } from "@/components/common/history/DataTableColu
 import { DataTableRowActions } from "@/components/common/history/DataTableRowActions";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Persona, Profile, SimulationAttempt, SimulationChat } from "@/types";
-import { getPersonaConfig } from "@/utils/personas";
+import { Profile, SimulationAttempt, SimulationChat } from "@/types";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
-import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { isSimulationTimedOut } from "@/utils/simulation-utils";
 import { useQuery } from "@tanstack/react-query";
 import { Column, ColumnDef, Row, Table } from "@tanstack/react-table";
@@ -24,7 +20,7 @@ import { useMemo } from "react";
 
 // Enhanced types for the data table
 interface EnhancedAttempt extends SimulationAttempt {
-  chats: SimulationChat[];
+  scenarios: SimulationChat[];
   personasTested: string[];
   interactionIds: string[];
 }
@@ -35,11 +31,15 @@ export function useHistoryColumns({
   showExport = true,
   cohortIds = undefined,
   showPractice = false,
+  startDate,
+  endDate,
 }: {
   profileId?: string | null;
   showExport?: boolean;
   cohortIds: string[] | undefined;
   showPractice?: boolean;
+  startDate?: Date;
+  endDate?: Date;
 }) {
   const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
     queryKey: ["profiles"],
@@ -66,22 +66,6 @@ export function useHistoryColumns({
     queryFn: () => getAllScenarios(),
   });
 
-  const { data: standardGroups, isLoading: isLoadingStandardGroups } = useQuery(
-    {
-      queryKey: ["standardGroups", rubrics?.map((rubric) => rubric.id)],
-      queryFn: () =>
-        getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
-      enabled: !!rubrics && rubrics.length > 0,
-    }
-  );
-
-  const { data: standards, isLoading: isLoadingStandards } = useQuery({
-    queryKey: ["standards", standardGroups?.map((group) => group.id)],
-    queryFn: () =>
-      getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
-    enabled: !!standardGroups && standardGroups.length > 0,
-  });
-
   const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
     queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
     queryFn: () =>
@@ -103,29 +87,10 @@ export function useHistoryColumns({
     enabled: !!chats && chats.length > 0,
   });
 
-  const { data: feedbacks, isLoading: isLoadingFeedbacks } = useQuery({
-    queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
-    queryFn: () =>
-      getSimulationChatFeedbacksBySimulationChatGrades(
-        grades!.map((grade) => grade.id)
-      ),
-    enabled: !!grades && grades.length > 0,
-  });
-
   const { data: cohorts, isLoading: isLoadingCohorts } = useQuery({
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
   });
-
-  // Create dynamic profile types from database profiles
-  const personaTypes = useMemo(() => {
-    if (!personas) return [];
-    return personas.map((persona: Persona) => ({
-      value: persona.id,
-      label: persona.name,
-      icon: getPersonaConfig(persona.name).icon,
-    }));
-  }, [personas]);
 
   // Create user options for GTA names
   const profileOptions = useMemo(() => {
@@ -142,22 +107,6 @@ export function useHistoryColumns({
     if (!rubrics || !simulations) return [];
     return rubrics.filter((r) => simulations.some((s) => s.rubricId === r.id));
   }, [rubrics, simulations]);
-
-  // Filter valid standard groups based on valid rubrics
-  const validStandardGroups = useMemo(() => {
-    if (!standardGroups || !validRubrics) return [];
-    return standardGroups.filter((g) =>
-      validRubrics.some((r) => r.id === g.rubricId)
-    );
-  }, [standardGroups, validRubrics]);
-
-  // Filter valid standards based on valid standard groups
-  const validStandards = useMemo(() => {
-    if (!standards || !validStandardGroups) return [];
-    return standards.filter((s) =>
-      validStandardGroups.some((g) => g.id === s.standardGroupId)
-    );
-  }, [standards, validStandardGroups]);
 
   // Create enhanced attempts data
   const enhancedAttempts = useMemo(() => {
@@ -194,56 +143,12 @@ export function useHistoryColumns({
 
       return {
         ...attempt,
-        chats: attemptChats,
+        scenarios: attemptChats,
         personasTested,
         interactionIds: simulation?.scenarioIds || [],
       };
     });
   }, [attempts, chats, personas, simulations, scenarios]);
-
-  // Create skill categories from standard groups for scoring
-  const skillCategories = useMemo(() => {
-    if (!validStandardGroups || !validStandards || !feedbacks) return {};
-
-    const categories: Record<string, number> = {};
-
-    validStandardGroups.forEach((group) => {
-      const groupStandards = validStandards.filter(
-        (s) => s.standardGroupId === group.id
-      );
-      const groupFeedbacks = feedbacks.filter((f) =>
-        groupStandards.some((s) => s.id === f.standardId)
-      );
-
-      if (groupFeedbacks.length > 0) {
-        const avgScore =
-          groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
-          groupFeedbacks.length;
-        const maxPoints = groupStandards[0]?.points || 5;
-        categories[group.name] = Math.round((avgScore / maxPoints) * 100);
-      }
-    });
-
-    return categories;
-  }, [validStandardGroups, validStandards, feedbacks]);
-
-  // Create dynamic score options from valid standard groups using shortName
-  const scoreOptions = useMemo(() => {
-    if (!validStandardGroups) return [];
-    return validStandardGroups.map((group) => ({
-      value: group.shortName,
-      label: group.shortName, // Use shortName for both value and label to fit in space
-    }));
-  }, [validStandardGroups]);
-
-  // Create simulation options for filtering
-  const simulationOptions = useMemo(() => {
-    if (!simulations) return [];
-    return simulations.map((simulation) => ({
-      value: simulation.id,
-      label: simulation.title,
-    }));
-  }, [simulations]);
 
   // Create scenario options for filtering
   const scenarioOptions = useMemo(() => {
@@ -253,6 +158,15 @@ export function useHistoryColumns({
       label: scenario.name,
     }));
   }, [scenarios]);
+
+  // Create simulation options for filtering
+  const simulationOptions = useMemo(() => {
+    if (!simulations) return [];
+    return simulations.map((simulation) => ({
+      value: simulation.id,
+      label: simulation.title,
+    }));
+  }, [simulations]);
 
   // Define columns - only attempts view
   const columns = useMemo(() => {
@@ -408,7 +322,7 @@ export function useHistoryColumns({
           if (profileName.includes(searchTerm)) return true;
 
           // Search in scenarios (chats)
-          const chats = row.getValue("chats") as SimulationChat[];
+          const chats = row.getValue("scenarios") as SimulationChat[];
           const scenarioIds = chats.map((chat) => chat.scenarioId);
           const scenarioNames = scenarioIds.map((scenarioId) => {
             const scenario = scenarios?.find((s) => s.id === scenarioId);
@@ -422,12 +336,12 @@ export function useHistoryColumns({
       },
       // Scenarios completion column
       {
-        accessorKey: "chats",
+        accessorKey: "scenarios",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Scenarios" />
         ),
         cell: ({ row }) => {
-          const chats = row.getValue("chats") as SimulationChat[];
+          const chats = row.getValue("scenarios") as SimulationChat[];
           const interactionIds = row.original.interactionIds;
 
           const completedChats =
@@ -448,26 +362,15 @@ export function useHistoryColumns({
           if (!value || value.length === 0) return true;
 
           const chats = row.getValue(id) as SimulationChat[];
-          const totalChats = chats?.length || 0;
-          const completedChats =
-            chats?.filter((chat) => chat.completed).length || 0;
 
-          if (
-            value.includes("completed") &&
-            completedChats === totalChats &&
-            totalChats > 0
-          )
-            return true;
-          if (
-            value.includes("in-progress") &&
-            completedChats > 0 &&
-            completedChats < totalChats
-          )
-            return true;
-          if (value.includes("not-started") && completedChats === 0)
-            return true;
+          // Check if any of the selected scenario IDs are present in the attempt's scenarios
+          const attemptScenarioIds =
+            chats?.map((chat) => chat.scenarioId) || [];
+          const hasSelectedScenario = value.some((scenarioId: string) =>
+            attemptScenarioIds.includes(scenarioId)
+          );
 
-          return false;
+          return hasSelectedScenario;
         },
       },
       // Agents tested column
@@ -525,7 +428,7 @@ export function useHistoryColumns({
           <DataTableColumnHeader column={column} title="Score" />
         ),
         accessorFn: (row: EnhancedAttempt) => {
-          const chats = row.chats;
+          const chats = row.scenarios;
           if (!chats || chats.length === 0) return 0;
 
           const chatGrades = chats
@@ -543,7 +446,7 @@ export function useHistoryColumns({
           return totalScore / chatGrades.length;
         },
         cell: ({ row }) => {
-          const chats = row.getValue("chats") as SimulationChat[];
+          const chats = row.getValue("scenarios") as SimulationChat[];
           if (!chats || chats.length === 0) {
             return <div className="text-muted-foreground">No chats</div>;
           }
@@ -616,7 +519,7 @@ export function useHistoryColumns({
         },
         enableSorting: true,
         filterFn: (row, _, value) => {
-          const chats = row.getValue("chats") as SimulationChat[];
+          const chats = row.getValue("scenarios") as SimulationChat[];
           if (!chats || chats.length === 0) {
             return value.includes("not-graded");
           }
@@ -754,6 +657,15 @@ export function useHistoryColumns({
     });
   }
 
+  // Apply date filtering
+  if (startDate && endDate) {
+    data = data.filter((attempt: unknown) => {
+      const attemptData = attempt as Record<string, unknown>;
+      const attemptDate = new Date(attemptData["createdAt"] as string);
+      return attemptDate >= startDate && attemptDate <= endDate;
+    });
+  }
+
   // Apply filtering based on profileId parameter
   if (profileId !== null) {
     // If profileId is provided, filter to that specific profile
@@ -766,30 +678,21 @@ export function useHistoryColumns({
     // Don't filter - show all data
   }
 
-  const isLoading =
-    isLoadingProfiles ||
-    isLoadingAttempts ||
-    isLoadingPersonas ||
-    isLoadingChats ||
-    isLoadingRubrics ||
-    isLoadingStandardGroups ||
-    isLoadingStandards ||
-    isLoadingGrades ||
-    isLoadingFeedbacks ||
-    isLoadingSimulations ||
-    isLoadingScenarios ||
-    isLoadingCohorts;
-
   return {
     columns,
-    isLoading,
-    data: data,
+    data,
     profileOptions,
-    personaTypes,
-    skillCategories,
-    scoreOptions,
     simulationOptions,
     scenarioOptions,
-    showAll: profileId === null, // This will now always be true when profileId is null
+    isLoading:
+      isLoadingProfiles ||
+      isLoadingAttempts ||
+      isLoadingPersonas ||
+      isLoadingChats ||
+      isLoadingRubrics ||
+      isLoadingGrades ||
+      isLoadingSimulations ||
+      isLoadingScenarios ||
+      isLoadingCohorts,
   };
 }
