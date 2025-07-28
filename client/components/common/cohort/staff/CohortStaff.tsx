@@ -53,7 +53,6 @@ export interface CohortStaffProps {
   setProfilesToDelete: (profileIds: string[]) => void;
   isLoading?: boolean;
   isSubmitting?: boolean;
-  currentCohortName?: string;
   effectiveProfile?: Profile | null; // Current user's effective profile
 }
 
@@ -63,7 +62,6 @@ export default function CohortStaff({
   profilesToDelete,
   setProfilesToDelete,
   isLoading = false,
-  currentCohortName,
   effectiveProfile,
 }: CohortStaffProps) {
   const router = useRouter();
@@ -88,7 +86,7 @@ export default function CohortStaff({
     (newProfiles: EditableProfile[]) => {
       setProfiles([...newProfiles, ...profiles]);
     },
-    [profiles, setProfiles],
+    [profiles, setProfiles]
   );
 
   // Profile management handlers
@@ -105,7 +103,7 @@ export default function CohortStaff({
       // Remove the profile from the visible UI state
       setProfiles(profiles.filter((p) => p.id !== profileId));
     },
-    [profiles, profilesToDelete, setProfiles, setProfilesToDelete],
+    [profiles, profilesToDelete, setProfiles, setProfilesToDelete]
   );
 
   const getProfileRoleIcon = (role: ProfileRole) => {
@@ -124,7 +122,7 @@ export default function CohortStaff({
       // Navigate to the profile report page
       router.push(`/analytics/reports/p/${profile.id}`);
     },
-    [router],
+    [router]
   );
 
   // Check permissions for actions
@@ -139,7 +137,7 @@ export default function CohortStaff({
       }
       return true;
     },
-    [effectiveProfile],
+    [effectiveProfile]
   );
 
   const canViewProfile = useCallback((profile: EditableProfile) => {
@@ -263,7 +261,6 @@ export default function CohortStaff({
           {/* Add Staff Button */}
           <CohortAddStaff
             onAddProfiles={handleAddProfiles}
-            currentCohortName={currentCohortName || ""}
             existingProfileIds={profiles.map((p) => p.id)}
           />
         </div>
@@ -276,7 +273,7 @@ export default function CohortStaff({
         <div
           className={cn(
             "min-h-[200px] rounded-lg",
-            filteredProfiles.length === 0 ? "border-2 border-dashed" : "",
+            filteredProfiles.length === 0 ? "border-2 border-dashed" : ""
           )}
         >
           {filteredProfiles.length === 0 ? (
@@ -304,7 +301,7 @@ export default function CohortStaff({
                         key={profile.id}
                         className={cn(
                           "group relative border rounded-lg hover:shadow-md transition-all",
-                          isNewProfile && "border-blue-300 bg-blue-50/50",
+                          isNewProfile && "border-blue-300 bg-blue-50/50"
                         )}
                       >
                         {/* Role display in top left */}
@@ -377,7 +374,7 @@ export default function CohortStaff({
                         key={profile.id}
                         className={cn(
                           "flex items-center gap-4 p-3 border rounded-lg hover:shadow-sm transition-all",
-                          isNewProfile && "border-blue-300 bg-blue-50/50",
+                          isNewProfile && "border-blue-300 bg-blue-50/50"
                         )}
                       >
                         <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
