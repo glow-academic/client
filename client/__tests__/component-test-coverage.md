@@ -1,15 +1,21 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 229
+- **Total Components**: 270
 - **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 229
+- **Tests Skipped** (already implemented): 270
 
 ## Component Coverage
 
 | Component | Path | Test File | Status |
 |-----------|------|-----------|--------|
+| Dashboard | components/analytics/Dashboard.tsx | Dashboard.test.tsx | ✅ Implemented |
+| Leaderboard | components/analytics/Leaderboard.tsx | Leaderboard.test.tsx | ✅ Implemented |
+| Report | components/analytics/report/Report.tsx | Report.test.tsx | ✅ Implemented |
+| Reports | components/analytics/report/Reports.tsx | Reports.test.tsx | ✅ Implemented |
+| ReportsDataTable | components/analytics/report/ReportsDataTable.tsx | ReportsDataTable.test.tsx | ✅ Implemented |
+| ReportsDataTableToolbar | components/analytics/report/ReportsDataTableToolbar.tsx | ReportsDataTableToolbar.test.tsx | ✅ Implemented |
 | CohortEdit | components/cohorts/CohortEdit.tsx | CohortEdit.test.tsx | ✅ Implemented |
 | Cohorts | components/cohorts/Cohorts.tsx | Cohorts.test.tsx | ✅ Implemented |
 | CohortsDataTable | components/cohorts/CohortsDataTable.tsx | CohortsDataTable.test.tsx | ✅ Implemented |
@@ -17,6 +23,30 @@
 | NewCohort | components/cohorts/NewCohort.tsx | NewCohort.test.tsx | ✅ Implemented |
 | Persona | components/common/agent/Persona.tsx | Persona.test.tsx | ✅ Implemented |
 | SystemAgent | components/common/agent/SystemAgent.tsx | SystemAgent.test.tsx | ✅ Implemented |
+| AnalyticsFilters | components/common/analytics/AnalyticsFilters.tsx | AnalyticsFilters.test.tsx | ✅ Implemented |
+| GrowthPicker | components/common/analytics/GrowthPicker.tsx | GrowthPicker.test.tsx | ✅ Implemented |
+| ScenarioAttributePicker | components/common/analytics/ScenarioAttributePicker.tsx | ScenarioAttributePicker.test.tsx | ✅ Implemented |
+| SimulationCompositionPicker | components/common/analytics/SimulationCompositionPicker.tsx | SimulationCompositionPicker.test.tsx | ✅ Implemented |
+| ScenarioPerformance | components/common/analytics/footer/ScenarioPerformance.tsx | ScenarioPerformance.test.tsx | ✅ Implemented |
+| ScenarioStats | components/common/analytics/footer/ScenarioStats.tsx | ScenarioStats.test.tsx | ✅ Implemented |
+| SimulationComposition | components/common/analytics/footer/SimulationComposition.tsx | SimulationComposition.test.tsx | ✅ Implemented |
+| SimulationPerformance | components/common/analytics/footer/SimulationPerformance.tsx | SimulationPerformance.test.tsx | ✅ Implemented |
+| AverageScore | components/common/analytics/header/AverageScore.tsx | AverageScore.test.tsx | ✅ Implemented |
+| CompletionPercentage | components/common/analytics/header/CompletionPercentage.tsx | CompletionPercentage.test.tsx | ✅ Implemented |
+| FirstAttemptPassRate | components/common/analytics/header/FirstAttemptPassRate.tsx | FirstAttemptPassRate.test.tsx | ✅ Implemented |
+| HighestScore | components/common/analytics/header/HighestScore.tsx | HighestScore.test.tsx | ✅ Implemented |
+| MessagesPerSession | components/common/analytics/header/MessagesPerSession.tsx | MessagesPerSession.test.tsx | ✅ Implemented |
+| PersonaResponseTimes | components/common/analytics/header/PersonaResponseTimes.tsx | PersonaResponseTimes.test.tsx | ✅ Implemented |
+| SessionEfficiency | components/common/analytics/header/SessionEfficiency.tsx | SessionEfficiency.test.tsx | ✅ Implemented |
+| StagnationRate | components/common/analytics/header/StagnationRate.tsx | StagnationRate.test.tsx | ✅ Implemented |
+| TimeSpent | components/common/analytics/header/TimeSpent.tsx | TimeSpent.test.tsx | ✅ Implemented |
+| TotalAttempts | components/common/analytics/header/TotalAttempts.tsx | TotalAttempts.test.tsx | ✅ Implemented |
+| AttemptImprovement | components/common/analytics/primary/AttemptImprovement.tsx | AttemptImprovement.test.tsx | ✅ Implemented |
+| Growth | components/common/analytics/primary/Growth.tsx | Growth.test.tsx | ✅ Implemented |
+| PersonaPerformance | components/common/analytics/primary/PersonaPerformance.tsx | PersonaPerformance.test.tsx | ✅ Implemented |
+| CohortPerformance | components/common/analytics/secondary/CohortPerformance.tsx | CohortPerformance.test.tsx | ✅ Implemented |
+| RubricHeatmap | components/common/analytics/secondary/RubricHeatmap.tsx | RubricHeatmap.test.tsx | ✅ Implemented |
+| SkillPerformance | components/common/analytics/secondary/SkillPerformance.tsx | SkillPerformance.test.tsx | ✅ Implemented |
 | DocumentSelect | components/common/chat/DocumentSelect.tsx | DocumentSelect.test.tsx | ✅ Implemented |
 | DocumentViewer | components/common/chat/DocumentViewer.tsx | DocumentViewer.test.tsx | ✅ Implemented |
 | Markdown | components/common/chat/Markdown.tsx | Markdown.test.tsx | ✅ Implemented |
@@ -57,6 +87,7 @@
 | ReportProblem | components/common/layout/ReportProblem.tsx | ReportProblem.test.tsx | ✅ Implemented |
 | UnifiedSidebar | components/common/layout/UnifiedSidebar.tsx | UnifiedSidebar.test.tsx | ✅ Implemented |
 | Login | components/common/login/Login.tsx | Login.test.tsx | ✅ Implemented |
+| Model | components/common/model/Model.tsx | Model.test.tsx | ✅ Implemented |
 | Parameter | components/common/parameter/Parameter.tsx | Parameter.test.tsx | ✅ Implemented |
 | ProfileSelector | components/common/profile/ProfileSelector.tsx | ProfileSelector.test.tsx | ✅ Implemented |
 | Provider | components/common/provider/Provider.tsx | Provider.test.tsx | ✅ Implemented |
@@ -125,6 +156,9 @@
 | FeedbackDataTable | components/system/feedback/FeedbackDataTable.tsx | FeedbackDataTable.test.tsx | ✅ Implemented |
 | FeedbackDataTableToolbar | components/system/feedback/FeedbackDataTableToolbar.tsx | FeedbackDataTableToolbar.test.tsx | ✅ Implemented |
 | Health | components/system/health/Health.tsx | Health.test.tsx | ✅ Implemented |
+| Logs | components/system/logs/Logs.tsx | Logs.test.tsx | ✅ Implemented |
+| LogsDataTable | components/system/logs/LogsDataTable.tsx | LogsDataTable.test.tsx | ✅ Implemented |
+| LogsDataTableToolbar | components/system/logs/LogsDataTableToolbar.tsx | LogsDataTableToolbar.test.tsx | ✅ Implemented |
 | alert-dialog | components/ui/alert-dialog.tsx | alert-dialog.test.tsx | ✅ Implemented |
 | avatar | components/ui/avatar.tsx | avatar.test.tsx | ✅ Implemented |
 | badge | components/ui/badge.tsx | badge.test.tsx | ✅ Implemented |
@@ -160,6 +194,12 @@
 | tabs | components/ui/tabs.tsx | tabs.test.tsx | ✅ Implemented |
 | textarea | components/ui/textarea.tsx | textarea.test.tsx | ✅ Implemented |
 | tooltip | components/ui/tooltip.tsx | tooltip.test.tsx | ✅ Implemented |
+| page | app/(main)/analytics/dashboard/page.tsx | page.test.tsx | ✅ Implemented |
+| page | app/(main)/analytics/leaderboard/page.tsx | page.test.tsx | ✅ Implemented |
+| page | app/(main)/analytics/page.tsx | page.test.tsx | ✅ Implemented |
+| page | app/(main)/analytics/reports/p/[profileId]/page.tsx | page.test.tsx | ✅ Implemented |
+| page | app/(main)/analytics/reports/p/page.tsx | page.test.tsx | ✅ Implemented |
+| page | app/(main)/analytics/reports/page.tsx | page.test.tsx | ✅ Implemented |
 | page | app/(main)/cohorts/c/[cohortId]/page.tsx | page.test.tsx | ✅ Implemented |
 | page | app/(main)/cohorts/c/page.tsx | page.test.tsx | ✅ Implemented |
 | page | app/(main)/cohorts/e/[cohortId]/page.tsx | page.test.tsx | ✅ Implemented |
@@ -213,6 +253,7 @@
 | page | app/(main)/system/agents/page.tsx | page.test.tsx | ✅ Implemented |
 | page | app/(main)/system/feedback/page.tsx | page.test.tsx | ✅ Implemented |
 | page | app/(main)/system/health/page.tsx | page.test.tsx | ✅ Implemented |
+| page | app/(main)/system/logs/page.tsx | page.test.tsx | ✅ Implemented |
 | error | app/error.tsx | error.test.tsx | ✅ Implemented |
 | layout | app/layout.tsx | layout.test.tsx | ✅ Implemented |
 | not-found | app/not-found.tsx | not-found.test.tsx | ✅ Implemented |
@@ -245,6 +286,14 @@
 ```
 __tests__/
 ├── components/
+│   ├── analytics/
+│   │   ├── Dashboard.test.tsx
+│   │   ├── Leaderboard.test.tsx
+│   │   ├── report/
+│   │   │   ├── Report.test.tsx
+│   │   │   ├── Reports.test.tsx
+│   │   │   ├── ReportsDataTable.test.tsx
+│   │   │   ├── ReportsDataTableToolbar.test.tsx
 │   ├── cohorts/
 │   │   ├── CohortEdit.test.tsx
 │   │   ├── Cohorts.test.tsx
@@ -255,6 +304,35 @@ __tests__/
 │   │   ├── agent/
 │   │   │   ├── Persona.test.tsx
 │   │   │   ├── SystemAgent.test.tsx
+│   │   ├── analytics/
+│   │   │   ├── AnalyticsFilters.test.tsx
+│   │   │   ├── GrowthPicker.test.tsx
+│   │   │   ├── ScenarioAttributePicker.test.tsx
+│   │   │   ├── SimulationCompositionPicker.test.tsx
+│   │   │   ├── footer/
+│   │   │   │   ├── ScenarioPerformance.test.tsx
+│   │   │   │   ├── ScenarioStats.test.tsx
+│   │   │   │   ├── SimulationComposition.test.tsx
+│   │   │   │   ├── SimulationPerformance.test.tsx
+│   │   │   ├── header/
+│   │   │   │   ├── AverageScore.test.tsx
+│   │   │   │   ├── CompletionPercentage.test.tsx
+│   │   │   │   ├── FirstAttemptPassRate.test.tsx
+│   │   │   │   ├── HighestScore.test.tsx
+│   │   │   │   ├── MessagesPerSession.test.tsx
+│   │   │   │   ├── PersonaResponseTimes.test.tsx
+│   │   │   │   ├── SessionEfficiency.test.tsx
+│   │   │   │   ├── StagnationRate.test.tsx
+│   │   │   │   ├── TimeSpent.test.tsx
+│   │   │   │   ├── TotalAttempts.test.tsx
+│   │   │   ├── primary/
+│   │   │   │   ├── AttemptImprovement.test.tsx
+│   │   │   │   ├── Growth.test.tsx
+│   │   │   │   ├── PersonaPerformance.test.tsx
+│   │   │   ├── secondary/
+│   │   │   │   ├── CohortPerformance.test.tsx
+│   │   │   │   ├── RubricHeatmap.test.tsx
+│   │   │   │   ├── SkillPerformance.test.tsx
 │   │   ├── chat/
 │   │   │   ├── DocumentSelect.test.tsx
 │   │   │   ├── DocumentViewer.test.tsx
@@ -303,6 +381,8 @@ __tests__/
 │   │   │   ├── UnifiedSidebar.test.tsx
 │   │   ├── login/
 │   │   │   ├── Login.test.tsx
+│   │   ├── model/
+│   │   │   ├── Model.test.tsx
 │   │   ├── parameter/
 │   │   │   ├── Parameter.test.tsx
 │   │   ├── profile/
@@ -394,6 +474,10 @@ __tests__/
 │   │   │   ├── FeedbackDataTableToolbar.test.tsx
 │   │   ├── health/
 │   │   │   ├── Health.test.tsx
+│   │   ├── logs/
+│   │   │   ├── Logs.test.tsx
+│   │   │   ├── LogsDataTable.test.tsx
+│   │   │   ├── LogsDataTableToolbar.test.tsx
 │   ├── ui/
 │   │   ├── alert-dialog.test.tsx
 │   │   ├── avatar.test.tsx
@@ -432,6 +516,18 @@ __tests__/
 │   │   ├── tooltip.test.tsx
 ├── app/
 │   ├── (main)/
+│   │   ├── analytics/
+│   │   │   ├── dashboard/
+│   │   │   │   ├── page.test.tsx
+│   │   │   ├── leaderboard/
+│   │   │   │   ├── page.test.tsx
+│   │   │   ├── page.test.tsx
+│   │   │   ├── reports/
+│   │   │   │   ├── p/
+│   │   │   │   │   ├── [profileId]/
+│   │   │   │   │   │   ├── page.test.tsx
+│   │   │   │   │   ├── page.test.tsx
+│   │   │   │   ├── page.test.tsx
 │   │   ├── cohorts/
 │   │   │   ├── c/
 │   │   │   │   ├── [cohortId]/
@@ -537,6 +633,8 @@ __tests__/
 │   │   │   ├── feedback/
 │   │   │   │   ├── page.test.tsx
 │   │   │   ├── health/
+│   │   │   │   ├── page.test.tsx
+│   │   │   ├── logs/
 │   │   │   │   ├── page.test.tsx
 │   ├── error.test.tsx
 │   ├── layout.test.tsx
