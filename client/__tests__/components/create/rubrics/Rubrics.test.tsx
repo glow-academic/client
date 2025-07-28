@@ -1,18 +1,22 @@
+/**
+ * Rubrics.test.tsx
+ * Tests for the Rubrics component, focusing on duplication functionality
+ */
+import Rubrics from "@/components/create/rubrics/Rubrics";
 import { renderWithMocks } from "@/test/renderWithMocks";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import Rubrics from "@/components/create/rubrics/Rubrics";
-
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
 import "@/mocks/mutations";
 import "@/mocks/queries";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { duplicateRubric } from "@/utils/rubric/duplicate-rubric";
 
-describe("Rubrics", () => {
+describe("Rubrics Component - Duplication Tests", () => {
   /* ------------------------------------------------------------------ *
    * 💡 Mock Data Usage Guide:
    *
@@ -34,127 +38,271 @@ describe("Rubrics", () => {
     vi.clearAllMocks();
   });
 
-  describe("basic render smoke-test", () => {
-    it("renders without crashing", async () => {
-      // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Rubrics />);
-
-      // Check that the component renders without crashing
-      await waitFor(() => {
-        expect(
-          screen.getByPlaceholderText("Search rubrics..."),
-        ).toBeInTheDocument();
-      });
-    });
-
-    it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<Rubrics />);
-
-      // Check that search input has proper accessibility attributes
-      await waitFor(() => {
-        const searchInput = screen.getByPlaceholderText("Search rubrics...");
-        expect(searchInput).toBeInTheDocument();
-        // Note: The Input component doesn't explicitly set type="text", but it's still accessible
-      });
-
-      // Check that the component has proper structure
-      expect(screen.getByRole("textbox")).toBeInTheDocument();
-    });
-  });
-
-  describe("User Interactions", () => {
-    it("should handle state changes", async () => {
+  describe("Rubric Duplication", () => {
+    it("should allow duplicating default rubrics with standard groups and standards", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Rubrics />);
 
-      // Test search functionality
-      await waitFor(() => {
-        expect(
-          screen.getByPlaceholderText("Search rubrics..."),
-        ).toBeInTheDocument();
+      // Mock the duplicateRubric function to return success
+      vi.mocked(duplicateRubric).mockResolvedValue({
+        id: "new-rubric-id",
+        name: "Test Rubric Copy",
+        description: "A test rubric",
+        points: 100,
+        passPoints: 70,
+        defaultRubric: false,
+        active: false,
+        createdAt: "2024-01-01T00:00:00Z",
+        updatedAt: "2024-01-01T00:00:00Z",
       });
 
-      const searchInput = screen.getByPlaceholderText("Search rubrics...");
-      await user.type(searchInput, "Math");
+      // Mock rubrics data with a default rubric
+      const mockRubricsData = [
+        {
+          id: "rubric-1",
+          name: "Test Rubric",
+          description: "A test rubric",
+          points: 100,
+          passPoints: 70,
+          defaultRubric: true,
+          active: true,
+          createdAt: "2024-01-01T00:00:00Z",
+          updatedAt: "2024-01-01T00:00:00Z",
+        },
+        {
+          id: "rubric-2",
+          name: "Non-Default Rubric",
+          description: "A non-default rubric",
+          points: 50,
+          passPoints: 35,
+          defaultRubric: false,
+          active: true,
+          createdAt: "2024-01-01T00:00:00Z",
+          updatedAt: "2024-01-01T00:00:00Z",
+        },
+      ];
 
-      // The search should filter the rubrics
-      expect(searchInput).toHaveValue("Math");
+      vi.mocked(getAllRubrics).mockResolvedValue(mockRubricsData);
+
+      renderWithMocks(<Rubrics />);
+
+      // Wait for the component to load
+      await waitFor(() => {
+        expect(screen.getByText("Test Rubric")).toBeInTheDocument();
+      });
+
+      // Find and click the duplicate button for the default rubric
+      const duplicateButton = screen.getByText("Duplicate");
+      await user.click(duplicateButton);
+
+      // Verify the duplicate function was called with correct parameters
+      await waitFor(() => {
+        expect(duplicateRubric).toHaveBeenCalledWith(
+          "rubric-1",
+          "Test Rubric Copy"
+        );
+      });
     });
 
-    it("should handle user events", async () => {
+    it("should not allow duplicating non-default rubrics", async () => {
+      // Mock rubrics data with only non-default rubrics
+      const mockRubricsData = [
+        {
+          id: "rubric-2",
+          name: "Non-Default Rubric",
+          description: "A non-default rubric",
+          points: 50,
+          passPoints: 35,
+          defaultRubric: false,
+          active: true,
+          createdAt: "2024-01-01T00:00:00Z",
+          updatedAt: "2024-01-01T00:00:00Z",
+        },
+      ];
+
+      vi.mocked(getAllRubrics).mockResolvedValue(mockRubricsData);
+
+      renderWithMocks(<Rubrics />);
+
+      // Wait for the component to load
+      await waitFor(() => {
+        expect(screen.getByText("Non-Default Rubric")).toBeInTheDocument();
+      });
+
+      // The non-default rubric should not have a duplicate button
+      const duplicateButtons = screen.queryAllByText("Duplicate");
+      expect(duplicateButtons).toHaveLength(0);
+    });
+
+    it("should show error message when duplication fails", async () => {
       const user = userEvent.setup();
+
+      // Mock the duplicateRubric function to throw an error
+      vi.mocked(duplicateRubric).mockRejectedValue(
+        new Error("Duplication failed")
+      );
+
+      // Mock rubrics data with a default rubric
+      const mockRubricsData = [
+        {
+          id: "rubric-1",
+          name: "Test Rubric",
+          description: "A test rubric",
+          points: 100,
+          passPoints: 70,
+          defaultRubric: true,
+          active: true,
+          createdAt: "2024-01-01T00:00:00Z",
+          updatedAt: "2024-01-01T00:00:00Z",
+        },
+      ];
+
+      vi.mocked(getAllRubrics).mockResolvedValue(mockRubricsData);
+
       renderWithMocks(<Rubrics />);
 
-      // Test search input interaction
+      // Wait for the component to load
       await waitFor(() => {
-        expect(
-          screen.getByPlaceholderText("Search rubrics..."),
-        ).toBeInTheDocument();
+        expect(screen.getByText("Test Rubric")).toBeInTheDocument();
       });
 
-      const searchInput = screen.getByPlaceholderText("Search rubrics...");
-      await user.click(searchInput);
-      await user.type(searchInput, "test search");
+      // Find and click the duplicate button
+      const duplicateButton = screen.getByText("Duplicate");
+      await user.click(duplicateButton);
 
-      expect(searchInput).toHaveValue("test search");
-    });
-  });
-
-  describe("API Integration", () => {
-    it("should handle and display an API error state", async () => {
-      // Arrange: Override the default success mock with an error for this test.
-      vi.mocked(getAllRubrics).mockRejectedValue(new Error("API Error"));
-
-      renderWithMocks(<Rubrics />);
-
-      // The component should handle the error gracefully
+      // Verify error message is shown
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search rubrics..."),
-        ).toBeInTheDocument();
-      });
-    });
-
-    it("should handle loading states", async () => {
-      // Mock data is automatically loaded from @/mocks/schema
-      renderWithMocks(<Rubrics />);
-
-      // Component should show loading state initially
-      await waitFor(() => {
-        expect(
-          screen.getByPlaceholderText("Search rubrics..."),
+          screen.getByText("Failed to duplicate rubric")
         ).toBeInTheDocument();
       });
     });
-  });
 
-  describe("Navigation", () => {
-    it("should handle navigation", async () => {
+    it("should show loading state during duplication", async () => {
+      const user = userEvent.setup();
+
+      // Create a promise that doesn't resolve immediately
+      let resolvePromise: (value: {
+        id: string;
+        name: string;
+        description: string;
+        points: number;
+        passPoints: number;
+        defaultRubric: boolean;
+        active: boolean;
+        createdAt: string;
+        updatedAt: string;
+      }) => void;
+      const promise = new Promise<{
+        id: string;
+        name: string;
+        description: string;
+        points: number;
+        passPoints: number;
+        defaultRubric: boolean;
+        active: boolean;
+        createdAt: string;
+        updatedAt: string;
+      }>((resolve) => {
+        resolvePromise = resolve;
+      });
+      vi.mocked(duplicateRubric).mockReturnValue(promise);
+
+      // Mock rubrics data with a default rubric
+      const mockRubricsData = [
+        {
+          id: "rubric-1",
+          name: "Test Rubric",
+          description: "A test rubric",
+          points: 100,
+          passPoints: 70,
+          defaultRubric: true,
+          active: true,
+          createdAt: "2024-01-01T00:00:00Z",
+          updatedAt: "2024-01-01T00:00:00Z",
+        },
+      ];
+
+      vi.mocked(getAllRubrics).mockResolvedValue(mockRubricsData);
+
       renderWithMocks(<Rubrics />);
 
-      // Wait for component to load
+      // Wait for the component to load
       await waitFor(() => {
-        expect(
-          screen.getByPlaceholderText("Search rubrics..."),
-        ).toBeInTheDocument();
+        expect(screen.getByText("Test Rubric")).toBeInTheDocument();
       });
 
-      // The component should render without navigation errors
-      expect(screen.getByRole("textbox")).toBeInTheDocument();
-    });
-  });
+      // Find and click the duplicate button
+      const duplicateButton = screen.getByText("Duplicate");
+      await user.click(duplicateButton);
 
-  describe("Edge Cases", () => {
-    it("should handle edge cases gracefully", async () => {
-      // Test with empty data
-      vi.mocked(getAllRubrics).mockResolvedValue([]);
+      // Verify loading spinner is shown
+      await waitFor(() => {
+        const loadingSpinner = document.querySelector(".animate-spin");
+        expect(loadingSpinner).toBeInTheDocument();
+      });
+
+      // Resolve the promise
+      resolvePromise!({
+        id: "new-rubric-id",
+        name: "Test Rubric Copy",
+        description: "A test rubric",
+        points: 100,
+        passPoints: 70,
+        defaultRubric: false,
+        active: false,
+        createdAt: "2024-01-01T00:00:00Z",
+        updatedAt: "2024-01-01T00:00:00Z",
+      });
+    });
+
+    it("should show success message when duplication succeeds", async () => {
+      const user = userEvent.setup();
+
+      // Mock the duplicateRubric function to return success
+      vi.mocked(duplicateRubric).mockResolvedValue({
+        id: "new-rubric-id",
+        name: "Test Rubric Copy",
+        description: "A test rubric",
+        points: 100,
+        passPoints: 70,
+        defaultRubric: false,
+        active: false,
+        createdAt: "2024-01-01T00:00:00Z",
+        updatedAt: "2024-01-01T00:00:00Z",
+      });
+
+      // Mock rubrics data with a default rubric
+      const mockRubricsData = [
+        {
+          id: "rubric-1",
+          name: "Test Rubric",
+          description: "A test rubric",
+          points: 100,
+          passPoints: 70,
+          defaultRubric: true,
+          active: true,
+          createdAt: "2024-01-01T00:00:00Z",
+          updatedAt: "2024-01-01T00:00:00Z",
+        },
+      ];
+
+      vi.mocked(getAllRubrics).mockResolvedValue(mockRubricsData);
 
       renderWithMocks(<Rubrics />);
 
-      // Should handle empty data gracefully
+      // Wait for the component to load
+      await waitFor(() => {
+        expect(screen.getByText("Test Rubric")).toBeInTheDocument();
+      });
+
+      // Find and click the duplicate button
+      const duplicateButton = screen.getByText("Duplicate");
+      await user.click(duplicateButton);
+
+      // Verify success message is shown
       await waitFor(() => {
         expect(
-          screen.getByText("No rubrics match the current filters."),
+          screen.getByText('Rubric "Test Rubric" duplicated successfully')
         ).toBeInTheDocument();
       });
     });

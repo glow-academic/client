@@ -112,6 +112,7 @@ export function Scenarios() {
         createdAt: undefined,
         updatedAt: undefined,
         defaultScenario: false,
+        active: false,
         generated: false,
         name: `${scenario.name} Copy`,
       });

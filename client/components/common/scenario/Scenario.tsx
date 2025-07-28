@@ -31,7 +31,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 // Custom Components
@@ -169,7 +168,7 @@ export default function Scenario({
     if (!isEditMode || !scenarioId) return [];
     return simulations.filter(
       (sim: Simulation) =>
-        sim.scenarioIds && sim.scenarioIds.includes(scenarioId),
+        sim.scenarioIds && sim.scenarioIds.includes(scenarioId)
     );
   }, [simulations, scenarioId, isEditMode]);
 
@@ -220,9 +219,9 @@ export default function Scenario({
     },
     {
       id: "content",
-      title: "Scenario Content",
+      title: "Scenario",
       description:
-        "Add a custom description or leave blank for auto-generation",
+        "This is what the TA will see when they enter the scenario. Leave blank for auto-generation.",
       status: getStepStatus("content"),
     },
   ];
@@ -245,7 +244,7 @@ export default function Scenario({
   // Event handlers
   const handleInputChange = (
     field: keyof Partial<ScenarioType>,
-    value: string | string[] | null,
+    value: string | string[] | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -277,7 +276,7 @@ export default function Scenario({
     } catch (error) {
       logError("Error generating scenario:", error);
       toast.error(
-        `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsGeneratingScenario(false);
@@ -311,7 +310,7 @@ export default function Scenario({
       router.push("/create/scenarios");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsSubmitting(false);
@@ -346,10 +345,10 @@ export default function Scenario({
   }
 
   const selectedDocuments = documents.filter((doc) =>
-    formData.documentIds?.includes(doc.id),
+    formData.documentIds?.includes(doc.id)
   );
   const selectedPersona = personas.find(
-    (persona) => persona.id === formData.personaId,
+    (persona) => persona.id === formData.personaId
   );
 
   return (
@@ -471,7 +470,7 @@ export default function Scenario({
               onMultiSelect={(models) =>
                 handleInputChange(
                   "documentIds",
-                  models.map((m) => m.id),
+                  models.map((m) => m.id)
                 )
               }
             />
@@ -565,7 +564,7 @@ export default function Scenario({
             </div>
             <div className="flex items-center gap-2">
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 onClick={handleGenerateScenario}
                 disabled={isSubmitting || isGeneratingScenario}
@@ -588,7 +587,6 @@ export default function Scenario({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="description">Scenario Description</Label>
               <Textarea
                 id="description"
                 value={formData.description || ""}
@@ -598,13 +596,6 @@ export default function Scenario({
                 placeholder="Enter a custom scenario description or leave blank to auto-generate..."
                 className="min-h-[120px]"
               />
-              <div className="flex items-start gap-2 p-3 rounded-md bg-blue-50 border border-blue-200">
-                <div className="text-blue-600 text-sm">
-                  <strong>💡 Tip:</strong> You can save the scenario with a
-                  blank description and we will dynamically generate one for
-                  each chat.
-                </div>
-              </div>
             </div>
           </CardContent>
         </Card>

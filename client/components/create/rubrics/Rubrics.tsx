@@ -12,10 +12,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { createRubric } from "@/utils/mutations/rubrics/create-rubric";
 import { deleteRubric } from "@/utils/mutations/rubrics/delete-rubric";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { duplicateRubric } from "@/utils/rubric/duplicate-rubric";
 
 import TableRubric from "@/components/common/rubric/TableRubric";
 import {
@@ -117,14 +117,7 @@ export default function Rubrics() {
 
     setIsDuplicating(rubric.id);
     try {
-      await createRubric({
-        ...rubric,
-        id: undefined,
-        createdAt: undefined,
-        updatedAt: undefined,
-        defaultRubric: false,
-        name: `${rubric.name} Copy`,
-      });
+      await duplicateRubric(rubric.id, `${rubric.name} Copy`);
       logInfo("Rubric duplicated successfully:", {
         originalId: rubric.id,
         originalName: rubric.name,

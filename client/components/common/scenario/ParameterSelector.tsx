@@ -45,7 +45,7 @@ export function ParameterSelector({
         acc[item.parameterId]!.push(item);
         return acc;
       },
-      {} as Record<string, ParameterItem[]>,
+      {} as Record<string, ParameterItem[]>
     );
   }, [parameterItems]);
 
@@ -61,7 +61,7 @@ export function ParameterSelector({
   // Get currently selected parameter items
   const selectedParameterItems = useMemo(() => {
     return parameterItems.filter((item) =>
-      selectedParameterItemIds.includes(item.id),
+      selectedParameterItemIds.includes(item.id)
     );
   }, [parameterItems, selectedParameterItemIds]);
 
@@ -75,18 +75,18 @@ export function ParameterSelector({
         acc[item.parameterId]!.push(item);
         return acc;
       },
-      {} as Record<string, ParameterItem[]>,
+      {} as Record<string, ParameterItem[]>
     );
   }, [selectedParameterItems]);
 
   const handleNonNumericalParameterChange = (
     parameterId: string,
-    parameterItemId: string | null,
+    parameterItemId: string | null
   ) => {
     const currentItems = selectedParameterItemIds.filter(
       (id) =>
         parameterItems.find((item) => item.id === id)?.parameterId !==
-        parameterId,
+        parameterId
     );
 
     if (parameterItemId) {
@@ -98,12 +98,12 @@ export function ParameterSelector({
 
   const handleNumericalParameterChange = (
     parameterId: string,
-    parameterItemId: string | null,
+    parameterItemId: string | null
   ) => {
     const currentItems = selectedParameterItemIds.filter(
       (id) =>
         parameterItems.find((item) => item.id === id)?.parameterId !==
-        parameterId,
+        parameterId
     );
 
     if (parameterItemId) {
@@ -123,7 +123,7 @@ export function ParameterSelector({
   };
 
   const getNumericalParameterRange = (
-    parameterId: string,
+    parameterId: string
   ): { min: number; max: number; step: number } => {
     const items = parameterItemsByParameter[parameterId] || [];
     const values = items
@@ -141,7 +141,7 @@ export function ParameterSelector({
 
   const handleNumericalSliderChange = (
     parameterId: string,
-    value: number[],
+    value: number[]
   ) => {
     const items = parameterItemsByParameter[parameterId] || [];
     const targetValue = value[0];
@@ -177,170 +177,165 @@ export function ParameterSelector({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Left side - Non-numerical parameters */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold">Categorical Parameters</h3>
-          <Badge variant="secondary" className="text-xs">
-            {nonNumericalParameters.length}
-          </Badge>
-        </div>
+    <div className="relative">
+      {/* Vertical divider - only visible on large screens */}
+      <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-px bg-border transform -translate-x-1/2" />
 
-        {nonNumericalParameters.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No categorical parameters available
-          </p>
-        ) : (
-          <div className="space-y-4">
-            {nonNumericalParameters.map((parameter) => {
-              const items = parameterItemsByParameter[parameter.id] || [];
-              const selectedItem = selectedItemsByParameter[parameter.id]?.[0];
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left side - Non-numerical parameters */}
+        <div className="space-y-4">
+          {nonNumericalParameters.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No categorical parameters available
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {nonNumericalParameters.map((parameter) => {
+                const items = parameterItemsByParameter[parameter.id] || [];
+                const selectedItem =
+                  selectedItemsByParameter[parameter.id]?.[0];
 
-              return (
-                <div key={parameter.id} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">
-                      {parameter.name}
-                    </Label>
-                    {selectedItem && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => resetParameter(parameter.id)}
-                        className="h-6 w-6 p-0 hover:bg-muted"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </div>
-
-                  <Select
-                    value={selectedItem?.id || "none"}
-                    onValueChange={(value) =>
-                      handleNonNumericalParameterChange(
-                        parameter.id,
-                        value === "none" ? null : value,
-                      )
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={`Select ${parameter.name.toLowerCase()}`}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No preference</SelectItem>
-                      {items.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          <div className="flex items-center justify-between w-full">
-                            <span>{item.name}</span>
-                            {item.defaultItem && (
-                              <Badge
-                                variant="secondary"
-                                className="text-xs ml-2"
-                              >
-                                Default
-                              </Badge>
-                            )}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {selectedItem && (
-                    <p className="text-xs text-muted-foreground">
-                      {selectedItem.description}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Right side - Numerical parameters */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold">Numerical Parameters</h3>
-          <Badge variant="secondary" className="text-xs">
-            {numericalParameters.length}
-          </Badge>
-        </div>
-
-        {numericalParameters.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No numerical parameters available
-          </p>
-        ) : (
-          <div className="space-y-6">
-            {numericalParameters.map((parameter) => {
-              const items = parameterItemsByParameter[parameter.id] || [];
-              const selectedItem = selectedItemsByParameter[parameter.id]?.[0];
-              const { min, max, step } = getNumericalParameterRange(
-                parameter.id,
-              );
-              const currentValue = getSelectedNumericalValue(parameter.id);
-
-              return (
-                <div key={parameter.id} className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
+                return (
+                  <div key={parameter.id} className="space-y-2">
+                    <div className="flex items-center justify-between">
                       <Label className="text-sm font-medium">
                         {parameter.name}
                       </Label>
                       {selectedItem && (
-                        <p className="text-xs text-muted-foreground">
-                          {selectedItem.name}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">
-                        {currentValue[0]}
-                      </span>
-                      {selectedItem && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => resetNumericalParameter(parameter.id)}
+                          onClick={() => resetParameter(parameter.id)}
                           className="h-6 w-6 p-0 hover:bg-muted"
                         >
                           <X className="h-3 w-3" />
                         </Button>
                       )}
                     </div>
+
+                    <Select
+                      value={selectedItem?.id || "none"}
+                      onValueChange={(value) =>
+                        handleNonNumericalParameterChange(
+                          parameter.id,
+                          value === "none" ? null : value
+                        )
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={`Select ${parameter.name.toLowerCase()}`}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No preference</SelectItem>
+                        {items.map((item) => (
+                          <SelectItem key={item.id} value={item.id}>
+                            <div className="flex items-center justify-between w-full">
+                              <span>{item.name}</span>
+                              {!item.defaultItem && (
+                                <Badge
+                                  variant="secondary"
+                                  className="text-xs ml-2"
+                                >
+                                  Custom
+                                </Badge>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {selectedItem && (
+                      <p className="text-xs text-muted-foreground">
+                        {selectedItem.description}
+                      </p>
+                    )}
                   </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
-                  <Slider
-                    min={min}
-                    max={max}
-                    step={step}
-                    value={currentValue}
-                    onValueChange={(value) =>
-                      handleNumericalSliderChange(parameter.id, value)
-                    }
-                    className="w-full"
-                    disabled={items.length === 0}
-                  />
+        {/* Right side - Numerical parameters */}
+        <div className="space-y-4">
+          {numericalParameters.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No numerical parameters available
+            </p>
+          ) : (
+            <div className="space-y-6">
+              {numericalParameters.map((parameter) => {
+                const items = parameterItemsByParameter[parameter.id] || [];
+                const selectedItem =
+                  selectedItemsByParameter[parameter.id]?.[0];
+                const { min, max, step } = getNumericalParameterRange(
+                  parameter.id
+                );
+                const currentValue = getSelectedNumericalValue(parameter.id);
 
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{min}</span>
-                    <span>{max}</span>
+                return (
+                  <div key={parameter.id} className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-sm font-medium">
+                          {parameter.name}
+                        </Label>
+                        {selectedItem && (
+                          <p className="text-xs text-muted-foreground">
+                            {selectedItem.name}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">
+                          {currentValue[0]}
+                        </span>
+                        {selectedItem && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              resetNumericalParameter(parameter.id)
+                            }
+                            className="h-6 w-6 p-0 hover:bg-muted"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    <Slider
+                      min={min}
+                      max={max}
+                      step={step}
+                      value={currentValue}
+                      onValueChange={(value) =>
+                        handleNumericalSliderChange(parameter.id, value)
+                      }
+                      className="w-full"
+                      disabled={items.length === 0}
+                    />
+
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>{min}</span>
+                      <span>{max}</span>
+                    </div>
+
+                    {selectedItem && (
+                      <p className="text-xs text-muted-foreground">
+                        {selectedItem.description}
+                      </p>
+                    )}
                   </div>
-
-                  {selectedItem && (
-                    <p className="text-xs text-muted-foreground">
-                      {selectedItem.description}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

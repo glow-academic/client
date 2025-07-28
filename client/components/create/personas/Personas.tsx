@@ -117,6 +117,7 @@ export default function Personas() {
         id: undefined,
         createdAt: undefined,
         updatedAt: undefined,
+        active: false,
         defaultPersona: false,
         name: `${persona.name} Copy`,
       });
