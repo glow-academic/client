@@ -16,7 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Award, Crown, MessageSquareText, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import AccoladeCard from "../common/cohort/AccoladeCard";
 import LeaderboardTable from "../common/cohort/LeaderboardTable";
 
@@ -366,38 +366,6 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       },
     };
   }, [cohortProfiles, safeGrades, messages, chats, rubrics, safeAttempts]);
-
-  // Log accolades for debugging
-  React.useEffect(() => {
-    if (accolades) {
-      console.log("Accolades calculated:", {
-        perfectScore: {
-          holder: accolades.perfectScore.holder
-            ? `${accolades.perfectScore.holder.firstName} ${accolades.perfectScore.holder.lastName}`
-            : null,
-          details: accolades.perfectScore.details,
-        },
-        longestConvo: {
-          holder: accolades.longestConvo.holder
-            ? `${accolades.longestConvo.holder.firstName} ${accolades.longestConvo.holder.lastName}`
-            : null,
-          details: accolades.longestConvo.details,
-        },
-        mostImproved: {
-          holder: accolades.mostImproved.holder
-            ? `${accolades.mostImproved.holder.firstName} ${accolades.mostImproved.holder.lastName}`
-            : null,
-          details: accolades.mostImproved.details,
-        },
-        quickestPass: {
-          holder: accolades.quickestPass.holder
-            ? `${accolades.quickestPass.holder.firstName} ${accolades.quickestPass.holder.lastName}`
-            : null,
-          details: accolades.quickestPass.details,
-        },
-      });
-    }
-  }, [accolades]);
 
   const leaderboardData = useMemo(() => {
     if (!cohortProfiles || cohortProfiles.length === 0) {
