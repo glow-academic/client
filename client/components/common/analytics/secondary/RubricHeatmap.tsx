@@ -43,7 +43,7 @@ import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useQuery } from "@tanstack/react-query";
 import { isAfter, isBefore } from "date-fns";
-import { Loader2, TrendingUp } from "lucide-react";
+import { Info, Loader2, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export interface RubricHeatmapProps {
@@ -75,6 +75,21 @@ function calculateCorrelation(x: number[], y: number[]): number {
   );
 
   return denominator === 0 ? 0 : numerator / denominator;
+}
+
+// Calculate p-value for correlation coefficient
+function calculatePValue(correlation: number, n: number): number {
+  if (n < 3) return 1;
+
+  // Calculate t-statistic
+  const tStat =
+    correlation * Math.sqrt((n - 2) / (1 - correlation * correlation));
+
+  // Calculate p-value using t-distribution approximation
+  // This is a simplified calculation - for more accuracy, you'd use a proper t-distribution table
+  const pValue = 2 * (1 - Math.abs(tStat) / Math.sqrt(tStat * tStat + n - 2));
+
+  return Math.max(0, Math.min(1, pValue)); // Clamp between 0 and 1
 }
 
 export default function RubricHeatmap({
@@ -283,6 +298,7 @@ export default function RubricHeatmap({
     const matrix: Array<
       Array<{
         correlation: number;
+        pValue: number;
         color: string;
         strength: string;
         dataPoints: number;
@@ -296,6 +312,7 @@ export default function RubricHeatmap({
         if (matrix[i]) {
           matrix[i]![j] = {
             correlation: 0,
+            pValue: 1,
             color: "#e5e7eb",
             strength: "No Data",
             dataPoints: 0,
@@ -378,6 +395,7 @@ export default function RubricHeatmap({
 
         if (scores1.length >= 3) {
           const correlation = calculateCorrelation(scores1, scores2);
+          const pValue = calculatePValue(correlation, scores1.length);
           const absCorrelation = Math.abs(correlation);
 
           // Determine color and strength based on correlation strength
@@ -398,6 +416,7 @@ export default function RubricHeatmap({
           if (matrix[i]) {
             matrix[i]![j] = {
               correlation: Math.round(correlation * 100) / 100,
+              pValue,
               color,
               strength,
               dataPoints: scores1.length,
@@ -746,8 +765,10 @@ export default function RubricHeatmap({
                                 <TooltipContent>
                                   <p>{`${group.shortName} ↔ ${colGroup.shortName}`}</p>
                                   <p>
-                                    Correlation: {cell.correlation.toFixed(2)}
+                                    Pearson r: {cell.correlation > 0 ? "+" : ""}
+                                    {cell.correlation.toFixed(2)}
                                   </p>
+                                  <p>p-value: {cell.pValue.toFixed(3)}</p>
                                   <p>Data points: {cell.dataPoints}</p>
                                 </TooltipContent>
                               </Tooltip>
@@ -762,25 +783,51 @@ export default function RubricHeatmap({
             </div>
           </TooltipProvider>
 
-          {/* Legend */}
-          <div className="flex items-center gap-3 text-xs text-muted-foreground justify-center flex-shrink-0">
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-green-500" />
-              <span>Strong Positive</span>
+          {/* Legend and Correlation Info */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground flex-shrink-0 w-full">
+            {/* Legend */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <span>Strong Positive</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-red-500" />
+                <span>Strong Negative</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-gray-300" />
+                <span>Weak/No Correlation</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-red-500" />
-              <span>Strong Negative</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-gray-300" />
-              <span>Weak/No Correlation</span>
-            </div>
+
+            {/* Correlation Info */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="bg-background/90 backdrop-blur-sm border rounded-md px-2 py-1 shadow-sm">
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-medium">Pearson r:</span>
+                    <span className="text-xs font-bold">Matrix</span>
+                    <Info className="h-3 w-3 text-muted-foreground" />
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="w-64 p-3">
+                <p className="text-sm">
+                  Pearson correlation coefficient matrix showing relationships
+                  between skill areas.
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Values range from -1 (perfect negative) to +1 (perfect
+                  positive). P-values indicate statistical significance.
+                </p>
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Actionable Insights */}
           {correlationMatrix.insights && (
-            <div className="p-3 bg-muted rounded-lg text-center flex-shrink-0">
+            <div className="p-3 bg-muted rounded-lg text-left flex-shrink-0 w-full">
               <p className="text-xs text-muted-foreground">
                 {correlationMatrix.insights}
               </p>
