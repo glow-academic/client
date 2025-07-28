@@ -2,10 +2,106 @@
 Tests for app.services.agents.collection.grade
 """
 
+import uuid
+from datetime import datetime, timezone
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock
+from agents import Runner
+from app.services.agents.collection.grade import (create_dynamic_rubric_model,
+                                                  create_safe_field_name,
+                                                  run_grade_agent)
 from sqlmodel import Session
-from app.services.agents.collection.grade import *
+
+
+class MockAgent:
+    def __init__(self, id, name, system_prompt, temperature, model_id, reasoning):
+        self.id = id
+        self.name = name
+        self.system_prompt = system_prompt
+        self.temperature = temperature
+        self.model_id = model_id
+        self.reasoning = reasoning
+
+
+class MockModel:
+    def __init__(self, id, name, provider_id):
+        self.id = id
+        self.name = name
+        self.provider_id = provider_id
+
+
+class MockProvider:
+    def __init__(self, id, name, api_key):
+        self.id = id
+        self.name = name
+        self.api_key = api_key
+
+
+class MockSimulationChat:
+    def __init__(self, id, attempt_id, title, trace_id=None, created_at=None):
+        self.id = id
+        self.attempt_id = attempt_id
+        self.title = title
+        self.trace_id = trace_id or str(uuid.uuid4())
+        self.created_at = created_at or datetime.now(timezone.utc)
+
+
+class MockSimulationAttempt:
+    def __init__(self, id, simulation_id):
+        self.id = id
+        self.simulation_id = simulation_id
+
+
+class MockSimulation:
+    def __init__(self, id, title, rubric_id):
+        self.id = id
+        self.title = title
+        self.rubric_id = rubric_id
+
+
+class MockRubric:
+    def __init__(self, id, name, points, pass_points, description=""):
+        self.id = id
+        self.name = name
+        self.points = points
+        self.pass_points = pass_points
+        self.description = description
+
+
+class MockStandardGroup:
+    def __init__(self, id, name, short_name, description, points, pass_points, rubric_id):
+        self.id = id
+        self.name = name
+        self.short_name = short_name
+        self.description = description
+        self.points = points
+        self.pass_points = pass_points
+        self.rubric_id = rubric_id
+
+
+class MockStandard:
+    def __init__(self, id, name, description, points, standard_group_id):
+        self.id = id
+        self.name = name
+        self.description = description
+        self.points = points
+        self.standard_group_id = standard_group_id
+
+
+class MockSimulationMessage:
+    def __init__(self, id, chat_id, content, type="query", created_at=None):
+        self.id = id
+        self.chat_id = chat_id
+        self.content = content
+        self.type = type
+        self.created_at = created_at or datetime.now(timezone.utc)
+
+
+class MockDynamicRubric:
+    def __init__(self, overall_score=0, passed=False):
+        self.overall_score = overall_score
+        self.passed = passed
 
 
 @pytest.fixture
@@ -14,55 +110,127 @@ def mock_session():
     return MagicMock(spec=Session)
 
 
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `create_safe_field_name`")
 class TestCreate_Safe_Field_Name:
     """Tests for create_safe_field_name function."""
 
     def test_create_safe_field_name_success(self):
         """Test successful create_safe_field_name execution."""
-        # TODO: Implement test for create_safe_field_name
-        assert False, "IMPLEMENT: Test for create_safe_field_name"
+        result = create_safe_field_name("Communication Skills")
+        assert result == "communication_skills"
+        
+        result = create_safe_field_name("Problem Solving")
+        assert result == "problem_solving"
+        
+        result = create_safe_field_name("Critical Thinking")
+        assert result == "critical_thinking"
 
     def test_create_safe_field_name_error(self):
         """Test create_safe_field_name error handling."""
-        # TODO: Implement error test for create_safe_field_name
-        assert False, "IMPLEMENT: Error test for create_safe_field_name"
+        # Test with special characters
+        result = create_safe_field_name("Communication & Problem-Solving!")
+        assert result == "communication_problem_solving"
+        
+        # Test with numbers
+        result = create_safe_field_name("Skill 123")
+        assert result == "skill_123"
+        
+        # Test with empty string
+        result = create_safe_field_name("")
+        assert result == ""
 
 
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `create_dynamic_rubric_model`")
 class TestCreate_Dynamic_Rubric_Model:
     """Tests for create_dynamic_rubric_model function."""
 
     def test_create_dynamic_rubric_model_success(self):
         """Test successful create_dynamic_rubric_model execution."""
-        # TODO: Implement test for create_dynamic_rubric_model
-        assert False, "IMPLEMENT: Test for create_dynamic_rubric_model"
+        standard_groups = [
+            MockStandardGroup(uuid.uuid4(), "Communication", "comm", "Communication skills", 10, 7, uuid.uuid4()),
+            MockStandardGroup(uuid.uuid4(), "Problem Solving", "prob", "Problem solving skills", 15, 10, uuid.uuid4())
+        ]
+        
+        DynamicRubric = create_dynamic_rubric_model(standard_groups)
+        
+        # Test that the model has the expected fields
+        instance = DynamicRubric(overall_score=85, passed=True, comm_score=8, comm_feedback="Good", prob_score=12, prob_feedback="Excellent")
+        
+        assert instance.overall_score == 85
+        assert instance.passed is True
+        assert instance.comm_score == 8
+        assert instance.comm_feedback == "Good"
+        assert instance.prob_score == 12
+        assert instance.prob_feedback == "Excellent"
 
     def test_create_dynamic_rubric_model_error(self):
         """Test create_dynamic_rubric_model error handling."""
-        # TODO: Implement error test for create_dynamic_rubric_model
-        assert False, "IMPLEMENT: Error test for create_dynamic_rubric_model"
+        # Test with empty standard groups
+        DynamicRubric = create_dynamic_rubric_model([])
+        
+        # Should still have basic fields
+        instance = DynamicRubric(overall_score=0, passed=False, summary="Test summary")
+        assert instance.overall_score == 0
+        assert instance.passed is False
+        assert instance.summary == "Test summary"
 
 
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `run_grade_agent`")
 class TestRun_Grade_Agent:
     """Tests for run_grade_agent function."""
 
-    def test_run_grade_agent_success(self):
+    @pytest.mark.asyncio
+    async def test_run_grade_agent_success(self, mock_session):
         """Test successful run_grade_agent execution."""
-        # TODO: Implement test for run_grade_agent
-        assert False, "IMPLEMENT: Test for run_grade_agent"
+        chat_id = uuid.uuid4()
+        attempt_id = uuid.uuid4()
+        simulation_id = uuid.uuid4()
+        rubric_id = uuid.uuid4()
+        agent_id = uuid.uuid4()
+        model_id = uuid.uuid4()
+        provider_id = uuid.uuid4()
+        
+        mock_chat = MockSimulationChat(chat_id, attempt_id, "Test Chat")
+        mock_attempt = MockSimulationAttempt(attempt_id, simulation_id)
+        mock_simulation = MockSimulation(simulation_id, "Test Simulation", rubric_id)
+        mock_rubric = MockRubric(rubric_id, "Test Rubric", 100, 70)
+        mock_agent = MockAgent(agent_id, "Grade", "Grade the conversation", 0.7, model_id, "medium")
+        mock_model = MockModel(model_id, "gpt-4", provider_id)
+        mock_provider = MockProvider(provider_id, "openai", "encrypted_api_key")
+        mock_standard_groups = [
+            MockStandardGroup(uuid.uuid4(), "Communication", "comm", "Communication skills", 10, 7, rubric_id)
+        ]
+        mock_standards = [
+            MockStandard(uuid.uuid4(), "Clear Communication", "Speaks clearly", 5, mock_standard_groups[0].id)
+        ]
+        mock_messages = [
+            MockSimulationMessage(uuid.uuid4(), chat_id, "Hello", "query"),
+            MockSimulationMessage(uuid.uuid4(), chat_id, "Hi there", "response")
+        ]
+        
+        # Mock the database queries
+        mock_session.exec.return_value.one.side_effect = [
+            mock_agent, mock_chat, mock_messages, mock_attempt, mock_simulation, mock_rubric
+        ]
+        mock_session.exec.return_value.all.side_effect = [mock_standard_groups, mock_standards]
+        mock_session.exec.return_value.one.side_effect = [
+            mock_agent, mock_chat, mock_messages, mock_attempt, mock_simulation, mock_rubric, mock_model, mock_provider
+        ]
+        
+        # Mock the Runner.run
+        mock_result = AsyncMock()
+        mock_result.final_output_as.return_value = MockDynamicRubric(overall_score=85, passed=True)
+        
+        with patch('app.services.agents.collection.grade.Runner.run', return_value=mock_result):
+            result = await run_grade_agent(chat_id, mock_session)
+            
+            assert result["success"] is True
+            assert "graded" in result["message"].lower()
 
-    def test_run_grade_agent_error(self):
+    @pytest.mark.asyncio
+    async def test_run_grade_agent_error(self, mock_session):
         """Test run_grade_agent error handling."""
-        # TODO: Implement error test for run_grade_agent
-        assert False, "IMPLEMENT: Error test for run_grade_agent"
+        chat_id = uuid.uuid4()
+        
+        # Mock the database query to raise an error
+        mock_session.exec.return_value.one.side_effect = Exception("Database error")
+        
+        with pytest.raises(Exception, match="Database error"):
+            await run_grade_agent(chat_id, mock_session)

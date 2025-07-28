@@ -217,7 +217,6 @@ class TestCohort_Overview:
         assert result["cohort"]["id"] == str(cohort_id)
         assert result["cohort"]["created_at"] is None
 
-    @pytest.mark.skip(reason="TODO: Complex mock setup needs to be fixed - requires proper handling of nested loops")
     def test_cohort_overview_with_simulations(self, mock_get_session):
         """Test cohort_overview with simulations."""
         mock_session = MagicMock()
@@ -233,14 +232,21 @@ class TestCohort_Overview:
         mock_simulation2 = MockSimulation(simulation2_id, "Simulation 2", True, 45)
         
         mock_session.get.return_value = mock_cohort
-        
-        # The function makes session.exec calls in this order:
-        # 1. For profiles (if cohort.profile_ids exists) - empty in this test
-        # 2. For simulations (if cohort.simulation_ids exists) - returns simulations
-        mock_session.exec.return_value.all.side_effect = [
-            [],  # First call: profiles (empty)
-            [mock_simulation1, mock_simulation2]  # Second call: simulations
-        ]
+
+        # Custom exec mock to handle .all() for each call, inspecting the SQL statement
+        def exec_side_effect(stmt, *args, **kwargs):
+            m = MagicMock()
+            stmt_str = str(stmt)
+            # If the query is for Profiles, return []
+            if 'FROM profiles' in stmt_str:
+                m.all.return_value = []
+            # If the query is for Simulations, return the two mock simulations
+            elif 'FROM simulations' in stmt_str:
+                m.all.return_value = [mock_simulation1, mock_simulation2]
+            else:
+                m.all.return_value = []
+            return m
+        mock_session.exec.side_effect = exec_side_effect
         
         result = cohort_overview(str(cohort_id))
         

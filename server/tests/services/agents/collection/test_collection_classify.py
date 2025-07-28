@@ -2,10 +2,58 @@
 Tests for app.services.agents.collection.classify
 """
 
+import uuid
+from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock
+from agents import Runner
+from app.services.agents.collection.classify import run_classify_agent
 from sqlmodel import Session
-from app.services.agents.collection.classify import *
+
+
+class MockAgent:
+    def __init__(self, id, name, system_prompt, temperature, model_id, reasoning):
+        self.id = id
+        self.name = name
+        self.system_prompt = system_prompt
+        self.temperature = temperature
+        self.model_id = model_id
+        self.reasoning = reasoning
+
+
+class MockModel:
+    def __init__(self, id, name, provider_id):
+        self.id = id
+        self.name = name
+        self.provider_id = provider_id
+
+
+class MockProvider:
+    def __init__(self, id, name, api_key):
+        self.id = id
+        self.name = name
+        self.api_key = api_key
+
+
+class MockDocument:
+    def __init__(self, id, name, file_path, mime_type, type="homework"):
+        self.id = id
+        self.name = name
+        self.file_path = file_path
+        self.mime_type = mime_type
+        self.type = type
+
+
+class MockClassify:
+    def __init__(self, homeworks=None, projects=None, quizzes=None, midterms=None, labs=None, lectures=None, syllabi=None):
+        self.homeworks = homeworks or []
+        self.projects = projects or []
+        self.quizzes = quizzes or []
+        self.midterms = midterms or []
+        self.labs = labs or []
+        self.lectures = lectures or []
+        self.syllabi = syllabi or []
 
 
 @pytest.fixture
@@ -14,19 +62,95 @@ def mock_session():
     return MagicMock(spec=Session)
 
 
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `run_classify_agent`")
 class TestRun_Classify_Agent:
     """Tests for run_classify_agent function."""
 
-    def test_run_classify_agent_success(self):
+    @pytest.mark.asyncio
+    async def test_run_classify_agent_success(self, mock_session):
         """Test successful run_classify_agent execution."""
-        # TODO: Implement test for run_classify_agent
-        assert False, "IMPLEMENT: Test for run_classify_agent"
+        document_ids = [uuid.uuid4(), uuid.uuid4()]
+        agent_id = uuid.uuid4()
+        model_id = uuid.uuid4()
+        provider_id = uuid.uuid4()
+        
+        mock_agent = MockAgent(agent_id, "Classify", "Classify documents", 0.7, model_id, "medium")
+        mock_model = MockModel(model_id, "gpt-4", provider_id)
+        mock_provider = MockProvider(provider_id, "openai", "encrypted_api_key")
+        mock_documents = [
+            MockDocument(document_ids[0], "document1.pdf", "/path/1", "application/pdf"),
+            MockDocument(document_ids[1], "document2.pdf", "/path/2", "application/pdf")
+        ]
+        
+        # Mock the database queries
+        mock_session.exec.return_value.one.return_value = mock_agent
+        mock_session.exec.return_value.all.side_effect = [mock_documents]
+        mock_session.exec.return_value.one.side_effect = [mock_agent, mock_model, mock_provider]
+        
+        # Mock the Runner.run
+        mock_result = AsyncMock()
+        mock_result.final_output_as.return_value = MockClassify(
+            homeworks=["1"], projects=["2"]
+        )
+        
+        with patch('app.services.agents.collection.classify.Runner.run', return_value=mock_result):
+            result = await run_classify_agent(document_ids, False, mock_session)
+            
+            assert result["success"] is True
+            assert result["classified_count"] == 2
+            assert result["total_count"] == 2
 
-    def test_run_classify_agent_error(self):
+    @pytest.mark.asyncio
+    async def test_run_classify_agent_error(self, mock_session):
         """Test run_classify_agent error handling."""
-        # TODO: Implement error test for run_classify_agent
-        assert False, "IMPLEMENT: Error test for run_classify_agent"
+        document_ids = [uuid.uuid4()]
+        
+        # Mock the database query to raise an error
+        mock_session.exec.return_value.one.side_effect = Exception("Database error")
+        
+        with pytest.raises(Exception, match="Database error"):
+            await run_classify_agent(document_ids, False, mock_session)
+
+    @pytest.mark.asyncio
+    async def test_run_classify_agent_no_documents(self, mock_session):
+        """Test run_classify_agent with no documents."""
+        document_ids = [uuid.uuid4()]
+        agent_id = uuid.uuid4()
+        
+        mock_agent = MockAgent(agent_id, "Classify", "Classify documents", 0.7, uuid.uuid4(), "medium")
+        
+        # Mock the database queries
+        mock_session.exec.return_value.one.return_value = mock_agent
+        mock_session.exec.return_value.all.return_value = []
+        
+        result = await run_classify_agent(document_ids, False, mock_session)
+        
+        assert result["success"] is True
+        assert result["message"] == "No documents to classify"
+        assert result["classified_count"] == 0
+        assert result["total_count"] == 0
+
+    @pytest.mark.asyncio
+    async def test_run_classify_agent_test_mode(self, mock_session):
+        """Test run_classify_agent in test mode."""
+        document_ids = [uuid.uuid4(), uuid.uuid4()]
+        agent_id = uuid.uuid4()
+        model_id = uuid.uuid4()
+        provider_id = uuid.uuid4()
+        
+        mock_agent = MockAgent(agent_id, "Classify", "Classify documents", 0.7, model_id, "medium")
+        mock_model = MockModel(model_id, "gpt-4", provider_id)
+        mock_provider = MockProvider(provider_id, "openai", "encrypted_api_key")
+        mock_documents = [
+            MockDocument(document_ids[0], "document1.pdf", "/path/1", "application/pdf"),
+            MockDocument(document_ids[1], "document2.pdf", "/path/2", "application/pdf")
+        ]
+        
+        # Mock the database queries
+        mock_session.exec.return_value.one.side_effect = [mock_agent, mock_model, mock_provider]
+        mock_session.exec.return_value.all.return_value = mock_documents
+        
+        result = await run_classify_agent(document_ids, True, mock_session)
+        
+        assert result["success"] is True
+        assert result["classified_count"] == 2
+        assert result["total_count"] == 2

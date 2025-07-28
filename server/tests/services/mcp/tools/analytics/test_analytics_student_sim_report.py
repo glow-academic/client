@@ -162,7 +162,6 @@ class TestStudent_Sim_Report:
         assert result["profile"]["id"] == str(profile_id)
         assert result["attempts"] == []
 
-    @pytest.mark.skip(reason="TODO: Complex mock setup needs to be fixed - requires proper handling of nested loops")
     def test_student_sim_report_multiple_attempts(self, mock_get_session):
         """Test student_sim_report with multiple attempts."""
         mock_session = MagicMock()
@@ -189,40 +188,59 @@ class TestStudent_Sim_Report:
         mock_message1 = MockSimulationMessage(uuid.uuid4(), chat1_id, "Hello", "query")
         mock_message2 = MockSimulationMessage(uuid.uuid4(), chat2_id, "Hi", "query")
         
-        # The function calls session.get multiple times:
-        # 1. Get profile (returns mock_profile)
-        # 2. Get simulation for attempt1 (returns mock_simulation)
-        # 3. Get scenario for chat1 (returns mock_scenario)
-        # 4. Get simulation for attempt2 (returns mock_simulation)
-        # 5. Get scenario for chat2 (returns mock_scenario)
-        mock_session.get.side_effect = [
-            mock_profile,      # First call: get profile
-            mock_simulation,   # Second call: get simulation for attempt1
-            mock_scenario,     # Third call: get scenario for chat1
-            mock_simulation,   # Fourth call: get simulation for attempt2
-            mock_scenario,     # Fifth call: get scenario for chat2
-        ]
-        
-        # The function makes these session.exec calls in order:
-        # 1. Get attempts (returns [mock_attempt1, mock_attempt2])
-        # 2. Get chats for attempt1 (returns [mock_chat1])
-        # 3. Get messages for chat1 (returns [mock_message1])
-        # 4. Get feedback for chat1 (returns [])
-        # 5. Get chats for attempt2 (returns [mock_chat2])
-        # 6. Get messages for chat2 (returns [mock_message2])
-        # 7. Get feedback for chat2 (returns [])
-        mock_session.exec.return_value.all.side_effect = [
-            [mock_attempt1, mock_attempt2],  # First call: get attempts
-            [mock_chat1],                    # Second call: get chats for attempt1
-            [mock_message1],                 # Third call: get messages for chat1
-            [],                             # Fourth call: get feedback for chat1
-            [mock_chat2],                    # Fifth call: get chats for attempt2
-            [mock_message2],                 # Sixth call: get messages for chat2
-            [],                             # Seventh call: get feedback for chat2
-        ]
-        mock_session.exec.return_value.first.return_value = None
+        # Use a more robust mock that handles the session.get calls properly
+        def mock_get(model, id):
+            print(f"mock_get called with model={model}, id={id}")
+            if id == profile_id:
+                return mock_profile
+            elif id == simulation_id:
+                return mock_simulation
+            elif id == scenario_id:
+                return mock_scenario
+            return None
+        mock_session.get.side_effect = mock_get
+
+        # Custom exec mock to handle .all() and .first() for each call
+        def exec_side_effect(*args, **kwargs):
+            m = MagicMock()
+            # The order of calls is:
+            # 1. attempts.all() -> [mock_attempt1, mock_attempt2]
+            # 2. chats for attempt1.all() -> [mock_chat1]
+            # 3. messages for chat1.all() -> [mock_message1]
+            # 4. feedback for chat1.all() -> []
+            # 5. chats for attempt2.all() -> [mock_chat2]
+            # 6. messages for chat2.all() -> [mock_message2]
+            # 7. feedback for chat2.all() -> []
+            if not hasattr(exec_side_effect, 'call_count'):
+                exec_side_effect.call_count = 0
+            call = exec_side_effect.call_count
+            exec_side_effect.call_count += 1
+            if call == 0:
+                m.all.return_value = [mock_attempt1, mock_attempt2]
+            elif call == 1:
+                m.all.return_value = [mock_chat1]
+            elif call == 2:
+                m.all.return_value = [mock_message1]
+            elif call == 3:
+                m.all.return_value = []
+            elif call == 4:
+                m.all.return_value = [mock_chat2]
+            elif call == 5:
+                m.all.return_value = [mock_message2]
+            elif call == 6:
+                m.all.return_value = []
+            else:
+                m.all.return_value = []
+            m.first.return_value = None
+            return m
+        exec_side_effect.call_count = 0
+        mock_session.exec.side_effect = exec_side_effect
         
         result = student_sim_report(str(profile_id))
+        
+        # Debug: Let's see what we got
+        print(f"Result: {result}")
+        print(f"Number of attempts: {len(result['attempts'])}")
         
         # The function returns one entry per chat, not per attempt
         assert len(result["attempts"]) == 2
@@ -293,7 +311,6 @@ class TestStudent_Sim_Report:
         attempt = result["attempts"][0]
         assert attempt["chat"]["grade"] == {}
 
-    @pytest.mark.skip(reason="TODO: Complex mock setup needs to be fixed - requires proper handling of nested loops")
     def test_student_sim_report_multiple_simulations(self, mock_get_session):
         """Test student_sim_report with multiple simulations."""
         mock_session = MagicMock()
@@ -328,32 +345,55 @@ class TestStudent_Sim_Report:
         # 3. Get scenario for chat1 (returns mock_scenario)
         # 4. Get simulation2 for attempt2 (returns mock_simulation2)
         # 5. Get scenario for chat2 (returns mock_scenario)
-        mock_session.get.side_effect = [
-            mock_profile,       # First call: get profile
-            mock_simulation1,   # Second call: get simulation1 for attempt1
-            mock_scenario,      # Third call: get scenario for chat1
-            mock_simulation2,   # Fourth call: get simulation2 for attempt2
-            mock_scenario,      # Fifth call: get scenario for chat2
-        ]
-        
-        # The function makes these session.exec calls in order:
-        # 1. Get attempts (returns [mock_attempt1, mock_attempt2])
-        # 2. Get chats for attempt1 (returns [mock_chat1])
-        # 3. Get messages for chat1 (returns [mock_message1])
-        # 4. Get feedback for chat1 (returns [])
-        # 5. Get chats for attempt2 (returns [mock_chat2])
-        # 6. Get messages for chat2 (returns [mock_message2])
-        # 7. Get feedback for chat2 (returns [])
-        mock_session.exec.return_value.all.side_effect = [
-            [mock_attempt1, mock_attempt2],  # First call: get attempts
-            [mock_chat1],                    # Second call: get chats for attempt1
-            [mock_message1],                 # Third call: get messages for chat1
-            [],                             # Fourth call: get feedback for chat1
-            [mock_chat2],                    # Fifth call: get chats for attempt2
-            [mock_message2],                 # Sixth call: get messages for chat2
-            [],                             # Seventh call: get feedback for chat2
-        ]
-        mock_session.exec.return_value.first.return_value = None
+        # Use a more robust mock that handles the session.get calls properly
+        def mock_get(model, id):
+            print(f"mock_get called with model={model}, id={id}")
+            if id == profile_id:
+                return mock_profile
+            elif id == simulation1_id:
+                return mock_simulation1
+            elif id == simulation2_id:
+                return mock_simulation2
+            elif id == scenario_id:
+                return mock_scenario
+            return None
+        mock_session.get.side_effect = mock_get
+
+        # Custom exec mock to handle .all() and .first() for each call
+        def exec_side_effect(*args, **kwargs):
+            m = MagicMock()
+            # The order of calls is:
+            # 1. attempts.all() -> [mock_attempt1, mock_attempt2]
+            # 2. chats for attempt1.all() -> [mock_chat1]
+            # 3. messages for chat1.all() -> [mock_message1]
+            # 4. feedback for chat1.all() -> []
+            # 5. chats for attempt2.all() -> [mock_chat2]
+            # 6. messages for chat2.all() -> [mock_message2]
+            # 7. feedback for chat2.all() -> []
+            if not hasattr(exec_side_effect, 'call_count'):
+                exec_side_effect.call_count = 0
+            call = exec_side_effect.call_count
+            exec_side_effect.call_count += 1
+            if call == 0:
+                m.all.return_value = [mock_attempt1, mock_attempt2]
+            elif call == 1:
+                m.all.return_value = [mock_chat1]
+            elif call == 2:
+                m.all.return_value = [mock_message1]
+            elif call == 3:
+                m.all.return_value = []
+            elif call == 4:
+                m.all.return_value = [mock_chat2]
+            elif call == 5:
+                m.all.return_value = [mock_message2]
+            elif call == 6:
+                m.all.return_value = []
+            else:
+                m.all.return_value = []
+            m.first.return_value = None
+            return m
+        exec_side_effect.call_count = 0
+        mock_session.exec.side_effect = exec_side_effect
         
         result = student_sim_report(str(profile_id))
         
