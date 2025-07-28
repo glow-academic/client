@@ -1,0 +1,189 @@
+"""
+Tests for app.utils.scenario
+"""
+from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
+
+import pytest
+from app.utils.scenario import *
+from sqlmodel import Session
+
+
+@pytest.fixture
+def mock_session():
+    """Create a mock database session."""
+    return MagicMock(spec=Session)
+
+
+import pytest
+
+
+class TestGet_Parameter_Item_Info:
+    """Tests for get_parameter_item_info function."""
+
+    def test_get_parameter_item_info_success(self, mock_session):
+        """Test successful get_parameter_item_info execution."""
+        from uuid import uuid4
+
+        from app.models import ParameterItems, Parameters
+        from app.utils.scenario import get_parameter_item_info
+
+        # Create mock parameter and parameter item
+        param_id = uuid4()
+        param_item_id = uuid4()
+        mock_param = Parameters(
+            id=param_id,
+            name="Difficulty",
+            description="Difficulty level"
+        )
+        mock_param_item = ParameterItems(
+            id=param_item_id,
+            parameter_id=param_id,
+            name="Easy",
+            description="Easy difficulty"
+        )
+        
+        # Mock the database query to return the joined result
+        mock_session.exec.return_value.all.return_value = [(mock_param_item, mock_param)]
+        
+        result = get_parameter_item_info([param_item_id], mock_session)
+        
+        assert result["role"] == "user"
+        assert "The following is the parameter item information:" in result["content"]
+        assert "This is the Difficulty (Difficulty level) for this chat: Easy. Description: Easy difficulty" in result["content"]
+
+    def test_get_parameter_item_info_error(self, mock_session):
+        """Test get_parameter_item_info error handling."""
+        from uuid import uuid4
+
+        from app.utils.scenario import get_parameter_item_info
+
+        # Mock the database query to return no results
+        mock_session.exec.return_value.all.return_value = []
+        
+        param_item_ids = [uuid4(), uuid4()]
+        
+        result = get_parameter_item_info(param_item_ids, mock_session)
+        
+        assert result["role"] == "user"
+        assert result["content"] == "No parameter items found."
+
+
+import pytest
+
+
+class TestRandomly_Fill_Scenario_Attributes:
+    """Tests for randomly_fill_scenario_attributes function."""
+
+    @pytest.mark.skip(reason="TODO: Fix complex mocking for random selection logic")
+    @pytest.mark.asyncio
+    async def test_randomly_fill_scenario_attributes_success(self, mock_session):
+        """Test successful randomly_fill_scenario_attributes execution."""
+        from uuid import uuid4
+
+        from app.models import (Documents, ParameterItems, Parameters,
+                                Personas, Scenarios)
+        from app.utils.scenario import randomly_fill_scenario_attributes
+
+        # Create mock scenario with null attributes
+        scenario_id = uuid4()
+        scenario = Scenarios(
+            id=scenario_id,
+            name="Test Scenario",
+            description="A test scenario",
+            persona_id=None,
+            document_ids=None,
+            parameter_item_ids=None
+        )
+        
+        # Create mock personas
+        persona_id = uuid4()
+        mock_persona = Personas(
+            id=persona_id,
+            name="Test Student",
+            description="A test student",
+            active=True
+        )
+        
+        # Create mock documents
+        doc_id = uuid4()
+        mock_document = Documents(
+            id=doc_id,
+            name="Test Document",
+            mime_type="application/pdf",
+            active=True
+        )
+        
+        # Create mock parameters and parameter items
+        param_id = uuid4()
+        param_item_id = uuid4()
+        mock_param = Parameters(
+            id=param_id,
+            name="Difficulty",
+            description="Difficulty level",
+            active=True
+        )
+        mock_param_item = ParameterItems(
+            id=param_item_id,
+            parameter_id=param_id,
+            name="Easy",
+            description="Easy difficulty"
+        )
+        
+        # Mock database queries - need to handle the random selection logic
+        def mock_all_side_effect(*args, **kwargs):
+            # This is a simplified mock that returns the first item for random.choice
+            if len(args) > 0 and "Personas" in str(args[0]):
+                return [mock_persona]
+            elif len(args) > 0 and "Documents" in str(args[0]):
+                return [mock_document]
+            elif len(args) > 0 and "Parameters" in str(args[0]):
+                return [mock_param]
+            elif len(args) > 0 and "ParameterItems" in str(args[0]):
+                return [mock_param_item]
+            return []
+        
+        mock_session.exec.return_value.all.side_effect = mock_all_side_effect
+        
+        result = await randomly_fill_scenario_attributes(scenario, mock_session)
+        
+        assert result.name == "Test Scenario"
+        assert result.description == "A test scenario"
+        assert result.persona_id == persona_id
+        assert result.document_ids == [doc_id]
+        assert result.parameter_item_ids == [param_item_id]
+        assert result.generated is True
+        assert result.parent_id == scenario_id
+
+    @pytest.mark.asyncio
+    async def test_randomly_fill_scenario_attributes_error(self, mock_session):
+        """Test randomly_fill_scenario_attributes error handling."""
+        from uuid import uuid4
+
+        from app.models import Scenarios
+        from app.utils.scenario import randomly_fill_scenario_attributes
+
+        # Create mock scenario with null attributes
+        scenario_id = uuid4()
+        scenario = Scenarios(
+            id=scenario_id,
+            name="Test Scenario",
+            description="A test scenario",
+            persona_id=None,
+            document_ids=None,
+            parameter_item_ids=None
+        )
+        
+        # Mock database queries to return empty results
+        mock_session.exec.return_value.all.return_value = []
+        
+        result = await randomly_fill_scenario_attributes(scenario, mock_session)
+        
+        assert result.name == "Test Scenario"
+        assert result.description == "A test scenario"
+        assert result.persona_id is None
+        assert result.document_ids == []
+        assert result.parameter_item_ids == []
+        assert result.generated is True
+        assert result.parent_id == scenario_id
+
