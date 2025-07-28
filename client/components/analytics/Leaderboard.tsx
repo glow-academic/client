@@ -96,10 +96,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   });
 
   // 9. Fetch all rubrics (for accolades and leaderboard calculation)
-  const {
-    data: rubrics,
-    isLoading: loadingRubrics,
-  } = useQuery({
+  const { data: rubrics, isLoading: loadingRubrics } = useQuery({
     queryKey: ["allRubrics"],
     queryFn: async () => {
       const { getAllRubrics } = await import(
@@ -226,26 +223,31 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         quickestPass: { holder: null, details: "" },
       };
 
-    // 1. Perfect Score
+    // 1. Perfect Score - Find someone who achieved exactly 100% (perfect score)
     let perfectScoreHolder = null;
     let perfectScoreDetails = "";
+
     for (const grade of safeGrades) {
       const rubric = rubrics?.find((r) => r.id === grade.rubricId);
-      if (rubric && grade.score === rubric.points) {
-        const attempt = safeAttempts.find((a) =>
-          chats.some(
-            (c) => c.id === grade.simulationChatId && c.attemptId === a.id
-          )
-        );
-        perfectScoreHolder = cohortProfiles.find(
-          (p) => p.id === attempt?.profileId
-        );
-        perfectScoreDetails = `on a simulation.`;
-        break;
+      if (rubric) {
+        const scorePercentage = (grade.score / rubric.points) * 100;
+        // Only consider it a perfect score if they got exactly 100%
+        if (scorePercentage === 100) {
+          const attempt = safeAttempts.find((a) =>
+            chats.some(
+              (c) => c.id === grade.simulationChatId && c.attemptId === a.id
+            )
+          );
+          perfectScoreHolder = cohortProfiles.find(
+            (p) => p.id === attempt?.profileId
+          );
+          perfectScoreDetails = `100% perfect score`;
+          break; // Found a perfect score, no need to look further
+        }
       }
     }
 
-    // 2. Longest Conversation
+    // 2. Longest Conversation - Find the chat with the most messages
     const chatMessageCounts = chats.map((chat) => ({
       chatId: chat.id,
       count: messages?.filter((m) => m.chatId === chat.id).length || 0,
@@ -258,11 +260,78 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       (p) => p.id === longestChatAttempt?.profileId
     );
 
-    // 3. Most Improved (Simplified: Biggest score jump on any simulation)
-    // For now, we'll use a placeholder - this would require more complex logic to track improvement over time
-    const mostImprovedHolder = cohortProfiles?.[1]; // Placeholder
+    // 3. Most Improved - Calculate the biggest score improvement over time
+    let mostImprovedHolder = null;
+    let mostImprovedDetails = "";
+    let biggestImprovement = 0;
 
-    // 4. Quickest Pass
+    // Group attempts by profile and simulation to track improvement
+    const profileSimulationAttempts = new Map<
+      string,
+      Array<{
+        profileId: string;
+        simulationId: string;
+        score: number;
+        scorePercentage: number;
+        createdAt: Date;
+      }>
+    >();
+
+    // Build attempt history for each profile-simulation combination
+    for (const grade of safeGrades) {
+      const attempt = safeAttempts.find((a) =>
+        chats.some(
+          (c) => c.id === grade.simulationChatId && c.attemptId === a.id
+        )
+      );
+      if (!attempt?.profileId) continue;
+
+      const rubric = rubrics?.find((r) => r.id === grade.rubricId);
+      if (!rubric) continue;
+
+      const scorePercentage = (grade.score / rubric.points) * 100;
+      const key = `${attempt.profileId}-${attempt.simulationId}`;
+
+      if (!profileSimulationAttempts.has(key)) {
+        profileSimulationAttempts.set(key, []);
+      }
+
+      profileSimulationAttempts.get(key)!.push({
+        profileId: attempt.profileId,
+        simulationId: attempt.simulationId,
+        score: grade.score,
+        scorePercentage,
+        createdAt: new Date(attempt.createdAt),
+      });
+    }
+
+    // Calculate improvement for each profile-simulation combination
+    for (const [, attempts] of profileSimulationAttempts) {
+      if (attempts.length < 2) continue; // Need at least 2 attempts to show improvement
+
+      // Sort by creation date
+      const sortedAttempts = attempts.sort(
+        (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+      );
+
+      const firstScore = sortedAttempts[0]?.scorePercentage;
+      const lastScore =
+        sortedAttempts[sortedAttempts.length - 1]?.scorePercentage;
+
+      if (firstScore === undefined || lastScore === undefined) continue;
+
+      const improvement = lastScore - firstScore;
+
+      if (improvement > biggestImprovement) {
+        biggestImprovement = improvement;
+        mostImprovedHolder = cohortProfiles.find(
+          (p) => p.id === attempts[0]?.profileId
+        );
+        mostImprovedDetails = `+${Math.round(improvement)}% improvement`;
+      }
+    }
+
+    // 4. Quickest Pass - Find the fastest completion time for a passed attempt
     const passedGrades = safeGrades.filter((g) => g.passed);
     const quickestGrade = passedGrades.sort(
       (a, b) => a.timeTaken - b.timeTaken
@@ -287,14 +356,48 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       },
       mostImproved: {
         holder: mostImprovedHolder,
-        details: `+45% score increase`,
+        details: mostImprovedDetails,
       },
       quickestPass: {
         holder: quickestPassHolder,
-        details: `${Math.round((quickestGrade?.timeTaken || 0) / 60)} min completion`,
+        details: quickestGrade
+          ? `${Math.round(quickestGrade.timeTaken / 60)} min completion`
+          : "",
       },
     };
   }, [cohortProfiles, safeGrades, messages, chats, rubrics, safeAttempts]);
+
+  // Log accolades for debugging
+  React.useEffect(() => {
+    if (accolades) {
+      console.log("Accolades calculated:", {
+        perfectScore: {
+          holder: accolades.perfectScore.holder
+            ? `${accolades.perfectScore.holder.firstName} ${accolades.perfectScore.holder.lastName}`
+            : null,
+          details: accolades.perfectScore.details,
+        },
+        longestConvo: {
+          holder: accolades.longestConvo.holder
+            ? `${accolades.longestConvo.holder.firstName} ${accolades.longestConvo.holder.lastName}`
+            : null,
+          details: accolades.longestConvo.details,
+        },
+        mostImproved: {
+          holder: accolades.mostImproved.holder
+            ? `${accolades.mostImproved.holder.firstName} ${accolades.mostImproved.holder.lastName}`
+            : null,
+          details: accolades.mostImproved.details,
+        },
+        quickestPass: {
+          holder: accolades.quickestPass.holder
+            ? `${accolades.quickestPass.holder.firstName} ${accolades.quickestPass.holder.lastName}`
+            : null,
+          details: accolades.quickestPass.details,
+        },
+      });
+    }
+  }, [accolades]);
 
   const leaderboardData = useMemo(() => {
     if (!cohortProfiles || cohortProfiles.length === 0) {
@@ -360,7 +463,6 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         avgScore: Math.round(avgScore),
         passRate: Math.round(passRate),
         simsCompleted: totalSims,
-        role: profile.role,
       };
     });
 

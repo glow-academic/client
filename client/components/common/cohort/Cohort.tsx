@@ -34,6 +34,8 @@ import { Cohort as CohortType, Profile, Simulation } from "@/types";
 import { createCohort } from "@/utils/mutations/cohorts/create-cohort";
 import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
+import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
@@ -130,8 +132,23 @@ export default function Cohort({ cohortId }: CohortProps) {
     queryFn: () => getAllScenarios(),
   });
 
+  const { data: parameters = [], isLoading: isLoadingParameters } = useQuery({
+    queryKey: ["parameters"],
+    queryFn: () => getAllParameters(),
+  });
+
+  const { data: parameterItems = [], isLoading: isLoadingParameterItems } =
+    useQuery({
+      queryKey: ["parameterItems"],
+      queryFn: () => getAllParameterItems(),
+    });
+
   const isLoading =
-    isLoadingProfiles || isLoadingSimulations || isLoadingScenarios;
+    isLoadingProfiles ||
+    isLoadingSimulations ||
+    isLoadingScenarios ||
+    isLoadingParameters ||
+    isLoadingParameterItems;
 
   // Transform simulations to match SimulationPicker interface
   const transformedSimulations: SimulationPickerType[] = useMemo(() => {
@@ -143,6 +160,7 @@ export default function Cohort({ cohortId }: CohortProps) {
       active: sim.active,
       defaultSimulation: sim.defaultSimulation,
       practiceSimulation: sim.practiceSimulation,
+      scenarioIds: sim.scenarioIds || [],
     }));
   }, [simulations]);
 
@@ -503,6 +521,9 @@ export default function Cohort({ cohortId }: CohortProps) {
               {formData.simulationIds !== undefined && !isLoading ? (
                 <SimulationPicker
                   simulations={transformedSimulations}
+                  scenarios={scenarios}
+                  parameters={parameters}
+                  parameterItems={parameterItems}
                   selectedSimulations={selectedSimulations}
                   onSelect={handleSimulationSelection}
                   placeholder="Add simulation"

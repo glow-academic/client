@@ -38,7 +38,6 @@ import { getProfileByAlias } from "@/utils/auth/get-profile-by-alias";
 import { profileRole } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
-import { createProfile } from "@/utils/mutations/profiles/create-profile";
 import { createProfiles } from "@/utils/mutations/profiles/create-profiles";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
@@ -154,14 +153,6 @@ export default function NewStaff() {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
   const csvInputRef = useRef<HTMLInputElement>(null);
-
-  // State for single user form
-  const [formData, setFormData] = React.useState({
-    firstName: "",
-    lastName: "",
-    alias: "",
-    role: "" as ProfileRole | "",
-  });
 
   // State for CSV upload
   const [csvPreview, setCsvPreview] = useState<NewProfile[]>([]);
@@ -499,29 +490,6 @@ export default function NewStaff() {
     setCsvPreview((prev) => prev.filter((p) => p.id !== profileId));
   }, []);
 
-  // Handle single user form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.role) return;
-
-    setIsSubmitting(true);
-    try {
-      await createProfile({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        alias: formData.alias,
-        role: formData.role,
-      });
-      toast.success("Staff member created successfully!");
-      router.push("/management/staff");
-    } catch (error) {
-      logError("Error creating staff member:", error);
-      toast.error("Failed to create staff member. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   // Handle CSV submission
   const handleCSVSubmit = async () => {
     if (csvPreview.length === 0) return;
@@ -575,136 +543,15 @@ export default function NewStaff() {
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
   return (
     <div className="space-y-6 py-4 px-4">
-      <Tabs defaultValue="single" className="space-y-4">
+      <Tabs defaultValue="csv" className="space-y-4">
         <div className="flex items-center justify-between">
           <TabsList>
-            <TabsTrigger value="single">Single User</TabsTrigger>
             <TabsTrigger value="csv">CSV Import</TabsTrigger>
             <TabsTrigger value="manual">Manual Add</TabsTrigger>
           </TabsList>
-          <Button variant="outline" onClick={downloadTemplate}>
-            <Download className="h-4 w-4 mr-2" />
-            Download Template
-          </Button>
         </div>
-
-        <TabsContent value="single">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  value={formData.firstName}
-                  onChange={(e) =>
-                    handleInputChange("firstName", e.target.value)
-                  }
-                  placeholder="Enter first name"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  value={formData.lastName}
-                  onChange={(e) =>
-                    handleInputChange("lastName", e.target.value)
-                  }
-                  placeholder="Enter last name"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="alias">Username/Alias</Label>
-                <Input
-                  id="alias"
-                  value={formData.alias}
-                  onChange={(e) => handleInputChange("alias", e.target.value)}
-                  placeholder="Enter username"
-                  required
-                />
-                <p className="text-sm text-muted-foreground">
-                  Will be used as {formData.alias}@
-                  {process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(value: ProfileRole) =>
-                    handleInputChange("role", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableRoles.map((role) => {
-                      const Icon = role.icon;
-                      return (
-                        <SelectItem key={role.value} value={role.value}>
-                          <div className="flex items-center gap-2">
-                            <Icon className="h-4 w-4" />
-                            {role.label}
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {formData.role && (
-              <div className="p-4 bg-muted rounded-md">
-                <div className="flex items-center gap-2 mb-2">
-                  {(() => {
-                    const RoleIcon = getRoleIcon(formData.role);
-                    return <RoleIcon className="h-4 w-4" />;
-                  })()}
-                  <Badge variant={getRoleBadgeVariant(formData.role)}>
-                    {getRoleDisplayName(formData.role)}
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {formData.role === "admin" &&
-                    "Will have full system access and user management permissions."}
-                  {formData.role === "instructional" &&
-                    "Will have permissions to manage instructors and teaching assistants."}
-                  {formData.role === "ta" &&
-                    "Will have permissions to assist with assigned cohorts."}
-                </p>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-                disabled={isSubmitting}
-              >
-                Back
-              </Button>
-              <Button type="submit" disabled={isSubmitting || !formData.role}>
-                {isSubmitting
-                  ? "Creating..."
-                  : `Create ${formData.role ? getRoleDisplayName(formData.role) : "Staff Member"}`}
-              </Button>
-            </div>
-          </form>
-        </TabsContent>
 
         <TabsContent value="csv">
           <div className="space-y-4">

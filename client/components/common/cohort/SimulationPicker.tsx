@@ -32,8 +32,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
 import { cn } from "@/lib/utils";
+import { Parameter, ParameterItem } from "@/types";
 
 export interface Simulation {
   id: string;
@@ -43,10 +50,14 @@ export interface Simulation {
   active: boolean;
   defaultSimulation?: boolean;
   practiceSimulation?: boolean;
+  scenarioIds?: string[];
 }
 
 export interface SimulationPickerProps extends PopoverProps {
   simulations: Simulation[];
+  scenarios?: { id: string; parameterItemIds?: string[] | null }[];
+  parameters?: Parameter[];
+  parameterItems?: ParameterItem[];
   label?: string;
   placeholder?: string;
   description?: string;
@@ -60,6 +71,9 @@ export interface SimulationPickerProps extends PopoverProps {
 
 export function SimulationPicker({
   simulations,
+  scenarios = [],
+  parameters = [],
+  parameterItems = [],
   label = "Simulations",
   placeholder = "Select simulations...",
   description = "Select one or more simulations to assign to the cohort.",
@@ -76,10 +90,69 @@ export function SimulationPicker({
     Simulation | undefined
   >(simulations[0]);
 
-  // Filter simulations to show only active ones if requested
-  const filteredSimulations = showOnlyActive
-    ? simulations.filter((sim) => sim.active)
-    : simulations;
+  // Filter simulations to show only active ones if requested, and exclude practice simulations
+  const filteredSimulations = (
+    showOnlyActive ? simulations.filter((sim) => sim.active) : simulations
+  ).filter((sim) => !sim.practiceSimulation);
+
+  // Get scenario badges for a simulation (aggregated from all scenarios)
+  const getSimulationScenarioBadges = (simulation: Simulation) => {
+    if (!simulation.scenarioIds || simulation.scenarioIds.length === 0) {
+      return [];
+    }
+
+    // Collect all parameter items from all scenarios in this simulation with frequency tracking
+    const parameterFrequency = new Map<
+      string,
+      {
+        parameterName: string;
+        value: string;
+        parameterId: string;
+        count: number;
+      }
+    >();
+
+    simulation.scenarioIds.forEach((scenarioId) => {
+      const scenario = scenarios.find((s) => s.id === scenarioId);
+      if (scenario?.parameterItemIds) {
+        scenario.parameterItemIds.forEach((parameterItemId: string) => {
+          const parameterItem = parameterItems.find(
+            (item) => item.id === parameterItemId
+          );
+          if (parameterItem) {
+            const parameter = parameters.find(
+              (param) => param.id === parameterItem.parameterId
+            );
+            if (parameter && !parameter.numerical) {
+              // Use parameter name as key to avoid duplicates
+              const key = parameter.name;
+              const existing = parameterFrequency.get(key);
+              if (existing) {
+                existing.count += 1;
+              } else {
+                parameterFrequency.set(key, {
+                  parameterName: parameter.name,
+                  value: parameterItem.value,
+                  parameterId: parameter.id,
+                  count: 1,
+                });
+              }
+            }
+          }
+        });
+      }
+    });
+
+    // Sort by frequency (most used first) and return top 3
+    return Array.from(parameterFrequency.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3)
+      .map(({ parameterName, value, parameterId }) => ({
+        parameterName,
+        value,
+        parameterId,
+      }));
+  };
 
   const handleSelect = (simulation: Simulation) => {
     const isSelected = selectedSimulations.some((s) => s.id === simulation.id);
@@ -88,7 +161,7 @@ export function SimulationPicker({
     if (isSelected) {
       // Remove from selection
       newSelectedSimulations = selectedSimulations.filter(
-        (s) => s.id !== simulation.id,
+        (s) => s.id !== simulation.id
       );
     } else {
       // Add to selection
@@ -108,11 +181,11 @@ export function SimulationPicker({
   // Remove individual item
   const handleRemoveItem = (
     simulationToRemove: Simulation,
-    e: React.MouseEvent,
+    e: React.MouseEvent
   ) => {
     e.stopPropagation();
     const newSelectedSimulations = selectedSimulations.filter(
-      (s) => s.id !== simulationToRemove.id,
+      (s) => s.id !== simulationToRemove.id
     );
     onSelect?.(newSelectedSimulations);
   };
@@ -219,16 +292,37 @@ export function SimulationPicker({
                       Default
                     </Badge>
                   )}
-                  {peekedSimulation?.practiceSimulation && (
-                    <Badge variant="secondary" className="text-xs">
-                      Practice
-                    </Badge>
-                  )}
                   {peekedSimulation?.active && (
                     <Badge variant="outline" className="text-xs text-green-600">
                       Active
                     </Badge>
                   )}
+                  {peekedSimulation &&
+                    getSimulationScenarioBadges(peekedSimulation)
+                      .slice(0, 3)
+                      .map((badge) => (
+                        <TooltipProvider key={badge.parameterId}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="outline" className="text-xs">
+                                {badge.value}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{badge.parameterName}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ))}
+                  {peekedSimulation &&
+                    getSimulationScenarioBadges(peekedSimulation).length >
+                      3 && (
+                      <Badge variant="outline" className="text-xs">
+                        +
+                        {getSimulationScenarioBadges(peekedSimulation).length -
+                          3}
+                      </Badge>
+                    )}
                 </div>
               </div>
             </HoverCardContent>
@@ -253,10 +347,11 @@ export function SimulationPicker({
                       key={simulation.id}
                       simulation={simulation}
                       isSelected={selectedSimulations.some(
-                        (s) => s.id === simulation.id,
+                        (s) => s.id === simulation.id
                       )}
                       onPeek={(simulation) => setPeekedSimulation(simulation)}
                       onSelect={() => handleSelect(simulation)}
+                      getScenarioBadges={getSimulationScenarioBadges}
                     />
                   ))}
                 </CommandGroup>
@@ -274,6 +369,9 @@ interface SimulationItemProps {
   isSelected: boolean;
   onSelect: () => void;
   onPeek: (simulation: Simulation) => void;
+  getScenarioBadges: (
+    simulation: Simulation
+  ) => { parameterName: string; value: string; parameterId: string }[];
 }
 
 function SimulationItem({
@@ -281,6 +379,7 @@ function SimulationItem({
   isSelected,
   onSelect,
   onPeek,
+  getScenarioBadges,
 }: SimulationItemProps) {
   const ref = React.useRef<HTMLDivElement>(null);
 
@@ -305,6 +404,8 @@ function SimulationItem({
     return `${hours}h ${minutes}m`;
   };
 
+  const scenarioBadges = getScenarioBadges(simulation);
+
   return (
     <CommandItem
       key={simulation.id}
@@ -321,9 +422,23 @@ function SimulationItem({
               <Badge variant="secondary" className="text-xs">
                 {formatTimeLimit(simulation.timeLimit)}
               </Badge>
-              {simulation.practiceSimulation && (
-                <Badge variant="default" className="text-xs">
-                  Practice
+              {scenarioBadges.slice(0, 3).map((badge) => (
+                <TooltipProvider key={badge.parameterId}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="secondary" className="text-xs">
+                        {badge.value}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{badge.parameterName}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ))}
+              {scenarioBadges.length > 3 && (
+                <Badge variant="outline" className="text-xs">
+                  +{scenarioBadges.length - 3}
                 </Badge>
               )}
             </div>
@@ -332,7 +447,7 @@ function SimulationItem({
         <Check
           className={cn(
             "ml-auto flex-shrink-0",
-            isSelected ? "opacity-100" : "opacity-0",
+            isSelected ? "opacity-100" : "opacity-0"
           )}
         />
       </div>

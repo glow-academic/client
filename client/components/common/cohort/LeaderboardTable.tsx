@@ -34,7 +34,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { X } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 export interface LeaderboardData {
   id: string;
@@ -42,7 +42,7 @@ export interface LeaderboardData {
   avgScore: number;
   passRate: number;
   simsCompleted: number;
-  role?: string;
+  role?: string; // Optional since we're no longer displaying it
 }
 
 export interface LeaderboardTableProps {
@@ -70,16 +70,6 @@ export default function LeaderboardTable({
   ]);
 
   // Create filter options
-  const roleOptions = useMemo(() => {
-    const uniqueRoles = [
-      ...new Set(data.map((user) => user.role).filter(Boolean)),
-    ];
-    return uniqueRoles.map((role) => ({
-      value: role!,
-      label: role!.charAt(0).toUpperCase() + role!.slice(1),
-    }));
-  }, [data]);
-
   const scoreRangeOptions = useMemo(
     () => [
       {
@@ -95,7 +85,7 @@ export default function LeaderboardTable({
         label: "Needs Improvement (<70%)",
       },
     ],
-    [],
+    []
   );
 
   // Define columns
@@ -138,30 +128,6 @@ export default function LeaderboardTable({
         filterFn: (row, _, value) => {
           const name = row.getValue("name") as string;
           return name.toLowerCase().includes(value.toLowerCase());
-        },
-      },
-      {
-        accessorKey: "role",
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Role"
-            className="justify-end"
-          />
-        ),
-        cell: ({ row }) => {
-          const role = row.getValue("role") as string;
-          return (
-            <div className="text-right">
-              <Badge variant="outline" className="text-xs">
-                {role || "Unknown"}
-              </Badge>
-            </div>
-          );
-        },
-        filterFn: (row, _, value) => {
-          const role = row.getValue("role") as string;
-          return value.includes(role);
         },
       },
       {
@@ -221,7 +187,7 @@ export default function LeaderboardTable({
         sortingFn: "basic",
       },
     ],
-    [currentUserId],
+    [currentUserId]
   );
 
   const table = useReactTable({
@@ -242,12 +208,11 @@ export default function LeaderboardTable({
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  // Set default role filter to "ta" if no filter is applied
-  React.useEffect(() => {
-    if (!table.getColumn("role")?.getFilterValue()) {
-      table.getColumn("role")?.setFilterValue(["ta"]);
-    }
-  }, [table]);
+  // Check if any filters are active
+  const isFiltered = table.getState().columnFilters.length > 0;
+
+  const nameColumn = table.getColumn("name");
+  const avgScoreColumn = table.getColumn("avgScore");
 
   if (data.length === 0) {
     return (
@@ -256,14 +221,6 @@ export default function LeaderboardTable({
       </div>
     );
   }
-
-  // Check if any filters are active
-  const isFiltered = table.getState().columnFilters.length > 0;
-
-  const nameColumn = table.getColumn("name");
-  const roleColumn = table.getColumn("role");
-
-  const avgScoreColumn = table.getColumn("avgScore");
 
   return (
     <div className="space-y-4">
@@ -283,13 +240,7 @@ export default function LeaderboardTable({
 
           <div className="flex items-center space-x-2 flex-wrap mb-2">
             {/* Role Filter */}
-            {roleColumn && roleOptions.length > 0 && (
-              <DataTableFacetedFilter
-                column={roleColumn}
-                title="Role"
-                options={roleOptions}
-              />
-            )}
+            {/* Removed Role Filter */}
 
             {/* Score Range Filter */}
             {avgScoreColumn && scoreRangeOptions.length > 0 && (
@@ -330,7 +281,7 @@ export default function LeaderboardTable({
                       ? null
                       : flexRender(
                           header.column.columnDef.header,
-                          header.getContext(),
+                          header.getContext()
                         )}
                   </TableHead>
                 ))}
@@ -356,7 +307,7 @@ export default function LeaderboardTable({
                       ) : (
                         flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext(),
+                          cell.getContext()
                         )
                       )}
                     </TableCell>
