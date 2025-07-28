@@ -9,22 +9,6 @@ import "@/mocks/api";
 import "@/mocks/mutations";
 import "@/mocks/queries";
 
-// Mock React Query to return empty arrays for profiles and cohorts
-vi.mock("@tanstack/react-query", () => ({
-  useQuery: vi.fn(({ queryKey }) => {
-    if (queryKey[0] === "profiles") {
-      return { data: [], isLoading: false };
-    }
-    if (queryKey[0] === "cohorts") {
-      return { data: [], isLoading: false };
-    }
-    return { data: null, isLoading: false };
-  }),
-  useQueryClient: vi.fn(() => ({
-    invalidateQueries: vi.fn(),
-  })),
-}));
-
 describe("Staff", () => {
   /* ------------------------------------------------------------------ *
    * 💡 Mock Data Usage Guide:
