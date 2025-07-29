@@ -7,7 +7,7 @@
 "use client";
 import { logError, logInfo } from "@/utils/logger";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, Copy, Edit, Trash2, Users } from "lucide-react";
+import { Copy, Edit, Eye, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -25,6 +25,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useScenarioColumns } from "@/hooks/use-scenario-columns";
 import { Scenario } from "@/types";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
@@ -112,6 +118,7 @@ export function Scenarios() {
         createdAt: undefined,
         updatedAt: undefined,
         defaultScenario: false,
+        active: false,
         generated: false,
         name: `${scenario.name} Copy`,
       });
@@ -138,6 +145,10 @@ export function Scenarios() {
     router.push(`/create/scenarios/s/${id}`);
   };
 
+  const handleView = (id: string) => {
+    router.push(`/create/scenarios/s/${id}`);
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
@@ -160,11 +171,6 @@ export function Scenarios() {
                 {scenario.name || "Unnamed Scenario"}
               </CardTitle>
               <div className="flex gap-1 flex-wrap">
-                {scenario.defaultScenario && (
-                  <Badge variant="secondary" className="text-xs">
-                    Default
-                  </Badge>
-                )}
                 {scenario.generated === true && (
                   <Badge variant="outline" className="text-xs">
                     Generated
@@ -177,6 +183,30 @@ export function Scenarios() {
             </p>
           </div>
           <div className="flex gap-2 items-center ml-4">
+            {canEditScenario(scenario.id) ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleEdit(scenario.id)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleView(scenario.id)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>View Scenario Details</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
             {canDuplicate(scenario) && (
               <Button
                 variant="outline"
@@ -188,15 +218,7 @@ export function Scenarios() {
                 {isDuplicating === scenario.id ? "..." : ""}
               </Button>
             )}
-            {canEditScenario(scenario.id) && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleEdit(scenario.id)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            )}
+
             {!isScenarioInUse(scenario.id) && (
               <Button
                 variant="outline"
@@ -217,20 +239,6 @@ export function Scenarios() {
       <div className="flex-grow"></div>
       <CardContent className="pt-0">
         <div className="grid grid-cols-2 gap-4 text-sm">
-          {scenario.crowdedness !== null && (
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Crowdedness:</span>
-              <span className="font-medium">{scenario.crowdedness}/10</span>
-            </div>
-          )}
-          {scenario.intensity !== null && (
-            <div className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Intensity:</span>
-              <span className="font-medium">{scenario.intensity}/10</span>
-            </div>
-          )}
           <div className="col-span-2">
             <span className="text-muted-foreground">Updated:</span>
             <span className="font-medium ml-2">
@@ -243,41 +251,46 @@ export function Scenarios() {
   );
 
   return (
-    <div className="space-y-6">
-      <ScenariosDataTable
-        columns={columns}
-        data={scenarios}
-        simulationOptions={simulationOptions}
-        cohortOptions={cohortOptions}
-        personaOptions={personaOptions}
-        scenarioTypeOptions={scenarioTypeOptions}
-        renderScenarioCard={renderScenarioCard}
-      />
+    <TooltipProvider>
+      <div className="space-y-6">
+        <ScenariosDataTable
+          columns={columns}
+          data={scenarios}
+          simulationOptions={simulationOptions}
+          cohortOptions={cohortOptions}
+          personaOptions={personaOptions}
+          scenarioTypeOptions={scenarioTypeOptions}
+          renderScenarioCard={renderScenarioCard}
+        />
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Scenario</AlertDialogTitle>
-            <AlertDialogDescription>
-              <p>
-                Are you sure you want to delete the scenario "{deleteItem?.name}
-                "? This action cannot be undone.
-              </p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Scenario</AlertDialogTitle>
+              <AlertDialogDescription>
+                <p>
+                  Are you sure you want to delete the scenario "
+                  {deleteItem?.name}
+                  "? This action cannot be undone.
+                </p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </TooltipProvider>
   );
 }

@@ -97,7 +97,7 @@ export function Profile({ className }: ProfileProps) {
             >
               <AvatarFallback className="text-lg">
                 {getInitials(
-                  activeProfile.firstName + " " + activeProfile.lastName
+                  activeProfile.firstName + " " + activeProfile.lastName,
                 )}
               </AvatarFallback>
             </Avatar>

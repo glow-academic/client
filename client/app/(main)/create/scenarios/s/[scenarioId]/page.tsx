@@ -11,10 +11,9 @@ import ScenarioEdit from "@/components/create/scenarios/ScenarioEdit";
 import type { Metadata, ResolvingMetadata } from "next";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 
-
 export async function generateMetadata(
   { params }: { params: Promise<{ scenarioId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { scenarioId } = await params;
   const scenario = await getScenario(scenarioId);
@@ -24,8 +23,6 @@ export async function generateMetadata(
     description: `${scenario?.name + " " + scenario?.description || "Scenario"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
   };
 }
-
-
 
 export default function EditScenarioPage({
   params,

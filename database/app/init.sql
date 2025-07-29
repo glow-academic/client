@@ -19,19 +19,16 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- 2. Assistant tables
 \i app/assistants/init.sql
 
--- 3. Analytics tables
-\i app/analytics/init.sql
-
--- 4. Agents
+-- 3. Agents
 \i app/agents/init.sql
 
--- 5. Tables that depend on agents (scenarios references agents)
+-- 4. Tables that depend on agents (scenarios references agents)
 \i app/scenarios/init.sql
 
--- 6. Tables that depend on multiple previous tables
+-- 5. Tables that depend on multiple previous tables
 \i app/simulations/init.sql
 
--- 7. Tables that depend on multiple previous tables
+-- 6. Tables that depend on multiple previous tables
 \i app/cohorts/init.sql
 
 -- ============================================================================

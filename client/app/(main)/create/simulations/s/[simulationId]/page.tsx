@@ -13,7 +13,7 @@ import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ simulationId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { simulationId } = await params;
   const simulation = await getSimulation(simulationId);
@@ -23,7 +23,6 @@ export async function generateMetadata(
     description: `${simulation?.title || "Simulation"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
   };
 }
-
 
 export default function EditSimulationPage({
   params,

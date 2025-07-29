@@ -106,7 +106,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       if (newChat) {
         queryClient.setQueryData(
           ["assistantChats", activeProfile?.id],
-          (old: AssistantChat[] = []) => [newChat, ...old]
+          (old: AssistantChat[] = []) => [newChat, ...old],
         );
       }
     },
@@ -139,11 +139,11 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     // Add event listeners
     window.addEventListener(
       "assistant_message_complete",
-      handleAssistantMessageComplete
+      handleAssistantMessageComplete,
     );
     window.addEventListener(
       "assistant_message_cancelled",
-      handleAssistantMessageCancelled
+      handleAssistantMessageCancelled,
     );
     window.addEventListener("assistant_error", handleAssistantError);
 
@@ -151,11 +151,11 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       // Remove event listeners
       window.removeEventListener(
         "assistant_message_complete",
-        handleAssistantMessageComplete
+        handleAssistantMessageComplete,
       );
       window.removeEventListener(
         "assistant_message_cancelled",
-        handleAssistantMessageCancelled
+        handleAssistantMessageCancelled,
       );
       window.removeEventListener("assistant_error", handleAssistantError);
     };
@@ -262,7 +262,9 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
           }
 
           logInfo("No chat selected, creating new chat for message");
-          const newChat = await createChatMutation.mutateAsync(activeProfile.id);
+          const newChat = await createChatMutation.mutateAsync(
+            activeProfile.id,
+          );
           if (!newChat?.id) {
             toast.error("Failed to create new chat");
             setIsSendingMessage(false);
@@ -320,7 +322,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       createChatMutation,
       emitStartAssistant,
       emitSendAssistantMessage,
-    ]
+    ],
   );
 
   const stopMessage = useCallback(() => {

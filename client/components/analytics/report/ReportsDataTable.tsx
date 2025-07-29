@@ -30,23 +30,27 @@ import { ReportsDataTableToolbar } from "./ReportsDataTableToolbar";
 export interface ReportsDataTableProps {
   columns: ColumnDef<TAPerformanceData>[];
   data: TAPerformanceData[];
-  performanceOptions: { value: string; label: string }[];
+  roleOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
   personaOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
   simulationOptions: { value: string; label: string }[];
+  simulations: Array<{ id: string; title: string }>;
   showExport?: boolean;
+  onViewReport: (profileId: string) => void;
 }
 
 export function ReportsDataTable({
   columns,
   data,
-  performanceOptions,
+  roleOptions,
   cohortOptions,
   personaOptions,
   scenarioOptions,
   simulationOptions,
+  simulations,
   showExport = true,
+  onViewReport,
 }: ReportsDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -54,18 +58,15 @@ export function ReportsDataTable({
       personasTested: false,
       scenarioIds: false,
       simulationIds: false,
-      // Hide these columns by default
-      totalAttempts: false,
-      lastActivity: false,
-      completionRate: false,
-      avgTimeMinutes: false,
-      passRate: false,
+      role: false, // Hide role column from toggle view
+      personaResponseTimes: false,
+      stagnationRate: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [sorting, setSorting] = React.useState<SortingState>([
-    { id: "avgScore", desc: true }, // Default sort by score descending
+    { id: "averageScore", desc: true }, // Default sort by score descending
   ]);
 
   const table = useReactTable({
@@ -93,11 +94,12 @@ export function ReportsDataTable({
     <div className="space-y-2">
       <ReportsDataTableToolbar
         table={table}
-        performanceOptions={performanceOptions}
+        roleOptions={roleOptions}
         cohortOptions={cohortOptions}
         personaOptions={personaOptions}
         scenarioOptions={scenarioOptions}
         simulationOptions={simulationOptions}
+        simulations={simulations}
         showExport={showExport}
       />
       <div className="rounded-md border overflow-x-auto">
@@ -118,7 +120,7 @@ export function ReportsDataTable({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   );
@@ -132,11 +134,8 @@ export function ReportsDataTable({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className={`h-8 ${
-                    row.original.isStruggling
-                      ? "bg-orange-50/50 border-orange-200"
-                      : "hover:bg-muted/30"
-                  } transition-colors`}
+                  className="h-6 hover:bg-muted/30 transition-colors cursor-pointer"
+                  onClick={() => onViewReport(row.original.id)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
@@ -147,7 +146,7 @@ export function ReportsDataTable({
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}

@@ -74,7 +74,7 @@ export function Simulations() {
   const isSimulationInUse = (simulationId: string) => {
     return cohorts.some(
       (cohort) =>
-        cohort.simulationIds && cohort.simulationIds.includes(simulationId)
+        cohort.simulationIds && cohort.simulationIds.includes(simulationId),
     );
   };
 
@@ -165,7 +165,7 @@ export function Simulations() {
       const duplicatedSimulation = {
         title: `${simulation.title} Copy`,
         timeLimit: simulation.timeLimit,
-        active: simulation.active,
+        active: false,
         scenarioIds: simulation.scenarioIds,
         rubricId: simulation.rubricId,
         defaultSimulation: false, // Duplicated simulations are not default

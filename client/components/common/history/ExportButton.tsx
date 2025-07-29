@@ -57,11 +57,11 @@ const columnMap = {
   profileId: "Name",
   persona: "Persona",
   title: "Title",
-  simulationTitle: "Simulation",
+  simulationId: "Simulation",
   status: "Status",
   score: "Score",
   averageScore: "Score",
-  chats: "Chats",
+  scenarios: "Scenarios",
   personasTested: "Personas",
   // Reports page columns
   firstName: "Name",
@@ -168,16 +168,23 @@ export function ExportButton<TData>({
               const original = row.original as AttemptData;
               const interactionIds = original.interactionIds as string[];
 
+              // Ensure chats is an array
+              const chatsArray = Array.isArray(chats) ? chats : [];
+
               const completedChats =
-                chats?.filter((chat) => chat.completed).length || 0;
+                chatsArray.filter((chat) => chat.completed).length || 0;
               // Use simulation's interactionIds length for total expected chats
-              const totalChats = interactionIds?.length || chats?.length || 0;
+              const totalChats =
+                interactionIds?.length || chatsArray.length || 0;
               return `"${completedChats}/${totalChats}"`;
             }
 
             if (column.id === "personasTested" && cellValue) {
               const personas = cellValue as string[];
-              return `"${personas.join(", ")}"`;
+
+              // Ensure personas is an array
+              const personasArray = Array.isArray(personas) ? personas : [];
+              return `"${personasArray.join(", ")}"`;
             }
 
             if (column.id === "averageScore" && cellValue) {

@@ -12,22 +12,31 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Pencil, Plus } from "lucide-react";
+import { logError } from "@/utils/logger";
+import { useQueryClient } from "@tanstack/react-query";
+import { Plus, Upload } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import React, { useMemo } from "react";
+import React, { useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { v4 as uuidv4 } from "uuid";
 
+import { AnalyticsFilters } from "@/components/common/analytics/AnalyticsFilters";
 import ChatDialog from "@/components/common/home/ChatDialog";
 import ChatFab from "@/components/common/home/ChatFab";
 import ChatWidget from "@/components/common/home/ChatWidget";
+import { AccessControl } from "@/components/common/layout/AccessControl";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
+import TATour from "@/components/home/TATour";
+import { AnalyticsProvider } from "@/contexts/analytics-context";
 import { AssistantProvider } from "@/contexts/assistant-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   SimulationProvider,
   useSimulation,
 } from "@/contexts/simulation-context";
-import { TourProvider, useTour } from "@/contexts/tour-context";
+import { TourProvider } from "@/contexts/tour-context";
+import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
 import {
   generateEnhancedBreadcrumbs,
   getActiveSectionFromPath,
@@ -36,49 +45,14 @@ import {
   createSectionChangeHandler,
   isMainScreen,
 } from "@/utils/navigation-utils";
-
-// Guide Button Component
-function GuideButton() {
-  const { state, openGuide } = useTour();
-  const { effectiveProfile } = useProfile();
-
-  // Show guide button when tour is not complete and not currently open
-  const shouldShow =
-    effectiveProfile &&
-    (!effectiveProfile.viewedIntro || !effectiveProfile.viewedChat) &&
-    !state.isOpen;
-
-  if (!shouldShow) return null;
-
-  return (
-    <button
-      onClick={openGuide}
-      className="fixed bottom-6 right-6 z-50 bg-primary text-primary-foreground rounded-full p-4 shadow-lg hover:bg-primary/90 transition-colors"
-      aria-label="Open tour guide"
-    >
-      <svg
-        className="w-6 h-6"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-      </svg>
-    </button>
-  );
-}
+import * as tus from "tus-js-client";
 
 // Inner component that uses the role context
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "/";
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, isLoading } = useProfile();
+  const queryClient = useQueryClient();
 
   // Role context is available for child components
   const activeSection = getActiveSectionFromPath(pathname);
@@ -87,10 +61,267 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   >([]);
   const simulationContext = useSimulation();
 
+  // Upload state - track multiple uploads
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeUploads, setActiveUploads] = useState<
+    Map<
+      string,
+      {
+        file: File;
+        progress: number;
+        toastId: string;
+        status: "uploading" | "finalizing" | "completed" | "error";
+      }
+    >
+  >(new Map());
+
+  // Upload functions
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      // Process all selected files in parallel
+      Array.from(files).forEach((file) => {
+        uploadFile(file);
+      });
+    }
+  };
+
+  const uploadFile = async (file: File) => {
+    // Create a unique file ID for this upload
+    const fileId = uuidv4();
+
+    // Show progress toast for this specific file
+    const toastId = toast.loading(`Preparing upload: ${file.name}`, {
+      description: "0% complete",
+    });
+
+    // Add to active uploads
+    setActiveUploads((prev) =>
+      new Map(prev).set(fileId, {
+        file,
+        progress: 0,
+        toastId: toastId as string,
+        status: "uploading",
+      })
+    );
+
+    try {
+      // Create TUS upload
+      const upload = new tus.Upload(file, {
+        endpoint: "/api/upload",
+        retryDelays: [0, 3000, 5000, 10000, 20000],
+        metadata: {
+          filename: file.name,
+          filetype: file.type,
+          fileId: fileId,
+        },
+        onError: (error) => {
+          logError("Upload failed:", error);
+          toast.error(`Upload failed: ${file.name}`, {
+            description: error.message || "An error occurred during upload",
+            id: toastId,
+          });
+
+          // Remove from active uploads
+          setActiveUploads((prev) => {
+            const newMap = new Map(prev);
+            newMap.delete(fileId);
+            return newMap;
+          });
+        },
+        onProgress: (bytesUploaded, bytesTotal) => {
+          const progress = Math.round((bytesUploaded / bytesTotal) * 100);
+
+          // Update progress for this specific upload
+          setActiveUploads((prev) => {
+            const newMap = new Map(prev);
+            const upload = newMap.get(fileId);
+            if (upload) {
+              newMap.set(fileId, {
+                ...upload,
+                progress,
+              });
+            }
+            return newMap;
+          });
+
+          toast.loading(`Uploading ${file.name}... ${progress}%`, {
+            description: `${Math.round((bytesUploaded / 1024 / 1024) * 100) / 100} MB / ${Math.round((bytesTotal / 1024 / 1024) * 100) / 100} MB`,
+            id: toastId,
+          });
+        },
+        onSuccess: async () => {
+          // Update status to finalizing
+          setActiveUploads((prev) => {
+            const newMap = new Map(prev);
+            const upload = newMap.get(fileId);
+            if (upload) {
+              newMap.set(fileId, {
+                ...upload,
+                status: "finalizing",
+              });
+            }
+            return newMap;
+          });
+
+          // Finalize the upload after TUS upload completes
+          try {
+            // Check if this is a ZIP file
+            const isZipFile = file.name.toLowerCase().endsWith(".zip");
+
+            // Auto-classify ZIP files by default
+            const shouldAutoClassify = isZipFile;
+
+            const result = await finalizeDocumentUpload(
+              fileId,
+              isZipFile, // zip parameter
+              shouldAutoClassify // autoClassify parameter
+            );
+
+            if (result.success) {
+              const isZipFile = file.name.toLowerCase().endsWith(".zip");
+              const description = isZipFile
+                ? `Extracted ${result.extracted_count || 0} documents${result.classification_result?.success ? " and auto-classified" : ""}`
+                : "File uploaded and processed successfully";
+
+              toast.success(`Upload completed: ${file.name}!`, {
+                description,
+                id: toastId,
+              });
+
+              // Update status to completed
+              setActiveUploads((prev) => {
+                const newMap = new Map(prev);
+                const upload = newMap.get(fileId);
+                if (upload) {
+                  newMap.set(fileId, {
+                    ...upload,
+                    status: "completed",
+                  });
+                }
+                return newMap;
+              });
+
+              // Invalidate documents queries to refresh the UI
+              await queryClient.invalidateQueries({ queryKey: ["documents"] });
+
+              // If we're on the documents page, also invalidate any filtered queries
+              if (pathname === "/create/documents") {
+                await queryClient.invalidateQueries({
+                  queryKey: ["documents"],
+                  exact: false,
+                });
+              }
+
+              // Remove from active uploads after a delay to show completion
+              setTimeout(() => {
+                setActiveUploads((prev) => {
+                  const newMap = new Map(prev);
+                  newMap.delete(fileId);
+                  return newMap;
+                });
+              }, 2000);
+            } else {
+              toast.error(`Upload processing failed: ${file.name}`, {
+                description:
+                  result.message || "Failed to process uploaded file",
+                id: toastId,
+              });
+
+              // Remove from active uploads
+              setActiveUploads((prev) => {
+                const newMap = new Map(prev);
+                newMap.delete(fileId);
+                return newMap;
+              });
+            }
+          } catch (finalizeError) {
+            logError("Finalization failed:", finalizeError);
+            toast.error(`Upload processing failed: ${file.name}`, {
+              description: "Failed to process uploaded file",
+              id: toastId,
+            });
+
+            // Remove from active uploads
+            setActiveUploads((prev) => {
+              const newMap = new Map(prev);
+              newMap.delete(fileId);
+              return newMap;
+            });
+          }
+
+          // Clear the file input
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+        },
+      });
+
+      // Start the upload
+      await upload.start();
+    } catch (error) {
+      logError("Upload error:", error);
+      toast.error(`Upload failed: ${file.name}`, {
+        description:
+          error instanceof Error
+            ? error.message
+            : "An error occurred during upload",
+        id: toastId,
+      });
+
+      // Remove from active uploads
+      setActiveUploads((prev) => {
+        const newMap = new Map(prev);
+        newMap.delete(fileId);
+        return newMap;
+      });
+    }
+  };
+
+  const handleUploadClick = () => {
+    if (activeUploads.size === 0) {
+      fileInputRef.current?.click();
+    }
+  };
+
   // Check if we're on a main screen that should show chat components
   const shouldShowChatComponents = useMemo(() => {
     return isMainScreen(pathname);
   }, [pathname]);
+
+  // Check if user has permission to see chat components (instructional, admin, superadmin only)
+  const canShowChatComponents = useMemo(() => {
+    const allowedRoles = ["instructional", "admin", "superadmin"];
+    return (
+      effectiveProfile?.role && allowedRoles.includes(effectiveProfile.role)
+    );
+  }, [effectiveProfile?.role]);
+
+  // Check if we're on an analytics page and should show filters
+  const isAnalyticsPage = useMemo(() => {
+    return pathname.startsWith("/analytics");
+  }, [pathname]);
+
+  const isHomePage = useMemo(() => {
+    return pathname === "/home";
+  }, [pathname]);
+
+  const canShowAnalyticsFilters = useMemo(() => {
+    const allowedRoles = ["instructional", "admin", "superadmin"];
+    return (
+      effectiveProfile?.role &&
+      allowedRoles.includes(effectiveProfile.role) &&
+      (isAnalyticsPage || isHomePage) &&
+      !pathname.includes("/edit") &&
+      !isLoading
+    );
+  }, [
+    effectiveProfile?.role,
+    isAnalyticsPage,
+    pathname,
+    isLoading,
+    isHomePage,
+  ]);
 
   // Load enhanced breadcrumbs with async ID resolution
   React.useEffect(() => {
@@ -101,7 +332,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     loadBreadcrumbs();
   }, [pathname]);
 
-  const handleSectionChange = createSectionChangeHandler(router);
+  const handleSectionChange = createSectionChangeHandler(router, pathname);
 
   // Determine action button based on current path
   const getActionButton = () => {
@@ -123,6 +354,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         isLastAttempt,
         simulation,
         isActive,
+        showResults,
       } = simulationContext;
 
       let buttonLabel = "End Chat";
@@ -135,30 +367,20 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       }
 
       return (
-        <Button
-          type="button"
-          variant="outline"
-          onClick={endChat}
-          disabled={
-            endChatLoading || (simulation?.timeLimit ? !isActive : false)
-          }
-          className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
-          data-tour-end-chat
-        >
-          {endChatLoading ? "Ending..." : buttonLabel}
-        </Button>
-      );
-    }
-
-    if (pathname === "/analytics/dashboard") {
-      return (
-        <Button
-          onClick={() => router.push("/analytics/dashboard/edit")}
-          size="sm"
-        >
-          <Pencil className="h-4 w-4 mr-2" />
-          Edit Dashboard
-        </Button>
+        !showResults && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={endChat}
+            disabled={
+              endChatLoading || (simulation?.timeLimit ? !isActive : false)
+            }
+            className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
+            data-tour-end-chat
+          >
+            {endChatLoading ? "Ending..." : buttonLabel}
+          </Button>
+        )
       );
     }
 
@@ -171,65 +393,36 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/classes") {
-      return (
-        <Button onClick={() => router.push("/classes/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Class
-        </Button>
-      );
-    }
-
-    // Check for individual class page pattern: /classes/new/c/[classId]
-    const cohortsPageMatch = pathname.match(
-      /^\/create\/cohorts\/new\/c\/([^\/]+)(?:\/.*)?$/
-    );
-    if (
-      cohortsPageMatch &&
-      effectiveProfile?.role !== "guest" &&
-      effectiveProfile.role !== "ta"
-    ) {
-      const cohortId = cohortsPageMatch[1];
-      return (
-        <Button
-          onClick={() => router.push(`/cohorts/c/${cohortId}/edit`)}
-          size="sm"
-          variant="default"
-        >
-          <Pencil className="h-4 w-4 mr-2" />
-          Edit Cohort
-        </Button>
-      );
-    }
-
-    // Check for individual class page pattern: /classes/new/c/[classId]
-    const classPageMatch = pathname.match(
-      /^\/create\/classes\/new\/c\/([^\/]+)(?:\/.*)?$/
-    );
-    if (
-      classPageMatch &&
-      effectiveProfile?.role !== "guest" &&
-      effectiveProfile.role !== "ta"
-    ) {
-      const classId = classPageMatch[1];
-      return (
-        <Button
-          onClick={() => router.push(`/classes/c/${classId}/edit`)}
-          size="sm"
-          variant="default"
-        >
-          <Pencil className="h-4 w-4 mr-2" />
-          Edit Class
-        </Button>
-      );
-    }
-
     if (pathname === "/create/personas") {
       return (
         <Button onClick={() => router.push("/create/personas/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Persona
         </Button>
+      );
+    }
+
+    if (pathname === "/create/documents") {
+      return (
+        <>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            onChange={handleFileSelect}
+            disabled={activeUploads.size > 0}
+            accept="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/zip"
+            className="hidden"
+          />
+          <Button
+            onClick={handleUploadClick}
+            size="sm"
+            disabled={activeUploads.size > 0}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            {activeUploads.size > 0 ? "Uploading..." : "Upload Document(s)"}
+          </Button>
+        </>
       );
     }
 
@@ -284,16 +477,31 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/system/providers") {
+    if (pathname === "/management/providers") {
       return (
-        <Button onClick={() => router.push("/system/providers/new")} size="sm">
+        <Button
+          onClick={() => router.push("/management/providers/new")}
+          size="sm"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Provider
         </Button>
       );
     }
 
-    if (!shouldShowChatComponents) {
+    if (pathname === "/management/parameters") {
+      return (
+        <Button
+          onClick={() => router.push("/management/parameters/new")}
+          size="sm"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Create Parameter
+        </Button>
+      );
+    }
+
+    if (!shouldShowChatComponents && canShowChatComponents) {
       return (
         <>
           <ChatFab up={true} />
@@ -326,14 +534,27 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
               />
             </div>
 
+            {/* Analytics Filters - Show in top right for analytics pages */}
+            {canShowAnalyticsFilters && (
+              <div className="px-4">
+                <AnalyticsFilters />
+              </div>
+            )}
+
             {actionButton && <div className="px-4">{actionButton}</div>}
           </header>
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+          <div
+            className={`flex flex-1 flex-col gap-4 p-4 pt-0 ${
+              shouldShowChatComponents && canShowChatComponents ? "pb-18" : ""
+            }`}
+          >
+            <AccessControl pathname={pathname}>{children}</AccessControl>
+          </div>
         </SidebarInset>
       </SidebarProvider>
 
-      {/* Chat Components - Only show on main screens defined in the sidebar */}
-      {shouldShowChatComponents && (
+      {/* Chat Components - Only show on main screens defined in the sidebar for allowed roles */}
+      {shouldShowChatComponents && canShowChatComponents && (
         <>
           <ChatFab up={false} />
           <ChatWidget up={false} />
@@ -341,8 +562,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         </>
       )}
 
-      {/* Guide Button - Always visible when tour is not complete */}
-      {effectiveProfile?.role === "ta" && <GuideButton />}
+      {/* Tour Component - Available globally for TA users */}
+      {effectiveProfile?.role === "ta" && <TATour />}
     </AssistantProvider>
   );
 }
@@ -354,7 +575,7 @@ export default function MainLayout({
 }) {
   const pathname = usePathname();
   const attemptId = useMemo(() => {
-    const match = pathname?.match(/^\/home\/a\/([^\/]+)/);
+    const match = pathname?.match(/^\/(?:home|practice)\/a\/([^\/]+)/);
     return match ? match[1] : null;
   }, [pathname]);
 
@@ -362,13 +583,15 @@ export default function MainLayout({
   // Otherwise, render the content directly.
   return (
     <TourProvider>
-      {attemptId ? (
-        <SimulationProvider attemptId={attemptId}>
+      <AnalyticsProvider>
+        {attemptId ? (
+          <SimulationProvider attemptId={attemptId}>
+            <MainLayoutContent>{children}</MainLayoutContent>
+          </SimulationProvider>
+        ) : (
           <MainLayoutContent>{children}</MainLayoutContent>
-        </SimulationProvider>
-      ) : (
-        <MainLayoutContent>{children}</MainLayoutContent>
-      )}
+        )}
+      </AnalyticsProvider>
     </TourProvider>
   );
 }

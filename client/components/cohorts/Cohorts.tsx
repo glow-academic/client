@@ -7,7 +7,15 @@
 "use client";
 import { logError, logInfo } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Edit, Plus, Sparkles, Trash2, Users } from "lucide-react";
+import {
+  Copy,
+  Edit,
+  LogOut,
+  Plus,
+  Sparkles,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -31,11 +39,31 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Cohort } from "@/types";
+import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { useProfile } from "@/contexts/profile-context";
 
 export default function Cohorts() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  // Fetch cohorts data
+  const {
+    data: cohorts = [],
+    refetch: refetchCohorts,
+    isLoading: loadingCohorts,
+  } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
+  });
+
+  // Fetch profiles data for role checking
+  const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getAllProfiles(),
+  });
+
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -43,12 +71,60 @@ export default function Cohorts() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [leaveItem, setLeaveItem] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
 
-  // Fetch cohorts data
-  const { data: cohorts = [], refetch: refetchCohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
+  // Get table columns and filter options - must be called before loading check
+  const { columns, profileOptions, simulationOptions } = useCohortColumns();
+
+  const isLoading =
+    isProfileLoading || !effectiveProfile || loadingCohorts || loadingProfiles;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+
+        {/* Cohorts grid skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="overflow-hidden">
+              <CardHeader className="pb-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                  <div className="flex space-x-2">
+                    <Skeleton className="h-8 w-8 rounded" />
+                    <Skeleton className="h-8 w-8 rounded" />
+                    <Skeleton className="h-8 w-8 rounded" />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-3/4 mb-3" />
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-3 w-3" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // Check if a cohort is being used (has members)
   const isCohortInUse = (cohortId: string) => {
@@ -59,13 +135,111 @@ export default function Cohorts() {
     return cohort.profileIds && cohort.profileIds.length > 0;
   };
 
-  // Check if user can edit (admin/superadmin or cohort not in use)
-  const canEditCohort = (cohortId: string) => {
-    return !isCohortInUse(cohortId);
+  // Check if a cohort can be deleted (inactive or no members)
+  const canDeleteCohort = (cohortId: string) => {
+    const cohort = cohorts.find((c) => c.id === cohortId);
+    if (!cohort) return false;
+
+    // Can delete if cohort is inactive
+    if (!cohort.active) {
+      return true;
+    }
+
+    // For active cohorts, check if there are any TA members
+    const cohortProfiles = profiles.filter((profile) =>
+      cohort.profileIds?.includes(profile.id),
+    );
+    const hasTAMembers = cohortProfiles.some(
+      (profile) => profile.role === "ta",
+    );
+
+    // Cannot delete active cohorts that have TA members
+    if (hasTAMembers) {
+      return false;
+    }
+
+    // For active cohorts without TA members, check if user is the only member
+    if (effectiveProfile?.role === "instructional") {
+      // Can delete if the user is the only member in the cohort
+      return (
+        cohortProfiles.length === 1 &&
+        cohortProfiles[0]?.id === effectiveProfile.id
+      );
+    }
+
+    // Admin/superadmin can delete active cohorts without TA members
+    const isAdmin =
+      effectiveProfile?.role === "admin" ||
+      effectiveProfile?.role === "superadmin";
+    if (isAdmin) {
+      return true;
+    }
+
+    return false;
   };
 
-  // Get table columns and filter options
-  const { columns, profileOptions, simulationOptions } = useCohortColumns();
+  // Check if user can leave the cohort
+  const canLeaveCohort = (cohortId: string) => {
+    const cohort = cohorts.find((c) => c.id === cohortId);
+    if (!cohort) return false;
+
+    // Only instructional users can leave cohorts
+    if (effectiveProfile?.role !== "instructional") return false;
+
+    // Check if user is in the cohort
+    const isUserInCohort = cohort.profileIds?.includes(
+      effectiveProfile?.id || "",
+    );
+    if (!isUserInCohort) return false;
+
+    // Check if there are other instructional users in the cohort
+    const cohortProfiles = profiles.filter((profile) =>
+      cohort.profileIds?.includes(profile.id),
+    );
+    const instructionalProfiles = cohortProfiles.filter(
+      (profile) => profile.role === "instructional",
+    );
+
+    // Can leave if there are other instructional users (not the only one)
+    return instructionalProfiles.length > 1;
+  };
+
+  // Check if user can edit (admin/superadmin, cohort not in use, or user is in cohort)
+  const canEditCohort = (cohortId: string) => {
+    const isAdmin =
+      effectiveProfile?.role === "admin" ||
+      effectiveProfile?.role === "superadmin";
+
+    if (isAdmin) return true;
+
+    const cohort = cohorts.find((c) => c.id === cohortId);
+    if (!cohort) return false;
+
+    // Check if user's profile is in the cohort's profileIds
+    const isUserInCohort = cohort.profileIds?.includes(
+      effectiveProfile?.id || "",
+    );
+
+    return isUserInCohort || !isCohortInUse(cohortId);
+  };
+
+  // Filter cohorts based on user role
+  const filteredCohorts = cohorts.filter((cohort) => {
+    const isAdmin =
+      effectiveProfile?.role === "admin" ||
+      effectiveProfile?.role === "superadmin";
+
+    // Admin/superadmin can see all cohorts
+    if (isAdmin) return true;
+
+    // Instructional users can only see cohorts they're in
+    if (effectiveProfile?.role === "instructional") {
+      return cohort.profileIds?.includes(effectiveProfile?.id || "");
+    }
+
+    // Other roles can see all cohorts
+    return true;
+  });
 
   const handleDelete = async () => {
     if (!deleteItem) return;
@@ -91,6 +265,46 @@ export default function Cohorts() {
     }
   };
 
+  const handleLeave = async () => {
+    if (!leaveItem) return;
+
+    setIsLeaving(true);
+    try {
+      // Remove the current user from the cohort
+      const cohort = cohorts.find((c) => c.id === leaveItem.id);
+      if (!cohort) {
+        toast.error("Cohort not found");
+        return;
+      }
+
+      const updatedProfileIds =
+        cohort.profileIds?.filter((id) => id !== effectiveProfile?.id) || [];
+
+      // Update the cohort to remove the current user
+      await updateCohort(leaveItem.id, {
+        ...cohort,
+        profileIds: updatedProfileIds,
+        updatedAt: new Date().toISOString(),
+      });
+
+      logInfo("Left cohort successfully:", {
+        id: leaveItem.id,
+        name: leaveItem.name,
+      });
+      toast.success("Left cohort successfully");
+      // Invalidate queries to ensure all components refresh
+      queryClient.invalidateQueries({ queryKey: ["cohorts"] });
+      refetchCohorts();
+    } catch (error) {
+      logError("Error leaving cohort:", error);
+      toast.error("Failed to leave cohort");
+    } finally {
+      setIsLeaving(false);
+      setShowLeaveDialog(false);
+      setLeaveItem(null);
+    }
+  };
+
   const handleDuplicate = async (cohort: Cohort) => {
     // Only allow duplicating non-default cohorts
     if (!cohort.defaultCohort) {
@@ -106,6 +320,7 @@ export default function Cohorts() {
         createdAt: undefined,
         updatedAt: undefined,
         defaultCohort: false,
+        active: false,
         title: `${cohort.title} Copy`,
       });
       logInfo("Cohort duplicated successfully:", {
@@ -129,8 +344,13 @@ export default function Cohorts() {
     setShowDeleteDialog(true);
   };
 
+  const handleLeaveClick = (id: string, name: string) => {
+    setLeaveItem({ id, name });
+    setShowLeaveDialog(true);
+  };
+
   const handleEdit = (id: string) => {
-    router.push(`/cohorts/c/${id}/edit`);
+    router.push(`/cohorts/e/${id}`);
   };
 
   const handleCreateNew = () => {
@@ -164,6 +384,17 @@ export default function Cohorts() {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            {canEditCohort(cohort.id) && (
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid={`edit-${cohort.id}`}
+                onClick={() => handleEdit(cohort.id)}
+                aria-label={`Edit ${cohort.title}`}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
             {canDuplicate(cohort) && (
               <Button
                 variant="outline"
@@ -179,18 +410,7 @@ export default function Cohorts() {
                 )}
               </Button>
             )}
-            {canEditCohort(cohort.id) && (
-              <Button
-                variant="outline"
-                size="sm"
-                data-testid={`edit-${cohort.id}`}
-                onClick={() => handleEdit(cohort.id)}
-                aria-label={`Edit ${cohort.title}`}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            )}
-            {!isCohortInUse(cohort.id) && (
+            {canDeleteCohort(cohort.id) && (
               <Button
                 variant="outline"
                 size="sm"
@@ -199,6 +419,17 @@ export default function Cohorts() {
                 aria-label={`Delete ${cohort.title}`}
               >
                 <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+            {canLeaveCohort(cohort.id) && (
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid={`leave-${cohort.id}`}
+                onClick={() => handleLeaveClick(cohort.id, cohort.title)}
+                aria-label={`Leave ${cohort.title}`}
+              >
+                <LogOut className="h-4 w-4" />
               </Button>
             )}
           </div>
@@ -237,12 +468,12 @@ export default function Cohorts() {
 
   return (
     <div className="space-y-6">
-      {cohorts.length === 0 ? (
+      {filteredCohorts.length === 0 ? (
         renderEmptyState()
       ) : (
         <CohortsDataTable
           columns={columns}
-          data={cohorts}
+          data={filteredCohorts}
           profileOptions={profileOptions}
           simulationOptions={simulationOptions}
           renderCohortCard={renderCohortCard}
@@ -269,6 +500,31 @@ export default function Cohorts() {
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Leave Cohort Confirmation Dialog */}
+      <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave Cohort</AlertDialogTitle>
+            <AlertDialogDescription>
+              <p>
+                Are you sure you want to leave the cohort "{leaveItem?.name}"?
+                This action cannot be undone.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isLeaving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLeave}
+              disabled={isLeaving}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              {isLeaving ? "Leaving..." : "Leave Cohort"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

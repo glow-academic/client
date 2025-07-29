@@ -15,7 +15,7 @@ export async function GET() {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || "development",
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     return NextResponse.json(
@@ -25,7 +25,7 @@ export async function GET() {
         error: error instanceof Error ? error.message : "Unknown error",
         timestamp: new Date().toISOString(),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

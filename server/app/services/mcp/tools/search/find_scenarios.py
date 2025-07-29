@@ -15,7 +15,6 @@
 #       "name": "...",
 #       "description": "...",
 #       "persona_id": "...",
-#       "class_id": "...",
 #       "default_scenario": False,
 #       "practice_scenario": True,
 #       "score": 133,
@@ -129,7 +128,6 @@ def find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
                 "name": str | None,         # Scenario name/title
                 "description": str | None,  # Scenario description
                 "persona_id": str | None,     # Linked persona UUID (if any)
-                "class_id": str | None,     # Linked class UUID (if any)
                 "default_scenario": bool,   # Is this the default scenario?
                 "practice_scenario": bool,  # Is this a practice scenario?
                 "score": int                # Heuristic match score
@@ -186,7 +184,6 @@ def find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
                     "name": sc.name,
                     "description": sc.description,
                     "persona_id": str(sc.persona_id) if sc.persona_id else None,
-                    "class_id": str(sc.class_id) if sc.class_id else None,
                     "default_scenario": sc.default_scenario,
                     "practice_scenario": sc.practice_scenario,
                     "score": score,

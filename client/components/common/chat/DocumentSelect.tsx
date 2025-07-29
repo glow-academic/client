@@ -42,7 +42,7 @@ export default function DocumentSelect({
   const [open, setOpen] = useState(false);
 
   const selectedDocument = documents.find(
-    (doc) => doc.id === selectedDocumentId
+    (doc) => doc.id === selectedDocumentId,
   );
 
   return (

@@ -31,29 +31,33 @@ export default function AccoladeCard({
   details,
 }: AccoladeCardProps) {
   return (
-    <Card>
+    <Card className="h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         {icon}
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex items-center">
         {user ? (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full">
             <Avatar
-              className="h-9 w-9 outline outline-muted-foreground"
+              className="h-9 w-9 outline outline-muted-foreground flex-shrink-0"
               style={{ outlineWidth: "1px", outlineStyle: "solid" }}
             >
               <AvatarFallback>
                 {getInitials(`${user.firstName} ${user.lastName}`)}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <p className="text-lg font-bold">{`${user.firstName} ${user.lastName}`}</p>
-              <p className="text-xs text-muted-foreground">{details}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-lg font-bold truncate">{`${user.firstName} ${user.lastName}`}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {details}
+              </p>
             </div>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">No holder yet</p>
+          <div className="flex items-center justify-center w-full h-full">
+            <p className="text-sm text-muted-foreground">No holder yet</p>
+          </div>
         )}
       </CardContent>
     </Card>

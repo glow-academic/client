@@ -67,8 +67,12 @@ def persona_overview(persona_id: str) -> Dict[str, Any]:
             "system_prompt": persona.system_prompt,
             "temperature": persona.temperature,
             "default_persona": persona.default_persona,
-            "created_at": persona.created_at.isoformat() if persona.created_at else None,
-            "updated_at": persona.updated_at.isoformat() if persona.updated_at else None,
+            "created_at": persona.created_at.isoformat()
+            if persona.created_at
+            else None,
+            "updated_at": persona.updated_at.isoformat()
+            if persona.updated_at
+            else None,
             "scenarios": scenario_list,
             "scenario_count": len(scenario_list),
         }

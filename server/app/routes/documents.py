@@ -6,12 +6,13 @@ import os
 import shutil
 import uuid
 import zipfile
+from uuid import UUID
 
 from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
 from app.models import Documents
 from app.services.agents.collection.classify import run_classify_agent
-from fastapi import (APIRouter, Depends, File, Form, HTTPException, Request,
+from fastapi import (APIRouter, Depends, File, HTTPException, Request,
                      Response, UploadFile)
 from fastapi.responses import FileResponse, JSONResponse
 from sqlmodel import Session, select
@@ -36,11 +37,11 @@ async def documents_health_check() -> JSONResponse:
         # Check if upload folder exists and is writable
         if not os.path.exists(UPLOAD_FOLDER):
             os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-        
+
         # Check if TUS uploads directory exists and is writable
         if not os.path.exists(TUS_UPLOADS_DIR):
             os.makedirs(TUS_UPLOADS_DIR, exist_ok=True)
-        
+
         return JSONResponse(
             status_code=200,
             content={
@@ -48,17 +49,13 @@ async def documents_health_check() -> JSONResponse:
                 "service": "documents",
                 "upload_folder": str(UPLOAD_FOLDER),
                 "tus_uploads_dir": str(TUS_UPLOADS_DIR),
-            }
+            },
         )
     except Exception as e:
         logger.error(f"Documents health check failed: {str(e)}")
         return JSONResponse(
             status_code=500,
-            content={
-                "status": "error",
-                "service": "documents",
-                "error": str(e)
-            }
+            content={"status": "error", "service": "documents", "error": str(e)},
         )
 
 
@@ -111,15 +108,11 @@ async def classify_documents(
 @router.post("/upload")
 async def upload_document(
     files: list[UploadFile] = File(...),
-    class_id: uuid.UUID = Form(...),
     session: Session = Depends(get_session),
 ) -> JSONResponse:
     """
     Upload one or more documents using regular multipart form data
     """
-    if class_id is None:
-        raise HTTPException(status_code=400, detail="Class ID is required")
-
     if not files:
         raise HTTPException(status_code=400, detail="No files provided")
 
@@ -149,7 +142,6 @@ async def upload_document(
             name=file.filename,
             file_path=file_path,
             mime_type=file.content_type,
-            class_id=class_id,
         )
 
         session.add(document)
@@ -404,8 +396,6 @@ async def finalize_upload(
         # Parse request body
         body = await request.json()
         file_id = body.get("fileId")
-        profile = body.get("profile")
-        class_id = body.get("classId")
         is_csv = body.get("csv", False)
         test = body.get("test", False)
 
@@ -586,7 +576,6 @@ async def finalize_upload(
                                 name=filename,
                                 file_path=final_file_path,
                                 mime_type=mime_type,
-                                class_id=uuid.UUID(class_id),
                             )
 
                             session.add(document)
@@ -616,14 +605,19 @@ async def finalize_upload(
                 auto_classify = body.get("autoClassify", False)
                 classification_result = None
 
-                if auto_classify and class_id:
+                if auto_classify:
                     try:
                         # Call the classify agent directly
-                        from app.services.agents.collection.classify import \
-                            run_classify_agent
+                        from app.services.agents.collection.classify import (
+                            run_classify_agent,
+                        )
 
+                        # Get document IDs for classification
+                        document_ids = [UUID(doc["id"]) for doc in extracted_documents]
                         classification_result = await run_classify_agent(
-                            class_id, test, session
+                            document_ids,
+                            test,
+                            session,
                         )
                         logger.info(
                             f"Auto-classification completed: {classification_result}"
@@ -664,12 +658,6 @@ async def finalize_upload(
                 )
 
         # Handle regular document uploads
-        if not class_id:
-            return JSONResponse(
-                status_code=400,
-                content={"status": "error", "message": "Missing classId parameter"},
-            )
-
         # Find the upload directory
         upload_dir = None
         for dir_name in os.listdir(TUS_UPLOADS_DIR):
@@ -733,7 +721,6 @@ async def finalize_upload(
             name=filename,
             file_path=final_file_path,
             mime_type=metadata.get("filetype", "application/octet-stream"),
-            class_id=uuid.UUID(class_id),
         )
 
         session.add(document)

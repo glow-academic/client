@@ -16,7 +16,7 @@ function deriveKey(password: string, salt: Buffer): Buffer {
 }
 
 export const encryptProviderKey = async (
-  providerKey: string
+  providerKey: string,
 ): Promise<string> => {
   const secretKey = process.env["SECRET_KEY"];
   if (!secretKey) {
@@ -39,7 +39,7 @@ export const encryptProviderKey = async (
 };
 
 export const decryptProviderKey = async (
-  encryptedKey: string
+  encryptedKey: string,
 ): Promise<string> => {
   const secretKey = process.env["SECRET_KEY"];
   if (!secretKey) {

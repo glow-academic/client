@@ -18,19 +18,25 @@ const RoleAndWebSocketProviderWrapper = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const userId = useSession().data?.user?.id;
-  const { data: profile, isLoading } = useQuery({
+  const { data: session, status: sessionStatus } = useSession();
+  const userId = session?.user?.id;
+  const { data: profile, isLoading: profileQueryLoading } = useQuery({
     queryKey: ["profile", userId],
-    queryFn: () => getProfilesByUser(parseInt(userId!)),
+    queryFn: () => getProfilesByUser(Number(userId!)),
     select: (data) => data[0],
     enabled: !!userId,
   });
 
-  // profileId is undefined while loading, null if loaded and no profile, or the id if present
-  const profileId = isLoading ? undefined : (profile?.id ?? null);
+  // ✅ "Really loading" = (session still loading) OR (profile still loading when we have a userId)
+  const profileLoading =
+    sessionStatus === "loading" || Boolean(userId && profileQueryLoading);
+  const profileId = profileLoading ? undefined : (profile?.id as string | null);
 
   return (
-    <ProfileProvider activeProfile={profile ?? null}>
+    <ProfileProvider
+      activeProfile={profile ?? null}
+      isProfileLoading={profileLoading}
+    >
       <WebSocketProvider profileId={profileId}>{children}</WebSocketProvider>
     </ProfileProvider>
   );

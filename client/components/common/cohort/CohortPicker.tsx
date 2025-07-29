@@ -25,7 +25,6 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -36,16 +35,14 @@ import { cn } from "@/lib/utils";
 
 export interface Cohort {
   id: string;
-  title: string;
+  title: string | React.ReactNode;
   description?: string;
   memberCount?: number;
 }
 
 export interface CohortPickerProps extends PopoverProps {
   cohorts: Cohort[];
-  label?: string;
   placeholder?: string;
-  description?: string;
   onSelect?: (cohorts: Cohort[]) => void;
   selectedCohorts?: Cohort[];
   hideSelectedChips?: boolean;
@@ -53,17 +50,15 @@ export interface CohortPickerProps extends PopoverProps {
 
 export function CohortPicker({
   cohorts,
-  label = "Cohorts",
   placeholder = "Select cohorts...",
-  description = "Select one or more cohorts to filter the progress view.",
   onSelect,
   selectedCohorts = [],
-  hideSelectedChips = true, // Changed default to true
+  hideSelectedChips = true,
   ...props
 }: CohortPickerProps) {
   const [open, setOpen] = React.useState(false);
   const [peekedCohort, setPeekedCohort] = React.useState<Cohort | undefined>(
-    cohorts[0]
+    cohorts[0],
   );
 
   const handleSelect = (cohort: Cohort) => {
@@ -92,7 +87,7 @@ export function CohortPicker({
   const handleRemoveItem = (cohortToRemove: Cohort, e: React.MouseEvent) => {
     e.stopPropagation();
     const newSelectedCohorts = selectedCohorts.filter(
-      (c) => c.id !== cohortToRemove.id
+      (c) => c.id !== cohortToRemove.id,
     );
     onSelect?.(newSelectedCohorts);
   };
@@ -102,30 +97,18 @@ export function CohortPicker({
       return placeholder;
     }
     if (selectedCohorts.length === 1) {
-      return selectedCohorts[0]!.title;
+      const title = selectedCohorts[0]!.title;
+      return typeof title === "string" ? title : "Cohort selected";
     }
     return `${selectedCohorts.length} cohorts selected`;
   };
 
   const getSearchNotFoundMessage = () => {
-    return `No ${label} found.`;
+    return `No cohorts found.`;
   };
 
   return (
-    <div className="grid gap-2">
-      <HoverCard openDelay={200}>
-        <HoverCardTrigger asChild>
-          <Label htmlFor="cohorts">{label}</Label>
-        </HoverCardTrigger>
-        <HoverCardContent
-          align="start"
-          className="w-[260px] text-sm"
-          side="left"
-        >
-          {description}
-        </HoverCardContent>
-      </HoverCard>
-
+    <div>
       {/* Show selected items */}
       {selectedCohorts.length > 0 && !hideSelectedChips && (
         <div className="flex flex-wrap gap-1 mb-2">
@@ -150,11 +133,12 @@ export function CohortPicker({
       <Popover open={open} onOpenChange={setOpen} {...props}>
         <PopoverTrigger asChild>
           <Button
-            variant="outline"
+            variant="secondary"
             role="combobox"
             aria-expanded={open}
             aria-label="Select cohorts"
             className="w-full justify-between"
+            size="sm"
           >
             {getButtonText()}
             <ChevronsUpDown className="opacity-50" />
@@ -170,7 +154,9 @@ export function CohortPicker({
             >
               <div className="grid gap-2">
                 <h4 className="font-medium leading-none">
-                  {peekedCohort?.title || "No cohort selected"}
+                  {typeof peekedCohort?.title === "string"
+                    ? peekedCohort.title
+                    : "Cohort selected"}
                 </h4>
                 <div className="text-sm text-muted-foreground">
                   {peekedCohort?.description || "No description available"}
@@ -184,7 +170,7 @@ export function CohortPicker({
               </div>
             </HoverCardContent>
             <Command loop>
-              <CommandList className="h-[var(--cmdk-list-height)] max-h-[400px]">
+              <CommandList className="h-[var(--cmdk-list-height)] max-h-[250px]">
                 <CommandInput placeholder="Search cohorts..." />
                 <CommandEmpty>{getSearchNotFoundMessage()}</CommandEmpty>
                 <HoverCardTrigger />
@@ -204,7 +190,7 @@ export function CohortPicker({
                       key={cohort.id}
                       cohort={cohort}
                       isSelected={selectedCohorts.some(
-                        (c) => c.id === cohort.id
+                        (c) => c.id === cohort.id,
                       )}
                       onPeek={(cohort) => setPeekedCohort(cohort)}
                       onSelect={() => handleSelect(cohort)}
@@ -249,10 +235,12 @@ function CohortItem({ cohort, isSelected, onSelect, onPeek }: CohortItemProps) {
       ref={ref}
       className="data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
     >
-      {cohort.title}
-      <Check
-        className={cn("ml-auto", isSelected ? "opacity-100" : "opacity-0")}
-      />
+      <div className="flex items-center justify-between w-full">
+        <div className="flex items-center gap-2">{cohort.title}</div>
+        <Check
+          className={cn("ml-auto", isSelected ? "opacity-100" : "opacity-0")}
+        />
+      </div>
     </CommandItem>
   );
 }

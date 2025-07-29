@@ -32,8 +32,6 @@ services:
       - HISTORY_DIR=/database/history
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./client/components:/client/components  # Mount client components with write access for analytics generation
-      - ./client/lib:/client/lib  # Mount client lib with write access for analytics generation
       - history:/database/history 
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]

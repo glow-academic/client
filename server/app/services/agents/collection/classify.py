@@ -4,7 +4,7 @@ from typing import Any
 
 from agents import Runner, trace
 from app.db import get_session
-from app.models import Documents, Models, Providers, SystemAgents
+from app.models import Agents, Documents, Models, Providers
 from app.services.agents.generic import GenericAgent
 from fastapi import Depends
 from pydantic import BaseModel
@@ -23,7 +23,10 @@ class Classify(BaseModel):
     syllabi: list[str] = []
 
 
-async def run_classify_agent(document_ids: list[uuid.UUID], test: bool = False, session: Session = Depends(get_session)
+async def run_classify_agent(
+    document_ids: list[uuid.UUID],
+    test: bool = False,
+    session: Session = Depends(get_session),
 ) -> dict[str, Any]:
     """
     This function is used to run the classify agent.
@@ -38,7 +41,7 @@ async def run_classify_agent(document_ids: list[uuid.UUID], test: bool = False, 
     """
 
     # find agent with name of "Classify"
-    agent = session.exec(select(SystemAgents).where(SystemAgents.name == "Classify")).one()
+    agent = session.exec(select(Agents).where(Agents.name == "Classify")).one()
     if not agent:
         raise ValueError("Classify agent not found")
 
@@ -66,7 +69,9 @@ async def run_classify_agent(document_ids: list[uuid.UUID], test: bool = False, 
 
     formatted_documents = "\n".join(document_list)
 
-    logger.info(f"Classifying {len(documents)} documents for document_ids {document_ids}")
+    logger.info(
+        f"Classifying {len(documents)} documents for document_ids {document_ids}"
+    )
 
     # getting the model from the agent's model_id
     model = session.exec(select(Models).where(Models.id == agent.model_id)).one()

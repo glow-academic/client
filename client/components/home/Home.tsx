@@ -1,284 +1,308 @@
 /**
  * Home.tsx
- * This is the unified home page with role-based access control
+ * This is the cohort dashboard component for the home page
  * @AshokSaravanan222 & @siladiea
- * 05/14/2025
+ * 07/20/2025
  */
 "use client";
-import { logError, logInfo } from "@/utils/logger";
-import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
-
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
-
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { Cohort, Profile } from "@/types";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
+import { logError, logInfo } from "@/utils/logger";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
-import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
+import { useQuery } from "@tanstack/react-query";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import SimulationProgress from "../common/cohort/SimulationProgress";
 import SimulationHistory from "../common/history/SimulationHistory";
-import { Skeleton } from "../ui/skeleton";
-import CompletionistView from "./CompletionistView";
-import PracticeZone from "./PracticeZone";
+import SimulationCard from "../common/simulation/SimulationCard";
 
 export default function Home() {
-  const router = useRouter();
+  const { effectiveProfile, activeProfile } = useProfile();
+  const { effectiveCohortIds, cohorts, isLoadingCohorts, startDate, endDate } =
+    useAnalytics();
+  const [carouselIndex, setCarouselIndex] = useState(0);
   const [loadingSimulation, setLoadingSimulation] = useState<string | null>(
     null
   );
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
     null
   );
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const router = useRouter();
 
-  // Use global WebSocket context instead of local connection
-  const { isConnected, emitStartSimulation } = useWebSocket();
-  const { effectiveProfile, activeProfile } = useProfile();
-
-  // 1. EXPAND DATA FETCHING SCOPE FOR ADMINS/INSTRUCTORS
-  const isAdminView =
+  // Determine if we should show all data (instructor view) or filtered (TA view)
+  const shouldShowAll =
+    effectiveProfile?.role === "instructional" ||
     effectiveProfile?.role === "admin" ||
-    effectiveProfile?.role === "superadmin" ||
-    effectiveProfile?.role === "instructional";
+    effectiveProfile?.role === "superadmin";
 
-  // Fetch all profiles if admin, otherwise just the user's
-  const { data: profiles, isLoading: _loadingProfiles } = useQuery({
-    queryKey: ["allProfilesForHome", isAdminView],
-    queryFn: getAllProfiles,
-    enabled: !!effectiveProfile,
-  });
+  // Check if user is a TA
+  const isTA = effectiveProfile?.role === "ta";
 
-  const profileIdsForQueries = useMemo(() => {
-    if (!profiles) return [];
-    if (isAdminView) return profiles.map((p: Profile) => p.id); // All users for admin
-    return [effectiveProfile!.id]; // Just self for TA/student
-  }, [profiles, isAdminView, effectiveProfile]);
-
-  const { data: cohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
-
-  const { data: simulations, isLoading: simulationsLoading } = useQuery({
+  // 1. Fetch all simulations
+  const { data: allSimulations, isLoading: loadingSimulations } = useQuery({
     queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
+    queryFn: getAllSimulations,
   });
 
-  const { data: scenarios } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
+  // 2. Fetch all profiles
+  const { data: allProfiles, isLoading: loadingProfiles } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: getAllProfiles,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  const { data: personas } = useQuery({
-    queryKey: ["personas"],
-    queryFn: () => getAllPersonas(),
-  });
-
-  // Fetch rubric-related data for real progress tracking
-  const { data: rubrics } = useQuery({
+  // 3. Fetch all rubrics
+  const { data: allRubrics, isLoading: loadingRubrics } = useQuery({
     queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
+    queryFn: getAllRubrics,
   });
 
-  const { data: standardGroups } = useQuery({
-    queryKey: ["standardGroups", rubrics?.map((rubric) => rubric.id)],
+  // 4. Fetch all attempts
+  const { data: allAttempts, isLoading: loadingAttempts } = useQuery({
+    queryKey: ["simulationAttempts"],
+    queryFn: () => {
+      if (!allProfiles) return [];
+      return getSimulationAttemptsByProfiles(allProfiles.map((p) => p.id));
+    },
+    enabled: !!allProfiles && allProfiles.length > 0,
+  });
+
+  // 5. Fetch all chats
+  const { data: allChats, isLoading: loadingChats } = useQuery({
+    queryKey: ["simulationChats", allAttempts?.map((a) => a.id)?.sort() || []],
+    queryFn: () => getSimulationChatsByAttempts(allAttempts!.map((a) => a.id)),
+    enabled: !!allAttempts && allAttempts.length > 0,
+  });
+
+  // 6. Fetch all grades
+  const { data: allGrades, isLoading: loadingGrades } = useQuery({
+    queryKey: ["simulationGrades", allChats?.map((c) => c.id)?.sort() || []],
     queryFn: () =>
-      getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
-    enabled: !!rubrics && rubrics.length > 0,
+      getSimulationChatGradesBySimulationChats(allChats!.map((c) => c.id)),
+    enabled: !!allChats && allChats.length > 0,
   });
 
-  const { data: standards } = useQuery({
-    queryKey: ["standards", standardGroups?.map((group) => group.id)],
-    queryFn: () =>
-      getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
-    enabled: !!standardGroups && standardGroups.length > 0,
-  });
-
-  // 2. USE THE EXPANDED SCOPE IN SUBSEQUENT QUERIES
-  const { data: attempts, isLoading: _loadingAttempts } = useQuery({
-    queryKey: ["simulationAttemptsForHome", profileIdsForQueries],
-    queryFn: () => getSimulationAttemptsByProfiles(profileIdsForQueries),
-    enabled: profileIdsForQueries.length > 0,
-  });
-
-  const { data: chats } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
-    queryFn: () =>
-      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
-    enabled: !!attempts && attempts.length > 0,
-  });
-
-  const { data: grades } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0,
-  });
-
-  const { data: feedbacks } = useQuery({
-    queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
-    queryFn: () =>
-      getSimulationChatFeedbacksBySimulationChatGrades(
-        grades!.map((grade) => grade.id)
-      ),
-    enabled: !!grades && grades.length > 0,
-  });
-
-  // Tour is now handled by the global tour context
-
-  // 3. PROCESS DATA FOR NEW COMPONENTS
-  const completionistData = useMemo(() => {
+  // Transform cohorts for display with completion status
+  const cohortsForDisplay = useMemo(() => {
     if (
-      !effectiveProfile ||
       !cohorts ||
-      !simulations ||
-      !grades ||
-      !profiles ||
-      !attempts
+      !allSimulations ||
+      !allProfiles ||
+      !allAttempts ||
+      !allChats ||
+      !allGrades
     ) {
-      return { percentage: 0, actionItems: [] };
+      return [];
     }
 
-    let percentage = 0;
-    let actionItems:
-      | { type: string; href: string; label: string }[]
-      | Cohort[] = [];
+    // Filter to only active cohorts
+    const activeCohorts = cohorts.filter((cohort) => cohort.active);
 
-    // Helper: get all non-practice simulations for a cohort
-    const getCohortSimulations = (cohort: Cohort) => {
-      if (!cohort.simulationIds) return [];
-      return simulations.filter(
-        (sim) =>
-          cohort.simulationIds.includes(sim.id) && !sim.practiceSimulation
-      );
-    };
-
-    if (effectiveProfile.role === "ta") {
-      // TA: Only cohorts assigned to this TA
-      const taCohorts = cohorts.filter((c) =>
-        c.profileIds?.includes(effectiveProfile.id)
+    return activeCohorts.map((cohort) => {
+      // Get simulations for this cohort
+      const cohortSimulations = allSimulations.filter((sim) =>
+        cohort.simulationIds?.includes(sim.id)
       );
 
-      // All assigned simulations for these cohorts (flattened, unique)
-      const assignedSimulations: typeof simulations = [];
-      taCohorts.forEach((cohort) => {
-        getCohortSimulations(cohort).forEach((sim) => {
-          if (!assignedSimulations.some((s) => s.id === sim.id)) {
-            assignedSimulations.push(sim);
-          }
-        });
-      });
+      // Get the profiles of members in this cohort
+      const cohortMembers = allProfiles.filter((p) =>
+        cohort.profileIds?.includes(p.id)
+      );
 
-      if (assignedSimulations.length === 0)
-        return { percentage: 100, actionItems: [] };
+      // Calculate completion status
+      let isCompleted = false;
 
-      let passedCount = 0;
-      const incompleteCohorts = new Set<string>();
-
-      assignedSimulations.forEach((sim) => {
-        // For this TA, for this simulation, in which cohort(s) is it assigned?
-        const simCohorts = taCohorts.filter((c) =>
-          c.simulationIds?.includes(sim.id)
+      if (shouldShowAll) {
+        // Instructor view: Check if all members have completed all simulations
+        const cohortAttempts = allAttempts.filter(
+          (att) =>
+            att.profileId &&
+            cohort.profileIds?.includes(att.profileId) &&
+            cohortSimulations.some((sim) => sim.id === att.simulationId)
         );
 
-        // Find attempts for this TA and this simulation
-        const taAttemptsForSim = attempts.filter(
-          (a) =>
-            a.profileId === effectiveProfile.id && a.simulationId === sim.id
+        const cohortAttemptIds = cohortAttempts.map((att) => att.id);
+        const cohortChats = allChats?.filter((c) =>
+          cohortAttemptIds.includes(c.attemptId)
         );
-        const taAttemptIds = taAttemptsForSim.map((a) => a.id);
-        const taChats = chats?.filter((c) =>
-          taAttemptIds.includes(c.attemptId)
-        );
-        const taGrades = grades.filter((g) =>
-          taChats?.some((c) => c.id === g.simulationChatId)
+        const cohortGrades = allGrades.filter((g) =>
+          cohortChats?.some((c) => c.id === g.simulationChatId)
         );
 
-        if (taGrades.some((g) => g.passed)) {
-          passedCount++;
+        const passedCount = cohortGrades.filter((g) => g.passed).length || 0;
+        const totalExpectedAttempts =
+          cohortMembers.length * cohortSimulations.length;
+
+        isCompleted = passedCount >= totalExpectedAttempts;
+      } else {
+        // TA view: Check if current TA has completed all simulations
+        if (!effectiveProfile?.id) {
+          isCompleted = false;
         } else {
-          // Add all cohorts where this simulation is assigned and TA is a member
-          simCohorts.forEach((c) => incompleteCohorts.add(c.id));
+          const taAttempts = allAttempts.filter(
+            (att) =>
+              att.profileId === effectiveProfile.id! &&
+              cohortSimulations.some((sim) => sim.id === att.simulationId)
+          );
+
+          const taAttemptIds = taAttempts.map((att) => att.id);
+          const taChats = allChats?.filter((c) =>
+            taAttemptIds.includes(c.attemptId)
+          );
+          const taGrades = allGrades.filter((g) =>
+            taChats?.some((c) => c.id === g.simulationChatId)
+          );
+
+          const passedCount = taGrades.filter((g) => g.passed).length || 0;
+          isCompleted = passedCount >= cohortSimulations.length;
         }
-      });
+      }
 
-      percentage = Math.round((passedCount / assignedSimulations.length) * 100);
-      actionItems = cohorts.filter((c) => incompleteCohorts.has(c.id));
-    } else {
-      // Admin/Instructor/Other Logic
-      // For each cohort, for each assigned simulation, for each member, check pass
-      let totalRequiredPasses = 0;
-      let actualPasses = 0;
-
-      cohorts.forEach((cohort) => {
-        const cohortSims = getCohortSimulations(cohort);
-        cohortSims.forEach((sim) => {
-          cohort.profileIds?.forEach((pid) => {
-            totalRequiredPasses++;
-            const memberAttempts = attempts.filter(
-              (a) => a.profileId === pid && a.simulationId === sim.id
-            );
-            const memberAttemptIds = memberAttempts.map((a) => a.id);
-            const memberChats = chats?.filter((c) =>
-              memberAttemptIds.includes(c.attemptId)
-            );
-            const memberGrades = grades.filter((g) =>
-              memberChats?.some((c) => c.id === g.simulationChatId)
-            );
-            if (memberGrades.some((g) => g.passed)) {
-              actualPasses++;
-            }
-          });
-        });
-      });
-
-      percentage =
-        totalRequiredPasses > 0
-          ? Math.round((actualPasses / totalRequiredPasses) * 100)
-          : 100;
-      actionItems = [
-        {
-          type: "monitor",
-          label: "Monitor All Cohorts",
-          href: "/analytics/progress",
-        },
-      ];
-    }
-
-    return { percentage, actionItems };
+      return {
+        id: cohort.id,
+        title: cohort.title,
+        description: `Cohort with ${cohort.profileIds?.length || 0} members`,
+        memberCount: cohort.profileIds?.length || 0,
+        isCompleted,
+      };
+    });
   }, [
-    effectiveProfile,
     cohorts,
-    simulations,
-    grades,
-    profiles,
-    attempts,
-    chats,
+    allSimulations,
+    allProfiles,
+    allAttempts,
+    allChats,
+    allGrades,
+    shouldShowAll,
+    effectiveProfile?.id,
   ]);
 
-  const practiceSimulations = useMemo(() => {
-    if (!simulations) return [];
-    // Simply filter for all simulations marked as 'practiceSimulation'
-    return simulations.filter((sim) => sim.practiceSimulation);
-  }, [simulations]);
+  // Get available cohorts based on user role
+  const availableCohorts = useMemo(() => {
+    if (!cohortsForDisplay) return [];
+
+    if (shouldShowAll || effectiveProfile?.defaultProfile) {
+      // Instructors see all active cohorts
+      return cohortsForDisplay;
+    } else if (isTA && effectiveProfile?.id) {
+      // TAs see only their assigned active cohorts
+      return cohortsForDisplay.filter((cohort) => {
+        const originalCohort = cohorts?.find((c) => c.id === cohort.id);
+        return originalCohort?.profileIds?.includes(effectiveProfile.id);
+      });
+    }
+
+    return [];
+  }, [
+    cohortsForDisplay,
+    shouldShowAll,
+    isTA,
+    effectiveProfile?.id,
+    cohorts,
+    effectiveProfile?.defaultProfile,
+  ]);
+
+  // Filter cohorts to only selected ones from analytics context, or show all available cohorts if none selected
+  const filteredCohorts = useMemo(() => {
+    if (!cohorts) return [];
+
+    // If specific cohorts are selected in analytics context, filter to those
+    if (
+      effectiveCohortIds.length > 0 &&
+      effectiveCohortIds.length < cohorts.length
+    ) {
+      return cohorts.filter((cohort) => effectiveCohortIds.includes(cohort.id));
+    }
+
+    // Otherwise, show all available cohorts for the user
+    return cohorts.filter((cohort) => {
+      // For instructors/admins, show all active cohorts
+      if (shouldShowAll || effectiveProfile?.defaultProfile) {
+        return cohort.active;
+      }
+      // For TAs, show only their assigned active cohorts
+      if (isTA && effectiveProfile?.id) {
+        return (
+          cohort.active && cohort.profileIds?.includes(effectiveProfile.id)
+        );
+      }
+      return false;
+    });
+  }, [
+    cohorts,
+    effectiveCohortIds,
+    shouldShowAll,
+    effectiveProfile?.defaultProfile,
+    isTA,
+    effectiveProfile?.id,
+  ]);
+
+  // Filter profiles to only include those in the filtered cohorts
+  const cohortProfiles = useMemo(() => {
+    if (!allProfiles || !filteredCohorts) return [];
+
+    // Get all profile IDs from all filtered cohorts
+    const allCohortProfileIds = new Set<string>();
+    filteredCohorts.forEach((cohort) => {
+      cohort.profileIds?.forEach((id) => allCohortProfileIds.add(id));
+    });
+
+    // Filter profiles to only include those in the cohort
+    const filteredProfiles = allProfiles.filter((profile) =>
+      allCohortProfileIds.has(profile.id)
+    );
+
+    return filteredProfiles;
+  }, [allProfiles, filteredCohorts]);
+
+  // Filter attempts to only include those from filtered cohorts
+  const attempts = useMemo(() => {
+    if (!allAttempts || !filteredCohorts) return [];
+
+    const cohortProfileIds = new Set<string>();
+    filteredCohorts.forEach((cohort) => {
+      cohort.profileIds?.forEach((id) => cohortProfileIds.add(id));
+    });
+
+    return allAttempts.filter(
+      (attempt) => attempt.profileId && cohortProfileIds.has(attempt.profileId)
+    );
+  }, [allAttempts, filteredCohorts]);
+
+  // Filter chats to only include those from filtered cohort attempts
+  const chats = useMemo(() => {
+    if (!allChats || !attempts) return [];
+
+    const attemptIds = new Set(attempts.map((a) => a.id));
+    return allChats.filter((chat) => attemptIds.has(chat.attemptId));
+  }, [allChats, attempts]);
+
+  // Filter grades to only include those from filtered cohort chats
+  const grades = useMemo(() => {
+    if (!allGrades || !chats) return [];
+
+    const chatIds = new Set(chats.map((c) => c.id));
+    return allGrades.filter((grade) => chatIds.has(grade.simulationChatId));
+  }, [allGrades, chats]);
+
+  const { isConnected, emitStartSimulation } = useWebSocket();
 
   // Set up simulation-specific event listeners using global WebSocket
   useEffect(() => {
@@ -386,217 +410,790 @@ export default function Home() {
     },
     [
       effectiveProfile,
+      activeProfile,
       isConnected,
       emitStartSimulation,
       loadingToastId,
-      activeProfile,
     ]
   );
 
-  // Memoize rubric data calculation to prevent unnecessary recalculations
-  const rubricDataCache = useMemo(() => {
-    if (
-      !attempts ||
-      !chats ||
-      !grades ||
-      !feedbacks ||
-      !standards ||
-      !standardGroups
-    ) {
-      return new Map();
+  // Note: attempts and grades can be empty/undefined when no simulations have been started yet
+  const safeAttempts = useMemo(() => attempts || [], [attempts]);
+  const safeGrades = useMemo(() => grades || [], [grades]);
+
+  // Data processing logic
+  const processedCohortData = useMemo(() => {
+    // Debug logging to help identify missing data
+    if (!filteredCohorts) {
+      return [];
+    }
+    if (!allSimulations) {
+      return [];
+    }
+    if (!cohortProfiles) {
+      return [];
     }
 
-    const cache = new Map();
-
-    // Pre-calculate for all simulations to avoid recalculation on each render
-    const allSimulationIds = [...new Set(attempts.map((a) => a.simulationId))];
-
-    allSimulationIds.forEach((simulationId) => {
-      // Get attempts for this simulation
-      const simulationAttempts = attempts.filter(
-        (attempt) => attempt.simulationId === simulationId
+    return filteredCohorts.map((cohort) => {
+      // Get simulations for this specific cohort (and exclude default/practice ones)
+      const cohortSimulations = allSimulations.filter((sim) =>
+        cohort.simulationIds?.includes(sim.id)
       );
 
-      // Get chats for these attempts
-      const simulationChats = chats.filter((chat) =>
-        simulationAttempts.some((attempt) => attempt.id === chat.attemptId)
+      // Get the profiles of members in this cohort
+      const cohortMembers = cohortProfiles.filter((p) =>
+        cohort.profileIds?.includes(p.id)
       );
 
-      // Get grades for these chats
-      const simulationGrades = grades.filter((grade) =>
-        simulationChats.some((chat) => chat.id === grade.simulationChatId)
-      );
+      // For each simulation, calculate progress based on user role
+      const simulationsWithProgress = cohortSimulations.map((simulation) => {
+        if (shouldShowAll) {
+          // Instructor/Admin view: Show progress for all cohort members
+          const cohortAttempts = safeAttempts.filter(
+            (att) =>
+              att.profileId &&
+              cohort.profileIds?.includes(att.profileId) &&
+              att.simulationId === simulation.id
+          );
 
-      // Get feedbacks for these grades
-      const simulationFeedbacks = feedbacks.filter((feedback) =>
-        simulationGrades.some(
-          (grade) => grade.id === feedback.simulationChatGradeId
-        )
-      );
+          const cohortAttemptIds = cohortAttempts.map((att) => att.id);
+          const cohortChats = chats?.filter((c) =>
+            cohortAttemptIds.includes(c.attemptId)
+          );
 
-      // Group by attempt and calculate scores
-      const attemptData = simulationAttempts.map((attempt, index) => {
-        const attemptChats = simulationChats.filter(
-          (chat) => chat.attemptId === attempt.id
-        );
-        const attemptGrades = simulationGrades.filter((grade) =>
-          attemptChats.some((chat) => chat.id === grade.simulationChatId)
-        );
-        const attemptFeedbacks = simulationFeedbacks.filter((feedback) =>
-          attemptGrades.some(
-            (grade) => grade.id === feedback.simulationChatGradeId
-          )
-        );
+          // Filter grades by date range if dates are provided
+          let cohortGrades = safeGrades.filter((g) =>
+            cohortChats?.some((c) => c.id === g.simulationChatId)
+          );
 
-        // Calculate skill scores similar to Overview.tsx
-        const skillScores = standardGroups.reduce(
-          (acc, group) => {
-            const groupStandards = standards.filter(
-              (s) => s.standardGroupId === group.id
+          if (startDate && endDate) {
+            cohortGrades = cohortGrades.filter((grade) => {
+              const gradeDate = new Date(grade.createdAt);
+              return gradeDate >= startDate && gradeDate <= endDate;
+            });
+          }
+
+          // Calculate progress based on each user's best attempt for this simulation
+          // This prevents counting multiple attempts per user which was causing >100% progress
+          const userBestAttempts = new Map<
+            string,
+            { passed: boolean; score: number; attemptId: string }
+          >();
+
+          // Group grades by attempt and calculate average scores
+          const attemptScores = new Map<
+            string,
+            { scores: number[]; profileId: string }
+          >();
+
+          cohortGrades.forEach((grade) => {
+            const chat = cohortChats?.find(
+              (c) => c.id === grade.simulationChatId
             );
-            const groupFeedbacks = attemptFeedbacks.filter((f) =>
-              groupStandards.some((s) => s.id === f.standardId)
+            const attempt = cohortAttempts.find(
+              (a) => a.id === chat?.attemptId
             );
 
-            if (groupFeedbacks.length > 0) {
-              // Use the rubric's total points for this group instead of max standard points
-              const rubric = rubrics?.find((r) => r.id === group.rubricId);
-              const rubricTotalPoints = rubric?.points || 100;
+            if (attempt?.id && attempt?.profileId) {
+              const existing = attemptScores.get(attempt.id);
+              if (existing) {
+                existing.scores.push(grade.score);
+              } else {
+                attemptScores.set(attempt.id, {
+                  scores: [grade.score],
+                  profileId: attempt.profileId,
+                });
+              }
+            }
+          });
 
-              const avgScore = Math.round(
-                (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
-                  groupFeedbacks.length /
-                  rubricTotalPoints) *
-                  100
-              );
-              acc[group.shortName] = avgScore;
+          // Calculate average score for each attempt and find best attempt per user
+          attemptScores.forEach((attemptData, attemptId) => {
+            const averageScore =
+              attemptData.scores.reduce((sum, score) => sum + score, 0) /
+              attemptData.scores.length;
+
+            // Get rubric to determine pass threshold
+            const rubric = allRubrics?.find(
+              (r) => r.id === simulation.rubricId
+            );
+            const passThreshold = rubric?.passPoints || 70; // Default to 70% if no rubric
+            const passed = averageScore >= passThreshold;
+
+            const existing = userBestAttempts.get(attemptData.profileId);
+            if (!existing || averageScore > existing.score) {
+              userBestAttempts.set(attemptData.profileId, {
+                passed,
+                score: averageScore,
+                attemptId,
+              });
+            }
+          });
+
+          // Count users based on their best attempts
+          const passedCount = Array.from(userBestAttempts.values()).filter(
+            (attempt) => attempt.passed
+          ).length;
+          const inProgressCount = Array.from(userBestAttempts.values()).filter(
+            (attempt) => !attempt.passed
+          ).length;
+          const notStartedCount =
+            cohortMembers.length - passedCount - inProgressCount;
+
+          return {
+            ...simulation,
+            progress: {
+              totalMembers: cohortMembers.length,
+              passedCount,
+              inProgressCount,
+              notStartedCount: Math.max(0, notStartedCount),
+              passedMembers:
+                Array.from(userBestAttempts.entries())
+                  .filter(([_, attempt]) => attempt.passed)
+                  .map(([profileId, _]) => profileId) || [],
+              inProgressMembers:
+                Array.from(userBestAttempts.entries())
+                  .filter(([_, attempt]) => !attempt.passed)
+                  .map(([profileId, _]) => profileId) || [],
+            },
+          };
+        } else {
+          // TA view: Show individual progress
+          if (!effectiveProfile?.id) {
+            // No profile ID available, show empty progress
+            return {
+              ...simulation,
+              progress: {
+                totalMembers: 1,
+                passedCount: 0,
+                inProgressCount: 0,
+                notStartedCount: 1,
+                passedMembers: [],
+                inProgressMembers: [],
+              },
+            };
+          }
+
+          // Find TA's attempts for this simulation
+          const taAttempts = safeAttempts.filter(
+            (att) =>
+              att.profileId === effectiveProfile.id! &&
+              att.simulationId === simulation.id
+          );
+
+          const taProgress = {
+            totalAttempts: taAttempts.length,
+            passedCount: 0,
+            inProgressCount: 0,
+            notStartedCount: taAttempts.length === 0 ? 1 : 0,
+            passedMembers: [] as string[],
+            inProgressMembers: [] as string[],
+          };
+
+          if (taAttempts.length > 0) {
+            const taAttemptIds = taAttempts.map((att) => att.id);
+
+            // Find chats and grades related to these attempts
+            const taChats = chats?.filter((c) =>
+              taAttemptIds.includes(c.attemptId)
+            );
+            let taGrades = safeGrades.filter((g) =>
+              taChats?.some((c) => c.id === g.simulationChatId)
+            );
+
+            // Filter grades by date range if dates are provided
+            if (startDate && endDate) {
+              taGrades = taGrades.filter((grade) => {
+                const gradeDate = new Date(grade.createdAt);
+                return gradeDate >= startDate && gradeDate <= endDate;
+              });
             }
 
-            return acc;
-          },
-          {} as Record<string, number>
-        );
+            // Calculate average score for each attempt and find best attempt
+            const taAttemptScores = new Map<string, { scores: number[] }>();
 
-        // Calculate overall score - normalize to percentage based on rubric total points
-        const rubric = rubrics?.find((r) =>
-          standardGroups?.some((sg) => sg.rubricId === r.id)
-        );
-        const rubricTotalPoints = rubric?.points || 20;
+            taGrades.forEach((grade) => {
+              const chat = taChats?.find(
+                (c) => c.id === grade.simulationChatId
+              );
+              const attempt = taAttempts.find((a) => a.id === chat?.attemptId);
 
-        const overallScore =
-          attemptGrades.length > 0
-            ? Math.round(
-                (attemptGrades.reduce((sum, g) => sum + g.score, 0) /
-                  attemptGrades.length /
-                  rubricTotalPoints) *
-                  100 // Convert to percentage
-              )
-            : 0;
+              if (attempt?.id) {
+                const existing = taAttemptScores.get(attempt.id);
+                if (existing) {
+                  existing.scores.push(grade.score);
+                } else {
+                  taAttemptScores.set(attempt.id, { scores: [grade.score] });
+                }
+              }
+            });
 
-        return {
-          attempt: index + 1,
-          overallScore,
-          skillScores,
-          createdAt: attempt.createdAt,
-        };
+            // Find best attempt based on average score
+            let bestAverageScore = 0;
+            let hasPassed = false;
+
+            taAttemptScores.forEach((attemptData) => {
+              const averageScore =
+                attemptData.scores.reduce((sum, score) => sum + score, 0) /
+                attemptData.scores.length;
+
+              if (averageScore > bestAverageScore) {
+                bestAverageScore = averageScore;
+
+                // Get rubric to determine pass threshold
+                const rubric = allRubrics?.find(
+                  (r) => r.id === simulation.rubricId
+                );
+                const passThreshold = rubric?.passPoints || 70; // Default to 70% if no rubric
+                hasPassed = averageScore >= passThreshold;
+              }
+            });
+
+            if (hasPassed) {
+              taProgress.passedCount = 1;
+              taProgress.passedMembers = [effectiveProfile.id!];
+            } else {
+              taProgress.inProgressCount = 1;
+              taProgress.inProgressMembers = [effectiveProfile.id!];
+            }
+          }
+
+          return {
+            ...simulation,
+            progress: {
+              totalMembers: 1, // Individual TA view
+              passedCount: taProgress.passedCount,
+              inProgressCount: taProgress.inProgressCount,
+              notStartedCount: taProgress.notStartedCount,
+              passedMembers: taProgress.passedMembers,
+              inProgressMembers: taProgress.inProgressMembers,
+            },
+          };
+        }
       });
 
-      const highestScore =
-        attemptData.length > 0
-          ? Math.max(...attemptData.map((a) => a.overallScore))
-          : 0;
+      return {
+        cohort,
+        cohortMembers,
+        simulations: simulationsWithProgress,
+      };
+    });
+  }, [
+    filteredCohorts,
+    allSimulations,
+    cohortProfiles,
+    safeAttempts,
+    chats,
+    safeGrades,
+    effectiveProfile,
+    shouldShowAll,
+    startDate,
+    endDate,
+    allRubrics,
+  ]);
 
-      cache.set(simulationId, { attempts: attemptData, highestScore });
+  // Enhanced simulation data with completion status and rubric data
+  const enhancedSimulations = useMemo(() => {
+    if (!processedCohortData || !allRubrics) return [];
+
+    return processedCohortData.flatMap((data) => {
+      return data.simulations.map((simulation) => {
+        // Get rubric for this simulation
+        const rubric = allRubrics.find((r) => r.id === simulation.rubricId);
+
+        // Calculate pass rate
+        const passRate =
+          rubric && rubric.points > 0
+            ? Math.round((rubric.passPoints / rubric.points) * 100)
+            : 0;
+
+        // Check if user has passed this simulation
+        let hasPassed = false;
+        let highestScore = 0;
+
+        // For TA view, use the progress data that was already calculated
+        if (!shouldShowAll && effectiveProfile?.id) {
+          // Use the progress data from processedCohortData
+          hasPassed = simulation.progress.passedCount > 0;
+
+          // Calculate highest score for display
+          const userAttempts = safeAttempts.filter(
+            (att) =>
+              att.profileId === effectiveProfile.id! &&
+              att.simulationId === simulation.id
+          );
+
+          if (userAttempts.length > 0) {
+            const userAttemptIds = userAttempts.map((att) => att.id);
+            const userChats = chats?.filter((c) =>
+              userAttemptIds.includes(c.attemptId)
+            );
+            let userGrades = safeGrades.filter((g) =>
+              userChats?.some((c) => c.id === g.simulationChatId)
+            );
+
+            // Filter grades by date range if dates are provided (same as progress calculation)
+            if (startDate && endDate) {
+              userGrades = userGrades.filter((grade) => {
+                const gradeDate = new Date(grade.createdAt);
+                return gradeDate >= startDate && gradeDate <= endDate;
+              });
+            }
+
+            if (userGrades.length > 0) {
+              // Calculate average score for each attempt and find the best one
+              const attemptScores = new Map<string, { scores: number[] }>();
+
+              userGrades.forEach((grade) => {
+                const chat = userChats?.find(
+                  (c) => c.id === grade.simulationChatId
+                );
+                const attempt = userAttempts.find(
+                  (a) => a.id === chat?.attemptId
+                );
+
+                if (attempt?.id) {
+                  const existing = attemptScores.get(attempt.id);
+                  if (existing) {
+                    existing.scores.push(grade.score);
+                  } else {
+                    attemptScores.set(attempt.id, { scores: [grade.score] });
+                  }
+                }
+              });
+
+              // Find the best attempt based on average score
+              let bestAverageScore = 0;
+
+              attemptScores.forEach((attemptData) => {
+                const averageScore =
+                  attemptData.scores.reduce((sum, score) => sum + score, 0) /
+                  attemptData.scores.length;
+
+                if (averageScore > bestAverageScore) {
+                  bestAverageScore = averageScore;
+                }
+              });
+
+              // Calculate highest score as percentage
+              const rubricTotalPoints = rubric?.points || 100;
+              highestScore = Math.round(
+                (bestAverageScore / rubricTotalPoints) * 100
+              );
+            }
+          }
+        } else if (effectiveProfile?.id && effectiveProfile?.role !== "guest") {
+          // For instructor view or other roles, calculate individual performance
+          const userAttempts = safeAttempts.filter(
+            (att) =>
+              att.profileId === effectiveProfile.id! &&
+              att.simulationId === simulation.id
+          );
+
+          if (userAttempts.length > 0) {
+            const userAttemptIds = userAttempts.map((att) => att.id);
+            const userChats = chats?.filter((c) =>
+              userAttemptIds.includes(c.attemptId)
+            );
+            let userGrades = safeGrades.filter((g) =>
+              userChats?.some((c) => c.id === g.simulationChatId)
+            );
+
+            // Filter grades by date range if dates are provided (same as progress calculation)
+            if (startDate && endDate) {
+              userGrades = userGrades.filter((grade) => {
+                const gradeDate = new Date(grade.createdAt);
+                return gradeDate >= startDate && gradeDate <= endDate;
+              });
+            }
+
+            if (userGrades.length > 0) {
+              // Calculate average score for each attempt and find the best one
+              const attemptScores = new Map<string, { scores: number[] }>();
+
+              userGrades.forEach((grade) => {
+                const chat = userChats?.find(
+                  (c) => c.id === grade.simulationChatId
+                );
+                const attempt = userAttempts.find(
+                  (a) => a.id === chat?.attemptId
+                );
+
+                if (attempt?.id) {
+                  const existing = attemptScores.get(attempt.id);
+                  if (existing) {
+                    existing.scores.push(grade.score);
+                  } else {
+                    attemptScores.set(attempt.id, { scores: [grade.score] });
+                  }
+                }
+              });
+
+              // Find the best attempt based on average score
+              let bestAverageScore = 0;
+              let hasPassedBestAttempt = false;
+
+              attemptScores.forEach((attemptData) => {
+                const averageScore =
+                  attemptData.scores.reduce((sum, score) => sum + score, 0) /
+                  attemptData.scores.length;
+
+                if (averageScore > bestAverageScore) {
+                  bestAverageScore = averageScore;
+
+                  // Get rubric to determine pass threshold
+                  const passThreshold = rubric?.passPoints || 70; // Default to 70% if no rubric
+                  hasPassedBestAttempt = averageScore >= passThreshold;
+                }
+              });
+
+              // Calculate highest score as percentage
+              const rubricTotalPoints = rubric?.points || 100;
+              highestScore = Math.round(
+                (bestAverageScore / rubricTotalPoints) * 100
+              );
+              hasPassed = hasPassedBestAttempt;
+            }
+          }
+        }
+
+        // For instructor view, check if ALL members have passed
+        if (shouldShowAll) {
+          const passedMembers = simulation.progress.passedMembers;
+          const totalMembers = simulation.progress.totalMembers;
+          hasPassed =
+            passedMembers.length > 0 && passedMembers.length >= totalMembers;
+        }
+        // For TA view, hasPassed is already set correctly above using progress data
+
+        return {
+          ...simulation,
+          cohort: data.cohort,
+          rubric,
+          passRate,
+          hasPassed,
+          highestScore,
+          rubricData: {
+            attempts: [], // We don't need detailed attempt data for the card
+            highestScore,
+          },
+        };
+      });
+    });
+  }, [
+    processedCohortData,
+    allRubrics,
+    shouldShowAll,
+    effectiveProfile?.id,
+    effectiveProfile?.role,
+    safeAttempts,
+    chats,
+    safeGrades,
+    startDate,
+    endDate,
+  ]);
+
+  // Sort simulations by completion status and then by cohort
+  const sortedSimulations = useMemo(() => {
+    return enhancedSimulations.sort((a, b) => {
+      // First sort by completion status (non-completed first)
+      if (a.hasPassed !== b.hasPassed) {
+        return a.hasPassed ? 1 : -1;
+      }
+
+      // Then sort by cohort title
+      return a.cohort.title.localeCompare(b.cohort.title);
+    });
+  }, [enhancedSimulations]);
+
+  // Sort progress data the same way as the cards (non-completed first, then by cohort)
+  const sortedProgressData = useMemo(() => {
+    if (!processedCohortData) return [];
+
+    // Flatten all simulations with their cohort info
+    const allSimulationsWithCohort = processedCohortData.flatMap((data) => {
+      return data.simulations.map((simulation) => ({
+        ...simulation,
+        cohort: data.cohort,
+      }));
     });
 
-    return cache;
-  }, [attempts, chats, grades, feedbacks, standards, standardGroups, rubrics]);
+    // Sort using the same logic as sortedSimulations
+    return allSimulationsWithCohort.sort((a, b) => {
+      // First sort by completion status (non-completed first)
+      const aCompleted = a.progress.passedCount >= a.progress.totalMembers;
+      const bCompleted = b.progress.passedCount >= b.progress.totalMembers;
 
-  // Get real rubric data for a simulation
-  const getRealRubricData = useCallback(
-    (simulationId: string) => {
-      return (
-        rubricDataCache.get(simulationId) || { attempts: [], highestScore: 0 }
-      );
-    },
-    [rubricDataCache]
-  );
+      if (aCompleted !== bCompleted) {
+        return aCompleted ? 1 : -1;
+      }
+
+      // Then sort by cohort title
+      return a.cohort.title.localeCompare(b.cohort.title);
+    });
+  }, [processedCohortData]);
+
+  // Carousel logic
+  const maxVisible = 3;
+  const totalPages = Math.ceil(sortedSimulations.length / maxVisible);
+  const canScrollLeft = carouselIndex > 0;
+  const canScrollRight = carouselIndex < totalPages - 1;
+
+  const handlePrevious = useCallback(() => {
+    if (canScrollLeft) {
+      setCarouselIndex(carouselIndex - 1);
+    }
+  }, [canScrollLeft, carouselIndex]);
+
+  const handleNext = useCallback(() => {
+    if (canScrollRight) {
+      setCarouselIndex(carouselIndex + 1);
+    }
+  }, [canScrollRight, carouselIndex]);
+
+  // Get simulations for current page
+  const startIndex = carouselIndex * maxVisible;
+  const endIndex = startIndex + maxVisible;
+  const visibleSimulations = sortedSimulations.slice(startIndex, endIndex);
 
   // Loading state
-  if (simulationsLoading) {
+  const isLoading =
+    isLoadingCohorts ||
+    loadingSimulations ||
+    loadingProfiles ||
+    loadingRubrics ||
+    loadingAttempts ||
+    loadingChats ||
+    loadingGrades;
+
+  if (isLoading || !effectiveProfile) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between space-y-2">
-          <div>
-            <Skeleton className="h-8 w-48 mb-2" />
-            <Skeleton className="h-4 w-64" />
+      <div className="container mx-auto p-4 space-y-8">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-64" />
+        </div>
+
+        {/* Progress Visualization Section skeleton */}
+        <div className="space-y-6">
+          <div className="max-h-96 overflow-y-auto space-y-4 pr-2">
+            {[...Array(5)].map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center space-x-4 p-3 rounded-lg border bg-gray-50 dark:bg-gray-800"
+              >
+                <Skeleton className="h-4 w-32" />
+                <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <Skeleton className="h-2 w-1/2 rounded-full" />
+                </div>
+                <Skeleton className="h-6 w-16" />
+                <Skeleton className="h-4 w-12" />
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Skeleton for Simulation Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Card
-              key={i}
-              className="overflow-hidden bg-white dark:bg-gray-900 border-0 shadow-lg"
-            >
-              <CardHeader className="pb-4">
-                <div className="flex items-start justify-between">
-                  <Skeleton className="h-12 w-12 rounded-xl" />
-                  <div className="text-right space-y-1">
-                    <Skeleton className="h-3 w-12" />
-                    <Skeleton className="h-3 w-10" />
+        {/* Assignments List Section skeleton */}
+        <div className="space-y-4">
+          {/* Header with navigation skeleton */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-8 w-8 rounded-lg" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-8 w-8 rounded-lg" />
+            </div>
+          </div>
+
+          {/* Carousel container skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <Card
+                key={i}
+                className="overflow-hidden bg-white dark:bg-gray-900 border-0 shadow-lg"
+              >
+                <CardHeader className="pb-4">
+                  <div className="flex items-start justify-between">
+                    <Skeleton className="h-12 w-12 rounded-xl" />
+                    <div className="text-right space-y-1">
+                      <Skeleton className="h-3 w-12" />
+                      <Skeleton className="h-3 w-10" />
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Skeleton className="h-6 w-32 mb-2" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
-                </div>
-                <div className="flex items-center space-x-4">
-                  <Skeleton className="h-3 w-16" />
-                  <Skeleton className="h-3 w-20" />
-                </div>
-              </CardContent>
-              <CardFooter className="pt-0">
-                <Skeleton className="h-10 w-full rounded-lg" />
-              </CardFooter>
-            </Card>
-          ))}
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Skeleton className="h-6 w-32 mb-2" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </CardContent>
+                <CardFooter className="pt-0">
+                  <Skeleton className="h-10 w-full rounded-lg" />
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+
+          {/* Dots indicator skeleton */}
+          <div className="flex justify-center space-x-2 mt-4">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="w-2 h-2 rounded-full" />
+            ))}
+          </div>
+        </div>
+
+        {/* History Section skeleton */}
+        <div className="mt-12 space-y-4">
+          <Skeleton className="h-6 w-32" />
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center space-x-4 p-3 rounded-lg border bg-gray-50 dark:bg-gray-800"
+              >
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
-  // 4. RENDER NEW COMPONENT STRUCTURE
-  return (
-    <TooltipProvider>
-      <div className="container mx-auto p-4 md:p-6 space-y-12">
-        <CompletionistView
-          data={completionistData}
-          profile={effectiveProfile}
-        />
-        <PracticeZone
-          simulations={practiceSimulations}
-          profile={effectiveProfile}
-          onStartSimulation={handleStartSimulation}
-          loadingSimulation={loadingSimulation}
-          getRealRubricData={getRealRubricData}
-          scenarios={scenarios ?? []}
-          personas={personas ?? []}
-        />
-
-        {/* History Section for non-guests */}
-        {effectiveProfile?.role !== "guest" && (
-          <div className="space-y-2">
-            <SimulationHistory showAll={false} showExport={false} />
-          </div>
-        )}
+  if (!effectiveProfile || effectiveProfile.role === "guest") {
+    return (
+      <div className="container mx-auto p-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+          <p className="text-gray-600">
+            You need TA permissions to view this dashboard.
+          </p>
+        </div>
       </div>
-      {/* Tour launcher - triggers the global tour context */}
-      {/* <TATour onClose={() => {}} /> */}
-    </TooltipProvider>
+    );
+  }
+
+  if (!availableCohorts.length) {
+    return (
+      <div className="container mx-auto p-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">No Cohorts Available</h1>
+          <p className="text-gray-600">
+            There are no cohorts assigned to you. Please contact an
+            administrator.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-4 space-y-8">
+      {/* Header with title */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">
+          Welcome back, {effectiveProfile?.firstName}!
+        </h2>
+      </div>
+
+      {/* Progress Visualization Section - All progress bars grouped together */}
+      <div className="space-y-6">
+        <div className="max-h-96 overflow-y-auto space-y-4 pr-2">
+          {sortedProgressData.map((sim) => (
+            <SimulationProgress key={sim.id} simulation={sim} />
+          ))}
+        </div>
+      </div>
+
+      {/* Assignments List Section - All simulation cards in carousel */}
+      {sortedSimulations.length > 0 && (
+        <div className="space-y-4">
+          {/* Header with navigation */}
+          <div className="flex items-center justify-between">
+            {totalPages > 1 && (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={handlePrevious}
+                  disabled={!canScrollLeft}
+                  className={`p-2 rounded-lg transition-colors ${
+                    canScrollLeft
+                      ? "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+                      : "bg-gray-50 text-gray-300 dark:bg-gray-900 dark:text-gray-600 cursor-not-allowed"
+                  }`}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {carouselIndex + 1} of {totalPages}
+                </span>
+                <button
+                  onClick={handleNext}
+                  disabled={!canScrollRight}
+                  className={`p-2 rounded-lg transition-colors ${
+                    canScrollRight
+                      ? "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+                      : "bg-gray-50 text-gray-300 dark:bg-gray-900 dark:text-gray-600 cursor-not-allowed"
+                  }`}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Carousel container */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {visibleSimulations.map((sim) => (
+              <SimulationCard
+                key={sim.id}
+                simulation={sim}
+                type="cohort"
+                onStartSimulation={handleStartSimulation}
+                loadingSimulation={loadingSimulation}
+                effectiveProfile={effectiveProfile}
+                scenarios={[]} // Not needed for cohort simulations
+                personas={[]} // Not needed for cohort simulations
+              />
+            ))}
+          </div>
+
+          {/* Dots indicator */}
+          {totalPages > 1 && (
+            <div className="flex justify-center space-x-2 mt-4">
+              {Array.from({ length: totalPages }, (_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCarouselIndex(index)}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    index === carouselIndex
+                      ? "bg-blue-500"
+                      : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* History Section. Always show current user's history */}
+      <div className="mt-12">
+        <SimulationHistory
+          profileId={effectiveProfile.id}
+          cohortIds={effectiveCohortIds}
+          showExport={!shouldShowAll}
+          showPractice={false}
+          startDate={startDate}
+          endDate={endDate}
+        />
+      </div>
+    </div>
   );
 }

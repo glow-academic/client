@@ -14,18 +14,14 @@ import {
   assistantChats as AssistantChats,
   assistantMessages as AssistantMessages,
   assistantToolCalls as AssistantToolCalls,
-  components as Components,
-  dashboards as Dashboards,
   personas as Personas,
-  systemAgents as SystemAgents,
-  scenarios as Scenarios,
-  scenarioClasses as ScenarioClasses,
-  scenarioLocations as ScenarioLocations,
-  scenarioDeadlines as ScenarioDeadlines,
-  scenarioTimes as ScenarioTimes,
-  simulations as Simulations,
+  agents as Agents,
   simulationAttempts as SimulationAttempts,
+  parameters as Parameters,
+  parameterItems as ParameterItems,
+  scenarios as Scenarios,
   simulationChats as SimulationChats,
+  simulations as Simulations,
   simulationMessages as SimulationMessages,
   simulationChatGrades as SimulationChatGrades,
   simulationChatFeedbacks as SimulationChatFeedbacks,
@@ -50,18 +46,14 @@ type AppFeedback = typeof AppFeedback.$inferSelect;
 type AssistantChat = typeof AssistantChats.$inferSelect;
 type AssistantMessage = typeof AssistantMessages.$inferSelect;
 type AssistantToolCall = typeof AssistantToolCalls.$inferSelect;
-type Component = typeof Components.$inferSelect;
-type Dashboard = typeof Dashboards.$inferSelect;
 type Persona = typeof Personas.$inferSelect;
-type SystemAgent = typeof SystemAgents.$inferSelect;
-type Scenario = typeof Scenarios.$inferSelect;
-type ScenarioClasse = typeof ScenarioClasses.$inferSelect;
-type ScenarioLocation = typeof ScenarioLocations.$inferSelect;
-type ScenarioDeadline = typeof ScenarioDeadlines.$inferSelect;
-type ScenarioTime = typeof ScenarioTimes.$inferSelect;
-type Simulation = typeof Simulations.$inferSelect;
+type Agent = typeof Agents.$inferSelect;
 type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
+type Parameter = typeof Parameters.$inferSelect;
+type ParameterItem = typeof ParameterItems.$inferSelect;
+type Scenario = typeof Scenarios.$inferSelect;
 type SimulationChat = typeof SimulationChats.$inferSelect;
+type Simulation = typeof Simulations.$inferSelect;
 type SimulationMessage = typeof SimulationMessages.$inferSelect;
 type SimulationChatGrade = typeof SimulationChatGrades.$inferSelect;
 type SimulationChatFeedback = typeof SimulationChatFeedbacks.$inferSelect;
@@ -92,18 +84,14 @@ export type {
   AssistantChat,
   AssistantMessage,
   AssistantToolCall,
-  Component,
-  Dashboard,
   Persona,
-  SystemAgent,
-  Scenario,
-  ScenarioClasse,
-  ScenarioLocation,
-  ScenarioDeadline,
-  ScenarioTime,
-  Simulation,
+  Agent,
   SimulationAttempt,
+  Parameter,
+  ParameterItem,
+  Scenario,
   SimulationChat,
+  Simulation,
   SimulationMessage,
   SimulationChatGrade,
   SimulationChatFeedback,

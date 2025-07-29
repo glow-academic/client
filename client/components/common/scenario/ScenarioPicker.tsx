@@ -1,6 +1,6 @@
 /**
- * SimulationPicker.tsx
- * Used to pick a certain item as part of the simulation
+ * ScenarioPicker.tsx
+ * Used to pick a certain item as part of the scenario
  * @AshokSaravanan222 & @siladiea
  * 05/20/2025
  */
@@ -47,6 +47,7 @@ export interface ScenarioPickerProps extends PopoverProps {
   multiSelect?: boolean; // Enable multiple selection mode
   onMultiSelect?: (models: Model[]) => void; // Callback for multiple selection
   hideSelectedChips?: boolean; // Hide the built-in selected chips display
+  disabled?: boolean; // Disable the picker
 }
 
 export function ScenarioPicker({
@@ -61,6 +62,7 @@ export function ScenarioPicker({
   multiSelect = false,
   onMultiSelect,
   hideSelectedChips = false,
+  disabled = false,
   ...props
 }: ScenarioPickerProps) {
   const [open, setOpen] = React.useState(false);
@@ -167,7 +169,7 @@ export function ScenarioPicker({
   const getSearchNotFoundMessage = () => {
     return `No ${label} found.`;
   };
-  
+
   return (
     <div className="grid gap-2">
       <HoverCard openDelay={200}>
@@ -204,7 +206,11 @@ export function ScenarioPicker({
         </div>
       )}
 
-      <Popover open={open} onOpenChange={setOpen} {...props}>
+      <Popover
+        open={disabled ? false : open}
+        onOpenChange={disabled ? () => {} : setOpen}
+        {...props}
+      >
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -212,6 +218,7 @@ export function ScenarioPicker({
             aria-expanded={open}
             aria-label="Select a model"
             className="w-full justify-between"
+            disabled={disabled}
           >
             {getButtonText()}
             <ChevronsUpDown className="opacity-50" />

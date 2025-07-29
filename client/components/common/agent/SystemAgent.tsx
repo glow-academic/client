@@ -24,9 +24,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { updateSystemAgent } from "@/utils/mutations/system_agents/update-system-agent";
 import { getAllModels } from "@/utils/queries/models/get-all-models";
-import { getSystemAgent } from "@/utils/queries/system_agents/get-system-agent";
+import { getAgent } from "@/utils/queries/agents/get-agent";
+import { updateAgent } from "@/utils/mutations/agents/update-agent";
 
 interface SystemAgentFormData {
   name?: string;
@@ -54,15 +54,15 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
       modelId: "",
       reasoning: "none",
     }),
-    []
+    [],
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<SystemAgentFormData>();
 
   const { data: agent, isLoading: isLoadingAgent } = useQuery({
-    queryKey: ["systemAgent", agentId],
-    queryFn: () => getSystemAgent(agentId),
+    queryKey: ["agent", agentId],
+    queryFn: () => getAgent(agentId),
     enabled: !!agentId,
   });
 
@@ -114,7 +114,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
     setIsSubmitting(true);
 
     try {
-      await updateSystemAgent(agentId, {
+      await updateAgent(agentId, {
         name: formData.name,
         description: formData.description,
         systemPrompt: formData.systemPrompt,
@@ -123,8 +123,8 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
         reasoning: formData.reasoning === "none" ? null : formData.reasoning,
         updatedAt: new Date().toISOString(),
       });
-      queryClient.invalidateQueries({ queryKey: ["systemAgents"] });
-      queryClient.invalidateQueries({ queryKey: ["systemAgent", agentId] });
+      queryClient.invalidateQueries({ queryKey: ["agents"] });
+      queryClient.invalidateQueries({ queryKey: ["agent", agentId] });
       toast.success("Agent updated successfully!");
       router.push("/system/agents");
     } catch (error) {
@@ -301,6 +301,14 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
           </div>
 
           <div className="flex gap-2 justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+              disabled={isSubmitting}
+            >
+              Back
+            </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Updating..." : "Update Agent"}
             </Button>

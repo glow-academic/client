@@ -59,22 +59,6 @@ class Cohorts(_Base, table=True):
     description: Optional[str] = Field(default=None, sa_column=Column('description', Text))
 
 
-class Components(_Base, table=True):
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='components_pkey'),
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-    file_name: str = Field(sa_column=Column('file_name', Text))
-    layout: Dict[str, Any] = Field(default_factory=dict, sa_column=Column('layout', JSONB))
-    stat: bool = Field(sa_column=Column('stat', Boolean, default=False))
-    default_component: bool = Field(sa_column=Column('default_component', Boolean, default=False))
-
-
 class Documents(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='documents_pkey'),
@@ -105,8 +89,24 @@ class Models(_Base, table=True):
     provider_id: Mapped[uuid.UUID] = Field(sa_column=Column('provider_id', Uuid(as_uuid=True)))
     active: bool = Field(sa_column=Column('active', Boolean, default=True))
 
+    agents: List['Agents'] = Relationship(back_populates='model')
     personas: List['Personas'] = Relationship(back_populates='model')
-    system_agents: List['SystemAgents'] = Relationship(back_populates='model')
+
+
+class Parameters(_Base, table=True):
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='parameters_pkey'),
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
+    name: str = Field(sa_column=Column('name', Text))
+    description: str = Field(sa_column=Column('description', Text))
+    numerical: bool = Field(sa_column=Column('numerical', Boolean, default=False))
+    active: bool = Field(sa_column=Column('active', Boolean, default=False))
+
+    parameter_items: List['ParameterItems'] = Relationship(back_populates='parameter')
 
 
 class Providers(_Base, table=True):
@@ -141,67 +141,6 @@ class Rubrics(_Base, table=True):
     simulations: List['Simulations'] = Relationship(back_populates='rubric')
     standard_groups: List['StandardGroups'] = Relationship(back_populates='rubric')
     simulation_chat_grades: List['SimulationChatGrades'] = Relationship(back_populates='rubric')
-
-
-class ScenarioClasses(_Base, table=True):
-    __tablename__ = 'scenario_classes'
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='scenario_classes_pkey'),
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    class_code: str = Field(sa_column=Column('class_code', Text))
-    description: str = Field(sa_column=Column('description', Text))
-
-    scenarios: List['Scenarios'] = Relationship(back_populates='class_')
-
-
-class ScenarioDeadlines(_Base, table=True):
-    __tablename__ = 'scenario_deadlines'
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='scenario_deadlines_pkey'),
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    deadline: str = Field(sa_column=Column('deadline', Text))
-    description: str = Field(sa_column=Column('description', Text))
-
-    scenarios: List['Scenarios'] = Relationship(back_populates='deadline')
-
-
-class ScenarioLocations(_Base, table=True):
-    __tablename__ = 'scenario_locations'
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='scenario_locations_pkey'),
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-
-    scenarios: List['Scenarios'] = Relationship(back_populates='location')
-
-
-class ScenarioTimes(_Base, table=True):
-    __tablename__ = 'scenario_times'
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='scenario_times_pkey'),
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    time_of_day: time = Field(sa_column=Column('time_of_day', Time))
-    description: str = Field(sa_column=Column('description', Text))
-
-    scenarios: List['Scenarios'] = Relationship(back_populates='time_')
 
 
 class Sessions(_Base, table=True):
@@ -240,6 +179,44 @@ class VerificationToken(_Base, table=True):
     token: str = Field(sa_column=Column('token', Text, primary_key=True))
 
 
+class Agents(_Base, table=True):
+    __table_args__ = (
+        ForeignKeyConstraint(['model_id'], ['models.id'], name='agents_model_id_fkey'),
+        PrimaryKeyConstraint('id', name='agents_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
+    name: str = Field(sa_column=Column('name', Text))
+    description: str = Field(sa_column=Column('description', Text))
+    system_prompt: str = Field(sa_column=Column('system_prompt', Text))
+    temperature: int = Field(sa_column=Column('temperature', Integer))
+    model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
+    reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('low', 'medium', 'high', name='reasoning_effort')))
+
+    model: Optional['Models'] = Relationship(back_populates='agents')
+
+
+class ParameterItems(_Base, table=True):
+    __tablename__ = 'parameter_items'
+    __table_args__ = (
+        ForeignKeyConstraint(['parameter_id'], ['parameters.id'], ondelete='CASCADE', name='parameter_items_parameter_id_fkey'),
+        PrimaryKeyConstraint('id', name='parameter_items_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
+    name: str = Field(sa_column=Column('name', Text))
+    description: str = Field(sa_column=Column('description', Text))
+    value: str = Field(sa_column=Column('value', Text))
+    parameter_id: Mapped[uuid.UUID] = Field(sa_column=Column('parameter_id', Uuid(as_uuid=True)))
+    default_item: bool = Field(sa_column=Column('default_item', Boolean, default=False))
+
+    parameter: Optional['Parameters'] = Relationship(back_populates='parameter_items')
+
+
 class Personas(_Base, table=True):
     __table_args__ = (
         ForeignKeyConstraint(['model_id'], ['models.id'], name='personas_model_id_fkey'),
@@ -255,6 +232,8 @@ class Personas(_Base, table=True):
     temperature: int = Field(sa_column=Column('temperature', Integer))
     default_persona: bool = Field(sa_column=Column('default_persona', Boolean, default=False))
     color: str = Field(sa_column=Column('color', Text))
+    icon: str = Field(sa_column=Column('icon', Text))
+    active: bool = Field(sa_column=Column('active', Boolean, default=False))
     model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
     reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('low', 'medium', 'high', name='reasoning_effort')))
 
@@ -286,7 +265,6 @@ class Profiles(_Base, table=True):
     user: Optional['Users'] = Relationship(back_populates='profiles')
     app_feedback: List['AppFeedback'] = Relationship(back_populates='profile')
     assistant_chats: List['AssistantChats'] = Relationship(back_populates='profile')
-    dashboards: List['Dashboards'] = Relationship(back_populates='profile')
     simulation_attempts: List['SimulationAttempts'] = Relationship(back_populates='profile')
 
 
@@ -331,26 +309,6 @@ class StandardGroups(_Base, table=True):
     standards: List['Standards'] = Relationship(back_populates='standard_group')
 
 
-class SystemAgents(_Base, table=True):
-    __tablename__ = 'system_agents'
-    __table_args__ = (
-        ForeignKeyConstraint(['model_id'], ['models.id'], name='system_agents_model_id_fkey'),
-        PrimaryKeyConstraint('id', name='system_agents_pkey')
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-    system_prompt: str = Field(sa_column=Column('system_prompt', Text))
-    temperature: int = Field(sa_column=Column('temperature', Integer))
-    model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
-    reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('low', 'medium', 'high', name='reasoning_effort')))
-
-    model: Optional['Models'] = Relationship(back_populates='system_agents')
-
-
 class AppFeedback(_Base, table=True):
     __tablename__ = 'app_feedback'
     __table_args__ = (
@@ -386,36 +344,9 @@ class AssistantChats(_Base, table=True):
     assistant_tool_calls: List['AssistantToolCalls'] = Relationship(back_populates='chat')
 
 
-class Dashboards(_Base, table=True):
-    __table_args__ = (
-        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='dashboards_profile_id_fkey'),
-        PrimaryKeyConstraint('id', name='dashboards_pkey')
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    header_component_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('header_component_ids', ARRAY(Uuid(as_uuid=True))))
-    primary_component_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('primary_component_ids', ARRAY(Uuid(as_uuid=True))))
-    secondary_component_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('secondary_component_ids', ARRAY(Uuid(as_uuid=True))))
-    footer_component_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('footer_component_ids', ARRAY(Uuid(as_uuid=True))))
-    auto_scroll: bool = Field(sa_column=Column('auto_scroll', Boolean, default=False))
-    show_indicators: bool = Field(sa_column=Column('show_indicators', Boolean, default=True))
-    header_components: int = Field(sa_column=Column('header_components', Integer, default=3))
-    main_split: float = Field(sa_column=Column('main_split', Double(53), default=0.65))
-    footer_split: float = Field(sa_column=Column('footer_split', Double(53), default=0.5))
-    profile_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('profile_id', Uuid(as_uuid=True)))
-
-    profile: Optional['Profiles'] = Relationship(back_populates='dashboards')
-
-
 class Scenarios(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['class_id'], ['scenario_classes.id'], ondelete='SET NULL', name='scenarios_class_id_fkey'),
-        ForeignKeyConstraint(['deadline_id'], ['scenario_deadlines.id'], ondelete='SET NULL', name='scenarios_deadline_id_fkey'),
-        ForeignKeyConstraint(['location_id'], ['scenario_locations.id'], ondelete='SET NULL', name='scenarios_location_id_fkey'),
         ForeignKeyConstraint(['persona_id'], ['personas.id'], ondelete='SET NULL', name='scenarios_persona_id_fkey'),
-        ForeignKeyConstraint(['time_id'], ['scenario_times.id'], ondelete='SET NULL', name='scenarios_time_id_fkey'),
         PrimaryKeyConstraint('id', name='scenarios_pkey')
     )
 
@@ -429,20 +360,11 @@ class Scenarios(_Base, table=True):
     generated: bool = Field(sa_column=Column('generated', Boolean, default=False))
     active: bool = Field(sa_column=Column('active', Boolean, default=True))
     persona_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('persona_id', Uuid(as_uuid=True)))
-    crowdedness: Optional[int] = Field(default=None, sa_column=Column('crowdedness', Integer))
-    intensity: Optional[int] = Field(default=None, sa_column=Column('intensity', Integer))
-    class_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('class_id', Uuid(as_uuid=True)))
-    location_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('location_id', Uuid(as_uuid=True)))
-    deadline_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('deadline_id', Uuid(as_uuid=True)))
-    time_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('time_id', Uuid(as_uuid=True)))
+    parameter_item_ids: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('parameter_item_ids', ARRAY(Uuid(as_uuid=True))))
     document_ids: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('document_ids', ARRAY(Uuid(as_uuid=True))))
     parent_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('parent_id', Uuid(as_uuid=True)))
 
-    class_: Optional['ScenarioClasses'] = Relationship(back_populates='scenarios')
-    deadline: Optional['ScenarioDeadlines'] = Relationship(back_populates='scenarios')
-    location: Optional['ScenarioLocations'] = Relationship(back_populates='scenarios')
     persona: Optional['Personas'] = Relationship(back_populates='scenarios')
-    time_: Optional['ScenarioTimes'] = Relationship(back_populates='scenarios')
     simulation_chats: List['SimulationChats'] = Relationship(back_populates='scenario')
 
 

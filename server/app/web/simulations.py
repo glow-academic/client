@@ -131,13 +131,8 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
             if not scenario.description or scenario.description == "":
                 name, description, trace_id = await run_scenario_agent(
                     persona_id=scenario.persona_id,
-                    class_id=scenario.class_id,
                     document_ids=scenario.document_ids,
-                    crowdedness=scenario.crowdedness,
-                    intensity=scenario.intensity,
-                    time_id=scenario.time_id,
-                    deadline_id=scenario.deadline_id,
-                    location_id=scenario.location_id,
+                    parameter_item_ids=scenario.parameter_item_ids,
                     group_id=new_attempt.id,
                     session=db_session,
                 )
@@ -370,13 +365,8 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                             trace_id,
                         ) = await run_scenario_agent(
                             persona_id=next_scenario.persona_id,
-                            class_id=next_scenario.class_id,
                             document_ids=next_scenario.document_ids,
-                            crowdedness=next_scenario.crowdedness,
-                            intensity=next_scenario.intensity,
-                            time_id=next_scenario.time_id,
-                            deadline_id=next_scenario.deadline_id,
-                            location_id=next_scenario.location_id,
+                            parameter_item_ids=next_scenario.parameter_item_ids,
                             group_id=attempt_id,
                             session=db_session,
                         )
@@ -442,7 +432,7 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
 
 
 async def process_simulation_message_websocket(
-    chat_id: str,
+    chat_id: uuid.UUID,
     message: str = "",
 ) -> None:
     """
@@ -530,7 +520,7 @@ async def process_simulation_message_websocket(
         cancelled = False
 
         try:
-            async for token in run_simulation_agent(uuid.UUID(chat_id), db_session):
+            async for token in run_simulation_agent(chat_id, db_session):
                 # Regular content token
                 accumulated_content += token
 

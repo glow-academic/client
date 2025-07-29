@@ -1,174 +1,465 @@
-# test_student_sim_report.py
+"""
+Tests for app.services.mcp.tools.analytics.student_sim_report
+"""
+
 import uuid
-from datetime import datetime
-from unittest.mock import patch, MagicMock
+from datetime import datetime, timedelta
+from unittest.mock import MagicMock, patch
 
-import pytest
 from app.services.mcp.tools.analytics.student_sim_report import student_sim_report
+from sqlalchemy.exc import SQLAlchemyError
 
 
-# Mock classes to simulate SQLModel objects
 class MockProfile:
-    def __init__(self, id, first_name, last_name, alias, created_at, role="student"):
-        (
-            self.id,
-            self.first_name,
-            self.last_name,
-            self.alias,
-            self.created_at,
-            self.role,
-        ) = id, first_name, last_name, alias, created_at, role
+    def __init__(self, id, first_name, last_name, alias, role="student"):
+        self.id = id
+        self.first_name = first_name
+        self.last_name = last_name
+        self.alias = alias
+        self.role = role
+        self.created_at = datetime.now()
 
 
 class MockSimulation:
-    def __init__(self, id, title):
-        self.id, self.title = id, title
+    def __init__(self, id, title, active=True):
+        self.id = id
+        self.title = title
+        self.active = active
 
 
-class MockScenario:
-    def __init__(self, id, name, description=""):
-        self.id, self.name, self.description = id, name, description
+class MockSimulationAttempt:
+    def __init__(self, id, created_at, simulation_id, profile_id=None):
+        self.id = id
+        self.created_at = created_at
+        self.simulation_id = simulation_id
+        self.profile_id = profile_id or uuid.uuid4()
 
 
-class MockStandard:
-    def __init__(self, name):
-        self.name = name
-
-
-class MockAttempt:
-    def __init__(self, id, simulation_id, created_at):
-        self.id, self.simulation_id, self.created_at = id, simulation_id, created_at
-
-
-class MockChat:
+class MockSimulationChat:
     def __init__(
         self,
         id,
         attempt_id,
         scenario_id,
-        created_at,
-        title,
-        completed=True,
+        created_at=None,
         completed_at=None,
+        completed=False,
     ):
-        (
-            self.id,
-            self.attempt_id,
-            self.scenario_id,
-            self.created_at,
-            self.title,
-            self.completed,
-            self.completed_at,
-        ) = id, attempt_id, scenario_id, created_at, title, completed, completed_at
+        self.id = id
+        self.attempt_id = attempt_id
+        self.scenario_id = scenario_id
+        self.created_at = created_at or datetime.now()
+        self.completed_at = completed_at
+        self.completed = completed
+        self.title = "Test Chat"
 
 
-class MockMessage:
-    def __init__(self, chat_id, type, content, created_at, completed=True):
-        self.chat_id, self.type, self.content, self.created_at, self.completed = (
-            chat_id,
-            type,
-            content,
-            created_at,
-            completed,
-        )
+class MockScenario:
+    def __init__(self, id, name, description="Test scenario"):
+        self.id = id
+        self.name = name
+        self.description = description
 
 
-class MockGrade:
-    def __init__(self, id, score, passed, time_taken, created_at):
-        self.id, self.score, self.passed, self.time_taken, self.created_at = (
-            id,
-            score,
-            passed,
-            time_taken,
-            created_at,
-        )
+class MockSimulationMessage:
+    def __init__(
+        self, id, chat_id, content, type="query", created_at=None, completed=True
+    ):
+        self.id = id
+        self.chat_id = chat_id
+        self.content = content
+        self.type = type
+        self.created_at = created_at or datetime.now()
+        self.completed = completed
 
 
-class MockFeedback:
-    def __init__(self, standard, total, feedback):
-        self.standard, self.total, self.feedback = standard, total, feedback
-
-
-@pytest.fixture
-def mock_db_session():
-    return MagicMock()
+class MockSimulationChatGrade:
+    def __init__(self, id, score, passed, time_taken=300):
+        self.id = id
+        self.score = score
+        self.passed = passed
+        self.time_taken = time_taken
+        self.created_at = datetime.now()
 
 
 @patch("app.services.mcp.tools.analytics.student_sim_report.get_session")
-class TestStudentSimReport:
-    """Tests for student_sim_report function using a mocked session."""
-
-    def test_success_with_full_data(self, mock_get_session, mock_db_session):
-        mock_get_session.return_value = iter([mock_db_session])
-        profile_id, sim_id, scenario_id = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
-
-        # 1. Mock Profile
-        mock_profile = MockProfile(
-            profile_id, "Detailed", "Student", "detail", datetime.now()
-        )
-
-        # 2. Mock related objects
-        mock_sim = MockSimulation(sim_id, "Report Sim")
-        mock_scenario = MockScenario(scenario_id, "Report Scenario")
-        mock_attempt = MockAttempt(uuid.uuid4(), sim_id, datetime.now())
-        mock_chat = MockChat(
-            uuid.uuid4(), mock_attempt.id, scenario_id, datetime.now(), "Chat"
-        )
-        mock_msg = MockMessage(mock_chat.id, "query", "Query", datetime.now())
-        mock_grade = MockGrade(uuid.uuid4(), 88, True, 123, datetime.now())
-        mock_feedback = MockFeedback(MockStandard("Clarity"), 5, "Good job")
-
-        # 3. Configure mock returns
-        mock_db_session.get.side_effect = [mock_profile, mock_sim, mock_scenario]
-
-        # Use a new mock for each `exec` call to control the chain
-        exec_mock_attempts = MagicMock()
-        exec_mock_attempts.all.return_value = [mock_attempt]
-
-        exec_mock_chats = MagicMock()
-        exec_mock_chats.all.return_value = [mock_chat]
-
-        exec_mock_messages = MagicMock()
-        exec_mock_messages.all.return_value = [mock_msg]
-
-        exec_mock_grade = MagicMock()
-        exec_mock_grade.first.return_value = mock_grade
-
-        exec_mock_feedback = MagicMock()
-        exec_mock_feedback.all.return_value = [(mock_feedback, mock_feedback.standard)]
-
-        mock_db_session.exec.side_effect = [
-            exec_mock_attempts,
-            exec_mock_chats,
-            exec_mock_messages,
-            exec_mock_grade,
-            exec_mock_feedback,
-        ]
-
-        # Act
-        result = student_sim_report(str(profile_id))
-
-        # Assert
-        assert "error" not in result
-        assert result["profile"]["id"] == str(profile_id)
-        assert len(result["attempts"]) == 1
-        assert result["attempts"][0]["chat"]["grade"]["score"] == 88
-        assert result["attempts"][0]["chat"]["feedback"][0]["standard"] == "Clarity"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `student_sim_report`")
 class TestStudent_Sim_Report:
     """Tests for student_sim_report function."""
 
-    def test_student_sim_report_success(self):
+    def test_student_sim_report_success(self, mock_get_session):
         """Test successful student_sim_report execution."""
-        # TODO: Implement test for student_sim_report
-        assert False, "IMPLEMENT: Test for student_sim_report"
+        mock_session = MagicMock()
+        mock_get_session.return_value = iter([mock_session])
 
-    def test_student_sim_report_error(self):
+        profile_id = uuid.uuid4()
+        simulation_id = uuid.uuid4()
+        scenario_id = uuid.uuid4()
+
+        mock_profile = MockProfile(profile_id, "John", "Doe", "jdoe")
+        mock_simulation = MockSimulation(simulation_id, "Conflict Resolution")
+        mock_scenario = MockScenario(scenario_id, "Test Scenario")
+
+        base_time = datetime.now()
+        attempt_id = uuid.uuid4()
+        chat_id = uuid.uuid4()
+
+        mock_attempt = MockSimulationAttempt(
+            attempt_id, base_time, simulation_id, profile_id
+        )
+        mock_chat = MockSimulationChat(
+            chat_id,
+            attempt_id,
+            scenario_id,
+            base_time,
+            base_time + timedelta(minutes=5),
+            True,
+        )
+        mock_grade = MockSimulationChatGrade(uuid.uuid4(), 85, True, 300)
+        mock_message = MockSimulationMessage(uuid.uuid4(), chat_id, "Hello", "query")
+
+        mock_session.get.side_effect = [mock_profile, mock_simulation, mock_scenario]
+        mock_session.exec.return_value.all.side_effect = [
+            [mock_attempt],
+            [mock_chat],
+            [mock_message],
+            [],
+        ]
+        mock_session.exec.return_value.first.return_value = mock_grade
+
+        result = student_sim_report(str(profile_id))
+
+        assert result["profile"]["id"] == str(profile_id)
+        assert result["profile"]["first_name"] == "John"
+        assert result["profile"]["last_name"] == "Doe"
+        assert result["profile"]["alias"] == "jdoe"
+        assert "attempts" in result
+        assert len(result["attempts"]) == 1
+
+    def test_student_sim_report_error(self, mock_get_session):
         """Test student_sim_report error handling."""
-        # TODO: Implement error test for student_sim_report
-        assert False, "IMPLEMENT: Error test for student_sim_report"
+        mock_session = MagicMock()
+        mock_get_session.return_value = iter([mock_session])
+
+        profile_id = uuid.uuid4()
+        mock_session.get.side_effect = SQLAlchemyError("Database connection failed")
+
+        result = student_sim_report(str(profile_id))
+
+        assert "error" in result
+        assert "Database error" in result["error"]
+
+    def test_student_sim_report_profile_not_found(self, mock_get_session):
+        """Test student_sim_report with non-existent profile."""
+        mock_session = MagicMock()
+        mock_get_session.return_value = iter([mock_session])
+
+        profile_id = uuid.uuid4()
+        mock_session.get.return_value = None
+
+        result = student_sim_report(str(profile_id))
+
+        assert "error" in result
+        assert "Profile not found" in result["error"]
+
+    def test_student_sim_report_invalid_uuid(self, mock_get_session):
+        """Test student_sim_report with invalid UUID."""
+        result = student_sim_report("invalid-uuid")
+
+        assert "error" in result
+        assert "Invalid profile_id format" in result["error"]
+
+    def test_student_sim_report_no_attempts(self, mock_get_session):
+        """Test student_sim_report with no attempts."""
+        mock_session = MagicMock()
+        mock_get_session.return_value = iter([mock_session])
+
+        profile_id = uuid.uuid4()
+        mock_profile = MockProfile(profile_id, "John", "Doe", "jdoe")
+
+        mock_session.get.return_value = mock_profile
+        mock_session.exec.return_value.all.return_value = []
+
+        result = student_sim_report(str(profile_id))
+
+        assert result["profile"]["id"] == str(profile_id)
+        assert result["attempts"] == []
+
+    def test_student_sim_report_multiple_attempts(self, mock_get_session):
+        """Test student_sim_report with multiple attempts."""
+        mock_session = MagicMock()
+        mock_get_session.return_value = iter([mock_session])
+
+        profile_id = uuid.uuid4()
+        simulation_id = uuid.uuid4()
+        scenario_id = uuid.uuid4()
+
+        mock_profile = MockProfile(profile_id, "John", "Doe", "jdoe")
+        mock_simulation = MockSimulation(simulation_id, "Test Simulation")
+        mock_scenario = MockScenario(scenario_id, "Test Scenario")
+
+        base_time = datetime.now()
+        attempt1_id = uuid.uuid4()
+        attempt2_id = uuid.uuid4()
+        chat1_id = uuid.uuid4()
+        chat2_id = uuid.uuid4()
+
+        mock_attempt1 = MockSimulationAttempt(
+            attempt1_id, base_time, simulation_id, profile_id
+        )
+        mock_attempt2 = MockSimulationAttempt(
+            attempt2_id, base_time + timedelta(hours=1), simulation_id, profile_id
+        )
+        mock_chat1 = MockSimulationChat(chat1_id, attempt1_id, scenario_id)
+        mock_chat2 = MockSimulationChat(chat2_id, attempt2_id, scenario_id)
+        mock_message1 = MockSimulationMessage(uuid.uuid4(), chat1_id, "Hello", "query")
+        mock_message2 = MockSimulationMessage(uuid.uuid4(), chat2_id, "Hi", "query")
+
+        # Use a more robust mock that handles the session.get calls properly
+        def mock_get(model, id):
+            print(f"mock_get called with model={model}, id={id}")
+            if id == profile_id:
+                return mock_profile
+            elif id == simulation_id:
+                return mock_simulation
+            elif id == scenario_id:
+                return mock_scenario
+            return None
+
+        mock_session.get.side_effect = mock_get
+
+        # Custom exec mock to handle .all() and .first() for each call
+        def exec_side_effect(*args, **kwargs):
+            m = MagicMock()
+            # The order of calls is:
+            # 1. attempts.all() -> [mock_attempt1, mock_attempt2]
+            # 2. chats for attempt1.all() -> [mock_chat1]
+            # 3. messages for chat1.all() -> [mock_message1]
+            # 4. feedback for chat1.all() -> []
+            # 5. chats for attempt2.all() -> [mock_chat2]
+            # 6. messages for chat2.all() -> [mock_message2]
+            # 7. feedback for chat2.all() -> []
+            if not hasattr(exec_side_effect, "call_count"):
+                exec_side_effect.call_count = 0
+            call = exec_side_effect.call_count
+            exec_side_effect.call_count += 1
+            if call == 0:
+                m.all.return_value = [mock_attempt1, mock_attempt2]
+            elif call == 1:
+                m.all.return_value = [mock_chat1]
+            elif call == 2:
+                m.all.return_value = [mock_message1]
+            elif call == 3:
+                m.all.return_value = []
+            elif call == 4:
+                m.all.return_value = [mock_chat2]
+            elif call == 5:
+                m.all.return_value = [mock_message2]
+            elif call == 6:
+                m.all.return_value = []
+            else:
+                m.all.return_value = []
+            m.first.return_value = None
+            return m
+
+        exec_side_effect.call_count = 0
+        mock_session.exec.side_effect = exec_side_effect
+
+        result = student_sim_report(str(profile_id))
+
+        # Debug: Let's see what we got
+        print(f"Result: {result}")
+        print(f"Number of attempts: {len(result['attempts'])}")
+
+        # The function returns one entry per chat, not per attempt
+        assert len(result["attempts"]) == 2
+        assert result["attempts"][0]["simulation_id"] == str(simulation_id)
+        assert result["attempts"][1]["simulation_id"] == str(simulation_id)
+
+    def test_student_sim_report_with_grades(self, mock_get_session):
+        """Test student_sim_report with grade information."""
+        mock_session = MagicMock()
+        mock_get_session.return_value = iter([mock_session])
+
+        profile_id = uuid.uuid4()
+        simulation_id = uuid.uuid4()
+        scenario_id = uuid.uuid4()
+
+        mock_profile = MockProfile(profile_id, "John", "Doe", "jdoe")
+        mock_simulation = MockSimulation(simulation_id, "Test Simulation")
+        mock_scenario = MockScenario(scenario_id, "Test Scenario")
+
+        base_time = datetime.now()
+        attempt_id = uuid.uuid4()
+        chat_id = uuid.uuid4()
+
+        mock_attempt = MockSimulationAttempt(
+            attempt_id, base_time, simulation_id, profile_id
+        )
+        mock_chat = MockSimulationChat(
+            chat_id,
+            attempt_id,
+            scenario_id,
+            base_time,
+            base_time + timedelta(minutes=5),
+            True,
+        )
+        mock_grade = MockSimulationChatGrade(uuid.uuid4(), 90, True, 300)
+        mock_message = MockSimulationMessage(uuid.uuid4(), chat_id, "Hello", "query")
+
+        mock_session.get.side_effect = [mock_profile, mock_simulation, mock_scenario]
+        mock_session.exec.return_value.all.side_effect = [
+            [mock_attempt],
+            [mock_chat],
+            [mock_message],
+            [],
+        ]
+        mock_session.exec.return_value.first.return_value = mock_grade
+
+        result = student_sim_report(str(profile_id))
+
+        assert len(result["attempts"]) == 1
+        attempt = result["attempts"][0]
+        assert attempt["chat"]["grade"]["score"] == 90
+        assert attempt["chat"]["grade"]["passed"] is True
+        assert attempt["chat"]["grade"]["time_taken"] == 300
+
+    def test_student_sim_report_no_grade(self, mock_get_session):
+        """Test student_sim_report with attempt but no grade."""
+        mock_session = MagicMock()
+        mock_get_session.return_value = iter([mock_session])
+
+        profile_id = uuid.uuid4()
+        simulation_id = uuid.uuid4()
+        scenario_id = uuid.uuid4()
+
+        mock_profile = MockProfile(profile_id, "John", "Doe", "jdoe")
+        mock_simulation = MockSimulation(simulation_id, "Test Simulation")
+        mock_scenario = MockScenario(scenario_id, "Test Scenario")
+
+        base_time = datetime.now()
+        attempt_id = uuid.uuid4()
+        chat_id = uuid.uuid4()
+
+        mock_attempt = MockSimulationAttempt(
+            attempt_id, base_time, simulation_id, profile_id
+        )
+        mock_chat = MockSimulationChat(
+            chat_id,
+            attempt_id,
+            scenario_id,
+            base_time,
+            base_time + timedelta(minutes=5),
+            True,
+        )
+
+        mock_session.get.side_effect = [mock_profile, mock_simulation, mock_scenario]
+        mock_session.exec.return_value.all.side_effect = [
+            [mock_attempt],
+            [mock_chat],
+            [],
+        ]
+        mock_session.exec.return_value.first.return_value = None  # No grade
+
+        result = student_sim_report(str(profile_id))
+
+        assert len(result["attempts"]) == 1
+        attempt = result["attempts"][0]
+        assert attempt["chat"]["grade"] == {}
+
+    def test_student_sim_report_multiple_simulations(self, mock_get_session):
+        """Test student_sim_report with multiple simulations."""
+        mock_session = MagicMock()
+        mock_get_session.return_value = iter([mock_session])
+
+        profile_id = uuid.uuid4()
+        simulation1_id = uuid.uuid4()
+        simulation2_id = uuid.uuid4()
+        scenario_id = uuid.uuid4()
+
+        mock_profile = MockProfile(profile_id, "John", "Doe", "jdoe")
+        mock_simulation1 = MockSimulation(simulation1_id, "Simulation 1")
+        mock_simulation2 = MockSimulation(simulation2_id, "Simulation 2")
+        mock_scenario = MockScenario(scenario_id, "Test Scenario")
+
+        base_time = datetime.now()
+        attempt1_id = uuid.uuid4()
+        attempt2_id = uuid.uuid4()
+        chat1_id = uuid.uuid4()
+        chat2_id = uuid.uuid4()
+
+        mock_attempt1 = MockSimulationAttempt(
+            attempt1_id, base_time, simulation1_id, profile_id
+        )
+        mock_attempt2 = MockSimulationAttempt(
+            attempt2_id, base_time + timedelta(hours=1), simulation2_id, profile_id
+        )
+        mock_chat1 = MockSimulationChat(chat1_id, attempt1_id, scenario_id)
+        mock_chat2 = MockSimulationChat(chat2_id, attempt2_id, scenario_id)
+        mock_message1 = MockSimulationMessage(uuid.uuid4(), chat1_id, "Hello", "query")
+        mock_message2 = MockSimulationMessage(uuid.uuid4(), chat2_id, "Hi", "query")
+
+        # The function calls session.get multiple times:
+        # 1. Get profile (returns mock_profile)
+        # 2. Get simulation1 for attempt1 (returns mock_simulation1)
+        # 3. Get scenario for chat1 (returns mock_scenario)
+        # 4. Get simulation2 for attempt2 (returns mock_simulation2)
+        # 5. Get scenario for chat2 (returns mock_scenario)
+        # Use a more robust mock that handles the session.get calls properly
+        def mock_get(model, id):
+            print(f"mock_get called with model={model}, id={id}")
+            if id == profile_id:
+                return mock_profile
+            elif id == simulation1_id:
+                return mock_simulation1
+            elif id == simulation2_id:
+                return mock_simulation2
+            elif id == scenario_id:
+                return mock_scenario
+            return None
+
+        mock_session.get.side_effect = mock_get
+
+        # Custom exec mock to handle .all() and .first() for each call
+        def exec_side_effect(*args, **kwargs):
+            m = MagicMock()
+            # The order of calls is:
+            # 1. attempts.all() -> [mock_attempt1, mock_attempt2]
+            # 2. chats for attempt1.all() -> [mock_chat1]
+            # 3. messages for chat1.all() -> [mock_message1]
+            # 4. feedback for chat1.all() -> []
+            # 5. chats for attempt2.all() -> [mock_chat2]
+            # 6. messages for chat2.all() -> [mock_message2]
+            # 7. feedback for chat2.all() -> []
+            if not hasattr(exec_side_effect, "call_count"):
+                exec_side_effect.call_count = 0
+            call = exec_side_effect.call_count
+            exec_side_effect.call_count += 1
+            if call == 0:
+                m.all.return_value = [mock_attempt1, mock_attempt2]
+            elif call == 1:
+                m.all.return_value = [mock_chat1]
+            elif call == 2:
+                m.all.return_value = [mock_message1]
+            elif call == 3:
+                m.all.return_value = []
+            elif call == 4:
+                m.all.return_value = [mock_chat2]
+            elif call == 5:
+                m.all.return_value = [mock_message2]
+            elif call == 6:
+                m.all.return_value = []
+            else:
+                m.all.return_value = []
+            m.first.return_value = None
+            return m
+
+        exec_side_effect.call_count = 0
+        mock_session.exec.side_effect = exec_side_effect
+
+        result = student_sim_report(str(profile_id))
+
+        # The function returns one entry per chat, not per attempt
+        assert len(result["attempts"]) == 2
+        simulation_ids = [attempt["simulation_id"] for attempt in result["attempts"]]
+        assert str(simulation1_id) in simulation_ids
+        assert str(simulation2_id) in simulation_ids

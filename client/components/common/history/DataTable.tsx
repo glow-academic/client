@@ -15,7 +15,6 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import * as React from "react";
-import { DateRange } from "react-day-picker";
 
 import {
   Table,
@@ -33,29 +32,36 @@ export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   profileOptions: { value: string; label: string }[];
-  scoreRangeOptions: { value: string; label: string }[];
+  simulationOptions: { value: string; label: string }[];
+  scenarioOptions?: { value: string; label: string }[];
   showExport?: boolean;
   showAll?: boolean;
+  startDate?: Date | undefined;
+  endDate?: Date | undefined;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   profileOptions,
-  scoreRangeOptions,
+  simulationOptions,
+  scenarioOptions = [],
   showExport = true,
   showAll = false,
+  startDate: _startDate,
+  endDate: _endDate,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+    React.useState<VisibilityState>({
+      // No columns hidden by default - clean slate
+    });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "createdAt", desc: true }, // Default to descending order by date
   ]);
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
 
   const table = useReactTable({
     data,
@@ -79,36 +85,13 @@ export function DataTable<TData, TValue>({
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  // Effect to update date filter when dateRange changes - only apply filter when user selects a date
-  React.useEffect(() => {
-    // Get the createdAt column reference
-    const createdAtColumn = table.getColumn("createdAt");
-    if (!createdAtColumn) return;
-
-    // Only set filter if there's a valid date range with both from and to dates
-    if (dateRange?.from && dateRange?.to) {
-      const fromDate = new Date(dateRange.from);
-      fromDate.setHours(0, 0, 0, 0);
-
-      const toDate = new Date(dateRange.to);
-      toDate.setHours(23, 59, 59, 999);
-
-      // Apply the date filter
-      createdAtColumn.setFilterValue([fromDate, toDate]);
-    } else {
-      // Clear the filter if date range is missing or incomplete
-      createdAtColumn.setFilterValue(undefined);
-    }
-  }, [dateRange, table]);
-
   return (
     <div className="space-y-4">
       <DataTableToolbar
         table={table}
         profileOptions={profileOptions}
-        scoreRangeOptions={scoreRangeOptions}
-        dateRange={dateRange}
-        setDateRange={setDateRange}
+        simulationOptions={simulationOptions}
+        scenarioOptions={scenarioOptions}
         showExport={showExport}
         showAll={showAll}
       />

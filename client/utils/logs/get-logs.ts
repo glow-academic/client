@@ -28,7 +28,7 @@ interface GetAppLogsResponse {
 // Get paginated logs, sorted by createdAt descending
 export async function getAppLogs({
   page = 1,
-  limit = 25,
+  limit = 1000, // Increased to get more logs for client-side filtering
 }: GetAppLogsParams = {}): Promise<GetAppLogsResponse> {
   try {
     const offset = (page - 1) * limit;

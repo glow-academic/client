@@ -1,8 +1,8 @@
 /**
  * AverageScore.tsx
- * This is used to show the average score.
+ * This component displays the average score for the agents.
  * @AshokSaravanan222 & @siladiea
- * 06/18/2025
+ * 07/23/2025
  */
 "use client";
 
@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -20,7 +21,7 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
-import { format, subDays } from "date-fns";
+import { eachDayOfInterval, format } from "date-fns";
 import { TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -33,34 +34,37 @@ import {
   YAxis,
 } from "recharts";
 
-type ColorTheme =
-  | "blue"
-  | "green"
-  | "purple"
-  | "orange"
-  | "teal"
-  | "red"
-  | "emerald"
-  | "indigo";
-type TimeRange = "7d" | "30d" | "90d";
-
 export interface AverageScoreProps {
-  color?: ColorTheme;
-  timeRange?: TimeRange;
-  title?: string;
-  showDialog?: boolean;
+  dateStart: Date;
+  dateEnd: Date;
+  thresholds: {
+    danger: number;
+    warning: number;
+    success: number;
+  };
+  profileId: string | undefined;
+  cohortIds: string[];
 }
 
 const COLOR_CONFIGS = {
-  blue: {
-    gradient: "from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900",
-    border: "border-blue-200",
-    text: "text-blue-700",
-    icon: "text-blue-600",
-    accent: "text-blue-600",
-    primary: "#3b82f6",
+  danger: {
+    gradient: "from-red-50 to-red-100 dark:from-red-950 dark:to-red-900",
+    border: "border-red-200",
+    text: "text-red-700",
+    icon: "text-red-600",
+    accent: "text-red-600",
+    primary: "#ef4444",
   },
-  green: {
+  warning: {
+    gradient:
+      "from-yellow-50 to-yellow-100 dark:from-yellow-950 dark:to-yellow-900",
+    border: "border-yellow-200",
+    text: "text-yellow-700",
+    icon: "text-yellow-600",
+    accent: "text-yellow-600",
+    primary: "#eab308",
+  },
+  success: {
     gradient:
       "from-green-50 to-green-100 dark:from-green-950 dark:to-green-900",
     border: "border-green-200",
@@ -69,73 +73,26 @@ const COLOR_CONFIGS = {
     accent: "text-green-600",
     primary: "#10b981",
   },
-  purple: {
-    gradient:
-      "from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900",
-    border: "border-purple-200",
-    text: "text-purple-700",
-    icon: "text-purple-600",
-    accent: "text-purple-600",
-    primary: "#8b5cf6",
-  },
-  orange: {
-    gradient:
-      "from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900",
-    border: "border-orange-200",
-    text: "text-orange-700",
-    icon: "text-orange-600",
-    accent: "text-orange-600",
-    primary: "#f97316",
-  },
-  teal: {
-    gradient: "from-teal-50 to-teal-100 dark:from-teal-950 dark:to-teal-900",
-    border: "border-teal-200",
-    text: "text-teal-700",
-    icon: "text-teal-600",
-    accent: "text-teal-600",
-    primary: "#14b8a6",
-  },
-  red: {
-    gradient: "from-red-50 to-red-100 dark:from-red-950 dark:to-red-900",
-    border: "border-red-200",
-    text: "text-red-700",
-    icon: "text-red-600",
-    accent: "text-red-600",
-    primary: "#ef4444",
-  },
-  emerald: {
-    gradient:
-      "from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900",
-    border: "border-emerald-200",
-    text: "text-emerald-700",
-    icon: "text-emerald-600",
-    accent: "text-emerald-600",
-    primary: "#10b981",
-  },
-  indigo: {
-    gradient:
-      "from-indigo-50 to-indigo-100 dark:from-indigo-950 dark:to-indigo-900",
-    border: "border-indigo-200",
-    text: "text-indigo-700",
-    icon: "text-indigo-600",
-    accent: "text-indigo-600",
-    primary: "#6366f1",
-  },
 };
 
 export default function AverageScore({
-  color = "emerald",
-  timeRange = "30d",
-  title = "Average Score",
-  showDialog = true,
+  dateStart,
+  dateEnd,
+  profileId,
+  thresholds,
+  cohortIds,
 }: AverageScoreProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const colorConfig = COLOR_CONFIGS[color];
 
   // Fetch data
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
+  });
+
+  const { data: cohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
   });
 
   const { data: attempts } = useQuery({
@@ -169,39 +126,98 @@ export default function AverageScore({
     queryFn: () => getAllRubrics(),
   });
 
-  // Calculate average score for the selected time range
+  // Helper function to get allowed simulation IDs based on cohort filtering
+  const allowedSimulationIds = useMemo(() => {
+    if (!cohorts || !cohortIds || cohortIds.length === 0) {
+      return null; // No cohort filtering, allow all simulations
+    }
+
+    // Filter cohorts to only those in cohortIds
+    const filteredCohorts = cohorts.filter((cohort) =>
+      cohortIds.includes(cohort.id),
+    );
+
+    if (filteredCohorts.length === 0) {
+      return []; // No matching cohorts, no data allowed
+    }
+
+    // If profileId is provided, check if profile belongs to any of the filtered cohorts
+    if (profileId) {
+      const profileInCohorts = filteredCohorts.some((cohort) =>
+        cohort.profileIds.includes(profileId),
+      );
+
+      if (!profileInCohorts) {
+        return []; // Profile not in any of the specified cohorts, no data allowed
+      }
+    }
+
+    // Get union of all simulation IDs from matching cohorts
+    const simulationIds = new Set<string>();
+    filteredCohorts.forEach((cohort) => {
+      cohort.simulationIds.forEach((simId) => {
+        if (simId !== "RAY") {
+          // Exclude placeholder
+          simulationIds.add(simId);
+        }
+      });
+    });
+
+    return Array.from(simulationIds);
+  }, [cohorts, cohortIds, profileId]);
+
+  // Calculate average score for the specified date range and profile
   const averageScore = useMemo(() => {
     if (!grades || !attempts || !chats || !simulations || !rubrics) return 0;
 
-    const getDaysFromTimeRange = (range: TimeRange) => {
-      switch (range) {
-        case "7d":
-          return 7;
-        case "30d":
-          return 30;
-        case "90d":
-          return 90;
-        default:
-          return 30;
-      }
-    };
-
-    const days = getDaysFromTimeRange(timeRange);
-    const cutoffDate = subDays(new Date(), days);
-
+    // Filter grades by date range
     const filteredGrades = grades.filter((grade) => {
       const gradeDate = new Date(grade.createdAt);
-      return gradeDate >= cutoffDate;
+      return gradeDate >= dateStart && gradeDate <= dateEnd;
     });
 
-    if (filteredGrades.length === 0) return 0;
+    // Filter by profileId if provided and exclude practice simulations
+    let profileFilteredGrades = profileId
+      ? filteredGrades.filter((grade) => {
+          const chat = chats.find((c) => c.id === grade.simulationChatId);
+          const attempt = attempts.find((a) => a.id === chat?.attemptId);
+          const simulation = simulations.find(
+            (s) => s.id === attempt?.simulationId,
+          );
+          return (
+            attempt?.profileId === profileId && !simulation?.practiceSimulation
+          );
+        })
+      : filteredGrades.filter((grade) => {
+          const chat = chats.find((c) => c.id === grade.simulationChatId);
+          const attempt = attempts.find((a) => a.id === chat?.attemptId);
+          const simulation = simulations.find(
+            (s) => s.id === attempt?.simulationId,
+          );
+          return !simulation?.practiceSimulation;
+        });
+
+    // Apply cohort filtering if simulation IDs are restricted
+    if (allowedSimulationIds !== null) {
+      if (allowedSimulationIds.length === 0) {
+        return 0; // No data allowed due to cohort restrictions
+      }
+
+      profileFilteredGrades = profileFilteredGrades.filter((grade) => {
+        const chat = chats.find((c) => c.id === grade.simulationChatId);
+        const attempt = attempts.find((a) => a.id === chat?.attemptId);
+        return allowedSimulationIds.includes(attempt?.simulationId || "");
+      });
+    }
+
+    if (profileFilteredGrades.length === 0) return 0;
 
     // Calculate average score using rubric points
-    const scoreSum = filteredGrades.reduce((sum, grade) => {
+    const scoreSum = profileFilteredGrades.reduce((sum, grade) => {
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId
+        (s) => s.id === attempt?.simulationId,
       );
       const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
       const rubricTotalPoints = rubric?.points || 100;
@@ -209,124 +225,184 @@ export default function AverageScore({
       return sum + scorePercent;
     }, 0);
 
-    return Math.round(scoreSum / filteredGrades.length);
-  }, [grades, attempts, chats, simulations, rubrics, timeRange]);
+    return Math.round(scoreSum / profileFilteredGrades.length);
+  }, [
+    grades,
+    attempts,
+    chats,
+    simulations,
+    rubrics,
+    dateStart,
+    dateEnd,
+    profileId,
+    allowedSimulationIds,
+  ]);
 
-  // Score trend data
+  // Score trend data for the specified date range
   const scoreTrend = useMemo(() => {
     if (!grades || !attempts || !chats || !simulations || !rubrics) return [];
 
-    const getDaysFromTimeRange = (range: TimeRange) => {
-      switch (range) {
-        case "7d":
-          return 7;
-        case "30d":
-          return 30;
-        case "90d":
-          return 90;
-        default:
-          return 30;
-      }
-    };
+    // Get all days in the date range
+    const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
 
-    const days = getDaysFromTimeRange(timeRange);
-    const getDateFormat = (range: TimeRange) => {
-      switch (range) {
-        case "7d":
-          return "MM/dd";
-        case "30d":
-          return "MM/dd";
-        case "90d":
-          return "M/d";
-        default:
-          return "MM/dd";
-      }
-    };
-
-    const dateFormat = getDateFormat(timeRange);
-
-    return Array.from({ length: Math.min(days, 14) }, (_, i) => {
-      const date = subDays(new Date(), Math.min(days, 14) - 1 - i);
+    return days.map((date) => {
       const dateStr = format(date, "yyyy-MM-dd");
 
+      // Filter grades for this specific day
       const dayGrades = grades.filter((grade) => {
         const gradeDate = format(new Date(grade.createdAt), "yyyy-MM-dd");
         return gradeDate === dateStr;
       });
 
+      // Filter by profileId if provided and exclude practice simulations
+      let profileFilteredDayGrades = profileId
+        ? dayGrades.filter((grade) => {
+            const chat = chats.find((c) => c.id === grade.simulationChatId);
+            const attempt = attempts.find((a) => a.id === chat?.attemptId);
+            const simulation = simulations.find(
+              (s) => s.id === attempt?.simulationId,
+            );
+            return (
+              attempt?.profileId === profileId &&
+              !simulation?.practiceSimulation
+            );
+          })
+        : dayGrades.filter((grade) => {
+            const chat = chats.find((c) => c.id === grade.simulationChatId);
+            const attempt = attempts.find((a) => a.id === chat?.attemptId);
+            const simulation = simulations.find(
+              (s) => s.id === attempt?.simulationId,
+            );
+            return !simulation?.practiceSimulation;
+          });
+
+      // Apply cohort filtering if simulation IDs are restricted
+      if (allowedSimulationIds !== null) {
+        if (allowedSimulationIds.length === 0) {
+          return {
+            date: format(date, "MM/dd"),
+            score: 0,
+            sessions: 0,
+          };
+        }
+
+        profileFilteredDayGrades = profileFilteredDayGrades.filter((grade) => {
+          const chat = chats.find((c) => c.id === grade.simulationChatId);
+          const attempt = attempts.find((a) => a.id === chat?.attemptId);
+          return allowedSimulationIds.includes(attempt?.simulationId || "");
+        });
+      }
+
       // Calculate average score for the day using rubric points
       let avgScore = 0;
-      if (dayGrades.length > 0) {
-        const dayScoreSum = dayGrades.reduce((sum, grade) => {
+      if (profileFilteredDayGrades.length > 0) {
+        const dayScoreSum = profileFilteredDayGrades.reduce((sum, grade) => {
           const chat = chats.find((c) => c.id === grade.simulationChatId);
           const attempt = attempts.find((a) => a.id === chat?.attemptId);
           const simulation = simulations.find(
-            (s) => s.id === attempt?.simulationId
+            (s) => s.id === attempt?.simulationId,
           );
           const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
           const rubricTotalPoints = rubric?.points || 100;
           const scorePercent = Math.round(
-            (grade.score / rubricTotalPoints) * 100
+            (grade.score / rubricTotalPoints) * 100,
           );
           return sum + scorePercent;
         }, 0);
-        avgScore = Math.round(dayScoreSum / dayGrades.length);
+        avgScore = Math.round(dayScoreSum / profileFilteredDayGrades.length);
       }
 
       return {
-        date: format(date, dateFormat),
+        date: format(date, "MM/dd"),
         score: avgScore,
-        sessions: dayGrades.length,
+        sessions: profileFilteredDayGrades.length,
       };
     });
-  }, [grades, attempts, chats, simulations, rubrics, timeRange]);
+  }, [
+    grades,
+    attempts,
+    chats,
+    simulations,
+    rubrics,
+    dateStart,
+    dateEnd,
+    profileId,
+    allowedSimulationIds,
+  ]);
 
-  const getTimeRangeLabel = (range: TimeRange) => {
-    switch (range) {
-      case "7d":
-        return "This week";
-      case "30d":
-        return "This month";
-      case "90d":
-        return "Last 3 months";
-      default:
-        return "This month";
-    }
+  // Determine color based on score and thresholds
+  const getColorConfig = (score: number) => {
+    if (score < thresholds.danger) return COLOR_CONFIGS.danger;
+    if (score < thresholds.warning) return COLOR_CONFIGS.warning;
+    return COLOR_CONFIGS.success;
   };
+
+  const colorConfig = getColorConfig(averageScore);
 
   const handleCardClick = () => {
-    if (showDialog) {
-      setIsDialogOpen(true);
-    }
+    setIsDialogOpen(true);
   };
+
+  // Check if we have data to display
+  const hasData = scoreTrend.some((day) => day.sessions > 0);
+
+  // Calculate actual trend from data
+  const getTrendAnalysis = () => {
+    if (!hasData || scoreTrend.length < 2) return null;
+
+    // Get recent data (last 3 days, 1 week, or 1 month depending on data availability)
+    const recentData = scoreTrend.slice(-3);
+    const earlierData = scoreTrend.slice(0, 3);
+
+    if (recentData.length === 0 || earlierData.length === 0) return null;
+
+    const recentAvg =
+      recentData.reduce((sum, day) => sum + day.score, 0) / recentData.length;
+    const earlierAvg =
+      earlierData.reduce((sum, day) => sum + day.score, 0) / earlierData.length;
+    const change = recentAvg - earlierAvg;
+    const changePercent =
+      earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
+
+    if (Math.abs(changePercent) < 1) return null;
+
+    const period =
+      scoreTrend.length <= 7
+        ? "3 days"
+        : scoreTrend.length <= 14
+          ? "1 week"
+          : "1 month";
+    const direction = changePercent > 0 ? "increased" : "decreased";
+
+    return `Average score ${direction} ${Math.abs(changePercent)}% over the past ${period}`;
+  };
+
+  const trendAnalysis = getTrendAnalysis();
 
   return (
     <>
       <Card
-        className={`bg-gradient-to-br ${colorConfig.gradient} ${colorConfig.border} ${showDialog ? "cursor-pointer hover:shadow-md transition-shadow" : ""}`}
+        className={`bg-gradient-to-br ${colorConfig.gradient} ${colorConfig.border} cursor-pointer hover:shadow-md transition-shadow h-full flex flex-col`}
         onClick={handleCardClick}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          <CardTitle className="text-sm font-medium">Average Score</CardTitle>
           <TrendingUp className={`h-4 w-4 ${colorConfig.icon}`} />
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 flex flex-col justify-center">
           <div className={`text-2xl font-bold ${colorConfig.text}`}>
-            {averageScore}%
+            {hasData ? `${averageScore}%` : "No data"}
           </div>
-          <p className={`text-xs ${colorConfig.accent} mt-1`}>
-            {getTimeRangeLabel(timeRange)}
-          </p>
         </CardContent>
       </Card>
 
-      {showDialog && (
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Average Score Trend</DialogTitle>
-            </DialogHeader>
-            <div className="h-64">
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Average Score Trend</DialogTitle>
+          </DialogHeader>
+          <div className="h-64">
+            {hasData ? (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={scoreTrend}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -348,10 +424,24 @@ export default function AverageScore({
                   />
                 </AreaChart>
               </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-500">
+                No data available for the selected date range
+                {profileId && " and profile"}
+              </div>
+            )}
+          </div>
+
+          {/* Dynamic Trend Analysis */}
+          {trendAnalysis && (
+            <div className="p-3 bg-gray-50 dark:bg-gray-950 rounded-lg">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {trendAnalysis}
+              </p>
             </div>
-          </DialogContent>
-        </Dialog>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

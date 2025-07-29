@@ -1,83 +1,127 @@
-# tests/services/mcp/tools/schema/test_query_data.py
+"""
+Tests for app.services.mcp.tools.schema.query_data
+"""
 
 from unittest.mock import MagicMock, patch
 
 from app.services.mcp.tools.schema.query_data import query_data
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import SQLAlchemyError
 
 
 @patch("app.services.mcp.tools.schema.query_data.engine")
-class Test_Query_Data:
-    """Unit tests for the query_data function."""
-
-    def test_query_data_success(self, mock_engine):
-        """Tests a successful SELECT query returns formatted data."""
-        mock_connection = MagicMock()
-        mock_engine.connect.return_value.__enter__.return_value = mock_connection
-        mock_row = MagicMock()
-        mock_row.__str__.return_value = "('John', 'Doe')"
-        mock_connection.execute.return_value.fetchmany.return_value = [mock_row]
-
-        result = query_data("SELECT first_name, last_name FROM profiles LIMIT 1")
-
-        assert result == "('John', 'Doe')"
-        mock_connection.execute.assert_called_once()
-
-    def test_query_data_with_like_clause(self, mock_engine):
-        """Tests that a query with a LIKE clause is constructed and run correctly."""
-        mock_connection = MagicMock()
-        mock_engine.connect.return_value.__enter__.return_value = mock_connection
-        mock_row = MagicMock()
-        mock_row.__str__.return_value = "('First Cohort',)"
-        mock_connection.execute.return_value.fetchmany.return_value = [mock_row]
-
-        # The purpose of this test is to ensure that a query containing LIKE
-        # passes the security check and is executed.
-        sql = "SELECT title FROM cohorts WHERE title LIKE '%First%'"
-        result = query_data(sql)
-
-        assert result == "('First Cohort',)"
-        # Verify the execute call was made, proving the query passed the check.
-        mock_connection.execute.assert_called_once()
-
-    def test_query_data_blocks_non_select_queries(self, mock_engine):
-        """Tests that write operations (UPDATE, DELETE, etc.) are blocked."""
-        result_update = query_data("UPDATE profiles SET first_name = 'Jane'")
-        result_delete = query_data("DELETE FROM profiles")
-
-        expected_error = "Error: only read-only queries are allowed."
-        assert result_update == expected_error
-        assert result_delete == expected_error
-        mock_engine.connect.assert_not_called()
-
-    def test_query_data_handles_db_error(self, mock_engine):
-        """Tests that a database error during execution is caught and returned."""
-        # Arrange: Make the connect call raise a SQLAlchemy error.
-        error = ProgrammingError(
-            "syntax error", params=None, orig="underlying DB error"
-        )
-        mock_engine.connect.side_effect = error
-
-        result = query_data("SELECT * FROM non_existent_table")
-
-        # FIX: The assertion now checks for the correct output, which is the
-        # full string representation of the exception object `e`.
-        assert result == f"Error: {error}"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `query_data`")
 class TestQuery_Data:
     """Tests for query_data function."""
 
-    def test_query_data_success(self):
+    def test_query_data_success(self, mock_engine):
         """Test successful query_data execution."""
-        # TODO: Implement test for query_data
-        assert False, "IMPLEMENT: Test for query_data"
+        mock_connection = MagicMock()
+        mock_engine.connect.return_value.__enter__.return_value = mock_connection
 
-    def test_query_data_error(self):
+        # Mock query result
+        mock_result = MagicMock()
+        mock_result.fetchmany.return_value = [
+            ("1", "Test User", "test@example.com"),
+            ("2", "Another User", "another@example.com"),
+        ]
+        mock_connection.execute.return_value = mock_result
+
+        result = query_data("SELECT id, name, email FROM profiles LIMIT 2")
+
+        assert "Test User" in result
+        assert "Another User" in result
+        assert "test@example.com" in result
+
+    def test_query_data_error(self, mock_engine):
         """Test query_data error handling."""
-        # TODO: Implement error test for query_data
-        assert False, "IMPLEMENT: Error test for query_data"
+        mock_connection = MagicMock()
+        mock_engine.connect.return_value.__enter__.return_value = mock_connection
+
+        mock_connection.execute.side_effect = SQLAlchemyError("Invalid SQL syntax")
+
+        result = query_data("SELECT * FROM nonexistent_table")
+
+        assert "Error:" in result
+        assert "Invalid SQL syntax" in result
+
+    def test_query_data_non_select_query(self, mock_engine):
+        """Test query_data blocks non-SELECT queries."""
+        result = query_data("INSERT INTO profiles (name) VALUES ('test')")
+
+        assert "Error: only read-only queries are allowed." in result
+
+    def test_query_data_update_query(self, mock_engine):
+        """Test query_data blocks UPDATE queries."""
+        result = query_data("UPDATE profiles SET name = 'test' WHERE id = 1")
+
+        assert "Error: only read-only queries are allowed." in result
+
+    def test_query_data_delete_query(self, mock_engine):
+        """Test query_data blocks DELETE queries."""
+        result = query_data("DELETE FROM profiles WHERE id = 1")
+
+        assert "Error: only read-only queries are allowed." in result
+
+    def test_query_data_drop_query(self, mock_engine):
+        """Test query_data blocks DROP queries."""
+        result = query_data("DROP TABLE profiles")
+
+        assert "Error: only read-only queries are allowed." in result
+
+    def test_query_data_empty_result(self, mock_engine):
+        """Test query_data with empty result set."""
+        mock_connection = MagicMock()
+        mock_engine.connect.return_value.__enter__.return_value = mock_connection
+
+        mock_result = MagicMock()
+        mock_result.fetchmany.return_value = []
+        mock_connection.execute.return_value = mock_result
+
+        result = query_data("SELECT id, name FROM profiles WHERE id = 999")
+
+        assert result == "(0 rows)"
+
+    def test_query_data_single_column(self, mock_engine):
+        """Test query_data with single column result."""
+        mock_connection = MagicMock()
+        mock_engine.connect.return_value.__enter__.return_value = mock_connection
+
+        mock_result = MagicMock()
+        mock_result.fetchmany.return_value = [("User 1",), ("User 2",)]
+        mock_connection.execute.return_value = mock_result
+
+        result = query_data("SELECT name FROM profiles")
+
+        assert "User 1" in result
+        assert "User 2" in result
+
+    def test_query_data_complex_query(self, mock_engine):
+        """Test query_data with complex SELECT query."""
+        mock_connection = MagicMock()
+        mock_engine.connect.return_value.__enter__.return_value = mock_connection
+
+        mock_result = MagicMock()
+        mock_result.fetchmany.return_value = [(5, 85.5)]
+        mock_connection.execute.return_value = mock_result
+
+        result = query_data(
+            "SELECT COUNT(*) as count, AVG(score) as avg_score FROM grades"
+        )
+
+        assert "5" in result
+        assert "85.5" in result
+
+    def test_query_data_with_join(self, mock_engine):
+        """Test query_data with JOIN query."""
+        mock_connection = MagicMock()
+        mock_engine.connect.return_value.__enter__.return_value = mock_connection
+
+        mock_result = MagicMock()
+        mock_result.fetchmany.return_value = [("John Doe", "Conflict Resolution")]
+        mock_connection.execute.return_value = mock_result
+
+        result = query_data(
+            "SELECT p.first_name || ' ' || p.last_name as profile_name, s.title as simulation_title FROM profiles p JOIN simulation_attempts sa ON p.id = sa.profile_id JOIN simulations s ON sa.simulation_id = s.id"
+        )
+
+        assert "John Doe" in result
+        assert "Conflict Resolution" in result

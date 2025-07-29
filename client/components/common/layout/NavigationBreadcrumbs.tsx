@@ -1,14 +1,14 @@
-import * as React from "react";
-import { useRouter } from "next/navigation";
 import {
   Breadcrumb,
-  BreadcrumbList,
   BreadcrumbItem,
   BreadcrumbLink,
+  BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { createBreadcrumbSectionChangeHandler } from "@/utils/navigation-utils";
+import { usePathname, useRouter } from "next/navigation";
+import * as React from "react";
 
 export interface NavigationBreadcrumbsProps {
   breadcrumbs: Array<{ title: string; section?: string }>;
@@ -20,7 +20,11 @@ export function NavigationBreadcrumbs({
   onSectionChange,
 }: NavigationBreadcrumbsProps) {
   const router = useRouter();
-  const breadcrumbNavigate = createBreadcrumbSectionChangeHandler(router);
+  const pathname = usePathname();
+  const breadcrumbNavigate = createBreadcrumbSectionChangeHandler(
+    router,
+    pathname,
+  );
 
   const handleBreadcrumbClick = (crumb: {
     title: string;

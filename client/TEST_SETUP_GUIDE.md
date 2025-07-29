@@ -24,10 +24,10 @@ The `test/setup.ts` file imports all centralized mocks once per test session:
 import "@testing-library/jest-dom";
 
 // Import all centralized mock modules
-import "@/mocks/queries";      // All query function mocks
-import "@/mocks/mutations";    // All mutation function mocks  
-import "@/mocks/navigation";   // Next.js navigation mocks
-import "@/mocks/auth";         // Next-auth and auth helper mocks
+import "@/mocks/queries"; // All query function mocks
+import "@/mocks/mutations"; // All mutation function mocks
+import "@/mocks/navigation"; // Next.js navigation mocks
+import "@/mocks/auth"; // Next-auth and auth helper mocks
 ```
 
 ### 3. Automatic Mock Detection
@@ -36,9 +36,9 @@ The test generation script automatically detects imports in components and adds 
 
 ```typescript
 // --- auto-generated mocks --------------------------------------------
-import '@/mocks/navigation';
-import '@/mocks/queries';
-import '@/mocks/auth';
+import "@/mocks/navigation";
+import "@/mocks/queries";
+import "@/mocks/auth";
 // ---------------------------------------------------------------------
 ```
 
@@ -76,17 +76,20 @@ npm run test:components
 ## Test Generation Features
 
 ### Automatic Mock Detection
+
 - Scans component imports
 - Maps imports to appropriate mock modules
 - Fails fast if unknown imports are found
 - Deduplicates mock imports
 
 ### Orphaned Test Cleanup
+
 - Removes test files for components that no longer exist
 - Keeps test directory clean
 - Reports cleanup actions
 
 ### Smart Analysis
+
 - Detects component features (props, hooks, API calls, etc.)
 - Generates appropriate test structure
 - Includes helpful comments and examples
@@ -126,6 +129,7 @@ describe('ComponentName', () => {
 ## Implementation Guidelines
 
 ### 1. Test Implementation
+
 All generated tests include deliberate failing assertions (`expect(true).toBe(false)`) to ensure they're implemented:
 
 ```typescript
@@ -138,17 +142,19 @@ expect(screen.getByRole('button')).toBeInTheDocument();
 ```
 
 ### 2. Mock Usage
+
 Tests can use mocked functions directly:
 
 ```typescript
-import { getUsers } from '@/utils/queries/users/get-users';
-import { vi } from 'vitest';
+import { getUsers } from "@/utils/queries/users/get-users";
+import { vi } from "vitest";
 
 // In test:
-vi.mocked(getUsers).mockResolvedValue([{ id: 1, name: 'Test User' }]);
+vi.mocked(getUsers).mockResolvedValue([{ id: 1, name: "Test User" }]);
 ```
 
 ### 3. Provider Setup
+
 For components requiring providers:
 
 ```typescript
@@ -156,7 +162,7 @@ const renderWithProviders = (ui: React.ReactElement) => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  
+
   return render(
     <QueryClientProvider client={queryClient}>
       {ui}
@@ -178,19 +184,20 @@ const renderWithProviders = (ui: React.ReactElement) => {
 
 ```typescript
 // mocks/api.ts
-import { vi } from 'vitest';
+import { vi } from "vitest";
 
-vi.mock('@/utils/api/fetch-data', () => ({
+vi.mock("@/utils/api/fetch-data", () => ({
   fetchData: vi.fn(),
 }));
 
 // In mapImportToMock():
-if (specifier.match(/^@\/utils\/api\/(.+)$/)) return '@/mocks/api';
+if (specifier.match(/^@\/utils\/api\/(.+)$/)) return "@/mocks/api";
 ```
 
 ## Troubleshooting
 
 ### Unknown Import Error
+
 If you see: `🚨 Unmapped import(s) in components/Foo.tsx: some-import`
 
 1. Add mapping rule to `mapImportToMock()`
@@ -198,11 +205,13 @@ If you see: `🚨 Unmapped import(s) in components/Foo.tsx: some-import`
 3. Regenerate tests
 
 ### Mock Not Working
+
 1. Ensure mock is imported in `test/setup.ts`
 2. Check `vi.mock()` call syntax
 3. Verify import path matches exactly
 
 ### Test Failures
+
 1. Check if component needs additional providers
 2. Verify mock return values match expected types
 3. Add missing context mocks if needed
@@ -223,4 +232,4 @@ If you see: `🚨 Unmapped import(s) in components/Foo.tsx: some-import`
 3. **Regenerate tests** - Run `npm run generate-tests`
 4. **Implement tests** - Replace failing assertions with real tests
 
-The system is now ready for use! All imports are automatically mocked, and you can focus on writing actual test logic instead of managing mock setup. 
+The system is now ready for use! All imports are automatically mocked, and you can focus on writing actual test logic instead of managing mock setup.

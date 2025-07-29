@@ -12,7 +12,6 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 // UI Components
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,32 +31,27 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
 // Custom Components
+import { ParameterSelector } from "./ParameterSelector";
 import { ScenarioPicker } from "./ScenarioPicker";
-import { ScenarioSlider } from "./ScenarioSlider";
 
 // Types and API functions
-import { Persona, Document, Scenario as ScenarioType, Simulation } from "@/types";
+import {
+  Document,
+  Persona,
+  Scenario as ScenarioType,
+  Simulation,
+} from "@/types";
 import { newScenario } from "@/utils/api/scenarios/new-scenario";
 import { logError } from "@/utils/logger";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
 import { updateScenario } from "@/utils/mutations/scenarios/update-scenario";
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
-import { getAllScenarioClasses } from "@/utils/queries/scenario_classes/get-all-scenario-classes";
-import { getAllScenarioDeadlines } from "@/utils/queries/scenario_deadlines/get-all-scenario-deadlines";
-import { getAllScenarioLocations } from "@/utils/queries/scenario_locations/get-all-scenario-locations";
-import { getAllScenarioTimes } from "@/utils/queries/scenario_times/get-all-scenario-times";
+import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
+import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
+import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { Model } from "@/utils/scenario";
@@ -87,14 +81,9 @@ export default function Scenario({
 
   // Form data state
   const initialFormData: Partial<ScenarioType> = {
-    classId: null,
     documentIds: [],
     personaId: null,
-    crowdedness: null,
-    intensity: null,
-    locationId: null,
-    timeId: null,
-    deadlineId: null,
+    parameterItemIds: [],
     name: "",
     description: "",
   };
@@ -118,30 +107,20 @@ export default function Scenario({
     queryFn: () => getAllPersonas(),
   });
 
+  const { data: parameters = [] } = useQuery({
+    queryKey: ["parameters"],
+    queryFn: () => getAllParameters(),
+  });
+
+  const { data: parameterItems = [] } = useQuery({
+    queryKey: ["parameter-items"],
+    queryFn: () => getAllParameterItems(),
+  });
+
   const { data: simulations = [] } = useQuery({
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
     enabled: isEditMode, // Only fetch when in edit mode
-  });
-
-  const { data: scenarioClasses = [] } = useQuery({
-    queryKey: ["scenarioClasses"],
-    queryFn: () => getAllScenarioClasses(),
-  });
-
-  const { data: scenarioLocations = [] } = useQuery({
-    queryKey: ["scenarioLocations"],
-    queryFn: () => getAllScenarioLocations(),
-  });
-
-  const { data: scenarioDeadlines = [] } = useQuery({
-    queryKey: ["scenarioDeadlines"],
-    queryFn: () => getAllScenarioDeadlines(),
-  });
-
-  const { data: scenarioTimes = [] } = useQuery({
-    queryKey: ["scenarioTimes"],
-    queryFn: () => getAllScenarioTimes(),
   });
 
   // Only fetch scenario data if in edit mode
@@ -155,14 +134,9 @@ export default function Scenario({
   useEffect(() => {
     if (isEditMode && scenario) {
       const scenarioData = {
-        classId: scenario.classId,
         documentIds: scenario.documentIds || [],
         personaId: scenario.personaId,
-        crowdedness: scenario.crowdedness,
-        intensity: scenario.intensity,
-        locationId: scenario.locationId,
-        timeId: scenario.timeId,
-        deadlineId: scenario.deadlineId,
+        parameterItemIds: scenario.parameterItemIds || [],
         name: scenario.name || "",
         description: scenario.description || "",
       };
@@ -179,17 +153,13 @@ export default function Scenario({
     const original = originalFormData;
 
     return (
-      current.classId !== original.classId ||
       current.personaId !== original.personaId ||
-      current.crowdedness !== original.crowdedness ||
-      current.intensity !== original.intensity ||
-      current.locationId !== original.locationId ||
-      current.timeId !== original.timeId ||
-      current.deadlineId !== original.deadlineId ||
       current.name !== original.name ||
       current.description !== original.description ||
       JSON.stringify(current.documentIds?.sort()) !==
-        JSON.stringify(original.documentIds?.sort())
+        JSON.stringify(original.documentIds?.sort()) ||
+      JSON.stringify(current.parameterItemIds?.sort()) !==
+        JSON.stringify(original.parameterItemIds?.sort())
     );
   }, [formData, originalFormData, isEditMode]);
 
@@ -202,8 +172,19 @@ export default function Scenario({
     );
   }, [simulations, scenarioId, isEditMode]);
 
+  // Check if scenario is readonly (used by active simulations)
+  const isReadonly = useMemo(() => {
+    if (!isEditMode || !scenarioId) return false;
+    return affectedSimulations.some((sim: Simulation) => sim.active);
+  }, [affectedSimulations, isEditMode, scenarioId]);
+
   // Calculate step status
   const getStepStatus = (stepId: string): StepStatus => {
+    // If we have a scenario description, mark all sections as completed
+    if (formData.description && formData.description.trim()) {
+      return "completed";
+    }
+
     switch (stepId) {
       case "persona":
         return formData.personaId ? "completed" : "active";
@@ -213,19 +194,10 @@ export default function Scenario({
           : formData.documentIds && formData.documentIds.length > 0
             ? "completed"
             : "active";
-      case "context":
+      case "parameters":
         return !formData.personaId
           ? "pending"
-          : formData.crowdedness || formData.intensity
-            ? "completed"
-            : "active";
-      case "environment":
-        return !formData.personaId
-          ? "pending"
-          : formData.locationId ||
-              formData.timeId ||
-              formData.deadlineId ||
-              formData.classId
+          : formData.parameterItemIds && formData.parameterItemIds.length > 0
             ? "completed"
             : "active";
       case "content":
@@ -250,24 +222,17 @@ export default function Scenario({
       optional: true,
     },
     {
-      id: "context",
-      title: "Set Context",
-      description: "Configure scenario parameters",
-      status: getStepStatus("context"),
-      optional: true,
-    },
-    {
-      id: "environment",
-      title: "Environment Details",
-      description: "Set location, timing, and urgency",
-      status: getStepStatus("environment"),
+      id: "parameters",
+      title: "Set Parameters",
+      description: "Configure scenario parameters and environment",
+      status: getStepStatus("parameters"),
       optional: true,
     },
     {
       id: "content",
-      title: "Scenario Content",
+      title: "Scenario",
       description:
-        "Add a custom description or leave blank for auto-generation",
+        "This is what the TA will see when they enter the scenario. Leave blank for auto-generation.",
       status: getStepStatus("content"),
     },
   ];
@@ -280,18 +245,17 @@ export default function Scenario({
     strengths: doc.mimeType,
   }));
 
-  const personaModels: Model[] = personas
-    .map((persona: Persona) => ({
-      id: persona.id,
-      name: persona.name,
-      description: persona.description,
-      type: "Personas" as const,
-    }));
+  const personaModels: Model[] = personas.map((persona: Persona) => ({
+    id: persona.id,
+    name: persona.name,
+    description: persona.description,
+    type: "Personas" as const,
+  }));
 
   // Event handlers
   const handleInputChange = (
     field: keyof Partial<ScenarioType>,
-    value: string | number | string[] | null
+    value: string | string[] | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -303,12 +267,7 @@ export default function Scenario({
       const result = await newScenario({
         personaId: formData.personaId || null,
         documentIds: formData.documentIds || [],
-        crowdedness: formData.crowdedness || null,
-        intensity: formData.intensity || null,
-        classId: formData.classId || null,
-        locationId: formData.locationId || null,
-        timeId: formData.timeId || null,
-        deadlineId: formData.deadlineId || null,
+        parameterItemIds: formData.parameterItemIds || [],
       });
 
       if (!result.success) {
@@ -343,13 +302,8 @@ export default function Scenario({
         name: formData.name?.trim() || "",
         description: formData.description?.trim() || "",
         personaId: formData.personaId,
-        classId: formData.classId,
         documentIds: formData.documentIds,
-        crowdedness: formData.crowdedness,
-        intensity: formData.intensity,
-        locationId: formData.locationId,
-        timeId: formData.timeId,
-        deadlineId: formData.deadlineId,
+        parameterItemIds: formData.parameterItemIds,
       };
 
       if (isEditMode) {
@@ -404,12 +358,65 @@ export default function Scenario({
   const selectedDocuments = documents.filter((doc) =>
     formData.documentIds?.includes(doc.id)
   );
-  const selectedPersona = personas.find((persona) => persona.id === formData.personaId);
+  const selectedPersona = personas.find(
+    (persona) => persona.id === formData.personaId
+  );
 
   return (
     <div className="w-full p-6 space-y-8">
+      {isReadonly && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg
+                className="h-5 w-5 text-yellow-400"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">
+                Scenario is in use by active simulations
+              </h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <p>
+                  This scenario is currently being used by{" "}
+                  {affectedSimulations.filter((sim) => sim.active).length}{" "}
+                  active simulation
+                  {affectedSimulations.filter((sim) => sim.active).length !== 1
+                    ? "s"
+                    : ""}
+                  . You can view the details but cannot make changes to prevent
+                  disruption to ongoing simulations.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Scenario Title Input */}
+      <div className="flex justify-center mb-6">
+        <div className="w-full max-w-2xl">
+          <input
+            type="text"
+            value={formData.name || ""}
+            onChange={(e) => handleInputChange("name", e.target.value)}
+            placeholder="New Scenario"
+            className="w-full text-3xl font-semibold text-center border-none outline-none bg-transparent px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isReadonly}
+          />
+        </div>
+      </div>
+
       <div className="space-y-6">
-        {/* Step 1: Agent Selection */}
+        {/* Step 1: Persona Selection */}
         <Card
           className={`transition-all ${!isEditMode && getStepStatus("persona") === "active" ? "ring-2 ring-primary" : ""} ${
             !isEditMode && getStepStatus("persona") === "pending"
@@ -463,10 +470,12 @@ export default function Scenario({
                     }
                   : undefined
               }
+              disabled={isReadonly}
             />
           </CardContent>
         </Card>
 
+        {/* Step 2: Documents */}
         <Card
           className={`transition-all ${!isEditMode && getStepStatus("documents") === "active" ? "ring-2 ring-primary" : ""} ${
             !isEditMode && getStepStatus("documents") === "pending"
@@ -527,14 +536,15 @@ export default function Scenario({
                   models.map((m) => m.id)
                 )
               }
+              disabled={isReadonly}
             />
           </CardContent>
         </Card>
 
-        {/* Step 4: Context Parameters */}
+        {/* Step 3: Parameters */}
         <Card
-          className={`transition-all ${!isEditMode && getStepStatus("context") === "active" ? "ring-2 ring-primary" : ""} ${
-            !isEditMode && getStepStatus("context") === "pending"
+          className={`transition-all ${!isEditMode && getStepStatus("parameters") === "active" ? "ring-2 ring-primary" : ""} ${
+            !isEditMode && getStepStatus("parameters") === "pending"
               ? "opacity-50"
               : ""
           }`}
@@ -543,14 +553,14 @@ export default function Scenario({
             <div className="flex items-center space-x-3">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  getStepStatus("context") === "completed"
+                  getStepStatus("parameters") === "completed"
                     ? "bg-green-500 text-white"
-                    : getStepStatus("context") === "active"
+                    : getStepStatus("parameters") === "active"
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted"
                 }`}
               >
-                {getStepStatus("context") === "completed" ? (
+                {getStepStatus("parameters") === "completed" ? (
                   <Check className="w-4 h-4" />
                 ) : (
                   "3"
@@ -568,229 +578,24 @@ export default function Scenario({
                 <CardDescription>{steps[2]?.description || ""}</CardDescription>
               </div>
             </div>
-            {getStepStatus("context") === "completed" && (
+            {getStepStatus("parameters") === "completed" && (
               <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto" />
             )}
           </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Crowdedness */}
-            <div className="space-y-2">
-              {formData.crowdedness !== null ? (
-                <ScenarioSlider
-                  label="Crowdedness Level"
-                  defaultValue={[5]}
-                  description="How busy or crowded the environment should be (1-10)"
-                  min={1}
-                  max={10}
-                  step={1}
-                  value={[formData.crowdedness || 5]}
-                  onValueChange={(value) =>
-                    handleInputChange("crowdedness", value[0] || 5)
-                  }
-                  inlineTitle={true}
-                  showReset={true}
-                  onReset={() => handleInputChange("crowdedness", null)}
-                />
-              ) : (
-                <>
-                  <Label>Crowdedness Level</Label>
-                  <Button
-                    variant="outline"
-                    onClick={() => handleInputChange("crowdedness", 5)}
-                    className="w-full justify-start"
-                  >
-                    Set crowdedness level
-                  </Button>
-                </>
-              )}
-            </div>
-
-            {/* Intensity */}
-            <div className="space-y-2">
-              {formData.intensity !== null ? (
-                <ScenarioSlider
-                  label="Intensity Level"
-                  description="How intense or challenging the scenario should be (1-10)"
-                  min={1}
-                  max={10}
-                  step={1}
-                  defaultValue={[5]}
-                  value={[formData.intensity || 5]}
-                  onValueChange={(value) =>
-                    handleInputChange("intensity", value[0] || 5)
-                  }
-                  inlineTitle={true}
-                  showReset={true}
-                  onReset={() => handleInputChange("intensity", null)}
-                />
-              ) : (
-                <>
-                  <Label>Intensity Level</Label>
-                  <Button
-                    variant="outline"
-                    onClick={() => handleInputChange("intensity", 5)}
-                    className="w-full justify-start"
-                  >
-                    Set intensity level
-                  </Button>
-                </>
-              )}
-            </div>
+          <CardContent>
+            <ParameterSelector
+              parameters={parameters}
+              parameterItems={parameterItems}
+              selectedParameterItemIds={formData.parameterItemIds || []}
+              onParameterItemIdsChange={(parameterItemIds) =>
+                handleInputChange("parameterItemIds", parameterItemIds)
+              }
+              disabled={isReadonly}
+            />
           </CardContent>
         </Card>
 
-        {/* Step 5: Environment Details */}
-        <Card
-          className={`transition-all ${!isEditMode && getStepStatus("environment") === "active" ? "ring-2 ring-primary" : ""} ${
-            !isEditMode && getStepStatus("environment") === "pending"
-              ? "opacity-50"
-              : ""
-          }`}
-        >
-          <CardHeader className="flex flex-row items-center space-y-0 pb-4">
-            <div className="flex items-center space-x-3">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  getStepStatus("environment") === "completed"
-                    ? "bg-green-500 text-white"
-                    : getStepStatus("environment") === "active"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                }`}
-              >
-                {getStepStatus("environment") === "completed" ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  "4"
-                )}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-lg">
-                    {steps[3]?.title || ""}
-                  </CardTitle>
-                  <Badge variant="secondary" className="text-xs">
-                    Optional
-                  </Badge>
-                </div>
-                <CardDescription>{steps[3]?.description || ""}</CardDescription>
-              </div>
-            </div>
-            {getStepStatus("environment") === "completed" && (
-              <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto" />
-            )}
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {/* Class */}
-            <div className="space-y-2">
-              <Label>Class</Label>
-              <Select
-                value={formData.classId || "none"}
-                onValueChange={(value) =>
-                  handleInputChange(
-                    "classId",
-                    value === "none" ? null : value
-                  )
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select class" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No preference</SelectItem>
-                  {scenarioClasses.map((scenarioClass) => (
-                    <SelectItem key={scenarioClass.id} value={scenarioClass.id}>
-                      {scenarioClass.classCode}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-
-            {/* Location */}
-            <div className="space-y-2">
-              <Label>Location</Label>
-              <Select
-                value={formData.locationId || "none"}
-                onValueChange={(value) =>
-                  handleInputChange(
-                    "locationId",
-                    value === "none" ? null : value
-                  )
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select location" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No preference</SelectItem>
-                  {scenarioLocations.map((location) => (
-                    <SelectItem key={location.id} value={location.id}>
-                      {location.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Time of Day */}
-            <div className="space-y-2">
-              <Label>Time of Day</Label>
-              <Select
-                value={formData.timeId || "none"}
-                onValueChange={(value) =>
-                  handleInputChange("timeId", value === "none" ? null : value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select time" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No preference</SelectItem>
-                  {scenarioTimes.map((time) => (
-                    <SelectItem key={time.id} value={time.id}>
-                      {new Date(
-                        `1970-01-01T${time.timeOfDay}`
-                      ).toLocaleTimeString([], {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Deadline */}
-            <div className="space-y-2">
-              <Label>Assignment Deadline</Label>
-              <Select
-                value={formData.deadlineId || "none"}
-                onValueChange={(value) =>
-                  handleInputChange(
-                    "deadlineId",
-                    value === "none" ? null : value
-                  )
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select deadline" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No preference</SelectItem>
-                  {scenarioDeadlines.map((deadline) => (
-                    <SelectItem key={deadline.id} value={deadline.id}>
-                      {deadline.deadline}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Step 6: Content */}
+        {/* Step 4: Content */}
         <Card
           className={`transition-all ${!isEditMode && getStepStatus("content") === "active" ? "ring-2 ring-primary" : ""} ${
             !isEditMode && getStepStatus("content") === "pending"
@@ -812,22 +617,22 @@ export default function Scenario({
                 {getStepStatus("content") === "completed" ? (
                   <Check className="w-4 h-4" />
                 ) : (
-                  "5"
+                  "4"
                 )}
               </div>
               <div className="flex-1">
                 <CardTitle className="text-lg">
-                  {steps[4]?.title || ""}
+                  {steps[3]?.title || ""}
                 </CardTitle>
-                <CardDescription>{steps[4]?.description || ""}</CardDescription>
+                <CardDescription>{steps[3]?.description || ""}</CardDescription>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 onClick={handleGenerateScenario}
-                disabled={isSubmitting || isGeneratingScenario}
+                disabled={isSubmitting || isGeneratingScenario || isReadonly}
               >
                 {isGeneratingScenario ? (
                   <>
@@ -847,7 +652,6 @@ export default function Scenario({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="description">Scenario Description</Label>
               <Textarea
                 id="description"
                 value={formData.description || ""}
@@ -856,14 +660,8 @@ export default function Scenario({
                 }
                 placeholder="Enter a custom scenario description or leave blank to auto-generate..."
                 className="min-h-[120px]"
+                disabled={isReadonly}
               />
-              <div className="flex items-start gap-2 p-3 rounded-md bg-blue-50 border border-blue-200">
-                <div className="text-blue-600 text-sm">
-                  <strong>💡 Tip:</strong> You can save the scenario with a
-                  blank description and we will dynamically generate one for
-                  each chat.
-                </div>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -881,7 +679,10 @@ export default function Scenario({
         <Button
           onClick={isEditMode ? handleUpdateClick : handleSubmit}
           disabled={
-            isSubmitting || isGeneratingScenario || (isEditMode && !hasChanges)
+            isSubmitting ||
+            isGeneratingScenario ||
+            (isEditMode && !hasChanges) ||
+            isReadonly
           }
           className="min-w-[120px]"
         >

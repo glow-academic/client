@@ -2,28 +2,29 @@
 # Import analytics tools
 from typing import Any, Dict, List
 
-from app.services.mcp.tools.analytics.cohort_pass_matrix import \
-    cohort_pass_matrix
-from app.services.mcp.tools.analytics.persona_response_times import \
-    persona_response_times
-from app.services.mcp.tools.analytics.simulation_attempts import \
-    simulation_attempts
-from app.services.mcp.tools.analytics.student_sim_report import \
-    student_sim_report
+from app.services.mcp.tools.analytics.cohort_pass_matrix import cohort_pass_matrix
+from app.services.mcp.tools.analytics.persona_response_times import (
+    persona_response_times,
+)
+from app.services.mcp.tools.analytics.simulation_attempts import simulation_attempts
+from app.services.mcp.tools.analytics.student_sim_report import student_sim_report
+
 # Import log tools
 from app.services.mcp.tools.log.assistant_usage import assistant_usage
 from app.services.mcp.tools.log.export_csv import export_csv
 from app.services.mcp.tools.log.recent_app_logs import recent_app_logs
 from app.services.mcp.tools.lookup.cohort_overview import cohort_overview
+
 # Import lookup tools
 from app.services.mcp.tools.lookup.persona_overview import persona_overview
 from app.services.mcp.tools.lookup.profile_overview import profile_overview
 from app.services.mcp.tools.lookup.scenario_overview import scenario_overview
-from app.services.mcp.tools.lookup.simulation_overview import \
-    simulation_overview
+from app.services.mcp.tools.lookup.simulation_overview import simulation_overview
+
 # Import schema tools
 from app.services.mcp.tools.schema.list_schema import list_schema
 from app.services.mcp.tools.schema.query_data import query_data
+
 # Import search tools
 from app.services.mcp.tools.search.find_cohorts import find_cohorts
 from app.services.mcp.tools.search.find_personas import find_personas
@@ -119,7 +120,6 @@ def _find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
 @server.tool()
 def _student_sim_report(profile_id: str, recent: int = 50) -> Dict[str, Any]:
     return student_sim_report(profile_id, recent)
-
 
 
 @server.tool()

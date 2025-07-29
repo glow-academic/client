@@ -1,112 +1,18 @@
 import { profileRole } from "@/utils/drizzle/schema";
+import {
+  getAvailableSectionsForRole,
+  getFirstAvailableSectionForRole,
+  isSectionAvailableForRole,
+} from "@/utils/route-permissions";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+
 type ProfileRole = (typeof profileRole.enumValues)[number];
 
-/**
- * Get the first available section for a given role
- * This determines where users should be navigated when switching roles
- */
-export const getFirstAvailableSectionForRole = (role: ProfileRole): string => {
-  switch (role) {
-    case "guest":
-    case "ta":
-      return "home";
-    case "instructional":
-      return "dashboard"; // Analytics overview
-    case "admin":
-      return "dashboard"; // Analytics overview
-    default:
-      return "home";
-  }
-};
-
-/**
- * Get all available sections for a given role
- * This helps determine what sections a user can access
- */
-export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
-  const sections: string[] = [];
-
-  switch (role) {
-    case "guest":
-      sections.push("home");
-      break;
-    case "ta":
-      sections.push("home", "classes", "cohorts");
-      break;
-    case "instructional":
-      sections.push(
-        "dashboard",
-        "reports",
-        "progress", // Analytics
-        "scenarios",
-        "simulations",
-        "rubrics", // Create
-        "cohorts" // Classes (all)
-      );
-      break;
-    case "admin":
-      sections.push(
-        "dashboard",
-        "reports",
-        "progress", // Analytics
-        "scenarios",
-        "simulations",
-        "rubrics", // Create
-        "cohorts", // Classes (all)
-        "personas",
-        "logs",
-        "providers", // Management
-        "agents",
-        "providers",
-        "logs",
-        "health" // System
-      );
-      break;
-    case "superadmin":
-      sections.push(
-        "dashboard",
-        "reports",
-        "progress", // Analytics
-        "scenarios",
-        "simulations",
-        "rubrics", // Create
-        "classes",
-        "cohorts", // Classes (all)
-        "departments",
-        "personas",
-        "logs",
-        "providers", // Management
-        "agents",
-        "providers",
-        "logs",
-        "health" // System
-      );
-      break;
-  }
-
-  // All roles can access profile
-  sections.push("profile");
-
-  return sections;
-};
-
-/**
- * Check if a section is available for a given role
- */
-export const isSectionAvailableForRole = (
-  section: string,
-  role: ProfileRole
-): boolean => {
-  const availableSections = getAvailableSectionsForRole(role);
-
-  // Handle dynamic sections (class-*, agent-*, etc.)
-  if (section && section.includes("-")) {
-    const baseSection = section.split("-")[0];
-    return availableSections.some((s) => s.startsWith(baseSection || ""));
-  }
-
-  return availableSections.includes(section);
+// Re-export the functions from route-permissions for backward compatibility
+export {
+  getAvailableSectionsForRole,
+  getFirstAvailableSectionForRole,
+  isSectionAvailableForRole,
 };
 
 /**
@@ -114,6 +20,11 @@ export const isSectionAvailableForRole = (
  * Main screens are those with 1 or 2 slashes (main sections and their direct children)
  */
 export const isMainScreen = (pathname: string): boolean => {
+  // Special case: allow /cohorts/new to be treated as a main screen
+  if (pathname === "/cohorts/new") {
+    return false;
+  }
+
   // Remove leading slash and count remaining slashes
   const pathWithoutLeadingSlash = pathname.startsWith("/")
     ? pathname.slice(1)
@@ -137,10 +48,17 @@ export const isMainScreen = (pathname: string): boolean => {
 /**
  * Maps a section identifier to its corresponding route path
  */
-export const getSectionRoute = (section: string): string => {
+export const getSectionRoute = (
+  section: string,
+  currentPathname?: string,
+): string => {
   switch (section) {
     case "home":
       return "/home";
+
+    // Practice route
+    case "practice":
+      return "/practice";
 
     // Analytics routes
     case "analytics":
@@ -149,10 +67,18 @@ export const getSectionRoute = (section: string): string => {
       return "/analytics/dashboard";
     case "reports":
       return "/analytics/reports";
-    case "progress":
-      return "/analytics/progress";
+    case "leaderboard":
+      return "/analytics/leaderboard";
 
     case "cohorts":
+      // For TA users, redirect to their first cohort sub-item page
+      // For other roles, go to the main cohorts page
+      if (currentPathname && currentPathname.includes("/cohorts/c/")) {
+        // If we're already on a cohort page, stay there
+        return currentPathname;
+      }
+      // For TAs, this will be handled by the sidebar to redirect to first cohort
+      // For other roles, go to main cohorts page
       return "/cohorts";
 
     // Create routes
@@ -166,28 +92,26 @@ export const getSectionRoute = (section: string): string => {
       return "/create/rubrics";
     case "personas":
       return "/create/personas";
+    case "documents":
+      return "/create/documents";
 
     // Management routes
     case "management":
       return "/management";
-    case "context":
-      return "/management/context";
+    case "parameters":
+      return "/management/parameters";
     case "staff":
       return "/management/staff";
     case "providers":
-      return "/system/providers";
-    case "activity":
-      return "/management/activity";
-    case "feedback":
-      return "/management/feedback";
+      return "/management/providers";
     case "system":
       return "/management/system";
 
     // System routes
     case "agents":
       return "/system/agents";
-    case "providers":
-      return "/system/providers";
+    case "feedback":
+      return "/system/feedback";
     case "logs":
       return "/system/logs";
     case "health":
@@ -206,6 +130,11 @@ export const getSectionRoute = (section: string): string => {
 
       if (section.startsWith("cohort-")) {
         const cohortId = section.replace("cohort-", "");
+        // Context-aware routing: if we're currently on a cohort editing page, route to editing
+        if (currentPathname && currentPathname.includes("/cohorts/e/")) {
+          return `/cohorts/e/${cohortId}`;
+        }
+        // Default to viewing context
         return `/cohorts/c/${cohortId}`;
       }
 
@@ -225,6 +154,10 @@ export const getSectionRoute = (section: string): string => {
         const rubricId = section.replace("rubric-", "");
         return `/create/rubrics/r/${rubricId}`;
       }
+      if (section.startsWith("document-")) {
+        const documentId = section.replace("document-", "");
+        return `/create/documents/d/${documentId}`;
+      }
 
       if (section.startsWith("chat-")) {
         const chatId = section.replace("chat-", "");
@@ -232,17 +165,26 @@ export const getSectionRoute = (section: string): string => {
       }
       if (section.startsWith("attempt-")) {
         const attemptId = section.replace("attempt-", "");
+        // Context-aware routing: if we're currently on a practice page, route to practice
+        if (currentPathname && currentPathname.startsWith("/practice")) {
+          return `/practice/a/${attemptId}`;
+        }
+        // Default to home context
         return `/home/a/${attemptId}`;
       }
 
       if (section.startsWith("provider-")) {
         const providerId = section.replace("provider-", "");
-        return `/system/providers/p/${providerId}`;
+        return `/management/providers/p/${providerId}`;
+      }
+      if (section.startsWith("parameter-")) {
+        const parameterId = section.replace("parameter-", "");
+        return `/management/parameters/p/${parameterId}`;
       }
       if (section.startsWith("model-")) {
         const providerId = section.replace("provider-", "");
         const modelId = section.replace("model-", "");
-        return `/system/providers/p/${providerId}/m/${modelId}`;
+        return `/management/providers/p/${providerId}/m/${modelId}`;
       }
       if (section.startsWith("report-")) {
         const profileId = section.replace("report-", "");
@@ -263,20 +205,26 @@ export const getSectionRoute = (section: string): string => {
  * Maps a section identifier to its corresponding route path for breadcrumb navigation
  * This is different from getSectionRoute because breadcrumb "Classes" should go to first class, not management
  */
-export const getBreadcrumbSectionRoute = (section: string): string => {
+export const getBreadcrumbSectionRoute = (
+  section: string,
+  _currentPathname?: string,
+): string => {
   switch (section) {
     default:
       // Use the regular section route for everything else
-      return getSectionRoute(section);
+      return getSectionRoute(section, _currentPathname);
   }
 };
 
 /**
  * Creates a section change handler that navigates to the appropriate route
  */
-export const createSectionChangeHandler = (router: AppRouterInstance) => {
+export const createSectionChangeHandler = (
+  router: AppRouterInstance,
+  currentPathname?: string,
+) => {
   return (section: string) => {
-    const route = getSectionRoute(section);
+    const route = getSectionRoute(section, currentPathname);
     router.push(route);
   };
 };
@@ -286,10 +234,11 @@ export const createSectionChangeHandler = (router: AppRouterInstance) => {
  * This handles the special case where "Classes" breadcrumb should go to first class, not management
  */
 export const createBreadcrumbSectionChangeHandler = (
-  router: AppRouterInstance
+  router: AppRouterInstance,
+  currentPathname?: string,
 ) => {
   return (section: string) => {
-    const route = getBreadcrumbSectionRoute(section);
+    const route = getBreadcrumbSectionRoute(section, currentPathname);
     router.push(route);
   };
 };
@@ -300,7 +249,8 @@ export const createBreadcrumbSectionChangeHandler = (
 export const createRoleAwareSectionChangeHandler = (
   router: AppRouterInstance,
   currentRole: ProfileRole,
-  onSectionChange?: (section: string) => void
+  onSectionChange?: (section: string) => void,
+  currentPathname?: string,
 ) => {
   return (section: string) => {
     // Check if the section is available for the current role
@@ -317,7 +267,7 @@ export const createRoleAwareSectionChangeHandler = (
     }
 
     // Otherwise, handle navigation internally
-    const route = getSectionRoute(section);
+    const route = getSectionRoute(section, currentPathname);
     router.push(route);
   };
 };
@@ -328,7 +278,8 @@ export const createRoleAwareSectionChangeHandler = (
  */
 export const createFlexibleSectionChangeHandler = (
   router: AppRouterInstance,
-  onSectionChange?: (section: string) => void
+  onSectionChange?: (section: string) => void,
+  currentPathname?: string,
 ) => {
   return (section: string) => {
     // If onSectionChange prop is provided, use it (for layout components)
@@ -338,7 +289,7 @@ export const createFlexibleSectionChangeHandler = (
     }
 
     // Otherwise, handle navigation internally
-    const route = getSectionRoute(section);
+    const route = getSectionRoute(section, currentPathname);
     router.push(route);
   };
 };

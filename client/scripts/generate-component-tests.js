@@ -9,10 +9,44 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Path configurations
-const COMPONENTS_DIR = path.join(__dirname, "../components");
-const TESTS_DIR = path.join(__dirname, "../__tests__");
-const EXCLUDED_DIRS = ["ui"]; // External UI components to skip
+// Path configurations - updated to include more directories
+const ROOT_DIR = path.join(__dirname, "..");
+const COMPONENTS_DIR = path.join(ROOT_DIR, "components");
+const APP_DIR = path.join(ROOT_DIR, "app");
+const UTILS_DIR = path.join(ROOT_DIR, "utils");
+const HOOKS_DIR = path.join(ROOT_DIR, "hooks");
+const LIB_DIR = path.join(ROOT_DIR, "lib");
+const CONTEXTS_DIR = path.join(ROOT_DIR, "contexts");
+const TESTS_DIR = path.join(ROOT_DIR, "__tests__");
+
+// Directories to scan for .tsx files
+const SCAN_DIRECTORIES = [
+  { dir: COMPONENTS_DIR, name: "components" },
+  { dir: APP_DIR, name: "app" },
+  { dir: UTILS_DIR, name: "utils" },
+  { dir: HOOKS_DIR, name: "hooks" },
+  { dir: LIB_DIR, name: "lib" },
+  { dir: CONTEXTS_DIR, name: "contexts" },
+];
+
+// Directories to exclude from scanning
+const EXCLUDE_DIRECTORIES = [
+  "queries",
+  "mutations",
+  "drizzle",
+  "api",
+  "auth",
+  "breadcrumb-utils.ts",
+  "logger.ts",
+  "navigation-utils.ts",
+  "date-utils.ts",
+  "string-utils.ts",
+  "validation-utils.ts",
+  "format-utils.ts",
+  "storage-utils.ts",
+  "constants.ts",
+  "types.ts",
+];
 
 // Initialize TypeScript project for AST parsing
 const project = new Project({
@@ -21,9 +55,26 @@ const project = new Project({
 });
 
 /**
+ * Check if a path should be excluded
+ */
+function shouldExcludePath(relativePath) {
+  const pathParts = relativePath.split(path.sep);
+
+  return EXCLUDE_DIRECTORIES.some((exclude) => {
+    // Handle file exclusions (ends with .ts)
+    if (exclude.endsWith(".ts")) {
+      return pathParts.some((part) => part === exclude);
+    }
+
+    // Handle directory exclusions
+    return pathParts.includes(exclude);
+  });
+}
+
+/**
  * Recursively scan directory for .tsx files
  */
-function scanComponentFiles(dir, relativePath = "") {
+function scanComponentFiles(dir, relativePath = "", sourceName = "") {
   const components = [];
 
   try {
@@ -36,18 +87,23 @@ function scanComponentFiles(dir, relativePath = "") {
 
       if (stat.isDirectory()) {
         // Skip excluded directories
-        if (EXCLUDED_DIRS.includes(item)) {
-          console.log(`⏭️  Skipping excluded directory: ${itemRelativePath}`);
+        if (shouldExcludePath(itemRelativePath)) {
+          console.log(`🚫 Excluding directory: ${itemRelativePath}`);
           continue;
         }
 
-        // Recursively scan subdirectories
-        const subComponents = scanComponentFiles(fullPath, itemRelativePath);
+        const subComponents = scanComponentFiles(
+          fullPath,
+          itemRelativePath,
+          sourceName
+        );
         components.push(...subComponents);
       } else if (stat.isFile() && item.endsWith(".tsx")) {
         const componentName = item.replace(".tsx", "");
         const testFileName = `${componentName}.test.tsx`;
-        const testDir = path.join(TESTS_DIR, relativePath);
+
+        // Create test directory structure that mirrors the source structure
+        const testDir = path.join(TESTS_DIR, sourceName, relativePath);
         const testFilePath = path.join(testDir, testFileName);
         const componentPath = path.join(relativePath, item);
 
@@ -59,6 +115,7 @@ function scanComponentFiles(dir, relativePath = "") {
           testDir,
           testFilePath,
           relativePath,
+          sourceName, // Track which source directory this came from
         });
       }
     }
@@ -67,6 +124,25 @@ function scanComponentFiles(dir, relativePath = "") {
   }
 
   return components;
+}
+
+/**
+ * Scan all directories for components
+ */
+function scanAllComponentFiles() {
+  const allComponents = [];
+
+  for (const { dir, name } of SCAN_DIRECTORIES) {
+    if (fs.existsSync(dir)) {
+      console.log(`📁 Scanning ${name} directory...`);
+      const components = scanComponentFiles(dir, "", name);
+      allComponents.push(...components);
+    } else {
+      console.log(`⚠️  Directory ${name} not found: ${dir}`);
+    }
+  }
+
+  return allComponents;
 }
 /**
  * Analyze component file using TypeScript AST to extract props, exports, and hooks
@@ -196,10 +272,22 @@ function analyzeComponent(componentPath) {
  * every spec imports the shared helper `@/tests/renderWithMocks`
  */
 function generateTestTemplate(component, analysis) {
-  const { componentName, componentPath } = component;
+  const { componentName, componentPath, sourceName } = component;
   const { queryNames, mutationNames } = analysis; // Get the function names from analysis
-  const importPath =
-    `@/components/${componentPath.replace(/\\/g, "/")}`.replace(".tsx", "");
+
+  // Generate import path based on source directory
+  let importPath;
+  if (sourceName === "components") {
+    importPath = `@/components/${componentPath.replace(/\\/g, "/")}`.replace(
+      ".tsx",
+      ""
+    );
+  } else {
+    importPath = `@/${sourceName}/${componentPath.replace(/\\/g, "/")}`.replace(
+      ".tsx",
+      ""
+    );
+  }
 
   /* ──────────────────────────────────────────────────────────
    * 2.  Build the test file
@@ -268,7 +356,7 @@ import userEvent from '@testing-library/user-event';`;
 // ——————————————————————————————————————————
 import ${
     analysis.hasDefaultExport
-      ? `${componentName}${analysis.namedExports.length > 0 ? `, { ${analysis.namedExports.join(", ")} }` : ""}`
+      ? `${componentName.includes("-") ? `{ default as ${componentName.replace(/-/g, "")} }` : componentName}${analysis.namedExports.length > 0 ? `, { ${analysis.namedExports.join(", ")} }` : ""}`
       : `{ ${analysis.namedExports.join(", ")} }`
   } from '${importPath}';
 
@@ -285,34 +373,34 @@ import '@/mocks/queries';
 import '@/mocks/mutations';
 import '@/mocks/api';
 `;
-}
+  }
 
-// Add props section if needed
-if (analysis.hasProps) {
-  template += `
+  // Add props section if needed
+  if (analysis.hasProps) {
+    template += `
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed`;
 
-  if (
+    if (
       analysis.propsInterface &&
       !analysis.namedExports.includes(analysis.propsInterface)
-  ) {
+    ) {
       template += `
 import type { ${analysis.propsInterface} } from '${importPath}';`;
-  }
+    }
 
-  template += `
+    template += `
 const mockProps: ${analysis.propsInterface}${
       propsGenericInfo.isGeneric
-          ? `<${"unknown, ".repeat(propsGenericInfo.paramCount).slice(0, -2)}>`
-          : ""
-  } = {
+        ? `<${"unknown, ".repeat(propsGenericInfo.paramCount).slice(0, -2)}>`
+        : ""
+    } = {
 ${mockPropLines.join("\n")}
 };
 // ------------------------------------------------------------------
 `;
-}
+  }
 
   template += `describe('${componentName}', () => {
   ${
@@ -344,7 +432,7 @@ ${mockPropLines.join("\n")}
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       ${hasMocks ? "// ✨ All mocks are automatically set up via imports above" : ""}
-      renderWithMocks(<${componentName} ${analysis.hasProps ? "{...mockProps}" : ""} />);
+      renderWithMocks(<${componentName.includes("-") ? componentName.replace(/-/g, "") : componentName} ${analysis.hasProps ? "{...mockProps}" : ""} />);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
@@ -415,7 +503,7 @@ ${mockPropLines.join("\n")}
           : ""
       }
 
-      renderWithMocks(<${componentName} ${analysis.hasProps ? "{...mockProps}" : ""} />);
+      renderWithMocks(<${componentName.includes("-") ? componentName.replace(/-/g, "") : componentName} ${analysis.hasProps ? "{...mockProps}" : ""} />);
       
       // Assert: Check that your component shows an error message.
       // TODO: Add specific error state assertions
@@ -509,11 +597,14 @@ ${mockPropLines.join("\n")}
  */
 function generateRenderExample(component, analysis) {
   const { componentName } = component;
+  const safeComponentName = componentName.includes("-")
+    ? componentName.replace(/-/g, "")
+    : componentName;
 
   if (analysis.hasProps) {
-    return `<${componentName} {...mockProps} />`;
+    return `<${safeComponentName} {...mockProps} />`;
   } else {
-    return `<${componentName} />`;
+    return `<${safeComponentName} />`;
   }
 }
 
@@ -581,7 +672,9 @@ function generateTestFiles(components) {
  */
 function cleanupOrphanedTests(components) {
   const existingComponentPaths = new Set(
-    components.map((c) => c.componentPath.replace(/\\/g, "/"))
+    components.map((c) =>
+      `${c.sourceName}/${c.componentPath}`.replace(/\\/g, "/")
+    )
   );
 
   let cleanedUp = 0;
@@ -643,7 +736,7 @@ function generateCoverageReport(components, stats) {
     const status = isTestImplemented(component.testFilePath)
       ? "✅ Implemented"
       : "❌ Needs Implementation";
-    report += `| ${component.componentName} | ${component.componentPath} | ${component.testFileName} | ${status} |\n`;
+    report += `| ${component.componentName} | ${component.sourceName}/${component.componentPath} | ${component.testFileName} | ${status} |\n`;
   });
 
   report += `
@@ -738,9 +831,14 @@ function generateDirectoryTree(components) {
   const tree = {};
 
   components.forEach((component) => {
-    const parts = component.relativePath.split(path.sep).filter((p) => p);
-    let current = tree;
+    // Start with source directory
+    if (!tree[component.sourceName]) {
+      tree[component.sourceName] = {};
+    }
+    let current = tree[component.sourceName];
 
+    // Add relative path parts
+    const parts = component.relativePath.split(path.sep).filter((p) => p);
     parts.forEach((part) => {
       if (!current[part]) {
         current[part] = {};
@@ -773,7 +871,7 @@ function generateDirectoryTree(components) {
 function main() {
   console.log("🚀 Generating Jest/Vitest tests for React components...\n");
 
-  const components = scanComponentFiles(COMPONENTS_DIR);
+  const components = scanAllComponentFiles();
 
   if (components.length === 0) {
     console.log("⚠️  No .tsx components found");

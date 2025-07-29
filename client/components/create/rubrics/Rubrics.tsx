@@ -1,29 +1,21 @@
 /**
  * Rubrics.tsx
- * Used to display the rubrics page with all created rubrics and management functionality.
+ * Used to display the rubrics page with table-based filtering and card layout.
  * @AshokSaravanan222 & @siladiea
- * 06/07/2025
+ * 06/18/2025
  */
 "use client";
 import { logError, logInfo } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  BookOpen,
-  Copy,
-  Edit,
-  FileCheck,
-  Plus,
-  Star,
-  Trash2,
-} from "lucide-react";
+import { Copy, Edit, FileCheck, Star, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { createRubric } from "@/utils/mutations/rubrics/create-rubric";
 import { deleteRubric } from "@/utils/mutations/rubrics/delete-rubric";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { duplicateRubric } from "@/utils/rubric/duplicate-rubric";
 
 import TableRubric from "@/components/common/rubric/TableRubric";
 import {
@@ -40,7 +32,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
+import { useRubricColumns } from "@/hooks/use-rubric-columns";
 import { Rubric } from "@/types";
+import { RubricsDataTable } from "./RubricsDataTable";
 
 export default function Rubrics() {
   const router = useRouter();
@@ -55,7 +49,11 @@ export default function Rubrics() {
   const { effectiveProfile } = useProfile();
 
   // Fetch rubrics data
-  const { data: rubrics = [], refetch: refetchRubrics } = useQuery({
+  const {
+    data: rubrics = [],
+    refetch: refetchRubrics,
+    isLoading: isRubricsLoading,
+  } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
   });
@@ -72,11 +70,18 @@ export default function Rubrics() {
 
   // Check if user can edit (admin/superadmin or rubric not in use)
   const canEditRubric = (rubricId: string) => {
-    const isAdmin =
-      effectiveProfile?.role === "admin" ||
+    const isSuperAdmin =
       effectiveProfile?.role === "superadmin";
-    return isAdmin || !isRubricInUse(rubricId);
+    return isSuperAdmin || !isRubricInUse(rubricId);
   };
+
+  // Get table columns and filter options
+  const {
+    columns,
+    passPointsOptions,
+    totalPointsOptions,
+    passPercentageOptions,
+  } = useRubricColumns();
 
   const handleDelete = async () => {
     if (!deleteItem) return;
@@ -111,14 +116,7 @@ export default function Rubrics() {
 
     setIsDuplicating(rubric.id);
     try {
-      await createRubric({
-        ...rubric,
-        id: undefined,
-        createdAt: undefined,
-        updatedAt: undefined,
-        defaultRubric: false,
-        name: `${rubric.name} Copy`,
-      });
+      await duplicateRubric(rubric.id, `${rubric.name} Copy`);
       logInfo("Rubric duplicated successfully:", {
         originalId: rubric.id,
         originalName: rubric.name,
@@ -144,10 +142,6 @@ export default function Rubrics() {
     router.push(`/create/rubrics/r/${id}`);
   };
 
-  const handleCreateNew = () => {
-    router.push("/create/rubrics/new");
-  };
-
   const canDuplicate = (rubric: Rubric) => {
     // Can only duplicate default rubrics
     return rubric.defaultRubric;
@@ -158,98 +152,95 @@ export default function Rubrics() {
     return Math.round((rubric.passPoints / rubric.points) * 100);
   };
 
-  return (
-    <div className="space-y-8">
-      {rubrics.map((rubric: Rubric) => {
-        const passPercentage = getPassPercentage(rubric);
+  const renderRubricCard = (rubric: Rubric) => {
+    const passPercentage = getPassPercentage(rubric);
 
-        return (
-          <Card key={rubric.id} className="w-full">
-            {/* Header */}
-            <CardHeader className="border-b">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <CardTitle className="text-2xl font-bold">
-                    {rubric.name}
-                  </CardTitle>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <Star className="h-4 w-4" />
-                      {rubric.points} total points
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <FileCheck className="h-4 w-4" />
-                      Pass: {rubric.passPoints} pts ({passPercentage}%)
-                    </div>
-                    <Badge variant={rubric.active ? "default" : "secondary"}>
-                      {rubric.active ? "Active" : "Inactive"}
-                    </Badge>
-                  </div>
-                  {rubric.description && (
-                    <p className="text-sm text-muted-foreground max-w-2xl">
-                      {rubric.description}
-                    </p>
-                  )}
+    return (
+      <Card key={rubric.id} className="w-full">
+        {/* Header */}
+        <CardHeader className="border-b">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <CardTitle className="text-2xl font-bold">
+                {rubric.name}
+              </CardTitle>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4" />
+                  {rubric.points} total points
                 </div>
                 <div className="flex items-center gap-2">
-                  {canEditRubric(rubric.id) && (
-                    <Button
-                      variant="outline"
-                      onClick={() => handleEdit(rubric.id)}
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                  )}
-                  {canDuplicate(rubric) && (
-                    <Button
-                      variant="outline"
-                      onClick={() => handleDuplicate(rubric)}
-                      disabled={isDuplicating === rubric.id}
-                    >
-                      {isDuplicating === rubric.id ? (
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
-                      ) : (
-                        <Copy className="h-4 w-4 mr-2" />
-                      )}
-                      Duplicate
-                    </Button>
-                  )}
-                  {!isRubricInUse(rubric.id) && (
-                    <Button
-                      variant="outline"
-                      onClick={() => handleDeleteClick(rubric.id, rubric.name)}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
-                  )}
+                  <FileCheck className="h-4 w-4" />
+                  Pass: {rubric.passPoints} pts ({passPercentage}%)
                 </div>
+                <Badge variant={rubric.active ? "default" : "secondary"}>
+                  {rubric.active ? "Active" : "Inactive"}
+                </Badge>
               </div>
-            </CardHeader>
+              {rubric.description && (
+                <p className="text-sm text-muted-foreground max-w-2xl">
+                  {rubric.description}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {canEditRubric(rubric.id) && (
+                <Button variant="outline" onClick={() => handleEdit(rubric.id)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              )}
+              {canDuplicate(rubric) && (
+                <Button
+                  variant="outline"
+                  onClick={() => handleDuplicate(rubric)}
+                  disabled={isDuplicating === rubric.id}
+                >
+                  {isDuplicating === rubric.id ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                  ) : (
+                    <Copy className="h-4 w-4 mr-2" />
+                  )}
+                  Duplicate
+                </Button>
+              )}
+              {!isRubricInUse(rubric.id) && (
+                <Button
+                  variant="outline"
+                  onClick={() => handleDeleteClick(rubric.id, rubric.name)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardHeader>
 
-            {/* Rubric Table */}
-            <CardContent className="p-6">
-              <TableRubric rubricId={rubric.id} />
-            </CardContent>
-          </Card>
-        );
-      })}
+        {/* Rubric Table */}
+        <CardContent className="p-6">
+          <TableRubric rubricId={rubric.id} />
+        </CardContent>
+      </Card>
+    );
+  };
 
-      {rubrics.length === 0 && (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">No rubrics yet</h3>
-            <p className="text-muted-foreground text-center mb-4">
-              Create your first evaluation rubric to define assessment criteria
-            </p>
-            <Button onClick={handleCreateNew}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Your First Rubric
-            </Button>
-          </CardContent>
-        </Card>
+  return (
+    <div className="space-y-6">
+      {isRubricsLoading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading rubrics...</p>
+        </div>
+      ) : (
+        <RubricsDataTable
+          columns={columns}
+          data={rubrics}
+          passPointsOptions={passPointsOptions}
+          totalPointsOptions={totalPointsOptions}
+          passPercentageOptions={passPercentageOptions}
+          renderRubricCard={renderRubricCard}
+        />
       )}
 
       {/* Delete Confirmation Dialog */}

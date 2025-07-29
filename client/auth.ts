@@ -1,7 +1,7 @@
 // auth.ts
 import { logError, logInfo } from "@/utils/logger";
 import PostgresAdapter from "@auth/pg-adapter";
-import NextAuth from 'next-auth'
+import NextAuth from "next-auth";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { Pool } from "pg";
 import { getProfileByAlias } from "./utils/auth/get-profile-by-alias";

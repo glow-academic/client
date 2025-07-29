@@ -12,8 +12,21 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -23,11 +36,20 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { createPersona } from "@/utils/mutations/personas/create-persona";
-import { getPersona } from "@/utils/queries/personas/get-persona";
-import { getAllModels } from "@/utils/queries/models/get-all-models";
 import { updatePersona } from "@/utils/mutations/personas/update-persona";
+import {
+  getPersonaIconComponent,
+  getSuggestedIconsForPersona,
+  PERSONA_ICON_MAP,
+  PERSONA_ICONS,
+} from "@/utils/persona-icons";
+import { getAllModels } from "@/utils/queries/models/get-all-models";
+import { getPersona } from "@/utils/queries/personas/get-persona";
+import { Check, ChevronsUpDown } from "lucide-react";
 
 interface FormData {
   name?: string;
@@ -36,6 +58,9 @@ interface FormData {
   temperature?: number;
   modelId?: string;
   reasoning?: "none" | "low" | "medium" | "high";
+  color?: string;
+  icon?: string;
+  active?: boolean;
 }
 
 export interface PersonaProps {
@@ -59,12 +84,17 @@ export default function Persona({
       temperature: 0.0,
       modelId: "",
       reasoning: "none",
+      color: "#000000",
+      icon: "Zap",
+      active: true,
     }),
     []
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>();
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
 
   const { data: persona, isLoading: isLoadingPersona } = useQuery({
     queryKey: ["persona", personaId],
@@ -88,6 +118,9 @@ export default function Persona({
         temperature: persona.temperature,
         modelId: persona.modelId || "",
         reasoning: persona.reasoning || "none",
+        color: persona.color || "#000000",
+        icon: persona.icon || "Zap",
+        active: persona.active ?? true,
       });
     } else if (!isEditMode) {
       setFormData(initialFormData);
@@ -129,6 +162,9 @@ export default function Persona({
           temperature: Number(formData.temperature),
           modelId: formData.modelId,
           reasoning: formData.reasoning === "none" ? null : formData.reasoning,
+          color: formData.color || "#000000",
+          icon: formData.icon || "Zap",
+          active: formData.active ?? true,
           updatedAt: new Date().toISOString(),
         });
         queryClient.invalidateQueries({ queryKey: ["personas"] });
@@ -142,10 +178,14 @@ export default function Persona({
           temperature: Number(formData.temperature),
           modelId: formData.modelId,
           reasoning: formData.reasoning === "none" ? null : formData.reasoning,
-          color: "#000000",
+          color: formData.color || "#000000",
+          icon: formData.icon || "Zap",
+          active: formData.active ?? true,
         });
         queryClient.invalidateQueries({ queryKey: ["personas"] });
-        queryClient.invalidateQueries({ queryKey: ["persona", newPersona?.id] });
+        queryClient.invalidateQueries({
+          queryKey: ["persona", newPersona?.id],
+        });
         toast.success("Persona created successfully!");
       }
 
@@ -159,6 +199,18 @@ export default function Persona({
     }
   };
 
+  // Dynamic icon component
+  const IconComponent = useMemo(() => {
+    if (!formData?.icon) return null;
+    return getPersonaIconComponent(formData.icon) || null;
+  }, [formData?.icon]);
+
+  // Get suggested icons when persona name changes
+  const _suggestedIcons = useMemo(() => {
+    if (!formData?.name) return [];
+    return getSuggestedIconsForPersona(formData.name);
+  }, [formData?.name]);
+
   return (
     <div className="space-y-6 py-4 px-4">
       <div className="w-full">
@@ -169,9 +221,22 @@ export default function Persona({
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
-                }
+                onChange={(e) => {
+                  const newName = e.target.value;
+                  setFormData((prev) => {
+                    const updatedData = { ...prev, name: newName };
+
+                    // Auto-suggest icon if no icon is selected yet or if it's the default
+                    if (!prev?.icon || prev.icon === "Zap") {
+                      const suggestions = getSuggestedIconsForPersona(newName);
+                      if (suggestions.length > 0) {
+                        updatedData.icon = suggestions[0] || "Zap";
+                      }
+                    }
+
+                    return updatedData;
+                  });
+                }}
                 placeholder="e.g., Enthusiastic Student"
                 required
               />
@@ -199,6 +264,245 @@ export default function Persona({
             ) : (
               <Skeleton className="h-10 w-full" />
             )}
+          </div>
+
+          {/* Active/Inactive Switch */}
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="active" className="text-sm">
+              Persona Active
+            </Label>
+            {formData?.active !== undefined && !isLoading ? (
+              <Switch
+                id="active"
+                checked={formData.active ?? true}
+                onCheckedChange={(checked) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    active: checked,
+                  }))
+                }
+              />
+            ) : (
+              <Skeleton className="h-6 w-11" />
+            )}
+          </div>
+
+          {/* Color and Icon Selection Row */}
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+            {/* Color Picker */}
+            <div className="space-y-2">
+              <Label htmlFor="color">Persona Color</Label>
+              {formData?.color !== undefined && !isLoading ? (
+                <Popover
+                  open={colorPickerOpen}
+                  onOpenChange={setColorPickerOpen}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-4 h-4 rounded border"
+                          style={{ backgroundColor: formData.color }}
+                        />
+                        <span>{formData.color}</span>
+                      </div>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-4">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="colorInput">Hex Color</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="colorInput"
+                            value={formData.color}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              // Allow any hex value (with or without #, any length)
+                              if (
+                                value === "" ||
+                                /^#?[0-9A-Fa-f]*$/.test(value)
+                              ) {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  color: value.startsWith("#")
+                                    ? value
+                                    : `#${value}`,
+                                }));
+                              }
+                            }}
+                            placeholder="#000000"
+                            className="flex-1"
+                          />
+                          <div
+                            className="w-10 h-10 rounded border"
+                            style={{ backgroundColor: formData.color }}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Preset Colors</Label>
+                        <div className="grid grid-cols-8 gap-2">
+                          {[
+                            "#ef4444",
+                            "#f97316",
+                            "#eab308",
+                            "#22c55e",
+                            "#06b6d4",
+                            "#3b82f6",
+                            "#8b5cf6",
+                            "#ec4899",
+                            "#dc2626",
+                            "#ea580c",
+                            "#ca8a04",
+                            "#16a34a",
+                            "#0891b2",
+                            "#2563eb",
+                            "#7c3aed",
+                            "#db2777",
+                            "#b91c1c",
+                            "#c2410c",
+                            "#a16207",
+                            "#15803d",
+                            "#0e7490",
+                            "#1d4ed8",
+                            "#6d28d9",
+                            "#be185d",
+                            "#991b1b",
+                            "#9a3412",
+                            "#854d0e",
+                            "#166534",
+                            "#155e75",
+                            "#1e40af",
+                            "#581c87",
+                            "#9d174d",
+                          ].map((color) => (
+                            <button
+                              key={color}
+                              type="button"
+                              className="w-8 h-8 rounded border-2 border-gray-200 hover:border-gray-400 transition-colors"
+                              style={{ backgroundColor: color }}
+                              onClick={() => {
+                                setFormData((prev) => ({ ...prev, color }));
+                                setColorPickerOpen(false);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <Skeleton className="h-10 w-full" />
+              )}
+            </div>
+
+            {/* Icon Picker */}
+            <div className="space-y-2">
+              <Label htmlFor="icon">Persona Icon</Label>
+              {formData?.icon !== undefined && !isLoading ? (
+                <Popover open={iconPickerOpen} onOpenChange={setIconPickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <div className="flex items-center gap-2">
+                        {IconComponent && <IconComponent className="w-4 h-4" />}
+                        <span>{formData.icon}</span>
+                        <ChevronsUpDown className="ml-auto h-4 w-4 opacity-50" />
+                      </div>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-0">
+                    <Command>
+                      <CommandInput placeholder="Search icons..." />
+                      <CommandList>
+                        <CommandEmpty>No icon found.</CommandEmpty>
+                        {_suggestedIcons.length > 0 && (
+                          <CommandGroup heading="Suggested for this persona">
+                            {_suggestedIcons
+                              .slice(0, 6)
+                              .map((iconName: string) => {
+                                const IconComponent =
+                                  PERSONA_ICON_MAP[
+                                    iconName as keyof typeof PERSONA_ICON_MAP
+                                  ];
+                                if (!IconComponent) return null;
+
+                                return (
+                                  <CommandItem
+                                    key={iconName}
+                                    value={iconName}
+                                    onSelect={() => {
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        icon: iconName,
+                                      }));
+                                      setIconPickerOpen(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        formData.icon === iconName
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      )}
+                                    />
+                                    <IconComponent className="mr-2 h-4 w-4" />
+                                    {iconName}
+                                  </CommandItem>
+                                );
+                              })}
+                          </CommandGroup>
+                        )}
+                        <CommandGroup heading="All Icons">
+                          {PERSONA_ICONS.map((iconName: string) => {
+                            const IconComponent =
+                              PERSONA_ICON_MAP[
+                                iconName as keyof typeof PERSONA_ICON_MAP
+                              ];
+                            if (!IconComponent) return null;
+
+                            return (
+                              <CommandItem
+                                key={iconName}
+                                value={iconName}
+                                onSelect={() => {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    icon: iconName,
+                                  }));
+                                  setIconPickerOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    formData.icon === iconName
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                <IconComponent className="mr-2 h-4 w-4" />
+                                {iconName}
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <Skeleton className="h-10 w-full" />
+              )}
+            </div>
           </div>
 
           <div className={`grid gap-4 grid-cols-1`}>
@@ -326,6 +630,14 @@ export default function Persona({
           </div>
 
           <div className="flex gap-2 justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push("/create/personas")}
+              disabled={isSubmitting}
+            >
+              Back
+            </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting
                 ? isEditMode

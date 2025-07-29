@@ -48,7 +48,7 @@ export function useCohortColumns() {
           const cohort = row.original;
           const cohortProfileIds = cohort.profileIds || [];
           return value.some((filterValue: string) =>
-            cohortProfileIds.includes(filterValue)
+            cohortProfileIds.includes(filterValue),
           );
         },
       },
@@ -58,20 +58,20 @@ export function useCohortColumns() {
         cell: ({ row }) => {
           const cohort = row.original;
           const cohortSimulations = simulations.filter((sim: Simulation) =>
-            cohort.simulationIds.includes(sim.id)
+            cohort.simulationIds.includes(sim.id),
           );
           return cohortSimulations.map((sim: Simulation) => sim.id);
         },
         filterFn: (row, _, value) => {
           const cohort = row.original;
           const cohortSimulations = simulations.filter((sim: Simulation) =>
-            cohort.simulationIds.includes(sim.id)
+            cohort.simulationIds.includes(sim.id),
           );
           const simulationIds = cohortSimulations.map(
-            (sim: Simulation) => sim.id
+            (sim: Simulation) => sim.id,
           );
           return value.some((filterValue: string) =>
-            simulationIds.includes(filterValue)
+            simulationIds.includes(filterValue),
           );
         },
       },
@@ -81,7 +81,7 @@ export function useCohortColumns() {
         cell: ({ row }) => row.getValue("updatedAt"),
       },
     ],
-    [simulations]
+    [simulations],
   );
 
   // Filter options
@@ -91,7 +91,7 @@ export function useCohortColumns() {
         value: profile.id,
         label: `${profile.firstName} ${profile.lastName}`,
       })),
-    [profiles]
+    [profiles],
   );
 
   const simulationOptions = useMemo(
@@ -100,7 +100,7 @@ export function useCohortColumns() {
         value: simulation.id,
         label: simulation.title,
       })),
-    [simulations]
+    [simulations],
   );
 
   return {

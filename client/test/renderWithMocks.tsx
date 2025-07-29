@@ -1,7 +1,10 @@
 // helpers/testing/renderWithMocks.tsx
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { AnalyticsProvider } from "@/contexts/analytics-context";
 import { AssistantProvider } from "@/contexts/assistant-context";
 import { ProfileProvider } from "@/contexts/profile-context";
+import { TourProvider } from "@/contexts/tour-context";
+import { WebSocketProvider } from "@/contexts/websocket-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 
@@ -37,10 +40,16 @@ export function renderWithMocks(ui: React.ReactElement) {
   return render(
     <QueryClientProvider client={queryClient}>
       <ProfileProvider activeProfile={mockProfile}>
-        <AssistantProvider>
-          <SidebarProvider>{ui}</SidebarProvider>
-        </AssistantProvider>
+        <AnalyticsProvider>
+          <AssistantProvider>
+            <WebSocketProvider profileId={mockProfile.id}>
+              <TourProvider>
+                <SidebarProvider>{ui}</SidebarProvider>
+              </TourProvider>
+            </WebSocketProvider>
+          </AssistantProvider>
+        </AnalyticsProvider>
       </ProfileProvider>
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 }

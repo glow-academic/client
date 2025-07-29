@@ -6,7 +6,6 @@
  */
 "use client";
 import { Button } from "@/components/ui/button";
-import { useProfile } from "@/contexts/profile-context";
 import { logError, logInfo } from "@/utils/logger";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -103,7 +102,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 3,
         animationDuration: Math.random() * 3 + 2,
-      }))
+      })),
     );
 
     setMovingSparkles(
@@ -113,7 +112,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 2,
         animationDuration: Math.random() * 2 + 3,
-      }))
+      })),
     );
 
     setFloatingSparkles(
@@ -123,7 +122,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 4,
         animationDuration: Math.random() * 3 + 4,
-      }))
+      })),
     );
 
     setMounted(true);
@@ -194,7 +193,6 @@ export default function Login() {
   const [loadingGuest, setLoadingGuest] = useState(false);
   const [loadingMicrosoft, setLoadingMicrosoft] = useState(false);
   const router = useRouter();
-  const { activeProfile } = useProfile();
 
   const handleMicrosoftLogin = async () => {
     try {
@@ -206,19 +204,17 @@ export default function Login() {
       // Clear guest mode and simulated role from localStorage
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedRole");
+      localStorage.removeItem("simulatedProfileId");
 
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
 
-      let redirectTo = `${appPrefix}/home`;
-      if (activeProfile?.role !== "ta") {
-        redirectTo = `${appPrefix}/analytics`;
-      }
+      const redirectTo = `${appPrefix}/home`;
 
       await signIn("microsoft-entra-id", { redirectTo: redirectTo });
 
       // Log successful login attempt
       await logInfo("Microsoft login attempt successful", {
-        redirectTo: activeProfile?.role !== "ta" ? "/analytics" : "/home",
+        redirectTo: "/home",
       });
 
       toast.success("Signing in with Microsoft...");
@@ -242,22 +238,23 @@ export default function Login() {
 
       // Log guest access attempt
       await logInfo("Guest access attempt started", {
-        redirectTo: "/home",
+        redirectTo: "/practice",
       });
 
       // Set guest mode in localStorage and redirect
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedRole");
+      localStorage.removeItem("simulatedProfileId");
       localStorage.setItem("guestMode", "true");
       localStorage.setItem("simulatedRole", "guest");
 
       // Log successful guest access
       await logInfo("Guest access attempt successful", {
-        redirectTo: "/home",
+        redirectTo: "/practice",
       });
 
       toast.success("Accessing as guest!");
-      router.push("/home");
+      router.push("/practice");
     } catch (error) {
       const errorMessage = (error as Error).message;
 

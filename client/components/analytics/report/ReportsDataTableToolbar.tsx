@@ -3,38 +3,48 @@
 import { Table } from "@tanstack/react-table";
 import { X } from "lucide-react";
 
+import { BrightspaceExportButton } from "@/components/common/history/BrightspaceExportButton";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
-import { ExportButton } from "@/components/common/history/ExportButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TAPerformanceData } from "@/hooks/use-report-columns";
+import React from "react";
 
 export interface ReportsDataTableToolbarProps {
   table: Table<TAPerformanceData>;
-  performanceOptions: { value: string; label: string }[];
+  roleOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
   personaOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
   simulationOptions: { value: string; label: string }[];
+  simulations: Array<{ id: string; title: string }>;
   showExport?: boolean;
 }
 
 export function ReportsDataTableToolbar({
   table,
-  performanceOptions,
+  roleOptions,
   cohortOptions,
   personaOptions,
   scenarioOptions,
   simulationOptions,
+  simulations,
   showExport = true,
 }: ReportsDataTableToolbarProps) {
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
 
   const firstNameColumn = table.getColumn("firstName");
-  const avgScoreColumn = table.getColumn("avgScore");
   const taCohortsColumn = table.getColumn("taCohorts");
+  const roleColumn = table.getColumn("role");
+
+  // Set default role filter to "ta" if no filter is applied
+  React.useEffect(() => {
+    if (!roleColumn?.getFilterValue()) {
+      roleColumn?.setFilterValue(["ta"]);
+    }
+  }, [roleColumn]);
 
   return (
     <div className="flex items-center justify-between">
@@ -51,12 +61,12 @@ export function ReportsDataTableToolbar({
         </div>
 
         <div className="flex items-center space-x-2 flex-wrap mb-2">
-          {/* Performance Filter */}
-          {avgScoreColumn && performanceOptions.length > 0 && (
+          {/* Role Filter */}
+          {roleColumn && roleOptions.length > 0 && (
             <DataTableFacetedFilter
-              column={avgScoreColumn}
-              title="Performance"
-              options={performanceOptions}
+              column={roleColumn}
+              title="Role"
+              options={roleOptions}
             />
           )}
 
@@ -111,10 +121,7 @@ export function ReportsDataTableToolbar({
 
       <div className="flex items-center space-x-2 mb-2">
         {showExport && (
-          <ExportButton
-            table={table}
-            profileOptions={[]} // Will be populated from the data
-          />
+          <BrightspaceExportButton table={table} simulations={simulations} />
         )}
 
         <DataTableViewOptions table={table} />

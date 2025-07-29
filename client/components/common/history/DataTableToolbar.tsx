@@ -2,59 +2,53 @@
 
 import { Table } from "@tanstack/react-table";
 import { X } from "lucide-react";
-import { DateRange } from "react-day-picker";
 
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
-import { ExportButton } from "@/components/common/history/ExportButton";
 import { Button } from "@/components/ui/button";
-import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { Input } from "@/components/ui/input";
 
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { SingleProfileBrightspaceExportButton } from "./SingleProfileBrightspaceExportButton";
 
 export interface DataTableToolbarProps<TData> {
   table: Table<TData>;
-  profileOptions: { value: string; label: string }[];
-  scoreRangeOptions: { value: string; label: string }[];
+  profileOptions?: { value: string; label: string }[];
+  simulationOptions?: { value: string; label: string }[];
+  scenarioOptions?: { value: string; label: string }[];
   isAdmin?: boolean;
-  dateRange?: DateRange | undefined;
-  setDateRange?: (range: DateRange | undefined) => void;
   showExport?: boolean;
   showAll?: boolean;
 }
 
 export function DataTableToolbar<TData>({
   table,
-  profileOptions,
-  scoreRangeOptions,
+  profileOptions = [],
+  simulationOptions = [],
+  scenarioOptions = [],
   isAdmin = false,
-  dateRange,
-  setDateRange,
   showExport = true,
   showAll = false,
 }: DataTableToolbarProps<TData>) {
-  // Check if any filters other than the date range are active
-  const isFiltered =
-    table.getState().columnFilters.filter((filter) => filter.id !== "createdAt")
-      .length > 0;
+  // Check if any filters are active
+  const isFiltered = table.getState().columnFilters.length > 0;
 
   const profileIdColumn = showAll ? table.getColumn("profileId") : null;
-  const averageScoreColumn = table.getColumn("averageScore");
+  const simulationIdColumn = table.getColumn("simulationId");
+  const scenariosColumn = table.getColumn("scenarios");
 
   return (
     <>
       <div className="flex items-center justify-between">
         <div className="flex flex-1 items-center space-x-2">
           <Input
-            placeholder="Filter simulations..."
+            placeholder="Search by name, simulation, or scenarios..."
             value={
-              (table
-                .getColumn("simulationTitle")
-                ?.getFilterValue() as string) ?? ""
+              (table.getColumn("simulationId")?.getFilterValue() as string) ??
+              ""
             }
             onChange={(event) =>
               table
-                .getColumn("simulationTitle")
+                .getColumn("simulationId")
                 ?.setFilterValue(event.target.value)
             }
             className="h-8 w-[150px] lg:w-[250px]"
@@ -68,14 +62,24 @@ export function DataTableToolbar<TData>({
             />
           )}
 
-          {/* Score filter */}
-          {averageScoreColumn && scoreRangeOptions.length > 0 && (
+          {/* Simulation filter */}
+          {simulationIdColumn && simulationOptions.length > 0 && (
             <DataTableFacetedFilter
-              column={averageScoreColumn}
-              title="Score"
-              options={scoreRangeOptions}
+              column={simulationIdColumn}
+              title="Simulation"
+              options={simulationOptions}
             />
           )}
+
+          {/* Scenarios filter */}
+          {scenariosColumn && scenarioOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={scenariosColumn}
+              title="Scenarios"
+              options={scenarioOptions}
+            />
+          )}
+
           {isFiltered && (
             <Button
               variant="ghost"
@@ -88,17 +92,8 @@ export function DataTableToolbar<TData>({
           )}
         </div>
         <div className="flex items-center space-x-2">
-          {/* Date range picker */}
-          {setDateRange && (
-            <DatePickerWithRange
-              dateRange={dateRange}
-              setDateRange={setDateRange}
-              className="w-auto"
-            />
-          )}
-
           {showExport && (
-            <ExportButton
+            <SingleProfileBrightspaceExportButton
               table={table}
               profileOptions={profileOptions}
             />

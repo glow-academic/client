@@ -15,8 +15,10 @@ import {
   useReducer,
 } from "react";
 
+import { useProfile } from "@/contexts/profile-context";
 import { Profile } from "@/types";
 import { TourStep } from "@/utils/tour-steps";
+import { useRouter } from "next/navigation";
 
 // Tour state interface
 interface TourContextState {
@@ -27,11 +29,15 @@ interface TourContextState {
   isNavigating: boolean;
   loadingSimulation: string | null;
   showGuideButton: boolean;
+  attemptId: string | null; // Store attemptId for persistence
 }
 
 // Tour actions
 type TourAction =
-  | { type: "OPEN"; payload: { steps: TourStep[]; profile: Profile } }
+  | {
+      type: "OPEN";
+      payload: { steps: TourStep[]; profile: Profile; initialStep?: number };
+    }
   | { type: "CLOSE" }
   | { type: "NEXT" }
   | { type: "PREV" }
@@ -39,7 +45,8 @@ type TourAction =
   | { type: "COMPLETE_STEP"; payload: number }
   | { type: "SET_NAVIGATING"; payload: boolean }
   | { type: "SET_LOADING_SIMULATION"; payload: string | null }
-  | { type: "SET_SHOW_GUIDE_BUTTON"; payload: boolean };
+  | { type: "SET_SHOW_GUIDE_BUTTON"; payload: boolean }
+  | { type: "SET_ATTEMPT_ID"; payload: string | null };
 
 // Initial state
 const initialState: TourContextState = {
@@ -50,19 +57,20 @@ const initialState: TourContextState = {
   isNavigating: false,
   loadingSimulation: null,
   showGuideButton: false,
+  attemptId: null,
 };
 
 // Reducer
 function tourReducer(
   state: TourContextState,
-  action: TourAction
+  action: TourAction,
 ): TourContextState {
   switch (action.type) {
     case "OPEN":
       return {
         ...state,
         isOpen: true,
-        currentStep: 0,
+        currentStep: action.payload.initialStep || 0,
         steps: action.payload.steps,
         profile: action.payload.profile,
         showGuideButton: true,
@@ -71,12 +79,10 @@ function tourReducer(
       return {
         ...state,
         isOpen: false,
-        currentStep: 0,
-        steps: [],
-        profile: null,
         isNavigating: false,
         loadingSimulation: null,
-        showGuideButton: false,
+        showGuideButton: true, // Keep guide button visible after tour closes
+        // Keep steps, profile, and attemptId so tour can be reopened
       };
     case "NEXT":
       return {
@@ -97,7 +103,7 @@ function tourReducer(
       return {
         ...state,
         steps: state.steps.map((step, index) =>
-          index === action.payload ? { ...step, isCompleted: true } : step
+          index === action.payload ? { ...step, isCompleted: true } : step,
         ),
       };
     case "SET_NAVIGATING":
@@ -115,6 +121,11 @@ function tourReducer(
         ...state,
         showGuideButton: action.payload,
       };
+    case "SET_ATTEMPT_ID":
+      return {
+        ...state,
+        attemptId: action.payload,
+      };
     default:
       return state;
   }
@@ -123,7 +134,7 @@ function tourReducer(
 // Context
 interface TourContextValue {
   state: TourContextState;
-  openTour: (steps: TourStep[], profile: Profile) => void;
+  openTour: (steps: TourStep[], profile: Profile, initialStep?: number) => void;
   closeTour: () => void;
   nextStep: () => void;
   prevStep: () => void;
@@ -132,8 +143,10 @@ interface TourContextValue {
   setNavigating: (isNavigating: boolean) => void;
   setLoadingSimulation: (simulationId: string | null) => void;
   setShowGuideButton: (show: boolean) => void;
+  setAttemptId: (attemptId: string | null) => void;
   openGuide: () => void;
   goBack: () => void;
+  getGuideButtonState: () => "start" | "resume" | "complete" | "hidden";
 }
 
 const TourContext = createContext<TourContextValue | undefined>(undefined);
@@ -145,11 +158,23 @@ interface TourProviderProps {
 
 export function TourProvider({ children }: TourProviderProps) {
   const [state, dispatch] = useReducer(tourReducer, initialState);
-
+  const { effectiveProfile } = useProfile();
+  const router = useRouter();
   // Actions
-  const openTour = useCallback((steps: TourStep[], profile: Profile) => {
-    dispatch({ type: "OPEN", payload: { steps, profile } });
-  }, []);
+  const openTour = useCallback(
+    (steps: TourStep[], profile: Profile, initialStep?: number) => {
+      const payload: {
+        steps: TourStep[];
+        profile: Profile;
+        initialStep?: number;
+      } = { steps, profile };
+      if (initialStep !== undefined) {
+        payload.initialStep = initialStep;
+      }
+      dispatch({ type: "OPEN", payload });
+    },
+    [],
+  );
 
   const closeTour = useCallback(() => {
     dispatch({ type: "CLOSE" });
@@ -183,35 +208,76 @@ export function TourProvider({ children }: TourProviderProps) {
     dispatch({ type: "SET_SHOW_GUIDE_BUTTON", payload: show });
   }, []);
 
+  const setAttemptId = useCallback((attemptId: string | null) => {
+    dispatch({ type: "SET_ATTEMPT_ID", payload: attemptId });
+  }, []);
+
   const openGuide = useCallback(() => {
     if (!state.isOpen && state.steps.length > 0 && state.profile) {
       dispatch({
         type: "OPEN",
-        payload: { steps: state.steps, profile: state.profile },
+        payload: {
+          steps: state.steps,
+          profile: state.profile,
+          initialStep: state.currentStep,
+        },
       });
     }
-  }, [state.isOpen, state.steps, state.profile]);
+  }, [state.isOpen, state.steps, state.profile, state.currentStep]);
 
   const goBack = useCallback(() => {
     // Navigate back based on current step
     switch (state.currentStep) {
       case 0: // Home overview - stay on home
         break;
-      case 1: // Cohorts - go back to home
+      case 1: // Cohort leaderboard - go back to home
         window.history.back();
         break;
-      case 2: // Classes - go back to cohorts
+      case 2: // Practice simulation - go back to home
         window.history.back();
         break;
-      case 3: // Simulation - go back to home
-        window.history.back();
+      case 3: // Send message - stay in simulation
         break;
-      case 4: // Send message - stay in simulation
-        break;
-      case 5: // End chat - stay in simulation
+      case 4: // End chat - stay in simulation
         break;
     }
   }, [state.currentStep]);
+
+  // Get guide button state
+  const getGuideButtonState = useCallback(():
+    | "start"
+    | "resume"
+    | "complete"
+    | "hidden" => {
+    if (!effectiveProfile) {
+      return "hidden";
+    }
+
+    // Check if we're on a simulation chat page
+    if (
+      typeof window !== "undefined" &&
+      window.location.pathname.includes("/practice/a/")
+    ) {
+      return "hidden";
+    }
+
+    // Check tour completion status using latest profile data
+    if (effectiveProfile.viewedIntro && effectiveProfile.viewedChat) {
+      // If both flags are true and attemptId is null, user has officially completed the tour
+      // and shouldn't see it again
+      if (!state.attemptId) {
+        return "hidden";
+      }
+      // If attemptId exists, they're in an active tour session, so show "complete"
+      return "complete";
+    }
+
+    if (state.isOpen) {
+      return "resume";
+    }
+
+    return "start";
+  }, [effectiveProfile, state.isOpen, state.attemptId]);
 
   // Context value
   const value = useMemo(
@@ -226,8 +292,10 @@ export function TourProvider({ children }: TourProviderProps) {
       setNavigating,
       setLoadingSimulation,
       setShowGuideButton,
+      setAttemptId,
       openGuide,
       goBack,
+      getGuideButtonState,
     }),
     [
       state,
@@ -240,9 +308,11 @@ export function TourProvider({ children }: TourProviderProps) {
       setNavigating,
       setLoadingSimulation,
       setShowGuideButton,
+      setAttemptId,
       openGuide,
       goBack,
-    ]
+      getGuideButtonState,
+    ],
   );
 
   // Handle body class for tour open state
@@ -265,143 +335,196 @@ export function TourProvider({ children }: TourProviderProps) {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         closeTour();
-      } else if (event.key === "ArrowRight") {
+      } else if (
+        event.key === "ArrowRight" &&
+        state.currentStep + 1 < state.steps.length
+      ) {
         nextStep();
-      } else if (event.key === "ArrowLeft") {
+      } else if (event.key === "ArrowLeft" && state.currentStep > 0) {
         prevStep();
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [state.isOpen, closeTour, nextStep, prevStep]);
+  }, [
+    state.isOpen,
+    state.currentStep,
+    state.steps.length,
+    closeTour,
+    nextStep,
+    prevStep,
+  ]);
 
-  // Handle click outside to close
-  useEffect(() => {
-    if (!state.isOpen) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (
-        !target.closest(".tour-sidebar") &&
-        !target.closest("[data-tour-step]")
-      ) {
-        closeTour();
-      }
-    };
-
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, [state.isOpen, closeTour]);
-
-  // Custom sidebar component
+  // Custom sidebar component with improved styling
   const TourSidebar = useMemo(() => {
     if (!state.isOpen || state.steps.length === 0) return null;
 
     const currentStep = state.steps[state.currentStep];
     if (!currentStep) return null;
 
+    // Get the latest profile data from the profile context
+    // const { effectiveProfile } = useProfile(); // This line is removed as per the edit hint
+
+    // Check if tour is actually completed based on latest profile status
+    const isTourCompleted =
+      effectiveProfile?.viewedIntro && effectiveProfile?.viewedChat;
+    const isLastStep = state.currentStep + 1 === state.steps.length;
+
     return (
       <aside className="tour-sidebar">
-        <header className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold">{currentStep.title}</h3>
-          <button
-            onClick={closeTour}
-            className="close-btn p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-            aria-label="Close tour"
-          >
-            ✕
-          </button>
-        </header>
-
-        <div className="flex-1 space-y-4">
-          <div className="prose dark:prose-invert text-sm">
-            {currentStep.content}
-          </div>
-
-          {currentStep.requiresAction && (
-            <div className="flex items-center gap-2 pt-4">
+        <div className="tour-sidebar-content">
+          <header className="tour-sidebar-header">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-foreground">
+                  {isTourCompleted ? "Tour Complete! 🎉" : currentStep.title}
+                </h3>
+                {isTourCompleted && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    🎉 Tour Complete! You're all set to use GLOW.
+                  </p>
+                )}
+              </div>
               <button
-                onClick={() => {
-                  // Dispatch custom event for tour action
-                  window.dispatchEvent(
-                    new CustomEvent("tourAction", {
-                      detail: { stepIndex: state.currentStep },
-                    })
-                  );
-                  logInfo("Tour action triggered", {
-                    stepIndex: state.currentStep,
-                  });
-                }}
-                disabled={state.isNavigating || !!state.loadingSimulation}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 flex-1"
+                onClick={closeTour}
+                className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground"
+                aria-label="Close tour"
               >
-                {state.isNavigating
-                  ? "Navigating..."
-                  : state.loadingSimulation
-                    ? "Starting..."
-                    : "Continue"}
+                ✕
               </button>
             </div>
-          )}
-        </div>
+          </header>
 
-        <footer className="mt-auto pt-6 space-y-3">
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>
-              Step {state.currentStep + 1} of {state.steps.length}
-            </span>
-            <span>
-              {Math.round(((state.currentStep + 1) / state.steps.length) * 100)}
-              %
-            </span>
+          <div className="tour-sidebar-body">
+            <div className="text-sm text-muted-foreground leading-relaxed">
+              {isTourCompleted ? (
+                <div className="space-y-3">
+                  <p>
+                    Congratulations! You've successfully completed the GLOW
+                    tour.
+                  </p>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div className="flex items-center space-x-2 text-green-800">
+                      <span className="text-lg">✅</span>
+                      <span className="font-medium">Home Overview</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-green-800 mt-2">
+                      <span className="text-lg">✅</span>
+                      <span className="font-medium">Cohort Leaderboard</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-green-800 mt-2">
+                      <span className="text-lg">✅</span>
+                      <span className="font-medium">Practice Simulation</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-green-800 mt-2">
+                      <span className="text-lg">✅</span>
+                      <span className="font-medium">Send Message</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-green-800 mt-2">
+                      <span className="text-lg">✅</span>
+                      <span className="font-medium">End Chat</span>
+                    </div>
+                  </div>
+                  <p className="text-sm">
+                    You now have access to all GLOW features. Feel free to
+                    explore and practice!
+                  </p>
+                </div>
+              ) : (
+                currentStep.content
+              )}
+            </div>
           </div>
-          <progress
-            value={state.currentStep + 1}
-            max={state.steps.length}
-            className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
-          >
-            <div className="h-full bg-primary rounded-full transition-all duration-300" />
-          </progress>
-          <div className="flex justify-between">
-            <button
-              onClick={goBack}
-              disabled={state.currentStep === 0}
-              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Go Back
-            </button>
-            <button
-              onClick={nextStep}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90"
-            >
-              {state.currentStep + 1 === state.steps.length ? "Finish" : "Next"}
-            </button>
-          </div>
-        </footer>
+
+          <footer className="tour-sidebar-footer">
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+              <span>
+                {isTourCompleted
+                  ? "Tour Complete! 🎉"
+                  : `Step ${state.currentStep + 1} of ${state.steps.length}`}
+              </span>
+              <span>
+                {isTourCompleted
+                  ? "100%"
+                  : `${Math.round(((state.currentStep + 1) / state.steps.length) * 100)}%`}
+              </span>
+            </div>
+
+            <div className="w-full bg-muted rounded-full h-1.5 mb-4">
+              <div
+                className="bg-primary h-1.5 rounded-full transition-all duration-300"
+                style={{
+                  width: isTourCompleted
+                    ? "100%"
+                    : `${((state.currentStep + 1) / state.steps.length) * 100}%`,
+                }}
+              />
+            </div>
+
+            {isTourCompleted ? (
+              // Completion screen - show "Back Home" button
+              <div className="flex justify-center">
+                <button
+                  onClick={() => {
+                    setAttemptId(null); // Reset attemptId since tour is complete
+                    closeTour();
+                    // Navigate back to home using router
+                    router.push("/home");
+                  }}
+                  className="px-6 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
+                >
+                  Back Home
+                </button>
+              </div>
+            ) : (
+              // Regular navigation - show Back and Next buttons
+              <div className="flex justify-between gap-2">
+                <button
+                  onClick={prevStep}
+                  disabled={state.currentStep === 0}
+                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={() => {
+                    // Dispatch custom event for tour action
+                    window.dispatchEvent(
+                      new CustomEvent("tourAction", {
+                        detail: { stepIndex: state.currentStep },
+                      }),
+                    );
+                    logInfo("Tour Next button clicked", {
+                      stepIndex: state.currentStep,
+                    });
+                  }}
+                  disabled={state.isNavigating || !!state.loadingSimulation}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors flex-1"
+                >
+                  {state.isNavigating
+                    ? "Navigating..."
+                    : state.loadingSimulation
+                      ? "Starting..."
+                      : isLastStep
+                        ? "Complete"
+                        : "Next"}
+                </button>
+              </div>
+            )}
+          </footer>
+        </div>
       </aside>
     );
-  }, [state, closeTour, nextStep, goBack]);
+  }, [state, closeTour, prevStep, effectiveProfile, setAttemptId, router]);
 
   return (
     <TourContext.Provider value={value}>
       {children}
       {state.isOpen && state.steps.length > 0 && (
         <>
-          {/* Disable reactour overlay and just use our custom sidebar */}
-          <div
-            className="tour-mask"
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              zIndex: 1000,
-              pointerEvents: "auto",
-            }}
-          />
+          {/* Tour overlay that replaces/overlays the sidebar */}
+          <div className="tour-overlay" />
           {TourSidebar}
         </>
       )}

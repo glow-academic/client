@@ -6,7 +6,6 @@
  */
 
 import Home from "@/components/home/Home";
-
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

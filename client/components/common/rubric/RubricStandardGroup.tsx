@@ -281,7 +281,7 @@ export default function RubricStandardGroup({
     }
 
     const groupStandards = standards.filter(
-      (s) => s.standardGroupId === group?.id
+      (s) => s.standardGroupId === group?.id,
     );
     // Sort standards by points (highest to lowest)
     const sortedStandards = groupStandards.sort((a, b) => b.points - a.points);
@@ -379,7 +379,7 @@ export default function RubricStandardGroup({
 
   const handleGroupInputChange = (
     field: keyof StandardGroupFormData,
-    value: string
+    value: string,
   ) => {
     setGroupFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -387,7 +387,7 @@ export default function RubricStandardGroup({
   const handleStandardInputChange = (
     standardIndex: number,
     field: keyof StandardFormData,
-    value: string
+    value: string,
   ) => {
     setStandardsFormData((prev) => {
       const updated = [...prev];
@@ -439,12 +439,12 @@ export default function RubricStandardGroup({
 
     if (isNaN(groupPoints) || groupPoints <= 0) {
       errors.push(
-        "Standard group points must be a valid number greater than 0"
+        "Standard group points must be a valid number greater than 0",
       );
     }
     if (isNaN(groupPassPoints) || groupPassPoints <= 0) {
       errors.push(
-        "Standard group pass points must be a valid number greater than 0"
+        "Standard group pass points must be a valid number greater than 0",
       );
     }
     if (
@@ -473,7 +473,7 @@ export default function RubricStandardGroup({
       const standardPoints = parseInt(standard.points);
       if (isNaN(standardPoints) || standardPoints <= 0) {
         errors.push(
-          `Standard ${index + 1}: Points must be a valid number greater than 0`
+          `Standard ${index + 1}: Points must be a valid number greater than 0`,
         );
       }
       if (
@@ -482,7 +482,7 @@ export default function RubricStandardGroup({
         standardPoints > groupPoints
       ) {
         errors.push(
-          `Standard ${index + 1}: Points cannot exceed group maximum (${groupPoints})`
+          `Standard ${index + 1}: Points cannot exceed group maximum (${groupPoints})`,
         );
       }
     });
@@ -530,7 +530,7 @@ export default function RubricStandardGroup({
                   description: standard.description,
                   points: parseInt(standard.points),
                   standardGroupId: newGroup.id,
-                })
+                }),
               );
             }
           });
@@ -565,7 +565,7 @@ export default function RubricStandardGroup({
                 description: standard.description,
                 points: parseInt(standard.points),
                 standardGroupId: group!.id,
-              })
+              }),
             );
           } else if (!standard.isNew && !standard.isDeleted && standard.id) {
             // Update existing standards
@@ -577,7 +577,7 @@ export default function RubricStandardGroup({
                   description: standard.description,
                   points: parseInt(standard.points),
                 },
-              })
+              }),
             );
           }
         });
@@ -613,10 +613,10 @@ export default function RubricStandardGroup({
 
       // Reset standards data
       const groupStandards = standards.filter(
-        (s) => s.standardGroupId === group?.id
+        (s) => s.standardGroupId === group?.id,
       );
       const sortedStandards = groupStandards.sort(
-        (a, b) => b.points - a.points
+        (a, b) => b.points - a.points,
       );
       const formData = sortedStandards.map((standard) => ({
         id: standard.id,
@@ -633,7 +633,7 @@ export default function RubricStandardGroup({
   const handleDeleteGroup = () => {
     if (
       confirm(
-        "Are you sure you want to delete this standard group? This will also delete all associated standards."
+        "Are you sure you want to delete this standard group? This will also delete all associated standards.",
       )
     ) {
       deleteStandardGroupMutation.mutate(group!.id);
@@ -657,11 +657,11 @@ export default function RubricStandardGroup({
       if (allStandardGroups) {
         const totalPoints = allStandardGroups.reduce(
           (sum, group) => sum + group.points,
-          0
+          0,
         );
         const totalPassPoints = allStandardGroups.reduce(
           (sum, group) => sum + group.passPoints,
-          0
+          0,
         );
 
         // Update the rubric with new totals
@@ -693,16 +693,18 @@ export default function RubricStandardGroup({
   const colorClasses = getColorClasses(color);
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden w-full max-w-full">
       <Collapsible open={isOpen} onOpenChange={() => onToggle(index)}>
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-muted/20 transition-colors">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 flex-1">
-                <div className={`p-2 rounded-lg ${colorClasses.bg}`}>
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div
+                  className={`p-2 rounded-lg ${colorClasses.bg} flex-shrink-0`}
+                >
                   <IconComponent className={`h-5 w-5 ${colorClasses.text}`} />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   {isEditing ? (
                     <div
                       className="space-y-3 w-full"
@@ -725,7 +727,7 @@ export default function RubricStandardGroup({
                           onChange={(e) =>
                             handleGroupInputChange(
                               "description",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           className="text-sm w-full"
@@ -751,7 +753,7 @@ export default function RubricStandardGroup({
                             onChange={(e) =>
                               handleGroupInputChange(
                                 "passPoints",
-                                e.target.value
+                                e.target.value,
                               )
                             }
                             className="text-sm"
@@ -760,17 +762,17 @@ export default function RubricStandardGroup({
                       </div>
                     </div>
                   ) : (
-                    <div>
-                      <CardTitle className="text-lg">
+                    <div className="min-w-0">
+                      <CardTitle className="text-lg truncate">
                         {mode === "create" ? "New Standard Group" : group!.name}
                       </CardTitle>
-                      <CardDescription>
+                      <CardDescription className="truncate">
                         {mode === "create"
                           ? "Create a new evaluation category"
                           : group!.description}
                       </CardDescription>
                       {mode === "edit" && (
-                        <div className="flex gap-2 pt-2">
+                        <div className="flex gap-2 pt-2 flex-wrap">
                           <Badge variant="outline">
                             Total: {group!.points} points
                           </Badge>
@@ -818,20 +820,20 @@ export default function RubricStandardGroup({
           </CardHeader>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <CardContent>
+          <CardContent className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-20">Points</TableHead>
                   <TableHead className="w-40">Name</TableHead>
-                  <TableHead>Description</TableHead>
+                  <TableHead className="w-full">Description</TableHead>
                   {isEditing && <TableHead className="w-20">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {visibleStandards.map((standard, standardIndex) => (
                   <TableRow key={standard.id || `new-${standardIndex}`}>
-                    <TableCell>
+                    <TableCell className="w-20">
                       {isEditing ? (
                         <Input
                           type="number"
@@ -840,7 +842,7 @@ export default function RubricStandardGroup({
                             handleStandardInputChange(
                               standardIndex,
                               "points",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           className="text-sm w-16"
@@ -855,7 +857,7 @@ export default function RubricStandardGroup({
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="w-40">
                       {isEditing ? (
                         <Input
                           value={standard.name}
@@ -863,17 +865,19 @@ export default function RubricStandardGroup({
                             handleStandardInputChange(
                               standardIndex,
                               "name",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           className="text-sm"
                           placeholder="Standard name"
                         />
                       ) : (
-                        <span className="font-medium">{standard.name}</span>
+                        <span className="font-medium truncate block">
+                          {standard.name}
+                        </span>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="w-full max-w-0">
                       {isEditing ? (
                         <Textarea
                           value={standard.description}
@@ -881,20 +885,22 @@ export default function RubricStandardGroup({
                             handleStandardInputChange(
                               standardIndex,
                               "description",
-                              e.target.value
+                              e.target.value,
                             )
                           }
-                          className="text-sm min-h-[60px]"
+                          className="text-sm min-h-[60px] max-w-full"
                           placeholder="Standard description"
                         />
                       ) : (
-                        <span className="text-sm leading-relaxed">
-                          {standard.description}
-                        </span>
+                        <div className="w-full overflow-hidden">
+                          <span className="text-sm leading-relaxed line-clamp-2 block truncate">
+                            {standard.description}
+                          </span>
+                        </div>
                       )}
                     </TableCell>
                     {isEditing && (
-                      <TableCell>
+                      <TableCell className="w-20">
                         <Button
                           variant="ghost"
                           size="sm"

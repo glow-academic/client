@@ -28,20 +28,18 @@ import { getPersonaConfig } from "@/utils/personas";
 import { FileText, Info, Timer, User, Users } from "lucide-react";
 import TableRubric from "../rubric/TableRubric";
 
-interface AttemptData {
-  attempt: number;
-  overallScore: number;
-  skillScores: Record<string, number>;
-  createdAt: string;
-}
-
 export interface SimulationCardProps {
-  simulation: Simulation;
+  simulation: Simulation & {
+    cohort?: { title: string };
+    rubric?: { points: number; passPoints: number } | undefined;
+    passRate?: number;
+    hasPassed?: boolean;
+    highestScore?: number;
+  };
   type: "default" | "cohort";
   onStartSimulation: (id: string) => void;
   loadingSimulation: string | null;
   effectiveProfile: Profile;
-  rubricData: { attempts: AttemptData[]; highestScore: number };
   scenarios?: Scenario[];
   personas?: Persona[];
 }
@@ -52,7 +50,6 @@ export default function SimulationCard({
   onStartSimulation,
   loadingSimulation,
   effectiveProfile,
-  rubricData,
   scenarios,
   personas,
 }: SimulationCardProps) {
@@ -73,15 +70,24 @@ export default function SimulationCard({
   const IconComponent =
     type === "default" ? personaConfig?.icon || User : Users;
 
-  const gradientClass =
-    type === "default"
+  // Determine gradient class based on completion status
+  const getGradientClass = () => {
+    if (simulation.hasPassed && type !== "default") {
+      return "from-green-500 to-green-600";
+    }
+    return type === "default"
       ? personaConfig?.colors?.gradient || "from-gray-500 to-gray-600"
       : "from-blue-500 to-purple-600";
+  };
+
+  const gradientClass = getGradientClass();
 
   const backgroundGradient =
     type === "default"
       ? "from-gray-900 to-gray-600"
-      : "from-blue-900 to-purple-600";
+      : simulation.hasPassed
+        ? "from-green-900 to-green-600"
+        : "from-blue-900 to-purple-600";
 
   // Make the card fill available height and stretch the header to create space
   return (
@@ -141,6 +147,9 @@ export default function SimulationCard({
                     <DialogHeader>
                       <DialogTitle>
                         Grading Rubric: {simulation.title}
+                        {simulation.passRate &&
+                          simulation.passRate > 0 &&
+                          ` (${simulation.passRate}% to pass)`}
                       </DialogTitle>
                     </DialogHeader>
                     {simulation.rubricId ? (
@@ -213,13 +222,15 @@ export default function SimulationCard({
               </span>
             </div>
             {effectiveProfile?.role !== "guest" &&
-              rubricData.highestScore > 0 && (
+              simulation.highestScore !== undefined &&
+              simulation.highestScore !== null &&
+              simulation.highestScore > 0 && (
                 <div className="flex items-center">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center">
                         <Info className="h-3 w-3 mr-1" />
-                        <span>{rubricData.highestScore}%</span>
+                        <span>{simulation.highestScore}%</span>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -235,6 +246,7 @@ export default function SimulationCard({
           <button
             onClick={() => onStartSimulation(simulation.id)}
             disabled={loadingSimulation === simulation.id}
+            data-testid={`start-simulation-${simulation.id}`}
             className={`w-full text-center py-2 rounded-lg bg-gradient-to-r ${gradientClass} text-white font-medium text-sm hover:shadow-lg transition-all duration-300 ${
               loadingSimulation === simulation.id
                 ? "animate-pulse cursor-not-allowed"
@@ -245,7 +257,9 @@ export default function SimulationCard({
               ? "Starting..."
               : type === "default"
                 ? "Start Simulation"
-                : "Start Simulations"}
+                : simulation.hasPassed
+                  ? "Completed Simulations"
+                  : "Start Simulations"}
           </button>
         </CardFooter>
       </Card>

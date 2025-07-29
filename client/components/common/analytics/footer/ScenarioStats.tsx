@@ -1,0 +1,753 @@
+/**
+ * ScenarioStats.tsx
+ * This component displays the scenario stats for the personas with bar charts.
+ * @AshokSaravanan222 & @siladiea
+ * 07/23/2025
+ */
+"use client";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
+import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
+import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
+import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
+import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
+import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
+import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { useQuery } from "@tanstack/react-query";
+import { isAfter, isBefore } from "date-fns";
+import { BarChart3, Check, ChevronsUpDown, Info } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from "recharts";
+
+export interface ScenarioStatsProps {
+  dateStart: Date;
+  dateEnd: Date;
+  thresholds: {
+    danger: number;
+    warning: number;
+    success: number;
+  };
+  profileId: string | undefined;
+  cohortIds: string[];
+}
+
+interface MetricOption {
+  id: string; // parameterId
+  name: string;
+  description: string;
+}
+
+export default function ScenarioStats({
+  dateStart,
+  dateEnd,
+  profileId,
+  cohortIds,
+  thresholds,
+}: ScenarioStatsProps) {
+  const [selectedParameterId, setSelectedParameterId] = useState<string>("");
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  // Fetch data
+  const { data: scenarios, isLoading: scenariosLoading } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => getAllScenarios(),
+  });
+
+  const { data: personas, isLoading: personasLoading } = useQuery({
+    queryKey: ["personas"],
+    queryFn: () => getAllPersonas(),
+  });
+
+  const { data: documents, isLoading: documentsLoading } = useQuery({
+    queryKey: ["documents"],
+    queryFn: () => getAllDocuments(),
+  });
+
+  const { data: profiles, isLoading: profilesLoading } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getAllProfiles(),
+  });
+
+  const { data: cohorts, isLoading: cohortsLoading } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
+  });
+
+  const { data: simulations, isLoading: simulationsLoading } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getAllSimulations(),
+  });
+
+  const { data: rubrics, isLoading: rubricsLoading } = useQuery({
+    queryKey: ["rubrics"],
+    queryFn: () => getAllRubrics(),
+  });
+
+  const { data: parameters, isLoading: parametersLoading } = useQuery({
+    queryKey: ["parameters"],
+    queryFn: () => getAllParameters(),
+  });
+
+  const { data: parameterItems, isLoading: parameterItemsLoading } = useQuery({
+    queryKey: ["parameterItems"],
+    queryFn: () => getAllParameterItems(),
+  });
+
+  const { data: attempts, isLoading: attemptsLoading } = useQuery({
+    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
+    queryFn: () =>
+      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
+    enabled: !!profiles && profiles.length > 0,
+  });
+
+  const { data: chats, isLoading: chatsLoading } = useQuery({
+    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
+    queryFn: () =>
+      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
+    enabled: !!attempts && attempts.length > 0,
+  });
+
+  const { data: grades, isLoading: gradesLoading } = useQuery({
+    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
+    queryFn: () =>
+      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
+    enabled: !!chats && chats.length > 0,
+  });
+
+  // Check if any data is still loading
+  const isLoading =
+    scenariosLoading ||
+    personasLoading ||
+    documentsLoading ||
+    profilesLoading ||
+    cohortsLoading ||
+    simulationsLoading ||
+    rubricsLoading ||
+    parametersLoading ||
+    parameterItemsLoading ||
+    attemptsLoading ||
+    chatsLoading ||
+    gradesLoading;
+
+  // Get numerical parameters only
+  const numericalParameters = useMemo(() => {
+    return parameters?.filter((p) => p.numerical && p.active) || [];
+  }, [parameters]);
+
+  // Set default selected parameter if none selected and we have numerical parameters
+  const selectedParameter = useMemo(() => {
+    if (!selectedParameterId && numericalParameters.length > 0) {
+      const firstParameter = numericalParameters[0];
+      if (firstParameter) {
+        setSelectedParameterId(firstParameter.id);
+        return firstParameter;
+      }
+    }
+    return numericalParameters.find((p) => p.id === selectedParameterId);
+  }, [selectedParameterId, numericalParameters]);
+
+  // Get parameter items for the selected parameter
+  const parameterItemsForSelected = useMemo(() => {
+    if (!parameterItems || !selectedParameter) return [];
+    return parameterItems
+      .filter((item) => item.parameterId === selectedParameter.id)
+      .sort((a, b) => parseFloat(a.value) - parseFloat(b.value));
+  }, [parameterItems, selectedParameter]);
+
+  // Generate metric options from numerical parameters
+  const METRIC_OPTIONS: MetricOption[] = useMemo(() => {
+    return numericalParameters.map((parameter) => ({
+      id: parameter.id,
+      name: parameter.name,
+      description: `Performance by ${parameter.name.toLowerCase()} value`,
+    }));
+  }, [numericalParameters]);
+
+  // Calculate cohort-based filters
+  const cohortFilters = useMemo(() => {
+    if (!cohorts || !cohortIds || cohortIds.length === 0) {
+      return {
+        allowedProfileIds: null,
+        allowedSimulationIds: null,
+        hasMatchingCohorts: true, // Show all data if no cohort filtering
+      };
+    }
+
+    // Filter cohorts based on provided cohortIds
+    const matchingCohorts = cohorts.filter((cohort) =>
+      cohortIds.includes(cohort.id)
+    );
+
+    if (matchingCohorts.length === 0) {
+      return {
+        allowedProfileIds: null,
+        allowedSimulationIds: null,
+        hasMatchingCohorts: false,
+      };
+    }
+
+    // Extract all profileIds and simulationIds from matching cohorts
+    const allProfileIds = new Set<string>();
+    const allSimulationIds = new Set<string>();
+
+    matchingCohorts.forEach((cohort) => {
+      cohort.profileIds?.forEach((id) => allProfileIds.add(id));
+      cohort.simulationIds?.forEach((id) => allSimulationIds.add(id));
+    });
+
+    return {
+      allowedProfileIds: Array.from(allProfileIds),
+      allowedSimulationIds: Array.from(allSimulationIds),
+      hasMatchingCohorts: true,
+    };
+  }, [cohorts, cohortIds]);
+
+  // Calculate aggregated performance data by metric level
+  const aggregatedPerformanceData = useMemo(() => {
+    if (
+      !scenarios ||
+      !personas ||
+      !documents ||
+      !attempts ||
+      !chats ||
+      !grades ||
+      !simulations ||
+      !profiles ||
+      !rubrics ||
+      !parameterItemsForSelected ||
+      !selectedParameter
+    ) {
+      return [];
+    }
+
+    // Filter data by date range, exclude practice simulations, and filter by TA role
+    const filteredGrades = grades.filter((grade) => {
+      const gradeDate = new Date(grade.createdAt);
+      const chat = chats.find((c) => c.id === grade.simulationChatId);
+      const attempt = attempts.find((a) => a.id === chat?.attemptId);
+      const simulation = simulations.find(
+        (s) => s.id === attempt?.simulationId
+      );
+      const profile = profiles?.find((p) => p.id === attempt?.profileId);
+
+      // Check date range
+      const inDateRange =
+        isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
+
+      // Exclude practice simulations
+      const notPractice = !simulation?.practiceSimulation;
+
+      // Filter by TA role (temporarily relaxed for debugging)
+      const isTA = profile?.role === "ta" || true; // Temporarily allow all roles for debugging
+
+      // Filter by profile if provided
+      const profileMatch = profileId ? attempt?.profileId === profileId : true;
+
+      // Apply cohort-based profile filtering
+      const cohortProfileMatch = cohortFilters.allowedProfileIds
+        ? profile && cohortFilters.allowedProfileIds.includes(profile.id)
+        : true;
+
+      // Apply cohort-based simulation filtering
+      const cohortSimulationMatch = cohortFilters.allowedSimulationIds
+        ? simulation &&
+          cohortFilters.allowedSimulationIds.includes(simulation.id)
+        : true;
+
+      return (
+        inDateRange &&
+        notPractice &&
+        isTA &&
+        profileMatch &&
+        cohortProfileMatch &&
+        cohortSimulationMatch
+      );
+    });
+
+    if (filteredGrades.length === 0) {
+      return [];
+    }
+
+    // Group scenarios by metric level and calculate average performance
+    const metricGroups: {
+      [key: string]: { scores: number[]; count: number; rubricPoints: number };
+    } = {};
+
+    scenarios.forEach((scenario) => {
+      const scenarioChats = chats.filter(
+        (chat) => chat.scenarioId === scenario.id
+      );
+      const scenarioGrades = filteredGrades.filter((grade) =>
+        scenarioChats.some((chat) => chat.id === grade.simulationChatId)
+      );
+
+      if (scenarioGrades.length === 0) return;
+
+      // Find the parameter item for this scenario that matches our selected parameter
+      const scenarioParameterItem = scenario.parameterItemIds?.find(
+        (itemId) => {
+          const item = parameterItemsForSelected.find((pi) => pi.id === itemId);
+          return item && item.parameterId === selectedParameter?.id;
+        }
+      );
+
+      if (scenarioParameterItem) {
+        const item = parameterItemsForSelected.find(
+          (pi) => pi.id === scenarioParameterItem
+        );
+        const metricValue = item?.value || "";
+
+        if (metricValue) {
+          // Calculate percentage scores based on rubric points
+          const percentageScores = scenarioGrades.map((grade) => {
+            const rubric = rubrics.find((r) => r.id === grade.rubricId);
+            if (!rubric || rubric.points === 0) return 0;
+
+            // Calculate percentage score (score out of rubric.points)
+            return Math.round((grade.score / rubric.points) * 100);
+          });
+
+          const avgScore = Math.round(
+            percentageScores.reduce((sum, score) => sum + score, 0) /
+              percentageScores.length
+          );
+
+          if (!metricGroups[metricValue]) {
+            metricGroups[metricValue] = {
+              scores: [],
+              count: 0,
+              rubricPoints: 0,
+            };
+          }
+          const group = metricGroups[metricValue];
+          if (group) {
+            group.scores.push(avgScore);
+            group.count += scenarioChats.length;
+
+            // Store rubric points for reference (use the first one found)
+            if (group.rubricPoints === 0) {
+              const firstGrade = scenarioGrades[0];
+              if (firstGrade) {
+                const rubric = rubrics.find(
+                  (r) => r.id === firstGrade.rubricId
+                );
+                group.rubricPoints = rubric?.points || 0;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Convert to array format for chart
+    const chartData = Object.entries(metricGroups)
+      .map(([metricLevel, data]) => ({
+        metricLevel,
+        avgScore: Math.round(
+          data.scores.reduce((sum, score) => sum + score, 0) /
+            data.scores.length
+        ),
+        scenarioCount: data.scores.length,
+        totalAttempts: data.count,
+        rubricPoints: data.rubricPoints,
+      }))
+      .sort((a, b) => parseFloat(a.metricLevel) - parseFloat(b.metricLevel))
+      .filter((item) => item.scenarioCount >= 1); // Show all levels with at least 1 scenario
+
+    return chartData;
+  }, [
+    scenarios,
+    personas,
+    documents,
+    attempts,
+    chats,
+    grades,
+    simulations,
+    profiles,
+    rubrics,
+    dateStart,
+    dateEnd,
+    profileId,
+    cohortFilters,
+    parameterItemsForSelected,
+    selectedParameter,
+  ]);
+
+  // Calculate Pearson correlation coefficient and p-value
+  const correlationData = useMemo(() => {
+    if (aggregatedPerformanceData.length < 2)
+      return { correlation: 0, pValue: 1 };
+
+    const n = aggregatedPerformanceData.length;
+    const sumX = aggregatedPerformanceData.reduce(
+      (sum, item) => sum + parseFloat(item.metricLevel),
+      0
+    );
+    const sumY = aggregatedPerformanceData.reduce(
+      (sum, item) => sum + item.avgScore,
+      0
+    );
+    const sumXY = aggregatedPerformanceData.reduce(
+      (sum, item) => sum + parseFloat(item.metricLevel) * item.avgScore,
+      0
+    );
+    const sumX2 = aggregatedPerformanceData.reduce(
+      (sum, item) => sum + Math.pow(parseFloat(item.metricLevel), 2),
+      0
+    );
+    const sumY2 = aggregatedPerformanceData.reduce(
+      (sum, item) => sum + item.avgScore * item.avgScore,
+      0
+    );
+
+    const numerator = n * sumXY - sumX * sumY;
+    const denominator = Math.sqrt(
+      (n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY)
+    );
+
+    const correlation = denominator === 0 ? 0 : numerator / denominator;
+
+    // Calculate p-value using t-test
+    const tStat =
+      correlation * Math.sqrt((n - 2) / (1 - correlation * correlation));
+    const pValue = 2 * (1 - Math.abs(tStat) / Math.sqrt(tStat * tStat + n - 2));
+
+    return { correlation, pValue };
+  }, [aggregatedPerformanceData]);
+
+  const { correlation, pValue } = correlationData;
+
+  const selectedMetricOption = METRIC_OPTIONS.find(
+    (m) => m.id === selectedParameterId
+  );
+
+  // Generate insight text
+  const getInsightText = () => {
+    const metricName = selectedMetricOption?.name.toLowerCase() || "metric";
+    if (correlation > 0.3) {
+      return `Higher ${metricName} tends to correlate with better performance.`;
+    } else if (correlation < -0.3) {
+      return `Higher ${metricName} tends to correlate with worse performance.`;
+    } else {
+      return `No clear relationship between ${metricName} and performance.`;
+    }
+  };
+
+  // Calculate threshold status based on correlation and performance
+  const getThresholdStatus = () => {
+    if (aggregatedPerformanceData.length === 0) return "neutral";
+
+    // Calculate average performance across all metric levels
+    const avgPerformance =
+      aggregatedPerformanceData.reduce((sum, item) => sum + item.avgScore, 0) /
+      aggregatedPerformanceData.length;
+
+    // Consider both average performance and correlation strength
+    const performanceThreshold = avgPerformance >= thresholds.success;
+    const correlationThreshold = Math.abs(correlation) >= 0.3;
+
+    if (performanceThreshold && correlationThreshold) return "success";
+    if (avgPerformance >= thresholds.warning || Math.abs(correlation) >= 0.2)
+      return "warning";
+    return "danger";
+  };
+
+  const thresholdStatus = getThresholdStatus();
+
+  // Show no data message if no matching cohorts found
+  if (!cohortFilters.hasMatchingCohorts) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Scenario Performance Analysis
+          </CardTitle>
+          <CardDescription>
+            Performance correlation with scenario characteristics
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center flex-1">
+          <div className="text-center space-y-2">
+            <p className="text-muted-foreground">
+              No data available for the selected cohorts.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              The selected profile is not a member of any of the specified
+              cohorts.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Scenario Performance Analysis
+          </CardTitle>
+          <CardDescription>
+            Performance correlation with scenario characteristics
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center flex-1">
+          <p className="text-muted-foreground">Loading scenario data...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show message if no numerical parameters available
+  if (numericalParameters.length === 0) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Scenario Performance Analysis
+          </CardTitle>
+          <CardDescription>
+            Performance correlation with scenario characteristics
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center flex-1">
+          <p className="text-muted-foreground">
+            No numerical parameters available for analysis.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!aggregatedPerformanceData.length) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Scenario Performance Analysis
+          </CardTitle>
+          <CardDescription>
+            Performance correlation with scenario characteristics
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center flex-1">
+          <p className="text-muted-foreground">
+            No scenario data available for the selected time period.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <TooltipProvider>
+      <Card className="w-full h-full flex flex-col relative">
+        <div
+          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+            thresholdStatus === "success"
+              ? "bg-green-500"
+              : thresholdStatus === "warning"
+                ? "bg-yellow-500"
+                : thresholdStatus === "danger"
+                  ? "bg-red-500"
+                  : "bg-gray-400"
+          }`}
+        />
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Scenario Performance Analysis
+              </CardTitle>
+              <CardDescription>
+                Performance correlation with scenario characteristics
+              </CardDescription>
+            </div>
+
+            {/* Metric Picker */}
+            <div className="flex items-center gap-2">
+              <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={pickerOpen}
+                    className="w-48 justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>
+                        {selectedMetricOption?.name || "Select Parameter"}
+                      </span>
+                    </div>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-0">
+                  <Command>
+                    <CommandInput placeholder="Search parameters..." />
+                    <CommandEmpty>No parameter found.</CommandEmpty>
+                    <CommandGroup>
+                      {METRIC_OPTIONS.map((metric) => (
+                        <CommandItem
+                          key={metric.id}
+                          value={metric.id}
+                          onSelect={() => {
+                            setSelectedParameterId(metric.id);
+                            setPickerOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedParameterId === metric.id
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          <div>
+                            <div className="font-medium">{metric.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {metric.description}
+                            </div>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-6 flex-1 flex flex-col">
+          {/* Bar Chart */}
+          <div className="flex-1 min-h-[300px] h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={aggregatedPerformanceData}
+                margin={{ top: 20, right: 20, bottom: 40, left: 20 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis
+                  dataKey="metricLevel"
+                  name={selectedMetricOption?.name || "Parameter Level"}
+                  fontSize={12}
+                  tickFormatter={(value) => value.toString()}
+                />
+                <YAxis
+                  fontSize={12}
+                  domain={[0, 100]}
+                  tickFormatter={(value) => `${value}%`}
+                />
+                <RechartsTooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--background))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "6px",
+                  }}
+                  formatter={(value: number, _name: string) => [
+                    `${value}%`,
+                    "Average Score",
+                  ]}
+                  labelFormatter={(label) => {
+                    const dataPoint = aggregatedPerformanceData.find(
+                      (item) => item.metricLevel === label
+                    );
+                    const metricName =
+                      selectedMetricOption?.name || "Parameter";
+                    return `${metricName} Level ${label} (${dataPoint?.scenarioCount || 0} scenarios)`;
+                  }}
+                />
+                <Bar
+                  dataKey="avgScore"
+                  fill="#3b82f6"
+                  name="Average Score"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* X-axis Label and Correlation */}
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground font-medium">
+              {selectedMetricOption?.name || "Parameter Level"}
+            </div>
+
+            {/* Correlation Component */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="bg-background/90 backdrop-blur-sm border rounded-md px-2 py-1 shadow-sm">
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-medium">Pearson r:</span>
+                    <span className="text-xs font-bold">
+                      {correlation > 0 ? "+" : ""}
+                      {correlation.toFixed(2)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      (p={pValue.toFixed(3)})
+                    </span>
+                    <Info className="h-3 w-3 text-muted-foreground" />
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="w-64 p-3">
+                <p className="text-sm">{getInsightText()}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Pearson correlation coefficient with p-value significance test
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </CardContent>
+      </Card>
+    </TooltipProvider>
+  );
+}

@@ -1,34 +1,42 @@
 "use client";
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useQuery } from "@tanstack/react-query";
 import { ColumnDef, Row, Table } from "@tanstack/react-table";
-import {
-  AlertTriangle,
-  ArrowUp,
-  Clock,
-  MessageCircle,
-  Target,
-  TrendingDown,
-  TrendingUp,
-  Users,
-} from "lucide-react";
+import { Clock, MessageCircle, Target, Timer } from "lucide-react";
 import { useMemo } from "react";
 
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 
-// Enhanced types for the TA performance data
+// Enhanced types for the TA performance data with the 10 metrics
 export interface TAPerformanceData {
   id: string;
   firstName: string;
   lastName: string;
   username: string;
+  // The 10 metrics from header components
+  averageScore: number;
+  completionPercentage: number;
+  firstAttemptPassRate: number;
+  highestScore: number;
+  messagesPerSession: number;
+  personaResponseTimes: number; // in minutes
+  sessionEfficiency: number; // percentage
+  stagnationRate: number; // percentage
+  timeSpent: number; // in minutes
+  totalAttempts: number;
+  // Risk assessment
+  riskLevel: "good" | "warning" | "danger";
+  riskDetails: {
+    dangerCount: number;
+    warningCount: number;
+    goodCount: number;
+  };
+  // Legacy fields for compatibility
   avgScore: number;
   completedSessions: number;
   totalSessions: number;
@@ -56,8 +64,6 @@ export interface TAPerformanceData {
   hasNoSessions: boolean;
   lastActivity: Date | null;
   scenariosCompleted: number;
-  messagesPerSession: number;
-  totalAttempts: number;
   taCohorts: string[];
   activeCohorts: number;
   cohortComparison: Array<{
@@ -70,6 +76,7 @@ export interface TAPerformanceData {
   bestCohortRank: number;
   avgVsCohort: number;
   // Additional fields for filtering
+  role: string;
   personasTested: string[];
   scenarioIds: string[];
   simulationIds: string[];
@@ -89,7 +96,6 @@ export function useReportColumns({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
   });
-
 
   const { data: cohorts } = useQuery({
     queryKey: ["cohorts"],
@@ -112,19 +118,19 @@ export function useReportColumns({
   });
 
   // Create filter options
-  const performanceOptions = useMemo(
+  const roleOptions = useMemo(
     () => [
       {
-        value: "all",
-        label: "All TAs",
+        value: "ta",
+        label: "Teaching Assistant",
       },
       {
-        value: "struggling",
-        label: "Struggling",
+        value: "instructor",
+        label: "Instructor",
       },
       {
-        value: "performing-well",
-        label: "Performing Well",
+        value: "admin",
+        label: "Administrator",
       },
     ],
     []
@@ -182,7 +188,8 @@ export function useReportColumns({
                     table.toggleAllPageRowsSelected(!!value)
                   }
                   aria-label="Select all"
-                  className="translate-y-[2px]"
+                  className="mr-2"
+                  onClick={(e) => e.stopPropagation()}
                 />
               ),
               cell: ({ row }: { row: Row<TAPerformanceData> }) => (
@@ -192,7 +199,8 @@ export function useReportColumns({
                     row.toggleSelected(!!value)
                   }
                   aria-label="Select row"
-                  className="translate-y-[2px]"
+                  className="mr-2"
+                  onClick={(e) => e.stopPropagation()}
                 />
               ),
               enableSorting: false,
@@ -201,7 +209,7 @@ export function useReportColumns({
           ]
         : []),
 
-      // Name column
+      // Name column with risk indicator
       {
         accessorKey: "firstName",
         header: ({ column }) => (
@@ -210,203 +218,17 @@ export function useReportColumns({
         cell: ({ row }) => {
           const ta = row.original;
           return (
-            <div className="flex items-center justify-center gap-1">
-              <div
-                className="font-medium text-xs cursor-pointer hover:text-primary hover:underline truncate"
-                onClick={() => onViewReport(ta.id)}
-                title={`${ta.firstName} ${ta.lastName}`}
-              >
-                {ta.firstName} {ta.lastName}
-              </div>
-              {ta.isStruggling && (
-                <AlertTriangle className="h-2.5 w-2.5 text-orange-600 flex-shrink-0" />
-              )}
-            </div>
-          );
-        },
-        filterFn: (row, _, value) => {
-          const ta = row.original;
-          const searchTerm = value.toLowerCase();
-          return (
-            ta.firstName.toLowerCase().includes(searchTerm) ||
-            ta.lastName.toLowerCase().includes(searchTerm) ||
-            ta.username.toLowerCase().includes(searchTerm)
-          );
-        },
-        enableSorting: true,
-      },
-      // Alias column
-      {
-        accessorKey: "username",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Alias" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
             <div
-              className="text-xs text-muted-foreground truncate text-center"
-              title={ta.username}
+              className="flex items-center space-x-1 cursor-pointer hover:text-primary hover:underline justify-start pl-1 py-0"
+              onClick={() => onViewReport(ta.id)}
+              title="Click to view detailed report"
             >
-              {ta.username}
-            </div>
-          );
-        },
-        enableSorting: true,
-      },
-      // Score column
-      {
-        accessorKey: "avgScore",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Score" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
-            <div className="text-center">
-              <Badge
-                variant={
-                  ta.avgScore >= 80
-                    ? "default"
-                    : ta.avgScore >= 70
-                      ? "secondary"
-                      : "destructive"
-                }
-                className="text-[10px] font-medium px-1 py-0 h-4"
-              >
-                {ta.hasNoSessions ? "N/A" : `${ta.avgScore}%`}
-              </Badge>
-            </div>
-          );
-        },
-        filterFn: (row, _, value) => {
-          const ta = row.original;
-          if (value.includes("all")) return true;
-          if (value.includes("struggling")) return ta.isStruggling;
-          if (value.includes("performing-well")) return !ta.isStruggling;
-          return true;
-        },
-        enableSorting: true,
-      },
-      // Sessions column
-      {
-        accessorKey: "totalSessions",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Sessions" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
-            <div className="text-center">
-              <div className="text-[10px] font-medium">
-                {ta.completedSessions}/{ta.totalSessions}
-              </div>
-            </div>
-          );
-        },
-        enableSorting: true,
-      },
-      // Pass Rate column
-      {
-        accessorKey: "passRate",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Pass" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
-            <div className="text-center">
-              <div className="text-[10px] font-medium">
-                {ta.hasNoSessions ? "N/A" : `${ta.passRate}%`}
-              </div>
-            </div>
-          );
-        },
-        enableSorting: true,
-      },
-      // Avg Time column
-      {
-        accessorKey: "avgTimeMinutes",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Time" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
-            <div className="text-center">
-              <div className="text-[10px] font-medium">
-                {ta.hasNoSessions ? "N/A" : `${ta.avgTimeMinutes}m`}
-              </div>
-            </div>
-          );
-        },
-        enableSorting: true,
-      },
-      // Completion Rate column
-      {
-        accessorKey: "completionRate",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Complete" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
-            <div className="text-center">
-              <div className="text-[10px] font-medium">
-                {ta.completionRate}%
-              </div>
-            </div>
-          );
-        },
-        enableSorting: true,
-      },
-      // Trend column
-      {
-        accessorKey: "trend",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Trend" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
-            <div className="text-center">
-              {ta.trend === "improving" ? (
-                <div className="flex items-center justify-center text-green-600">
-                  <TrendingUp className="h-2.5 w-2.5" />
-                </div>
-              ) : ta.trend === "declining" ? (
-                <div className="flex items-center justify-center text-red-600">
-                  <TrendingDown className="h-2.5 w-2.5" />
-                </div>
-              ) : (
-                <div className="flex items-center justify-center text-gray-600">
-                  <ArrowUp className="h-2.5 w-2.5 rotate-90" />
-                </div>
-              )}
-            </div>
-          );
-        },
-        enableSorting: true,
-      },
-      // Last Activity column
-      {
-        accessorKey: "lastActivity",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Last Activity" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
-            <div className="text-center">
-              <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
-                <Clock className="h-2.5 w-2.5" />
-                <span className="truncate">
-                  {ta.lastActivity
-                    ? new Date(ta.lastActivity).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })
-                    : "Never"}
+              <div className="flex flex-col items-start">
+                <span className="text-xs font-medium">
+                  {ta.firstName} {ta.lastName}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {ta.username}
                 </span>
               </div>
             </div>
@@ -414,25 +236,107 @@ export function useReportColumns({
         },
         enableSorting: true,
       },
-      // Scenarios Completed column
+
+      // Average Score column
       {
-        accessorKey: "scenariosCompleted",
+        accessorKey: "averageScore",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Scenarios" />
+          <DataTableColumnHeader column={column} title="Avg Score" />
         ),
         cell: ({ row }) => {
           const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
+            if (ta.averageScore >= 85) return "bg-green-50";
+            if (ta.averageScore >= 75) return "bg-yellow-50";
+            return "bg-red-50";
+          };
           return (
-            <div className="text-center">
-              <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
-                <Target className="h-2.5 w-2.5" />
-                {ta.scenariosCompleted}
-              </div>
+            <div
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
+            >
+              {ta.hasNoSessions ? "N/A" : `${ta.averageScore}%`}
             </div>
           );
         },
         enableSorting: true,
       },
+
+      // Completion Percentage column
+      {
+        accessorKey: "completionPercentage",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Completion" />
+        ),
+        cell: ({ row }) => {
+          const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
+            if (ta.completionPercentage >= 85) return "bg-green-50";
+            if (ta.completionPercentage >= 75) return "bg-yellow-50";
+            return "bg-red-50";
+          };
+          return (
+            <div
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
+            >
+              {ta.hasNoSessions ? "N/A" : `${ta.completionPercentage}%`}
+            </div>
+          );
+        },
+        enableSorting: true,
+      },
+
+      // First Attempt Pass Rate column
+      {
+        accessorKey: "firstAttemptPassRate",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="First Pass" />
+        ),
+        cell: ({ row }) => {
+          const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
+            if (ta.firstAttemptPassRate >= 85) return "bg-green-50";
+            if (ta.firstAttemptPassRate >= 75) return "bg-yellow-50";
+            return "bg-red-50";
+          };
+          return (
+            <div
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
+            >
+              {ta.hasNoSessions ? "N/A" : `${ta.firstAttemptPassRate}%`}
+            </div>
+          );
+        },
+        enableSorting: true,
+      },
+
+      // Highest Score column
+      {
+        accessorKey: "highestScore",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Highest" />
+        ),
+        cell: ({ row }) => {
+          const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
+            if (ta.highestScore >= 90) return "bg-green-50";
+            if (ta.highestScore >= 80) return "bg-yellow-50";
+            return "bg-red-50";
+          };
+          return (
+            <div
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
+            >
+              {ta.hasNoSessions ? "N/A" : `${ta.highestScore}%`}
+            </div>
+          );
+        },
+        enableSorting: true,
+      },
+
       // Messages Per Session column
       {
         accessorKey: "messagesPerSession",
@@ -441,130 +345,178 @@ export function useReportColumns({
         ),
         cell: ({ row }) => {
           const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
+            if (ta.messagesPerSession >= 12) return "bg-green-50";
+            if (ta.messagesPerSession >= 8) return "bg-yellow-50";
+            return "bg-red-50";
+          };
           return (
-            <div className="text-center">
-              <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
-                <MessageCircle className="h-2.5 w-2.5" />
-                {ta.hasNoSessions ? "N/A" : ta.messagesPerSession}
-              </div>
+            <div
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
+            >
+              <MessageCircle className="h-2.5 w-2.5" />
+              {ta.hasNoSessions ? "N/A" : ta.messagesPerSession}
             </div>
-          );
-        },
-        enableSorting: true,
-      },
-      // Total Attempts column
-      {
-        accessorKey: "totalAttempts",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Total Attempts" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
-            <div className="text-center">
-              <div className="text-[10px] font-medium">{ta.totalAttempts}</div>
-            </div>
-          );
-        },
-        enableSorting: true,
-      },
-      // Cohorts column
-      {
-        accessorKey: "taCohorts",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Cohorts" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          return (
-            <div className="text-center">
-              <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
-                <Users className="h-2.5 w-2.5" />
-                <span title={ta.taCohorts.join(", ")}>
-                  {ta.taCohorts.length}
-                </span>
-              </div>
-            </div>
-          );
-        },
-        filterFn: (row, _, value) => {
-          const ta = row.original;
-          if (!value || value.length === 0) return true;
-          return ta.cohortComparison.some((comparison) =>
-            value.includes(comparison.cohortId)
           );
         },
         enableSorting: true,
       },
 
-      // Status column
+      // Persona Response Times column
       {
-        accessorKey: "isStruggling",
+        accessorKey: "personaResponseTimes",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Status" />
+          <DataTableColumnHeader column={column} title="Response Time" />
         ),
         cell: ({ row }) => {
           const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
+            if (ta.personaResponseTimes <= 3) return "bg-green-50";
+            if (ta.personaResponseTimes <= 5) return "bg-yellow-50";
+            return "bg-red-50";
+          };
           return (
-            <div className="text-center">
-              {ta.hasNoSessions ? (
-                <Badge
-                  variant="destructive"
-                  className="text-[10px] px-1 py-0 h-4"
-                >
-                  None
-                </Badge>
-              ) : ta.isStruggling ? (
-                <Badge
-                  variant="secondary"
-                  className="text-[10px] bg-orange-100 text-orange-800 px-1 py-0 h-4"
-                >
-                  Risk
-                </Badge>
-              ) : (
-                <Badge
-                  variant="default"
-                  className="text-[10px] bg-green-100 text-green-800 px-1 py-0 h-4"
-                >
-                  Good
-                </Badge>
-              )}
+            <div
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
+            >
+              <Clock className="h-2.5 w-2.5" />
+              {ta.hasNoSessions ? "N/A" : `${ta.personaResponseTimes}m`}
             </div>
           );
         },
         enableSorting: true,
       },
-      // Actions column
+
+      // Session Efficiency column
       {
-        id: "actions",
-        header: "Action",
+        accessorKey: "sessionEfficiency",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Efficiency" />
+        ),
         cell: ({ row }) => {
           const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
+            if (ta.sessionEfficiency >= 85) return "bg-green-50";
+            if (ta.sessionEfficiency >= 75) return "bg-yellow-50";
+            return "bg-red-50";
+          };
           return (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-6 px-2 text-[10px]"
-              onClick={() => onViewReport(ta.id)}
+            <div
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
             >
-              View
-            </Button>
+              {ta.hasNoSessions ? "N/A" : `${ta.sessionEfficiency}%`}
+            </div>
           );
         },
+        enableSorting: true,
+      },
+
+      // Stagnation Rate column
+      {
+        accessorKey: "stagnationRate",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Stagnation" />
+        ),
+        cell: ({ row }) => {
+          const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
+            if (ta.stagnationRate <= 15) return "bg-green-50";
+            if (ta.stagnationRate <= 25) return "bg-yellow-50";
+            return "bg-red-50";
+          };
+          return (
+            <div
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
+            >
+              {ta.hasNoSessions ? "N/A" : `${ta.stagnationRate}%`}
+            </div>
+          );
+        },
+        enableSorting: true,
+      },
+
+      // Time Spent column
+      {
+        accessorKey: "timeSpent",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Time Spent" />
+        ),
+        cell: ({ row }) => {
+          const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
+            if (ta.timeSpent <= 60) return "bg-green-50";
+            if (ta.timeSpent <= 90) return "bg-yellow-50";
+            return "bg-red-50";
+          };
+          return (
+            <div
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
+            >
+              <Timer className="h-2.5 w-2.5" />
+              {ta.hasNoSessions ? "N/A" : `${ta.timeSpent}m`}
+            </div>
+          );
+        },
+        enableSorting: true,
+      },
+
+      // Total Attempts column
+      {
+        accessorKey: "totalAttempts",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Attempts" />
+        ),
+        cell: ({ row }) => {
+          const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.totalAttempts >= 8) return "bg-green-50";
+            if (ta.totalAttempts >= 5) return "bg-yellow-50";
+            return "bg-red-50";
+          };
+          return (
+            <div
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
+            >
+              <Target className="h-2.5 w-2.5" />
+              {ta.totalAttempts}
+            </div>
+          );
+        },
+        enableSorting: true,
+      },
+
+      // Hidden columns for filtering
+      {
+        accessorKey: "role",
+        header: "Role",
+        cell: () => null,
         enableSorting: false,
         enableHiding: false,
+        enableColumnFilter: true,
+        filterFn: (row, _, value) => {
+          const ta = row.original;
+          if (!value || value.length === 0) return true;
+          return value.includes(ta.role);
+        },
       },
       {
         accessorKey: "personasTested",
         header: "Personas Tested",
         cell: () => null,
         enableSorting: false,
-        enableHiding: true,
+        enableHiding: false,
         enableColumnFilter: true,
         filterFn: (row, _, value) => {
           const ta = row.original;
           if (!value || value.length === 0) return true;
-          return ta.personasTested.some((personaId) => value.includes(personaId));
+          return ta.personasTested.some((personaId) =>
+            value.includes(personaId)
+          );
         },
       },
       {
@@ -572,7 +524,7 @@ export function useReportColumns({
         header: "Scenario IDs",
         cell: () => null,
         enableSorting: false,
-        enableHiding: true,
+        enableHiding: false,
         enableColumnFilter: true,
         filterFn: (row, _, value) => {
           const ta = row.original;
@@ -587,7 +539,7 @@ export function useReportColumns({
         header: "Simulation IDs",
         cell: () => null,
         enableSorting: false,
-        enableHiding: true,
+        enableHiding: false,
         enableColumnFilter: true,
         filterFn: (row, _, value) => {
           const ta = row.original;
@@ -604,7 +556,7 @@ export function useReportColumns({
 
   return {
     columns,
-    performanceOptions,
+    roleOptions,
     cohortOptions,
     personaOptions,
     scenarioOptions,

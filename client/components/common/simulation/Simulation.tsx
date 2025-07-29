@@ -20,7 +20,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -33,15 +32,29 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Rubric, Scenario } from "@/types";
 import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
 import { updateSimulation } from "@/utils/mutations/simulations/update-simulation";
+import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
+import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { GripVertical, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import {
+  SimulationScenario,
+  SimulationScenarioPicker,
+} from "./SimulationScenarioPicker";
 
 export interface SimulationProps {
   simulationId?: string;
@@ -98,7 +111,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
     queryFn: () => getSimulation(simulationId!),
     enabled: isEditMode,
   });
-  
+
   const { data: rubrics = [], isLoading: isLoadingRubrics } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
@@ -109,10 +122,23 @@ export default function Simulation({ simulationId }: SimulationProps) {
     queryFn: () => getAllScenarios(),
   });
 
+  const { data: parameters = [], isLoading: isLoadingParameters } = useQuery({
+    queryKey: ["parameters"],
+    queryFn: () => getAllParameters(),
+  });
+
+  const { data: parameterItems = [], isLoading: isLoadingParameterItems } =
+    useQuery({
+      queryKey: ["parameter-items"],
+      queryFn: () => getAllParameterItems(),
+    });
+
   const isLoading =
     isLoadingSimulation ||
     isLoadingRubrics ||
-    isLoadingScenarios;
+    isLoadingScenarios ||
+    isLoadingParameters ||
+    isLoadingParameterItems;
 
   useEffect(() => {
     if (simulation && isEditMode) {
@@ -156,22 +182,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
     if (errors[field as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
-  };
-
-  const addScenario = (scenarioId: string) => {
-    if (!formData?.scenarioIds?.includes(scenarioId)) {
-      setFormData((prev) => ({
-        ...prev,
-        scenarioIds: [...(prev?.scenarioIds || []), scenarioId],
-      }));
-    }
-  };
-
-  const removeScenario = (scenarioId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      scenarioIds: prev?.scenarioIds?.filter((id) => id !== scenarioId) || [],
-    }));
   };
 
   const handleDragStartScenario = (e: React.DragEvent, scenarioId: string) => {
@@ -295,7 +305,73 @@ export default function Simulation({ simulationId }: SimulationProps) {
   };
 
   const editScenario = (scenarioId: string) => {
-    router.push(`/create/scenarios/s/${scenarioId}`);
+    window.open(`/create/scenarios/s/${scenarioId}`, "_blank");
+  };
+
+  // Transform scenarios to match SimulationScenarioPicker interface
+  const transformedScenarios: SimulationScenario[] = useMemo(() => {
+    return scenarios.map((scenario) => ({
+      id: scenario.id,
+      title: scenario.name,
+      description: scenario.description,
+      active: scenario.active,
+      defaultScenario: scenario.defaultScenario,
+      practiceScenario: scenario.practiceScenario,
+      parameterItemIds: scenario.parameterItemIds || [],
+    }));
+  }, [scenarios]);
+
+  // Compute selected scenarios from formData
+  const selectedScenarios = useMemo(() => {
+    if (!formData?.scenarioIds || scenarios.length === 0) {
+      return [];
+    }
+    return transformedScenarios.filter((scenario) =>
+      formData.scenarioIds?.includes(scenario.id)
+    );
+  }, [formData?.scenarioIds, transformedScenarios, scenarios.length]);
+
+  // Handle scenario selection from picker
+  const handleScenarioSelection = (selectedScenarios: SimulationScenario[]) => {
+    const scenarioIds = selectedScenarios.map((scenario) => scenario.id);
+    setFormData((prev) => ({
+      ...prev,
+      scenarioIds,
+    }));
+  };
+
+  // Get parameter badges for a scenario
+  const getScenarioParameterBadges = (scenario: Scenario) => {
+    if (!scenario.parameterItemIds || scenario.parameterItemIds.length === 0) {
+      return [];
+    }
+
+    const badges: {
+      parameterName: string;
+      value: string;
+      parameterId: string;
+    }[] = [];
+
+    scenario.parameterItemIds.forEach((parameterItemId) => {
+      const parameterItem = parameterItems.find(
+        (item) => item.id === parameterItemId
+      );
+      if (parameterItem) {
+        const parameter = parameters.find(
+          (param) => param.id === parameterItem.parameterId
+        );
+        if (parameter && !parameter.numerical) {
+          // Only show non-numerical parameters
+          badges.push({
+            parameterName: parameter.name,
+            value: parameterItem.value,
+            parameterId: parameter.id,
+          });
+        }
+      }
+    });
+
+    return badges;
   };
 
   return (
@@ -344,6 +420,24 @@ export default function Simulation({ simulationId }: SimulationProps) {
           )}
         </div>
 
+        {/* Active/Inactive Switch */}
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="active" className="text-sm">
+            Simulation Active
+          </Label>
+          {formData?.active !== undefined && !isLoading ? (
+            <Switch
+              id="active"
+              checked={formData.active ?? true}
+              onCheckedChange={(checked) =>
+                handleInputChange("active", checked)
+              }
+            />
+          ) : (
+            <Skeleton className="h-6 w-11" />
+          )}
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="rubricId">Rubric</Label>
           {formData?.rubricId !== undefined && !isLoading ? (
@@ -384,100 +478,58 @@ export default function Simulation({ simulationId }: SimulationProps) {
                 </p>
               )}
             </div>
-            <div className="flex gap-2">
-              {formData?.scenarioIds !== undefined && !isLoading ? (
-                <Select
-                  value=""
-                  onValueChange={(value: string) => {
-                    if (value) addScenario(value);
-                  }}
-                >
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Add scenario" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {scenarios
-                      .filter(
-                        (scenario: Scenario) =>
-                          !formData.scenarioIds?.includes(scenario.id)
-                      )
-                      .map((scenario: Scenario) => (
-                        <SelectItem key={scenario.id} value={scenario.id}>
-                          {scenario.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
-            </div>
           </div>
 
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Card key={i} className="p-3 min-h-[180px]">
-                  <div className="space-y-3 h-full flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <Skeleton className="h-4 w-1/2" />
-                        <div className="flex items-center gap-2">
-                          <Skeleton className="h-6 w-6 rounded" />
-                          <Skeleton className="h-6 w-6 rounded" />
-                          <Skeleton className="h-4 w-4 rounded" />
-                        </div>
-                      </div>
-                      <div className="space-y-2 mt-2">
-                        <Skeleton className="h-3 w-full" />
-                        <div className="flex items-center gap-2">
-                          <Skeleton className="h-5 w-20 rounded" />
-                          <Skeleton className="h-5 w-20 rounded" />
-                        </div>
-                        <Skeleton className="h-5 w-16 rounded" />
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          ) : formData?.scenarioIds?.length === 0 ? (
-            <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
-              <div>
-                <p className="font-medium mb-1">No scenarios selected</p>
-              </div>
-            </div>
+            <Skeleton className="h-10 w-full" />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {formData?.scenarioIds?.map((scenarioId) => {
-                const scenario = scenarios.find(
-                  (s: Scenario) => s.id === scenarioId
+            <SimulationScenarioPicker
+              scenarios={transformedScenarios}
+              parameters={parameters}
+              parameterItems={parameterItems}
+              label=""
+              placeholder="Select scenarios..."
+              description="Choose scenarios to include in this simulation"
+              onSelect={handleScenarioSelection}
+              selectedScenarios={selectedScenarios}
+              hideSelectedChips={true}
+              showOnlyActive={true}
+              showLabel={false}
+            />
+          )}
+
+          {/* Display selected scenarios with preview functionality */}
+          {selectedScenarios.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
+              {selectedScenarios.map((scenario) => {
+                const originalScenario = scenarios.find(
+                  (s: Scenario) => s.id === scenario.id
                 );
-                if (!scenario) return null;
+                if (!originalScenario) return null;
 
                 return (
                   <Card
-                    key={scenarioId}
+                    key={scenario.id}
                     className={`p-3 min-h-[180px] cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
-                      draggedScenario === scenarioId ? "opacity-50" : ""
+                      draggedScenario === scenario.id ? "opacity-50" : ""
                     }`}
                     draggable
-                    onDragStart={(e) => handleDragStartScenario(e, scenarioId)}
+                    onDragStart={(e) => handleDragStartScenario(e, scenario.id)}
                     onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, scenarioId)}
+                    onDrop={(e) => handleDrop(e, scenario.id)}
                   >
                     <div className="space-y-3 h-full flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium text-sm">
-                            {scenario.name || "Unnamed Scenario"}
+                            {scenario.title || "Unnamed Scenario"}
                           </h4>
                           <div className="flex items-center gap-2">
                             <Button
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => editScenario(scenarioId)}
+                              onClick={() => editScenario(scenario.id)}
                               className="h-6 w-6 p-0"
                             >
                               <Pencil className="h-3 w-3" />
@@ -486,7 +538,13 @@ export default function Simulation({ simulationId }: SimulationProps) {
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => removeScenario(scenarioId)}
+                              onClick={() => {
+                                const newSelectedScenarios =
+                                  selectedScenarios.filter(
+                                    (s) => s.id !== scenario.id
+                                  );
+                                handleScenarioSelection(newSelectedScenarios);
+                              }}
                               className="h-6 w-6 p-0"
                             >
                               <Trash2 className="h-3 w-3" />
@@ -499,15 +557,43 @@ export default function Simulation({ simulationId }: SimulationProps) {
                           <p className="text-xs text-muted-foreground line-clamp-3">
                             {scenario.description || "No description provided"}
                           </p>
-
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Badge variant="outline" className="text-xs">
-                              Crowdedness: {scenario.crowdedness ?? "N/A"}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              Intensity: {scenario.intensity ?? "N/A"}
-                            </Badge>
-                          </div>
+                          {/* Parameter badges */}
+                          {(() => {
+                            const parameterBadges =
+                              getScenarioParameterBadges(originalScenario);
+                            if (parameterBadges.length > 0) {
+                              return (
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  {parameterBadges.slice(0, 4).map((badge) => (
+                                    <TooltipProvider key={badge.parameterId}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Badge
+                                            variant="secondary"
+                                            className="text-xs"
+                                          >
+                                            {badge.value}
+                                          </Badge>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>{badge.parameterName}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  ))}
+                                  {parameterBadges.length > 4 && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs"
+                                    >
+                                      +{parameterBadges.length - 4}
+                                    </Badge>
+                                  )}
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -522,6 +608,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
         <div className="flex justify-end gap-3">
           <Button
             variant="outline"
+            type="button"
             onClick={() => router.push("/create/simulations")}
           >
             Back

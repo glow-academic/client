@@ -17,11 +17,12 @@ const columnMap = {
   createdAt: "Date",
   profileId: "Name",
   userId: "Name",
-  simulationTitle: "Simulation",
+  simulationId: "Simulation",
   classCode: "Classes",
   classIds: "Classes",
   personasTested: "Personas",
   averageScore: "Score",
+  scenarios: "Scenarios",
   // Reports page columns
   firstName: "Name",
   username: "Alias",
@@ -37,6 +38,24 @@ const columnMap = {
   totalAttempts: "Total Attempts",
   taCohorts: "Cohorts",
   isStruggling: "Status",
+  // Leaderboard page columns
+  rank: "Rank",
+  name: "User",
+  role: "Role",
+  simsCompleted: "Sims Completed",
+  completionPercentage: "Completion",
+  firstAttemptPassRate: "First Pass",
+  highestScore: "Highest Score",
+  personaResponseTimes: "Response Time",
+  sessionEfficiency: "Efficiency",
+  stagnationRate: "Stagnation",
+  timeSpent: "Time Spent",
+  // Staff page columns
+  active: "Status",
+  lastActive: "Last Active",
+  cohortNames: "Cohorts",
+  email: "Email",
+  actions: "Actions",
 };
 
 export interface DataTableViewOptionsProps<TData> {

@@ -20,7 +20,7 @@ function initializePostgres() {
 async function insertLogToDatabase(
   level: string,
   message: string,
-  context: Record<string, unknown>
+  context: Record<string, unknown>,
 ): Promise<void> {
   try {
     const pgSql = initializePostgres();
@@ -41,7 +41,7 @@ async function insertLogToDatabase(
 export async function logToDatabase(
   level: "info" | "warn" | "error" | "debug",
   message: string,
-  context?: Record<string, unknown>
+  context?: Record<string, unknown>,
 ): Promise<void> {
   try {
     await insertLogToDatabase(level, message, context || {});
@@ -53,7 +53,7 @@ export async function logToDatabase(
 // Convenience functions
 export async function logInfo(
   message: string,
-  context?: Record<string, unknown>
+  context?: Record<string, unknown>,
 ): Promise<void> {
   if (!isProduction) {
     console.log(message, context);
@@ -64,7 +64,7 @@ export async function logInfo(
 export async function logError(
   message: string,
   error?: Error | unknown,
-  context?: Record<string, unknown>
+  context?: Record<string, unknown>,
 ): Promise<void> {
   const errorInfo =
     error instanceof Error
@@ -83,7 +83,7 @@ export async function logError(
 
 export async function logWarn(
   message: string,
-  context?: Record<string, unknown>
+  context?: Record<string, unknown>,
 ): Promise<void> {
   if (!isProduction) {
     console.warn(message, context);
@@ -93,7 +93,7 @@ export async function logWarn(
 
 export async function logDebug(
   message: string,
-  context?: Record<string, unknown>
+  context?: Record<string, unknown>,
 ): Promise<void> {
   if (!isProduction) {
     console.debug(message, context);

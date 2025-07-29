@@ -176,13 +176,6 @@ start_fresh_from_init() {
     echo "✅ Agent SQL generated from markdown files"
   fi
   
-  # Generate analytics components SQL and Registry
-  if [[ -f "app/analytics/generate-components.sh" ]]; then
-    echo "🔧 Generating analytics components and registry..."
-    cd app/analytics && ./generate-components.sh && cd - > /dev/null
-    echo "✅ Analytics components and registry generated"
-  fi
-  
   # Generate model SQL with encrypted API keys
   if [[ -f "app/models/generate-models.sh" ]]; then
     echo "🔐 Generating model SQL with encrypted API keys..."

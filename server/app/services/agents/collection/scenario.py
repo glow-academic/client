@@ -5,13 +5,11 @@ from typing import List, Tuple
 from agents import Runner, gen_trace_id, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
-from app.models import Models, Personas, Providers, SystemAgents
+from app.models import Models, Personas, Providers, Agents
 from app.services.agents.generic import GenericAgent
 from app.utils.document import get_document_info
 from app.utils.personas import get_persona_info
-from app.utils.scenario import (get_class_info, get_crowdedness_info,
-                                get_deadline_info, get_intensity_info,
-                                get_location_info, get_time_info)
+from app.utils.scenario import get_parameter_item_info
 from fastapi import Depends
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -27,12 +25,7 @@ class Scenario(BaseModel):
 async def run_scenario_agent(
     persona_id: uuid.UUID | None = None,
     document_ids: List[uuid.UUID] | None = None,
-    crowdedness: int | None = None,
-    intensity: int | None = None,
-    class_id: uuid.UUID | None = None,
-    location_id: uuid.UUID | None = None,
-    time_id: uuid.UUID | None = None,
-    deadline_id: uuid.UUID | None = None,
+    parameter_item_ids: List[uuid.UUID] | None = None,
     group_id: uuid.UUID | None = None,
     session: Session = Depends(get_session),
 ) -> Tuple[str, str, str]:
@@ -41,13 +34,8 @@ async def run_scenario_agent(
 
     Args:
         persona_id: The ID of the persona
-        class_id: The ID of the class
         document_ids: The IDs of the documents
-        crowdedness: The crowdedness of the class
-        intensity: The intensity of the class
-        location_id: The ID of the location
-        time_id: The ID of the time
-        deadline_id: The ID of the deadline
+        parameter_item_ids: The IDs of the parameter items
         group_id: The ID of the group
         session: The database session
     Returns:
@@ -58,53 +46,32 @@ async def run_scenario_agent(
     if persona_id is None:
         persona_info = None
     else:
-        persona = session.exec(select(Personas).where(Personas.id == persona_id)).one_or_none()
+        persona = session.exec(
+            select(Personas).where(Personas.id == persona_id)
+        ).one_or_none()
         if not persona:
             raise ValueError(f"Persona with ID {persona_id} not found")
         persona_info = get_persona_info(persona.id, session)
-
-    if crowdedness is None:
-        crowdedness_info = None
-    else:
-        crowdedness_info = get_crowdedness_info(crowdedness)
-
-    if intensity is None:
-        intensity_info = None
-    else:
-        intensity_info = get_intensity_info(intensity)
 
     if document_ids is None or len(document_ids) == 0:
         document_info = None
     else:
         document_info = get_document_info(document_ids, session)
 
-    if class_id is None:
-        class_info = None
+    if parameter_item_ids is None or len(parameter_item_ids) == 0:
+        parameter_item_info = None
     else:
-        class_info = get_class_info(class_id, session)
-
-    if location_id is None:
-        location_info = None
-    else:
-        location_info = get_location_info(location_id, session)
-
-    if time_id is None:
-        time_info = None
-    else:
-        time_info = get_time_info(time_id, session)
-
-    if deadline_id is None:
-        deadline_info = None
-    else:
-        deadline_info = get_deadline_info(deadline_id, session)
+        parameter_item_info = get_parameter_item_info(parameter_item_ids, session)
 
     # find agent with name of "Scenario"
-    scenario_agent = session.exec(select(SystemAgents).where(SystemAgents.name == "Scenario")).one()
+    scenario_agent = session.exec(select(Agents).where(Agents.name == "Scenario")).one()
     if not scenario_agent:
         raise ValueError("Scenario agent not found")
 
     # getting the model from the agent's model_id
-    model = session.exec(select(Models).where(Models.id == scenario_agent.model_id)).one()
+    model = session.exec(
+        select(Models).where(Models.id == scenario_agent.model_id)
+    ).one()
     if not model:
         raise ValueError(f"Model with ID {scenario_agent.model_id} not found")
 
@@ -123,20 +90,15 @@ async def run_scenario_agent(
         model_provider=provider.name,
         api_key=provider.api_key,
         reasoning=scenario_agent.reasoning,
-        output_type=Scenario
+        output_type=Scenario,
     )
 
     agent_instance = scenario_agent_generic.agent()
 
     input_items: list[TResponseInputItem | None] = [
         persona_info,
-        class_info,
         document_info,
-        crowdedness_info,
-        intensity_info,
-        location_info,
-        time_info,
-        deadline_info,
+        parameter_item_info,
     ]
     clean_input_items = [item for item in input_items if item is not None]
     logger.info(f"Input items: {clean_input_items}")

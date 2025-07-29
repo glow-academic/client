@@ -34,14 +34,17 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
 import { Cohort } from "@/types";
 import { getSimulatableProfiles } from "@/utils/auth/get-simulatable-profiles";
 import { logError } from "@/utils/logger";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getAvailableSubsectionsForRole } from "@/utils/route-permissions";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Brain,
   ChartBar,
   Check,
   ChevronRight,
@@ -57,7 +60,7 @@ import {
   Users,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -100,6 +103,82 @@ const getInitials = (name?: string): string => {
     .slice(0, 2);
 };
 
+// Skeleton component for the sidebar
+function SidebarSkeleton() {
+  return (
+    <Sidebar>
+      <SidebarHeader>
+        {/* Profile Switcher Skeleton */}
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" disabled>
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <div className="flex flex-col gap-0.5 leading-none text-left">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+              <Skeleton className="ml-auto h-4 w-4" />
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+
+        {/* Search Form Skeleton */}
+        <SidebarGroup className="py-0">
+          <SidebarGroupContent className="relative">
+            <Skeleton className="h-9 w-full pl-8" />
+            <Search className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 opacity-50 select-none" />
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarHeader>
+
+      <SidebarContent className="gap-0">
+        {/* Navigation sections skeleton */}
+        {[1, 2, 3, 4, 5].map((i) => (
+          <SidebarGroup key={i}>
+            <SidebarGroupLabel className="group/label text-sidebar-foreground text-sm font-medium">
+              <div className="flex items-center gap-2 px-2 py-1.5">
+                <Skeleton className="h-4 w-4" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+            </SidebarGroupLabel>
+          </SidebarGroup>
+        ))}
+      </SidebarContent>
+
+      {/* Footer Skeleton */}
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <div className="px-2 pb-2">
+              <div className="relative group">
+                <div className="relative border border-blue-500 dark:border-purple-600 rounded-lg px-4 py-2.5">
+                  <div className="flex items-center justify-center gap-2">
+                    <Skeleton className="h-4 w-4" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" disabled>
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+              <Skeleton className="ml-auto h-4 w-4" />
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+
+      <SidebarRail />
+    </Sidebar>
+  );
+}
+
 export function UnifiedSidebar({
   activeSection,
   onSectionChange,
@@ -107,6 +186,7 @@ export function UnifiedSidebar({
 }: UnifiedSidebarProps) {
   const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [profileSearchTerm, setProfileSearchTerm] = React.useState("");
@@ -115,7 +195,8 @@ export function UnifiedSidebar({
   const profileSearchInputRef = React.useRef<HTMLInputElement>(null);
 
   // Use the profile context
-  const { activeProfile, effectiveProfile, setSimulatedProfile } = useProfile();
+  const { activeProfile, effectiveProfile, setSimulatedProfile, isLoading } =
+    useProfile();
 
   // Get simulatable profiles for the dropdown
   const { data: simulatableProfiles, isLoading: isLoadingProfiles } = useQuery({
@@ -125,6 +206,48 @@ export function UnifiedSidebar({
       !!activeProfile &&
       ["superadmin", "admin", "instructional"].includes(activeProfile.role),
   });
+
+  const { data: cohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  // Extract stable profile ID to avoid complex dependency expressions
+  const stableProfileId = effectiveProfile?.id || "";
+
+  const getCohortSubItems = React.useMemo(() => {
+    if (!cohorts || !effectiveProfile) return [];
+
+    let profileCohorts: Cohort[] = [];
+
+    switch (effectiveProfile.role) {
+      case "superadmin":
+      case "admin":
+        profileCohorts = cohorts;
+        break;
+      case "instructional":
+      case "ta":
+        if (effectiveProfile.defaultProfile) {
+          profileCohorts = cohorts;
+          break;
+        }
+        profileCohorts = cohorts.filter((cohortData: Cohort) =>
+          cohortData?.profileIds?.includes(stableProfileId)
+        );
+        break;
+      default:
+        return [];
+    }
+
+    return profileCohorts.map((c: { id: string; title: string }) => ({
+      title: c.title,
+      url: `/cohorts/c/${c.id}`,
+      section: `cohort-${c.id}`,
+      isSubItem: true,
+    }));
+  }, [cohorts, effectiveProfile, stableProfileId]);
 
   // Create the final profile list for the dropdown, organized by priority
   const profileOptions = React.useMemo(() => {
@@ -168,89 +291,61 @@ export function UnifiedSidebar({
     return options;
   }, [activeProfile, simulatableProfiles, profileSearchTerm]);
 
-  const { data: cohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  });
-
-  // Extract stable profile ID to avoid complex dependency expressions
-  const stableProfileId = effectiveProfile?.id || "";
-
-  const getCohortSubItems = React.useMemo(() => {
-    if (!cohorts) return [];
-
-    let profileCohorts: Cohort[] = [];
-
-    switch (effectiveProfile.role) {
-      case "superadmin":
-      case "admin":
-        profileCohorts = cohorts;
-        break;
-      case "instructional":
-      case "ta":
-        if (effectiveProfile.defaultProfile) {
-          profileCohorts = cohorts;
-          break;
-        }
-        profileCohorts = cohorts.filter((cohortData: Cohort) =>
-          cohortData?.profileIds?.includes(stableProfileId)
-        );
-        break;
-      default:
-        return [];
-    }
-
-    return profileCohorts.map((c: { id: string; title: string }) => ({
-      title: c.title,
-      url: `/cohorts/c/${c.id}`,
-      section: `cohort-${c.id}`,
-      isSubItem: true,
-    }));
-  }, [
-    cohorts,
-    effectiveProfile.role,
-    stableProfileId,
-    effectiveProfile.defaultProfile,
-  ]);
-
   // Build navigation menu based on role with search filtering
   const navMain = useMemo(() => {
+    if (!effectiveProfile) return [];
+
     const menu: NavSection[] = [];
+    const availableSections = getAvailableSubsectionsForRole(
+      effectiveProfile.role
+    );
 
-    // Home - For all
-    menu.push({
-      title: "Home",
-      url: "#",
-      icon: Home,
-      section: "home",
-    });
+    // Home - Only for non guest users
+    if (availableSections.includes("home")) {
+      menu.push({
+        title: "Home",
+        url: "#",
+        icon: Home,
+        section: "home",
+      });
+    }
 
-    // Classes and Cohorts sections based on role
-    if (["ta"].includes(effectiveProfile.role)) {
-      // TA/Instructor view - collapsible with sub-items
+    // Practice - all users
+    if (availableSections.includes("practice")) {
       menu.push({
-        title: "Cohorts",
+        title: "Practice",
         url: "#",
-        icon: Users,
-        items: [...getCohortSubItems],
+        icon: Brain,
+        section: "practice",
       });
-    } else if (
-      ["instructional", "admin", "superadmin"].includes(effectiveProfile.role)
-    ) {
-      // Staff/Admin view - single items, no sub-items, no "new"
-      menu.push({
-        title: "Cohorts",
-        url: "#",
-        icon: Users,
-        section: "cohorts",
-      });
+    }
+
+    // Cohorts sections based on role
+    if (availableSections.includes("cohorts")) {
+      if (["ta"].includes(effectiveProfile.role)) {
+        // TA/Instructor view - collapsible with sub-items
+        menu.push({
+          title: "Cohorts",
+          url: "#",
+          icon: Users,
+          items: [...getCohortSubItems],
+        });
+      } else {
+        // Staff/Admin view - single items, no sub-items, no "new"
+        menu.push({
+          title: "Cohorts",
+          url: "#",
+          icon: Users,
+          section: "cohorts",
+        });
+      }
     }
 
     // Analytics - Available from instructor level and up
     if (
-      ["instructional", "admin", "superadmin"].includes(effectiveProfile.role)
+      availableSections.includes("dashboard") ||
+      availableSections.includes("reports") ||
+      availableSections.includes("leaderboard")
     ) {
       menu.push({
         title: "Analytics",
@@ -268,9 +363,9 @@ export function UnifiedSidebar({
             section: "reports",
           },
           {
-            title: "Progress",
+            title: "Leaderboard",
             url: "#",
-            section: "progress",
+            section: "leaderboard",
           },
         ],
       });
@@ -278,7 +373,11 @@ export function UnifiedSidebar({
 
     // Create - Available from instructor level and up
     if (
-      ["instructional", "admin", "superadmin"].includes(effectiveProfile.role)
+      availableSections.includes("personas") ||
+      availableSections.includes("documents") ||
+      availableSections.includes("scenarios") ||
+      availableSections.includes("simulations") ||
+      availableSections.includes("rubrics")
     ) {
       menu.push({
         title: "Create",
@@ -291,9 +390,9 @@ export function UnifiedSidebar({
             section: "personas",
           },
           {
-            title: "Rubrics",
+            title: "Documents",
             url: "#",
-            section: "rubrics",
+            section: "documents",
           },
           {
             title: "Scenarios",
@@ -305,12 +404,21 @@ export function UnifiedSidebar({
             url: "#",
             section: "simulations",
           },
+          {
+            title: "Rubrics",
+            url: "#",
+            section: "rubrics",
+          },
         ],
       });
     }
 
     // Management - Available from admin level only
-    if (["admin", "superadmin"].includes(effectiveProfile.role)) {
+    if (
+      availableSections.includes("staff") ||
+      availableSections.includes("providers") ||
+      availableSections.includes("parameters")
+    ) {
       const managementItems: MenuItem[] = [];
 
       menu.push({
@@ -320,33 +428,38 @@ export function UnifiedSidebar({
         items: managementItems,
       });
 
-      managementItems.push({
-        title: "Context",
-        url: "#",
-        section: "context",
-      });
+      if (availableSections.includes("staff")) {
+        managementItems.push({
+          title: "Staff",
+          url: "#",
+          section: "staff",
+        });
+      }
 
-      managementItems.push({
-        title: "Staff",
-        url: "#",
-        section: "staff",
-      });
+      if (availableSections.includes("providers")) {
+        managementItems.push({
+          title: "Providers",
+          url: "#",
+          section: "providers",
+        });
+      }
 
-      managementItems.push({
-        title: "Activity",
-        url: "#",
-        section: "activity",
-      });
-
-      managementItems.push({
-        title: "Feedback",
-        url: "#",
-        section: "feedback",
-      });
+      if (availableSections.includes("parameters")) {
+        managementItems.push({
+          title: "Parameters",
+          url: "#",
+          section: "parameters",
+        });
+      }
     }
 
     // System  - Available from superadmin level only
-    if (["superadmin"].includes(effectiveProfile.role)) {
+    if (
+      availableSections.includes("agents") ||
+      availableSections.includes("feedback") ||
+      availableSections.includes("logs") ||
+      availableSections.includes("health")
+    ) {
       const systemItems: MenuItem[] = [];
 
       menu.push({
@@ -356,32 +469,40 @@ export function UnifiedSidebar({
         items: systemItems,
       });
 
-      systemItems.push({
-        title: "Agents",
-        url: "#",
-        section: "agents",
-      });
+      if (availableSections.includes("agents")) {
+        systemItems.push({
+          title: "Agents",
+          url: "#",
+          section: "agents",
+        });
+      }
 
-      // Providers - available for admin
-      systemItems.push({
-        title: "Providers",
-        url: "#",
-        section: "providers",
-      });
+      // Feedback - moved from management
+      if (availableSections.includes("feedback")) {
+        systemItems.push({
+          title: "Feedback",
+          url: "#",
+          section: "feedback",
+        });
+      }
 
       // Logs - available for admin
-      systemItems.push({
-        title: "Logs",
-        url: "#",
-        section: "logs",
-      });
+      if (availableSections.includes("logs")) {
+        systemItems.push({
+          title: "Logs",
+          url: "#",
+          section: "logs",
+        });
+      }
 
       // Health - available for admin
-      systemItems.push({
-        title: "Health",
-        url: "#",
-        section: "health",
-      });
+      if (availableSections.includes("health")) {
+        systemItems.push({
+          title: "Health",
+          url: "#",
+          section: "health",
+        });
+      }
     }
 
     // Apply search filter if search term exists
@@ -402,11 +523,12 @@ export function UnifiedSidebar({
     }
 
     return menu;
-  }, [effectiveProfile.role, searchTerm, getCohortSubItems]);
+  }, [effectiveProfile, searchTerm, getCohortSubItems]);
 
   const handleSectionChange = createFlexibleSectionChangeHandler(
     router,
-    onSectionChange
+    onSectionChange,
+    pathname
   );
 
   const handleItemClick = useCallback(
@@ -438,14 +560,38 @@ export function UnifiedSidebar({
       // Otherwise, simulate the selected profile
       setSimulatedProfile(profileId, true);
     }
+    // Clear guest flags (simulatedProfileId is managed by setSimulatedProfile)
+    localStorage.removeItem("guestMode");
+    localStorage.removeItem("simulatedRole");
   };
+
+  // Watch for profile changes and redirect if current page is not accessible
+  // TEMPORARILY DISABLED: Let users manually navigate from access denied screen for debugging
+  /*
+  React.useEffect(() => {
+    // Don't redirect if still loading or if we don't have a profile yet
+    if (isLoading || !effectiveProfile) {
+      return;
+    }
+
+    // Only redirect if current page is not accessible
+    if (!hasRouteAccess(pathname, effectiveProfile.role)) {
+      // Only redirect if we're not already on a redirect path
+      const redirectPath = getRedirectPathForRole(effectiveProfile.role);
+      if (pathname !== redirectPath) {
+        router.push(redirectPath);
+      }
+    }
+  }, [effectiveProfile, pathname, router, isLoading]);
+  */
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
   };
 
   const handleLoginOrLogout = async () => {
-    if (effectiveProfile.role === "guest" || !activeProfile) {
+    const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
+    if (effectiveProfile?.role === "guest" || !activeProfile) {
       // Navigate to login page for guests or when no user
       router.push("/");
       return;
@@ -461,7 +607,8 @@ export function UnifiedSidebar({
           localStorage.removeItem("guestAttemptIds");
           localStorage.removeItem("simulatedRole");
           localStorage.removeItem("guestMode");
-          await signOut({ redirectTo: "/" });
+          localStorage.removeItem("simulatedProfileId");
+          await signOut({ redirectTo: `${appPrefix}/` });
           return "Logged out successfully";
         } catch (error) {
           logError("Error logging out:", error);
@@ -479,6 +626,14 @@ export function UnifiedSidebar({
       }
     );
   };
+
+  // Show skeleton while profile is loading or while we don't have a complete profile yet
+  const shouldShowSkeleton =
+    isLoading || !effectiveProfile || !effectiveProfile?.role;
+
+  if (shouldShowSkeleton) {
+    return <SidebarSkeleton />;
+  }
 
   return (
     <Sidebar {...props}>

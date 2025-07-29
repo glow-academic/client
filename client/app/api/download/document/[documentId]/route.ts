@@ -10,7 +10,7 @@ import type { NextRequest } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ documentId: string }> }
+  { params }: { params: Promise<{ documentId: string }> },
 ) {
   try {
     const { documentId } = await params;
@@ -25,9 +25,9 @@ export async function GET(
         ...Object.fromEntries(
           [...req.headers.entries()].filter(([key]) =>
             ["authorization", "cookie", "user-agent"].includes(
-              key.toLowerCase()
-            )
-          )
+              key.toLowerCase(),
+            ),
+          ),
         ),
       },
     });
@@ -47,7 +47,7 @@ export async function GET(
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
     }
 
@@ -99,7 +99,7 @@ export async function GET(
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
   }
 }

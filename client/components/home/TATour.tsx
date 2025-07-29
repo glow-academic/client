@@ -6,35 +6,110 @@
  */
 "use client";
 import { logError, logInfo } from "@/utils/logger";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { CheckCircle, HelpCircle, Play } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
 import { useTour } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { updateProfile } from "@/utils/mutations/profiles/update-profile";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { createTATourSteps } from "@/utils/tour-steps";
+
+// Guide Button Component
+function GuideButton() {
+  const { effectiveProfile } = useProfile();
+  const { openGuide, getGuideButtonState } = useTour();
+
+  const buttonState = getGuideButtonState();
+
+  // Don't render if hidden or no profile
+  if (buttonState === "hidden" || !effectiveProfile) {
+    return null;
+  }
+
+  const getButtonContent = () => {
+    switch (buttonState) {
+      case "start":
+        return {
+          icon: <Play className="h-4 w-4" />,
+          text: "Start Tour",
+          variant: "default" as const,
+        };
+      case "resume":
+        return {
+          icon: <HelpCircle className="h-4 w-4" />,
+          text: "Resume Tour",
+          variant: "secondary" as const,
+        };
+      case "complete":
+        return {
+          icon: <CheckCircle className="h-4 w-4" />,
+          text: "Tour Complete",
+          variant: "outline" as const,
+        };
+      default:
+        return {
+          icon: <HelpCircle className="h-4 w-4" />,
+          text: "Help",
+          variant: "outline" as const,
+        };
+    }
+  };
+
+  const { icon, text, variant } = getButtonContent();
+
+  return (
+    buttonState === "start" && (
+      <div className="fixed bottom-4 right-4 z-50">
+        <Button
+          onClick={openGuide}
+          variant={variant}
+          size="sm"
+          className="shadow-lg hover:shadow-xl transition-all duration-200"
+        >
+          {icon}
+          <span className="ml-2">{text}</span>
+        </Button>
+      </div>
+    )
+  );
+}
 
 export default function TATour() {
   const router = useRouter();
   const pathname = usePathname();
   const { effectiveProfile } = useProfile();
   const { isConnected, emitStartSimulation } = useWebSocket();
+  const queryClient = useQueryClient();
+
+  // Comprehensive debug logging on every render
+  useEffect(() => {
+    // Removed logInfo call to prevent Next.js 15 server function error
+  });
   const {
     state: tourState,
     openTour,
+    closeTour,
     nextStep,
     completeStep,
     setNavigating,
     setLoadingSimulation,
     setShowGuideButton,
+    setAttemptId,
   } = useTour();
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const tourStateRef = useRef(tourState);
+
+  // Update ref when tour state changes
+  useEffect(() => {
+    tourStateRef.current = tourState;
+  }, [tourState]);
 
   // Fetch data needed for tour navigation
   const { data: cohorts = [] } = useQuery({
@@ -42,62 +117,100 @@ export default function TATour() {
     queryFn: () => getAllCohorts(),
   });
 
-  const { data: simulations = [] } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
-
-  // Get TA's assigned cohorts and classes
+  // Get TA's assigned cohorts
   const taCohorts = useMemo(() => {
     if (!effectiveProfile || !cohorts) return [];
     return cohorts.filter((cohort) =>
-      cohort.profileIds?.includes(effectiveProfile.id)
+      cohort.profileIds?.includes(effectiveProfile.id),
     );
   }, [effectiveProfile, cohorts]);
 
-  // Get practice simulations (defaultSimulation = true)
-  const practiceSimulations = useMemo(() => {
-    return simulations.filter((sim) => sim.practiceSimulation);
-  }, [simulations]);
-
-  // Handle step completion
+  // Handle step completion with proper profile updates
   const handleStepComplete = useCallback(
     async (stepIndex: number) => {
-      if (!effectiveProfile) return;
+      if (!effectiveProfile) {
+        logError("handleStepComplete: No effective profile", { stepIndex });
+        return;
+      }
 
+      logInfo("Completing tour step", {
+        stepIndex,
+        effectiveProfile: effectiveProfile.id,
+        stepTitle: tourState.steps[stepIndex]?.title,
+        currentViewedIntro: effectiveProfile.viewedIntro,
+        currentViewedChat: effectiveProfile.viewedChat,
+      });
       completeStep(stepIndex);
 
+      // Get current steps from tour state ref to avoid dependency issues
+      const currentSteps = tourStateRef.current.steps;
+
       // Update profile based on completed steps
-      const updatedSteps = tourState.steps.map((step, index) =>
-        index === stepIndex ? { ...step, isCompleted: true } : step
+      const updatedSteps = currentSteps.map((step, index) =>
+        index === stepIndex ? { ...step, isCompleted: true } : step,
       );
 
-      const introStepsComplete = updatedSteps
-        .slice(0, 3)
-        .every((step) => step.isCompleted);
-      const chatStepsComplete = updatedSteps
-        .slice(3)
-        .every((step) => step.isCompleted);
+      // Step 1 is tracked by viewedIntro (Cohort Leaderboard)
+      const introStepsComplete = updatedSteps[1]?.isCompleted;
+
+      // Step 4 is tracked by viewedChat (End Chat)
+      const chatStepsComplete = updatedSteps[4]?.isCompleted;
 
       try {
+        let profileUpdated = false;
+
         if (introStepsComplete && !effectiveProfile.viewedIntro) {
           await updateProfile(effectiveProfile.id, { viewedIntro: true });
           logInfo("Updated profile: viewedIntro = true");
+          profileUpdated = true;
         }
 
         if (chatStepsComplete && !effectiveProfile.viewedChat) {
           await updateProfile(effectiveProfile.id, { viewedChat: true });
           logInfo("Updated profile: viewedChat = true");
+          profileUpdated = true;
+        }
+
+        // Invalidate relevant profile queries to ensure UI updates
+        if (profileUpdated) {
+          // Invalidate the specific profile query
+          queryClient.invalidateQueries({
+            queryKey: ["profile", effectiveProfile.id],
+          });
+
+          // Invalidate the simulated profile query if this is a simulated profile
+          if (tourState.profile?.id === effectiveProfile.id) {
+            queryClient.invalidateQueries({
+              queryKey: ["simulatedProfile", effectiveProfile.id],
+            });
+          }
+
+          // Invalidate all profiles query to update any lists that show this profile
+          queryClient.invalidateQueries({
+            queryKey: ["profiles"],
+          });
+
+          logInfo("Invalidated profile queries after update", {
+            profileId: effectiveProfile.id,
+            viewedIntro: introStepsComplete,
+            viewedChat: chatStepsComplete,
+          });
         }
       } catch (error) {
         logError("Error updating profile for tour completion:", error);
       }
     },
-    [effectiveProfile, tourState.steps, completeStep]
+    [
+      effectiveProfile,
+      completeStep,
+      tourState.steps,
+      tourState.profile?.id,
+      queryClient,
+    ], // queryClient is stable and doesn't need to be in dependencies
   );
 
-  // Navigation handlers
-  const handleNavigateToCohort = useCallback(() => {
+  // Navigation handlers with proper delays
+  const handleNavigateToCohortLeaderboard = useCallback(async () => {
     if (taCohorts.length === 0) {
       toast.error("No cohorts assigned to you yet.");
       return;
@@ -110,16 +223,17 @@ export default function TATour() {
       setNavigating(false);
       return;
     }
+
+    logInfo("Navigating to cohort leaderboard", { cohortId: firstCohort.id });
     router.push(`/cohorts/c/${firstCohort.id}`);
 
-    // Mark step as complete after navigation
+    // Wait for navigation to complete
     setTimeout(() => {
-      handleStepComplete(1);
       setNavigating(false);
-    }, 1000);
-  }, [taCohorts, router, handleStepComplete, setNavigating]);
+    }, 1500);
+  }, [taCohorts, router, setNavigating]);
 
-  const handleStartSimulation = useCallback(
+  const handleStartPracticeSimulation = useCallback(
     async (simulationId: string) => {
       if (!isConnected) {
         toast.error("WebSocket not connected. Please wait for connection.");
@@ -131,10 +245,20 @@ export default function TATour() {
         return;
       }
 
+      // Use stored attemptId if available
+      if (tourState.attemptId) {
+        logInfo("Using stored attemptId for tour", {
+          attemptId: tourState.attemptId,
+        });
+        router.push(`/practice/a/${tourState.attemptId}`);
+        return;
+      }
+
       setLoadingSimulation(simulationId);
       const toastId = toast.loading("Starting practice simulation...");
 
       try {
+        logInfo("Starting practice simulation for tour", { simulationId });
         emitStartSimulation({
           simulation_id: simulationId,
           profile_id: String(effectiveProfile.id),
@@ -147,9 +271,6 @@ export default function TATour() {
           toast.error("Simulation start timed out. Please try again.");
           setLoadingSimulation(null);
         }, 30000);
-
-        // Mark step as complete
-        handleStepComplete(3);
       } catch (error) {
         logError("Error starting simulation:", error);
         toast.dismiss(toastId);
@@ -159,73 +280,301 @@ export default function TATour() {
     },
     [
       isConnected,
-      effectiveProfile,
+      effectiveProfile?.id,
       emitStartSimulation,
-      handleStepComplete,
       setLoadingSimulation,
-    ]
+      tourState.attemptId,
+      router,
+    ],
   );
 
-  const handleEndChat = useCallback(() => {
-    // This will be called when the user clicks the end chat button
-    // The step will be marked complete automatically
-    handleStepComplete(4);
-  }, [handleStepComplete]);
+  const handleNavigateToPractice = useCallback(async () => {
+    setNavigating(true);
+    logInfo("Navigating to practice page");
+
+    // Navigate to practice page
+    router.push("/practice");
+
+    // Wait for navigation to complete
+    setTimeout(() => {
+      setNavigating(false);
+    }, 1500);
+  }, [router, setNavigating]);
 
   // Initialize tour steps and launch tour
   useEffect(() => {
-    if (!effectiveProfile || tourState.isOpen) return;
+    logInfo("TATour useEffect triggered", {
+      hasProfile: !!effectiveProfile,
+      role: effectiveProfile?.role,
+      profileId: effectiveProfile?.id,
+      viewedIntro: effectiveProfile?.viewedIntro,
+      viewedChat: effectiveProfile?.viewedChat,
+      currentTourState: {
+        isOpen: tourState.isOpen,
+        currentStep: tourState.currentStep,
+        stepsLength: tourState.steps.length,
+        profileId: tourState.profile?.id,
+        attemptId: tourState.attemptId,
+      },
+    });
 
-    // Start tour if user hasn't viewed intro or chat
-    if (!effectiveProfile.viewedIntro || !effectiveProfile.viewedChat) {
-      const steps = createTATourSteps(
-        effectiveProfile,
-        () => router.push("/home"),
-        (cohortId: string) => router.push(`/cohorts/c/${cohortId}`),
-        (simulationId: string) => handleStartSimulation(simulationId),
-        () => handleEndChat()
-      );
+    if (!effectiveProfile || effectiveProfile.role !== "ta") {
+      logInfo("TATour: Skipping initialization", {
+        hasProfile: !!effectiveProfile,
+        role: effectiveProfile?.role,
+        profileId: effectiveProfile?.id,
+      });
+      return;
+    }
 
-      openTour(steps, effectiveProfile);
+    // Only initialize if we don't already have steps for this profile
+    if (
+      tourState.steps.length > 0 &&
+      tourState.profile?.id === effectiveProfile.id
+    ) {
+      logInfo("TATour: Already initialized for this profile", {
+        profileId: effectiveProfile.id,
+        stepsLength: tourState.steps.length,
+        isOpen: tourState.isOpen,
+        viewedIntro: effectiveProfile.viewedIntro,
+        viewedChat: effectiveProfile.viewedChat,
+        attemptId: tourState.attemptId,
+      });
+
+      // Check if tour should be closed based on completion status
+      // Note: We no longer auto-close completed tours - they show completion screen
+      if (
+        effectiveProfile.viewedIntro &&
+        effectiveProfile.viewedChat &&
+        tourState.isOpen
+      ) {
+        logInfo(
+          "TATour: User completed tour, keeping open for completion screen",
+          {
+            viewedIntro: effectiveProfile.viewedIntro,
+            viewedChat: effectiveProfile.viewedChat,
+          },
+        );
+        // Don't close - let the completion screen show
+      }
+      return;
+    }
+
+    // Don't initialize tour if user has officially completed it (both flags true and no attemptId)
+    if (
+      effectiveProfile.viewedIntro &&
+      effectiveProfile.viewedChat &&
+      !tourState.attemptId
+    ) {
+      logInfo("TATour: User has officially completed tour, not initializing", {
+        profileId: effectiveProfile.id,
+        viewedIntro: effectiveProfile.viewedIntro,
+        viewedChat: effectiveProfile.viewedChat,
+        attemptId: tourState.attemptId,
+      });
+      return;
+    }
+
+    // Create tour steps for TAs
+    const steps = createTATourSteps(
+      effectiveProfile,
+      () => router.push("/home"),
+      (cohortId: string) => router.push(`/cohorts/c/${cohortId}`),
+      (simulationId: string) => handleStartPracticeSimulation(simulationId),
+      () => {}, // End chat is handled by WebSocket events
+      taCohorts && taCohorts.length > 0 && taCohorts[0]
+        ? taCohorts[0].id
+        : undefined,
+      tourState.attemptId || undefined,
+    );
+
+    // Determine initial step based on profile completion status
+    let initialStep = 0;
+    if (!effectiveProfile.viewedIntro) {
+      // User hasn't completed intro steps - start from beginning
+      initialStep = 0;
+    } else if (effectiveProfile.viewedIntro && !effectiveProfile.viewedChat) {
+      // User has completed intro steps (0-1) but not chat steps (2-4)
+      initialStep = 2; // Start at practice simulation step (step 2)
+    } else if (effectiveProfile.viewedIntro && effectiveProfile.viewedChat) {
+      // User has completed everything - show completion screen
+      // Always show completion screen when both flags are true, regardless of attemptId
+      initialStep = 4; // Show the final step (end chat) as completion screen
+    }
+
+    logInfo("TATour: Created steps", {
+      stepsLength: steps.length,
+      initialStep,
+    });
+
+    // Always initialize the tour with steps (this sets up the guide button)
+    openTour(steps, effectiveProfile, initialStep);
+    logInfo("TATour: Opened tour");
+
+    // Navigate to the correct page for the initial step
+    if (initialStep >= 0 && initialStep < steps.length) {
+      const targetStep = steps[initialStep];
+      if (targetStep && targetStep.page && targetStep.page !== pathname) {
+        const targetPage = targetStep.page;
+        logInfo("Navigating to correct page for tour step", {
+          step: initialStep,
+          targetPage,
+          currentPath: pathname,
+        });
+        router.push(targetPage);
+      }
+    }
+
+    // If user has completed the tour, show completion screen instead of closing
+    if (effectiveProfile.viewedIntro && effectiveProfile.viewedChat) {
+      logInfo("TATour: User completed tour, showing completion screen");
+      // Don't close the tour - let it show the completion screen
     }
   }, [
     effectiveProfile,
-    tourState.isOpen,
-    router,
-    handleStartSimulation,
-    handleEndChat,
+    tourState.steps.length, // Add this to prevent re-initialization
+    tourState.profile?.id, // Add this to check if we already have the right profile
+    tourState.isOpen, // Add this to check if we need to close the tour
+    tourState.currentStep, // Add missing dependency
+    tourState.attemptId, // Add missing dependency
     openTour,
+    closeTour,
+    handleStartPracticeSimulation,
+    router, // Add router back as it's needed
+    taCohorts, // Add taCohorts dependency
+    pathname, // Add pathname dependency
   ]);
 
-  // Automatic step completion based on user actions
+  // Function to navigate to the correct page for the current step
+  const navigateToStepPage = useCallback(
+    (stepIndex: number) => {
+      if (stepIndex >= 0 && stepIndex < tourState.steps.length) {
+        const step = tourState.steps[stepIndex];
+        if (step && step.page && step.page !== pathname) {
+          // For steps 3-4 (send-message and end-chat), check if we need to wait for attemptId
+          if ((stepIndex === 3 || stepIndex === 4) && !tourState.attemptId) {
+            logInfo("Skipping navigation to attempt page - no attemptId yet", {
+              stepIndex,
+              targetPage: step.page,
+              attemptId: tourState.attemptId,
+            });
+            return;
+          }
+
+          // If we have an attemptId and the step page is /practice, update it to the actual attempt page
+          let targetPage = step.page;
+          if (
+            tourState.attemptId &&
+            (stepIndex === 3 || stepIndex === 4) &&
+            step.page === "/practice"
+          ) {
+            targetPage = `/practice/a/${tourState.attemptId}`;
+          }
+
+          logInfo("Navigating to page for tour step", {
+            stepIndex,
+            targetPage,
+            currentPath: pathname,
+          });
+          router.push(targetPage);
+        }
+      }
+    },
+    [tourState.steps, pathname, router, tourState.attemptId],
+  );
+
+  // Navigate to correct page when tour is opened
+  useEffect(() => {
+    if (tourState.isOpen && tourState.steps.length > 0) {
+      navigateToStepPage(tourState.currentStep);
+    }
+  }, [
+    tourState.isOpen,
+    tourState.currentStep,
+    tourState.steps.length,
+    navigateToStepPage,
+  ]);
+
+  // Navigate to attempt page when attemptId becomes available
+  useEffect(() => {
+    if (tourState.isOpen && tourState.attemptId && tourState.steps.length > 0) {
+      const currentStep = tourState.steps[tourState.currentStep];
+      logInfo("AttemptId available - checking if navigation needed", {
+        attemptId: tourState.attemptId,
+        currentStep: tourState.currentStep,
+        currentStepPage: currentStep?.page,
+        pathname,
+      });
+
+      if (
+        currentStep &&
+        (tourState.currentStep === 3 || tourState.currentStep === 4) &&
+        currentStep.page === "/practice"
+      ) {
+        logInfo("AttemptId available - navigating to attempt page", {
+          attemptId: tourState.attemptId,
+          currentStep: tourState.currentStep,
+          targetPage: `/practice/a/${tourState.attemptId}`,
+        });
+        router.push(`/practice/a/${tourState.attemptId}`);
+      }
+    }
+  }, [
+    tourState.attemptId,
+    tourState.isOpen,
+    tourState.currentStep,
+    tourState.steps,
+    router,
+    pathname,
+  ]);
+
+  // Handle automatic step completion based on current location
   useEffect(() => {
     if (!tourState.isOpen || !effectiveProfile) return;
 
     const currentStep = tourState.steps[tourState.currentStep];
     if (!currentStep || currentStep.isCompleted) return;
 
-    // Step 1: Home overview - auto-complete when on home page
-    if (tourState.currentStep === 0 && pathname === "/home") {
+    logInfo("Checking auto-completion for step", {
+      stepIndex: tourState.currentStep,
+      pathname,
+      stepId: currentStep.id,
+      stepPage: currentStep.page,
+      attemptId: tourState.attemptId,
+    });
+
+    // Step 0: Home overview - auto-complete when on home page
+    if (
+      tourState.currentStep === 0 &&
+      pathname === "/home" &&
+      !tourState.steps[0]?.isCompleted
+    ) {
+      logInfo("Auto-completing home step");
       handleStepComplete(0);
+      // Don't auto-advance - let user control progression
     }
 
-    // Step 2: Cohorts page - auto-complete when on cohorts page
-    if (tourState.currentStep === 1 && pathname.includes("/cohorts/c/")) {
+    // Step 1: Cohort leaderboard - auto-complete when on cohort leaderboard page
+    if (
+      tourState.currentStep === 1 &&
+      pathname.includes("/cohorts/c/") &&
+      !tourState.steps[1]?.isCompleted
+    ) {
+      logInfo("Auto-completing cohort leaderboard step");
       handleStepComplete(1);
+      // Don't auto-advance - let user control progression
     }
 
-    // Step 3: Practice simulation - auto-complete when simulation starts
-    if (tourState.currentStep === 2 && pathname.includes("/home/a/")) {
-      handleStepComplete(3);
-    }
+    // Step 2: Practice simulation - don't auto-complete, wait for user action or next button
+    // This step requires the user to click Next or manually start a simulation
 
-    // Step 4: Send message - auto-complete when message is sent
-    if (tourState.currentStep === 3) {
-      // This will be handled by the message event listener below
-    }
+    // Step 3: Send message - DON'T auto-complete, wait for actual message sent
+    // This step should only complete when the user actually sends a message via WebSocket events
 
-    // Step 5: End chat - auto-complete when end chat button is clicked
-    // This is handled by the event listener below
+    // Step 4: End chat - DON'T auto-complete, wait for actual chat completion
+    // This step should only complete when the user actually ends the chat via WebSocket events
+
+    // Steps 3-4 are handled by WebSocket events
   }, [
     tourState.currentStep,
     tourState.steps,
@@ -233,81 +582,30 @@ export default function TATour() {
     effectiveProfile,
     tourState.isOpen,
     handleStepComplete,
+    tourState.attemptId,
   ]);
 
-  // Automatic navigation between steps
-  useEffect(() => {
-    if (!tourState.isOpen || !effectiveProfile) return;
-
-    const currentStep = tourState.steps[tourState.currentStep];
-    if (!currentStep || currentStep.isCompleted) return;
-
-    // Auto-navigate based on current step
-    switch (tourState.currentStep) {
-      case 0: // Home overview - already on home
-        break;
-      case 1: // Navigate to cohorts
-        if (pathname !== "/cohorts" && !pathname.includes("/cohorts/c/")) {
-          handleNavigateToCohort();
-        }
-        break;
-      case 2: // Navigate to home and start simulation
-        if (pathname !== "/home") {
-          router.push("/home");
-        } else if (practiceSimulations.length > 0 && practiceSimulations[0]) {
-          handleStartSimulation(practiceSimulations[0].id);
-        }
-        break;
-      case 3: // Send message - handled by event listener
-        break;
-      case 4: // End chat - handled by event listener
-        break;
-    }
-  }, [
-    tourState.currentStep,
-    tourState.steps,
-    pathname,
-    effectiveProfile,
-    tourState.isOpen,
-    handleNavigateToCohort,
-    handleStartSimulation,
-    practiceSimulations,
-    router,
-  ]);
-
-  // Handle step completion and auto-advance
-  useEffect(() => {
-    if (!tourState.isOpen || !effectiveProfile) return;
-
-    const currentStep = tourState.steps[tourState.currentStep];
-    if (!currentStep || !currentStep.isCompleted) return;
-
-    // Auto-advance to next step after a short delay
-    const timer = setTimeout(() => {
-      if (tourState.currentStep < tourState.steps.length - 1) {
-        nextStep();
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [
-    tourState.currentStep,
-    tourState.steps,
-    effectiveProfile,
-    tourState.isOpen,
-    nextStep,
-  ]);
-
-  // Set up simulation event listeners
+  // Set up WebSocket event listeners for tour progression
   useEffect(() => {
     const handleSimulationStarted = (event: CustomEvent) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
       const { attemptId } = event.detail;
-      logInfo("Navigating to simulation attempt", { attemptId });
-      router.push(`/home/a/${attemptId}`);
+      logInfo("Simulation started for tour", { attemptId });
+
+      // Store attemptId for persistence
+      setAttemptId(attemptId);
       setLoadingSimulation(null);
+
+      // Advance to step 3 (send message) since we're now in the simulation
+      if (tourState.isOpen && tourState.currentStep === 2) {
+        logInfo("Simulation started - advancing to step 3 (send message)");
+        handleStepComplete(2); // Complete step 2
+        nextStep(); // Advance to step 3
+      }
+
+      // Let WebSocket events handle step completion - don't auto-advance here
     };
 
     const handleSimulationError = () => {
@@ -318,66 +616,297 @@ export default function TATour() {
       setLoadingSimulation(null);
     };
 
-    // Listen for end chat button clicks
-    const handleEndChatClick = (event: Event) => {
-      const target = event.target as HTMLElement;
-      if (target.closest("[data-tour-end-chat]")) {
-        logInfo("End chat button clicked - marking tour step complete");
+    // Listen for message sent events (step 3) - when user sends their first message
+    const handleMessageSent = (event: CustomEvent) => {
+      logInfo("Message sent event received", {
+        tourOpen: tourState.isOpen,
+        currentStep: tourState.currentStep,
+        step3Completed: tourState.steps[3]?.isCompleted,
+        messageId: event.detail?.messageId,
+        chatId: event.detail?.chatId,
+        totalSteps: tourState.steps.length,
+        step3Exists: !!tourState.steps[3],
+      });
+
+      if (
+        tourState.isOpen &&
+        tourState.currentStep === 3 &&
+        !tourState.steps[3]?.isCompleted
+      ) {
+        logInfo("Message sent - marking tour step 3 complete");
+        handleStepComplete(3);
+        nextStep();
+      } else {
+        logInfo("Message sent - but not completing step 3", {
+          tourOpen: tourState.isOpen,
+          currentStep: tourState.currentStep,
+          step3Completed: tourState.steps[3]?.isCompleted,
+          expectedStep: 3,
+        });
+      }
+    };
+
+    // Listen for chat ended events (step 4) - ONLY source of truth for final step
+    const handleChatEnded = (event: CustomEvent) => {
+      logInfo("Chat ended event received", {
+        tourOpen: tourState.isOpen,
+        currentStep: tourState.currentStep,
+        step4Completed: tourState.steps[4]?.isCompleted,
+        chatId: event.detail?.chatId,
+      });
+
+      if (
+        tourState.isOpen &&
+        tourState.currentStep === 4 &&
+        !tourState.steps[4]?.isCompleted
+      ) {
+        logInfo("Chat ended - marking final tour step complete");
         handleStepComplete(4);
+        nextStep();
       }
     };
 
     window.addEventListener(
       "simulationStarted",
-      handleSimulationStarted as EventListener
+      handleSimulationStarted as EventListener,
     );
     window.addEventListener("simulationError", handleSimulationError);
-    document.addEventListener("click", handleEndChatClick);
+    window.addEventListener("messageSent", handleMessageSent as EventListener);
+    window.addEventListener("chatEnded", handleChatEnded as EventListener);
 
     return () => {
       window.removeEventListener(
         "simulationStarted",
-        handleSimulationStarted as EventListener
+        handleSimulationStarted as EventListener,
       );
       window.removeEventListener("simulationError", handleSimulationError);
-      document.removeEventListener("click", handleEndChatClick);
+      window.removeEventListener(
+        "messageSent",
+        handleMessageSent as EventListener,
+      );
+      window.removeEventListener("chatEnded", handleChatEnded as EventListener);
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [router, handleStepComplete, setLoadingSimulation]);
+  }, [
+    router,
+    handleStepComplete,
+    setLoadingSimulation,
+    setAttemptId,
+    tourState.isOpen,
+    tourState.currentStep,
+    tourState.steps,
+    nextStep,
+  ]);
 
-  // Custom step actions mapping
+  // Custom step actions mapping - handles Next button clicks
   const customStepActions = useMemo(() => {
     return {
-      1: handleNavigateToCohort, // Cohorts page
+      0: () => {
+        // Step 0: Complete current step and navigate to cohort leaderboard
+        handleStepComplete(0);
+        nextStep();
+        handleNavigateToCohortLeaderboard();
+      },
+      1: () => {
+        // Step 1: Complete current step and navigate to practice
+        handleStepComplete(1);
+        nextStep();
+        handleNavigateToPractice();
+      },
       2: () => {
-        if (practiceSimulations.length === 0) {
-          toast.error("No practice simulations available.");
-          return;
+        // Step 2: Handle practice simulation start - just click the button and let WebSocket events handle progression
+        nextStep();
+
+        // Check if we already have an attemptId
+        if (tourState.attemptId) {
+          // If we have an attemptId, navigate directly to the simulation
+          logInfo("Using existing attemptId for tour navigation", {
+            attemptId: tourState.attemptId,
+          });
+          router.push(`/practice/a/${tourState.attemptId}`);
+        } else {
+          // If no attemptId, trigger the first practice simulation card click
+          setTimeout(() => {
+            // Look for practice simulation cards (permanent-simulation-card) first
+            let practiceCards = document.querySelectorAll(
+              '[data-testid="permanent-simulation-card"]',
+            );
+
+            // If no permanent cards found, try regular simulation cards as fallback
+            if (practiceCards.length === 0) {
+              practiceCards = document.querySelectorAll(
+                '[data-testid="simulation-card"]',
+              );
+            }
+
+            if (practiceCards.length > 0) {
+              const firstCard = practiceCards[0];
+              if (firstCard) {
+                // Look for the start button using data-testid
+                const startButton = firstCard.querySelector(
+                  '[data-testid^="start-simulation-"]',
+                ) as HTMLButtonElement;
+                if (startButton && !startButton.disabled) {
+                  logInfo(
+                    "Clicking first practice simulation card button on step 2",
+                    {
+                      buttonText: startButton.textContent,
+                      cardTitle: firstCard.querySelector(
+                        '[data-testid="simulation-title"]',
+                      )?.textContent,
+                      simulationId: startButton
+                        .getAttribute("data-testid")
+                        ?.replace("start-simulation-", ""),
+                    },
+                  );
+                  startButton.click();
+                  // Don't auto-advance - let WebSocket events handle progression
+                } else {
+                  logError(
+                    "Could not find start button on first practice simulation card",
+                    {
+                      buttonFound: !!startButton,
+                      buttonText: startButton?.textContent,
+                      buttonDisabled: startButton?.disabled,
+                    },
+                  );
+                  toast.error(
+                    "Could not start simulation automatically. Please click the Start button manually.",
+                  );
+                }
+              } else {
+                logError("First practice simulation card is null");
+                toast.error(
+                  "Could not start simulation automatically. Please click the Start button manually.",
+                );
+              }
+            } else {
+              logError("No practice simulation cards found");
+              toast.error("No practice simulations available.");
+            }
+          }, 500); // Small delay to ensure page is loaded
         }
-        const firstSimulation = practiceSimulations[0];
-        if (!firstSimulation) {
-          toast.error("No practice simulations available.");
-          return;
+      },
+      3: () => {
+        // Step 3: User is now in the simulation - click the first starter prompt
+        logInfo("Step 3 action triggered - clicking first starter prompt");
+
+        // If we have an attemptId, navigate to the attempt page first
+        if (tourState.attemptId) {
+          router.push(`/practice/a/${tourState.attemptId}`);
         }
-        handleStartSimulation(firstSimulation.id);
-      }, // Start practice simulation
+
+        // Click the first starter prompt button after a short delay to ensure page is loaded
+        setTimeout(() => {
+          // Look for starter prompt buttons - they are buttons with variant="outline" in the attempt messages
+          const starterPromptButtons = document.querySelectorAll(
+            'button[class*="outline"][class*="h-auto"][class*="p-4"]',
+          );
+
+          if (starterPromptButtons.length > 0) {
+            const firstButton = starterPromptButtons[0] as HTMLButtonElement;
+            if (firstButton && !firstButton.disabled) {
+              logInfo("Clicking first starter prompt button", {
+                buttonText: firstButton.textContent?.trim(),
+              });
+              firstButton.click();
+            } else {
+              logError("First starter prompt button is disabled or not found", {
+                buttonFound: !!firstButton,
+                buttonDisabled: firstButton?.disabled,
+                buttonText: firstButton?.textContent,
+              });
+              toast.error(
+                "Could not send message automatically. Please click a starter prompt manually.",
+              );
+            }
+          } else {
+            logError("No starter prompt buttons found");
+            toast.error(
+              "No starter prompts available. Please type a message manually.",
+            );
+          }
+        }, 1000); // Wait for page to load and messages to render
+      },
+      4: () => {
+        // Step 4: Check if tour is completed
+        if (effectiveProfile?.viewedIntro && effectiveProfile?.viewedChat) {
+          // Tour is completed - close it, reset attemptId, and navigate home
+          logInfo(
+            "Step 4 action triggered - tour completed, closing and navigating home",
+          );
+          setAttemptId(null); // Reset attemptId since tour is complete
+          closeTour();
+          router.push("/home");
+        } else {
+          // Tour not completed - click the End Session/End Chat button
+          logInfo(
+            "Step 4 action triggered - clicking End Session/End Chat button",
+          );
+
+          // If we have an attemptId, navigate to the attempt page first
+          if (tourState.attemptId) {
+            router.push(`/practice/a/${tourState.attemptId}`);
+          }
+
+          // Click the End Session/End Chat button after a short delay to ensure page is loaded
+          setTimeout(() => {
+            const endChatButton = document.querySelector(
+              "[data-tour-end-chat]",
+            ) as HTMLButtonElement;
+
+            if (endChatButton && !endChatButton.disabled) {
+              logInfo("Clicking End Session/End Chat button", {
+                buttonText: endChatButton.textContent?.trim(),
+              });
+              endChatButton.click();
+            } else {
+              logError("End Session/End Chat button is disabled or not found", {
+                buttonFound: !!endChatButton,
+                buttonDisabled: endChatButton?.disabled,
+                buttonText: endChatButton?.textContent,
+              });
+              toast.error(
+                "Could not end chat automatically. Please click the End Session button manually.",
+              );
+            }
+          }, 1000); // Wait for page to load
+        }
+      },
     };
   }, [
-    handleNavigateToCohort,
-    handleStartSimulation,
-    practiceSimulations,
+    handleStepComplete,
+    nextStep,
+    handleNavigateToCohortLeaderboard,
+    handleNavigateToPractice,
+    router,
+    tourState.attemptId,
+    closeTour,
+    effectiveProfile?.viewedIntro,
+    effectiveProfile?.viewedChat,
+    setAttemptId,
   ]);
 
   // Set up global action handlers for the tour context
   useEffect(() => {
     const handleTourAction = (event: CustomEvent) => {
       const { stepIndex } = event.detail;
+      logInfo("Tour action triggered", {
+        stepIndex,
+        currentStep: tourState.currentStep,
+        tourOpen: tourState.isOpen,
+        stepsLength: tourState.steps.length,
+      });
+
       const action =
         customStepActions[stepIndex as keyof typeof customStepActions];
       if (action) {
+        logInfo("Executing tour action for step", { stepIndex });
         action();
+      } else {
+        logError("No action found for tour step", { stepIndex });
       }
     };
 
@@ -385,23 +914,38 @@ export default function TATour() {
     return () => {
       window.removeEventListener(
         "tourAction",
-        handleTourAction as EventListener
+        handleTourAction as EventListener,
       );
     };
-  }, [customStepActions]);
+  }, [
+    customStepActions,
+    tourState.currentStep,
+    tourState.isOpen,
+    tourState.steps.length,
+  ]);
 
-  // Show guide button when tour is not complete
+  // Show guide button when appropriate
   useEffect(() => {
-    if (
-      effectiveProfile &&
-      (!effectiveProfile.viewedIntro || !effectiveProfile.viewedChat)
-    ) {
-      setShowGuideButton(true);
+    if (effectiveProfile?.role === "ta") {
+      // Don't show guide button if user has officially completed the tour
+      if (
+        effectiveProfile.viewedIntro &&
+        effectiveProfile.viewedChat &&
+        !tourState.attemptId
+      ) {
+        setShowGuideButton(false);
+      } else {
+        setShowGuideButton(true);
+      }
     } else {
       setShowGuideButton(false);
     }
-  }, [effectiveProfile, setShowGuideButton]);
+  }, [effectiveProfile, setShowGuideButton, tourState.attemptId]);
 
-  // This component no longer renders UI - it just manages tour state
-  return null;
+  // Render the guide button
+  return (
+    <>
+      <GuideButton />
+    </>
+  );
 }

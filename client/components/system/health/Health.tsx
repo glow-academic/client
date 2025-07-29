@@ -162,8 +162,8 @@ export default function Health() {
               lastChecked: new Date(),
               responseTime: isConnected ? 0 : undefined,
             }
-          : check
-      )
+          : check,
+      ),
     );
   }, [isConnected]);
 
@@ -185,8 +185,8 @@ export default function Health() {
               lastChecked: new Date(),
               responseTime: authStatus === "loading" ? undefined : 0,
             }
-          : check
-      )
+          : check,
+      ),
     );
   }, [authStatus]);
 
@@ -278,7 +278,7 @@ export default function Health() {
           case "document-upload":
             // Test document upload service by checking the documents health endpoint
             const uploadResponse = await fetch(
-              `${getApiBase()}/documents/health`
+              `${getApiBase()}/documents/health`,
             );
             if (!uploadResponse.ok)
               throw new Error(`HTTP ${uploadResponse.status}`);
@@ -288,13 +288,13 @@ export default function Health() {
             // Test route scanner by checking main routes
             const routes = ["/", "/home", "/profile", "/system/health"];
             const routePromises = routes.map((route) =>
-              fetch(route).then((res) => ({ route, status: res.status }))
+              fetch(route).then((res) => ({ route, status: res.status })),
             );
             const routeResults = await Promise.all(routePromises);
             const failedRoutes = routeResults.filter((r) => r.status >= 400);
             if (failedRoutes.length > 0) {
               throw new Error(
-                `Routes with issues: ${failedRoutes.map((r) => r.route).join(", ")}`
+                `Routes with issues: ${failedRoutes.map((r) => r.route).join(", ")}`,
               );
             }
             break;
@@ -328,7 +328,7 @@ export default function Health() {
         };
       }
     },
-    []
+    [],
   );
 
   const runAllHealthChecks = useCallback(async () => {
@@ -350,7 +350,7 @@ export default function Health() {
       prev.map((check) => {
         const result = results.find((r) => r.id === check.id);
         return result || check;
-      })
+      }),
     );
 
     setLastRefresh(new Date());
@@ -361,11 +361,11 @@ export default function Health() {
 
     if (healthyCount === totalCount) {
       toast.success(
-        `All health checks passed! (${healthyCount}/${totalCount})`
+        `All health checks passed! (${healthyCount}/${totalCount})`,
       );
     } else {
       toast.error(
-        `Health checks completed with issues (${healthyCount}/${totalCount} healthy)`
+        `Health checks completed with issues (${healthyCount}/${totalCount} healthy)`,
       );
     }
   }, [runHealthCheck]);
@@ -394,7 +394,7 @@ export default function Health() {
                   if (res.ok) successCount++;
                   else failedCount++;
                 })
-                .catch(() => failedCount++)
+                .catch(() => failedCount++),
             );
             await Promise.all(promises);
             break;
@@ -438,7 +438,7 @@ export default function Health() {
                   status: 0,
                   ok: false,
                   error: err.message,
-                }))
+                })),
             );
 
             const linkResults = await Promise.all(linkPromises);
@@ -471,7 +471,7 @@ export default function Health() {
             try {
               // First check if the upload endpoint is available
               const healthResponse = await fetch(
-                `${getApiBase()}/documents/health`
+                `${getApiBase()}/documents/health`,
               );
               if (!healthResponse.ok) {
                 failedCount = totalRequests;
@@ -525,7 +525,7 @@ export default function Health() {
         };
       }
     },
-    [isConnected, authStatus, stressTests]
+    [isConnected, authStatus, stressTests],
   );
 
   const runAllStressTests = useCallback(async () => {
@@ -551,7 +551,7 @@ export default function Health() {
       toast.success(`All stress tests passed! (${passedCount}/${totalCount})`);
     } else {
       toast.error(
-        `Stress tests completed with issues (${passedCount}/${totalCount} passed)`
+        `Stress tests completed with issues (${passedCount}/${totalCount} passed)`,
       );
     }
   }, [runStressTest]);

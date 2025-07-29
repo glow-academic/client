@@ -8,13 +8,15 @@ import { logError } from "@/utils/logger";
 import { getPersona } from "@/utils/queries/personas/get-persona";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
+import { getAgent } from "./queries/agents/get-agent";
 import { getCohort } from "./queries/cohorts/get-cohort";
 import { getModel } from "./queries/models/get-model";
+import { getParameter } from "./queries/parameters/get-parameter";
 import { getProfile } from "./queries/profiles/get-profile";
+import { getProvider } from "./queries/providers/get-provider";
 import { getRubric } from "./queries/rubrics/get-rubric";
 import { getSimulationAttempt } from "./queries/simulation_attempts/get-simulation-attempt";
 import { getSimulationChat } from "./queries/simulation_chats/get-simulation-chat";
-import { getSystemAgent } from "./queries/system_agents/get-system-agent";
 
 interface BreadcrumbItem {
   title: string;
@@ -50,7 +52,7 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         const personaData = await getPersona(id);
         return personaData?.name || `Persona ${id.substring(0, 8)}...`;
       case "agent":
-        const agentData = await getSystemAgent(id);
+        const agentData = await getAgent(id);
         return agentData?.name || `Agent ${id.substring(0, 8)}...`;
       case "simulation":
         const simulationData = await getSimulation(id);
@@ -87,8 +89,12 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         );
 
       case "provider":
-        // For now, return a generic provider name since we don't have a getProvider function
-        return `Provider ${id.substring(0, 8)}...`;
+        const providerData = await getProvider(id);
+        return providerData?.name || `Provider ${id.substring(0, 8)}...`;
+
+      case "parameter":
+        const parameterData = await getParameter(id);
+        return parameterData?.name || `Parameter ${id.substring(0, 8)}...`;
 
       default:
         return id.length > 10 ? `${id.substring(0, 8)}...` : id;
@@ -136,9 +142,13 @@ export const generateEnhancedBreadcrumbs = async (
         context = "chat";
       } else if (prevSegment === "c" && segments.includes("cohorts")) {
         context = "cohort";
-      } else if (prevSegment === "m" && segments.includes("models")) {
+      } else if (prevSegment === "e" && segments.includes("cohorts")) {
+        context = "cohort";
+      } else if (prevSegment === "m" && segments.includes("providers")) {
         context = "model";
       } else if (prevSegment === "a" && segments.includes("home")) {
+        context = "attempt";
+      } else if (prevSegment === "a" && segments.includes("practice")) {
         context = "attempt";
       } else if (prevSegment === "s" && segments.includes("simulations")) {
         context = "simulation";
@@ -156,6 +166,8 @@ export const generateEnhancedBreadcrumbs = async (
         context = "rubric";
       } else if (prevSegment === "p" && segments.includes("reports")) {
         context = "report";
+      } else if (prevSegment === "p" && segments.includes("parameters")) {
+        context = "parameter";
       }
 
       if (context) {
@@ -167,6 +179,9 @@ export const generateEnhancedBreadcrumbs = async (
         // Main sections
         case "home":
           title = "Home";
+          break;
+        case "practice":
+          title = "Practice";
           break;
         case "progress":
           title = "Progress";
@@ -203,9 +218,6 @@ export const generateEnhancedBreadcrumbs = async (
         case "reports":
           title = "Reports";
           break;
-        case "progress":
-          title = "Progress";
-          break;
 
         // Create subsections
         case "personas":
@@ -217,8 +229,8 @@ export const generateEnhancedBreadcrumbs = async (
         case "rubrics":
           title = "Rubrics";
           break;
-        case "simulations":
-          title = "Simulations";
+        case "documents":
+          title = "Documents";
           break;
 
         // Management subsections
@@ -228,19 +240,22 @@ export const generateEnhancedBreadcrumbs = async (
         case "context":
           title = "Context";
           break;
-        case "logs":
-          title = "Logs";
+        case "providers":
+          title = "Providers";
+          break;
+        case "parameters":
+          title = "Parameters";
           break;
         case "models":
           title = "Models";
           break;
-        
+
         // System subsections
         case "agents":
           title = "Agents";
           break;
-        case "providers":
-          title = "Providers";
+        case "feedback":
+          title = "Feedback";
           break;
         case "health":
           title = "Health";
@@ -280,6 +295,12 @@ const getSectionFromSegments = (segments: string[]): string => {
     case "home":
       return "home";
 
+    case "practice":
+      if (second === "a" && third) {
+        return "practice";
+      }
+      return "practice";
+
     case "progress":
       return "progress";
 
@@ -291,6 +312,15 @@ const getSectionFromSegments = (segments: string[]): string => {
         return second; // dashboard, reports, history
       }
       return "analytics";
+
+    case "cohorts":
+      if (second === "c" && third) {
+        return `cohort-${third}`;
+      }
+      if (second === "e" && third) {
+        return `cohort-${third}`;
+      }
+      return "cohorts";
 
     case "create":
       if (second === "personas") {
@@ -317,6 +347,12 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "rubrics";
       }
+      if (second === "documents") {
+        if (third === "d" && fourth) {
+          return `document-${fourth}`;
+        }
+        return "documents";
+      }
       return "create";
 
     case "management":
@@ -326,8 +362,20 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "staff";
       }
+      if (second === "providers") {
+        if (third === "p" && fourth) {
+          return `provider-${fourth}`;
+        }
+        return "providers";
+      }
+      if (second === "parameters") {
+        if (third === "p" && fourth) {
+          return `parameter-${fourth}`;
+        }
+        return "parameters";
+      }
       if (second) {
-        return second; // staff, personas, logs, models, rubrics
+        return second; // staff, context, logs, models, rubrics
       }
       return "management";
 
@@ -338,11 +386,8 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "agents";
       }
-      if (second === "providers") {
-        if (third === "p" && fourth) {
-          return `provider-${fourth}`;
-        }
-        return "providers";
+      if (second === "feedback") {
+        return "feedback";
       }
       if (second === "logs") {
         return "logs";
@@ -392,6 +437,9 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
       case "home":
         title = "Home";
         break;
+      case "practice":
+        title = "Practice";
+        break;
       case "progress":
         title = "Progress";
         break;
@@ -427,9 +475,6 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
       case "reports":
         title = "Reports";
         break;
-      case "progress":
-        title = "Progress";
-        break;
       case "agents":
         title = "Agents";
         break;
@@ -442,11 +487,14 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
       case "staff":
         title = "Staff";
         break;
-      case "agents":
-        title = "Agents";
-        break;
       case "providers":
         title = "Providers";
+        break;
+      case "parameters":
+        title = "Parameters";
+        break;
+      case "documents":
+        title = "Documents";
         break;
       case "logs":
         title = "Logs";

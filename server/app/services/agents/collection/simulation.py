@@ -2,17 +2,23 @@ import os
 import uuid
 from typing import AsyncGenerator
 
-import PyPDF2
+import pypdf
 from agents import Runner, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
-from app.models import (Documents, Models, Personas, Providers, Scenarios,
-                        SimulationAttempts, SimulationChats,
-                        SimulationMessages)
+from app.models import (
+    Documents,
+    Models,
+    Personas,
+    Providers,
+    Scenarios,
+    SimulationAttempts,
+    SimulationChats,
+    SimulationMessages,
+)
 from app.services.agents.generic import GenericAgent
-from app.utils.chat import (get_chat_scenario,
-                            get_simulation_conversation_history)
+from app.utils.chat import get_chat_scenario, get_simulation_conversation_history
 from fastapi import Depends
 from openai.types.responses import ResponseTextDeltaEvent
 from sqlmodel import Session, select
@@ -88,10 +94,9 @@ async def _handle_simulation_chat(
     if not scenario.persona_id:
         raise ValueError(f"Scenario {scenario.id} has no persona_id")
 
-    if not scenario.class_id:
-        raise ValueError(f"Scenario {scenario.id} has no class_id")
-
-    persona = session.exec(select(Personas).where(Personas.id == scenario.persona_id)).one()
+    persona = session.exec(
+        select(Personas).where(Personas.id == scenario.persona_id)
+    ).one()
     if not persona:
         raise ValueError(f"Persona not found for scenario {scenario.id}")
 
@@ -113,7 +118,7 @@ async def _handle_simulation_chat(
                 # Handle PDF files
                 try:
                     with open(full_path, "rb") as file:
-                        pdf_reader = PyPDF2.PdfReader(file)
+                        pdf_reader = pypdf.PdfReader(file)
                         for page in pdf_reader.pages:
                             content += page.extract_text() + "\n"
                 except Exception as e:

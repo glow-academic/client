@@ -6,7 +6,7 @@
  */
 "use client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 // UI Components
@@ -25,25 +25,27 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
+import { useProfile } from "@/contexts/profile-context";
 import { Cohort as CohortType, Profile, Simulation } from "@/types";
 import { createCohort } from "@/utils/mutations/cohorts/create-cohort";
 import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
+import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { Loader2, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import CohortStaff from "./CohortStaff";
+import {
+  SimulationPicker,
+  Simulation as SimulationPickerType,
+} from "./SimulationPicker";
+import CohortStaff from "./staff/CohortStaff";
 
 export interface CohortProps {
   cohortId?: string;
@@ -68,6 +70,7 @@ type EditableProfile =
 export default function Cohort({ cohortId }: CohortProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { effectiveProfile } = useProfile();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingCohortId, setEditingCohortId] = useState<string | null>(null);
@@ -96,6 +99,18 @@ export default function Cohort({ cohortId }: CohortProps) {
   const [staffProfiles, setStaffProfiles] = useState<EditableProfile[]>([]);
   const [profilesToDelete, setProfilesToDelete] = useState<string[]>([]);
 
+  // Memoize callback functions to prevent unnecessary re-renders
+  const memoizedSetStaffProfiles = useCallback(
+    (profiles: EditableProfile[]) => {
+      setStaffProfiles(profiles);
+    },
+    []
+  );
+
+  const memoizedSetProfilesToDelete = useCallback((profileIds: string[]) => {
+    setProfilesToDelete(profileIds);
+  }, []);
+
   // Fetch cohorts for the list mode
   const { data: cohorts = [] } = useQuery({
     queryKey: ["cohorts"],
@@ -112,12 +127,74 @@ export default function Cohort({ cohortId }: CohortProps) {
     queryFn: () => getAllSimulations(),
   });
 
-  const isLoading = isLoadingProfiles || isLoadingSimulations;
+  const { data: scenarios = [], isLoading: isLoadingScenarios } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => getAllScenarios(),
+  });
+
+  const { data: parameters = [], isLoading: isLoadingParameters } = useQuery({
+    queryKey: ["parameters"],
+    queryFn: () => getAllParameters(),
+  });
+
+  const { data: parameterItems = [], isLoading: isLoadingParameterItems } =
+    useQuery({
+      queryKey: ["parameterItems"],
+      queryFn: () => getAllParameterItems(),
+    });
+
+  const isLoading =
+    isLoadingProfiles ||
+    isLoadingSimulations ||
+    isLoadingScenarios ||
+    isLoadingParameters ||
+    isLoadingParameterItems;
+
+  // Transform simulations to match SimulationPicker interface
+  const transformedSimulations: SimulationPickerType[] = useMemo(() => {
+    return simulations.map((sim) => ({
+      id: sim.id,
+      title: sim.title,
+      description: `Simulation with ${sim.scenarioIds?.length || 0} scenarios`,
+      timeLimit: sim.timeLimit || undefined,
+      active: sim.active,
+      defaultSimulation: sim.defaultSimulation,
+      practiceSimulation: sim.practiceSimulation,
+      scenarioIds: sim.scenarioIds || [],
+    }));
+  }, [simulations]);
+
+  // Compute selected simulations from formData
+  const selectedSimulations = useMemo(() => {
+    if (!formData.simulationIds || simulations.length === 0) {
+      return [];
+    }
+    return transformedSimulations.filter((sim) =>
+      formData.simulationIds?.includes(sim.id)
+    );
+  }, [formData.simulationIds, transformedSimulations, simulations.length]);
+
+  // Handle simulation selection from picker
+  const handleSimulationSelection = useCallback(
+    (selectedSims: SimulationPickerType[]) => {
+      const simulationIds = selectedSims.map((sim) => sim.id);
+      setFormData((prev) => ({
+        ...prev,
+        simulationIds,
+      }));
+    },
+    []
+  );
 
   // Load cohort data if editing
   useEffect(() => {
     const targetCohortId = cohortId || editingCohortId;
-    if (targetCohortId) {
+    if (
+      targetCohortId &&
+      cohorts.length > 0 &&
+      profiles.length > 0 &&
+      isEditMode
+    ) {
       const cohortToEdit = cohorts.find(
         (c: CohortType) => c.id === targetCohortId
       );
@@ -129,17 +206,81 @@ export default function Cohort({ cohortId }: CohortProps) {
           simulationIds: cohortToEdit.simulationIds || [],
           active: cohortToEdit.active ?? true,
         };
-        setFormData(cohortData);
-        setOriginalFormData(cohortData); // Set original data for comparison
+
+        // Only update if the data has actually changed to prevent infinite loops
+        setFormData((prev) => {
+          const hasChanged =
+            prev.title !== cohortData.title ||
+            prev.description !== cohortData.description ||
+            JSON.stringify(prev.profileIds) !==
+              JSON.stringify(cohortData.profileIds) ||
+            JSON.stringify(prev.simulationIds) !==
+              JSON.stringify(cohortData.simulationIds) ||
+            prev.active !== cohortData.active;
+
+          return hasChanged ? cohortData : prev;
+        });
+
+        setOriginalFormData((prev) => {
+          const hasChanged =
+            prev.title !== cohortData.title ||
+            prev.description !== cohortData.description ||
+            JSON.stringify(prev.profileIds) !==
+              JSON.stringify(cohortData.profileIds) ||
+            JSON.stringify(prev.simulationIds) !==
+              JSON.stringify(cohortData.simulationIds) ||
+            prev.active !== cohortData.active;
+
+          return hasChanged ? cohortData : prev;
+        });
 
         // Load staff profiles
         const cohortProfiles = profiles.filter((profile: Profile) =>
           cohortToEdit.profileIds?.includes(profile.id)
         );
-        setStaffProfiles(cohortProfiles);
+
+        setStaffProfiles((prev) => {
+          const hasChanged =
+            prev.length !== cohortProfiles.length ||
+            JSON.stringify(prev.map((p) => p.id).sort()) !==
+              JSON.stringify(cohortProfiles.map((p) => p.id).sort());
+
+          return hasChanged ? cohortProfiles : prev;
+        });
       }
     }
-  }, [cohortId, editingCohortId, cohorts, profiles]);
+  }, [
+    cohortId,
+    editingCohortId,
+    cohorts,
+    profiles,
+    simulations.length,
+    isEditMode,
+  ]);
+
+  // Auto-fill current user for instructional users when creating a new cohort
+  useEffect(() => {
+    if (
+      !isEditMode &&
+      effectiveProfile?.role === "instructional" &&
+      effectiveProfile?.id &&
+      profiles.length > 0 &&
+      staffProfiles.length === 0
+    ) {
+      const currentUserProfile = profiles.find(
+        (profile: Profile) => profile.id === effectiveProfile.id
+      );
+      if (currentUserProfile) {
+        setStaffProfiles([currentUserProfile]);
+      }
+    }
+  }, [
+    isEditMode,
+    effectiveProfile?.role,
+    effectiveProfile?.id,
+    profiles,
+    staffProfiles.length,
+  ]);
 
   // Check if form has changes
   const hasChanges = useMemo(() => {
@@ -170,15 +311,6 @@ export default function Cohort({ cohortId }: CohortProps) {
   };
 
   // Simulation management handlers
-  const addSimulation = (simulationId: string) => {
-    if (!formData.simulationIds?.includes(simulationId)) {
-      setFormData((prev) => ({
-        ...prev,
-        simulationIds: [...(prev.simulationIds || []), simulationId],
-      }));
-    }
-  };
-
   const removeSimulation = (simulationId: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -224,6 +356,16 @@ export default function Cohort({ cohortId }: CohortProps) {
 
     if (!formData.title?.trim()) {
       newErrors.title = "Title is required";
+    }
+
+    // For instructional users, ensure they are always in the cohort
+    if (effectiveProfile?.role === "instructional" && !isEditMode) {
+      const isUserInCohort = staffProfiles.some(
+        (profile) => profile.id === effectiveProfile.id
+      );
+      if (!isUserInCohort) {
+        newErrors.title = "You must be included in the cohort to create it";
+      }
     }
 
     setErrors(newErrors);
@@ -306,7 +448,7 @@ export default function Cohort({ cohortId }: CohortProps) {
   };
 
   const editSimulation = (simulationId: string) => {
-    router.push(`/create/simulations/s/${simulationId}`);
+    window.open(`/create/simulations/s/${simulationId}`, "_blank");
   };
 
   return (
@@ -315,13 +457,17 @@ export default function Cohort({ cohortId }: CohortProps) {
         {/* Basic Cohort Information */}
         <div className="space-y-2">
           <Label htmlFor="title">Title *</Label>
-          <Input
-            id="title"
-            value={formData.title}
-            onChange={(e) => handleInputChange("title", e.target.value)}
-            placeholder="Enter cohort title"
-            className={errors.title ? "border-destructive" : ""}
-          />
+          {formData.title !== undefined && !isLoading ? (
+            <Input
+              id="title"
+              value={formData.title}
+              onChange={(e) => handleInputChange("title", e.target.value)}
+              placeholder="Enter cohort title"
+              className={errors.title ? "border-destructive" : ""}
+            />
+          ) : (
+            <Skeleton className="h-10 w-full" />
+          )}
           {errors.title && (
             <p className="text-sm text-destructive">{errors.title}</p>
           )}
@@ -329,13 +475,35 @@ export default function Cohort({ cohortId }: CohortProps) {
 
         <div className="space-y-2">
           <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            value={formData.description || ""}
-            onChange={(e) => handleInputChange("description", e.target.value)}
-            placeholder="Enter cohort description (optional)"
-            rows={3}
-          />
+          {formData.description !== undefined && !isLoading ? (
+            <Textarea
+              id="description"
+              value={formData.description || ""}
+              onChange={(e) => handleInputChange("description", e.target.value)}
+              placeholder="Enter cohort description (optional)"
+              rows={3}
+            />
+          ) : (
+            <Skeleton className="h-20 w-full" />
+          )}
+        </div>
+
+        {/* Active/Inactive Switch */}
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="active" className="text-sm">
+            Cohort Active
+          </Label>
+          {formData.active !== undefined && !isLoading ? (
+            <Switch
+              id="active"
+              checked={formData.active ?? true}
+              onCheckedChange={(checked) =>
+                handleInputChange("active", checked)
+              }
+            />
+          ) : (
+            <Skeleton className="h-6 w-11" />
+          )}
         </div>
 
         {/* Simulations */}
@@ -351,28 +519,17 @@ export default function Cohort({ cohortId }: CohortProps) {
             </div>
             <div className="flex gap-2">
               {formData.simulationIds !== undefined && !isLoading ? (
-                <Select
-                  value=""
-                  onValueChange={(value: string) => {
-                    if (value) addSimulation(value);
-                  }}
-                >
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Add simulation" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {simulations
-                      .filter(
-                        (simulation: Simulation) =>
-                          !formData.simulationIds?.includes(simulation.id)
-                      )
-                      .map((simulation: Simulation) => (
-                        <SelectItem key={simulation.id} value={simulation.id}>
-                          {simulation.title}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                <SimulationPicker
+                  simulations={transformedSimulations}
+                  scenarios={scenarios}
+                  parameters={parameters}
+                  parameterItems={parameterItems}
+                  selectedSimulations={selectedSimulations}
+                  onSelect={handleSimulationSelection}
+                  placeholder="Add simulation"
+                  showLabel={false}
+                  buttonClassName="w-48"
+                />
               ) : (
                 <Skeleton className="h-10 w-48" />
               )}
@@ -469,10 +626,41 @@ export default function Cohort({ cohortId }: CohortProps) {
                             <Badge variant="outline" className="text-xs">
                               Time: {simulation.timeLimit || "No limit"} min
                             </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {simulation.active ? "Active" : "Inactive"}
-                            </Badge>
                           </div>
+
+                          {/* Scenario Names */}
+                          {simulation.scenarioIds &&
+                            simulation.scenarioIds.length > 0 && (
+                              <div className="mt-2">
+                                <p className="text-xs font-medium text-muted-foreground mb-1">
+                                  Scenarios ({simulation.scenarioIds.length}):
+                                </p>
+                                <div className="space-y-1">
+                                  {simulation.scenarioIds
+                                    .slice(0, 3)
+                                    .map((scenarioId) => {
+                                      const scenario = scenarios.find(
+                                        (s) => s.id === scenarioId
+                                      );
+                                      return (
+                                        <div
+                                          key={scenarioId}
+                                          className="text-xs text-muted-foreground truncate"
+                                        >
+                                          •{" "}
+                                          {scenario?.name || "Unknown Scenario"}
+                                        </div>
+                                      );
+                                    })}
+                                  {simulation.scenarioIds.length > 3 && (
+                                    <div className="text-xs text-muted-foreground">
+                                      +{simulation.scenarioIds.length - 3}{" "}
+                                      more...
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                         </div>
                       </div>
                     </div>
@@ -486,34 +674,50 @@ export default function Cohort({ cohortId }: CohortProps) {
         {/* Staff Management */}
         <CohortStaff
           profiles={staffProfiles}
-          setProfiles={setStaffProfiles}
+          setProfiles={memoizedSetStaffProfiles}
           profilesToDelete={profilesToDelete}
-          setProfilesToDelete={setProfilesToDelete}
+          setProfilesToDelete={memoizedSetProfilesToDelete}
           isLoading={isLoading}
           isSubmitting={isSubmitting}
+          effectiveProfile={effectiveProfile}
         />
 
         {/* Submit Button */}
         <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => router.push("/cohorts")}>
-            Back
-          </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting || (isEditMode && !hasChanges)}
-            className="min-w-[120px]"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {cohortId || editingCohortId ? "Updating..." : "Creating..."}
-              </>
-            ) : cohortId || editingCohortId ? (
-              "Update Cohort"
-            ) : (
-              "Create Cohort"
-            )}
-          </Button>
+          {!isLoading ? (
+            <>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => router.push("/cohorts")}
+              >
+                Back
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting || (isEditMode && !hasChanges)}
+                className="min-w-[120px]"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {cohortId || editingCohortId
+                      ? "Updating..."
+                      : "Creating..."}
+                  </>
+                ) : cohortId || editingCohortId ? (
+                  "Update Cohort"
+                ) : (
+                  "Create Cohort"
+                )}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Skeleton className="h-10 w-16" />
+              <Skeleton className="h-10 w-32" />
+            </>
+          )}
         </div>
       </form>
 
