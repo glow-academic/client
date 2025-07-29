@@ -34,6 +34,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -416,6 +417,24 @@ export default function Simulation({ simulationId }: SimulationProps) {
           )}
           {errors.timeLimit && (
             <p className="text-sm text-destructive">{errors.timeLimit}</p>
+          )}
+        </div>
+
+        {/* Active/Inactive Switch */}
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="active" className="text-sm">
+            Simulation Active
+          </Label>
+          {formData?.active !== undefined && !isLoading ? (
+            <Switch
+              id="active"
+              checked={formData.active ?? true}
+              onCheckedChange={(checked) =>
+                handleInputChange("active", checked)
+              }
+            />
+          ) : (
+            <Skeleton className="h-6 w-11" />
           )}
         </div>
 

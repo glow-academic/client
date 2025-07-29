@@ -7,7 +7,7 @@
 "use client";
 import { logError, logInfo } from "@/utils/logger";
 import { useQuery } from "@tanstack/react-query";
-import { Copy, Edit, Trash2 } from "lucide-react";
+import { Copy, Edit, Eye, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -22,8 +22,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useScenarioColumns } from "@/hooks/use-scenario-columns";
 import { Scenario } from "@/types";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
@@ -31,7 +38,6 @@ import { deleteScenario } from "@/utils/mutations/scenarios/delete-scenario";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { ScenariosDataTable } from "./ScenariosDataTable";
-import { Badge } from "@/components/ui/badge";
 
 export function Scenarios() {
   const router = useRouter();
@@ -57,7 +63,7 @@ export function Scenarios() {
   // Check if a scenario is being used by any simulations
   const isScenarioInUse = (scenarioId: string) => {
     return simulations.some(
-      (sim) => sim.scenarioIds && sim.scenarioIds.includes(scenarioId),
+      (sim) => sim.scenarioIds && sim.scenarioIds.includes(scenarioId)
     );
   };
 
@@ -139,6 +145,10 @@ export function Scenarios() {
     router.push(`/create/scenarios/s/${id}`);
   };
 
+  const handleView = (id: string) => {
+    router.push(`/create/scenarios/s/${id}`);
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
@@ -173,6 +183,30 @@ export function Scenarios() {
             </p>
           </div>
           <div className="flex gap-2 items-center ml-4">
+            {canEditScenario(scenario.id) ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleEdit(scenario.id)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleView(scenario.id)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>View Scenario Details</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
             {canDuplicate(scenario) && (
               <Button
                 variant="outline"
@@ -184,15 +218,7 @@ export function Scenarios() {
                 {isDuplicating === scenario.id ? "..." : ""}
               </Button>
             )}
-            {canEditScenario(scenario.id) && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleEdit(scenario.id)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            )}
+
             {!isScenarioInUse(scenario.id) && (
               <Button
                 variant="outline"
@@ -200,7 +226,7 @@ export function Scenarios() {
                 onClick={() =>
                   handleDeleteClick(
                     scenario.id,
-                    scenario.name || "Unnamed Scenario",
+                    scenario.name || "Unnamed Scenario"
                   )
                 }
               >
@@ -225,41 +251,46 @@ export function Scenarios() {
   );
 
   return (
-    <div className="space-y-6">
-      <ScenariosDataTable
-        columns={columns}
-        data={scenarios}
-        simulationOptions={simulationOptions}
-        cohortOptions={cohortOptions}
-        personaOptions={personaOptions}
-        scenarioTypeOptions={scenarioTypeOptions}
-        renderScenarioCard={renderScenarioCard}
-      />
+    <TooltipProvider>
+      <div className="space-y-6">
+        <ScenariosDataTable
+          columns={columns}
+          data={scenarios}
+          simulationOptions={simulationOptions}
+          cohortOptions={cohortOptions}
+          personaOptions={personaOptions}
+          scenarioTypeOptions={scenarioTypeOptions}
+          renderScenarioCard={renderScenarioCard}
+        />
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Scenario</AlertDialogTitle>
-            <AlertDialogDescription>
-              <p>
-                Are you sure you want to delete the scenario "{deleteItem?.name}
-                "? This action cannot be undone.
-              </p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Scenario</AlertDialogTitle>
+              <AlertDialogDescription>
+                <p>
+                  Are you sure you want to delete the scenario "
+                  {deleteItem?.name}
+                  "? This action cannot be undone.
+                </p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </TooltipProvider>
   );
 }

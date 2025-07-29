@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { createPersona } from "@/utils/mutations/personas/create-persona";
@@ -59,6 +60,7 @@ interface FormData {
   reasoning?: "none" | "low" | "medium" | "high";
   color?: string;
   icon?: string;
+  active?: boolean;
 }
 
 export interface PersonaProps {
@@ -84,8 +86,9 @@ export default function Persona({
       reasoning: "none",
       color: "#000000",
       icon: "Zap",
+      active: true,
     }),
-    [],
+    []
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -117,6 +120,7 @@ export default function Persona({
         reasoning: persona.reasoning || "none",
         color: persona.color || "#000000",
         icon: persona.icon || "Zap",
+        active: persona.active ?? true,
       });
     } else if (!isEditMode) {
       setFormData(initialFormData);
@@ -160,6 +164,7 @@ export default function Persona({
           reasoning: formData.reasoning === "none" ? null : formData.reasoning,
           color: formData.color || "#000000",
           icon: formData.icon || "Zap",
+          active: formData.active ?? true,
           updatedAt: new Date().toISOString(),
         });
         queryClient.invalidateQueries({ queryKey: ["personas"] });
@@ -175,6 +180,7 @@ export default function Persona({
           reasoning: formData.reasoning === "none" ? null : formData.reasoning,
           color: formData.color || "#000000",
           icon: formData.icon || "Zap",
+          active: formData.active ?? true,
         });
         queryClient.invalidateQueries({ queryKey: ["personas"] });
         queryClient.invalidateQueries({
@@ -186,7 +192,7 @@ export default function Persona({
       router.push("/create/personas");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`,
+        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`
       );
     } finally {
       setIsSubmitting(false);
@@ -257,6 +263,27 @@ export default function Persona({
               />
             ) : (
               <Skeleton className="h-10 w-full" />
+            )}
+          </div>
+
+          {/* Active/Inactive Switch */}
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="active" className="text-sm">
+              Persona Active
+            </Label>
+            {formData?.active !== undefined && !isLoading ? (
+              <Switch
+                id="active"
+                checked={formData.active ?? true}
+                onCheckedChange={(checked) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    active: checked,
+                  }))
+                }
+              />
+            ) : (
+              <Skeleton className="h-6 w-11" />
             )}
           </div>
 
@@ -424,7 +451,7 @@ export default function Persona({
                                         "mr-2 h-4 w-4",
                                         formData.icon === iconName
                                           ? "opacity-100"
-                                          : "opacity-0",
+                                          : "opacity-0"
                                       )}
                                     />
                                     <IconComponent className="mr-2 h-4 w-4" />
@@ -459,7 +486,7 @@ export default function Persona({
                                     "mr-2 h-4 w-4",
                                     formData.icon === iconName
                                       ? "opacity-100"
-                                      : "opacity-0",
+                                      : "opacity-0"
                                   )}
                                 />
                                 <IconComponent className="mr-2 h-4 w-4" />

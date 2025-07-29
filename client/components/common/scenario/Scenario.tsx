@@ -172,8 +172,19 @@ export default function Scenario({
     );
   }, [simulations, scenarioId, isEditMode]);
 
+  // Check if scenario is readonly (used by active simulations)
+  const isReadonly = useMemo(() => {
+    if (!isEditMode || !scenarioId) return false;
+    return affectedSimulations.some((sim: Simulation) => sim.active);
+  }, [affectedSimulations, isEditMode, scenarioId]);
+
   // Calculate step status
   const getStepStatus = (stepId: string): StepStatus => {
+    // If we have a scenario description, mark all sections as completed
+    if (formData.description && formData.description.trim()) {
+      return "completed";
+    }
+
     switch (stepId) {
       case "persona":
         return formData.personaId ? "completed" : "active";
@@ -353,6 +364,57 @@ export default function Scenario({
 
   return (
     <div className="w-full p-6 space-y-8">
+      {isReadonly && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg
+                className="h-5 w-5 text-yellow-400"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">
+                Scenario is in use by active simulations
+              </h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <p>
+                  This scenario is currently being used by{" "}
+                  {affectedSimulations.filter((sim) => sim.active).length}{" "}
+                  active simulation
+                  {affectedSimulations.filter((sim) => sim.active).length !== 1
+                    ? "s"
+                    : ""}
+                  . You can view the details but cannot make changes to prevent
+                  disruption to ongoing simulations.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Scenario Title Input */}
+      <div className="flex justify-center mb-6">
+        <div className="w-full max-w-2xl">
+          <input
+            type="text"
+            value={formData.name || ""}
+            onChange={(e) => handleInputChange("name", e.target.value)}
+            placeholder="New Scenario"
+            className="w-full text-3xl font-semibold text-center border-none outline-none bg-transparent px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isReadonly}
+          />
+        </div>
+      </div>
+
       <div className="space-y-6">
         {/* Step 1: Persona Selection */}
         <Card
@@ -408,6 +470,7 @@ export default function Scenario({
                     }
                   : undefined
               }
+              disabled={isReadonly}
             />
           </CardContent>
         </Card>
@@ -473,6 +536,7 @@ export default function Scenario({
                   models.map((m) => m.id)
                 )
               }
+              disabled={isReadonly}
             />
           </CardContent>
         </Card>
@@ -526,6 +590,7 @@ export default function Scenario({
               onParameterItemIdsChange={(parameterItemIds) =>
                 handleInputChange("parameterItemIds", parameterItemIds)
               }
+              disabled={isReadonly}
             />
           </CardContent>
         </Card>
@@ -567,7 +632,7 @@ export default function Scenario({
                 variant="default"
                 size="sm"
                 onClick={handleGenerateScenario}
-                disabled={isSubmitting || isGeneratingScenario}
+                disabled={isSubmitting || isGeneratingScenario || isReadonly}
               >
                 {isGeneratingScenario ? (
                   <>
@@ -595,6 +660,7 @@ export default function Scenario({
                 }
                 placeholder="Enter a custom scenario description or leave blank to auto-generate..."
                 className="min-h-[120px]"
+                disabled={isReadonly}
               />
             </div>
           </CardContent>
@@ -613,7 +679,10 @@ export default function Scenario({
         <Button
           onClick={isEditMode ? handleUpdateClick : handleSubmit}
           disabled={
-            isSubmitting || isGeneratingScenario || (isEditMode && !hasChanges)
+            isSubmitting ||
+            isGeneratingScenario ||
+            (isEditMode && !hasChanges) ||
+            isReadonly
           }
           className="min-w-[120px]"
         >

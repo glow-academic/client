@@ -27,6 +27,7 @@ interface ParameterSelectorProps {
   parameterItems: ParameterItem[];
   selectedParameterItemIds: string[];
   onParameterItemIdsChange: (parameterItemIds: string[]) => void;
+  disabled?: boolean;
 }
 
 export function ParameterSelector({
@@ -34,6 +35,7 @@ export function ParameterSelector({
   parameterItems,
   selectedParameterItemIds,
   onParameterItemIdsChange,
+  disabled = false,
 }: ParameterSelectorProps) {
   // Group parameter items by parameter
   const parameterItemsByParameter = useMemo(() => {
@@ -207,6 +209,7 @@ export function ParameterSelector({
                           size="sm"
                           onClick={() => resetParameter(parameter.id)}
                           className="h-6 w-6 p-0 hover:bg-muted"
+                          disabled={disabled}
                         >
                           <X className="h-3 w-3" />
                         </Button>
@@ -221,6 +224,7 @@ export function ParameterSelector({
                           value === "none" ? null : value
                         )
                       }
+                      disabled={disabled}
                     >
                       <SelectTrigger>
                         <SelectValue
@@ -301,6 +305,7 @@ export function ParameterSelector({
                               resetNumericalParameter(parameter.id)
                             }
                             className="h-6 w-6 p-0 hover:bg-muted"
+                            disabled={disabled}
                           >
                             <X className="h-3 w-3" />
                           </Button>
@@ -317,7 +322,7 @@ export function ParameterSelector({
                         handleNumericalSliderChange(parameter.id, value)
                       }
                       className="w-full"
-                      disabled={items.length === 0}
+                      disabled={items.length === 0 || disabled}
                     />
 
                     <div className="flex justify-between text-xs text-muted-foreground">

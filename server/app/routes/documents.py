@@ -12,15 +12,8 @@ from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
 from app.models import Documents
 from app.services.agents.collection.classify import run_classify_agent
-from fastapi import (
-    APIRouter,
-    Depends,
-    File,
-    HTTPException,
-    Request,
-    Response,
-    UploadFile,
-)
+from fastapi import (APIRouter, Depends, File, HTTPException, Request,
+                     Response, UploadFile)
 from fastapi.responses import FileResponse, JSONResponse
 from sqlmodel import Session, select
 

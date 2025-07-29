@@ -18,7 +18,6 @@ import { Plus, Upload } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Upload as TusUpload } from "tus-js-client";
 import { v4 as uuidv4 } from "uuid";
 
 import { AnalyticsFilters } from "@/components/common/analytics/AnalyticsFilters";
@@ -46,6 +45,7 @@ import {
   createSectionChangeHandler,
   isMainScreen,
 } from "@/utils/navigation-utils";
+import * as tus from "tus-js-client";
 
 // Inner component that uses the role context
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
@@ -107,7 +107,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
     try {
       // Create TUS upload
-      const upload = new TusUpload(file, {
+      const upload = new tus.Upload(file, {
         endpoint: "/api/upload",
         retryDelays: [0, 3000, 5000, 10000, 20000],
         metadata: {

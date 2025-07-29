@@ -47,6 +47,7 @@ export interface ScenarioPickerProps extends PopoverProps {
   multiSelect?: boolean; // Enable multiple selection mode
   onMultiSelect?: (models: Model[]) => void; // Callback for multiple selection
   hideSelectedChips?: boolean; // Hide the built-in selected chips display
+  disabled?: boolean; // Disable the picker
 }
 
 export function ScenarioPicker({
@@ -61,6 +62,7 @@ export function ScenarioPicker({
   multiSelect = false,
   onMultiSelect,
   hideSelectedChips = false,
+  disabled = false,
   ...props
 }: ScenarioPickerProps) {
   const [open, setOpen] = React.useState(false);
@@ -71,7 +73,7 @@ export function ScenarioPicker({
     Model[]
   >([]);
   const [peekedModel, setPeekedModel] = React.useState<Model | undefined>(
-    models[0],
+    models[0]
   );
 
   // Use external selectedModel if provided, otherwise use internal state
@@ -142,7 +144,7 @@ export function ScenarioPicker({
     e.stopPropagation();
     if (multiSelect) {
       const newSelectedModels = selectedModels.filter(
-        (m) => m.id !== modelToRemove.id,
+        (m) => m.id !== modelToRemove.id
       );
       if (!externalSelectedModels.length) {
         setInternalSelectedModels(newSelectedModels);
@@ -204,7 +206,11 @@ export function ScenarioPicker({
         </div>
       )}
 
-      <Popover open={open} onOpenChange={setOpen} {...props}>
+      <Popover
+        open={disabled ? false : open}
+        onOpenChange={disabled ? () => {} : setOpen}
+        {...props}
+      >
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -212,6 +218,7 @@ export function ScenarioPicker({
             aria-expanded={open}
             aria-label="Select a model"
             className="w-full justify-between"
+            disabled={disabled}
           >
             {getButtonText()}
             <ChevronsUpDown className="opacity-50" />
