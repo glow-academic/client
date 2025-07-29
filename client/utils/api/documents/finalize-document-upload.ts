@@ -72,9 +72,8 @@ export async function finalizeDocumentUpload(
       ...(profile !== undefined && { profile }),
       ...(test !== undefined && { test }),
     };
-    const appPrefix = process.env["APP_PREFIX"] ?? "";
 
-    const response = await fetch(`${getApiBase()}${appPrefix}/documents/tus/finalize`, {
+    const response = await fetch(`${getApiBase()}/documents/tus/finalize`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -209,17 +209,17 @@ export default function DocumentViewer({
     if (type?.includes("text/") || current.name?.endsWith(".md")) {
       return (
         <div
-          className={`w-full h-full ${compact ? "p-1" : "p-4"} flex flex-col items-center justify-center`}
+          className={`w-full h-full ${compact ? "p-1" : "p-4"} flex flex-col`}
         >
           {current.name?.endsWith(".md") ? (
             <div
-              className={`prose ${compact ? "prose-xs" : "prose-sm"} max-w-none dark:prose-invert flex-1 min-h-0 overflow-y-auto text-center ${compact ? "leading-tight" : ""}`}
+              className={`prose ${compact ? "prose-xs" : "prose-sm"} max-w-none dark:prose-invert flex-1 min-h-0 overflow-y-auto ${compact ? "leading-tight" : ""}`}
             >
               <Markdown>{content ?? ""}</Markdown>
             </div>
           ) : (
             <pre
-              className={`whitespace-pre-wrap ${compact ? "text-[4px] leading-[6px]" : "text-sm"} font-mono bg-muted/30 ${compact ? "p-1" : "p-3"} rounded-md overflow-auto flex-1 min-h-0 text-center`}
+              className={`whitespace-pre-wrap ${compact ? "text-[4px] leading-[6px]" : "text-sm"} font-mono bg-muted/30 ${compact ? "p-1" : "p-3"} rounded-md overflow-auto flex-1 min-h-0`}
             >
               {content}
             </pre>

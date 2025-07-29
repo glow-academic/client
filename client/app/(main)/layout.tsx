@@ -303,7 +303,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   const isHomePage = useMemo(() => {
-    return pathname.startsWith("/home");
+    return pathname === "/home";
   }, [pathname]);
 
   const canShowAnalyticsFilters = useMemo(() => {
