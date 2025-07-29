@@ -30,7 +30,9 @@ const RoleAndWebSocketProviderWrapper = ({
   // ✅ "Really loading" = (session still loading) OR (profile still loading when we have a userId)
   const profileLoading =
     sessionStatus === "loading" || Boolean(userId && profileQueryLoading);
-  const profileId = profileLoading ? undefined : (profile?.id as string | null);
+
+  // For guest mode (no session), profileId should be null, not undefined
+  const profileId = profileLoading ? undefined : profile?.id || null;
 
   return (
     <ProfileProvider
