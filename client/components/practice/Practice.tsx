@@ -36,10 +36,10 @@ import PracticeZone from "./PracticeZone";
 export default function Practice() {
   const router = useRouter();
   const [loadingSimulation, setLoadingSimulation] = useState<string | null>(
-    null,
+    null
   );
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
-    null,
+    null
   );
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
@@ -118,7 +118,7 @@ export default function Practice() {
             allAttempts?.filter(
               (att) =>
                 att.profileId === effectiveProfile.id! &&
-                att.simulationId === simulation.id,
+                att.simulationId === simulation.id
             ) || [];
 
           if (userAttempts.length > 0) {
@@ -128,18 +128,55 @@ export default function Practice() {
               [];
             const userGrades =
               allGrades?.filter((g) =>
-                userChats?.some((c) => c.id === g.simulationChatId),
+                userChats?.some((c) => c.id === g.simulationChatId)
               ) || [];
 
             if (userGrades.length > 0) {
+              // Calculate average score for each attempt and find the best one
+              const attemptScores = new Map<string, { scores: number[] }>();
+
+              userGrades.forEach((grade) => {
+                const chat = userChats?.find(
+                  (c) => c.id === grade.simulationChatId
+                );
+                const attempt = userAttempts.find(
+                  (a) => a.id === chat?.attemptId
+                );
+
+                if (attempt?.id) {
+                  const existing = attemptScores.get(attempt.id);
+                  if (existing) {
+                    existing.scores.push(grade.score);
+                  } else {
+                    attemptScores.set(attempt.id, { scores: [grade.score] });
+                  }
+                }
+              });
+
+              // Find the best attempt based on average score
+              let bestAverageScore = 0;
+              let hasPassedBestAttempt = false;
+
+              attemptScores.forEach((attemptData) => {
+                const averageScore =
+                  attemptData.scores.reduce((sum, score) => sum + score, 0) /
+                  attemptData.scores.length;
+
+                if (averageScore > bestAverageScore) {
+                  bestAverageScore = averageScore;
+
+                  // Get rubric to determine pass threshold
+                  const passThreshold = rubric?.passPoints || 70; // Default to 70% if no rubric
+                  hasPassedBestAttempt = averageScore >= passThreshold;
+                }
+              });
+
               // Calculate highest score as percentage
               const rubricTotalPoints = rubric?.points || 100;
               highestScore = Math.round(
-                (Math.max(...userGrades.map((g) => g.score)) /
-                  rubricTotalPoints) *
-                  100,
+                (bestAverageScore / rubricTotalPoints) * 100
               );
-              hasPassed = userGrades.some((g) => g.passed);
+              hasPassed = hasPassedBestAttempt;
             }
           }
         }
@@ -192,14 +229,14 @@ export default function Practice() {
 
     window.addEventListener(
       "simulationStarted",
-      handleSimulationStarted as EventListener,
+      handleSimulationStarted as EventListener
     );
     window.addEventListener("simulationError", handleSimulationError);
 
     return () => {
       window.removeEventListener(
         "simulationStarted",
-        handleSimulationStarted as EventListener,
+        handleSimulationStarted as EventListener
       );
       window.removeEventListener("simulationError", handleSimulationError);
       if (timeoutRef.current) {
@@ -219,7 +256,7 @@ export default function Practice() {
 
         if (!isConnected) {
           toast.error(
-            "WebSocket not connected. Please wait for connection or refresh the page.",
+            "WebSocket not connected. Please wait for connection or refresh the page."
           );
           logError("WebSocket not connected when trying to start simulation", {
             simulationId,
@@ -270,7 +307,7 @@ export default function Practice() {
       emitStartSimulation,
       loadingToastId,
       activeProfile,
-    ],
+    ]
   );
 
   // Loading state

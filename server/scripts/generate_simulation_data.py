@@ -7,6 +7,8 @@ and rubric structures using the project's auto-generated SQLModels. It then
 generates realistic seed data for every simulation found, ensuring:
 - TAs only have grades for cohorts/simulations they are assigned to
 - Grades are created for all rubric items
+- Multiple attempts per simulation with improvement over time
+- Higher pass rate (85% base) with realistic progression
 - Diverse set of passing, failing, and no data scenarios
 - Realistic distribution of performance data
 """
@@ -115,9 +117,10 @@ def get_ta_simulations(ta_profile: Profiles, cohorts: List[Cohorts], simulations
     return ta_simulations
 
 
-def generate_realistic_grade(ta_profile: Profiles, simulation: Simulations, rubrics_data: dict) -> Tuple[int, List[Tuple], bool]:
+def generate_realistic_grade(ta_profile: Profiles, simulation: Simulations, rubrics_data: dict, attempt_number: int = 1) -> Tuple[int, List[Tuple], bool]:
     """
     Generate a realistic grade based on TA profile and simulation context.
+    Supports multiple attempts with improvement over time.
     Returns (total_score, feedback_data, passed)
     """
     rubric_data = rubrics_data.get(str(simulation.rubric_id))
@@ -129,21 +132,27 @@ def generate_realistic_grade(ta_profile: Profiles, simulation: Simulations, rubr
     standards_by_group = rubric_data['standards_by_group']
     
     # Generate realistic performance based on various factors
-    # Base performance with some randomness
-    base_performance = random.gauss(0.7, 0.15)  # Mean 70%, std dev 15%
+    # Base performance with much higher pass rate - increased from 70% to 85%
+    base_performance = random.gauss(0.85, 0.12)  # Mean 85%, std dev 12%
     
     # Adjust based on simulation difficulty (practice vs regular)
     if simulation.practice_simulation:
         base_performance += 0.1  # Practice simulations are easier
     
+    # Add improvement over multiple attempts
+    # Each attempt improves performance by 5-15%
+    if attempt_number > 1:
+        improvement = random.uniform(0.05, 0.15) * (attempt_number - 1)
+        base_performance += improvement
+    
     # Add some variability based on TA experience (using profile ID as seed)
     profile_seed = hash(str(ta_profile.id)) % 1000
     random.seed(profile_seed)
-    experience_bonus = random.uniform(-0.1, 0.1)
+    experience_bonus = random.uniform(-0.05, 0.1)  # Reduced negative variance
     base_performance += experience_bonus
     
     # Clamp to reasonable range
-    base_performance = max(0.1, min(0.95, base_performance))
+    base_performance = max(0.2, min(0.98, base_performance))  # Increased minimum to 20%
     
     # Convert to score out of rubric total points
     total_score = int(round(base_performance * rubric.points))
@@ -192,10 +201,74 @@ def generate_realistic_grade(ta_profile: Profiles, simulation: Simulations, rubr
     return total_score, feedback_data, passed
 
 
+def generate_multiple_attempts(ta_profile: Profiles, simulation: Simulations, rubrics_data: dict) -> List[Dict]:
+    """
+    Generate multiple attempts for a single simulation, where each attempt is a complete simulation run.
+    Each attempt contains multiple chats (one per scenario) and grades for each chat.
+    Returns a list of attempt scenarios.
+    """
+    attempts = []
+    
+    # Determine how many attempts this TA will make for this simulation
+    # 60% make 1 attempt, 30% make 2 attempts, 10% make 3+ attempts
+    attempt_roll = random.random()
+    if attempt_roll < 0.6:
+        num_attempts = 1
+    elif attempt_roll < 0.9:
+        num_attempts = 2
+    else:
+        num_attempts = random.randint(3, 4)
+    
+    # Get all scenarios for this simulation
+    scenario_ids = simulation.scenario_ids or []
+    if not scenario_ids:
+        # If no scenarios configured, skip this simulation
+        return []
+    
+    # Generate attempts with improvement over time
+    for attempt_num in range(1, num_attempts + 1):
+        # Generate grades for each scenario in this attempt
+        scenario_grades = []
+        attempt_passed = True  # Overall attempt passes if all scenarios pass
+        
+        for scenario_index, scenario_id in enumerate(scenario_ids):
+            total_score, feedback_data, passed = generate_realistic_grade(
+                ta_profile, simulation, rubrics_data, attempt_num
+            )
+            
+            # If any scenario fails, the overall attempt fails
+            if not passed:
+                attempt_passed = False
+            
+            scenario_grades.append({
+                'scenario_id': scenario_id,
+                'scenario_index': scenario_index,
+                'total_score': total_score,
+                'feedback_data': feedback_data,
+                'passed': passed
+            })
+        
+        attempts.append({
+            'ta_profile': ta_profile,
+            'simulation': simulation,
+            'attempt_number': attempt_num,
+            'scenario_grades': scenario_grades,
+            'attempt_passed': attempt_passed,
+            'will_attempt': True
+        })
+        
+        # If they passed all scenarios, they might stop (but not guaranteed)
+        if attempt_passed and attempt_num > 1 and random.random() < 0.7:
+            break
+    
+    return attempts
+
+
 def generate_diverse_performance_scenarios(ta_profiles: List[Profiles], simulations: List[Simulations], 
                                          cohorts: List[Cohorts], rubrics_data: dict) -> List[Dict]:
     """
     Generate diverse performance scenarios including passing, failing, and no data.
+    Now supports multiple attempts per simulation where each attempt is a complete simulation run.
     """
     scenarios = []
     
@@ -211,31 +284,21 @@ def generate_diverse_performance_scenarios(ta_profiles: List[Profiles], simulati
         # Some TAs will attempt all, some will attempt some, some will attempt none
         attempt_probability = random.random()
         
-        if attempt_probability < 0.3:
-            # 30% of TAs attempt all their assigned simulations
+        if attempt_probability < 0.4:  # Increased from 0.3
+            # 40% of TAs attempt all their assigned simulations
             simulations_to_attempt = ta_simulations
-        elif attempt_probability < 0.7:
+        elif attempt_probability < 0.8:  # Increased from 0.7
             # 40% of TAs attempt some of their assigned simulations
             num_to_attempt = random.randint(1, len(ta_simulations))
             simulations_to_attempt = random.sample(ta_simulations, num_to_attempt)
         else:
-            # 30% of TAs attempt none (no data scenario)
+            # 20% of TAs attempt none (no data scenario) - reduced from 30%
             simulations_to_attempt = []
         
         for simulation in simulations_to_attempt:
-            # Generate realistic grade
-            total_score, feedback_data, passed = generate_realistic_grade(
-                ta_profile, simulation, rubrics_data
-            )
-            
-            scenarios.append({
-                'ta_profile': ta_profile,
-                'simulation': simulation,
-                'total_score': total_score,
-                'feedback_data': feedback_data,
-                'passed': passed,
-                'will_attempt': True
-            })
+            # Generate multiple attempts for this simulation
+            attempts = generate_multiple_attempts(ta_profile, simulation, rubrics_data)
+            scenarios.extend(attempts)
     
     return scenarios
 
@@ -285,8 +348,8 @@ def main():
         "Best Practice Discussion"
     ]
     
-    # Configuration for data generation - reduced for testing
-    TOTAL_SCENARIOS_TO_GENERATE = 500  # Reduced from 500 for testing
+    # Configuration for data generation
+    TOTAL_SCENARIOS_TO_GENERATE = 500  # Total attempts to generate (may include multiple attempts per simulation)
     TODAY = datetime.datetime.now(datetime.timezone.utc)
     START_DATE = TODAY - datetime.timedelta(days=90)
     random.seed(42)  # For reproducible results
@@ -323,73 +386,89 @@ def main():
             [] for _ in range(5)
         )
 
-        print(f"\n🚀 Generating simulation data for {len(scenarios)} scenarios...")
+        print(f"\n🚀 Generating simulation data for {len(scenarios)} simulation attempts...")
 
         for i, scenario in enumerate(scenarios):
             progress = i / (len(scenarios) - 1) if len(scenarios) > 1 else 0
             
             ta_profile = scenario['ta_profile']
             simulation = scenario['simulation']
+            attempt_number = scenario.get('attempt_number', 1)
+            scenario_grades = scenario.get('scenario_grades', [])
             
-            # Generate unique IDs
-            attempt_id, chat_id, grade_id = (
-                str(uuid.uuid4()),
-                str(uuid.uuid4()),
-                str(uuid.uuid4()),
-            )
+            # Generate unique attempt ID
+            attempt_id = str(uuid.uuid4())
             
-            # Generate realistic timestamp
+            # Generate realistic timestamp with attempt spacing
+            # Multiple attempts for the same simulation should be spaced out
             base_date = START_DATE + progress * (TODAY - START_DATE)
-            created_ts = rand_ts(base_date)
+            
+            # Add spacing for multiple attempts (1-7 days between attempts)
+            if attempt_number > 1:
+                days_between_attempts = random.randint(1, 7)
+                base_date += datetime.timedelta(days=days_between_attempts * (attempt_number - 1))
+            
+            attempt_created_ts = rand_ts(base_date)
 
             # 1. simulation_attempts
             attempt_rows.append(
-                f"({q(attempt_id)}, {q(created_ts)}, {q(ta_profile.id)}, {q(simulation.id)})"
+                f"({q(attempt_id)}, {q(attempt_created_ts)}, {q(ta_profile.id)}, {q(simulation.id)})"
             )
 
-            # 2. simulation_chats
-            completed = random.random() < 0.95  # 95% completion rate
-            scenario_id = random.choice(simulation.scenario_ids)
-            chat_rows.append(
-                f"({q(chat_id)}, {q(created_ts)}, {q(created_ts)}, {q(created_ts) if completed else 'NULL'}, "
-                f"{q(random.choice(CHAT_TITLES))}, {q(scenario_id)}, {q(attempt_id)}, {str(completed).lower()}, NULL)"
-            )
+            # Generate data for each scenario in this attempt
+            for scenario_grade in scenario_grades:
+                scenario_id = scenario_grade['scenario_id']
+                scenario_index = scenario_grade['scenario_index']
+                total_score = scenario_grade['total_score']
+                passed = scenario_grade['passed']
+                feedback_data = scenario_grade['feedback_data']
+                
+                # Generate unique IDs for this chat
+                chat_id = str(uuid.uuid4())
+                grade_id = str(uuid.uuid4())
+                
+                # Chat timestamp (slightly after attempt creation)
+                chat_created_ts = rand_ts(base_date + datetime.timedelta(minutes=scenario_index * 5))
 
-            # 3. simulation_messages (2-4 message pairs for realistic conversations)
-            chat_start_time = datetime.datetime.fromisoformat(
-                created_ts.replace("'", "")
-            )
-            num_exchanges = random.randint(2, 4)
-            
-            for i in range(num_exchanges):
-                q_time = chat_start_time + datetime.timedelta(
-                    seconds=i * 30 + random.randint(1, 10)
-                )
-                message_rows.append(
-                    f"({q(uuid.uuid4())}, {q(q_time)}, {q(q_time)}, {q(chat_id)}, {q(random.choice(QUESTION_BANK))}, 'query', true)"
-                )
-                r_time = q_time + datetime.timedelta(seconds=random.randint(10, 25))
-                message_rows.append(
-                    f"({q(uuid.uuid4())}, {q(r_time)}, {q(r_time)}, {q(chat_id)}, {q(random.choice(ANSWER_BANK))}, 'response', true)"
+                # 2. simulation_chats
+                completed = random.random() < 0.95  # 95% completion rate
+                chat_rows.append(
+                    f"({q(chat_id)}, {q(chat_created_ts)}, {q(chat_created_ts)}, {q(chat_created_ts) if completed else 'NULL'}, "
+                    f"{q(random.choice(CHAT_TITLES))}, {q(scenario_id)}, {q(attempt_id)}, {str(completed).lower()}, NULL)"
                 )
 
-            # 4. simulation_chat_grades
-            total_score = scenario['total_score']
-            passed = scenario['passed']
-            time_taken = random.randint(180, 600)  # 3-10 minutes
-            rubric_id = simulation.rubric_id
-            
-            grade_rows.append(
-                f"({q(grade_id)}, {q(created_ts)}, {str(passed).lower()}, {total_score}, {time_taken}, {q(rubric_id)}, {q(chat_id)})"
-            )
-
-            # 5. simulation_chat_feedbacks (one for each standard group)
-            feedback_data = scenario['feedback_data']
-            for standard_id, points in feedback_data:
-                feedback_text = f"Performance rated {points}/5 for this standard."
-                fb_rows.append(
-                    f"({q(uuid.uuid4())}, {q(created_ts)}, {q(standard_id)}, {q(grade_id)}, {points}, {q(feedback_text)})"
+                # 3. simulation_messages (2-4 message pairs for realistic conversations)
+                chat_start_time = datetime.datetime.fromisoformat(
+                    chat_created_ts.replace("'", "")
                 )
+                num_exchanges = random.randint(2, 4)
+                
+                for j in range(num_exchanges):
+                    q_time = chat_start_time + datetime.timedelta(
+                        seconds=j * 30 + random.randint(1, 10)
+                    )
+                    message_rows.append(
+                        f"({q(uuid.uuid4())}, {q(q_time)}, {q(q_time)}, {q(chat_id)}, {q(random.choice(QUESTION_BANK))}, 'query', true)"
+                    )
+                    r_time = q_time + datetime.timedelta(seconds=random.randint(10, 25))
+                    message_rows.append(
+                        f"({q(uuid.uuid4())}, {q(r_time)}, {q(r_time)}, {q(chat_id)}, {q(random.choice(ANSWER_BANK))}, 'response', true)"
+                    )
+
+                # 4. simulation_chat_grades
+                time_taken = random.randint(180, 600)  # 3-10 minutes
+                rubric_id = simulation.rubric_id
+                
+                grade_rows.append(
+                    f"({q(grade_id)}, {q(chat_created_ts)}, {str(passed).lower()}, {total_score}, {time_taken}, {q(rubric_id)}, {q(chat_id)})"
+                )
+
+                # 5. simulation_chat_feedbacks (one for each standard group)
+                for standard_id, points in feedback_data:
+                    feedback_text = f"Performance rated {points}/5 for this standard."
+                    fb_rows.append(
+                        f"({q(uuid.uuid4())}, {q(chat_created_ts)}, {q(standard_id)}, {q(grade_id)}, {points}, {q(feedback_text)})"
+                    )
 
         # --- Assemble and write the final SQL script ---
         def build_sql(table: str, cols: str, rows: list) -> str:
@@ -457,10 +536,12 @@ def main():
         print(f"    - {total_feedbacks} feedback entries created")
         print(f"    - {passing_rate:.1f}% passing rate")
         print(f"\n  🎯 Features:")
+        print(f"    - Multiple attempts per simulation with improvement over time")
+        print(f"    - Higher pass rate (85% base vs previous 70%)")
         print(f"    - TAs only graded on assigned simulations")
         print(f"    - Complete rubric coverage (all standards)")
-        print(f"    - Diverse performance distribution")
         print(f"    - Realistic conversation patterns")
+        print(f"    - Attempt spacing (1-7 days between retries)")
         print(f"\n📁 SQL output written to: {output_path}")
         print("=" * 60)
 

@@ -30,15 +30,39 @@ export default function SimulationProgress({
 }: SimulationProgressProps) {
   const { progress } = simulation;
 
-  // Calculate completion percentage
-  const totalCompleted = progress.passedCount + progress.inProgressCount;
+  // Validate progress data to ensure consistency
+  const validatedProgress = {
+    totalMembers: Math.max(0, progress.totalMembers),
+    passedCount: Math.max(
+      0,
+      Math.min(progress.passedCount, progress.totalMembers)
+    ),
+    inProgressCount: Math.max(
+      0,
+      Math.min(
+        progress.inProgressCount,
+        progress.totalMembers - progress.passedCount
+      )
+    ),
+    notStartedCount: Math.max(0, progress.notStartedCount),
+    passedMembers: progress.passedMembers || [],
+    inProgressMembers: progress.inProgressMembers || [],
+  };
+
+  // Calculate completion percentage (capped at 100%)
+  const totalCompleted =
+    validatedProgress.passedCount + validatedProgress.inProgressCount;
   const completionPercentage =
-    progress.totalMembers > 0
-      ? Math.round((totalCompleted / progress.totalMembers) * 100)
+    validatedProgress.totalMembers > 0
+      ? Math.min(
+          100,
+          Math.round((totalCompleted / validatedProgress.totalMembers) * 100)
+        )
       : 0;
 
   // Determine if all members have passed (for instructor view)
-  const allPassed = progress.passedCount >= progress.totalMembers;
+  const allPassed =
+    validatedProgress.passedCount >= validatedProgress.totalMembers;
   const isComplete = allPassed;
 
   // Get status text and color
@@ -50,7 +74,7 @@ export default function SimulationProgress({
         bgColor: "bg-green-100 dark:bg-green-900/20",
         borderColor: "border-green-200 dark:border-green-800",
       };
-    } else if (progress.passedCount > 0) {
+    } else if (validatedProgress.passedCount > 0) {
       return {
         text: "In Progress",
         color: "text-blue-600 dark:text-blue-400",
@@ -92,7 +116,7 @@ export default function SimulationProgress({
           className={`h-2 rounded-full transition-all duration-300 ${
             isComplete
               ? "bg-green-500"
-              : progress.passedCount > 0
+              : validatedProgress.passedCount > 0
                 ? "bg-blue-500"
                 : "bg-gray-400"
           }`}
@@ -116,18 +140,18 @@ export default function SimulationProgress({
       <div className="text-xs text-gray-500 dark:text-gray-400 space-x-2">
         <span className="inline-flex items-center">
           <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
-          {progress.passedCount} passed
+          {validatedProgress.passedCount} passed
         </span>
-        {progress.inProgressCount > 0 && (
+        {validatedProgress.inProgressCount > 0 && (
           <span className="inline-flex items-center">
             <span className="w-2 h-2 bg-blue-500 rounded-full mr-1"></span>
-            {progress.inProgressCount} in progress
+            {validatedProgress.inProgressCount} in progress
           </span>
         )}
-        {progress.notStartedCount > 0 && (
+        {validatedProgress.notStartedCount > 0 && (
           <span className="inline-flex items-center">
             <span className="w-2 h-2 bg-gray-400 rounded-full mr-1"></span>
-            {progress.notStartedCount} not started
+            {validatedProgress.notStartedCount} not started
           </span>
         )}
       </div>

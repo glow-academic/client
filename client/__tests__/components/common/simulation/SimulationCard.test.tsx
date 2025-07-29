@@ -79,7 +79,7 @@ describe("SimulationCard", () => {
 
       // Verify the card has proper test IDs for accessibility
       expect(
-        screen.getByTestId("permanent-simulation-card"),
+        screen.getByTestId("permanent-simulation-card")
       ).toBeInTheDocument();
       expect(screen.getByTestId("simulation-title")).toBeInTheDocument();
       expect(screen.getByTestId("simulation-duration")).toBeInTheDocument();
@@ -100,7 +100,7 @@ describe("SimulationCard", () => {
         <SimulationCard
           {...mockProps}
           onStartSimulation={mockOnStartSimulation}
-        />,
+        />
       );
 
       const startButton = screen.getByTestId("start-simulation-1");
@@ -123,7 +123,7 @@ describe("SimulationCard", () => {
       renderWithMocks(<SimulationCard {...mockProps} type="default" />);
 
       expect(
-        screen.getByTestId("permanent-simulation-card"),
+        screen.getByTestId("permanent-simulation-card")
       ).toBeInTheDocument();
       expect(screen.getByText("Start Simulation")).toBeInTheDocument();
     });
@@ -167,7 +167,7 @@ describe("SimulationCard", () => {
       // Look for the rubric button by finding the button with aria-haspopup="dialog"
       const buttons = screen.getAllByRole("button");
       const rubricButton = buttons.find(
-        (button) => button.getAttribute("aria-haspopup") === "dialog",
+        (button) => button.getAttribute("aria-haspopup") === "dialog"
       );
       expect(rubricButton).toBeInTheDocument();
     });

@@ -134,7 +134,7 @@ export default function HighestScore({
 
     // Filter cohorts to only those in cohortIds
     const filteredCohorts = cohorts.filter((cohort) =>
-      cohortIds.includes(cohort.id),
+      cohortIds.includes(cohort.id)
     );
 
     if (filteredCohorts.length === 0) {
@@ -144,7 +144,7 @@ export default function HighestScore({
     // If profileId is provided, check if profile belongs to any of the filtered cohorts
     if (profileId) {
       const profileInCohorts = filteredCohorts.some((cohort) =>
-        cohort.profileIds.includes(profileId),
+        cohort.profileIds.includes(profileId)
       );
 
       if (!profileInCohorts) {
@@ -176,7 +176,7 @@ export default function HighestScore({
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId,
+        (s) => s.id === attempt?.simulationId
       );
       return (
         gradeDate >= dateStart &&
@@ -209,19 +209,45 @@ export default function HighestScore({
 
     if (profileFilteredGrades.length === 0) return 0;
 
-    // Calculate scores using rubric points and find the highest
-    const scores = profileFilteredGrades.map((grade) => {
+    // Group grades by attempt and calculate average scores
+    const attemptScores = new Map<
+      string,
+      { scores: number[]; rubricTotalPoints: number }
+    >();
+
+    profileFilteredGrades.forEach((grade) => {
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId,
+        (s) => s.id === attempt?.simulationId
       );
       const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
       const rubricTotalPoints = rubric?.points || 100;
-      return Math.round((grade.score / rubricTotalPoints) * 100);
+
+      if (attempt?.id) {
+        const existing = attemptScores.get(attempt.id);
+        if (existing) {
+          existing.scores.push(grade.score);
+        } else {
+          attemptScores.set(attempt.id, {
+            scores: [grade.score],
+            rubricTotalPoints,
+          });
+        }
+      }
     });
 
-    return Math.max(...scores);
+    // Calculate average score for each attempt and find the highest
+    const attemptAverages = Array.from(attemptScores.values()).map(
+      (attemptData) => {
+        const averageScore =
+          attemptData.scores.reduce((sum, score) => sum + score, 0) /
+          attemptData.scores.length;
+        return Math.round((averageScore / attemptData.rubricTotalPoints) * 100);
+      }
+    );
+
+    return attemptAverages.length > 0 ? Math.max(...attemptAverages) : 0;
   }, [
     grades,
     attempts,
@@ -250,7 +276,7 @@ export default function HighestScore({
         const chat = chats.find((c) => c.id === grade.simulationChatId);
         const attempt = attempts.find((a) => a.id === chat?.attemptId);
         const simulation = simulations.find(
-          (s) => s.id === attempt?.simulationId,
+          (s) => s.id === attempt?.simulationId
         );
         return gradeDate === dateStr && !simulation?.practiceSimulation;
       });
@@ -281,20 +307,51 @@ export default function HighestScore({
         });
       }
 
-      // Calculate highest score for the day using rubric points
+      // Calculate highest score for the day using average scores per attempt
       let dayHighestScore = 0;
       if (profileFilteredDayGrades.length > 0) {
-        const dayScores = profileFilteredDayGrades.map((grade) => {
+        // Group grades by attempt for this day
+        const dayAttemptScores = new Map<
+          string,
+          { scores: number[]; rubricTotalPoints: number }
+        >();
+
+        profileFilteredDayGrades.forEach((grade) => {
           const chat = chats.find((c) => c.id === grade.simulationChatId);
           const attempt = attempts.find((a) => a.id === chat?.attemptId);
           const simulation = simulations.find(
-            (s) => s.id === attempt?.simulationId,
+            (s) => s.id === attempt?.simulationId
           );
           const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
           const rubricTotalPoints = rubric?.points || 100;
-          return Math.round((grade.score / rubricTotalPoints) * 100);
+
+          if (attempt?.id) {
+            const existing = dayAttemptScores.get(attempt.id);
+            if (existing) {
+              existing.scores.push(grade.score);
+            } else {
+              dayAttemptScores.set(attempt.id, {
+                scores: [grade.score],
+                rubricTotalPoints,
+              });
+            }
+          }
         });
-        dayHighestScore = Math.max(...dayScores);
+
+        // Calculate average score for each attempt and find the highest
+        const dayAttemptAverages = Array.from(dayAttemptScores.values()).map(
+          (attemptData) => {
+            const averageScore =
+              attemptData.scores.reduce((sum, score) => sum + score, 0) /
+              attemptData.scores.length;
+            return Math.round(
+              (averageScore / attemptData.rubricTotalPoints) * 100
+            );
+          }
+        );
+
+        dayHighestScore =
+          dayAttemptAverages.length > 0 ? Math.max(...dayAttemptAverages) : 0;
       }
 
       return {

@@ -776,7 +776,7 @@ export default function CohortPerformance({
                           {cohort.name}
                         </h4>
                         <p className="text-xs text-muted-foreground">
-                          {passRatePercentage}% of students pass{" "}
+                          {passRatePercentage.toFixed(2)}% of students pass{" "}
                           {selectedSimulations.length} quiz
                           {selectedSimulations.length !== 1 ? "zes" : ""} with a{" "}
                           {Math.round(

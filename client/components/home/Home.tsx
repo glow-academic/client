@@ -473,9 +473,70 @@ export default function Home() {
             });
           }
 
-          const passedCount = cohortGrades.filter((g) => g.passed).length || 0;
-          const inProgressCount =
-            cohortGrades.filter((g) => !g.passed).length || 0;
+          // Calculate progress based on each user's best attempt for this simulation
+          // This prevents counting multiple attempts per user which was causing >100% progress
+          const userBestAttempts = new Map<
+            string,
+            { passed: boolean; score: number; attemptId: string }
+          >();
+
+          // Group grades by attempt and calculate average scores
+          const attemptScores = new Map<
+            string,
+            { scores: number[]; profileId: string }
+          >();
+
+          cohortGrades.forEach((grade) => {
+            const chat = cohortChats?.find(
+              (c) => c.id === grade.simulationChatId
+            );
+            const attempt = cohortAttempts.find(
+              (a) => a.id === chat?.attemptId
+            );
+
+            if (attempt?.id && attempt?.profileId) {
+              const existing = attemptScores.get(attempt.id);
+              if (existing) {
+                existing.scores.push(grade.score);
+              } else {
+                attemptScores.set(attempt.id, {
+                  scores: [grade.score],
+                  profileId: attempt.profileId,
+                });
+              }
+            }
+          });
+
+          // Calculate average score for each attempt and find best attempt per user
+          attemptScores.forEach((attemptData, attemptId) => {
+            const averageScore =
+              attemptData.scores.reduce((sum, score) => sum + score, 0) /
+              attemptData.scores.length;
+
+            // Get rubric to determine pass threshold
+            const rubric = allRubrics?.find(
+              (r) => r.id === simulation.rubricId
+            );
+            const passThreshold = rubric?.passPoints || 70; // Default to 70% if no rubric
+            const passed = averageScore >= passThreshold;
+
+            const existing = userBestAttempts.get(attemptData.profileId);
+            if (!existing || averageScore > existing.score) {
+              userBestAttempts.set(attemptData.profileId, {
+                passed,
+                score: averageScore,
+                attemptId,
+              });
+            }
+          });
+
+          // Count users based on their best attempts
+          const passedCount = Array.from(userBestAttempts.values()).filter(
+            (attempt) => attempt.passed
+          ).length;
+          const inProgressCount = Array.from(userBestAttempts.values()).filter(
+            (attempt) => !attempt.passed
+          ).length;
           const notStartedCount =
             cohortMembers.length - passedCount - inProgressCount;
 
@@ -487,31 +548,13 @@ export default function Home() {
               inProgressCount,
               notStartedCount: Math.max(0, notStartedCount),
               passedMembers:
-                cohortGrades
-                  ?.filter((g) => g.passed)
-                  .map((g) => {
-                    const chat = cohortChats?.find(
-                      (c) => c.id === g.simulationChatId
-                    );
-                    const attempt = cohortAttempts.find(
-                      (a) => a.id === chat?.attemptId
-                    );
-                    return attempt?.profileId || "";
-                  })
-                  .filter(Boolean) || [],
+                Array.from(userBestAttempts.entries())
+                  .filter(([_, attempt]) => attempt.passed)
+                  .map(([profileId, _]) => profileId) || [],
               inProgressMembers:
-                cohortGrades
-                  ?.filter((g) => !g.passed)
-                  .map((g) => {
-                    const chat = cohortChats?.find(
-                      (c) => c.id === g.simulationChatId
-                    );
-                    const attempt = cohortAttempts.find(
-                      (a) => a.id === chat?.attemptId
-                    );
-                    return attempt?.profileId || "";
-                  })
-                  .filter(Boolean) || [],
+                Array.from(userBestAttempts.entries())
+                  .filter(([_, attempt]) => !attempt.passed)
+                  .map(([profileId, _]) => profileId) || [],
             },
           };
         } else {
@@ -566,7 +609,45 @@ export default function Home() {
               });
             }
 
-            const hasPassed = taGrades.some((g) => g.passed);
+            // Calculate average score for each attempt and find best attempt
+            const taAttemptScores = new Map<string, { scores: number[] }>();
+
+            taGrades.forEach((grade) => {
+              const chat = taChats?.find(
+                (c) => c.id === grade.simulationChatId
+              );
+              const attempt = taAttempts.find((a) => a.id === chat?.attemptId);
+
+              if (attempt?.id) {
+                const existing = taAttemptScores.get(attempt.id);
+                if (existing) {
+                  existing.scores.push(grade.score);
+                } else {
+                  taAttemptScores.set(attempt.id, { scores: [grade.score] });
+                }
+              }
+            });
+
+            // Find best attempt based on average score
+            let bestAverageScore = 0;
+            let hasPassed = false;
+
+            taAttemptScores.forEach((attemptData) => {
+              const averageScore =
+                attemptData.scores.reduce((sum, score) => sum + score, 0) /
+                attemptData.scores.length;
+
+              if (averageScore > bestAverageScore) {
+                bestAverageScore = averageScore;
+
+                // Get rubric to determine pass threshold
+                const rubric = allRubrics?.find(
+                  (r) => r.id === simulation.rubricId
+                );
+                const passThreshold = rubric?.passPoints || 70; // Default to 70% if no rubric
+                hasPassed = averageScore >= passThreshold;
+              }
+            });
 
             if (hasPassed) {
               taProgress.passedCount = 1;
@@ -608,6 +689,7 @@ export default function Home() {
     shouldShowAll,
     startDate,
     endDate,
+    allRubrics,
   ]);
 
   // Enhanced simulation data with completion status and rubric data
@@ -629,8 +711,12 @@ export default function Home() {
         let hasPassed = false;
         let highestScore = 0;
 
-        // Calculate individual user's highest score for any profile with an ID (except guests)
-        if (effectiveProfile?.id && effectiveProfile?.role !== "guest") {
+        // For TA view, use the progress data that was already calculated
+        if (!shouldShowAll && effectiveProfile?.id) {
+          // Use the progress data from processedCohortData
+          hasPassed = simulation.progress.passedCount > 0;
+
+          // Calculate highest score for display
           const userAttempts = safeAttempts.filter(
             (att) =>
               att.profileId === effectiveProfile.id! &&
@@ -642,30 +728,143 @@ export default function Home() {
             const userChats = chats?.filter((c) =>
               userAttemptIds.includes(c.attemptId)
             );
-            const userGrades = safeGrades.filter((g) =>
+            let userGrades = safeGrades.filter((g) =>
               userChats?.some((c) => c.id === g.simulationChatId)
             );
 
+            // Filter grades by date range if dates are provided (same as progress calculation)
+            if (startDate && endDate) {
+              userGrades = userGrades.filter((grade) => {
+                const gradeDate = new Date(grade.createdAt);
+                return gradeDate >= startDate && gradeDate <= endDate;
+              });
+            }
+
             if (userGrades.length > 0) {
+              // Calculate average score for each attempt and find the best one
+              const attemptScores = new Map<string, { scores: number[] }>();
+
+              userGrades.forEach((grade) => {
+                const chat = userChats?.find(
+                  (c) => c.id === grade.simulationChatId
+                );
+                const attempt = userAttempts.find(
+                  (a) => a.id === chat?.attemptId
+                );
+
+                if (attempt?.id) {
+                  const existing = attemptScores.get(attempt.id);
+                  if (existing) {
+                    existing.scores.push(grade.score);
+                  } else {
+                    attemptScores.set(attempt.id, { scores: [grade.score] });
+                  }
+                }
+              });
+
+              // Find the best attempt based on average score
+              let bestAverageScore = 0;
+
+              attemptScores.forEach((attemptData) => {
+                const averageScore =
+                  attemptData.scores.reduce((sum, score) => sum + score, 0) /
+                  attemptData.scores.length;
+
+                if (averageScore > bestAverageScore) {
+                  bestAverageScore = averageScore;
+                }
+              });
+
               // Calculate highest score as percentage
               const rubricTotalPoints = rubric?.points || 100;
               highestScore = Math.round(
-                (Math.max(...userGrades.map((g) => g.score)) /
-                  rubricTotalPoints) *
-                  100
+                (bestAverageScore / rubricTotalPoints) * 100
               );
-              hasPassed = userGrades.some((g) => g.passed);
+            }
+          }
+        } else if (effectiveProfile?.id && effectiveProfile?.role !== "guest") {
+          // For instructor view or other roles, calculate individual performance
+          const userAttempts = safeAttempts.filter(
+            (att) =>
+              att.profileId === effectiveProfile.id! &&
+              att.simulationId === simulation.id
+          );
+
+          if (userAttempts.length > 0) {
+            const userAttemptIds = userAttempts.map((att) => att.id);
+            const userChats = chats?.filter((c) =>
+              userAttemptIds.includes(c.attemptId)
+            );
+            let userGrades = safeGrades.filter((g) =>
+              userChats?.some((c) => c.id === g.simulationChatId)
+            );
+
+            // Filter grades by date range if dates are provided (same as progress calculation)
+            if (startDate && endDate) {
+              userGrades = userGrades.filter((grade) => {
+                const gradeDate = new Date(grade.createdAt);
+                return gradeDate >= startDate && gradeDate <= endDate;
+              });
+            }
+
+            if (userGrades.length > 0) {
+              // Calculate average score for each attempt and find the best one
+              const attemptScores = new Map<string, { scores: number[] }>();
+
+              userGrades.forEach((grade) => {
+                const chat = userChats?.find(
+                  (c) => c.id === grade.simulationChatId
+                );
+                const attempt = userAttempts.find(
+                  (a) => a.id === chat?.attemptId
+                );
+
+                if (attempt?.id) {
+                  const existing = attemptScores.get(attempt.id);
+                  if (existing) {
+                    existing.scores.push(grade.score);
+                  } else {
+                    attemptScores.set(attempt.id, { scores: [grade.score] });
+                  }
+                }
+              });
+
+              // Find the best attempt based on average score
+              let bestAverageScore = 0;
+              let hasPassedBestAttempt = false;
+
+              attemptScores.forEach((attemptData) => {
+                const averageScore =
+                  attemptData.scores.reduce((sum, score) => sum + score, 0) /
+                  attemptData.scores.length;
+
+                if (averageScore > bestAverageScore) {
+                  bestAverageScore = averageScore;
+
+                  // Get rubric to determine pass threshold
+                  const passThreshold = rubric?.passPoints || 70; // Default to 70% if no rubric
+                  hasPassedBestAttempt = averageScore >= passThreshold;
+                }
+              });
+
+              // Calculate highest score as percentage
+              const rubricTotalPoints = rubric?.points || 100;
+              highestScore = Math.round(
+                (bestAverageScore / rubricTotalPoints) * 100
+              );
+              hasPassed = hasPassedBestAttempt;
             }
           }
         }
 
-        // For instructor view, also check if ALL members have passed (but keep individual score)
+        // For instructor view, check if ALL members have passed
         if (shouldShowAll) {
           const passedMembers = simulation.progress.passedMembers;
           const totalMembers = simulation.progress.totalMembers;
           hasPassed =
             passedMembers.length > 0 && passedMembers.length >= totalMembers;
         }
+        // For TA view, hasPassed is already set correctly above using progress data
 
         return {
           ...simulation,
@@ -690,6 +889,8 @@ export default function Home() {
     safeAttempts,
     chats,
     safeGrades,
+    startDate,
+    endDate,
   ]);
 
   // Sort simulations by completion status and then by cohort

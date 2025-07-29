@@ -115,4 +115,31 @@ describe("SimulationProgress", () => {
     expect(screen.getByText("Not Started")).toBeInTheDocument();
     expect(screen.getByText("0%")).toBeInTheDocument();
   });
+
+  it("caps progress percentage at 100% even with invalid data", () => {
+    const invalidProgressSimulation = {
+      ...mockSimulation,
+      progress: {
+        totalMembers: 5,
+        passedCount: 6, // More passed than total members (invalid data)
+        inProgressCount: 2, // Additional in progress
+        notStartedCount: 0,
+        passedMembers: [
+          "profile-1",
+          "profile-2",
+          "profile-3",
+          "profile-4",
+          "profile-5",
+          "profile-6",
+        ],
+        inProgressMembers: ["profile-7", "profile-8"],
+      },
+    };
+
+    render(<SimulationProgress simulation={invalidProgressSimulation} />);
+
+    // Should cap at 100% even though raw calculation would be 160%
+    expect(screen.getByText("100%")).toBeInTheDocument();
+    expect(screen.getByText("Complete")).toBeInTheDocument();
+  });
 });
