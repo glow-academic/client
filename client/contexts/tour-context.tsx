@@ -18,6 +18,7 @@ import {
 import { useProfile } from "@/contexts/profile-context";
 import { Profile } from "@/types";
 import { TourStep } from "@/utils/tour-steps";
+import { useRouter } from "next/navigation";
 
 // Tour state interface
 interface TourContextState {
@@ -158,7 +159,7 @@ interface TourProviderProps {
 export function TourProvider({ children }: TourProviderProps) {
   const [state, dispatch] = useReducer(tourReducer, initialState);
   const { effectiveProfile } = useProfile();
-
+  const router = useRouter();
   // Actions
   const openTour = useCallback(
     (steps: TourStep[], profile: Profile, initialStep?: number) => {
@@ -469,9 +470,7 @@ export function TourProvider({ children }: TourProviderProps) {
                     setAttemptId(null); // Reset attemptId since tour is complete
                     closeTour();
                     // Navigate back to home using router
-                    if (typeof window !== "undefined") {
-                      window.location.href = "/home";
-                    }
+                    router.push("/home");
                   }}
                   className="px-6 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
                 >
@@ -517,7 +516,7 @@ export function TourProvider({ children }: TourProviderProps) {
         </div>
       </aside>
     );
-  }, [state, closeTour, prevStep, effectiveProfile, setAttemptId]);
+  }, [state, closeTour, prevStep, effectiveProfile, setAttemptId, router]);
 
   return (
     <TourContext.Provider value={value}>
