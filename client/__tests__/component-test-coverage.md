@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 271
+- **Total Components**: 273
 - **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 271
+- **Tests Skipped** (already implemented): 273
 
 ## Component Coverage
 
@@ -103,6 +103,8 @@
 | Simulation | components/common/simulation/Simulation.tsx | Simulation.test.tsx | ✅ Implemented |
 | SimulationCard | components/common/simulation/SimulationCard.tsx | SimulationCard.test.tsx | ✅ Implemented |
 | SimulationScenarioPicker | components/common/simulation/SimulationScenarioPicker.tsx | SimulationScenarioPicker.test.tsx | ✅ Implemented |
+| CodeViewer | components/common/viewers/CodeViewer.tsx | CodeViewer.test.tsx | ✅ Implemented |
+| HtmlViewer | components/common/viewers/HtmlViewer.tsx | HtmlViewer.test.tsx | ✅ Implemented |
 | Documents | components/create/documents/Documents.tsx | Documents.test.tsx | ✅ Implemented |
 | DocumentsDataTable | components/create/documents/DocumentsDataTable.tsx | DocumentsDataTable.test.tsx | ✅ Implemented |
 | DocumentsDataTableToolbar | components/create/documents/DocumentsDataTableToolbar.tsx | DocumentsDataTableToolbar.test.tsx | ✅ Implemented |
@@ -405,6 +407,9 @@ __tests__/
 │   │   │   ├── Simulation.test.tsx
 │   │   │   ├── SimulationCard.test.tsx
 │   │   │   ├── SimulationScenarioPicker.test.tsx
+│   │   ├── viewers/
+│   │   │   ├── CodeViewer.test.tsx
+│   │   │   ├── HtmlViewer.test.tsx
 │   ├── create/
 │   │   ├── documents/
 │   │   │   ├── Documents.test.tsx

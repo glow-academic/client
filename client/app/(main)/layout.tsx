@@ -41,6 +41,7 @@ import {
   generateEnhancedBreadcrumbs,
   getActiveSectionFromPath,
 } from "@/utils/breadcrumb-utils";
+import { inferMimeFromName } from "@/utils/mime-map";
 import {
   createSectionChangeHandler,
   isMainScreen,
@@ -112,7 +113,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         retryDelays: [0, 3000, 5000, 10000, 20000],
         metadata: {
           filename: file.name,
-          filetype: file.type,
+          // if browser didn't set a type, use our inference
+          filetype: file.type || inferMimeFromName(file.name),
           fileId: fileId,
         },
         onError: (error) => {
@@ -411,7 +413,17 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             multiple
             onChange={handleFileSelect}
             disabled={activeUploads.size > 0}
-            accept="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/zip"
+            accept={[
+              "application/pdf",
+              "image/*",
+              "application/msword",
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              "text/plain",
+              "application/zip",
+              "text/html",
+              // Extensions for source files & common texty formats
+              ".java,.py,.c,.h,.cpp,.hpp,.cc,.cs,.js,.jsx,.ts,.tsx,.mjs,.cjs,.html,.css,.scss,.md,.json,.yml,.yaml,.xml,.sh,.bash,.zsh,.rb,.go,.rs,.kt,.swift,.m,.mm,.sql,.ipynb",
+            ].join(",")}
             className="hidden"
           />
           <Button

@@ -12,6 +12,7 @@ from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
 from app.models import Documents
 from app.services.agents.collection.classify import run_classify_agent
+from app.utils.mime_utils import get_content_type
 from fastapi import (APIRouter, Depends, File, HTTPException, Request,
                      Response, UploadFile)
 from fastapi.responses import FileResponse, JSONResponse
@@ -189,9 +190,18 @@ async def get_document(
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Document file not found")
 
-    # Return the file as a response
+    # Get the best content type for this file
+    content_type = get_content_type(result.name, result.mime_type)
+    
+    # Return the file as a response with proper content type
     return FileResponse(
-        path=file_path, filename=result.name, media_type=result.mime_type
+        path=file_path, 
+        filename=result.name, 
+        media_type=content_type,
+        headers={
+            "Content-Disposition": f"inline; filename=\"{result.name}\"",
+            "Cache-Control": "private, max-age=0, must-revalidate",
+        }
     )
 
 
@@ -564,18 +574,15 @@ async def finalize_upload(
                             # Copy file to final location
                             shutil.copy2(extracted_file_path, final_full_path)
 
-                            # Determine MIME type
-                            mime_type = (
-                                mimetypes.guess_type(filename)[0]
-                                or "application/octet-stream"
-                            )
+                            # Get the best content type for this file
+                            content_type = get_content_type(filename)
 
                             # Create document record
                             document = Documents(
                                 id=document_id,
                                 name=filename,
                                 file_path=final_file_path,
-                                mime_type=mime_type,
+                                mime_type=content_type,
                             )
 
                             session.add(document)
@@ -583,7 +590,7 @@ async def finalize_upload(
                                 {
                                     "id": str(document_id),
                                     "name": filename,
-                                    "mime_type": mime_type,
+                                    "mime_type": content_type,
                                 }
                             )
 
@@ -608,9 +615,8 @@ async def finalize_upload(
                 if auto_classify:
                     try:
                         # Call the classify agent directly
-                        from app.services.agents.collection.classify import (
-                            run_classify_agent,
-                        )
+                        from app.services.agents.collection.classify import \
+                            run_classify_agent
 
                         # Get document IDs for classification
                         document_ids = [UUID(doc["id"]) for doc in extracted_documents]
@@ -715,12 +721,15 @@ async def finalize_upload(
         # Move the file to its final location
         shutil.copy2(file_path, final_full_path)
 
+        # Get the best content type for this file
+        content_type = get_content_type(filename, metadata.get("filetype"))
+        
         # Create document record in database
         document = Documents(
             id=document_id,
             name=filename,
             file_path=final_file_path,
-            mime_type=metadata.get("filetype", "application/octet-stream"),
+            mime_type=content_type,
         )
 
         session.add(document)

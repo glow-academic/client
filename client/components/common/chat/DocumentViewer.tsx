@@ -14,6 +14,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Document } from "@/types";
 // Removed downloadDocument import - now calling API directly
+import CodeViewer from "@/components/common/viewers/CodeViewer";
+import HtmlViewer from "@/components/common/viewers/HtmlViewer";
+import { isCodeByName } from "@/utils/mime-map";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { useQuery } from "@tanstack/react-query";
 import { Download, FileText } from "lucide-react";
@@ -89,6 +92,9 @@ export default function DocumentViewer({
         setLoading(true);
         setError(null);
 
+        // Get current document for name-based MIME inference
+        const currentDoc = documentsToUse.find((d) => d.id === docId);
+
         // Call the API route directly or use blob URL for form documents
         let response;
         if (isFormDocument && document?.filePath?.startsWith("blob:")) {
@@ -118,7 +124,11 @@ export default function DocumentViewer({
         const contentType = response.headers.get("content-type") ?? "";
         setType(contentType);
 
-        if (contentType.includes("text/")) {
+        const shouldTreatAsText =
+          contentType.startsWith("text/") || isCodeByName(currentDoc?.name);
+
+        // Read once
+        if (shouldTreatAsText) {
           setContent(await response.text());
         } else {
           const blob = await response.blob();
@@ -132,6 +142,7 @@ export default function DocumentViewer({
     };
 
     loadDocument();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docId, isFormDocument, document?.filePath]);
 
   // Loading state
@@ -200,6 +211,43 @@ export default function DocumentViewer({
             height={0}
             sizes="100vw"
             unoptimized
+          />
+        </div>
+      );
+    }
+
+    // Code files viewer with Monaco editor
+    if (
+      type === "text/x-java-source" ||
+      type === "text/x-java" ||
+      type === "text/x-python" ||
+      type === "text/x-script.python" ||
+      type === "text/javascript" ||
+      type === "text/typescript" ||
+      type === "text/css" ||
+      type === "application/json" ||
+      type === "application/sql" ||
+      isCodeByName(current?.name)
+    ) {
+      return (
+        <div className="w-full h-full flex flex-col">
+          <CodeViewer
+            name={current?.name}
+            value={content ?? ""}
+            compact={compact}
+          />
+        </div>
+      );
+    }
+
+    // HTML viewer with tabs for rendered and source
+    if (type?.includes("text/html") || current.name?.endsWith(".html")) {
+      return (
+        <div className="w-full h-full flex flex-col">
+          <HtmlViewer
+            name={current?.name}
+            content={content ?? ""}
+            compact={compact}
           />
         </div>
       );
