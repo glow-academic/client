@@ -663,6 +663,16 @@ export function useHistoryColumns({
         );
       });
 
+      // Add admins and superadmins to allowed profiles by default
+      // This ensures that admin/superadmin attempts are always visible
+      if (profiles) {
+        profiles.forEach((profile) => {
+          if (profile.role === "admin" || profile.role === "superadmin") {
+            allowedProfileIds.add(profile.id);
+          }
+        });
+      }
+
       // Filter attempts based on cohort membership
       data = data.filter((attempt: unknown) => {
         const attemptData = attempt as Record<string, unknown>;
