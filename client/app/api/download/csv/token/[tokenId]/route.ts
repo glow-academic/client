@@ -10,7 +10,7 @@ import type { NextRequest } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ tokenId: string }> },
+  { params }: { params: Promise<{ tokenId: string }> }
 ) {
   try {
     const { tokenId } = await params;
@@ -29,9 +29,9 @@ export async function GET(
         ...Object.fromEntries(
           [...req.headers.entries()].filter(([key]) =>
             ["authorization", "cookie", "user-agent"].includes(
-              key.toLowerCase(),
-            ),
-          ),
+              key.toLowerCase()
+            )
+          )
         ),
       },
     });
@@ -51,7 +51,7 @@ export async function GET(
           headers: {
             "Content-Type": "application/json",
           },
-        },
+        }
       );
     }
 
@@ -59,7 +59,7 @@ export async function GET(
     const contentType =
       response.headers.get("content-type") || "application/octet-stream";
     const contentDispositionFromBackend = response.headers.get(
-      "content-disposition",
+      "content-disposition"
     );
     const contentLength = response.headers.get("content-length");
 
@@ -77,9 +77,11 @@ export async function GET(
 
     // Set Content-Disposition based on query param or backend header
     if (name) {
+      // Properly encode filename for HTTP headers to handle Unicode characters
+      const encodedName = encodeURIComponent(name);
       responseHeaders.set(
         "Content-Disposition",
-        `attachment; filename="${name}.csv"`,
+        `attachment; filename="${encodedName}.csv"; filename*=UTF-8''${encodedName}.csv`
       );
     } else if (contentDispositionFromBackend) {
       responseHeaders.set("Content-Disposition", contentDispositionFromBackend);
@@ -113,7 +115,7 @@ export async function GET(
         headers: {
           "Content-Type": "application/json",
         },
-      },
+      }
     );
   }
 }

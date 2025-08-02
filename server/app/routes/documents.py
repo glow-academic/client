@@ -193,13 +193,18 @@ async def get_document(
     # Get the best content type for this file
     content_type = get_content_type(result.name, result.mime_type)
     
+    # Properly encode filename for HTTP headers to handle Unicode characters
+    import urllib.parse
+    encoded_filename = urllib.parse.quote(result.name, safe='')
+    content_disposition = f"inline; filename=\"{encoded_filename}\"; filename*=UTF-8''{encoded_filename}"
+    
     # Return the file as a response with proper content type
     return FileResponse(
         path=file_path, 
         filename=result.name, 
         media_type=content_type,
         headers={
-            "Content-Disposition": f"inline; filename=\"{result.name}\"",
+            "Content-Disposition": content_disposition,
             "Cache-Control": "private, max-age=0, must-revalidate",
         }
     )
