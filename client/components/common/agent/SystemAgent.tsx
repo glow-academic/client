@@ -24,9 +24,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { getAllModels } from "@/utils/queries/models/get-all-models";
-import { getAgent } from "@/utils/queries/agents/get-agent";
 import { updateAgent } from "@/utils/mutations/agents/update-agent";
+import { getAgent } from "@/utils/queries/agents/get-agent";
+import { getAllModels } from "@/utils/queries/models/get-all-models";
 
 interface SystemAgentFormData {
   name?: string;
@@ -54,7 +54,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
       modelId: "",
       reasoning: "none",
     }),
-    [],
+    []
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -120,7 +120,10 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
         systemPrompt: formData.systemPrompt,
         temperature: Number(formData.temperature),
         modelId: formData.modelId,
-        reasoning: formData.reasoning === "none" ? null : formData.reasoning,
+        reasoning:
+          formData.reasoning === "none" || !formData.reasoning
+            ? null
+            : formData.reasoning,
         updatedAt: new Date().toISOString(),
       });
       queryClient.invalidateQueries({ queryKey: ["agents"] });
