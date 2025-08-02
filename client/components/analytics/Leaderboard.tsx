@@ -396,22 +396,18 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       return [];
     }
 
+    // Note: cohortProfiles already contains only TAs due to the filtering in cohortProfiles useMemo
     let usersToRank = cohortProfiles;
 
-    // For instructional roles, show all users in the cohort
-    // For TA roles, show all users in the cohort (not just other TAs)
-    // This allows TAs to see everyone's progress, not just other TAs
+    // For all roles, show TAs from the cohort
+    // The filtering to only TAs is already done in cohortProfiles
     if (
       effectiveProfile?.role === "ta" ||
-      effectiveProfile?.role === "instructional"
-    ) {
-      // Show all users in the cohort
-      usersToRank = cohortProfiles;
-    } else if (
+      effectiveProfile?.role === "instructional" ||
       effectiveProfile?.role === "admin" ||
       effectiveProfile?.role === "superadmin"
     ) {
-      // Admins can see all users
+      // Show TAs from the cohort
       usersToRank = cohortProfiles;
     }
 
@@ -466,7 +462,12 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       return a.name.localeCompare(b.name);
     });
 
-    return sorted;
+    // Limit to top 25% of TAs based on average score
+    // This prevents users from seeing themselves at the bottom if they're not performing well
+    const top25PercentCount = Math.ceil(sorted.length * 0.25);
+    const top25Percent = sorted.slice(0, top25PercentCount);
+
+    return top25Percent;
   }, [
     cohortProfiles,
     effectiveProfile,
