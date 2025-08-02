@@ -118,6 +118,22 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   const filteredCohorts = useMemo(() => {
     if (!cohorts) return [];
 
+    // If a specific cohortId is passed, only show that cohort
+    if (cohortId) {
+      const specificCohort = cohorts.find((cohort) => cohort.id === cohortId);
+      if (!specificCohort) return [];
+
+      // For TAs, ensure they can only see cohorts they're assigned to
+      if (isTA && effectiveProfile?.id) {
+        if (!specificCohort.profileIds?.includes(effectiveProfile.id)) {
+          return []; // TA is not assigned to this cohort
+        }
+      }
+
+      // For instructors/admins, they can see any cohort
+      return [specificCohort];
+    }
+
     // If no cohorts are selected, show all available cohorts for the user
     if (effectiveCohortIds.length === 0) {
       return cohorts.filter((cohort) => {
@@ -139,6 +155,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     return cohorts.filter((cohort) => effectiveCohortIds.includes(cohort.id));
   }, [
     cohorts,
+    cohortId,
     effectiveCohortIds,
     shouldShowAll,
     effectiveProfile?.defaultProfile,
