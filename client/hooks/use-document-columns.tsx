@@ -29,7 +29,7 @@ const getFileExtension = (filename: string): string => {
   return "N/A";
 };
 
-export function useDocumentColumns() {
+export function useDocumentColumns(onPreview?: (document: Document) => void) {
   // Fetch data for filter options
   const { data: scenarios = [] } = useQuery({
     queryKey: ["scenarios"],
@@ -47,7 +47,7 @@ export function useDocumentColumns() {
       { value: "lecture", label: "📖 Lecture" },
       { value: "syllabus", label: "📋 Syllabus" },
     ],
-    [],
+    []
   );
 
   const columns = useMemo<ColumnDef<Document>[]>(
@@ -103,7 +103,10 @@ export function useDocumentColumns() {
           return (
             <div className="flex items-center gap-3 max-w-[300px]">
               {/* Document preview */}
-              <div className="w-12 h-12 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+              <div
+                className="w-12 h-12 bg-muted rounded-lg overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => onPreview?.(row.original)}
+              >
                 <div className="w-full h-full">
                   <DocumentViewer
                     document={row.original}
@@ -171,7 +174,7 @@ export function useDocumentColumns() {
         cell: ({ row }) => {
           const document = row.original;
           const documentScenarios = scenarios.filter((scenario: Scenario) =>
-            scenario.documentIds?.includes(document.id),
+            scenario.documentIds?.includes(document.id)
           );
 
           if (documentScenarios.length === 0) {
@@ -244,7 +247,7 @@ export function useDocumentColumns() {
         enableHiding: false,
       },
     ],
-    [scenarios, typeOptions],
+    [scenarios, typeOptions, onPreview]
   );
 
   const scenarioOptions = useMemo(
@@ -253,7 +256,7 @@ export function useDocumentColumns() {
         value: scenario.id,
         label: scenario.name,
       })),
-    [scenarios],
+    [scenarios]
   );
 
   const extensionOptions = useMemo(
@@ -267,7 +270,7 @@ export function useDocumentColumns() {
       { value: "PNG", label: "PNG" },
       { value: "OTHER", label: "Other" },
     ],
-    [],
+    []
   );
 
   return {

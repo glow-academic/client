@@ -97,10 +97,6 @@ export default function Documents() {
     refetchOnMount: false,
   });
 
-  // Get table columns and filter options
-  const { columns, typeOptions, scenarioOptions, extensionOptions } =
-    useDocumentColumns();
-
   // Get document type icon
   const getDocumentTypeIcon = (type: string) => {
     const typeInfo = typeOptions.find((option) => option.value === type);
@@ -156,6 +152,10 @@ export default function Documents() {
     setPreviewDocument(document);
     setShowPreviewDialog(true);
   };
+
+  // Get table columns and filter options
+  const { columns, typeOptions, scenarioOptions, extensionOptions } =
+    useDocumentColumns(handlePreview);
 
   // Handle single document delete
   const handleSingleDelete = (document: DocumentObject) => {
@@ -314,6 +314,7 @@ export default function Documents() {
         <div
           className="aspect-square bg-muted rounded-lg relative overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
           onClick={() => handlePreview(document)}
+          style={{ cursor: "pointer" }}
         >
           {/* Document preview */}
           <div className="w-full h-full">
