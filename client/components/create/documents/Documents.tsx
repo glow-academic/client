@@ -620,7 +620,7 @@ export default function Documents() {
 
       {/* Preview Document Dialog */}
       <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
-        <DialogContent className="sm:max-w-4xl max-h-[80vh]">
+        <DialogContent className="sm:max-w-4xl h-full max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>
               {previewDocument?.name || "Document Preview"}
@@ -633,7 +633,7 @@ export default function Documents() {
             <div className="flex-1 min-h-0">
               <DocumentViewer
                 document={previewDocument}
-                bare={false}
+                bare={true}
                 isFormDocument={false}
               />
             </div>
