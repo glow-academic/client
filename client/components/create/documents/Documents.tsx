@@ -44,7 +44,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Document as DocumentObject, DocumentType } from "@/types";
-import { Edit, Trash2, UploadCloud } from "lucide-react";
+import { Edit, Eye, Trash2, UploadCloud } from "lucide-react";
 
 import { useDocumentColumns } from "@/hooks/use-document-columns";
 import { deleteDocument } from "@/utils/api/documents/delete-document";
@@ -68,8 +68,12 @@ export default function Documents() {
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const [editingDocument, setEditingDocument] = useState<DocumentObject | null>(
-    null,
+    null
+  );
+  const [previewDocument, setPreviewDocument] = useState<DocumentObject | null>(
+    null
   );
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -108,20 +112,20 @@ export default function Documents() {
     (documentId: string) => {
       const activeScenarios = scenarios.filter((scenario) => scenario.active);
       return !activeScenarios.some((scenario) =>
-        scenario.documentIds?.includes(documentId),
+        scenario.documentIds?.includes(documentId)
       );
     },
-    [scenarios],
+    [scenarios]
   );
 
   // Get scenarios that use this document
   const getScenariosUsingDocument = useCallback(
     (documentId: string) => {
       return scenarios.filter((scenario) =>
-        scenario.documentIds?.includes(documentId),
+        scenario.documentIds?.includes(documentId)
       );
     },
-    [scenarios],
+    [scenarios]
   );
 
   // Handle document selection (for bulk operations in list view only)
@@ -145,6 +149,12 @@ export default function Documents() {
   const handleEdit = (document: DocumentObject) => {
     setEditingDocument({ ...document });
     setShowEditDialog(true);
+  };
+
+  // Handle document preview
+  const handlePreview = (document: DocumentObject) => {
+    setPreviewDocument(document);
+    setShowPreviewDialog(true);
   };
 
   // Handle single document delete
@@ -171,7 +181,7 @@ export default function Documents() {
 
       if (!canDeleteDocument(editingDocument.id)) {
         toast.error(
-          "This document cannot be deleted as it is used in active scenarios",
+          "This document cannot be deleted as it is used in active scenarios"
         );
         setShowDeleteDialog(false);
         setEditingDocument(null);
@@ -198,7 +208,7 @@ export default function Documents() {
 
       // Filter to only deletable documents
       const deletableDocuments = selectedDocuments.filter((documentId) =>
-        canDeleteDocument(documentId),
+        canDeleteDocument(documentId)
       );
 
       if (deletableDocuments.length === 0) {
@@ -274,6 +284,15 @@ export default function Documents() {
             variant="outline"
             size="sm"
             className="h-7 w-7 p-0 bg-white/90 backdrop-blur-sm"
+            onClick={() => handlePreview(document)}
+          >
+            <Eye className="h-3 w-3" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 w-7 p-0 bg-white/90 backdrop-blur-sm"
             onClick={() => handleEdit(document)}
           >
             <Edit className="h-3 w-3" />
@@ -292,7 +311,10 @@ export default function Documents() {
         </div>
 
         {/* Document preview area */}
-        <div className="aspect-square bg-muted rounded-lg relative overflow-hidden">
+        <div
+          className="aspect-square bg-muted rounded-lg relative overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+          onClick={() => handlePreview(document)}
+        >
           {/* Document preview */}
           <div className="w-full h-full">
             <DocumentViewer
@@ -366,6 +388,7 @@ export default function Documents() {
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           onEdit={handleEdit}
+          onPreview={handlePreview}
           onDelete={handleSingleDelete}
           canDelete={canDeleteDocument}
           selectedDocuments={selectedDocuments}
@@ -393,7 +416,7 @@ export default function Documents() {
                   value={editingDocument.name}
                   onChange={(e) =>
                     setEditingDocument((prev) =>
-                      prev ? { ...prev, name: e.target.value } : null,
+                      prev ? { ...prev, name: e.target.value } : null
                     )
                   }
                 />
@@ -405,7 +428,7 @@ export default function Documents() {
                   value={editingDocument.type}
                   onValueChange={(value) =>
                     setEditingDocument((prev) =>
-                      prev ? { ...prev, type: value as DocumentType } : null,
+                      prev ? { ...prev, type: value as DocumentType } : null
                     )
                   }
                 >
@@ -428,7 +451,7 @@ export default function Documents() {
                   checked={editingDocument.active}
                   onCheckedChange={(checked) =>
                     setEditingDocument((prev) =>
-                      prev ? { ...prev, active: checked } : null,
+                      prev ? { ...prev, active: checked } : null
                     )
                   }
                 />
@@ -463,7 +486,7 @@ export default function Documents() {
                   Are you sure you want to delete "{editingDocument.name}"?
                   {(() => {
                     const scenariosUsing = getScenariosUsingDocument(
-                      editingDocument.id,
+                      editingDocument.id
                     );
                     if (scenariosUsing.length > 0) {
                       return ` This document is used by ${scenariosUsing.length} scenario${scenariosUsing.length > 1 ? "s" : ""}.`;
@@ -486,10 +509,10 @@ export default function Documents() {
 
                   {(() => {
                     const deletableDocuments = selectedDocuments.filter(
-                      (documentId) => canDeleteDocument(documentId),
+                      (documentId) => canDeleteDocument(documentId)
                     );
                     const nonDeletableDocuments = selectedDocuments.filter(
-                      (documentId) => !canDeleteDocument(documentId),
+                      (documentId) => !canDeleteDocument(documentId)
                     );
 
                     return (
@@ -504,7 +527,7 @@ export default function Documents() {
                               <ul className="text-sm space-y-1">
                                 {deletableDocuments.map((documentId) => {
                                   const doc = documents.find(
-                                    (d) => d.id === documentId,
+                                    (d) => d.id === documentId
                                   );
                                   return (
                                     <li
@@ -530,7 +553,7 @@ export default function Documents() {
                               <ul className="text-sm space-y-1">
                                 {nonDeletableDocuments.map((documentId) => {
                                   const doc = documents.find(
-                                    (d) => d.id === documentId,
+                                    (d) => d.id === documentId
                                   );
                                   const scenariosUsing = doc
                                     ? getScenariosUsingDocument(doc.id)
@@ -579,7 +602,7 @@ export default function Documents() {
                 (editingDocument && !selectedDocuments.length
                   ? !canDeleteDocument(editingDocument.id)
                   : selectedDocuments.filter((documentId) =>
-                      canDeleteDocument(documentId),
+                      canDeleteDocument(documentId)
                     ).length === 0)
               }
               className="bg-red-600 hover:bg-red-700 text-white"
@@ -593,6 +616,37 @@ export default function Documents() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Preview Document Dialog */}
+      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+        <DialogContent className="sm:max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>
+              {previewDocument?.name || "Document Preview"}
+            </DialogTitle>
+            <DialogDescription>
+              Preview the document content below.
+            </DialogDescription>
+          </DialogHeader>
+          {previewDocument && (
+            <div className="flex-1 min-h-0">
+              <DocumentViewer
+                document={previewDocument}
+                bare={false}
+                isFormDocument={false}
+              />
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowPreviewDialog(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

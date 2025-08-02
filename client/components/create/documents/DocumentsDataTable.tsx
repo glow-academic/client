@@ -28,7 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Document } from "@/types";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Eye, Trash2 } from "lucide-react";
 import { DocumentsDataTableToolbar } from "./DocumentsDataTableToolbar";
 
 export interface DocumentsDataTableProps {
@@ -41,6 +41,7 @@ export interface DocumentsDataTableProps {
   viewMode: "grid" | "list";
   onViewModeChange: (mode: "grid" | "list") => void;
   onEdit: (document: Document) => void;
+  onPreview: (document: Document) => void;
   onDelete: (document: Document) => void;
   canDelete: (documentId: string) => boolean;
   selectedDocuments: string[];
@@ -59,6 +60,7 @@ export function DocumentsDataTable({
   viewMode,
   onViewModeChange,
   onEdit,
+  onPreview,
   onDelete,
   canDelete,
   selectedDocuments,
@@ -73,7 +75,7 @@ export function DocumentsDataTable({
     },
   ]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -122,6 +124,15 @@ export function DocumentsDataTable({
               variant="outline"
               size="sm"
               className="h-7 w-7 p-0"
+              onClick={() => onPreview(document)}
+            >
+              <Eye className="h-3 w-3" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 w-7 p-0"
               onClick={() => onEdit(document)}
             >
               <Edit className="h-3 w-3" />
@@ -146,7 +157,7 @@ export function DocumentsDataTable({
 
     // Filter out the existing select and actions columns and add our custom ones
     const filteredColumns = columns.filter(
-      (col) => col.id !== "select" && col.id !== "actions",
+      (col) => col.id !== "select" && col.id !== "actions"
     );
     return [checkboxColumn, ...filteredColumns, actionsColumn];
   }, [
@@ -155,6 +166,7 @@ export function DocumentsDataTable({
     onDocumentSelect,
     onSelectAll,
     onEdit,
+    onPreview,
     onDelete,
     canDelete,
   ]);
@@ -215,7 +227,7 @@ export function DocumentsDataTable({
                             ? null
                             : flexRender(
                                 header.column.columnDef.header,
-                                header.getContext(),
+                                header.getContext()
                               )}
                         </TableHead>
                       );
@@ -234,7 +246,7 @@ export function DocumentsDataTable({
                         <TableCell key={cell.id}>
                           {flexRender(
                             cell.column.columnDef.cell,
-                            cell.getContext(),
+                            cell.getContext()
                           )}
                         </TableCell>
                       ))}
