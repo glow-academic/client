@@ -1,19 +1,14 @@
 "use client";
-import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
 import CodeViewer from "./CodeViewer";
 
 export interface HtmlViewerProps {
   name?: string;
   content: string;
-  compact?: boolean;
 }
 
-export default function HtmlViewer({
-  name,
-  content,
-  compact = false,
-}: HtmlViewerProps) {
+export default function HtmlViewer({ name, content }: HtmlViewerProps) {
   // Sanitize HTML content for security
   const sanitizeHtml = (html: string): string => {
     // Basic sanitization - remove script tags and dangerous attributes
@@ -30,16 +25,13 @@ export default function HtmlViewer({
   const [iframeLoading, setIframeLoading] = useState(true);
 
   return (
-    <Tabs
-      defaultValue="render"
-      className={`w-full h-full ${compact ? "p-1" : "p-3"}`}
-    >
+    <Tabs defaultValue="render" className="w-full h-full p-3">
       <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="render">Rendered</TabsTrigger>
         <TabsTrigger value="source">Source</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="render" className="mt-2 h-full relative">
+      <TabsContent value="render" className="h-full relative">
         {iframeLoading && (
           <div className="absolute inset-0 flex items-center justify-center z-10 bg-background/70">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -51,12 +43,14 @@ export default function HtmlViewer({
           srcDoc={safeHtml}
           title={`HTML Preview - ${name || "Document"}`}
           onLoad={() => setIframeLoading(false)}
-          style={iframeLoading ? { visibility: "hidden" } : { visibility: "visible" }}
+          style={
+            iframeLoading ? { visibility: "hidden" } : { visibility: "visible" }
+          }
         />
       </TabsContent>
 
       <TabsContent value="source" className="mt-2 h-full">
-        <CodeViewer name={name || ""} value={content} compact={compact} />
+        <CodeViewer name={name || ""} value={content} />
       </TabsContent>
     </Tabs>
   );

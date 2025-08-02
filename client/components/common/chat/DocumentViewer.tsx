@@ -216,7 +216,30 @@ export default function DocumentViewer({
       );
     }
 
-    // Code files viewer with Monaco editor
+    // For compact view, show all text-based files as simple text/markdown
+    if (
+      compact &&
+      (type?.startsWith("text/") ||
+        isCodeByName(current?.name) ||
+        current.name?.endsWith(".html") ||
+        current.name?.endsWith(".md"))
+    ) {
+      return (
+        <div className="w-full h-full p-1 flex flex-col">
+          {current.name?.endsWith(".md") ? (
+            <div className="prose prose-xs max-w-none dark:prose-invert flex-1 min-h-0 overflow-y-auto leading-tight">
+              <Markdown>{content ?? ""}</Markdown>
+            </div>
+          ) : (
+            <pre className="whitespace-pre-wrap text-[4px] leading-[6px] font-mono bg-muted/30 p-1 rounded-md overflow-auto flex-1 min-h-0">
+              {content}
+            </pre>
+          )}
+        </div>
+      );
+    }
+
+    // Code files viewer with Monaco editor (non-compact only)
     if (
       type === "text/x-java-source" ||
       type === "text/x-java" ||
@@ -231,47 +254,25 @@ export default function DocumentViewer({
     ) {
       return (
         <div className="w-full h-full flex flex-col">
-          <CodeViewer
-            name={current?.name}
-            value={content ?? ""}
-            compact={compact}
-          />
+          <CodeViewer name={current?.name} value={content ?? ""} />
         </div>
       );
     }
 
-    // HTML viewer with tabs for rendered and source
+    // HTML viewer with tabs for rendered and source (non-compact only)
     if (type?.includes("text/html") || current.name?.endsWith(".html")) {
       return (
         <div className="w-full h-full flex flex-col">
-          <HtmlViewer
-            name={current?.name}
-            content={content ?? ""}
-            compact={compact}
-          />
+          <HtmlViewer name={current?.name} content={content ?? ""} />
         </div>
       );
     }
 
-    // Text/Markdown viewer
+    // Text/Markdown viewer (non-compact only)
     if (type?.includes("text/") || current.name?.endsWith(".md")) {
       return (
-        <div
-          className={`w-full h-full ${compact ? "p-1" : "p-4"} flex flex-col`}
-        >
-          {current.name?.endsWith(".md") ? (
-            <div
-              className={`prose ${compact ? "prose-xs" : "prose-sm"} max-w-none dark:prose-invert flex-1 min-h-0 overflow-y-auto ${compact ? "leading-tight" : ""}`}
-            >
-              <Markdown>{content ?? ""}</Markdown>
-            </div>
-          ) : (
-            <pre
-              className={`whitespace-pre-wrap ${compact ? "text-[4px] leading-[6px]" : "text-sm"} font-mono bg-muted/30 ${compact ? "p-1" : "p-3"} rounded-md overflow-auto flex-1 min-h-0`}
-            >
-              {content}
-            </pre>
-          )}
+        <div className="w-full h-full flex flex-col">
+          <CodeViewer name={current?.name} value={content ?? ""} />
         </div>
       );
     }
