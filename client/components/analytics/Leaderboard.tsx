@@ -30,6 +30,10 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   const router = useRouter();
 
   const handleViewReport = (profileId: string) => {
+    // Disable navigation for TAs when viewing a specific cohort
+    if (cohortId && effectiveProfile?.role === "ta") {
+      return;
+    }
     router.push(`/analytics/reports/p/${profileId}`);
   };
 
@@ -41,6 +45,9 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
 
   // Check if user is a TA
   const isTA = effectiveProfile?.role === "ta";
+
+  // Check if navigation should be disabled for TAs viewing a specific cohort
+  const shouldDisableNavigation = cohortId && isTA;
 
   // 3. Get all profile IDs from the cohorts to fetch member data
   const cohortMemberIds = useMemo(() => {
@@ -497,17 +504,26 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
           {/* Accolades Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {accolades.perfectScore?.holder ? (
-              <Link
-                href={`/analytics/reports/p/${accolades.perfectScore.holder.id}`}
-                className="block h-full"
-              >
+              shouldDisableNavigation ? (
                 <AccoladeCard
                   icon={<Award className="h-4 w-4" />}
                   title="Perfect Score"
                   user={accolades.perfectScore.holder}
                   details={accolades.perfectScore.details || ""}
                 />
-              </Link>
+              ) : (
+                <Link
+                  href={`/analytics/reports/p/${accolades.perfectScore.holder.id}`}
+                  className="block h-full"
+                >
+                  <AccoladeCard
+                    icon={<Award className="h-4 w-4" />}
+                    title="Perfect Score"
+                    user={accolades.perfectScore.holder}
+                    details={accolades.perfectScore.details || ""}
+                  />
+                </Link>
+              )
             ) : (
               <AccoladeCard
                 icon={<Award className="h-4 w-4" />}
@@ -517,17 +533,26 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
               />
             )}
             {accolades.longestConvo?.holder ? (
-              <Link
-                href={`/analytics/reports/p/${accolades.longestConvo.holder.id}`}
-                className="block h-full"
-              >
+              shouldDisableNavigation ? (
                 <AccoladeCard
                   icon={<MessageSquareText className="h-4 w-4" />}
                   title="Longest Convo"
                   user={accolades.longestConvo.holder}
                   details={accolades.longestConvo.details || ""}
                 />
-              </Link>
+              ) : (
+                <Link
+                  href={`/analytics/reports/p/${accolades.longestConvo.holder.id}`}
+                  className="block h-full"
+                >
+                  <AccoladeCard
+                    icon={<MessageSquareText className="h-4 w-4" />}
+                    title="Longest Convo"
+                    user={accolades.longestConvo.holder}
+                    details={accolades.longestConvo.details || ""}
+                  />
+                </Link>
+              )
             ) : (
               <AccoladeCard
                 icon={<MessageSquareText className="h-4 w-4" />}
@@ -537,17 +562,26 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
               />
             )}
             {accolades.mostImproved?.holder ? (
-              <Link
-                href={`/analytics/reports/p/${accolades.mostImproved.holder.id}`}
-                className="block h-full"
-              >
+              shouldDisableNavigation ? (
                 <AccoladeCard
                   icon={<Zap className="h-4 w-4" />}
                   title="Most Improved"
                   user={accolades.mostImproved.holder}
                   details={accolades.mostImproved.details || ""}
                 />
-              </Link>
+              ) : (
+                <Link
+                  href={`/analytics/reports/p/${accolades.mostImproved.holder.id}`}
+                  className="block h-full"
+                >
+                  <AccoladeCard
+                    icon={<Zap className="h-4 w-4" />}
+                    title="Most Improved"
+                    user={accolades.mostImproved.holder}
+                    details={accolades.mostImproved.details || ""}
+                  />
+                </Link>
+              )
             ) : (
               <AccoladeCard
                 icon={<Zap className="h-4 w-4" />}
@@ -557,17 +591,26 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
               />
             )}
             {accolades.quickestPass?.holder ? (
-              <Link
-                href={`/analytics/reports/p/${accolades.quickestPass.holder.id}`}
-                className="block h-full"
-              >
+              shouldDisableNavigation ? (
                 <AccoladeCard
                   icon={<Crown className="h-4 w-4" />}
                   title="Quickest Pass"
                   user={accolades.quickestPass.holder}
                   details={accolades.quickestPass.details || ""}
                 />
-              </Link>
+              ) : (
+                <Link
+                  href={`/analytics/reports/p/${accolades.quickestPass.holder.id}`}
+                  className="block h-full"
+                >
+                  <AccoladeCard
+                    icon={<Crown className="h-4 w-4" />}
+                    title="Quickest Pass"
+                    user={accolades.quickestPass.holder}
+                    details={accolades.quickestPass.details || ""}
+                  />
+                </Link>
+              )
             ) : (
               <AccoladeCard
                 icon={<Crown className="h-4 w-4" />}
@@ -581,7 +624,9 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
             <LeaderboardTable
               data={leaderboardData}
               currentUserId={effectiveProfile?.id || ""}
-              onViewReport={handleViewReport}
+              {...(shouldDisableNavigation
+                ? {}
+                : { onViewReport: handleViewReport })}
             />
           </div>
         </div>
