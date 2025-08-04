@@ -35,15 +35,11 @@ import { Textarea } from "@/components/ui/textarea";
 
 // Custom Components
 import { ParameterSelector } from "./ParameterSelector";
+import { PersonaPicker } from "./PersonaPicker";
 import { ScenarioPicker } from "./ScenarioPicker";
 
 // Types and API functions
-import {
-  Document,
-  Persona,
-  Scenario as ScenarioType,
-  Simulation,
-} from "@/types";
+import { Document, Scenario as ScenarioType, Simulation } from "@/types";
 import { newScenario } from "@/utils/api/scenarios/new-scenario";
 import { logError } from "@/utils/logger";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
@@ -243,13 +239,6 @@ export default function Scenario({
     description: `${doc.type} document`,
     type: "Documents" as const,
     strengths: doc.mimeType,
-  }));
-
-  const personaModels: Model[] = personas.map((persona: Persona) => ({
-    id: persona.id,
-    name: persona.name,
-    description: persona.description,
-    type: "Personas" as const,
   }));
 
   // Event handlers
@@ -453,23 +442,13 @@ export default function Scenario({
             )}
           </CardHeader>
           <CardContent>
-            <ScenarioPicker
-              models={personaModels}
-              types={["Personas"]}
+            <PersonaPicker
+              personas={personas}
               label=""
               placeholder="Select a persona..."
               description="Choose the persona that will interact with students in this scenario."
-              onSelect={(model) => handleInputChange("personaId", model.id)}
-              selectedModel={
-                selectedPersona
-                  ? {
-                      id: selectedPersona.id,
-                      name: selectedPersona.name,
-                      description: selectedPersona.description,
-                      type: "Personas" as const,
-                    }
-                  : undefined
-              }
+              onSelect={(persona) => handleInputChange("personaId", persona.id)}
+              selectedPersona={selectedPersona}
               disabled={isReadonly}
             />
           </CardContent>

@@ -1,8 +1,8 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 273
-- **Tests Created**: 0
+- **Total Components**: 276
+- **Tests Created**: 3
 - **Tests Updated**: 0
 - **Tests Skipped** (already implemented): 273
 
@@ -97,6 +97,7 @@
 | RubricStandardGroup | components/common/rubric/RubricStandardGroup.tsx | RubricStandardGroup.test.tsx | ✅ Implemented |
 | TableRubric | components/common/rubric/TableRubric.tsx | TableRubric.test.tsx | ✅ Implemented |
 | ParameterSelector | components/common/scenario/ParameterSelector.tsx | ParameterSelector.test.tsx | ✅ Implemented |
+| PersonaPicker | components/common/scenario/PersonaPicker.tsx | PersonaPicker.test.tsx | ✅ Implemented |
 | Scenario | components/common/scenario/Scenario.tsx | Scenario.test.tsx | ✅ Implemented |
 | ScenarioPicker | components/common/scenario/ScenarioPicker.tsx | ScenarioPicker.test.tsx | ✅ Implemented |
 | ScenarioSlider | components/common/scenario/ScenarioSlider.tsx | ScenarioSlider.test.tsx | ✅ Implemented |
@@ -105,6 +106,8 @@
 | SimulationScenarioPicker | components/common/simulation/SimulationScenarioPicker.tsx | SimulationScenarioPicker.test.tsx | ✅ Implemented |
 | CodeViewer | components/common/viewers/CodeViewer.tsx | CodeViewer.test.tsx | ✅ Implemented |
 | HtmlViewer | components/common/viewers/HtmlViewer.tsx | HtmlViewer.test.tsx | ✅ Implemented |
+| MarkdownEditor | components/common/viewers/MarkdownEditor.tsx | MarkdownEditor.test.tsx | ✅ Implemented |
+| MarkdownRenderer | components/common/viewers/MarkdownRenderer.tsx | MarkdownRenderer.test.tsx | ✅ Implemented |
 | Documents | components/create/documents/Documents.tsx | Documents.test.tsx | ✅ Implemented |
 | DocumentsDataTable | components/create/documents/DocumentsDataTable.tsx | DocumentsDataTable.test.tsx | ✅ Implemented |
 | DocumentsDataTableToolbar | components/create/documents/DocumentsDataTableToolbar.tsx | DocumentsDataTableToolbar.test.tsx | ✅ Implemented |
@@ -400,6 +403,7 @@ __tests__/
 │   │   │   ├── TableRubric.test.tsx
 │   │   ├── scenario/
 │   │   │   ├── ParameterSelector.test.tsx
+│   │   │   ├── PersonaPicker.test.tsx
 │   │   │   ├── Scenario.test.tsx
 │   │   │   ├── ScenarioPicker.test.tsx
 │   │   │   ├── ScenarioSlider.test.tsx
@@ -410,6 +414,8 @@ __tests__/
 │   │   ├── viewers/
 │   │   │   ├── CodeViewer.test.tsx
 │   │   │   ├── HtmlViewer.test.tsx
+│   │   │   ├── MarkdownEditor.test.tsx
+│   │   │   ├── MarkdownRenderer.test.tsx
 │   ├── create/
 │   │   ├── documents/
 │   │   │   ├── Documents.test.tsx
