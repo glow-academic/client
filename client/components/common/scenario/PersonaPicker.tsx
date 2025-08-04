@@ -108,12 +108,14 @@ export function PersonaPicker({
       description: "",
       color: "#64748b",
       icon: "Brain",
-      reasoning: "",
+      reasoning: "low",
       temperature: 50,
       defaultPersona: false,
       active: true,
       createdAt: "",
       updatedAt: "",
+      systemPrompt: "",
+      modelId: "",
     });
     setOpen(false);
   };
