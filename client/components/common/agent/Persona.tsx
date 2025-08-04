@@ -53,6 +53,7 @@ import { getAllModels } from "@/utils/queries/models/get-all-models";
 import { getPersona } from "@/utils/queries/personas/get-persona";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { Check, ChevronsUpDown } from "lucide-react";
+import MarkdownEditor from "../viewers/MarkdownEditor";
 
 interface FormData {
   name?: string;
@@ -706,27 +707,26 @@ export default function Persona({
             )}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 h-[500px]">
             <Label htmlFor="systemPrompt">System Prompt *</Label>
             {formData?.systemPrompt !== undefined && !isLoading ? (
               <>
-                <Textarea
-                  id="systemPrompt"
+                <MarkdownEditor
                   value={formData?.systemPrompt || ""}
-                  onChange={(e) =>
+                  onChange={(value) =>
                     setFormData((prev) => ({
                       ...prev,
-                      systemPrompt: e.target.value,
+                      systemPrompt: value,
                     }))
                   }
-                  placeholder="System prompt that defines how the persona should behave and respond"
-                  rows={20}
-                  required
+                  placeholder="System prompt that defines how the persona should behave and respond. You can use markdown formatting."
                   disabled={isReadonly}
+                  className="min-h-[400px]"
                 />
                 <p className="text-sm text-muted-foreground">
                   This prompt defines the persona's behavior and personality in
-                  conversations.
+                  conversations. You can use markdown formatting for better
+                  organization.
                 </p>
               </>
             ) : (
