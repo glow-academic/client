@@ -42,6 +42,27 @@ import { Persona } from "@/types";
 import { createPersona } from "@/utils/mutations/personas/create-persona";
 import { PersonasDataTable } from "./PersonasDataTable";
 
+// Utility function to generate gradient from hex color
+const generateGradientFromHex = (hexColor: string): string => {
+  // Remove # if present
+  const cleanHex = hexColor.replace("#", "");
+
+  // Convert to RGB
+  const r = parseInt(cleanHex.substr(0, 2), 16);
+  const g = parseInt(cleanHex.substr(2, 2), 16);
+  const b = parseInt(cleanHex.substr(4, 2), 16);
+
+  // Create a lighter variant for the gradient (brighter like simulation cards)
+  const lighterR = Math.min(255, r + 60);
+  const lighterG = Math.min(255, g + 60);
+  const lighterB = Math.min(255, b + 60);
+
+  // Convert back to hex
+  const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+
+  return `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
+};
+
 export default function Personas() {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -169,25 +190,11 @@ export default function Personas() {
     // Use the hex color directly with CSS custom properties
     const hexColor = persona.color || "#64748b"; // Default to slate if no color
 
-    // Function to determine if a color is light or dark
-    const isLightColor = (hex: string) => {
-      // Remove # if present
-      const cleanHex = hex.replace("#", "");
+    // Generate gradient from hex color
+    const gradientStyle = generateGradientFromHex(hexColor);
 
-      // Convert to RGB
-      const r = parseInt(cleanHex.substr(0, 2), 16);
-      const g = parseInt(cleanHex.substr(2, 2), 16);
-      const b = parseInt(cleanHex.substr(4, 2), 16);
-
-      // Calculate luminance (perceived brightness)
-      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-      // Return true if light (luminance > 0.5), false if dark
-      return luminance > 0.5;
-    };
-
-    // Choose icon color based on background brightness
-    const iconColor = isLightColor(hexColor) ? "#000000" : "#ffffff";
+    // Always use white icon for consistency with gradient backgrounds
+    const iconColor = "#ffffff";
 
     return (
       <Card key={persona.id} className="hover:shadow-md transition-shadow">
@@ -196,9 +203,9 @@ export default function Personas() {
             <div className="space-y-2 flex-1">
               <div className="flex items-center gap-2">
                 <div
-                  className="p-2 rounded-lg"
+                  className="p-2 rounded-lg shadow-lg group-hover:scale-110 transition-transform duration-300"
                   style={{
-                    backgroundColor: hexColor,
+                    background: gradientStyle,
                   }}
                 >
                   <IconComponent
