@@ -8,7 +8,7 @@
 "use client";
 
 import { PopoverProps } from "@radix-ui/react-popover";
-import { Check, ChevronsUpDown, X } from "lucide-react";
+import { Check, ChevronsUpDown, Eye, X } from "lucide-react";
 import * as React from "react";
 
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
@@ -21,6 +21,14 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   HoverCard,
   HoverCardContent,
@@ -72,6 +80,10 @@ export function DocumentPicker({
   const [peekedDocument, setPeekedDocument] = React.useState<
     Document | undefined
   >(documents[0]);
+  const [showPreviewDialog, setShowPreviewDialog] = React.useState(false);
+  const [previewDocument, setPreviewDocument] = React.useState<
+    Document | undefined
+  >(undefined);
 
   // Use external selectedDocument if provided, otherwise use internal state
   const selectedDocument = externalSelectedDocument || internalSelectedDocument;
@@ -134,6 +146,13 @@ export function DocumentPicker({
       });
     }
     setOpen(false);
+  };
+
+  // Handle document preview
+  const handlePreview = (document: Document, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPreviewDocument(document);
+    setShowPreviewDialog(true);
   };
 
   // Remove individual item in multi-select mode
@@ -205,14 +224,23 @@ export function DocumentPicker({
               key={document.id}
               className="relative group border rounded-lg hover:shadow-md transition-all bg-white"
             >
-              {/* Remove button */}
-              <button
-                type="button"
-                onClick={(e) => handleRemoveItem(document, e)}
-                className="absolute top-1 right-1 z-10 h-5 w-5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs"
-              >
-                <X className="h-3 w-3" />
-              </button>
+              {/* Action buttons */}
+              <div className="absolute top-1 right-1 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  type="button"
+                  onClick={(e) => handlePreview(document, e)}
+                  className="h-5 w-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs"
+                >
+                  <Eye className="h-3 w-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => handleRemoveItem(document, e)}
+                  className="h-5 w-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
 
               {/* Document preview */}
               <div className="aspect-square bg-muted rounded-lg relative overflow-hidden">
@@ -319,6 +347,37 @@ export function DocumentPicker({
           </HoverCard>
         </PopoverContent>
       </Popover>
+
+      {/* Preview Dialog */}
+      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+        <DialogContent className="sm:max-w-4xl h-full max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>
+              {previewDocument?.name || "Document Preview"}
+            </DialogTitle>
+            <DialogDescription>
+              Preview the document content below.
+            </DialogDescription>
+          </DialogHeader>
+          {previewDocument && (
+            <div className="flex-1 min-h-0">
+              <DocumentViewer
+                document={previewDocument}
+                bare={true}
+                isFormDocument={false}
+              />
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowPreviewDialog(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
