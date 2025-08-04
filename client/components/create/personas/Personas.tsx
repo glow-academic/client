@@ -241,17 +241,6 @@ export default function Personas() {
               </p>
             </div>
             <div className="flex gap-2 items-center">
-              {persona.defaultPersona && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDuplicate(persona)}
-                  disabled={isDuplicating === persona.id}
-                >
-                  <Copy className="h-4 w-4" />
-                  {isDuplicating === persona.id ? "..." : ""}
-                </Button>
-              )}
               {canEditPersona(persona.id) ? (
                 <Button
                   variant="outline"
@@ -276,6 +265,15 @@ export default function Personas() {
                   </TooltipContent>
                 </Tooltip>
               )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDuplicate(persona)}
+                disabled={isDuplicating === persona.id}
+              >
+                <Copy className="h-4 w-4" />
+                {isDuplicating === persona.id ? "..." : ""}
+              </Button>
               {!isPersonaInUse(persona.id) && (
                 <Button
                   variant="outline"
