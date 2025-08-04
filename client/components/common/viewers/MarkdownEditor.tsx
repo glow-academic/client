@@ -81,7 +81,7 @@ export default function MarkdownEditor({
       </TabsList>
 
       <TabsContent value="source" className="mt-2 h-full">
-        <div className="w-full h-full min-h-[400px]">
+        <div className="w-full h-full">
           <Monaco
             height="100%"
             defaultLanguage="markdown"
@@ -114,7 +114,7 @@ export default function MarkdownEditor({
       </TabsContent>
 
       <TabsContent value="preview" className="mt-2 h-full">
-        <div className="w-full h-full min-h-[400px] border rounded-md p-4 overflow-auto">
+        <div className="w-full h-full border rounded-md p-4 overflow-auto">
           {previewLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

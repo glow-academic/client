@@ -707,22 +707,24 @@ export default function Persona({
             )}
           </div>
 
-          <div className="space-y-2 h-[500px]">
+          <div className="space-y-2">
             <Label htmlFor="systemPrompt">System Prompt *</Label>
             {formData?.systemPrompt !== undefined && !isLoading ? (
               <>
-                <MarkdownEditor
-                  value={formData?.systemPrompt || ""}
-                  onChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      systemPrompt: value,
-                    }))
-                  }
-                  placeholder="System prompt that defines how the persona should behave and respond. You can use markdown formatting."
-                  disabled={isReadonly}
-                  className="min-h-[400px]"
-                />
+                <div className="h-[500px]">
+                  <MarkdownEditor
+                    value={formData?.systemPrompt || ""}
+                    onChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        systemPrompt: value,
+                      }))
+                    }
+                    placeholder="System prompt that defines how the persona should behave and respond. You can use markdown formatting."
+                    disabled={isReadonly}
+                    className="h-full"
+                  />
+                </div>
                 <p className="text-sm text-muted-foreground">
                   This prompt defines the persona's behavior and personality in
                   conversations. You can use markdown formatting for better
