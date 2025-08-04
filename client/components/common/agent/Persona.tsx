@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { useProfile } from "@/contexts/profile-context";
+
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -49,6 +51,7 @@ import {
 } from "@/utils/persona-icons";
 import { getAllModels } from "@/utils/queries/models/get-all-models";
 import { getPersona } from "@/utils/queries/personas/get-persona";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { Check, ChevronsUpDown } from "lucide-react";
 
 interface FormData {
@@ -75,6 +78,7 @@ export default function Persona({
   const router = useRouter();
   const isEditMode = mode === "edit" && !!personaId;
   const queryClient = useQueryClient();
+  const { effectiveProfile } = useProfile();
 
   const initialFormData: FormData = useMemo(
     () => ({
@@ -106,6 +110,35 @@ export default function Persona({
     queryKey: ["models"],
     queryFn: () => getAllModels(),
   });
+
+  const { data: scenarios = [] } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => getAllScenarios(),
+    enabled: isEditMode, // Only fetch when in edit mode
+  });
+
+  // Check if persona is readonly (default persona and user is not superadmin, or persona is in use)
+  const isReadonly = useMemo(() => {
+    if (!isEditMode || !persona) return false;
+
+    const isSuperAdmin = effectiveProfile?.role === "superadmin";
+    const isDefaultPersona = persona.defaultPersona;
+
+    // If it's a default persona and user is not superadmin, it's readonly
+    if (isDefaultPersona && !isSuperAdmin) {
+      return true;
+    }
+
+    // Check if persona is in use by any scenarios
+    const isPersonaInUse = scenarios.some(
+      (scenario) => scenario.personaId === persona.id
+    );
+    if (isPersonaInUse && !isSuperAdmin) {
+      return true;
+    }
+
+    return false;
+  }, [isEditMode, persona, effectiveProfile?.role, scenarios]);
 
   const isLoading = isLoadingPersona || isModelsLoading;
 
@@ -213,6 +246,38 @@ export default function Persona({
 
   return (
     <div className="space-y-6 py-4 px-4">
+      {isReadonly && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg
+                className="h-5 w-5 text-yellow-400"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">
+                Persona is read-only
+              </h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <p>
+                  {persona?.defaultPersona
+                    ? "This is a default persona that cannot be edited. You can view the details but cannot make changes."
+                    : "This persona is currently in use by scenarios and cannot be edited. You can view the details but cannot make changes."}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="w-full">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -239,6 +304,7 @@ export default function Persona({
                 }}
                 placeholder="e.g., Enthusiastic Student"
                 required
+                disabled={isReadonly}
               />
             ) : (
               <Skeleton className="h-10 w-full" />
@@ -260,6 +326,7 @@ export default function Persona({
                 placeholder="Detailed behavior description and personality traits"
                 rows={4}
                 required
+                disabled={isReadonly}
               />
             ) : (
               <Skeleton className="h-10 w-full" />
@@ -281,6 +348,7 @@ export default function Persona({
                     active: checked,
                   }))
                 }
+                disabled={isReadonly}
               />
             ) : (
               <Skeleton className="h-6 w-11" />
@@ -301,6 +369,7 @@ export default function Persona({
                     <Button
                       variant="outline"
                       className="w-full justify-start text-left font-normal"
+                      disabled={isReadonly}
                     >
                       <div className="flex items-center gap-2">
                         <div
@@ -410,6 +479,7 @@ export default function Persona({
                     <Button
                       variant="outline"
                       className="w-full justify-start text-left font-normal"
+                      disabled={isReadonly}
                     >
                       <div className="flex items-center gap-2">
                         {IconComponent && <IconComponent className="w-4 h-4" />}
@@ -519,6 +589,7 @@ export default function Persona({
                       }))
                     }
                     required
+                    disabled={isReadonly}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a model" />
@@ -553,6 +624,7 @@ export default function Persona({
                         reasoning: value as "none" | "low" | "medium" | "high",
                       }))
                     }
+                    disabled={isReadonly}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select reasoning effort" />
@@ -591,6 +663,7 @@ export default function Persona({
                     }))
                   }
                   className="w-full"
+                  disabled={isReadonly}
                 />{" "}
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>Deterministic</span>
@@ -618,6 +691,7 @@ export default function Persona({
                   placeholder="System prompt that defines how the persona should behave and respond"
                   rows={20}
                   required
+                  disabled={isReadonly}
                 />
                 <p className="text-sm text-muted-foreground">
                   This prompt defines the persona's behavior and personality in
@@ -638,7 +712,7 @@ export default function Persona({
             >
               Back
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || isReadonly}>
               {isSubmitting
                 ? isEditMode
                   ? "Updating..."

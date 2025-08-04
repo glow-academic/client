@@ -7,7 +7,7 @@
 "use client";
 import { logError, logInfo } from "@/utils/logger";
 import { useQuery } from "@tanstack/react-query";
-import { Brain, Copy, Edit, Thermometer, Trash2 } from "lucide-react";
+import { Brain, Copy, Edit, Eye, Thermometer, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -79,12 +79,18 @@ export default function Personas() {
     return scenarios.some((scenario) => scenario.personaId === personaId);
   };
 
-  // Check if user can edit (admin/superadmin or persona not in use)
+  // Check if user can edit (superadmin can edit all, others can only edit non-default personas not in use)
   const canEditPersona = (personaId: string) => {
-    const isAdmin =
-      effectiveProfile?.role === "admin" ||
-      effectiveProfile?.role === "superadmin";
-    return isAdmin || !isPersonaInUse(personaId);
+    const isSuperAdmin = effectiveProfile?.role === "superadmin";
+    const persona = personas.find((p) => p.id === personaId);
+
+    // Superadmin can edit all personas
+    if (isSuperAdmin) {
+      return true;
+    }
+
+    // Non-superadmin users can only edit non-default personas that are not in use
+    return persona && !persona.defaultPersona && !isPersonaInUse(personaId);
   };
 
   const handleDelete = async () => {
@@ -141,6 +147,10 @@ export default function Personas() {
   };
 
   const handleEdit = (id: string) => {
+    router.push(`/create/personas/p/${id}`);
+  };
+
+  const handleView = (id: string) => {
     router.push(`/create/personas/p/${id}`);
   };
 
@@ -242,7 +252,7 @@ export default function Personas() {
                   {isDuplicating === persona.id ? "..." : ""}
                 </Button>
               )}
-              {canEditPersona(persona.id) && (
+              {canEditPersona(persona.id) ? (
                 <Button
                   variant="outline"
                   size="sm"
@@ -250,6 +260,21 @@ export default function Personas() {
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleView(persona.id)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>View Persona Details</p>
+                  </TooltipContent>
+                </Tooltip>
               )}
               {!isPersonaInUse(persona.id) && (
                 <Button
@@ -258,7 +283,7 @@ export default function Personas() {
                   onClick={() =>
                     handleDeleteClick(
                       persona.id,
-                      persona.name || "Unnamed Persona",
+                      persona.name || "Unnamed Persona"
                     )
                   }
                 >
