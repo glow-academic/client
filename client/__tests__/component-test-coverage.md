@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 276
-- **Tests Created**: 3
+- **Total Components**: 278
+- **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 273
+- **Tests Skipped** (already implemented): 278
 
 ## Component Coverage
 
@@ -64,6 +64,7 @@
 | CohortStaff | components/common/cohort/staff/CohortStaff.tsx | CohortStaff.test.tsx | ✅ Implemented |
 | CohortStaffDataTable | components/common/cohort/staff/CohortStaffDataTable.tsx | CohortStaffDataTable.test.tsx | ✅ Implemented |
 | CohortStaffDataTableToolbar | components/common/cohort/staff/CohortStaffDataTableToolbar.tsx | CohortStaffDataTableToolbar.test.tsx | ✅ Implemented |
+| DocumentPreviewCard | components/common/documents/DocumentPreviewCard.tsx | DocumentPreviewCard.test.tsx | ✅ Implemented |
 | BrightspaceExportButton | components/common/history/BrightspaceExportButton.tsx | BrightspaceExportButton.test.tsx | ✅ Implemented |
 | DataTable | components/common/history/DataTable.tsx | DataTable.test.tsx | ✅ Implemented |
 | DataTableColumnHeader | components/common/history/DataTableColumnHeader.tsx | DataTableColumnHeader.test.tsx | ✅ Implemented |
@@ -96,6 +97,7 @@
 | RubricPicker | components/common/rubric/RubricPicker.tsx | RubricPicker.test.tsx | ✅ Implemented |
 | RubricStandardGroup | components/common/rubric/RubricStandardGroup.tsx | RubricStandardGroup.test.tsx | ✅ Implemented |
 | TableRubric | components/common/rubric/TableRubric.tsx | TableRubric.test.tsx | ✅ Implemented |
+| DocumentPicker | components/common/scenario/DocumentPicker.tsx | DocumentPicker.test.tsx | ✅ Implemented |
 | ParameterSelector | components/common/scenario/ParameterSelector.tsx | ParameterSelector.test.tsx | ✅ Implemented |
 | PersonaPicker | components/common/scenario/PersonaPicker.tsx | PersonaPicker.test.tsx | ✅ Implemented |
 | Scenario | components/common/scenario/Scenario.tsx | Scenario.test.tsx | ✅ Implemented |
@@ -360,6 +362,8 @@ __tests__/
 │   │   │   │   ├── CohortStaff.test.tsx
 │   │   │   │   ├── CohortStaffDataTable.test.tsx
 │   │   │   │   ├── CohortStaffDataTableToolbar.test.tsx
+│   │   ├── documents/
+│   │   │   ├── DocumentPreviewCard.test.tsx
 │   │   ├── history/
 │   │   │   ├── BrightspaceExportButton.test.tsx
 │   │   │   ├── DataTable.test.tsx
@@ -402,6 +406,7 @@ __tests__/
 │   │   │   ├── RubricStandardGroup.test.tsx
 │   │   │   ├── TableRubric.test.tsx
 │   │   ├── scenario/
+│   │   │   ├── DocumentPicker.test.tsx
 │   │   │   ├── ParameterSelector.test.tsx
 │   │   │   ├── PersonaPicker.test.tsx
 │   │   │   ├── Scenario.test.tsx

@@ -34,12 +34,12 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 // Custom Components
+import { DocumentPicker } from "./DocumentPicker";
 import { ParameterSelector } from "./ParameterSelector";
 import { PersonaPicker } from "./PersonaPicker";
-import { ScenarioPicker } from "./ScenarioPicker";
 
 // Types and API functions
-import { Document, Scenario as ScenarioType, Simulation } from "@/types";
+import { Scenario as ScenarioType, Simulation } from "@/types";
 import { newScenario } from "@/utils/api/scenarios/new-scenario";
 import { logError } from "@/utils/logger";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
@@ -50,7 +50,6 @@ import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters"
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import { Model } from "@/utils/scenario";
 
 export interface ScenarioProps {
   scenarioId?: string;
@@ -232,14 +231,6 @@ export default function Scenario({
       status: getStepStatus("content"),
     },
   ];
-
-  const documentModels: Model[] = documents.map((doc: Document) => ({
-    id: doc.id,
-    name: doc.name,
-    description: `${doc.type} document`,
-    type: "Documents" as const,
-    strengths: doc.mimeType,
-  }));
 
   // Event handlers
   const handleInputChange = (
@@ -496,23 +487,17 @@ export default function Scenario({
             )}
           </CardHeader>
           <CardContent>
-            <ScenarioPicker
-              models={documentModels}
-              types={["Documents"]}
+            <DocumentPicker
+              documents={documents}
               label=""
               placeholder="Select documents..."
               description="Choose documents that will be available during this scenario."
               multiSelect={true}
-              selectedModels={selectedDocuments.map((doc) => ({
-                id: doc.id,
-                name: doc.name,
-                description: `${doc.type} document`,
-                type: "Documents" as const,
-              }))}
-              onMultiSelect={(models) =>
+              selectedDocuments={selectedDocuments}
+              onMultiSelect={(selectedDocs) =>
                 handleInputChange(
                   "documentIds",
-                  models.map((m) => m.id)
+                  selectedDocs.map((doc) => doc.id)
                 )
               }
               disabled={isReadonly}

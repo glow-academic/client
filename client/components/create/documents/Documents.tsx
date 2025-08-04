@@ -20,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
+import { DocumentPreviewCard } from "@/components/common/documents/DocumentPreviewCard";
 import {
   Dialog,
   DialogContent,
@@ -44,7 +45,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Document as DocumentObject, DocumentType } from "@/types";
-import { Edit, Eye, Trash2, UploadCloud } from "lucide-react";
+import { UploadCloud } from "lucide-react";
 
 import { useDocumentColumns } from "@/hooks/use-document-columns";
 import { deleteDocument } from "@/utils/api/documents/delete-document";
@@ -53,12 +54,6 @@ import { updateDocument } from "@/utils/mutations/documents/update-document";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { DocumentsDataTable } from "./DocumentsDataTable";
-
-// Helper function to truncate text
-const truncateText = (text: string, maxLength: number = 30): string => {
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + "...";
-};
 
 export default function Documents() {
   const queryClient = useQueryClient();
@@ -96,12 +91,6 @@ export default function Documents() {
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
-
-  // Get document type icon
-  const getDocumentTypeIcon = (type: string) => {
-    const typeInfo = typeOptions.find((option) => option.value === type);
-    return typeInfo?.label.split(" ")[0] || "📄";
-  };
 
   // Check if document can be deleted (not used by active scenarios)
   const canDeleteDocument = useCallback(
@@ -147,7 +136,7 @@ export default function Documents() {
     setShowEditDialog(true);
   };
 
-  // Handle document preview
+  // Handle document preview (for table view)
   const handlePreview = (document: DocumentObject) => {
     setPreviewDocument(document);
     setShowPreviewDialog(true);
@@ -273,80 +262,15 @@ export default function Documents() {
     const canDelete = canDeleteDocument(document.id);
 
     return (
-      <div
+      <DocumentPreviewCard
         key={document.id}
-        className="group relative border rounded-lg hover:shadow-md transition-all bg-white"
-      >
-        {/* Action buttons - moved to top right */}
-        <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-7 w-7 p-0 bg-white/90 backdrop-blur-sm"
-            onClick={() => handlePreview(document)}
-          >
-            <Eye className="h-3 w-3" />
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-7 w-7 p-0 bg-white/90 backdrop-blur-sm"
-            onClick={() => handleEdit(document)}
-          >
-            <Edit className="h-3 w-3" />
-          </Button>
-          {canDelete && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-7 w-7 p-0 text-destructive hover:text-destructive bg-white/90 backdrop-blur-sm"
-              onClick={() => handleSingleDelete(document)}
-            >
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-
-        {/* Document preview area */}
-        <div
-          className="aspect-square bg-muted rounded-lg relative overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-          onClick={() => handlePreview(document)}
-          style={{ cursor: "pointer" }}
-        >
-          {/* Document preview */}
-          <div className="w-full h-full">
-            <DocumentViewer
-              document={document}
-              bare={true}
-              isFormDocument={false}
-            />
-          </div>
-
-          {/* Status indicators */}
-          <div className="absolute top-1 left-1 flex gap-1">
-            {!document.active && (
-              <Badge variant="secondary" className="text-xs">
-                INACTIVE
-              </Badge>
-            )}
-          </div>
-
-          {/* Document name */}
-          <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded max-w-[calc(100%-1rem)]">
-            <span title={document.name}>{truncateText(document.name, 25)}</span>
-          </div>
-
-          {/* Type badge - moved to bottom right */}
-          <div className="absolute bottom-2 right-2 z-10">
-            <Badge variant="outline" className="text-xs">
-              {getDocumentTypeIcon(document.type)}
-            </Badge>
-          </div>
-        </div>
-      </div>
+        document={document}
+        onEdit={handleEdit}
+        onPreview={handlePreview}
+        onDelete={handleSingleDelete}
+        canDelete={canDelete}
+        showActions={true}
+      />
     );
   };
 
