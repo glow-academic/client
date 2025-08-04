@@ -82,7 +82,7 @@ export function PersonaPicker({
     Persona | undefined
   >(undefined);
   const [peekedPersona, setPeekedPersona] = React.useState<Persona | undefined>(
-    personas[0]
+    personas.find((p) => p.active) || personas[0]
   );
 
   // Use external selectedPersona if provided, otherwise use internal state
@@ -212,15 +212,17 @@ export function PersonaPicker({
                   </CommandGroup>
                 )}
                 <CommandGroup heading="Personas">
-                  {personas.map((persona) => (
-                    <PersonaItem
-                      key={persona.id}
-                      persona={persona}
-                      isSelected={selectedPersona?.id === persona.id}
-                      onPeek={(persona) => setPeekedPersona(persona)}
-                      onSelect={() => handleSelect(persona)}
-                    />
-                  ))}
+                  {personas
+                    .filter((persona) => persona.active)
+                    .map((persona) => (
+                      <PersonaItem
+                        key={persona.id}
+                        persona={persona}
+                        isSelected={selectedPersona?.id === persona.id}
+                        onPeek={(persona) => setPeekedPersona(persona)}
+                        onSelect={() => handleSelect(persona)}
+                      />
+                    ))}
                 </CommandGroup>
               </CommandList>
             </Command>
