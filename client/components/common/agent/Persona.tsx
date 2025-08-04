@@ -64,6 +64,7 @@ interface FormData {
   color?: string;
   icon?: string;
   active?: boolean;
+  defaultPersona?: boolean;
 }
 
 export interface PersonaProps {
@@ -91,6 +92,7 @@ export default function Persona({
       color: "#000000",
       icon: "Zap",
       active: true,
+      defaultPersona: false,
     }),
     []
   );
@@ -154,6 +156,7 @@ export default function Persona({
         color: persona.color || "#000000",
         icon: persona.icon || "Zap",
         active: persona.active ?? true,
+        defaultPersona: persona.defaultPersona ?? false,
       });
     } else if (!isEditMode) {
       setFormData(initialFormData);
@@ -198,6 +201,7 @@ export default function Persona({
           color: formData.color || "#000000",
           icon: formData.icon || "Zap",
           active: formData.active ?? true,
+          defaultPersona: formData.defaultPersona ?? false,
           updatedAt: new Date().toISOString(),
         });
         queryClient.invalidateQueries({ queryKey: ["personas"] });
@@ -214,6 +218,7 @@ export default function Persona({
           color: formData.color || "#000000",
           icon: formData.icon || "Zap",
           active: formData.active ?? true,
+          defaultPersona: formData.defaultPersona ?? false,
         });
         queryClient.invalidateQueries({ queryKey: ["personas"] });
         queryClient.invalidateQueries({
@@ -333,25 +338,51 @@ export default function Persona({
             )}
           </div>
 
-          {/* Active/Inactive Switch */}
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="active" className="text-sm">
-              Persona Active
-            </Label>
-            {formData?.active !== undefined && !isLoading ? (
-              <Switch
-                id="active"
-                checked={formData.active ?? true}
-                onCheckedChange={(checked) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    active: checked,
-                  }))
-                }
-                disabled={isReadonly}
-              />
-            ) : (
-              <Skeleton className="h-6 w-11" />
+          {/* Active/Inactive and Default Persona Switches */}
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="active" className="text-sm">
+                Persona Active
+              </Label>
+              {formData?.active !== undefined && !isLoading ? (
+                <Switch
+                  id="active"
+                  checked={formData.active ?? true}
+                  onCheckedChange={(checked) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      active: checked,
+                    }))
+                  }
+                  disabled={isReadonly}
+                />
+              ) : (
+                <Skeleton className="h-6 w-11" />
+              )}
+            </div>
+
+            {/* Default Persona Switch - Only for superadmin */}
+            {effectiveProfile?.role === "superadmin" && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="defaultPersona" className="text-sm">
+                  Default Persona
+                </Label>
+                {formData?.defaultPersona !== undefined && !isLoading ? (
+                  <Switch
+                    id="defaultPersona"
+                    checked={formData.defaultPersona ?? false}
+                    onCheckedChange={(checked) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        defaultPersona: checked,
+                      }))
+                    }
+                    disabled={isReadonly}
+                  />
+                ) : (
+                  <Skeleton className="h-6 w-11" />
+                )}
+              </div>
             )}
           </div>
 
