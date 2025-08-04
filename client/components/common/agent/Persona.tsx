@@ -711,7 +711,7 @@ export default function Persona({
             <Label htmlFor="systemPrompt">System Prompt *</Label>
             {formData?.systemPrompt !== undefined && !isLoading ? (
               <>
-                <div className="h-[500px]">
+                <div className="h-[500px] overflow-auto">
                   <MarkdownEditor
                     value={formData?.systemPrompt || ""}
                     onChange={(value) =>
