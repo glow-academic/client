@@ -6,16 +6,16 @@
  */
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { Bot, Brain, Edit, Thermometer } from "lucide-react";
+import { Brain, Edit, Thermometer } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAgentColumns } from "@/hooks/use-agent-columns";
 import { Agent } from "@/types";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { AgentsDataTable } from "./AgentsDataTable";
-import { useAgentColumns } from "@/hooks/use-agent-columns";
 
 export default function Agents() {
   const router = useRouter();

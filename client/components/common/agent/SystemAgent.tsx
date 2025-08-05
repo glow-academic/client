@@ -8,7 +8,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -46,18 +46,6 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const initialFormData: SystemAgentFormData = useMemo(
-    () => ({
-      name: "",
-      description: "",
-      systemPrompt: "",
-      temperature: 0.0,
-      modelId: "",
-      reasoning: "none",
-    }),
-    []
-  );
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<SystemAgentFormData>();
 
@@ -84,10 +72,8 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
         modelId: agent.modelId || "",
         reasoning: agent.reasoning || "none",
       });
-    } else {
-      setFormData(initialFormData);
     }
-  }, [agent, initialFormData]);
+  }, [agent]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
