@@ -980,10 +980,10 @@ async def generate_certificate(
             
             # Build PDF with sophisticated border
             from reportlab.platypus import PageTemplate
-            from reportlab.platypus.frames import Frame
+            from reportlab.platypus.frames import Frame  # type: ignore
 
             # Create a custom page template with decorative border
-            def certificate_page(canvas, doc):
+            def certificate_page(canvas, doc): # type: ignore
                 # Draw outer border
                 canvas.setStrokeColor(colors.darkblue)
                 canvas.setLineWidth(3)
