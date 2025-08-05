@@ -283,6 +283,18 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         redirectTo: "/management/providers",
       },
       {
+        path: "/management/providers/p/[providerId]/new",
+        roles: ["admin", "superadmin"],
+        title: "Create Model",
+        redirectTo: "/management/providers",
+      },
+      {
+        path: "/management/providers/p/[providerId]/m/[modelId]",
+        roles: ["admin", "superadmin"],
+        title: "Edit Model",
+        redirectTo: "/management/providers",
+      },
+      {
         path: "/management/parameters",
         roles: ["admin", "superadmin"],
         title: "Parameters",
@@ -349,31 +361,7 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         roles: ["superadmin"],
         title: "System Health",
         redirectTo: "/system/health",
-      },
-      {
-        path: "/system/providers",
-        roles: ["superadmin"],
-        title: "System Providers",
-        redirectTo: "/system/providers",
-      },
-      {
-        path: "/system/providers/new",
-        roles: ["superadmin"],
-        title: "Create System Provider",
-        redirectTo: "/system/providers",
-      },
-      {
-        path: "/system/providers/p/[providerId]",
-        roles: ["superadmin"],
-        title: "Edit System Provider",
-        redirectTo: "/system/providers",
-      },
-      {
-        path: "/system/providers/p/[providerId]/m/[modelId]",
-        roles: ["superadmin"],
-        title: "Edit Model",
-        redirectTo: "/system/providers",
-      },
+      }
     ],
   },
   {
