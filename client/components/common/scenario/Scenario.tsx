@@ -1,12 +1,12 @@
 /**
- * ScenarioWizard.tsx
+ * Scenario.tsx
  * Progressive step-by-step scenario creation flow
  * @AshokSaravanan222 & @siladiea
  * 05/20/2025
  */
 "use client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronRight, Loader2 } from "lucide-react";
+import { Check, ChevronRight, Loader2, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -31,6 +31,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 // Custom Components
@@ -39,6 +41,7 @@ import { ParameterSelector } from "./ParameterSelector";
 import { PersonaPicker } from "./PersonaPicker";
 
 // Types and API functions
+import { useProfile } from "@/contexts/profile-context";
 import { Scenario as ScenarioType, Simulation } from "@/types";
 import { newScenario } from "@/utils/api/scenarios/new-scenario";
 import { logError } from "@/utils/logger";
@@ -72,6 +75,7 @@ export default function Scenario({
 }: ScenarioProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { effectiveProfile } = useProfile();
   const isEditMode = mode === "edit" && !!scenarioId;
 
   // Form data state
@@ -81,6 +85,8 @@ export default function Scenario({
     parameterItemIds: [],
     name: "",
     description: "",
+    defaultScenario: false,
+    practiceScenario: false,
   };
 
   const [formData, setFormData] =
@@ -88,6 +94,7 @@ export default function Scenario({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [originalFormData, setOriginalFormData] =
     useState<Partial<ScenarioType>>(initialFormData);
 
@@ -134,6 +141,8 @@ export default function Scenario({
         parameterItemIds: scenario.parameterItemIds || [],
         name: scenario.name || "",
         description: scenario.description || "",
+        defaultScenario: scenario.defaultScenario ?? false,
+        practiceScenario: scenario.practiceScenario ?? false,
       };
       setFormData(scenarioData);
       setOriginalFormData(scenarioData); // Set original data for comparison
@@ -151,6 +160,8 @@ export default function Scenario({
       current.personaId !== original.personaId ||
       current.name !== original.name ||
       current.description !== original.description ||
+      current.defaultScenario !== original.defaultScenario ||
+      current.practiceScenario !== original.practiceScenario ||
       JSON.stringify(current.documentIds?.sort()) !==
         JSON.stringify(original.documentIds?.sort()) ||
       JSON.stringify(current.parameterItemIds?.sort()) !==
@@ -235,7 +246,7 @@ export default function Scenario({
   // Event handlers
   const handleInputChange = (
     field: keyof Partial<ScenarioType>,
-    value: string | string[] | null
+    value: string | string[] | boolean | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -284,6 +295,8 @@ export default function Scenario({
         personaId: formData.personaId,
         documentIds: formData.documentIds,
         parameterItemIds: formData.parameterItemIds,
+        defaultScenario: formData.defaultScenario || false,
+        practiceScenario: formData.practiceScenario || false,
       };
 
       if (isEditMode) {
@@ -382,7 +395,7 @@ export default function Scenario({
       )}
 
       {/* Scenario Title Input */}
-      <div className="flex justify-center mb-6">
+      <div className="flex justify-center mb-6 relative">
         <div className="w-full max-w-2xl">
           <input
             type="text"
@@ -393,6 +406,18 @@ export default function Scenario({
             disabled={isReadonly}
           />
         </div>
+        {/* Settings Icon - Only for superadmin */}
+        {effectiveProfile?.role === "superadmin" && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowSettingsDialog(true)}
+            className="absolute right-0 top-0"
+            disabled={isReadonly}
+          >
+            <Settings className="h-5 w-5" />
+          </Button>
+        )}
       </div>
 
       <div className="space-y-6">
@@ -662,6 +687,57 @@ export default function Scenario({
           )}
         </Button>
       </div>
+
+      {/* Settings Dialog */}
+      <AlertDialog
+        open={showSettingsDialog}
+        onOpenChange={setShowSettingsDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Scenario Settings</AlertDialogTitle>
+            <AlertDialogDescription>
+              Configure advanced settings for this scenario.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-medium">Default Scenario</Label>
+                <p className="text-sm text-muted-foreground">
+                  Mark this as a default scenario that can be used as a
+                  template.
+                </p>
+              </div>
+              <Switch
+                checked={formData.defaultScenario ?? false}
+                onCheckedChange={(checked) =>
+                  handleInputChange("defaultScenario", checked)
+                }
+                disabled={isReadonly}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-medium">Practice Scenario</Label>
+                <p className="text-sm text-muted-foreground">
+                  Mark this as a practice scenario for training purposes.
+                </p>
+              </div>
+              <Switch
+                checked={formData.practiceScenario ?? false}
+                onCheckedChange={(checked) =>
+                  handleInputChange("practiceScenario", checked)
+                }
+                disabled={isReadonly}
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>Close</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Update Confirmation Dialog */}
       <AlertDialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
