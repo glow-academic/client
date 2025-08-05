@@ -9,6 +9,7 @@ export interface DataTableRowActionsProps {
   profileId: string;
   scenarios: Array<{ completed: boolean }>;
   interactionIds: string[];
+  isIncomplete?: boolean;
 }
 
 export function DataTableRowActions({
@@ -16,6 +17,7 @@ export function DataTableRowActions({
   profileId,
   scenarios,
   interactionIds,
+  isIncomplete = false,
 }: DataTableRowActionsProps) {
   const { effectiveProfile } = useProfile();
 
@@ -29,8 +31,12 @@ export function DataTableRowActions({
   const totalChats = interactionIds?.length || scenariosArray.length;
   const isComplete = completedChats === totalChats && totalChats > 0;
 
-  // Show "Continue" if it's the current user and simulation is not complete
-  const buttonText = isCurrentUser && !isComplete ? "Continue" : "View";
+  // Show "View" if simulation is marked as incomplete, otherwise show "Continue" if it's the current user and simulation is not complete
+  const buttonText = isIncomplete
+    ? "View"
+    : isCurrentUser && !isComplete
+      ? "Continue"
+      : "View";
 
   return (
     <Link href={`/home/a/${id}`}>

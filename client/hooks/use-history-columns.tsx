@@ -478,6 +478,9 @@ export function useHistoryColumns({
         cell: ({ row }) => {
           const chats = row.original.scenarios;
 
+          const allChatsCompleted = chats.every((chat) => chat.completed);
+          const expectedChats = row.original.interactionIds?.length;
+
           // Ensure chats is an array
           const chatsArray = Array.isArray(chats) ? chats : [];
           if (chatsArray.length === 0) {
@@ -490,27 +493,23 @@ export function useHistoryColumns({
             )
             .filter(Boolean);
 
-          if (chatGrades.length === 0) {
-            const completedChats = chatsArray.filter((chat) => chat.completed);
-            if (completedChats.length > 0) {
-              return <div className="text-amber-500">Grading in progress</div>;
-            }
+          // Check if simulation timed out
+          const timedOutSimulation = simulations?.find(
+            (s) => s.id === row.original.simulationId
+          );
+          const isTimedOut = isSimulationTimedOut({
+            attemptCreatedAt: row.original.createdAt,
+            simulationTimeLimit: timedOutSimulation?.timeLimit || null,
+          });
 
-            // Check if simulation timed out
-            const simulation = simulations?.find(
-              (s) => s.id === row.original.simulationId
-            );
-            const isTimedOut = isSimulationTimedOut({
-              attemptCreatedAt: row.original.createdAt,
-              simulationTimeLimit: simulation?.timeLimit || null,
-            });
-
-            if (isTimedOut) {
-              return <div className="text-red-500 font-medium">Incomplete</div>;
-            }
-
-            return <div className="text-muted-foreground">Not graded</div>;
+          if (
+            (isTimedOut && !allChatsCompleted) ||
+            expectedChats !== chats.length
+          ) {
+            return <div className="text-red-500 font-medium">Incomplete</div>;
           }
+
+          // return <div className="text-muted-foreground">Not graded</div>;
 
           const totalScore = chatGrades.reduce(
             (sum: number, grade) => sum + (grade?.score || 0),
@@ -615,6 +614,24 @@ export function useHistoryColumns({
         id: "actions",
         cell: ({ row }) => {
           const attempt = row.original;
+          const chats = attempt.scenarios;
+
+          const allChatsCompleted = chats.every((chat) => chat.completed);
+          const expectedChats = attempt.interactionIds?.length;
+
+          // Check if simulation timed out
+          const timedOutSimulation = simulations?.find(
+            (s) => s.id === attempt.simulationId
+          );
+          const isTimedOut = isSimulationTimedOut({
+            attemptCreatedAt: attempt.createdAt,
+            simulationTimeLimit: timedOutSimulation?.timeLimit || null,
+          });
+
+          // Determine if simulation is incomplete based on the same logic as the score column
+          const isIncomplete =
+            (isTimedOut && !allChatsCompleted) ||
+            expectedChats !== chats.length;
 
           return (
             <DataTableRowActions
@@ -622,6 +639,7 @@ export function useHistoryColumns({
               profileId={attempt.profileId || ""}
               scenarios={attempt.scenarios}
               interactionIds={attempt.interactionIds}
+              isIncomplete={isIncomplete}
             />
           );
         },

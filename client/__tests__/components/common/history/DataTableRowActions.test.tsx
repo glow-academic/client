@@ -11,6 +11,9 @@ import {
 // Minimal props factory – edit values as needed
 const mockProps: DataTableRowActionsProps = {
   id: "test-id",
+  profileId: "test-profile-id",
+  scenarios: [],
+  interactionIds: [],
 };
 // ------------------------------------------------------------------
 describe("DataTableRowActions", () => {
@@ -37,6 +40,46 @@ describe("DataTableRowActions", () => {
         document.querySelector('[data-testid="row-actions"]') ||
         document.querySelector("div");
       expect(actions).toBeInTheDocument();
+    });
+  });
+
+  describe("Button text logic", () => {
+    it("should show 'View' when isIncomplete is true", () => {
+      renderWithMocks(
+        <DataTableRowActions {...mockProps} isIncomplete={true} />
+      );
+
+      const button = document.querySelector("button");
+      expect(button).toHaveTextContent("View");
+    });
+
+    it("should show 'View' when isIncomplete is false and not current user", () => {
+      renderWithMocks(
+        <DataTableRowActions {...mockProps} isIncomplete={false} />
+      );
+
+      const button = document.querySelector("button");
+      expect(button).toHaveTextContent("View");
+    });
+
+    it("should show 'Continue' when isIncomplete is false and is current user with incomplete simulation", () => {
+      // Mock the profile context to return the same profileId
+      const mockProfileContext = {
+        effectiveProfile: { id: "test-profile-id" },
+      };
+
+      renderWithMocks(
+        <DataTableRowActions
+          {...mockProps}
+          isIncomplete={false}
+          scenarios={[{ completed: false }]}
+          interactionIds={["1", "2"]}
+        />,
+        { profileContext: mockProfileContext }
+      );
+
+      const button = document.querySelector("button");
+      expect(button).toHaveTextContent("Continue");
     });
   });
 

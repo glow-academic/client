@@ -71,7 +71,7 @@ export default function AttemptChat() {
     );
   }, [selectedChatId, simulationContext?.chats]);
 
-  // Auto-select first completed chat when results show and default to showing rubric if all chats completed
+  // Auto-select first chat when results show and default to showing rubric if all chats completed
   useEffect(() => {
     if (
       simulationContext?.showResults &&
@@ -79,16 +79,17 @@ export default function AttemptChat() {
       simulationContext?.chats.length > 0 &&
       !selectedChatId
     ) {
+      // Select the first available chat (not just completed ones)
+      if (simulationContext?.chats[0]) {
+        setSelectedChatId(simulationContext.chats[0].id);
+      }
+
+      // If all chats are completed, default to showing rubric
       const completedChats = simulationContext?.chats.filter(
         (chat: SimulationChat) => chat.completed
       );
-      if (completedChats.length > 0 && completedChats[0]) {
-        setSelectedChatId(completedChats[0].id);
-
-        // If all chats are completed, default to showing rubric
-        if (completedChats.length === simulationContext?.chats.length) {
-          setShowGrades(true);
-        }
+      if (completedChats.length === simulationContext?.chats.length) {
+        setShowGrades(true);
       }
     }
   }, [
@@ -252,12 +253,14 @@ export default function AttemptChat() {
                                       )?.passed
                                       ? "bg-green-100 dark:bg-green-900/30"
                                       : "bg-red-100 dark:bg-red-900/30"
-                                    : simulationContext?.aggregatedResults
-                                      ? simulationContext?.aggregatedResults
-                                          .overallPassed
-                                        ? "bg-green-100 dark:bg-green-900/30"
-                                        : "bg-red-100 dark:bg-red-900/30"
-                                      : "bg-muted"
+                                    : selectedChat && !selectedChat.completed
+                                      ? "bg-red-100 dark:bg-red-900/30"
+                                      : simulationContext?.aggregatedResults
+                                        ? simulationContext?.aggregatedResults
+                                            .overallPassed
+                                          ? "bg-green-100 dark:bg-green-900/30"
+                                          : "bg-red-100 dark:bg-red-900/30"
+                                        : "bg-muted"
                                 }`}
                               >
                                 <Clock className="h-4 w-4" />
@@ -282,7 +285,12 @@ export default function AttemptChat() {
                                           simulationContext?.aggregatedResults
                                             .totalTime
                                         )
-                                      : "No time limit"}
+                                      : simulationContext?.simulation?.timeLimit
+                                        ? formatTime(
+                                            simulationContext.simulation
+                                              .timeLimit * 60
+                                          )
+                                        : "No time limit"}
                                 </span>
                               </div>
                             </TooltipTrigger>
@@ -315,6 +323,10 @@ export default function AttemptChat() {
                                   }
                                   )
                                 </p>
+                              </TooltipContent>
+                            ) : selectedChat && !selectedChat.completed ? (
+                              <TooltipContent>
+                                <p>Incomplete</p>
                               </TooltipContent>
                             ) : simulationContext?.aggregatedResults ? (
                               <TooltipContent>
@@ -354,15 +366,23 @@ export default function AttemptChat() {
                           <SelectValue placeholder="Select chat to view results" />
                         </SelectTrigger>
                         <SelectContent>
-                          {simulationContext?.chats
-                            ?.filter((chat: SimulationChat) => chat.completed)
-                            .map((chat: SimulationChat) => (
+                          {simulationContext?.chats?.map(
+                            (chat: SimulationChat) => (
                               <SelectItem key={chat.id} value={chat.id}>
                                 <div className="flex items-center gap-2">
                                   <span>{chat.title}</span>
+                                  {!chat.completed && (
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-xs"
+                                    >
+                                      Incomplete
+                                    </Badge>
+                                  )}
                                 </div>
                               </SelectItem>
-                            ))}
+                            )
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
