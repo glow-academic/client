@@ -57,7 +57,7 @@ export default function AttemptInput() {
     e:
       | React.FormEvent<HTMLFormElement>
       | React.KeyboardEvent<HTMLTextAreaElement>
-      | React.MouseEvent<HTMLButtonElement>,
+      | React.MouseEvent<HTMLButtonElement>
   ) => {
     e.preventDefault();
     const messageToSend = newMessage.trim();
@@ -72,6 +72,17 @@ export default function AttemptInput() {
       return;
 
     setNewMessage("");
+
+    // Dispatch messageSent event for tour progression and navigating state management
+    window.dispatchEvent(
+      new CustomEvent("messageSent", {
+        detail: {
+          message: messageToSend,
+          chatId: simulationContext.currentChat.id,
+          isTourMessage: false,
+        },
+      })
+    );
 
     simulationContext?.sendMessage(messageToSend);
   };

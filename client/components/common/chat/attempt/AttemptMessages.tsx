@@ -49,14 +49,25 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
     return basePrompts.slice(0, 3);
   }, []);
 
-  const handleStarterPromptClick = (prompt: string) =>
+  const handleStarterPromptClick = (prompt: string) => {
+    // Dispatch messageSent event for tour progression and navigating state management
+    window.dispatchEvent(
+      new CustomEvent("messageSent", {
+        detail: {
+          message: prompt,
+          chatId: targetChatId,
+          isTourMessage: false,
+        },
+      })
+    );
     simulationContext?.sendMessage(prompt);
+  };
 
   const scrollToBottom = () => {
     const scrollArea = scrollAreaRef.current;
     if (scrollArea) {
       const viewport = scrollArea.querySelector(
-        "[data-radix-scroll-area-viewport]",
+        "[data-radix-scroll-area-viewport]"
       ) as HTMLElement;
       if (viewport)
         viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
@@ -76,7 +87,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
     const scrollArea = scrollAreaRef.current;
     if (!scrollArea) return;
     const viewport = scrollArea.querySelector(
-      "[data-radix-scroll-area-viewport]",
+      "[data-radix-scroll-area-viewport]"
     ) as HTMLElement;
     if (!viewport) return;
     const handleScrollEvent = () => {
@@ -145,7 +156,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                   .sort(
                     (a, b) =>
                       new Date(a.createdAt).getTime() -
-                      new Date(b.createdAt).getTime(),
+                      new Date(b.createdAt).getTime()
                   )
                   .map((message) => (
                     <div key={message.id} className="space-y-3">

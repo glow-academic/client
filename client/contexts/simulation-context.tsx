@@ -114,9 +114,7 @@ export interface SimulationContextType {
   onSimulationFinished?: (() => void) | undefined;
 }
 
-const SimulationContext = createContext<SimulationContextType | null>(
-  null
-);
+const SimulationContext = createContext<SimulationContextType | null>(null);
 
 export const useSimulation = () => {
   return useContext(SimulationContext);
@@ -216,7 +214,7 @@ export function SimulationProvider({
     queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
     queryFn: () =>
       getSimulationChatFeedbacksBySimulationChatGrades(
-        grades!.map((grade) => grade.id),
+        grades!.map((grade) => grade.id)
       ),
     enabled: !!grades,
   });
@@ -228,7 +226,7 @@ export function SimulationProvider({
     // Sort chats by creation date to ensure consistent ordering
     const sortedChats = [...chats].sort(
       (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
     // Return the chat at the current index, or the first chat if index is out of bounds
@@ -253,7 +251,7 @@ export function SimulationProvider({
   const scenarioDocuments = useMemo(() => {
     if (!scenario || !documents) return [];
     return documents.filter((doc: Document) =>
-      scenario.documentIds?.includes(doc.id),
+      scenario.documentIds?.includes(doc.id)
     );
   }, [documents, scenario]);
 
@@ -265,7 +263,7 @@ export function SimulationProvider({
           ?.timeTaken || 0
       );
     },
-    [grades],
+    [grades]
   );
 
   // Create dynamic rubric for current chat based on grades/feedback
@@ -280,12 +278,12 @@ export function SimulationProvider({
       return null;
 
     const chatGrade = grades.find(
-      (grade) => grade.simulationChatId === currentChat.id,
+      (grade) => grade.simulationChatId === currentChat.id
     );
     if (!chatGrade) return null;
 
     const chatFeedbacks = feedbacks.filter(
-      (feedback) => feedback.simulationChatGradeId === chatGrade.id,
+      (feedback) => feedback.simulationChatGradeId === chatGrade.id
     );
 
     // Calculate skill scores and feedbacks
@@ -295,16 +293,16 @@ export function SimulationProvider({
 
     standardGroups.forEach((group) => {
       const groupStandards = standards.filter(
-        (s) => s.standardGroupId === group.id,
+        (s) => s.standardGroupId === group.id
       );
       const groupFeedbacks = chatFeedbacks.filter((f) =>
-        groupStandards.some((s) => s.id === f.standardId),
+        groupStandards.some((s) => s.id === f.standardId)
       );
 
       if (groupFeedbacks.length > 0) {
         const groupMaxPoints = group.points;
         const maxStandardPoints = Math.max(
-          ...groupStandards.map((s) => s.points),
+          ...groupStandards.map((s) => s.points)
         );
         const avgScore =
           groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
@@ -338,18 +336,18 @@ export function SimulationProvider({
       return [];
 
     const completedChats = chats.filter(
-      (chat: SimulationChat) => chat.completed,
+      (chat: SimulationChat) => chat.completed
     );
 
     return completedChats
       .map((chat) => {
         const chatGrade = grades.find(
-          (grade) => grade.simulationChatId === chat.id,
+          (grade) => grade.simulationChatId === chat.id
         );
         if (!chatGrade) return null;
 
         const chatFeedbacks = feedbacks.filter(
-          (feedback) => feedback.simulationChatGradeId === chatGrade.id,
+          (feedback) => feedback.simulationChatGradeId === chatGrade.id
         );
 
         const skillScores: Record<string, number> = {};
@@ -358,22 +356,22 @@ export function SimulationProvider({
 
         standardGroups.forEach((group) => {
           const groupStandards = standards.filter(
-            (s) => s.standardGroupId === group.id,
+            (s) => s.standardGroupId === group.id
           );
           const groupFeedbacks = chatFeedbacks.filter((f) =>
-            groupStandards.some((s) => s.id === f.standardId),
+            groupStandards.some((s) => s.id === f.standardId)
           );
 
           if (groupFeedbacks.length > 0) {
             const groupMaxPoints = group.points;
             const maxStandardPoints = Math.max(
-              ...groupStandards.map((s) => s.points),
+              ...groupStandards.map((s) => s.points)
             );
             const avgScore =
               groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
               groupFeedbacks.length;
             const normalizedScore = Math.round(
-              (avgScore / maxStandardPoints) * 5,
+              (avgScore / maxStandardPoints) * 5
             );
 
             skillScores[group.name] = normalizedScore;
@@ -405,11 +403,11 @@ export function SimulationProvider({
 
     const totalScore = allDynamicRubrics.reduce(
       (sum: number, rubric: DynamicRubric) => sum + rubric.score,
-      0,
+      0
     );
     const averageScore = totalScore / allDynamicRubrics.length;
     const passedChats = allDynamicRubrics.filter(
-      (rubric: DynamicRubric) => rubric.passed,
+      (rubric: DynamicRubric) => rubric.passed
     ).length;
 
     // Calculate total time using actual database timestamps
@@ -419,7 +417,7 @@ export function SimulationProvider({
           .reduce(
             (sum: number, chat: SimulationChat) =>
               sum + calculateActualTimeTaken(chat),
-            0,
+            0
           )
       : 0;
 
@@ -465,7 +463,7 @@ export function SimulationProvider({
       const attemptStartTime = new Date(attempt.createdAt);
       const currentTime = new Date();
       const elapsedSeconds = Math.floor(
-        (currentTime.getTime() - attemptStartTime.getTime()) / 1000,
+        (currentTime.getTime() - attemptStartTime.getTime()) / 1000
       );
 
       if (currentSimulation.timeLimit) {
@@ -486,7 +484,7 @@ export function SimulationProvider({
       setIsActive(false);
       setShowResults(true);
       toast.success(
-        isSingleChatAttempt ? "Session completed!" : "Attempt completed!",
+        isSingleChatAttempt ? "Session completed!" : "Attempt completed!"
       );
       onSimulationFinishedRef.current?.();
       return;
@@ -502,7 +500,7 @@ export function SimulationProvider({
         setIsActive(false);
         setShowResults(true);
         toast.success(
-          isSingleChatAttempt ? "Session completed!" : "Attempt completed!",
+          isSingleChatAttempt ? "Session completed!" : "Attempt completed!"
         );
         onSimulationFinishedRef.current?.(); // Call the latest version of the function
       }
@@ -523,11 +521,11 @@ export function SimulationProvider({
     if (chats && chats.length > 0 && currentChatIndex === 0) {
       const sortedChats = [...chats].sort(
         (a, b) =>
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
 
       const firstIncompleteIndex = sortedChats.findIndex(
-        (chat: SimulationChat) => !chat.completed,
+        (chat: SimulationChat) => !chat.completed
       );
 
       if (
@@ -555,7 +553,7 @@ export function SimulationProvider({
             setCurrentChatIndex((prev) => {
               const nextIndex = prev + 1;
               toast.success(
-                `Moving to chat ${nextIndex + 1} of ${chats?.length || 0}`,
+                `Moving to chat ${nextIndex + 1} of ${chats?.length || 0}`
               );
               return nextIndex;
             });
@@ -588,7 +586,7 @@ export function SimulationProvider({
     if (chats && chats.length > 0 && !showResults) {
       const totalExpectedChats = chats.length;
       const completedChats = chats.filter(
-        (chat: SimulationChat) => chat.completed,
+        (chat: SimulationChat) => chat.completed
       ).length;
 
       if (completedChats === totalExpectedChats) {
@@ -599,7 +597,7 @@ export function SimulationProvider({
           completedChatIds.length === 0 ||
           (grades &&
             grades.some((grade) =>
-              completedChatIds.includes(grade.simulationChatId),
+              completedChatIds.includes(grade.simulationChatId)
             ));
 
         if (hasGradingData) {
@@ -622,7 +620,7 @@ export function SimulationProvider({
     ) {
       const totalExpectedChats = chats.length;
       const completedChats = chats.filter(
-        (chat: SimulationChat) => chat.completed,
+        (chat: SimulationChat) => chat.completed
       ).length;
 
       if (completedChats === totalExpectedChats) {
@@ -630,7 +628,7 @@ export function SimulationProvider({
           .filter((chat: SimulationChat) => chat.completed)
           .map((chat) => chat.id);
         const hasGradingForAllCompleted = completedChatIds.every((chatId) =>
-          grades.some((grade) => grade.simulationChatId === chatId),
+          grades.some((grade) => grade.simulationChatId === chatId)
         );
 
         if (hasGradingForAllCompleted) {
@@ -693,7 +691,7 @@ export function SimulationProvider({
       // (handleSimulationMessageComplete, handleSimulationMessageCancelled, etc.)
       // to ensure proper state management with server responses
     },
-    [currentChat, isSendingMessage, emitSendSimulationMessage],
+    [currentChat, isSendingMessage, emitSendSimulationMessage]
   );
 
   // Stop message function
@@ -751,9 +749,9 @@ export function SimulationProvider({
                       content: event.detail.finalContent,
                       completed: true,
                     }
-                  : msg,
+                  : msg
               );
-            },
+            }
           );
 
           // Invalidate queries for fresh data
@@ -766,6 +764,17 @@ export function SimulationProvider({
 
         // Reset loading states
         setIsSendingMessage(false);
+
+        // Dispatch responseComplete event for tour progression and navigating state management
+        window.dispatchEvent(
+          new CustomEvent("responseComplete", {
+            detail: {
+              chatId: event.detail.chatId,
+              messageId: event.detail.messageId,
+              finalContent: event.detail.finalContent,
+            },
+          })
+        );
       }
     };
 
@@ -779,9 +788,9 @@ export function SimulationProvider({
             return old.map((msg) =>
               msg.id === event.detail.messageId
                 ? { ...msg, content: event.detail.accumulatedContent }
-                : msg,
+                : msg
             );
-          },
+          }
         );
       }
     };
@@ -815,12 +824,12 @@ export function SimulationProvider({
       // THE FIX: Check if the event's completedChatId matches the current one.
       if (event.detail.completedChatId === currentChatIdRef.current) {
         logInfo(
-          `Chat ${event.detail.completedChatId} ended. Invalidating data to fetch next state.`,
+          `Chat ${event.detail.completedChatId} ended. Invalidating data to fetch next state.`
         );
 
         // Mark the chat as freshly completed so the UI can auto-advance
         setFreshlyCompletedChats((prev) =>
-          new Set(prev).add(event.detail.completedChatId),
+          new Set(prev).add(event.detail.completedChatId)
         );
         freshlyCompletedChatsRef.current.add(event.detail.completedChatId);
 
@@ -848,72 +857,72 @@ export function SimulationProvider({
 
     window.addEventListener(
       "simulationMessageStart",
-      handleSimulationMessageStart as EventListener,
+      handleSimulationMessageStart as EventListener
     );
     window.addEventListener(
       "simulationMessageComplete",
-      handleSimulationMessageComplete as EventListener,
+      handleSimulationMessageComplete as EventListener
     );
     window.addEventListener(
       "simulationMessageCancelled",
-      handleSimulationMessageCancelled as EventListener,
+      handleSimulationMessageCancelled as EventListener
     );
     window.addEventListener(
       "simulationMessageError",
-      handleSimulationMessageError as EventListener,
+      handleSimulationMessageError as EventListener
     );
     window.addEventListener(
       "simulationStopped",
-      handleSimulationStopped as EventListener,
+      handleSimulationStopped as EventListener
     );
     // Listen for the custom event dispatched from the WebSocketProvider
     window.addEventListener(
       "simulationChatEnded",
-      handleChatEnded as EventListener,
+      handleChatEnded as EventListener
     );
     window.addEventListener(
       "simulationError",
-      handleSimulationError as EventListener,
+      handleSimulationError as EventListener
     );
     // Listen for data channel events
     window.addEventListener(
       "simulationMessageToken",
-      handleSimulationMessageToken as EventListener,
+      handleSimulationMessageToken as EventListener
     );
 
     return () => {
       window.removeEventListener(
         "simulationMessageStart",
-        handleSimulationMessageStart as EventListener,
+        handleSimulationMessageStart as EventListener
       );
       window.removeEventListener(
         "simulationMessageComplete",
-        handleSimulationMessageComplete as EventListener,
+        handleSimulationMessageComplete as EventListener
       );
       window.removeEventListener(
         "simulationMessageCancelled",
-        handleSimulationMessageCancelled as EventListener,
+        handleSimulationMessageCancelled as EventListener
       );
       window.removeEventListener(
         "simulationMessageError",
-        handleSimulationMessageError as EventListener,
+        handleSimulationMessageError as EventListener
       );
       window.removeEventListener(
         "simulationStopped",
-        handleSimulationStopped as EventListener,
+        handleSimulationStopped as EventListener
       );
       window.removeEventListener(
         "simulationChatEnded",
-        handleChatEnded as EventListener,
+        handleChatEnded as EventListener
       );
       window.removeEventListener(
         "simulationError",
-        handleSimulationError as EventListener,
+        handleSimulationError as EventListener
       );
       // Remove data channel event listeners
       window.removeEventListener(
         "simulationMessageToken",
-        handleSimulationMessageToken as EventListener,
+        handleSimulationMessageToken as EventListener
       );
     };
   }, [queryClient, attemptId]); // Add queryClient and attemptId to the dependency array

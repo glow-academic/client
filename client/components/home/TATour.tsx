@@ -639,25 +639,46 @@ export default function TATour() {
         step3Completed: tourState.steps[3]?.isCompleted,
         messageId: event.detail?.messageId,
         chatId: event.detail?.chatId,
+        message: event.detail?.message,
+        isTourMessage: event.detail?.isTourMessage,
         totalSteps: tourState.steps.length,
         step3Exists: !!tourState.steps[3],
       });
 
+      // Set navigating to true when a message is sent (but don't complete step yet)
+      if (tourState.isOpen && tourState.currentStep === 3) {
+        setNavigating(true);
+        logInfo("Message sent - setting navigating to true");
+      }
+    };
+
+    // Listen for response complete events - when we receive the full response from backend
+    const handleResponseComplete = (event: CustomEvent) => {
+      logInfo("Response complete event received", {
+        tourOpen: tourState.isOpen,
+        currentStep: tourState.currentStep,
+        chatId: event.detail?.chatId,
+        messageId: event.detail?.messageId,
+      });
+
+      // Set navigating to false and complete step 3 when response is complete
       if (
         tourState.isOpen &&
         tourState.currentStep === 3 &&
         !tourState.steps[3]?.isCompleted
       ) {
-        logInfo("Message sent - marking tour step 3 complete");
+        setNavigating(false);
+        logInfo(
+          "Response complete - setting navigating to false and completing step 3"
+        );
         handleStepComplete(3);
         nextStep();
-      } else {
-        logInfo("Message sent - but not completing step 3", {
-          tourOpen: tourState.isOpen,
-          currentStep: tourState.currentStep,
-          step3Completed: tourState.steps[3]?.isCompleted,
-          expectedStep: 3,
-        });
+      } else if (tourState.isOpen && tourState.currentStep === 3) {
+        // Just reset navigating state if step is already completed
+        setNavigating(false);
+        logInfo(
+          "Response complete - setting navigating to false (step already completed)"
+        );
       }
     };
 
@@ -691,6 +712,10 @@ export default function TATour() {
       handleSimulationButtonPressed as EventListener
     );
     window.addEventListener("messageSent", handleMessageSent as EventListener);
+    window.addEventListener(
+      "responseComplete",
+      handleResponseComplete as EventListener
+    );
     window.addEventListener("chatEnded", handleChatEnded as EventListener);
 
     return () => {
@@ -706,6 +731,10 @@ export default function TATour() {
       window.removeEventListener(
         "messageSent",
         handleMessageSent as EventListener
+      );
+      window.removeEventListener(
+        "responseComplete",
+        handleResponseComplete as EventListener
       );
       window.removeEventListener("chatEnded", handleChatEnded as EventListener);
       if (timeoutRef.current) {
