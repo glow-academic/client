@@ -27,6 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { updateAgent } from "@/utils/mutations/agents/update-agent";
 import { getAgent } from "@/utils/queries/agents/get-agent";
 import { getAllModels } from "@/utils/queries/models/get-all-models";
+import MarkdownEditor from "../viewers/MarkdownEditor";
 
 interface SystemAgentFormData {
   name?: string;
@@ -280,26 +281,27 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
             <Label htmlFor="systemPrompt">System Prompt *</Label>
             {formData?.systemPrompt !== undefined && !isLoading ? (
               <>
-                <Textarea
-                  id="systemPrompt"
-                  value={formData?.systemPrompt || ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      systemPrompt: e.target.value,
-                    }))
-                  }
-                  placeholder="System prompt that defines how the agent should behave and respond"
-                  rows={20}
-                  required
-                />
+                <div className="h-[500px] overflow-auto">
+                  <MarkdownEditor
+                    value={formData?.systemPrompt || ""}
+                    onChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        systemPrompt: value,
+                      }))
+                    }
+                    placeholder="System prompt that defines how the agent should behave and respond. You can use markdown formatting."
+                    className="h-full"
+                  />
+                </div>
                 <p className="text-sm text-muted-foreground">
                   This prompt defines the agent's behavior and personality in
-                  conversations.
+                  conversations. You can use markdown formatting for better
+                  organization.
                 </p>
               </>
             ) : (
-              <Skeleton className="h-100 w-full" />
+              <Skeleton className="h-[500px] w-full" />
             )}
           </div>
 

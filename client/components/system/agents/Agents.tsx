@@ -48,9 +48,6 @@ export default function Agents() {
         <div className="flex justify-between items-start">
           <div className="space-y-2 flex-1">
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-blue-500 bg-opacity-10">
-                <Bot className="h-4 w-4 text-blue-500" />
-              </div>
               <CardTitle className="text-base">
                 {agent.name || "Unnamed Agent"}
               </CardTitle>
