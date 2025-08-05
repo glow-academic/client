@@ -844,6 +844,16 @@ export function SimulationProvider({
 
         // Turn off the loading indicator for the "End Chat" button
         setEndChatLoading(false);
+
+        // Dispatch chatEnded event for tour progression and navigating state management
+        window.dispatchEvent(
+          new CustomEvent("chatEnded", {
+            detail: {
+              chatId: event.detail.completedChatId,
+              attemptId: attemptId,
+            },
+          })
+        );
       }
     };
 

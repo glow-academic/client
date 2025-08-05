@@ -682,7 +682,24 @@ export default function TATour() {
       }
     };
 
-    // Listen for chat ended events (step 4) - ONLY source of truth for final step
+    // Listen for end chat button pressed events (step 4) - when user clicks End Chat button
+    const handleEndChatButtonPressed = (event: CustomEvent) => {
+      logInfo("End chat button pressed event received", {
+        tourOpen: tourState.isOpen,
+        currentStep: tourState.currentStep,
+        step4Completed: tourState.steps[4]?.isCompleted,
+        chatId: event.detail?.chatId,
+        attemptId: event.detail?.attemptId,
+      });
+
+      // Set navigating to true when end chat button is pressed
+      if (tourState.isOpen && tourState.currentStep === 4) {
+        setNavigating(true);
+        logInfo("End chat button pressed - setting navigating to true");
+      }
+    };
+
+    // Listen for chat ended events (step 4) - when chat is actually ended by backend
     const handleChatEnded = (event: CustomEvent) => {
       logInfo("Chat ended event received", {
         tourOpen: tourState.isOpen,
@@ -691,14 +708,24 @@ export default function TATour() {
         chatId: event.detail?.chatId,
       });
 
+      // Set navigating to false and complete step 4 when chat is ended
       if (
         tourState.isOpen &&
         tourState.currentStep === 4 &&
         !tourState.steps[4]?.isCompleted
       ) {
-        logInfo("Chat ended - marking final tour step complete");
+        setNavigating(false);
+        logInfo(
+          "Chat ended - setting navigating to false and completing step 4"
+        );
         handleStepComplete(4);
         nextStep();
+      } else if (tourState.isOpen && tourState.currentStep === 4) {
+        // Just reset navigating state if step is already completed
+        setNavigating(false);
+        logInfo(
+          "Chat ended - setting navigating to false (step already completed)"
+        );
       }
     };
 
@@ -715,6 +742,10 @@ export default function TATour() {
     window.addEventListener(
       "responseComplete",
       handleResponseComplete as EventListener
+    );
+    window.addEventListener(
+      "endChatButtonPressed",
+      handleEndChatButtonPressed as EventListener
     );
     window.addEventListener("chatEnded", handleChatEnded as EventListener);
 
@@ -735,6 +766,10 @@ export default function TATour() {
       window.removeEventListener(
         "responseComplete",
         handleResponseComplete as EventListener
+      );
+      window.removeEventListener(
+        "endChatButtonPressed",
+        handleEndChatButtonPressed as EventListener
       );
       window.removeEventListener("chatEnded", handleChatEnded as EventListener);
       if (timeoutRef.current) {
@@ -905,6 +940,17 @@ export default function TATour() {
           // Tour not completed - click the End Session/End Chat button
           logInfo(
             "Step 4 action triggered - clicking End Session/End Chat button"
+          );
+
+          // Dispatch endChatButtonPressed event when Complete button is clicked on step 4
+          // This will set the navigating state to true
+          window.dispatchEvent(
+            new CustomEvent("endChatButtonPressed", {
+              detail: {
+                chatId: "tour-step-4",
+                attemptId: tourState.attemptId,
+              },
+            })
           );
 
           // If we have an attemptId, navigate to the attempt page first

@@ -373,7 +373,18 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
           <Button
             type="button"
             variant="outline"
-            onClick={endChat}
+            onClick={() => {
+              // Dispatch endChatButtonPressed event for tour progression and navigating state management
+              window.dispatchEvent(
+                new CustomEvent("endChatButtonPressed", {
+                  detail: {
+                    chatId: simulationContext.currentChat?.id,
+                    attemptId: simulationContext.attemptId,
+                  },
+                })
+              );
+              endChat();
+            }}
             disabled={
               endChatLoading || (simulation?.timeLimit ? !isActive : false)
             }
