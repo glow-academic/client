@@ -974,10 +974,6 @@ async def generate_certificate(
                 story.append(table)
                 story.append(Spacer(1, 30))
             
-            # Add branding
-            story.append(Spacer(1, 20))
-            story.append(Paragraph("GLOW | Purdue University", styles['Normal']))
-            
             # Build PDF with sophisticated border
             from reportlab.platypus import PageTemplate
             from reportlab.platypus.frames import Frame  # type: ignore
@@ -1003,6 +999,15 @@ async def generate_certificate(
                             (doc.leftMargin + 0.1*inch, doc.bottomMargin + 0.1*inch),
                             (doc.leftMargin + doc.width - 0.25*inch, doc.bottomMargin + 0.1*inch)]:
                     canvas.rect(x, y, corner_size, corner_size, fill=1)
+                
+                # Add branding text in bottom left corner
+                canvas.setFont("Helvetica", 10)
+                canvas.setFillColor(colors.darkblue)
+                branding_text = "GLOW | Purdue University"
+                # Position in bottom left, inside the border but with some margin
+                x_pos = doc.leftMargin + 0.3*inch
+                y_pos = doc.bottomMargin + 0.3*inch
+                canvas.drawString(x_pos, y_pos, branding_text)
             
             page_template = PageTemplate(id='certificate', frames=[content_frame], onPage=certificate_page)
             doc.addPageTemplates([page_template])
