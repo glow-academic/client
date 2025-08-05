@@ -176,6 +176,9 @@ export function Scenarios() {
                     Generated
                   </Badge>
                 )}
+                <Badge variant={scenario.active ? "default" : "secondary"}>
+                  {scenario.active ? "Active" : "Inactive"}
+                </Badge>
               </div>
             </div>
             <p className="text-sm text-muted-foreground line-clamp-2">

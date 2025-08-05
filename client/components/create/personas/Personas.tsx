@@ -242,6 +242,9 @@ export default function Personas() {
                     <p>Randomness Level</p>
                   </TooltipContent>
                 </Tooltip>
+                <Badge variant={persona.active ? "default" : "secondary"}>
+                  {persona.active ? "Active" : "Inactive"}
+                </Badge>
               </div>
               <p className="text-sm text-muted-foreground">
                 {persona.description || "No description available"}

@@ -310,7 +310,33 @@ export default function Scenario({
         toast.success("Scenario created successfully!");
       }
 
+      // Invalidate all relevant queries to ensure data consistency
       queryClient.invalidateQueries({ queryKey: ["scenarios"] });
+
+      // Invalidate specific scenario query if in edit mode
+      if (isEditMode && scenarioId) {
+        queryClient.invalidateQueries({ queryKey: ["scenario", scenarioId] });
+      }
+
+      // Invalidate simulations queries since scenarios are used by simulations
+      queryClient.invalidateQueries({ queryKey: ["simulations"] });
+
+      // Invalidate analytics queries that depend on scenarios
+      queryClient.invalidateQueries({ queryKey: ["simulationAttempts"] });
+      queryClient.invalidateQueries({ queryKey: ["simulationChats"] });
+      queryClient.invalidateQueries({ queryKey: ["simulationGrades"] });
+      queryClient.invalidateQueries({ queryKey: ["simulationFeedbacks"] });
+
+      // Invalidate documents queries since scenarios reference documents
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+
+      // Invalidate personas queries since scenarios reference personas
+      queryClient.invalidateQueries({ queryKey: ["personas"] });
+
+      // Invalidate parameters queries since scenarios reference parameters
+      queryClient.invalidateQueries({ queryKey: ["parameters"] });
+      queryClient.invalidateQueries({ queryKey: ["parameter-items"] });
+
       router.push("/create/scenarios");
     } catch (error) {
       toast.error(

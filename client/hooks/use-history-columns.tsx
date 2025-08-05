@@ -2,7 +2,6 @@
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { DataTableRowActions } from "@/components/common/history/DataTableRowActions";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Profile, SimulationAttempt, SimulationChat } from "@/types";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
@@ -15,7 +14,7 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { isSimulationTimedOut } from "@/utils/simulation-utils";
 import { useQuery } from "@tanstack/react-query";
-import { Column, ColumnDef, Row, Table } from "@tanstack/react-table";
+import { Column, ColumnDef, Row } from "@tanstack/react-table";
 import { useMemo } from "react";
 
 // Enhanced types for the data table
@@ -28,7 +27,7 @@ interface EnhancedAttempt extends SimulationAttempt {
 // Component to use the columns with data from queries
 export function useHistoryColumns({
   profileId = null,
-  showExport = true,
+  showExport: _showExport = true,
   cohortIds = undefined,
   showPractice = false,
   startDate,
@@ -189,39 +188,6 @@ export function useHistoryColumns({
   // Define columns - only attempts view
   const columns = useMemo(() => {
     const attemptColumns: ColumnDef<EnhancedAttempt>[] = [
-      // Select column - only show if showExport is true
-      ...(showExport
-        ? [
-            {
-              id: "select",
-              header: ({ table }: { table: Table<EnhancedAttempt> }) => (
-                <Checkbox
-                  checked={
-                    table.getIsAllPageRowsSelected() ||
-                    (table.getIsSomePageRowsSelected() && "indeterminate")
-                  }
-                  onCheckedChange={(value: boolean | "indeterminate") =>
-                    table.toggleAllPageRowsSelected(!!value)
-                  }
-                  aria-label="Select all"
-                  className="translate-y-[2px]"
-                />
-              ),
-              cell: ({ row }: { row: Row<EnhancedAttempt> }) => (
-                <Checkbox
-                  checked={row.getIsSelected()}
-                  onCheckedChange={(value: boolean | "indeterminate") =>
-                    row.toggleSelected(!!value)
-                  }
-                  aria-label="Select row"
-                  className="translate-y-[2px]"
-                />
-              ),
-              enableSorting: false,
-              enableHiding: false,
-            },
-          ]
-        : []),
       // Date column
       {
         accessorKey: "createdAt",
@@ -648,15 +614,7 @@ export function useHistoryColumns({
     ];
 
     return attemptColumns;
-  }, [
-    profileOptions,
-    showExport,
-    grades,
-    simulations,
-    scenarios,
-    validRubrics,
-    profileId,
-  ]);
+  }, [profileOptions, grades, simulations, scenarios, validRubrics, profileId]);
 
   // Use enhanced attempts data
   let data: unknown[] = enhancedAttempts || [];
