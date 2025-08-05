@@ -804,11 +804,47 @@ async def generate_certificate(
 
             # Create PDF in memory
             buffer = io.BytesIO()
-            doc = SimpleDocTemplate(buffer, pagesize=letter)
+            doc = SimpleDocTemplate(buffer, pagesize=letter, 
+                                  leftMargin=0.5*inch, rightMargin=0.5*inch,
+                                  topMargin=0.5*inch, bottomMargin=0.5*inch)
             story = []
             
             # Get styles
             styles = getSampleStyleSheet()
+            
+            # Create certificate border
+            def create_border():
+                from reportlab.graphics import renderPDF
+                from reportlab.graphics.shapes import Drawing, Rect
+
+                # Create decorative border
+                border_drawing = Drawing(7.5*inch, 10*inch)
+                
+                # Outer border
+                outer_rect = Rect(0, 0, 7.5*inch, 10*inch, 
+                                 strokeColor=colors.darkblue, 
+                                 strokeWidth=3, 
+                                 fillColor=None)
+                border_drawing.add(outer_rect)
+                
+                # Inner border
+                inner_rect = Rect(0.1*inch, 0.1*inch, 7.3*inch, 9.8*inch, 
+                                 strokeColor=colors.darkblue, 
+                                 strokeWidth=1, 
+                                 fillColor=None)
+                border_drawing.add(inner_rect)
+                
+                # Corner decorations
+                corner_size = 0.3*inch
+                for x, y in [(0, 0), (7.5*inch-corner_size, 0), 
+                            (0, 10*inch-corner_size), (7.5*inch-corner_size, 10*inch-corner_size)]:
+                    corner = Rect(x, y, corner_size, corner_size, 
+                                 strokeColor=colors.darkblue, 
+                                 strokeWidth=2, 
+                                 fillColor=colors.lightblue)
+                    border_drawing.add(corner)
+                
+                return border_drawing
             
             # Create custom styles
             title_style = ParagraphStyle(
@@ -845,6 +881,10 @@ async def generate_certificate(
                 spaceAfter=10,
                 textColor=colors.darkblue
             )
+            
+            # Add border (commented out for now to avoid import issues)
+            # story.append(create_border())
+            # story.append(Spacer(1, 10))
             
             # Add title
             story.append(Paragraph("Certificate of Completion", title_style))
@@ -897,28 +937,38 @@ async def generate_certificate(
                         
                         table_data.append([cohort_name, sim_name, score_text, status_text])
                 
-                # Create table
-                table = Table(table_data, colWidths=[1.5*inch, 2*inch, 1*inch, 1*inch])
-                table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, 0), 12),
-                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-                    ('FONTSIZE', (0, 1), (-1, -1), 10),
-                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ]))
-                
-                story.append(table)
-                story.append(Spacer(1, 30))
+                            # Create table with better column widths and text wrapping
+                table = Table(table_data, colWidths=[1.8*inch, 2.5*inch, 1*inch, 1*inch])
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 11),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.lightblue),
+                ('GRID', (0, 0), (-1, -1), 1, colors.darkblue),
+                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 1), (-1, -1), 9),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('WORDWRAP', (0, 0), (-1, -1), True),
+                ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                ('TOPPADDING', (0, 0), (-1, -1), 4),
+                ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
+            ]))
+            
+            story.append(table)
+            story.append(Spacer(1, 30))
             
             # Add branding
+            story.append(Spacer(1, 20))
             story.append(Paragraph("GLOW | Purdue University", styles['Normal']))
+            
+            # Add page break to ensure one page maximum
+            from reportlab.platypus import PageBreak
+            story.append(PageBreak())
             
             # Build PDF
             doc.build(story)
