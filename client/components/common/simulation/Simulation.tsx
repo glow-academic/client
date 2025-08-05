@@ -41,6 +41,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useProfile } from "@/contexts/profile-context";
 import { Rubric, Scenario } from "@/types";
 import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
 import { updateSimulation } from "@/utils/mutations/simulations/update-simulation";
@@ -67,6 +68,8 @@ interface FormData {
   cohortIds?: string[];
   scenarioIds?: string[];
   active?: boolean;
+  defaultSimulation?: boolean;
+  practiceSimulation?: boolean;
 }
 
 interface FormErrors {
@@ -78,6 +81,7 @@ interface FormErrors {
 
 export default function Simulation({ simulationId }: SimulationProps) {
   const queryClient = useQueryClient();
+  const { effectiveProfile } = useProfile();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
@@ -97,6 +101,8 @@ export default function Simulation({ simulationId }: SimulationProps) {
       cohortIds: [],
       scenarioIds: [],
       active: true,
+      defaultSimulation: false,
+      practiceSimulation: false,
     }),
     []
   );
@@ -148,6 +154,8 @@ export default function Simulation({ simulationId }: SimulationProps) {
         rubricId: simulation.rubricId,
         scenarioIds: simulation.scenarioIds,
         active: simulation.active,
+        defaultSimulation: simulation.defaultSimulation ?? false,
+        practiceSimulation: simulation.practiceSimulation ?? false,
       };
       setFormData(simulationData);
       setOriginalFormData(simulationData); // Set original data for comparison
@@ -169,6 +177,8 @@ export default function Simulation({ simulationId }: SimulationProps) {
       current.timeLimit !== original.timeLimit ||
       current.rubricId !== original.rubricId ||
       current.active !== original.active ||
+      current.defaultSimulation !== original.defaultSimulation ||
+      current.practiceSimulation !== original.practiceSimulation ||
       JSON.stringify(current.scenarioIds?.sort()) !==
         JSON.stringify(original.scenarioIds?.sort())
     );
@@ -256,6 +266,8 @@ export default function Simulation({ simulationId }: SimulationProps) {
       if (targetSimulationId) {
         result = await updateSimulation(targetSimulationId, {
           ...formData,
+          defaultSimulation: formData?.defaultSimulation || false,
+          practiceSimulation: formData?.practiceSimulation || false,
           updatedAt: new Date().toISOString(),
         });
         toast.success("Simulation updated successfully!");
@@ -266,6 +278,8 @@ export default function Simulation({ simulationId }: SimulationProps) {
           scenarioIds: formData?.scenarioIds || [],
           timeLimit: formData?.timeLimit || null,
           active: formData?.active || true,
+          defaultSimulation: formData?.defaultSimulation || false,
+          practiceSimulation: formData?.practiceSimulation || false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
@@ -420,24 +434,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
           )}
         </div>
 
-        {/* Active/Inactive Switch */}
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="active" className="text-sm">
-            Simulation Active
-          </Label>
-          {formData?.active !== undefined && !isLoading ? (
-            <Switch
-              id="active"
-              checked={formData.active ?? true}
-              onCheckedChange={(checked) =>
-                handleInputChange("active", checked)
-              }
-            />
-          ) : (
-            <Skeleton className="h-6 w-11" />
-          )}
-        </div>
-
         <div className="space-y-2">
           <Label htmlFor="rubricId">Rubric</Label>
           {formData?.rubricId !== undefined && !isLoading ? (
@@ -463,6 +459,66 @@ export default function Simulation({ simulationId }: SimulationProps) {
           )}
           {errors.rubricId && (
             <p className="text-sm text-destructive">{errors.rubricId}</p>
+          )}
+        </div>
+
+        {/* Active/Inactive, Default Simulation, and Practice Simulation Switches */}
+        <div className="space-y-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="active" className="text-sm">
+              Simulation Active
+            </Label>
+            {formData?.active !== undefined && !isLoading ? (
+              <Switch
+                id="active"
+                checked={formData.active ?? true}
+                onCheckedChange={(checked) =>
+                  handleInputChange("active", checked)
+                }
+              />
+            ) : (
+              <Skeleton className="h-6 w-11" />
+            )}
+          </div>
+
+          {/* Default Simulation Switch - Only for superadmin */}
+          {effectiveProfile?.role === "superadmin" && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="defaultSimulation" className="text-sm">
+                Default Simulation
+              </Label>
+              {formData?.defaultSimulation !== undefined && !isLoading ? (
+                <Switch
+                  id="defaultSimulation"
+                  checked={formData.defaultSimulation ?? false}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("defaultSimulation", checked)
+                  }
+                />
+              ) : (
+                <Skeleton className="h-6 w-11" />
+              )}
+            </div>
+          )}
+
+          {/* Practice Simulation Switch - Only for superadmin */}
+          {effectiveProfile?.role === "superadmin" && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="practiceSimulation" className="text-sm">
+                Practice Simulation
+              </Label>
+              {formData?.practiceSimulation !== undefined && !isLoading ? (
+                <Switch
+                  id="practiceSimulation"
+                  checked={formData.practiceSimulation ?? false}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("practiceSimulation", checked)
+                  }
+                />
+              ) : (
+                <Skeleton className="h-6 w-11" />
+              )}
+            </div>
           )}
         </div>
 
