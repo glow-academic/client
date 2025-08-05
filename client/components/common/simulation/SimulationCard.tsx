@@ -24,7 +24,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Persona, Profile, Scenario, Simulation } from "@/types";
-import { getPersonaConfig } from "@/utils/personas";
+import { getPersonaIconComponent } from "@/utils/persona-icons";
+import { generateGradientFromHex, getPersonaConfig } from "@/utils/personas";
 import { FileText, Info, Timer, User, Users } from "lucide-react";
 import TableRubric from "../rubric/TableRubric";
 
@@ -65,18 +66,27 @@ export default function SimulationCard({
     ? personas?.find((a: Persona) => a.id === interaction.personaId)
     : null;
 
-  // Get persona configuration based on persona name
+  // Get persona configuration and icon based on persona data
   const personaConfig = persona ? getPersonaConfig(persona.name) : null;
   const IconComponent =
-    type === "default" ? personaConfig?.icon || User : Users;
+    type === "default"
+      ? (persona
+          ? getPersonaIconComponent(persona.icon)
+          : personaConfig?.icon) || User
+      : Users;
 
-  // Determine gradient class based on completion status
+  // Determine gradient class based on completion status and persona color
   const getGradientClass = () => {
     if (simulation.hasPassed && type !== "default") {
       return "from-green-500 to-green-600";
     }
+    if (type === "default" && persona?.color) {
+      // Use the persona's actual color from database to generate gradient
+      const gradientStyle = generateGradientFromHex(persona.color);
+      return gradientStyle;
+    }
     return type === "default"
-      ? personaConfig?.colors?.gradient || "from-gray-500 to-gray-600"
+      ? personaConfig?.colors?.gradient || "from-blue-500 to-purple-600"
       : "from-blue-500 to-purple-600";
   };
 
@@ -116,13 +126,22 @@ export default function SimulationCard({
         <CardHeader className="pb-1 relative z-10">
           <div className="flex items-start justify-between">
             <div
-              className={`p-2 rounded-xl bg-gradient-to-br ${gradientClass} shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0`}
+              className={`p-2 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0 ${
+                typeof gradientClass === "string" &&
+                !gradientClass.startsWith("linear-gradient")
+                  ? `bg-gradient-to-br ${gradientClass}`
+                  : ""
+              }`}
               style={{
                 minHeight: 40,
                 minWidth: 40,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                ...(typeof gradientClass === "string" &&
+                  gradientClass.startsWith("linear-gradient") && {
+                    background: gradientClass,
+                  }),
               }}
             >
               <IconComponent className="h-5 w-5 text-white" />
@@ -247,11 +266,22 @@ export default function SimulationCard({
             onClick={() => onStartSimulation(simulation.id)}
             disabled={loadingSimulation === simulation.id}
             data-testid={`start-simulation-${simulation.id}`}
-            className={`w-full text-center py-2 rounded-lg bg-gradient-to-r ${gradientClass} text-white font-medium text-sm hover:shadow-lg transition-all duration-300 ${
+            className={`w-full text-center py-2 rounded-lg text-white font-medium text-sm hover:shadow-lg transition-all duration-300 ${
               loadingSimulation === simulation.id
                 ? "animate-pulse cursor-not-allowed"
                 : "hover:scale-105 cursor-pointer"
-            } disabled:opacity-70`}
+            } disabled:opacity-70 ${
+              typeof gradientClass === "string" &&
+              !gradientClass.startsWith("linear-gradient")
+                ? `bg-gradient-to-r ${gradientClass}`
+                : ""
+            }`}
+            style={{
+              ...(typeof gradientClass === "string" &&
+                gradientClass.startsWith("linear-gradient") && {
+                  background: gradientClass,
+                }),
+            }}
           >
             {loadingSimulation === simulation.id
               ? "Starting..."
