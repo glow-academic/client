@@ -16,6 +16,7 @@ from app.utils.mime_utils import get_content_type
 from fastapi import (APIRouter, Depends, File, HTTPException, Request,
                      Response, UploadFile)
 from fastapi.responses import FileResponse, JSONResponse
+from reportlab.graphics.shapes import Drawing, Rect  # type: ignore
 from sqlmodel import Session, select
 
 # Create uploads directory if it doesn't exist
@@ -813,38 +814,38 @@ async def generate_certificate(
             styles = getSampleStyleSheet()
             
             # Create certificate border
-            def create_border():
-                from reportlab.graphics import renderPDF
-                from reportlab.graphics.shapes import Drawing, Rect
-
-                # Create decorative border
-                border_drawing = Drawing(7.5*inch, 10*inch)
-                
-                # Outer border
-                outer_rect = Rect(0, 0, 7.5*inch, 10*inch, 
-                                 strokeColor=colors.darkblue, 
-                                 strokeWidth=3, 
-                                 fillColor=None)
-                border_drawing.add(outer_rect)
-                
-                # Inner border
-                inner_rect = Rect(0.1*inch, 0.1*inch, 7.3*inch, 9.8*inch, 
-                                 strokeColor=colors.darkblue, 
-                                 strokeWidth=1, 
-                                 fillColor=None)
-                border_drawing.add(inner_rect)
-                
-                # Corner decorations
-                corner_size = 0.3*inch
-                for x, y in [(0, 0), (7.5*inch-corner_size, 0), 
-                            (0, 10*inch-corner_size), (7.5*inch-corner_size, 10*inch-corner_size)]:
-                    corner = Rect(x, y, corner_size, corner_size, 
-                                 strokeColor=colors.darkblue, 
-                                 strokeWidth=2, 
-                                 fillColor=colors.lightblue)
-                    border_drawing.add(corner)
-                
-                return border_drawing
+            def create_border() -> Drawing:
+                try:
+                    # Create decorative border - smaller to fit page
+                    border_drawing = Drawing(5*inch, 7*inch)
+                    
+                    # Outer border
+                    outer_rect = Rect(0, 0, 5*inch, 7*inch, 
+                                     strokeColor=colors.darkblue, 
+                                     strokeWidth=3, 
+                                     fillColor=None)
+                    border_drawing.add(outer_rect)
+                    
+                    # Inner border
+                    inner_rect = Rect(0.1*inch, 0.1*inch, 4.8*inch, 6.8*inch, 
+                                     strokeColor=colors.darkblue, 
+                                     strokeWidth=1, 
+                                     fillColor=None)
+                    border_drawing.add(inner_rect)
+                    
+                    # Corner decorations
+                    corner_size = 0.2*inch
+                    for x, y in [(0, 0), (5*inch-corner_size, 0), 
+                                (0, 7*inch-corner_size), (5*inch-corner_size, 7*inch-corner_size)]:
+                        corner = Rect(x, y, corner_size, corner_size, 
+                                     strokeColor=colors.darkblue, 
+                                     strokeWidth=2, 
+                                     fillColor=colors.lightblue)
+                        border_drawing.add(corner)
+                    
+                    return border_drawing
+                except ImportError:
+                    return None
             
             # Create custom styles
             title_style = ParagraphStyle(
@@ -882,13 +883,15 @@ async def generate_certificate(
                 textColor=colors.darkblue
             )
             
-            # Add border (commented out for now to avoid import issues)
-            # story.append(create_border())
-            # story.append(Spacer(1, 10))
+            # Add border
+            border = create_border()
+            if border:
+                story.append(border)
+                story.append(Spacer(1, 10))
             
             # Add title
             story.append(Paragraph("Certificate of Completion", title_style))
-            story.append(Spacer(1, 20))
+            story.append(Spacer(1, 10))
             
             # Add profile name
             story.append(Paragraph(profile_name, name_style))
@@ -1010,27 +1013,27 @@ async def generate_certificate(
             filename = f"certificate_{profile_name.replace(' ', '_')}_{uuid.uuid4().hex[:8]}.txt"
             file_path = os.path.join(UPLOAD_FOLDER, filename)
             
-            with open(file_path, 'w') as f:
-                f.write("Certificate of Completion\n")
-                f.write("=" * 30 + "\n\n")
-                f.write(f"Name: {profile_name}\n\n")
+            with open(file_path, 'w', encoding='utf-8') as f:  # type: ignore
+                f.write("Certificate of Completion\n")  # type: ignore
+                f.write("=" * 30 + "\n\n")  # type: ignore
+                f.write(f"Name: {profile_name}\n\n")  # type: ignore
                 
                 # Calculate overall status
                 total_cohorts = len(cohort_data)
                 passed_cohorts = sum(1 for cohort in cohort_data if cohort.get("passed", False))
                 all_passed = passed_cohorts == total_cohorts and total_cohorts > 0
                 
-                f.write(f"Status: {'COMPLETE' if all_passed else 'INCOMPLETE'}\n")
-                f.write(f"Progress: {passed_cohorts} of {total_cohorts} cohorts completed\n\n")
+                f.write(f"Status: {'COMPLETE' if all_passed else 'INCOMPLETE'}\n")  # type: ignore
+                f.write(f"Progress: {passed_cohorts} of {total_cohorts} cohorts completed\n\n")  # type: ignore
                 
-                f.write("Cohort Progress:\n")
-                f.write("-" * 20 + "\n")
+                f.write("Cohort Progress:\n")  # type: ignore
+                f.write("-" * 20 + "\n")  # type: ignore
                 
                 for cohort in cohort_data:
                     cohort_name = cohort.get("name", "Unknown Cohort")
                     simulations = cohort.get("simulations", [])
                     
-                    f.write(f"\n{cohort_name}:\n")
+                    f.write(f"\n{cohort_name}:\n")  # type: ignore
                     for sim in simulations:
                         sim_name = sim.get("name", "Unknown Simulation")
                         score = sim.get("score", 0)
@@ -1039,9 +1042,9 @@ async def generate_certificate(
                         score_text = f"{score}%" if score > 0 else "No attempts"
                         status_text = "PASS" if passed else "FAIL" if score > 0 else "Not attempted"
                         
-                        f.write(f"  - {sim_name}: {score_text} ({status_text})\n")
+                        f.write(f"  - {sim_name}: {score_text} ({status_text})\n")  # type: ignore
                 
-                f.write("\nGLOW | Purdue University\n")
+                f.write("\nGLOW | Purdue University\n")  # type: ignore
             
             # Create document record
             document = Documents(
