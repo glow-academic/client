@@ -53,28 +53,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await response.json();
+    // Get the file content and headers from the FastAPI response
+    const fileContent = await response.arrayBuffer();
+    const contentType =
+      response.headers.get("content-type") || "application/pdf";
+    const contentDisposition =
+      response.headers.get("content-disposition") ||
+      'attachment; filename="certificate.pdf"';
+    const cacheControl =
+      response.headers.get("cache-control") ||
+      "no-cache, no-store, must-revalidate";
+    const pragma = response.headers.get("pragma") || "no-cache";
+    const expires = response.headers.get("expires") || "0";
 
     logInfo("Certificate generated successfully", {
-      documentId: result.document_id,
-      filename: result.filename,
+      contentType,
+      contentDisposition,
     });
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: result.message,
-        documentId: result.document_id,
-        filename: result.filename,
-        status: "success",
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    // Return the file directly as a download response
+    return new Response(fileContent, {
+      status: 200,
+      headers: {
+        "Content-Type": contentType,
+        "Content-Disposition": contentDisposition,
+        "Cache-Control": cacheControl,
+        Pragma: pragma,
+        Expires: expires,
+      },
+    });
   } catch (error) {
     const errorMessage = `Error generating certificate: ${error instanceof Error ? error.message : "Unknown error"}`;
     logError(errorMessage, error);

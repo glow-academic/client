@@ -775,9 +775,10 @@ async def finalize_upload(
 async def generate_certificate(
     request: Request,
     session: Session = Depends(get_session),
-) -> JSONResponse:
+) -> Response:
     """
     Generate a certificate PDF for a profile showing their cohort progress
+    Returns the file directly as a download response
     """
     try:
         # Parse request body
@@ -1014,94 +1015,76 @@ async def generate_certificate(
             doc.build(story)
             buffer.seek(0)
             
-            # Save PDF to file
+            # Generate filename for download
             filename = f"certificate_{profile_name.replace(' ', '_')}_{uuid.uuid4().hex[:8]}.pdf"
-            file_path = os.path.join(UPLOAD_FOLDER, filename)
             
-            with open(file_path, 'wb') as f:
-                f.write(buffer.getvalue())
-            
-            # Create document record
-            document = Documents(
-                id=uuid.uuid4(),
-                name=filename,
-                file_path=filename,
-                mime_type="application/pdf",
-            )
-            
-            session.add(document)
-            session.commit()
-            
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "status": "success",
-                    "message": "Certificate generated successfully",
-                    "document_id": str(document.id),
-                    "filename": filename,
-                },
+            # Return PDF directly as file download
+            return Response(
+                content=buffer.getvalue(),
+                media_type="application/pdf",
+                headers={
+                    "Content-Disposition": f"attachment; filename=\"{filename}\"",
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0",
+                }
             )
             
         except ImportError:
             # Fallback if reportlab is not available
             logger.warning("ReportLab not available, using simple text generation")
             
-            # Create simple text file as fallback
-            filename = f"certificate_{profile_name.replace(' ', '_')}_{uuid.uuid4().hex[:8]}.txt"
-            file_path = os.path.join(UPLOAD_FOLDER, filename)
+            # Create simple text content as fallback
+            text_content = []
+            text_content.append("Certificate of Completion")
+            text_content.append("=" * 30)
+            text_content.append("")
+            text_content.append(f"Name: {profile_name}")
+            text_content.append("")
             
-            with open(file_path, 'w', encoding='utf-8') as f:  # type: ignore
-                f.write("Certificate of Completion\n")  # type: ignore
-                f.write("=" * 30 + "\n\n")  # type: ignore
-                f.write(f"Name: {profile_name}\n\n")  # type: ignore
+            # Calculate overall status
+            total_cohorts = len(cohort_data)
+            passed_cohorts = sum(1 for cohort in cohort_data if cohort.get("passed", False))
+            all_passed = passed_cohorts == total_cohorts and total_cohorts > 0
+            
+            text_content.append(f"Status: {'COMPLETE' if all_passed else 'INCOMPLETE'}")
+            text_content.append(f"Progress: {passed_cohorts} of {total_cohorts} cohorts completed")
+            text_content.append("")
+            
+            text_content.append("Cohort Progress:")
+            text_content.append("-" * 20)
+            
+            for cohort in cohort_data:
+                cohort_name = cohort.get("name", "Unknown Cohort")
+                simulations = cohort.get("simulations", [])
                 
-                # Calculate overall status
-                total_cohorts = len(cohort_data)
-                passed_cohorts = sum(1 for cohort in cohort_data if cohort.get("passed", False))
-                all_passed = passed_cohorts == total_cohorts and total_cohorts > 0
-                
-                f.write(f"Status: {'COMPLETE' if all_passed else 'INCOMPLETE'}\n")  # type: ignore
-                f.write(f"Progress: {passed_cohorts} of {total_cohorts} cohorts completed\n\n")  # type: ignore
-                
-                f.write("Cohort Progress:\n")  # type: ignore
-                f.write("-" * 20 + "\n")  # type: ignore
-                
-                for cohort in cohort_data:
-                    cohort_name = cohort.get("name", "Unknown Cohort")
-                    simulations = cohort.get("simulations", [])
+                text_content.append(f"\n{cohort_name}:")
+                for sim in simulations:
+                    sim_name = sim.get("name", "Unknown Simulation")
+                    score = sim.get("score", 0)
+                    passed = sim.get("passed", False)
                     
-                    f.write(f"\n{cohort_name}:\n")  # type: ignore
-                    for sim in simulations:
-                        sim_name = sim.get("name", "Unknown Simulation")
-                        score = sim.get("score", 0)
-                        passed = sim.get("passed", False)
-                        
-                        score_text = f"{score}%" if score > 0 else "No attempts"
-                        status_text = "PASS" if passed else "FAIL" if score > 0 else "Not attempted"
-                        
-                        f.write(f"  - {sim_name}: {score_text} ({status_text})\n")  # type: ignore
-                
-                f.write("\nGLOW | Purdue University\n")  # type: ignore
+                    score_text = f"{score}%" if score > 0 else "No attempts"
+                    status_text = "PASS" if passed else "FAIL" if score > 0 else "Not attempted"
+                    
+                    text_content.append(f"  - {sim_name}: {score_text} ({status_text})")
             
-            # Create document record
-            document = Documents(
-                id=uuid.uuid4(),
-                name=filename,
-                file_path=filename,
-                mime_type="text/plain",
-            )
+            text_content.append("")
+            text_content.append("GLOW | Purdue University")
             
-            session.add(document)
-            session.commit()
+            # Generate filename for download
+            filename = f"certificate_{profile_name.replace(' ', '_')}_{uuid.uuid4().hex[:8]}.txt"
             
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "status": "success",
-                    "message": "Certificate generated successfully (text format)",
-                    "document_id": str(document.id),
-                    "filename": filename,
-                },
+            # Return text file directly as download
+            return Response(
+                content="\n".join(text_content),
+                media_type="text/plain",
+                headers={
+                    "Content-Disposition": f"attachment; filename=\"{filename}\"",
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0",
+                }
             )
             
     except Exception as e:

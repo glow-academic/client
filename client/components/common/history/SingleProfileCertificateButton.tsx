@@ -255,32 +255,29 @@ export function SingleProfileCertificateButton<TData>({
         throw new Error(errorData.message || "Failed to generate certificate");
       }
 
-      const result = await response.json();
+      // Handle direct file download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
 
-      if (result.success) {
-        // Download the generated certificate
-        const downloadResponse = await fetch(
-          `/api/download/document/${result.documentId}`
-        );
-
-        if (downloadResponse.ok) {
-          const blob = await downloadResponse.blob();
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = result.filename || "certificate.pdf";
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-
-          toast?.success(`Certificate generated for ${profileName}`);
-        } else {
-          throw new Error("Failed to download certificate");
+      // Extract filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get("content-disposition");
+      let filename = "certificate.pdf";
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="([^"]+)"/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
         }
-      } else {
-        throw new Error(result.message || "Failed to generate certificate");
       }
+
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast?.success(`Certificate generated for ${profileName}`);
     } catch (error) {
       logError("Error generating certificate:", error);
       toast?.error("Failed to generate certificate");
