@@ -7,9 +7,16 @@
 "use client";
 import { logError, logInfo } from "@/utils/logger";
 import { useQuery } from "@tanstack/react-query";
-import { Copy, Edit, Eye, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Edit,
+  Eye,
+  Trash2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -39,6 +46,11 @@ import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { ScenariosDataTable } from "./ScenariosDataTable";
 
+interface GroupedScenario {
+  parent: Scenario;
+  children: Scenario[];
+}
+
 export function Scenarios() {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -48,6 +60,9 @@ export function Scenarios() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
+    new Set()
+  );
 
   // Fetch scenarios data
   const { data: scenarios = [], refetch: refetchScenarios } = useQuery({
@@ -59,6 +74,51 @@ export function Scenarios() {
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
   });
+
+  // Group scenarios by parent_id
+  const groupedScenarios = useMemo(() => {
+    const groups: GroupedScenario[] = [];
+    const parentMap = new Map<string, Scenario>();
+    const childMap = new Map<string, Scenario[]>();
+
+    // First pass: identify parents and collect children
+    scenarios.forEach((scenario) => {
+      if (scenario.generated && scenario.parentId) {
+        // This is a generated scenario with a parent
+        if (!childMap.has(scenario.parentId)) {
+          childMap.set(scenario.parentId, []);
+        }
+        childMap.get(scenario.parentId)!.push(scenario);
+      } else if (!scenario.generated) {
+        // This is a parent scenario
+        parentMap.set(scenario.id, scenario);
+      }
+    });
+
+    // Second pass: create groups
+    parentMap.forEach((parent) => {
+      const children = childMap.get(parent.id) || [];
+      if (children.length > 0) {
+        // Only create groups for parents that have generated children
+        groups.push({ parent, children });
+      } else {
+        // Parent with no children - add as standalone
+        groups.push({ parent, children: [] });
+      }
+    });
+
+    // Add standalone generated scenarios (those without parents or with missing parents)
+    scenarios.forEach((scenario) => {
+      if (
+        scenario.generated &&
+        (!scenario.parentId || !parentMap.has(scenario.parentId))
+      ) {
+        groups.push({ parent: scenario, children: [] });
+      }
+    });
+
+    return groups;
+  }, [scenarios]);
 
   // Check if a scenario is being used by any simulations
   const isScenarioInUse = (scenarioId: string) => {
@@ -158,19 +218,53 @@ export function Scenarios() {
     return scenario.generated !== true;
   };
 
-  const renderScenarioCard = (scenario: Scenario) => (
+  const toggleGroupCollapse = (parentId: string) => {
+    setCollapsedGroups((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(parentId)) {
+        newSet.delete(parentId);
+      } else {
+        newSet.add(parentId);
+      }
+      return newSet;
+    });
+  };
+
+  const renderScenarioCard = (
+    scenario: Scenario,
+    isChild: boolean = false,
+    showDropdown?: boolean,
+    isCollapsed?: boolean,
+    onToggleCollapse?: () => void
+  ) => (
     <Card
       key={scenario.id}
-      className="hover:shadow-md transition-shadow flex flex-col h-full"
+      className={`hover:shadow-md transition-shadow flex flex-col h-full ${
+        isChild ? "ml-8 border-l-2 border-l-blue-200" : ""
+      }`}
     >
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div className="space-y-2 flex-1">
             <div className="flex items-center gap-2">
-              <CardTitle className="text-base">
+              {showDropdown && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 hover:bg-muted flex-shrink-0 -ml-1"
+                  onClick={onToggleCollapse}
+                >
+                  {isCollapsed ? (
+                    <ChevronRight className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
+              <CardTitle className="text-base flex-1 min-w-0">
                 {scenario.name || "Unnamed Scenario"}
               </CardTitle>
-              <div className="flex gap-1 flex-wrap">
+              <div className="flex gap-1 flex-wrap flex-shrink-0">
                 {scenario.generated === true && (
                   <Badge variant="outline" className="text-xs">
                     Generated
@@ -253,6 +347,33 @@ export function Scenarios() {
     </Card>
   );
 
+  const renderGroupedScenarios = () => {
+    return groupedScenarios.map((group) => {
+      const isCollapsed = collapsedGroups.has(group.parent.id);
+      const hasChildren = group.children.length > 0;
+
+      return (
+        <div key={group.parent.id} className="space-y-2">
+          {/* Parent Scenario Card */}
+          {renderScenarioCard(
+            group.parent,
+            false,
+            hasChildren,
+            isCollapsed,
+            () => toggleGroupCollapse(group.parent.id)
+          )}
+
+          {/* Child Scenarios */}
+          {hasChildren && !isCollapsed && (
+            <div className="space-y-2">
+              {group.children.map((child) => renderScenarioCard(child, true))}
+            </div>
+          )}
+        </div>
+      );
+    });
+  };
+
   return (
     <TooltipProvider>
       <div className="space-y-6">
@@ -263,7 +384,7 @@ export function Scenarios() {
           cohortOptions={cohortOptions}
           personaOptions={personaOptions}
           scenarioTypeOptions={scenarioTypeOptions}
-          renderScenarioCard={renderScenarioCard}
+          renderGroupedScenarios={renderGroupedScenarios}
         />
 
         {/* Delete Confirmation Dialog */}

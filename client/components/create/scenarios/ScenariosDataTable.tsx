@@ -26,7 +26,7 @@ export interface ScenariosDataTableProps {
   cohortOptions: { value: string; label: string }[];
   personaOptions: { value: string; label: string }[];
   scenarioTypeOptions: { value: string; label: string }[];
-  renderScenarioCard: (scenario: Scenario) => React.ReactNode;
+  renderGroupedScenarios: () => React.ReactNode;
 }
 
 export function ScenariosDataTable({
@@ -36,13 +36,13 @@ export function ScenariosDataTable({
   cohortOptions,
   personaOptions,
   scenarioTypeOptions,
-  renderScenarioCard,
+  renderGroupedScenarios,
 }: ScenariosDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "updatedAt", desc: true }, // Default to descending order by date
@@ -84,11 +84,9 @@ export function ScenariosDataTable({
         personaOptions={personaOptions}
         scenarioTypeOptions={scenarioTypeOptions}
       />
-      <div className="grid gap-4">
+      <div className="space-y-4">
         {table.getRowModel().rows.length ? (
-          table
-            .getRowModel()
-            .rows.map((row) => renderScenarioCard(row.original))
+          renderGroupedScenarios()
         ) : (
           <div className="text-center py-8 text-muted-foreground">
             No scenarios match the current filters.

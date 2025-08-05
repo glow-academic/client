@@ -19,7 +19,9 @@ const mockProps: ScenariosDataTableProps = {
   cohortOptions: [],
   personaOptions: [],
   scenarioTypeOptions: [],
-  renderScenarioCard: vi.fn(),
+  renderGroupedScenarios: vi.fn(() => (
+    <div>No scenarios match the current filters.</div>
+  )),
 };
 // ------------------------------------------------------------------
 describe("ScenariosDataTable", () => {
@@ -70,7 +72,7 @@ describe("ScenariosDataTable", () => {
         cohortOptions: [{ value: "cohort-1", label: "Test Cohort" }],
         personaOptions: [{ value: "persona-1", label: "Test Persona" }],
         scenarioTypeOptions: [{ value: "type-1", label: "Test Type" }],
-        renderScenarioCard: vi.fn(() => <div>Test Scenario Card</div>),
+        renderGroupedScenarios: vi.fn(() => <div>Test Scenario Card</div>),
       };
 
       renderWithMocks(<ScenariosDataTable {...propsWithData} />);
@@ -119,7 +121,7 @@ describe("ScenariosDataTable", () => {
         cohortOptions: [],
         personaOptions: [],
         scenarioTypeOptions: [],
-        renderScenarioCard: vi.fn(() => null),
+        renderGroupedScenarios: vi.fn(() => null),
       };
 
       renderWithMocks(<ScenariosDataTable {...edgeCaseProps} />);
@@ -139,7 +141,7 @@ describe("ScenariosDataTable", () => {
         cohortOptions: [],
         personaOptions: [],
         scenarioTypeOptions: [],
-        renderScenarioCard: vi.fn(),
+        renderGroupedScenarios: vi.fn(),
       };
 
       renderWithMocks(<ScenariosDataTable {...minimalProps} />);
