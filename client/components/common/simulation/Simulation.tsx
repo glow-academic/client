@@ -292,7 +292,18 @@ export default function Simulation({ simulationId }: SimulationProps) {
       }
 
       resetFormAndState();
+
+      // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: ["simulations"] });
+      if (targetSimulationId) {
+        queryClient.invalidateQueries({
+          queryKey: ["simulation", targetSimulationId],
+        });
+      }
+      if (result?.id) {
+        queryClient.invalidateQueries({ queryKey: ["simulation", result.id] });
+      }
+
       router.push(`/create/simulations`);
     } catch (error) {
       const targetSimulationId = simulationId || editingSimulationId;
