@@ -178,11 +178,20 @@ export default function Scenario({
     );
   }, [simulations, scenarioId, isEditMode]);
 
-  // Check if scenario is readonly (used by active simulations)
+  // Check if scenario is readonly (used by active simulations or is a generated scenario)
   const isReadonly = useMemo(() => {
     if (!isEditMode || !scenarioId) return false;
-    return affectedSimulations.some((sim: Simulation) => sim.active);
-  }, [affectedSimulations, isEditMode, scenarioId]);
+
+    // Check if scenario is used by active simulations
+    const usedByActiveSimulations = affectedSimulations.some(
+      (sim: Simulation) => sim.active
+    );
+
+    // Check if scenario is generated (has a parentId)
+    const isGeneratedScenario = scenario?.parentId && scenario?.generated;
+
+    return usedByActiveSimulations || isGeneratedScenario;
+  }, [affectedSimulations, isEditMode, scenarioId, scenario]);
 
   // Calculate step status
   const getStepStatus = (stepId: string): StepStatus => {
@@ -401,19 +410,30 @@ export default function Scenario({
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-yellow-800">
-                Scenario is in use by active simulations
+                {scenario?.parentId && scenario?.generated
+                  ? "Generated scenario cannot be edited"
+                  : "Scenario is in use by active simulations"}
               </h3>
               <div className="mt-2 text-sm text-yellow-700">
-                <p>
-                  This scenario is currently being used by{" "}
-                  {affectedSimulations.filter((sim) => sim.active).length}{" "}
-                  active simulation
-                  {affectedSimulations.filter((sim) => sim.active).length !== 1
-                    ? "s"
-                    : ""}
-                  . You can view the details but cannot make changes to prevent
-                  disruption to ongoing simulations.
-                </p>
+                {scenario?.parentId && scenario?.generated ? (
+                  <p>
+                    This is a generated scenario that cannot be directly edited.
+                    You can duplicate this scenario to create a new editable
+                    version with your desired changes.
+                  </p>
+                ) : (
+                  <p>
+                    This scenario is currently being used by{" "}
+                    {affectedSimulations.filter((sim) => sim.active).length}{" "}
+                    active simulation
+                    {affectedSimulations.filter((sim) => sim.active).length !==
+                    1
+                      ? "s"
+                      : ""}
+                    . You can view the details but cannot make changes to
+                    prevent disruption to ongoing simulations.
+                  </p>
+                )}
               </div>
             </div>
           </div>
