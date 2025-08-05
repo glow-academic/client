@@ -810,6 +810,21 @@ async def generate_certificate(
                                   topMargin=0.5*inch, bottomMargin=0.5*inch)
             story = []
             
+            # Create a frame with border for the content
+            from reportlab.lib.units import inch
+            from reportlab.platypus import Frame
+
+            # Create a frame that will contain all content with a border
+            content_frame = Frame(
+                doc.leftMargin + 0.2*inch, doc.bottomMargin + 0.2*inch,
+                doc.width - 0.4*inch, doc.height - 0.4*inch,
+                leftPadding=0.1*inch,
+                bottomPadding=0.1*inch,
+                rightPadding=0.1*inch,
+                topPadding=0.1*inch,
+                showBoundary=1  # This creates the border
+            )
+            
             # Get styles
             styles = getSampleStyleSheet()
             
@@ -883,12 +898,6 @@ async def generate_certificate(
                 textColor=colors.darkblue
             )
             
-            # Add border
-            border = create_border()
-            if border:
-                story.append(border)
-                story.append(Spacer(1, 10))
-            
             # Add title
             story.append(Paragraph("Certificate of Completion", title_style))
             story.append(Spacer(1, 10))
@@ -940,40 +949,63 @@ async def generate_certificate(
                         
                         table_data.append([cohort_name, sim_name, score_text, status_text])
                 
-                            # Create table with better column widths and text wrapping
+                # Create table with better column widths and text wrapping
                 table = Table(table_data, colWidths=[1.8*inch, 2.5*inch, 1*inch, 1*inch])
-            table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 11),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.lightblue),
-                ('GRID', (0, 0), (-1, -1), 1, colors.darkblue),
-                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-                ('FONTSIZE', (0, 1), (-1, -1), 9),
-                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('WORDWRAP', (0, 0), (-1, -1), True),
-                ('LEFTPADDING', (0, 0), (-1, -1), 6),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
-                ('TOPPADDING', (0, 0), (-1, -1), 4),
-                ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
-            ]))
-            
-            story.append(table)
-            story.append(Spacer(1, 30))
+                table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                    ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 11),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.lightblue),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.darkblue),
+                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                    ('FONTSIZE', (0, 1), (-1, -1), 9),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('WORDWRAP', (0, 0), (-1, -1), True),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                    ('TOPPADDING', (0, 0), (-1, -1), 4),
+                    ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
+                ]))
+                
+                story.append(table)
+                story.append(Spacer(1, 30))
             
             # Add branding
             story.append(Spacer(1, 20))
             story.append(Paragraph("GLOW | Purdue University", styles['Normal']))
             
-            # Add page break to ensure one page maximum
-            from reportlab.platypus import PageBreak
-            story.append(PageBreak())
+            # Build PDF with sophisticated border
+            from reportlab.platypus import PageTemplate
+            from reportlab.platypus.frames import Frame
+
+            # Create a custom page template with decorative border
+            def certificate_page(canvas, doc):
+                # Draw outer border
+                canvas.setStrokeColor(colors.darkblue)
+                canvas.setLineWidth(3)
+                canvas.rect(doc.leftMargin + 0.1*inch, doc.bottomMargin + 0.1*inch, 
+                          doc.width - 0.2*inch, doc.height - 0.2*inch)
+                
+                # Draw inner border
+                canvas.setLineWidth(1)
+                canvas.rect(doc.leftMargin + 0.2*inch, doc.bottomMargin + 0.2*inch, 
+                          doc.width - 0.4*inch, doc.height - 0.4*inch)
+                
+                # Draw corner decorations
+                canvas.setFillColor(colors.lightblue)
+                corner_size = 0.15*inch
+                for x, y in [(doc.leftMargin + 0.1*inch, doc.bottomMargin + doc.height - 0.25*inch),
+                            (doc.leftMargin + doc.width - 0.25*inch, doc.bottomMargin + doc.height - 0.25*inch),
+                            (doc.leftMargin + 0.1*inch, doc.bottomMargin + 0.1*inch),
+                            (doc.leftMargin + doc.width - 0.25*inch, doc.bottomMargin + 0.1*inch)]:
+                    canvas.rect(x, y, corner_size, corner_size, fill=1)
             
-            # Build PDF
+            page_template = PageTemplate(id='certificate', frames=[content_frame], onPage=certificate_page)
+            doc.addPageTemplates([page_template])
             doc.build(story)
             buffer.seek(0)
             
