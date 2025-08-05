@@ -502,9 +502,10 @@ export function useHistoryColumns({
             simulationTimeLimit: timedOutSimulation?.timeLimit || null,
           });
 
+          // Only show "Incomplete" if we have timed out and either not all chats are completed or expectedChats !== chats.length
           if (
-            (isTimedOut && !allChatsCompleted) ||
-            expectedChats !== chats.length
+            isTimedOut &&
+            (!allChatsCompleted || expectedChats !== chats.length)
           ) {
             return <div className="text-red-500 font-medium">Incomplete</div>;
           }
@@ -630,8 +631,8 @@ export function useHistoryColumns({
 
           // Determine if simulation is incomplete based on the same logic as the score column
           const isIncomplete =
-            (isTimedOut && !allChatsCompleted) ||
-            expectedChats !== chats.length;
+            isTimedOut &&
+            (!allChatsCompleted || expectedChats !== chats.length);
 
           return (
             <DataTableRowActions
