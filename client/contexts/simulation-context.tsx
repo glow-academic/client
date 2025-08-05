@@ -64,7 +64,7 @@ interface TimerState {
   expired: boolean;
 }
 
-interface SimulationContextType {
+export interface SimulationContextType {
   // Attempt and simulation data
   attemptId: string;
   attempt: SimulationAttempt | null;
@@ -114,7 +114,9 @@ interface SimulationContextType {
   onSimulationFinished?: (() => void) | undefined;
 }
 
-const SimulationContext = createContext<SimulationContextType | null>(null);
+const SimulationContext = createContext<SimulationContextType | null>(
+  null
+);
 
 export const useSimulation = () => {
   return useContext(SimulationContext);
