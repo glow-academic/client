@@ -25,8 +25,9 @@ export interface ScenariosDataTableProps {
   simulationOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
   personaOptions: { value: string; label: string }[];
-  scenarioTypeOptions: { value: string; label: string }[];
-  renderGroupedScenarios: () => React.ReactNode;
+  renderGroupedScenarios: (
+    filteredGroups?: { parent: Scenario; children: Scenario[] }[]
+  ) => React.ReactNode;
 }
 
 export function ScenariosDataTable({
@@ -35,7 +36,6 @@ export function ScenariosDataTable({
   simulationOptions,
   cohortOptions,
   personaOptions,
-  scenarioTypeOptions,
   renderGroupedScenarios,
 }: ScenariosDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
@@ -48,8 +48,13 @@ export function ScenariosDataTable({
     { id: "updatedAt", desc: true }, // Default to descending order by date
   ]);
 
+  // Create a table with parent scenarios only for pagination
+  const parentScenarios = React.useMemo(() => {
+    return data.filter((scenario) => !scenario.generated);
+  }, [data]);
+
   const table = useReactTable({
-    data,
+    data: parentScenarios, // Use parent scenarios for pagination
     columns,
     state: {
       sorting,
@@ -75,6 +80,67 @@ export function ScenariosDataTable({
     },
   });
 
+  // Get the current page's parent scenario IDs
+  const currentPageRows = table.getRowModel().rows;
+  const currentPageParentIds = React.useMemo(() => {
+    return new Set(currentPageRows.map((row) => row.original.id));
+  }, [currentPageRows]);
+
+  // Get all scenarios that should be shown on current page
+  const currentPageScenarios = React.useMemo(() => {
+    const parentScenariosOnPage = data.filter(
+      (scenario) => !scenario.generated && currentPageParentIds.has(scenario.id)
+    );
+
+    const childScenariosOnPage = data.filter(
+      (scenario) =>
+        scenario.generated &&
+        scenario.parentId &&
+        currentPageParentIds.has(scenario.parentId)
+    );
+
+    return [...parentScenariosOnPage, ...childScenariosOnPage];
+  }, [data, currentPageParentIds]);
+
+  // Group the current page scenarios
+  const currentPageGroupedScenarios = React.useMemo(() => {
+    const groups: { parent: Scenario; children: Scenario[] }[] = [];
+    const parentMap = new Map<string, Scenario>();
+    const childMap = new Map<string, Scenario[]>();
+
+    // First pass: identify parents and collect children
+    currentPageScenarios.forEach((scenario) => {
+      if (scenario.generated && scenario.parentId) {
+        // This is a generated scenario with a parent
+        if (!childMap.has(scenario.parentId)) {
+          childMap.set(scenario.parentId, []);
+        }
+        childMap.get(scenario.parentId)!.push(scenario);
+      } else if (!scenario.generated) {
+        // This is a parent scenario
+        parentMap.set(scenario.id, scenario);
+      }
+    });
+
+    // Second pass: create groups
+    parentMap.forEach((parent) => {
+      const children = childMap.get(parent.id) || [];
+      groups.push({ parent, children });
+    });
+
+    // Add standalone generated scenarios (those without parents or with missing parents)
+    currentPageScenarios.forEach((scenario) => {
+      if (
+        scenario.generated &&
+        (!scenario.parentId || !parentMap.has(scenario.parentId))
+      ) {
+        groups.push({ parent: scenario, children: [] });
+      }
+    });
+
+    return groups;
+  }, [currentPageScenarios]);
+
   return (
     <div className="space-y-4">
       <ScenariosDataTableToolbar
@@ -82,11 +148,10 @@ export function ScenariosDataTable({
         simulationOptions={simulationOptions}
         cohortOptions={cohortOptions}
         personaOptions={personaOptions}
-        scenarioTypeOptions={scenarioTypeOptions}
       />
       <div className="space-y-4">
         {table.getRowModel().rows.length ? (
-          renderGroupedScenarios()
+          renderGroupedScenarios(currentPageGroupedScenarios)
         ) : (
           <div className="text-center py-8 text-muted-foreground">
             No scenarios match the current filters.

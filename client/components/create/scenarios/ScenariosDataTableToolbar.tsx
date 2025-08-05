@@ -13,7 +13,6 @@ export interface ScenariosDataTableToolbarProps {
   simulationOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
   personaOptions: { value: string; label: string }[];
-  scenarioTypeOptions: { value: string; label: string }[];
 }
 
 export function ScenariosDataTableToolbar({
@@ -21,7 +20,6 @@ export function ScenariosDataTableToolbar({
   simulationOptions,
   cohortOptions,
   personaOptions,
-  scenarioTypeOptions,
 }: ScenariosDataTableToolbarProps) {
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -30,7 +28,6 @@ export function ScenariosDataTableToolbar({
   const simulationColumn = table.getColumn("simulationIds");
   const cohortColumn = table.getColumn("cohortIds");
   const personaColumn = table.getColumn("personaId");
-  const scenarioTypeColumn = table.getColumn("scenarioType");
 
   return (
     <div className="flex items-center justify-between">
@@ -69,15 +66,6 @@ export function ScenariosDataTableToolbar({
               column={personaColumn}
               title="Persona"
               options={personaOptions}
-            />
-          )}
-
-          {/* Scenario Type Filter */}
-          {scenarioTypeColumn && scenarioTypeOptions.length > 0 && (
-            <DataTableFacetedFilter
-              column={scenarioTypeColumn}
-              title="Type"
-              options={scenarioTypeOptions}
             />
           )}
 

@@ -133,13 +133,8 @@ export function Scenarios() {
   };
 
   // Get table columns and filter options
-  const {
-    columns,
-    simulationOptions,
-    cohortOptions,
-    personaOptions,
-    scenarioTypeOptions,
-  } = useScenarioColumns();
+  const { columns, simulationOptions, cohortOptions, personaOptions } =
+    useScenarioColumns();
 
   const handleDelete = async () => {
     if (!deleteItem) return;
@@ -347,8 +342,10 @@ export function Scenarios() {
     </Card>
   );
 
-  const renderGroupedScenarios = () => {
-    return groupedScenarios.map((group) => {
+  const renderGroupedScenarios = (filteredGroups?: GroupedScenario[]) => {
+    const groupsToRender = filteredGroups || groupedScenarios;
+
+    return groupsToRender.map((group) => {
       const isCollapsed = collapsedGroups.has(group.parent.id);
       const hasChildren = group.children.length > 0;
 
@@ -383,7 +380,6 @@ export function Scenarios() {
           simulationOptions={simulationOptions}
           cohortOptions={cohortOptions}
           personaOptions={personaOptions}
-          scenarioTypeOptions={scenarioTypeOptions}
           renderGroupedScenarios={renderGroupedScenarios}
         />
 
