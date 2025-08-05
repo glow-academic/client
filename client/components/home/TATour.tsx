@@ -743,6 +743,14 @@ export default function TATour() {
         // Step 2: Handle practice simulation start - just click the button and let WebSocket events handle progression
         nextStep();
 
+        // Dispatch simulationButtonPressed event when Next button is clicked on step 2
+        // This will set the navigating state to true
+        window.dispatchEvent(
+          new CustomEvent("simulationButtonPressed", {
+            detail: { simulationId: "tour-step-2" },
+          })
+        );
+
         // Check if we already have an attemptId
         if (tourState.attemptId) {
           // If we have an attemptId, navigate directly to the simulation
