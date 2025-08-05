@@ -17,17 +17,22 @@ import {
 
 export interface DataTablePaginationProps<TData> {
   table: Table<TData>;
+  card?: boolean;
 }
 
 export function DataTablePagination<TData>({
   table,
+  card = false,
 }: DataTablePaginationProps<TData>) {
+  const pageSizeOptions = card ? [12, 24, 36, 48, 60] : [10, 20, 30, 40, 50];
+  const labelText = card ? "Items per page" : "Rows per page";
+
   return (
     <div className="flex items-center justify-between px-2">
       <div className="flex-1"></div>
       <div className="flex items-center space-x-6 lg:space-x-8">
         <div className="flex items-center space-x-2">
-          <p className="text-sm font-medium">Rows per page</p>
+          <p className="text-sm font-medium">{labelText}</p>
           <Select
             value={`${table.getState().pagination.pageSize}`}
             onValueChange={(value) => {
@@ -38,7 +43,7 @@ export function DataTablePagination<TData>({
               <SelectValue placeholder={table.getState().pagination.pageSize} />
             </SelectTrigger>
             <SelectContent side="top">
-              {[10, 20, 30, 40, 50].map((pageSize) => (
+              {pageSizeOptions.map((pageSize) => (
                 <SelectItem key={pageSize} value={`${pageSize}`}>
                   {pageSize}
                 </SelectItem>
