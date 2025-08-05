@@ -25,3 +25,5 @@ cffi==1.17.1
 starlette==0.46.2
 pydantic==2.11.7
 requests==2.32.4
+
+reportlab==4.0.4

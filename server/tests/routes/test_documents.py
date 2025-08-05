@@ -557,3 +557,20 @@ class TestDocuments_Health_Check:
         assert response.status_code == 500
         assert response.json()["status"] == "error"
         assert response.json()["service"] == "documents"
+
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `generate_certificate`")
+class TestGenerate_Certificate:
+    """Tests for generate_certificate endpoint."""
+
+    def test_generate_certificate_success(self, client):
+        """Test successful generate_certificate request."""
+        # TODO: Implement test for generate_certificate
+        assert False, "IMPLEMENT: Test for generate_certificate"
+
+    def test_generate_certificate_error(self, client):
+        """Test generate_certificate error handling."""
+        # TODO: Implement error test for generate_certificate
+        assert False, "IMPLEMENT: Error test for generate_certificate"
+

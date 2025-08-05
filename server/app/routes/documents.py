@@ -770,6 +770,258 @@ async def finalize_upload(
         )
 
 
+@router.post("/certificate")
+async def generate_certificate(
+    request: Request,
+    session: Session = Depends(get_session),
+) -> JSONResponse:
+    """
+    Generate a certificate PDF for a profile showing their cohort progress
+    """
+    try:
+        # Parse request body
+        body = await request.json()
+        profile_id = body.get("profileId")
+        profile_name = body.get("profileName")
+        cohort_data = body.get("cohortData", [])
+        
+        if not profile_id or not profile_name:
+            raise HTTPException(status_code=400, detail="Missing profile information")
+        
+        # Generate PDF using reportlab
+        try:
+            import io
+
+            from reportlab.lib import colors  # type: ignore
+            from reportlab.lib.pagesizes import letter  # type: ignore
+            from reportlab.lib.styles import ParagraphStyle  # type: ignore
+            from reportlab.lib.styles import \
+                getSampleStyleSheet  # type: ignore
+            from reportlab.lib.units import inch  # type: ignore
+            from reportlab.platypus import Paragraph  # type: ignore
+            from reportlab.platypus import SimpleDocTemplate  # type: ignore
+            from reportlab.platypus import Spacer, Table, TableStyle
+
+            # Create PDF in memory
+            buffer = io.BytesIO()
+            doc = SimpleDocTemplate(buffer, pagesize=letter)
+            story = []
+            
+            # Get styles
+            styles = getSampleStyleSheet()
+            
+            # Create custom styles
+            title_style = ParagraphStyle(
+                'CustomTitle',
+                parent=styles['Heading1'],
+                fontSize=24,
+                spaceAfter=30,
+                alignment=1,  # Center
+                textColor=colors.darkblue
+            )
+            
+            name_style = ParagraphStyle(
+                'NameStyle',
+                parent=styles['Heading2'],
+                fontSize=28,
+                spaceAfter=20,
+                alignment=1,  # Center
+                textColor=colors.black
+            )
+            
+            status_style = ParagraphStyle(
+                'StatusStyle',
+                parent=styles['Heading2'],
+                fontSize=20,
+                spaceAfter=30,
+                alignment=1,  # Center
+                fontWeight='bold'
+            )
+            
+            header_style = ParagraphStyle(
+                'HeaderStyle',
+                parent=styles['Heading3'],
+                fontSize=14,
+                spaceAfter=10,
+                textColor=colors.darkblue
+            )
+            
+            # Add title
+            story.append(Paragraph("Certificate of Completion", title_style))
+            story.append(Spacer(1, 20))
+            
+            # Add profile name
+            story.append(Paragraph(profile_name, name_style))
+            story.append(Spacer(1, 30))
+            
+            # Calculate overall status
+            total_cohorts = len(cohort_data)
+            passed_cohorts = sum(1 for cohort in cohort_data if cohort.get("passed", False))
+            all_passed = passed_cohorts == total_cohorts and total_cohorts > 0
+            
+            # Add status
+            if all_passed:
+                status_text = "COMPLETE"
+                status_color = colors.green
+            else:
+                status_text = "INCOMPLETE"
+                status_color = colors.red
+            
+            status_style.textColor = status_color
+            story.append(Paragraph(status_text, status_style))
+            story.append(Spacer(1, 30))
+            
+            # Add progress summary
+            summary_text = f"Progress: {passed_cohorts} of {total_cohorts} cohorts completed"
+            story.append(Paragraph(summary_text, styles['Normal']))
+            story.append(Spacer(1, 20))
+            
+            # Add cohort details
+            if cohort_data:
+                story.append(Paragraph("Cohort Progress", header_style))
+                
+                # Create table data
+                table_data = [["Cohort", "Simulation", "Score", "Status"]]
+                
+                for cohort in cohort_data:
+                    cohort_name = cohort.get("name", "Unknown Cohort")
+                    simulations = cohort.get("simulations", [])
+                    
+                    for sim in simulations:
+                        sim_name = sim.get("name", "Unknown Simulation")
+                        score = sim.get("score", 0)
+                        passed = sim.get("passed", False)
+                        
+                        score_text = f"{score}%" if score > 0 else "No attempts"
+                        status_text = "PASS" if passed else "FAIL" if score > 0 else "Not attempted"
+                        
+                        table_data.append([cohort_name, sim_name, score_text, status_text])
+                
+                # Create table
+                table = Table(table_data, colWidths=[1.5*inch, 2*inch, 1*inch, 1*inch])
+                table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 12),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                    ('FONTSIZE', (0, 1), (-1, -1), 10),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ]))
+                
+                story.append(table)
+                story.append(Spacer(1, 30))
+            
+            # Add branding
+            story.append(Paragraph("GLOW | Purdue University", styles['Normal']))
+            
+            # Build PDF
+            doc.build(story)
+            buffer.seek(0)
+            
+            # Save PDF to file
+            filename = f"certificate_{profile_name.replace(' ', '_')}_{uuid.uuid4().hex[:8]}.pdf"
+            file_path = os.path.join(UPLOAD_FOLDER, filename)
+            
+            with open(file_path, 'wb') as f:
+                f.write(buffer.getvalue())
+            
+            # Create document record
+            document = Documents(
+                id=uuid.uuid4(),
+                name=filename,
+                file_path=filename,
+                mime_type="application/pdf",
+            )
+            
+            session.add(document)
+            session.commit()
+            
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "message": "Certificate generated successfully",
+                    "document_id": str(document.id),
+                    "filename": filename,
+                },
+            )
+            
+        except ImportError:
+            # Fallback if reportlab is not available
+            logger.warning("ReportLab not available, using simple text generation")
+            
+            # Create simple text file as fallback
+            filename = f"certificate_{profile_name.replace(' ', '_')}_{uuid.uuid4().hex[:8]}.txt"
+            file_path = os.path.join(UPLOAD_FOLDER, filename)
+            
+            with open(file_path, 'w') as f:
+                f.write("Certificate of Completion\n")
+                f.write("=" * 30 + "\n\n")
+                f.write(f"Name: {profile_name}\n\n")
+                
+                # Calculate overall status
+                total_cohorts = len(cohort_data)
+                passed_cohorts = sum(1 for cohort in cohort_data if cohort.get("passed", False))
+                all_passed = passed_cohorts == total_cohorts and total_cohorts > 0
+                
+                f.write(f"Status: {'COMPLETE' if all_passed else 'INCOMPLETE'}\n")
+                f.write(f"Progress: {passed_cohorts} of {total_cohorts} cohorts completed\n\n")
+                
+                f.write("Cohort Progress:\n")
+                f.write("-" * 20 + "\n")
+                
+                for cohort in cohort_data:
+                    cohort_name = cohort.get("name", "Unknown Cohort")
+                    simulations = cohort.get("simulations", [])
+                    
+                    f.write(f"\n{cohort_name}:\n")
+                    for sim in simulations:
+                        sim_name = sim.get("name", "Unknown Simulation")
+                        score = sim.get("score", 0)
+                        passed = sim.get("passed", False)
+                        
+                        score_text = f"{score}%" if score > 0 else "No attempts"
+                        status_text = "PASS" if passed else "FAIL" if score > 0 else "Not attempted"
+                        
+                        f.write(f"  - {sim_name}: {score_text} ({status_text})\n")
+                
+                f.write("\nGLOW | Purdue University\n")
+            
+            # Create document record
+            document = Documents(
+                id=uuid.uuid4(),
+                name=filename,
+                file_path=filename,
+                mime_type="text/plain",
+            )
+            
+            session.add(document)
+            session.commit()
+            
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "message": "Certificate generated successfully (text format)",
+                    "document_id": str(document.id),
+                    "filename": filename,
+                },
+            )
+            
+    except Exception as e:
+        logger.error(f"Error generating certificate: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"status": "error", "message": f"Failed to generate certificate: {str(e)}"},
+        )
+
+
 @router.delete("/id/{document_id}")
 async def delete_document(
     document_id: uuid.UUID,

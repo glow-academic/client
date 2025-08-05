@@ -1188,7 +1188,7 @@ export default function Home() {
         <SimulationHistory
           profileId={effectiveProfile.id}
           cohortIds={effectiveCohortIds}
-          showExport={!shouldShowAll}
+          showExport={true}
           showPractice={false}
           startDate={startDate}
           endDate={endDate}

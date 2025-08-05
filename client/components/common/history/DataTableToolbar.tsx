@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
-import { SingleProfileBrightspaceExportButton } from "./SingleProfileBrightspaceExportButton";
+import { SingleProfileCertificateButton } from "./SingleProfileCertificateButton";
 
 export interface DataTableToolbarProps<TData> {
   table: Table<TData>;
@@ -93,7 +93,7 @@ export function DataTableToolbar<TData>({
         </div>
         <div className="flex items-center space-x-2">
           {showExport && (
-            <SingleProfileBrightspaceExportButton
+            <SingleProfileCertificateButton
               table={table}
               profileOptions={profileOptions}
             />

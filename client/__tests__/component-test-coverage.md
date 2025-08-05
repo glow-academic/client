@@ -2,9 +2,9 @@
 
 ## Summary
 - **Total Components**: 278
-- **Tests Created**: 0
+- **Tests Created**: 1
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 278
+- **Tests Skipped** (already implemented): 277
 
 ## Component Coverage
 
@@ -75,7 +75,7 @@
 | DataTableViewOptions | components/common/history/DataTableViewOptions.tsx | DataTableViewOptions.test.tsx | ✅ Implemented |
 | ExportButton | components/common/history/ExportButton.tsx | ExportButton.test.tsx | ✅ Implemented |
 | SimulationHistory | components/common/history/SimulationHistory.tsx | SimulationHistory.test.tsx | ✅ Implemented |
-| SingleProfileBrightspaceExportButton | components/common/history/SingleProfileBrightspaceExportButton.tsx | SingleProfileBrightspaceExportButton.test.tsx | ✅ Implemented |
+| SingleProfileCertificateButton | components/common/history/SingleProfileCertificateButton.tsx | SingleProfileCertificateButton.test.tsx | ✅ Implemented |
 | ChatDialog | components/common/home/ChatDialog.tsx | ChatDialog.test.tsx | ✅ Implemented |
 | ChatFab | components/common/home/ChatFab.tsx | ChatFab.test.tsx | ✅ Implemented |
 | ChatInput | components/common/home/ChatInput.tsx | ChatInput.test.tsx | ✅ Implemented |
@@ -375,7 +375,7 @@ __tests__/
 │   │   │   ├── DataTableViewOptions.test.tsx
 │   │   │   ├── ExportButton.test.tsx
 │   │   │   ├── SimulationHistory.test.tsx
-│   │   │   ├── SingleProfileBrightspaceExportButton.test.tsx
+│   │   │   ├── SingleProfileCertificateButton.test.tsx
 │   │   ├── home/
 │   │   │   ├── ChatDialog.test.tsx
 │   │   │   ├── ChatFab.test.tsx

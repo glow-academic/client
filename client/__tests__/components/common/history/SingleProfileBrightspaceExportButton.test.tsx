@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import { SingleProfileBrightspaceExportButton } from "@/components/common/history/SingleProfileBrightspaceExportButton";
+import { SingleProfileCertificateButton } from "@/components/common/history/SingleProfileCertificateButton";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
@@ -76,7 +76,7 @@ const mockProps = {
   profileOptions: [{ value: "profile-1", label: "Test Profile" }],
 };
 
-describe("SingleProfileBrightspaceExportButton", () => {
+describe("SingleProfileCertificateButton", () => {
   // ✨ Reset mocks after each test
   afterEach(() => {
     vi.clearAllMocks();
@@ -84,24 +84,26 @@ describe("SingleProfileBrightspaceExportButton", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<SingleProfileBrightspaceExportButton {...mockProps} />);
+      renderWithMocks(<SingleProfileCertificateButton {...mockProps} />);
 
-      // Should render the export button
-      expect(screen.getByText(/Brightspace Export/)).toBeInTheDocument();
+      // Should render the certificate button
+      expect(screen.getByText(/Download Certificate/)).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      renderWithMocks(<SingleProfileBrightspaceExportButton {...mockProps} />);
+      renderWithMocks(<SingleProfileCertificateButton {...mockProps} />);
 
-      // Should render the export button
-      expect(screen.getByText(/Brightspace Export/)).toBeInTheDocument();
+      // Should render the certificate button
+      expect(screen.getByText(/Download Certificate/)).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<SingleProfileBrightspaceExportButton {...mockProps} />);
+      renderWithMocks(<SingleProfileCertificateButton {...mockProps} />);
 
-      // Check for the export button
-      const button = screen.getByRole("button", { name: /Brightspace Export/ });
+      // Check for the certificate button
+      const button = screen.getByRole("button", {
+        name: /Download Certificate/,
+      });
       expect(button).toBeInTheDocument();
     });
   });
@@ -170,7 +172,7 @@ describe("SingleProfileBrightspaceExportButton", () => {
       };
 
       renderWithMocks(
-        <SingleProfileBrightspaceExportButton {...minimalProps} />,
+        <SingleProfileBrightspaceExportButton {...minimalProps} />
       );
 
       // Should render with minimal props
