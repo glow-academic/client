@@ -263,7 +263,15 @@ export default function SimulationCard({
 
         <CardFooter className="pt-0 relative z-10">
           <button
-            onClick={() => onStartSimulation(simulation.id)}
+            onClick={() => {
+              // Dispatch custom event for tour progression when simulation button is pressed
+              window.dispatchEvent(
+                new CustomEvent("simulationButtonPressed", {
+                  detail: { simulationId: simulation.id },
+                })
+              );
+              onStartSimulation(simulation.id);
+            }}
             disabled={loadingSimulation === simulation.id}
             data-testid={`start-simulation-${simulation.id}`}
             className={`w-full text-center py-2 rounded-lg text-white font-medium text-sm hover:shadow-lg transition-all duration-300 ${
