@@ -109,6 +109,21 @@ export default function AttemptChat() {
     }
   }, [simulationContext?.scenarioDocuments, selectedDocumentId]);
 
+  // Reset selected document when chat changes
+  useEffect(() => {
+    if (
+      simulationContext?.scenarioDocuments &&
+      simulationContext?.scenarioDocuments.length > 0 &&
+      simulationContext?.scenarioDocuments[0]
+    ) {
+      setSelectedDocumentId(simulationContext?.scenarioDocuments[0].id);
+    }
+  }, [
+    selectedChatId,
+    simulationContext?.currentChat?.id,
+    simulationContext?.scenarioDocuments,
+  ]);
+
   if (simulationContext?.isLoadingChats) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
