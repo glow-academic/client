@@ -42,7 +42,7 @@ export function ParametersDataTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "updatedAt", desc: true }, // Default to descending order by date
@@ -70,7 +70,7 @@ export function ParametersDataTable({
     getFacetedUniqueValues: getFacetedUniqueValues(),
     initialState: {
       pagination: {
-        pageSize: 10,
+        pageSize: 12, // Default to 12 items per page for card layout
       },
     },
   });
@@ -95,7 +95,7 @@ export function ParametersDataTable({
           </div>
         )}
       </div>
-      <DataTablePagination table={table} />
+      <DataTablePagination table={table} card={true} />
     </div>
   );
 }
