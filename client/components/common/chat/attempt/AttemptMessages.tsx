@@ -166,9 +166,6 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                             {!message.completed && message.content === "" ? (
                               <div className="bg-muted rounded-lg p-3">
                                 <div className="flex items-center">
-                                  <span className="text-gray-500 mr-2">
-                                    Analyzing
-                                  </span>
                                   <LoadingDots />
                                 </div>
                               </div>
