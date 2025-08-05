@@ -6,6 +6,7 @@ import { FileText } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useProfile } from "@/contexts/profile-context";
 import { logError, logInfo } from "@/utils/logger";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -36,6 +37,7 @@ export function SingleProfileCertificateButton<TData>({
 }: SingleProfileCertificateButtonProps<TData>) {
   const selectedRows = Object.keys(table.getState().rowSelection).length;
   const [isGenerating, setIsGenerating] = useState(false);
+  const { effectiveProfile } = useProfile();
 
   // Fetch all necessary data
   const { data: cohorts = [] } = useQuery({
@@ -159,16 +161,36 @@ export function SingleProfileCertificateButton<TData>({
         return;
       }
 
-      const profileId = firstRow.getValue("profileId") as string;
-      const profileOption = profileOptions.find(
-        (profile) => profile.value === profileId
-      );
-      const profileName = profileOption?.label || profileId;
+      // Get the current user's profile from context
+      if (!effectiveProfile?.id) {
+        toast?.error("No user profile available");
+        return;
+      }
+
+      const profileId = effectiveProfile.id;
+      const profileName = `${effectiveProfile.firstName} ${effectiveProfile.lastName}`;
+
+      // Get the profile to check if they're admin/superadmin
+      const profile = profiles.find((p) => p.id === profileId);
+      const isAdminUser =
+        profile?.role === "admin" || profile?.role === "superadmin";
 
       // Find all cohorts that contain this profile
-      const profileCohorts = cohorts.filter((cohort) =>
+      // For admin/superadmin users, include all active cohorts
+      let profileCohorts = cohorts.filter((cohort) =>
         cohort.profileIds.includes(profileId)
       );
+
+      // If admin/superadmin and no cohorts found, include all active cohorts
+      if (isAdminUser && profileCohorts.length === 0) {
+        profileCohorts = cohorts.filter((cohort) => cohort.active);
+        logInfo("Admin user - using all active cohorts", {
+          profileId,
+          profileRole: profile?.role,
+          totalCohorts: cohorts.length,
+          activeCohortsCount: profileCohorts.length,
+        });
+      }
 
       // Prepare cohort data for certificate
       const cohortData: CohortData[] = [];
@@ -208,7 +230,11 @@ export function SingleProfileCertificateButton<TData>({
       logInfo("Generating certificate", {
         profileId,
         profileName,
+        profileRole: profile?.role,
+        isAdminUser,
         cohortCount: cohortData.length,
+        selectedRows,
+        profileOptionsLength: profileOptions.length,
       });
 
       // Call the certificate generation API
