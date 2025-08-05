@@ -447,11 +447,13 @@ export default function Simulation({ simulationId }: SimulationProps) {
                 <SelectValue placeholder="Select a rubric..." />
               </SelectTrigger>
               <SelectContent>
-                {rubrics.map((rubric: Rubric) => (
-                  <SelectItem key={rubric.id} value={rubric.id}>
-                    {rubric.name} ({rubric.points} points)
-                  </SelectItem>
-                ))}
+                {rubrics
+                  .filter((rubric: Rubric) => rubric.active)
+                  .map((rubric: Rubric) => (
+                    <SelectItem key={rubric.id} value={rubric.id}>
+                      {rubric.name} ({rubric.points} points)
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           ) : (
