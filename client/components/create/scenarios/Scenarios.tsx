@@ -132,6 +132,11 @@ export function Scenarios() {
     return !isScenarioInUse(scenarioId);
   };
 
+  // Check if scenario can be deleted (default scenarios cannot be deleted)
+  const canDeleteScenario = (scenario: Scenario) => {
+    return !scenario.defaultScenario && !isScenarioInUse(scenario.id);
+  };
+
   // Get table columns and filter options
   const { columns, simulationOptions, cohortOptions, personaOptions } =
     useScenarioColumns();
@@ -208,9 +213,9 @@ export function Scenarios() {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const canDuplicate = (scenario: Scenario) => {
-    // Can duplicate general scenarios and default scenarios (but not generated ones)
-    return scenario.generated !== true;
+  const canDuplicate = (_scenario: Scenario) => {
+    // Allow all scenarios to be duplicated for ease of use
+    return true;
   };
 
   const toggleGroupCollapse = (parentId: string) => {
@@ -260,14 +265,22 @@ export function Scenarios() {
                 {scenario.name || "Unnamed Scenario"}
               </CardTitle>
               <div className="flex gap-1 flex-wrap flex-shrink-0">
-                {scenario.generated === true && (
-                  <Badge variant="outline" className="text-xs">
-                    Generated
+                {scenario.defaultScenario && (
+                  <Badge variant="default" className="text-xs">
+                    Default
                   </Badge>
                 )}
-                <Badge variant={scenario.active ? "default" : "secondary"}>
-                  {scenario.active ? "Active" : "Inactive"}
-                </Badge>
+                {scenario.practiceScenario && (
+                  <Badge variant="outline" className="text-xs">
+                    Practice
+                  </Badge>
+                )}
+                {!scenario.generated &&
+                  !scenario.defaultScenario &&
+                  !scenario.practiceScenario &&
+                  !scenario.active && (
+                    <Badge variant="secondary">Inactive</Badge>
+                  )}
               </div>
             </div>
             <p className="text-sm text-muted-foreground line-clamp-2">
@@ -275,55 +288,89 @@ export function Scenarios() {
             </p>
           </div>
           <div className="flex gap-2 items-center ml-4">
-            {canEditScenario(scenario.id) ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleEdit(scenario.id)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            ) : (
-              <Tooltip>
-                <TooltipTrigger asChild>
+            {scenario.generated ? (
+              // For generated scenarios: only show preview and duplicate
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleView(scenario.id)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>View Scenario Details</p>
+                  </TooltipContent>
+                </Tooltip>
+                {canDuplicate(scenario) && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleView(scenario.id)}
+                    onClick={() => handleDuplicate(scenario)}
+                    disabled={isDuplicating === scenario.id}
                   >
-                    <Eye className="h-4 w-4" />
+                    <Copy className="h-4 w-4" />
+                    {isDuplicating === scenario.id ? "..." : ""}
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>View Scenario Details</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-            {canDuplicate(scenario) && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDuplicate(scenario)}
-                disabled={isDuplicating === scenario.id}
-              >
-                <Copy className="h-4 w-4" />
-                {isDuplicating === scenario.id ? "..." : ""}
-              </Button>
-            )}
+                )}
+              </>
+            ) : (
+              // For non-generated scenarios: show edit, duplicate, and delete
+              <>
+                {canEditScenario(scenario.id) ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(scenario.id)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleView(scenario.id)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>View Scenario Details</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                {canDuplicate(scenario) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDuplicate(scenario)}
+                    disabled={isDuplicating === scenario.id}
+                  >
+                    <Copy className="h-4 w-4" />
+                    {isDuplicating === scenario.id ? "..." : ""}
+                  </Button>
+                )}
 
-            {!isScenarioInUse(scenario.id) && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  handleDeleteClick(
-                    scenario.id,
-                    scenario.name || "Unnamed Scenario"
-                  )
-                }
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+                {canDeleteScenario(scenario) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      handleDeleteClick(
+                        scenario.id,
+                        scenario.name || "Unnamed Scenario"
+                      )
+                    }
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </div>
