@@ -367,21 +367,44 @@ export default function AttemptChat() {
                         </SelectTrigger>
                         <SelectContent>
                           {simulationContext?.chats?.map(
-                            (chat: SimulationChat) => (
-                              <SelectItem key={chat.id} value={chat.id}>
-                                <div className="flex items-center gap-2">
-                                  <span>{chat.title}</span>
-                                  {!chat.completed && (
-                                    <Badge
-                                      variant="secondary"
-                                      className="text-xs"
-                                    >
-                                      Incomplete
-                                    </Badge>
-                                  )}
-                                </div>
-                              </SelectItem>
-                            )
+                            (chat: SimulationChat) => {
+                              // Find rubric result for this chat
+                              const rubricResult =
+                                simulationContext?.allDynamicRubrics.find(
+                                  (rubric) => rubric.chatId === chat.id
+                                );
+
+                              return (
+                                <SelectItem key={chat.id} value={chat.id}>
+                                  <div className="flex items-center gap-2">
+                                    <span>{chat.title}</span>
+                                    {!chat.completed ? (
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-xs"
+                                      >
+                                        Incomplete
+                                      </Badge>
+                                    ) : rubricResult ? (
+                                      <Badge
+                                        variant={
+                                          rubricResult.passed
+                                            ? "default"
+                                            : "destructive"
+                                        }
+                                        className={`text-xs ${
+                                          rubricResult.passed
+                                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                                        }`}
+                                      >
+                                        {rubricResult.passed ? "Pass" : "Fail"}
+                                      </Badge>
+                                    ) : null}
+                                  </div>
+                                </SelectItem>
+                              );
+                            }
                           )}
                         </SelectContent>
                       </Select>
