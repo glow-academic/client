@@ -182,13 +182,11 @@ export default function Scenario({
   const isReadonly = useMemo(() => {
     if (!isEditMode || !scenarioId) return false;
 
-    // Check if scenario is used by active simulations
     const usedByActiveSimulations = affectedSimulations.some(
       (sim: Simulation) => sim.active
     );
 
-    // Check if scenario is generated (has a parentId)
-    const isGeneratedScenario = scenario?.parentId && scenario?.generated;
+    const isGeneratedScenario = !!(scenario?.parentId && scenario?.generated);
 
     return usedByActiveSimulations || isGeneratedScenario;
   }, [affectedSimulations, isEditMode, scenarioId, scenario]);
