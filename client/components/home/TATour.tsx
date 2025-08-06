@@ -7,7 +7,7 @@
 "use client";
 import { logError, logInfo } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle, HelpCircle, Play } from "lucide-react";
+import { HelpCircle, Play } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
@@ -42,15 +42,9 @@ function GuideButton() {
         };
       case "resume":
         return {
-          icon: <HelpCircle className="h-4 w-4" />,
+          icon: <Play className="h-4 w-4" />,
           text: "Resume Tour",
-          variant: "secondary" as const,
-        };
-      case "complete":
-        return {
-          icon: <CheckCircle className="h-4 w-4" />,
-          text: "Tour Complete",
-          variant: "outline" as const,
+          variant: "default" as const,
         };
       default:
         return {
@@ -64,7 +58,7 @@ function GuideButton() {
   const { icon, text, variant } = getButtonContent();
 
   return (
-    buttonState === "start" && (
+    (buttonState === "start" || buttonState === "resume") && (
       <div className="fixed bottom-4 right-4 z-50">
         <Button
           onClick={openGuide}

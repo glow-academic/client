@@ -63,7 +63,7 @@ const initialState: TourContextState = {
 // Reducer
 function tourReducer(
   state: TourContextState,
-  action: TourAction,
+  action: TourAction
 ): TourContextState {
   switch (action.type) {
     case "OPEN":
@@ -103,7 +103,7 @@ function tourReducer(
       return {
         ...state,
         steps: state.steps.map((step, index) =>
-          index === action.payload ? { ...step, isCompleted: true } : step,
+          index === action.payload ? { ...step, isCompleted: true } : step
         ),
       };
     case "SET_NAVIGATING":
@@ -146,7 +146,7 @@ interface TourContextValue {
   setAttemptId: (attemptId: string | null) => void;
   openGuide: () => void;
   goBack: () => void;
-  getGuideButtonState: () => "start" | "resume" | "complete" | "hidden";
+  getGuideButtonState: () => "start" | "resume" | "hidden";
 }
 
 const TourContext = createContext<TourContextValue | undefined>(undefined);
@@ -173,7 +173,7 @@ export function TourProvider({ children }: TourProviderProps) {
       }
       dispatch({ type: "OPEN", payload });
     },
-    [],
+    []
   );
 
   const closeTour = useCallback(() => {
@@ -244,12 +244,13 @@ export function TourProvider({ children }: TourProviderProps) {
   }, [state.currentStep]);
 
   // Get guide button state
-  const getGuideButtonState = useCallback(():
-    | "start"
-    | "resume"
-    | "complete"
-    | "hidden" => {
+  const getGuideButtonState = useCallback((): "start" | "resume" | "hidden" => {
     if (!effectiveProfile) {
+      return "hidden";
+    }
+
+    // Don't show button if tour is currently open
+    if (state.isOpen) {
       return "hidden";
     }
 
@@ -263,21 +264,23 @@ export function TourProvider({ children }: TourProviderProps) {
 
     // Check tour completion status using latest profile data
     if (effectiveProfile.viewedIntro && effectiveProfile.viewedChat) {
-      // If both flags are true and attemptId is null, user has officially completed the tour
-      // and shouldn't see it again
-      if (!state.attemptId) {
-        return "hidden";
-      }
-      // If attemptId exists, they're in an active tour session, so show "complete"
-      return "complete";
+      // If both flags are true, user has completed the tour - show nothing
+      return "hidden";
     }
 
-    if (state.isOpen) {
+    // If viewedIntro is true but viewedChat is false, show resume tour
+    if (effectiveProfile.viewedIntro && !effectiveProfile.viewedChat) {
       return "resume";
     }
 
-    return "start";
-  }, [effectiveProfile, state.isOpen, state.attemptId]);
+    // If both viewedIntro and viewedChat are false, show start tour
+    if (!effectiveProfile.viewedIntro && !effectiveProfile.viewedChat) {
+      return "start";
+    }
+
+    // Default fallback
+    return "hidden";
+  }, [effectiveProfile, state.isOpen]);
 
   // Context value
   const value = useMemo(
@@ -312,7 +315,7 @@ export function TourProvider({ children }: TourProviderProps) {
       openGuide,
       goBack,
       getGuideButtonState,
-    ],
+    ]
   );
 
   // Handle body class for tour open state
@@ -493,7 +496,7 @@ export function TourProvider({ children }: TourProviderProps) {
                     window.dispatchEvent(
                       new CustomEvent("tourAction", {
                         detail: { stepIndex: state.currentStep },
-                      }),
+                      })
                     );
                     logInfo("Tour Next button clicked", {
                       stepIndex: state.currentStep,
