@@ -937,6 +937,18 @@ export function UnifiedSidebar({
                     <DropdownMenuSeparator />
                   </>
                 )}
+                {activeProfile && effectiveProfile.role === "superadmin" && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => {}}
+                      variant="default"
+                    >
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Emulate
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem
                   onClick={handleLoginOrLogout}
                   disabled={isLoggingOut}

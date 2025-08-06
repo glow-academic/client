@@ -53,7 +53,7 @@ export const createTATourSteps = (
     },
     {
       id: "cohort-leaderboard",
-      title: "Your Cohort Progress 📊",
+      title: "Cohort Leaderboard 📊",
       content:
         "Let's check your cohort's leaderboard to see how you and your peers are progressing. This shows everyone's completion status and scores.",
       action: () => {

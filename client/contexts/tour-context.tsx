@@ -378,6 +378,22 @@ export function TourProvider({ children }: TourProviderProps) {
     // Check if tour is actually completed based on latest profile status
     const isTourCompleted =
       effectiveProfile?.viewedIntro && effectiveProfile?.viewedChat;
+
+
+    const getNavigatingText = (currentStep: number) => {
+      switch (currentStep) {
+        case 0:
+        case 1:
+        case 2:
+          return "Navigating...";
+        case 3:
+          return "Sending...";
+        case 4:
+          return "Ending...";
+        default:
+          return "Navigating...";
+      }
+    }
     const isLastStep = state.currentStep + 1 === state.steps.length;
 
     return (
@@ -389,11 +405,6 @@ export function TourProvider({ children }: TourProviderProps) {
                 <h3 className="text-lg font-semibold text-foreground">
                   {isTourCompleted ? "Tour Complete! 🎉" : currentStep.title}
                 </h3>
-                {isTourCompleted && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    🎉 Tour Complete! You're all set to use GLOW.
-                  </p>
-                )}
               </div>
               <button
                 onClick={closeTour}
@@ -406,7 +417,7 @@ export function TourProvider({ children }: TourProviderProps) {
           </header>
 
           <div className="tour-sidebar-body">
-            <div className="text-sm text-muted-foreground leading-relaxed">
+            <div className="text-md text-muted-foreground leading-relaxed">
               {isTourCompleted ? (
                 <div className="space-y-3">
                   <p>
@@ -512,7 +523,7 @@ export function TourProvider({ children }: TourProviderProps) {
                   className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors flex-1"
                 >
                   {state.isNavigating
-                    ? "Navigating..."
+                    ? getNavigatingText(state.currentStep)
                     : state.loadingSimulation
                       ? "Starting..."
                       : isLastStep

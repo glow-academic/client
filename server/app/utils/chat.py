@@ -39,13 +39,13 @@ def get_simulation_conversation_history(
 
     for item in items:
         if isinstance(item, SimulationMessages):
-            if item.type == "query":
+            if item.type == "query" and item.content != "":
                 user_message_item: TResponseInputItem = {
                     "role": "user",
                     "content": item.content,
                 }
                 conversation_history.append(user_message_item)
-            if item.type == "response":
+            if item.type == "response" and item.content != "":
                 assistant_message_item: TResponseInputItem = {
                     "role": "assistant",
                     "content": item.content,
