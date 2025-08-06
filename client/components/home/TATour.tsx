@@ -340,7 +340,7 @@ export default function TATour() {
         setNavigating(false);
         expectedPathnameRef.current = null;
       }
-    }, 5000); // 5 second fallback timeout
+    }, 3000); // 3 second fallback timeout for back navigation
   }, [router, setNavigating]);
 
   const handleNavigateBackToHome = useCallback(async () => {
@@ -363,7 +363,7 @@ export default function TATour() {
         setNavigating(false);
         expectedPathnameRef.current = null;
       }
-    }, 5000); // 5 second fallback timeout
+    }, 3000); // 3 second fallback timeout for back navigation
   }, [router, setNavigating]);
 
   const handleNavigateBackToCohortLeaderboard = useCallback(async () => {
@@ -400,7 +400,7 @@ export default function TATour() {
         setNavigating(false);
         expectedPathnameRef.current = null;
       }
-    }, 5000); // 5 second fallback timeout
+    }, 3000); // 3 second fallback timeout for back navigation
   }, [taCohorts, router, setNavigating]);
 
   // Initialize tour steps and launch tour
@@ -632,6 +632,13 @@ export default function TATour() {
 
   // Monitor pathname changes to set navigating to false when we reach expected destination
   useEffect(() => {
+    logInfo("Pathname monitoring effect triggered", {
+      expectedPath: expectedPathnameRef.current,
+      currentPath: pathname,
+      isNavigating: tourState.isNavigating,
+      tourOpen: tourState.isOpen,
+    });
+
     if (
       expectedPathnameRef.current &&
       pathname === expectedPathnameRef.current
@@ -649,7 +656,27 @@ export default function TATour() {
         timeoutRef.current = null;
       }
     }
-  }, [pathname, setNavigating]);
+  }, [pathname, setNavigating, tourState.isNavigating, tourState.isOpen]);
+
+  // Fallback mechanism: set navigating to false after a delay if it's still true
+  useEffect(() => {
+    if (tourState.isNavigating) {
+      const fallbackTimeout = setTimeout(() => {
+        logInfo("Fallback timeout - setting navigating to false", {
+          currentPath: pathname,
+          expectedPath: expectedPathnameRef.current,
+        });
+        setNavigating(false);
+        expectedPathnameRef.current = null;
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+      }, 5000); // 5 second fallback
+
+      return () => clearTimeout(fallbackTimeout);
+    }
+  }, [tourState.isNavigating, pathname, setNavigating]);
 
   // Handle automatic step completion based on current location
   useEffect(() => {
@@ -870,6 +897,7 @@ export default function TATour() {
         fromStep,
         toStep,
         currentStep: tourState.currentStep,
+        currentPathname: pathname,
       });
 
       // Handle back navigation from step 3 to step 2
@@ -989,6 +1017,7 @@ export default function TATour() {
     handleNavigateBackToPractice,
     handleNavigateBackToHome,
     handleNavigateBackToCohortLeaderboard,
+    pathname,
   ]);
 
   // Custom step actions mapping - handles Next button clicks

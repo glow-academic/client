@@ -13,6 +13,7 @@ import {
   useEffect,
   useMemo,
   useReducer,
+  useRef,
 } from "react";
 
 import { useProfile } from "@/contexts/profile-context";
@@ -159,6 +160,7 @@ export function TourProvider({ children }: TourProviderProps) {
   const [state, dispatch] = useReducer(tourReducer, initialState);
   const { effectiveProfile } = useProfile();
   const router = useRouter();
+  const lastKeyPressRef = useRef<number>(0);
   // Actions
   const openTour = useCallback(
     (steps: TourStep[], profile: Profile, initialStep?: number) => {
@@ -325,14 +327,25 @@ export function TourProvider({ children }: TourProviderProps) {
     if (!state.isOpen) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      const now = Date.now();
+      const timeSinceLastPress = now - lastKeyPressRef.current;
+
+      // Prevent rapid-fire key presses (less than 200ms apart)
+      if (timeSinceLastPress < 200) {
+        return;
+      }
+
       if (event.key === "Escape") {
+        lastKeyPressRef.current = now;
         closeTour();
       } else if (
         event.key === "ArrowRight" &&
         state.currentStep + 1 < state.steps.length
       ) {
+        lastKeyPressRef.current = now;
         nextStep();
       } else if (event.key === "ArrowLeft" && state.currentStep > 0) {
+        lastKeyPressRef.current = now;
         prevStep();
       }
     };
