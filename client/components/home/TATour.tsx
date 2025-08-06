@@ -804,14 +804,14 @@ export default function TATour() {
       0: () => {
         // Step 0: Complete current step and navigate to cohort leaderboard
         handleStepComplete(0);
-        nextStep();
         handleNavigateToCohortLeaderboard();
+        nextStep();
       },
       1: () => {
         // Step 1: Complete current step and navigate to practice
         handleStepComplete(1);
-        nextStep();
         handleNavigateToPractice();
+        nextStep();
       },
       2: () => {
         // Step 2: Handle practice simulation start - just click the button and let WebSocket events handle progression
