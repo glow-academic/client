@@ -99,6 +99,7 @@ export default function TATour() {
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tourStateRef = useRef(tourState);
+  const expectedPathnameRef = useRef<string | null>(null);
 
   // Update ref when tour state changes
   useEffect(() => {
@@ -218,13 +219,26 @@ export default function TATour() {
       return;
     }
 
-    logInfo("Navigating to cohort leaderboard", { cohortId: firstCohort.id });
-    router.push(`/cohorts/c/${firstCohort.id}`);
+    const targetPath = `/cohorts/c/${firstCohort.id}`;
+    expectedPathnameRef.current = targetPath;
 
-    // Wait for navigation to complete
-    setTimeout(() => {
-      setNavigating(false);
-    }, 1500);
+    logInfo("Navigating to cohort leaderboard", {
+      cohortId: firstCohort.id,
+      targetPath,
+    });
+    router.push(targetPath);
+
+    // Set a fallback timeout in case navigation fails
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      if (expectedPathnameRef.current === targetPath) {
+        logInfo("Navigation timeout - setting navigating to false", {
+          targetPath,
+        });
+        setNavigating(false);
+        expectedPathnameRef.current = null;
+      }
+    }, 5000); // 5 second fallback timeout
   }, [taCohorts, router, setNavigating]);
 
   const handleStartPracticeSimulation = useCallback(
@@ -284,15 +298,25 @@ export default function TATour() {
 
   const handleNavigateToPractice = useCallback(async () => {
     setNavigating(true);
-    logInfo("Navigating to practice page");
+    const targetPath = "/practice";
+    expectedPathnameRef.current = targetPath;
+
+    logInfo("Navigating to practice page", { targetPath });
 
     // Navigate to practice page
-    router.push("/practice");
+    router.push(targetPath);
 
-    // Wait for navigation to complete
-    setTimeout(() => {
-      setNavigating(false);
-    }, 1500);
+    // Set a fallback timeout in case navigation fails
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      if (expectedPathnameRef.current === targetPath) {
+        logInfo("Navigation timeout - setting navigating to false", {
+          targetPath,
+        });
+        setNavigating(false);
+        expectedPathnameRef.current = null;
+      }
+    }, 5000); // 5 second fallback timeout
   }, [router, setNavigating]);
 
   // Initialize tour steps and launch tour
@@ -521,6 +545,27 @@ export default function TATour() {
     router,
     pathname,
   ]);
+
+  // Monitor pathname changes to set navigating to false when we reach expected destination
+  useEffect(() => {
+    if (
+      expectedPathnameRef.current &&
+      pathname === expectedPathnameRef.current
+    ) {
+      logInfo("Reached expected destination - setting navigating to false", {
+        expectedPath: expectedPathnameRef.current,
+        currentPath: pathname,
+      });
+      setNavigating(false);
+      expectedPathnameRef.current = null;
+
+      // Clear the fallback timeout since we've reached our destination
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    }
+  }, [pathname, setNavigating]);
 
   // Handle automatic step completion based on current location
   useEffect(() => {
