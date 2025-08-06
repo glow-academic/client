@@ -599,11 +599,20 @@ export default function TATour() {
       setAttemptId(attemptId);
       setLoadingSimulation(null);
 
-      // Advance to step 3 (send message) since we're now in the simulation
-      if (tourState.isOpen && tourState.currentStep === 2) {
-        logInfo("Simulation started - advancing to step 3 (send message)");
-        handleStepComplete(2); // Complete step 2
-        nextStep(); // Advance to step 3
+      // Complete step 2 and advance to step 3 when simulation is actually started
+      if (
+        tourState.isOpen &&
+        tourState.currentStep === 2 &&
+        !tourState.steps[2]?.isCompleted
+      ) {
+        logInfo(
+          "Simulation started - completing step 2 and advancing to step 3"
+        );
+        handleStepComplete(2);
+        nextStep();
+      } else if (tourState.isOpen && tourState.currentStep === 2) {
+        // Just reset navigating state if step is already completed
+        logInfo("Simulation started - step 2 already completed");
       }
 
       // Let WebSocket events handle step completion - don't auto-advance here
@@ -625,9 +634,10 @@ export default function TATour() {
         currentStep: tourState.currentStep,
       });
 
-      // Set navigating state to true for 1500ms when simulation button is pressed
+      // Set navigating state to true when simulation button is pressed (but don't complete step yet)
       if (tourState.isOpen && tourState.currentStep === 2) {
         setNavigating(true);
+        logInfo("Simulation button pressed - setting navigating to true");
       }
     };
 

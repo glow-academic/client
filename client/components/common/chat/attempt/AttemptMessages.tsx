@@ -187,6 +187,14 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                   No response
                                 </span>
                               </div>
+                            ) : message.completed &&
+                              message.content.startsWith("Error:") ? (
+                              // Show error messages in red
+                              <div className="bg-red-50 border border-red-200 rounded-lg p-3 relative">
+                                <div className="text-red-700">
+                                  <Markdown>{message.content}</Markdown>
+                                </div>
+                              </div>
                             ) : (
                               <div className="bg-muted rounded-lg p-3 relative">
                                 <Markdown>{message.content}</Markdown>

@@ -24,10 +24,8 @@ from app.models import (
 )
 from app.services.agents.collection.grade import run_grade_agent
 from app.services.agents.collection.scenario import run_scenario_agent
-from app.services.agents.collection.simulation import (
-    cancel_simulation_run,
-    run_simulation_agent,
-)
+from app.services.agents.collection.simulation import (cancel_simulation_run,
+                                                       run_simulation_agent)
 from app.utils.scenario import randomly_fill_scenario_attributes
 from sqlmodel import select
 
@@ -462,7 +460,6 @@ async def process_simulation_message_websocket(
                 type="query",
                 content=message,
                 completed=True,
-                audio=False,
             )
 
             db_session.add(user_message)
@@ -479,7 +476,6 @@ async def process_simulation_message_websocket(
                     "role": "user",
                     "content": message,
                     "completed": True,
-                    "audio": False,
                     "created_at": user_message.created_at.isoformat(),
                 },
                 room=f"simulation_{chat_id}",
@@ -491,7 +487,6 @@ async def process_simulation_message_websocket(
             type="response",
             content="",
             completed=False,
-            audio=False,
         )
         db_session.add(assistant_message)
         db_session.commit()
@@ -507,7 +502,6 @@ async def process_simulation_message_websocket(
                 "role": "assistant",
                 "content": "",
                 "completed": False,
-                "audio": False,
                 "created_at": assistant_message.created_at.isoformat(),
             },
             room=f"simulation_{chat_id}",
