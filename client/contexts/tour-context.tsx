@@ -344,7 +344,11 @@ export function TourProvider({ children }: TourProviderProps) {
       ) {
         lastKeyPressRef.current = now;
         nextStep();
-      } else if (event.key === "ArrowLeft" && state.currentStep > 0) {
+      } else if (
+        event.key === "ArrowLeft" &&
+        state.currentStep > 0 &&
+        state.currentStep !== 4
+      ) {
         lastKeyPressRef.current = now;
         prevStep();
       }
@@ -487,7 +491,7 @@ export function TourProvider({ children }: TourProviderProps) {
               <div className="flex justify-between gap-2">
                 <button
                   onClick={prevStep}
-                  disabled={state.currentStep === 0}
+                  disabled={state.currentStep === 0 || state.currentStep === 4}
                   className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Back

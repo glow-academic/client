@@ -363,7 +363,7 @@ export default function TATour() {
         setNavigating(false);
         expectedPathnameRef.current = null;
       }
-    }, 3000); // 3 second fallback timeout for back navigation
+    }, 5000); // 5 second fallback timeout for back navigation
   }, [router, setNavigating]);
 
   const handleNavigateBackToCohortLeaderboard = useCallback(async () => {
@@ -400,7 +400,7 @@ export default function TATour() {
         setNavigating(false);
         expectedPathnameRef.current = null;
       }
-    }, 3000); // 3 second fallback timeout for back navigation
+    }, 5000); // 5 second fallback timeout for back navigation
   }, [taCohorts, router, setNavigating]);
 
   // Initialize tour steps and launch tour
@@ -676,6 +676,7 @@ export default function TATour() {
 
       return () => clearTimeout(fallbackTimeout);
     }
+    return undefined;
   }, [tourState.isNavigating, pathname, setNavigating]);
 
   // Handle automatic step completion based on current location
@@ -906,6 +907,11 @@ export default function TATour() {
         logInfo(
           "Back navigation from step 3 to step 2 - setting navigating to true"
         );
+        // Clear attemptId when going back from step 3 to step 2
+        // This allows the user to create a new simulation when they press next again
+        setAttemptId(null);
+        logInfo("Cleared attemptId for new simulation");
+
         handleNavigateBackToPractice();
       }
       // Handle back navigation from step 2 to step 1
