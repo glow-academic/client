@@ -319,6 +319,90 @@ export default function TATour() {
     }, 5000); // 5 second fallback timeout
   }, [router, setNavigating]);
 
+  // Back navigation handlers
+  const handleNavigateBackToPractice = useCallback(async () => {
+    setNavigating(true);
+    const targetPath = "/practice";
+    expectedPathnameRef.current = targetPath;
+
+    logInfo("Navigating back to practice page", { targetPath });
+
+    // Navigate back to practice page
+    router.push(targetPath);
+
+    // Set a fallback timeout in case navigation fails
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      if (expectedPathnameRef.current === targetPath) {
+        logInfo("Back navigation timeout - setting navigating to false", {
+          targetPath,
+        });
+        setNavigating(false);
+        expectedPathnameRef.current = null;
+      }
+    }, 5000); // 5 second fallback timeout
+  }, [router, setNavigating]);
+
+  const handleNavigateBackToHome = useCallback(async () => {
+    setNavigating(true);
+    const targetPath = "/home";
+    expectedPathnameRef.current = targetPath;
+
+    logInfo("Navigating back to home page", { targetPath });
+
+    // Navigate back to home page
+    router.push(targetPath);
+
+    // Set a fallback timeout in case navigation fails
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      if (expectedPathnameRef.current === targetPath) {
+        logInfo("Back navigation timeout - setting navigating to false", {
+          targetPath,
+        });
+        setNavigating(false);
+        expectedPathnameRef.current = null;
+      }
+    }, 5000); // 5 second fallback timeout
+  }, [router, setNavigating]);
+
+  const handleNavigateBackToCohortLeaderboard = useCallback(async () => {
+    if (taCohorts.length === 0) {
+      toast.error("No cohorts assigned to you yet.");
+      setNavigating(false);
+      return;
+    }
+
+    setNavigating(true);
+    const firstCohort = taCohorts[0];
+    if (!firstCohort) {
+      toast.error("No cohorts assigned to you yet.");
+      setNavigating(false);
+      return;
+    }
+
+    const targetPath = `/cohorts/c/${firstCohort.id}`;
+    expectedPathnameRef.current = targetPath;
+
+    logInfo("Navigating back to cohort leaderboard", {
+      cohortId: firstCohort.id,
+      targetPath,
+    });
+    router.push(targetPath);
+
+    // Set a fallback timeout in case navigation fails
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      if (expectedPathnameRef.current === targetPath) {
+        logInfo("Back navigation timeout - setting navigating to false", {
+          targetPath,
+        });
+        setNavigating(false);
+        expectedPathnameRef.current = null;
+      }
+    }, 5000); // 5 second fallback timeout
+  }, [taCohorts, router, setNavigating]);
+
   // Initialize tour steps and launch tour
   useEffect(() => {
     logInfo("TATour useEffect triggered", {
@@ -778,6 +862,57 @@ export default function TATour() {
       }
     };
 
+    // Listen for back navigation events
+    const handleBackNavigation = (event: CustomEvent) => {
+      const { fromStep, toStep } = event.detail;
+      logInfo("Back navigation event received", {
+        tourOpen: tourState.isOpen,
+        fromStep,
+        toStep,
+        currentStep: tourState.currentStep,
+      });
+
+      // Handle back navigation from step 3 to step 2
+      if (tourState.isOpen && fromStep === 3 && toStep === 2) {
+        setNavigating(true);
+        logInfo(
+          "Back navigation from step 3 to step 2 - setting navigating to true"
+        );
+        handleNavigateBackToPractice();
+      }
+      // Handle back navigation from step 2 to step 1
+      else if (tourState.isOpen && fromStep === 2 && toStep === 1) {
+        setNavigating(true);
+        logInfo(
+          "Back navigation from step 2 to step 1 - setting navigating to true"
+        );
+        handleNavigateBackToCohortLeaderboard();
+      }
+      // Handle back navigation from step 1 to step 0
+      else if (tourState.isOpen && fromStep === 1 && toStep === 0) {
+        setNavigating(true);
+        logInfo(
+          "Back navigation from step 1 to step 0 - setting navigating to true"
+        );
+        handleNavigateBackToHome();
+      }
+    };
+
+    // Listen for existing simulation navigation events
+    const handleExistingSimulationNavigation = (event: CustomEvent) => {
+      logInfo("Existing simulation navigation event received", {
+        tourOpen: tourState.isOpen,
+        currentStep: tourState.currentStep,
+        attemptId: event.detail?.attemptId,
+      });
+
+      // Set navigating to false when we navigate to an existing simulation
+      if (tourState.isOpen && tourState.currentStep === 2) {
+        setNavigating(false);
+        logInfo("Existing simulation navigation - setting navigating to false");
+      }
+    };
+
     window.addEventListener(
       "simulationStarted",
       handleSimulationStarted as EventListener
@@ -797,6 +932,14 @@ export default function TATour() {
       handleEndChatButtonPressed as EventListener
     );
     window.addEventListener("chatEnded", handleChatEnded as EventListener);
+    window.addEventListener(
+      "backNavigation",
+      handleBackNavigation as EventListener
+    );
+    window.addEventListener(
+      "existingSimulationNavigation",
+      handleExistingSimulationNavigation as EventListener
+    );
 
     return () => {
       window.removeEventListener(
@@ -821,6 +964,14 @@ export default function TATour() {
         handleEndChatButtonPressed as EventListener
       );
       window.removeEventListener("chatEnded", handleChatEnded as EventListener);
+      window.removeEventListener(
+        "backNavigation",
+        handleBackNavigation as EventListener
+      );
+      window.removeEventListener(
+        "existingSimulationNavigation",
+        handleExistingSimulationNavigation as EventListener
+      );
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -835,6 +986,9 @@ export default function TATour() {
     tourState.steps,
     nextStep,
     setNavigating,
+    handleNavigateBackToPractice,
+    handleNavigateBackToHome,
+    handleNavigateBackToCohortLeaderboard,
   ]);
 
   // Custom step actions mapping - handles Next button clicks
@@ -870,6 +1024,14 @@ export default function TATour() {
           logInfo("Using existing attemptId for tour navigation", {
             attemptId: tourState.attemptId,
           });
+
+          // Dispatch existingSimulationNavigation event to set navigating to false
+          window.dispatchEvent(
+            new CustomEvent("existingSimulationNavigation", {
+              detail: { attemptId: tourState.attemptId },
+            })
+          );
+
           router.push(`/practice/a/${tourState.attemptId}`);
         } else {
           // If no attemptId, trigger the first practice simulation card click

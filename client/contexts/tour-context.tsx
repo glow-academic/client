@@ -145,7 +145,6 @@ interface TourContextValue {
   setShowGuideButton: (show: boolean) => void;
   setAttemptId: (attemptId: string | null) => void;
   openGuide: () => void;
-  goBack: () => void;
   getGuideButtonState: () => "start" | "resume" | "hidden";
 }
 
@@ -185,8 +184,18 @@ export function TourProvider({ children }: TourProviderProps) {
   }, []);
 
   const prevStep = useCallback(() => {
+    // Dispatch back navigation event before calling prevStep
+    if (state.currentStep > 0) {
+      const fromStep = state.currentStep;
+      const toStep = state.currentStep - 1;
+      window.dispatchEvent(
+        new CustomEvent("backNavigation", {
+          detail: { fromStep, toStep },
+        })
+      );
+    }
     dispatch({ type: "PREV" });
-  }, []);
+  }, [state.currentStep]);
 
   const setStep = useCallback((step: number) => {
     dispatch({ type: "SET_STEP", payload: step });
@@ -224,24 +233,6 @@ export function TourProvider({ children }: TourProviderProps) {
       });
     }
   }, [state.isOpen, state.steps, state.profile, state.currentStep]);
-
-  const goBack = useCallback(() => {
-    // Navigate back based on current step
-    switch (state.currentStep) {
-      case 0: // Home overview - stay on home
-        break;
-      case 1: // Cohort leaderboard - go back to home
-        window.history.back();
-        break;
-      case 2: // Practice simulation - go back to home
-        window.history.back();
-        break;
-      case 3: // Send message - stay in simulation
-        break;
-      case 4: // End chat - stay in simulation
-        break;
-    }
-  }, [state.currentStep]);
 
   // Get guide button state
   const getGuideButtonState = useCallback((): "start" | "resume" | "hidden" => {
@@ -297,7 +288,6 @@ export function TourProvider({ children }: TourProviderProps) {
       setShowGuideButton,
       setAttemptId,
       openGuide,
-      goBack,
       getGuideButtonState,
     }),
     [
@@ -313,7 +303,6 @@ export function TourProvider({ children }: TourProviderProps) {
       setShowGuideButton,
       setAttemptId,
       openGuide,
-      goBack,
       getGuideButtonState,
     ]
   );
