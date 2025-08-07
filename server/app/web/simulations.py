@@ -413,8 +413,9 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
 
             if end_all:
                 # Handle end all functionality - create all remaining chats
+                # Pass the current chat ID to avoid double grading
                 await _handle_end_all_remaining_chats(
-                    sid, attempt_id, scenario_ids, db_session
+                    sid, attempt_id, scenario_ids, db_session, chat_id
                 )
             else:
                 # Emit the new, more descriptive success response for single chat
@@ -449,6 +450,7 @@ async def _handle_end_all_remaining_chats(
     attempt_id: str,
     scenario_ids: list[uuid.UUID],
     db_session: Session,
+    current_chat_id: uuid.UUID | None = None,
 ) -> None:
     """
     Handle creating all remaining chats and marking them as completed
@@ -458,7 +460,11 @@ async def _handle_end_all_remaining_chats(
         select(SimulationChats).where(SimulationChats.attempt_id == attempt_id)
     ).all()
 
+    logger.info(f"End all: Found {len(existing_chats)} existing chats for attempt {attempt_id}")
+    logger.info(f"End all: Total scenario IDs: {len(scenario_ids)}")
+
     # End all existing incomplete chats
+    incomplete_chats_processed = 0
     for chat in existing_chats:
         if not chat.completed:
             # Check message count for each chat
@@ -466,18 +472,28 @@ async def _handle_end_all_remaining_chats(
                 select(SimulationMessages).where(SimulationMessages.chat_id == chat.id)
             ).all()
 
-            if len(messages) >= 2:
+            logger.info(f"End all: Chat {chat.id} has {len(messages)} messages")
+
+            # Skip grading if this is the current chat (already graded in main function)
+            should_grade = len(messages) >= 2 and chat.id != current_chat_id
+
+            if should_grade:
                 # Run grading for chats with sufficient messages
+                logger.info(f"End all: Running grading for chat {str(chat.id)}")
                 await run_grade_agent(chat.id, db_session)
 
             # Mark chat as completed
             chat.completed = True
             chat.completed_at = datetime.now(timezone.utc)
             db_session.add(chat)
+            incomplete_chats_processed += 1
 
     # Create remaining chats and mark them as completed
     existing_scenario_ids = [chat.scenario_id for chat in existing_chats]
     remaining_scenario_ids = [sid for sid in scenario_ids if sid not in existing_scenario_ids]
+
+    logger.info(f"End all: Existing scenario IDs: {len(existing_scenario_ids)}")
+    logger.info(f"End all: Remaining scenario IDs: {len(remaining_scenario_ids)}")
 
     for i, scenario_id in enumerate(remaining_scenario_ids):
         chat_index = len(existing_chats) + i + 1
@@ -499,13 +515,13 @@ async def _handle_end_all_remaining_chats(
         "end_all_completed",
         {
             "success": True,
-            "message": f"Ended {len(existing_chats)} existing chats and created {len(remaining_scenario_ids)} new completed chats",
+            "message": f"Ended {incomplete_chats_processed} incomplete chats and created {len(remaining_scenario_ids)} new completed chats",
             "attempt_id": attempt_id,
         },
         room=sid,
     )
 
-    logger.info(f"End all completed for attempt {attempt_id}")
+    logger.info(f"End all completed for attempt {attempt_id}: processed {incomplete_chats_processed} incomplete chats, created {len(remaining_scenario_ids)} new chats")
 
 
 async def process_simulation_message_websocket(

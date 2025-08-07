@@ -728,18 +728,6 @@ export function SimulationProvider({
     setEndChatLoading(true);
 
     try {
-      // Get all scenario IDs for this simulation
-      const scenarioIds = simulation.scenarioIds || [];
-      const expectedChatCount = scenarioIds.length;
-      const currentChatCount = chats.length;
-
-      // Only proceed if there are at least 2 remaining sessions
-      if (expectedChatCount - currentChatCount < 2) {
-        toast.error("Need at least 2 remaining sessions to use End All");
-        setEndChatLoading(false);
-        return;
-      }
-
       // Call backend with end_all=true to handle all remaining chats
       emitContinueSimulation({
         chat_id: currentChat.id,
@@ -750,14 +738,7 @@ export function SimulationProvider({
       toast.error(`Failed to end all chats: ${error}`);
       setEndChatLoading(false);
     }
-  }, [
-    simulation,
-    attempt,
-    currentChat,
-    chats,
-    attemptId,
-    emitContinueSimulation,
-  ]);
+  }, [simulation, attempt, currentChat, attemptId, emitContinueSimulation]);
 
   // Listen for WebSocket loading state changes
   useEffect(() => {

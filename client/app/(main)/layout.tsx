@@ -372,7 +372,11 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       }
 
       // Check if there are at least 2 remaining sessions for End All button
-      const remainingSessions = expectedChatCount - chats.length;
+      // Count incomplete chats + scenarios that haven't been created as chats yet
+      const incompleteChats = chats.filter((chat) => !chat.completed).length;
+      const createdChats = chats.length;
+      const remainingScenarios = expectedChatCount - createdChats;
+      const remainingSessions = incompleteChats + remainingScenarios;
       const showEndAllButton = remainingSessions >= 2;
 
       return (
