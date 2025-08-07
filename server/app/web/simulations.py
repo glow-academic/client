@@ -427,6 +427,7 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
 async def process_simulation_message_websocket(
     chat_id: uuid.UUID,
     message: str = "",
+    is_retry: bool = False,
 ) -> None:
     """
     Process a simulation message and stream the response via WebSocket
@@ -447,9 +448,9 @@ async def process_simulation_message_websocket(
             raise ValueError(f"Chat {chat_id} not found")
 
         # Keep existing TEXT_TEXT flow unchanged
-        # 1. Add the user message to the chat
+        # 1. Add the user message to the chat (skip if this is a retry)
         sio_instance = get_sio_instance()
-        if message and message.strip() != "":
+        if message and message.strip() != "" and not is_retry:
             user_message = SimulationMessages(
                 chat_id=chat_id,
                 type="query",
@@ -475,6 +476,8 @@ async def process_simulation_message_websocket(
                 },
                 room=f"simulation_{chat_id}",
             )
+        elif is_retry:
+            logger.info(f"Skipping user message creation for retry in chat {chat_id}")
 
         # 3. Create placeholder assistant message
         assistant_message = SimulationMessages(

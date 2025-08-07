@@ -171,9 +171,13 @@ async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
         # Process the message via WebSocket
         from app.web.simulations import process_simulation_message_websocket
 
+        # Extract isRetry flag from data
+        is_retry = data.get("isRetry", False)
+
         await process_simulation_message_websocket(
             chat_id=uuid.UUID(chat_id),
             message=message or "",
+            is_retry=is_retry,
         )
 
     except Exception as e:
