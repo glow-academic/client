@@ -109,7 +109,7 @@ export default function ReportProblem({
     setFormData({
       type: initialType || "",
       message: initialMessage
-        ? `${initialMessage}\n\n---\n\nIs there any additional information you'd like to add to help us understand and resolve this issue?`
+        ? `${initialMessage}\n\n---\n\nIs there anything you'd like to add to help us understand and resolve this issue?`
         : "",
     });
     setErrors({});

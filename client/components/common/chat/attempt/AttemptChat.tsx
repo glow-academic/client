@@ -448,7 +448,7 @@ export default function AttemptChat() {
           {/* Right Panel - Documents */}
           {showDocuments && simulationContext?.scenarioDocuments.length > 0 && (
             <>
-              <ResizableHandle />
+              <ResizableHandle className="bg-transparent" />
               <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
                 <Card className="h-full flex flex-col ml-4 p-0">
                   <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
@@ -662,7 +662,7 @@ export default function AttemptChat() {
         {/* Right Panel - Documents */}
         {showDocuments && simulationContext?.scenarioDocuments.length > 0 && (
           <>
-            <ResizableHandle />
+            <ResizableHandle className="bg-transparent" />
             <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
               <Card className="h-full flex flex-col ml-4 p-0">
                 <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
