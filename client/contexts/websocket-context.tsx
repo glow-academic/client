@@ -52,6 +52,7 @@ interface WebSocketContextType {
   emitContinueSimulation: (data: {
     chat_id: string;
     attempt_id: string;
+    end_all?: boolean;
   }) => void;
 
   // Assistant event emitters
@@ -728,6 +729,28 @@ export function WebSocketProvider({
       );
 
       socket.on(
+        "end_all_completed",
+        (data: { success: boolean; message: string; attempt_id: string }) => {
+          logInfo("End all completed", data);
+          setIsContinuingSimulation(false);
+
+          if (data.success) {
+            toast.success(data.message);
+            // Dispatch a custom event for end all completion
+            window.dispatchEvent(
+              new CustomEvent("endAllCompleted", {
+                detail: {
+                  attemptId: data.attempt_id,
+                },
+              })
+            );
+          } else {
+            toast.error(data.message);
+          }
+        }
+      );
+
+      socket.on(
         "simulation_error",
         (data: { success: boolean; message: string }) => {
           logError("Simulation error", data.message);
@@ -1055,7 +1078,7 @@ export function WebSocketProvider({
   );
 
   const emitContinueSimulation = useCallback(
-    (data: { chat_id: string; attempt_id: string }) => {
+    (data: { chat_id: string; attempt_id: string; end_all?: boolean }) => {
       if (!socketRef.current || !isConnected) {
         logError("Cannot continue simulation - WebSocket not connected");
         toast.error("WebSocket not connected. Please refresh the page.");

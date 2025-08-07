@@ -22,7 +22,7 @@ from app.services.agents.collection.scenario import run_scenario_agent
 from app.services.agents.collection.simulation import (cancel_simulation_run,
                                                        run_simulation_agent)
 from app.utils.scenario import randomly_fill_scenario_attributes
-from sqlmodel import select
+from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
 
@@ -286,6 +286,7 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
     try:
         chat_id = data.get("chat_id")
         attempt_id = data.get("attempt_id")
+        end_all = data.get("end_all", False)
 
         if not chat_id or not attempt_id:
             await emit_error(sid, "Missing chat_id or attempt_id")
@@ -389,32 +390,51 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                     db_session.refresh(next_chat)
                     next_chat_id = next_chat.id
 
+            # Check if this chat has at least 2 messages before running grading
+            messages = db_session.exec(
+                select(SimulationMessages).where(SimulationMessages.chat_id == chat_id)
+            ).all()
+
             # Explicitly define which chat was completed and which is next
             completed_chat_id = chat_id
             new_chat_id = next_chat_id
             is_attempt_finished = new_chat_id == completed_chat_id
 
-            # Run grading logic for the chat that was just completed
-            simulation_grade_id = await run_grade_agent(completed_chat_id, db_session)
+            # Only run grading if chat has at least 2 messages
+            simulation_grade_id = None
+            if len(messages) >= 2:
+                simulation_grade_id = await run_grade_agent(completed_chat_id, db_session)
 
-            # Emit the new, more descriptive success response
-            sio_instance = get_sio_instance()
-            await sio_instance.emit(
-                "simulation_continued",
-                {
-                    "success": True,
-                    "message": "Simulation continued successfully",
-                    "completed_chat_id": str(completed_chat_id),
-                    "next_chat_id": str(new_chat_id),
-                    "is_attempt_finished": is_attempt_finished,
-                    "simulation_grade_id": simulation_grade_id,
-                },
-                room=sid,
-            )
+            # Mark the current chat as completed
+            chat.completed = True
+            chat.completed_at = datetime.now(timezone.utc)
+            db_session.add(chat)
+            db_session.commit()
 
-            logger.info(
-                f"Simulation continued successfully: completed_chat={completed_chat_id}, next_chat={new_chat_id}"
-            )
+            if end_all:
+                # Handle end all functionality - create all remaining chats
+                await _handle_end_all_remaining_chats(
+                    sid, attempt_id, scenario_ids, db_session
+                )
+            else:
+                # Emit the new, more descriptive success response for single chat
+                sio_instance = get_sio_instance()
+                await sio_instance.emit(
+                    "simulation_continued",
+                    {
+                        "success": True,
+                        "message": "Simulation continued successfully",
+                        "completed_chat_id": str(completed_chat_id),
+                        "next_chat_id": str(new_chat_id),
+                        "is_attempt_finished": is_attempt_finished,
+                        "simulation_grade_id": simulation_grade_id,
+                    },
+                    room=sid,
+                )
+
+                logger.info(
+                    f"Simulation continued successfully: completed_chat={completed_chat_id}, next_chat={new_chat_id}"
+                )
 
         finally:
             db_session.close()
@@ -422,6 +442,70 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
     except Exception as e:
         logger.error(f"Error continuing simulation for {sid}: {str(e)}")
         await emit_error(sid, f"Failed to continue simulation: {str(e)}")
+
+
+async def _handle_end_all_remaining_chats(
+    sid: str,
+    attempt_id: str,
+    scenario_ids: list[uuid.UUID],
+    db_session: Session,
+) -> None:
+    """
+    Handle creating all remaining chats and marking them as completed
+    """
+    # Get all existing chats for this attempt
+    existing_chats = db_session.exec(
+        select(SimulationChats).where(SimulationChats.attempt_id == attempt_id)
+    ).all()
+
+    # End all existing incomplete chats
+    for chat in existing_chats:
+        if not chat.completed:
+            # Check message count for each chat
+            messages = db_session.exec(
+                select(SimulationMessages).where(SimulationMessages.chat_id == chat.id)
+            ).all()
+
+            if len(messages) >= 2:
+                # Run grading for chats with sufficient messages
+                await run_grade_agent(chat.id, db_session)
+
+            # Mark chat as completed
+            chat.completed = True
+            chat.completed_at = datetime.now(timezone.utc)
+            db_session.add(chat)
+
+    # Create remaining chats and mark them as completed
+    existing_scenario_ids = [chat.scenario_id for chat in existing_chats]
+    remaining_scenario_ids = [sid for sid in scenario_ids if sid not in existing_scenario_ids]
+
+    for i, scenario_id in enumerate(remaining_scenario_ids):
+        chat_index = len(existing_chats) + i + 1
+        new_chat = SimulationChats(
+            title=f"Scenario {chat_index}",
+            scenario_id=scenario_id,
+            attempt_id=attempt_id,
+            completed=True,
+            completed_at=datetime.now(timezone.utc),
+        )
+        db_session.add(new_chat)
+
+    # Commit all changes
+    db_session.commit()
+
+    # Emit end all completed event
+    sio_instance = get_sio_instance()
+    await sio_instance.emit(
+        "end_all_completed",
+        {
+            "success": True,
+            "message": f"Ended {len(existing_chats)} existing chats and created {len(remaining_scenario_ids)} new completed chats",
+            "attempt_id": attempt_id,
+        },
+        room=sid,
+    )
+
+    logger.info(f"End all completed for attempt {attempt_id}")
 
 
 async def process_simulation_message_websocket(

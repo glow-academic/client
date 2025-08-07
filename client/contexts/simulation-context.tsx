@@ -14,8 +14,7 @@ import {
   SimulationMessage,
 } from "@/types";
 import { logInfo } from "@/utils/logger";
-import { createSimulationChat } from "@/utils/mutations/simulation_chats/create-simulation-chat";
-import { updateSimulationChat } from "@/utils/mutations/simulation_chats/update-simulation-chat";
+
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
@@ -23,7 +22,6 @@ import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-si
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempt } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempt";
-import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
@@ -710,43 +708,22 @@ export function SimulationProvider({
       setEndChatLoading(true);
 
       try {
-        // Check if this chat has at least 2 messages
-        const chatMessages = await queryClient.fetchQuery({
-          queryKey: ["simulationMessages", targetChatId],
-          queryFn: () => getSimulationMessagesByChat(targetChatId),
+        // Call backend with end_all=false for single chat ending
+        emitContinueSimulation({
+          chat_id: targetChatId,
+          attempt_id: attemptId,
+          end_all: false,
         });
-
-        if (chatMessages && chatMessages.length >= 2) {
-          // Chat has enough messages, call backend for grading
-          emitContinueSimulation({
-            chat_id: targetChatId,
-            attempt_id: attemptId,
-          });
-        } else {
-          // Chat has insufficient messages, just mark as completed
-          await updateSimulationChat(targetChatId, {
-            completed: true,
-            completedAt: new Date().toISOString(),
-          });
-
-          // Invalidate queries to refresh the UI
-          queryClient.invalidateQueries({
-            queryKey: ["simulationChats", attemptId],
-          });
-          queryClient.invalidateQueries({ queryKey: ["attempt", attemptId] });
-
-          setEndChatLoading(false);
-        }
       } catch (error) {
         toast.error(`Failed to end chat: ${error}`);
         setEndChatLoading(false);
       }
     },
-    [currentChat?.id, emitContinueSimulation, attemptId, queryClient]
+    [currentChat?.id, emitContinueSimulation, attemptId]
   );
 
   const endAllChats = useCallback(async () => {
-    if (!simulation || !attempt) return;
+    if (!simulation || !attempt || !currentChat) return;
 
     setEndChatLoading(true);
 
@@ -763,62 +740,23 @@ export function SimulationProvider({
         return;
       }
 
-      // End all existing incomplete chats
-      for (let i = 0; i < currentChatCount; i++) {
-        const chat = chats[i];
-        if (chat && !chat.completed) {
-          await endChat(chat.id);
-        }
-      }
-
-      // Create all remaining chats and mark them as completed
-      const remainingScenarioIds = scenarioIds.slice(currentChatCount);
-
-      // For each remaining scenario, create a chat and immediately mark it as completed
-      for (let i = 0; i < remainingScenarioIds.length; i++) {
-        const scenarioId = remainingScenarioIds[i];
-        const chatIndex = currentChatCount + i + 1;
-
-        // Create the chat with completed status
-        if (scenarioId) {
-          await createSimulationChat({
-            title: `Scenario ${chatIndex}`,
-            scenarioId: scenarioId,
-            attemptId: attemptId,
-            completed: true, // Mark as completed immediately
-          });
-        }
-      }
-
-      // Invalidate queries to refresh the UI
-      queryClient.invalidateQueries({
-        queryKey: ["simulationChats", attemptId],
+      // Call backend with end_all=true to handle all remaining chats
+      emitContinueSimulation({
+        chat_id: currentChat.id,
+        attempt_id: attemptId,
+        end_all: true,
       });
-      queryClient.invalidateQueries({ queryKey: ["attempt", attemptId] });
-      queryClient.invalidateQueries({ queryKey: ["simulationGrades"] });
-      queryClient.invalidateQueries({ queryKey: ["simulationFeedbacks"] });
-
-      toast.success(
-        `Created and completed ${remainingScenarioIds.length} remaining sessions`
-      );
-
-      // Show results since all chats are now completed
-      setShowResults(true);
-      setIsActive(false);
-      onSimulationFinished?.();
     } catch (error) {
       toast.error(`Failed to end all chats: ${error}`);
-    } finally {
       setEndChatLoading(false);
     }
   }, [
     simulation,
     attempt,
+    currentChat,
     chats,
     attemptId,
-    queryClient,
-    onSimulationFinished,
-    endChat,
+    emitContinueSimulation,
   ]);
 
   // Listen for WebSocket loading state changes
@@ -959,6 +897,24 @@ export function SimulationProvider({
       }
     };
 
+    const handleEndAllCompleted = (event: CustomEvent) => {
+      if (event.detail.attemptId === attemptId) {
+        // Invalidate queries to refresh the UI
+        queryClient.invalidateQueries({
+          queryKey: ["simulationChats", attemptId],
+        });
+        queryClient.invalidateQueries({ queryKey: ["attempt", attemptId] });
+        queryClient.invalidateQueries({ queryKey: ["simulationGrades"] });
+        queryClient.invalidateQueries({ queryKey: ["simulationFeedbacks"] });
+
+        // Show results since all chats are now completed
+        setShowResults(true);
+        setIsActive(false);
+        onSimulationFinished?.();
+        setEndChatLoading(false);
+      }
+    };
+
     window.addEventListener(
       "simulationMessageStart",
       handleSimulationMessageStart as EventListener
@@ -987,6 +943,11 @@ export function SimulationProvider({
     window.addEventListener(
       "simulationError",
       handleSimulationError as EventListener
+    );
+
+    window.addEventListener(
+      "endAllCompleted",
+      handleEndAllCompleted as EventListener
     );
     // Listen for data channel events
     window.addEventListener(
@@ -1023,13 +984,17 @@ export function SimulationProvider({
         "simulationError",
         handleSimulationError as EventListener
       );
+      window.removeEventListener(
+        "endAllCompleted",
+        handleEndAllCompleted as EventListener
+      );
       // Remove data channel event listeners
       window.removeEventListener(
         "simulationMessageToken",
         handleSimulationMessageToken as EventListener
       );
     };
-  }, [queryClient, attemptId]); // Add queryClient and attemptId to the dependency array
+  }, [queryClient, attemptId, onSimulationFinished]); // Add queryClient, attemptId, and onSimulationFinished to the dependency array
 
   const value: SimulationContextType = {
     // Data
