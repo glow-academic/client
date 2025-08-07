@@ -28,7 +28,7 @@ import { logError, logInfo } from "@/utils/logger";
 import { createAppFeedback } from "@/utils/mutations/app_feedback/create-app-feedback";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MessageSquare } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface FormData {
@@ -43,21 +43,48 @@ interface FormErrors {
 
 export interface ReportProblemProps {
   children?: React.ReactNode;
+  initialType?: "feature" | "bug" | "question" | "other";
+  initialMessage?: string;
 }
 
-export default function ReportProblem({ children }: ReportProblemProps) {
+export default function ReportProblem({
+  children,
+  initialType,
+  initialMessage,
+}: ReportProblemProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { activeProfile } = useProfile();
 
   const [formData, setFormData] = useState<FormData>({
-    type: "",
-    message: "",
+    type: initialType || "",
+    message: initialMessage
+      ? `${initialMessage}\n\n---\n\nIs there anything you'd like to add to help us understand and resolve this issue?\n\n`
+      : "",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
+
+  // Auto-scroll to bottom and focus textarea when dialog opens with initial message
+  useEffect(() => {
+    if (isOpen && initialMessage && textareaRef.current) {
+      // Longer delay to ensure dialog is fully rendered and focus management is complete
+      setTimeout(() => {
+        if (textareaRef.current) {
+          // Scroll to bottom
+          textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+
+          // Focus the textarea and position cursor
+          textareaRef.current.focus();
+          const length = textareaRef.current.value.length;
+          textareaRef.current.setSelectionRange(length, length);
+        }
+      }, 300);
+    }
+  }, [isOpen, initialMessage]);
 
   const createFeedbackMutation = useMutation({
     mutationFn: createAppFeedback,
@@ -65,7 +92,7 @@ export default function ReportProblem({ children }: ReportProblemProps) {
       logInfo("Feedback submitted successfully", { feedbackId: data[0]?.id });
       queryClient.invalidateQueries({ queryKey: ["app_feedback"] });
       toast.success(
-        "Feedback submitted successfully! Thank you for your input.",
+        "Feedback submitted successfully! Thank you for your input."
       );
       setIsOpen(false);
       resetForm();
@@ -78,8 +105,10 @@ export default function ReportProblem({ children }: ReportProblemProps) {
 
   const resetForm = () => {
     setFormData({
-      type: "",
-      message: "",
+      type: initialType || "",
+      message: initialMessage
+        ? `${initialMessage}\n\n---\n\nIs there any additional information you'd like to add to help us understand and resolve this issue?`
+        : "",
     });
     setErrors({});
   };
@@ -152,7 +181,24 @@ export default function ReportProblem({ children }: ReportProblemProps) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent
+        className="sm:max-w-[500px]"
+        onOpenAutoFocus={(e) => {
+          // Prevent default focus behavior and manually focus textarea if we have initial message
+          if (initialMessage) {
+            e.preventDefault();
+            setTimeout(() => {
+              if (textareaRef.current) {
+                textareaRef.current.focus();
+                const length = textareaRef.current.value.length;
+                textareaRef.current.setSelectionRange(length, length);
+                textareaRef.current.scrollTop =
+                  textareaRef.current.scrollHeight;
+              }
+            }, 100);
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Feedback</DialogTitle>
         </DialogHeader>
@@ -182,6 +228,7 @@ export default function ReportProblem({ children }: ReportProblemProps) {
             <Label htmlFor="message">Message *</Label>
             <Textarea
               id="message"
+              ref={textareaRef}
               value={formData.message}
               onChange={(e) => handleInputChange("message", e.target.value)}
               placeholder="Please describe your issue, feature request, or question..."

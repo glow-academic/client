@@ -6,7 +6,13 @@
  */
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDown, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 // UI Components
@@ -18,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import Markdown from "@/components/common/chat/Markdown";
+import ReportProblem from "@/components/common/layout/ReportProblem";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useSimulation } from "@/contexts/simulation-context";
 import { SimulationMessage } from "@/types";
@@ -339,36 +346,57 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                             )
                                         );
 
-                                      // Only show retry button if there are no successful responses
-                                      if (!hasSuccessfulResponse) {
-                                        return (
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() =>
-                                              handleRetry(
-                                                messages.indexOf(
-                                                  currentResponse
-                                                )
-                                              )
-                                            }
-                                            className="absolute bottom-2 right-2 h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100"
-                                            disabled={
-                                              simulationContext?.currentChat
-                                                ?.completed ||
-                                              simulationContext?.isSendingMessage ||
-                                              (simulationContext?.simulation
-                                                ?.timeLimit
-                                                ? !simulationContext?.isActive
-                                                : false)
-                                            }
-                                            title="Retry this message"
+                                      return (
+                                        <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                                          {/* Report Error Button - Always shown for error messages */}
+                                          <ReportProblem
+                                            initialType="bug"
+                                            initialMessage={`Error in simulation chat: ${currentResponse.content}\n\nChat ID: ${targetChatId}\nMessage ID: ${currentResponse.id}`}
                                           >
-                                            <RotateCcw className="h-4 w-4" />
-                                          </Button>
-                                        );
-                                      }
-                                      return null;
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100"
+                                              title="Report this error"
+                                              onClick={(e) => {
+                                                // Prevent the dialog from opening immediately
+                                                // The ReportProblem component will handle the dialog
+                                                e.stopPropagation();
+                                              }}
+                                            >
+                                              <AlertCircle className="h-4 w-4" />
+                                            </Button>
+                                          </ReportProblem>
+
+                                          {/* Retry Button - Only shown if no successful responses exist */}
+                                          {!hasSuccessfulResponse && (
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() =>
+                                                handleRetry(
+                                                  messages.indexOf(
+                                                    currentResponse
+                                                  )
+                                                )
+                                              }
+                                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100"
+                                              disabled={
+                                                simulationContext?.currentChat
+                                                  ?.completed ||
+                                                simulationContext?.isSendingMessage ||
+                                                (simulationContext?.simulation
+                                                  ?.timeLimit
+                                                  ? !simulationContext?.isActive
+                                                  : false)
+                                              }
+                                              title="Retry this message"
+                                            >
+                                              <RotateCcw className="h-4 w-4" />
+                                            </Button>
+                                          )}
+                                        </div>
+                                      );
                                     })()}
                                   </div>
                                 ) : (
