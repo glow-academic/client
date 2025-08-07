@@ -321,35 +321,55 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                   currentResponse.content.startsWith(
                                     "Error:"
                                   ) ? (
-                                  // Show error messages in red with retry button
+                                  // Show error messages in red with retry button (only if no successful responses exist)
                                   <div className="bg-red-50 border border-red-200 rounded-lg p-3 relative">
                                     <div className="text-red-700 pr-12">
                                       <Markdown>
                                         {currentResponse.content}
                                       </Markdown>
                                     </div>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() =>
-                                        handleRetry(
-                                          messages.indexOf(currentResponse)
-                                        )
+                                    {(() => {
+                                      // Check if there are any non-error responses in this group
+                                      const hasSuccessfulResponse =
+                                        group.responses.some(
+                                          (response) =>
+                                            response.completed &&
+                                            !response.content.startsWith(
+                                              "Error:"
+                                            )
+                                        );
+
+                                      // Only show retry button if there are no successful responses
+                                      if (!hasSuccessfulResponse) {
+                                        return (
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() =>
+                                              handleRetry(
+                                                messages.indexOf(
+                                                  currentResponse
+                                                )
+                                              )
+                                            }
+                                            className="absolute bottom-2 right-2 h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100"
+                                            disabled={
+                                              simulationContext?.currentChat
+                                                ?.completed ||
+                                              simulationContext?.isSendingMessage ||
+                                              (simulationContext?.simulation
+                                                ?.timeLimit
+                                                ? !simulationContext?.isActive
+                                                : false)
+                                            }
+                                            title="Retry this message"
+                                          >
+                                            <RotateCcw className="h-4 w-4" />
+                                          </Button>
+                                        );
                                       }
-                                      className="absolute bottom-2 right-2 h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100"
-                                      disabled={
-                                        simulationContext?.currentChat
-                                          ?.completed ||
-                                        simulationContext?.isSendingMessage ||
-                                        (simulationContext?.simulation
-                                          ?.timeLimit
-                                          ? !simulationContext?.isActive
-                                          : false)
-                                      }
-                                      title="Retry this message"
-                                    >
-                                      <RotateCcw className="h-4 w-4" />
-                                    </Button>
+                                      return null;
+                                    })()}
                                   </div>
                                 ) : (
                                   <div className="bg-muted rounded-lg p-3 relative">
