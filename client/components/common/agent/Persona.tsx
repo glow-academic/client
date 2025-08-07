@@ -677,7 +677,10 @@ export default function Persona({
 
           <div className="space-y-2">
             <Label htmlFor="temperature">
-              Temperature: {formData?.temperature && formData.temperature}
+              Temperature:{" "}
+              {formData?.temperature !== undefined
+                ? formData.temperature.toFixed(2)
+                : "0.00"}
             </Label>
             {formData?.temperature !== undefined && !isLoading ? (
               <>
@@ -685,18 +688,18 @@ export default function Persona({
                   id="temperature"
                   data-testid="temperature-slider"
                   min={0}
-                  max={100}
-                  step={1}
-                  value={[(formData?.temperature || 0) * 100]}
+                  max={1}
+                  step={0.01}
+                  value={[formData?.temperature || 0]}
                   onValueChange={(value) =>
                     setFormData((prev) => ({
                       ...prev,
-                      temperature: (value[0] || 0) / 100,
+                      temperature: value[0] || 0,
                     }))
                   }
                   className="w-full"
                   disabled={isReadonly}
-                />{" "}
+                />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>Deterministic</span>
                   <span>Creative</span>

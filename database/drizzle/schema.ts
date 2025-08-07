@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, varchar, text, bigint, timestamp, uuid, boolean, foreignKey, jsonb, primaryKey, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, serial, integer, varchar, text, bigint, timestamp, uuid, boolean, foreignKey, jsonb, real, primaryKey, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const assistantMessageType = pgEnum("assistant_message_type", ['user', 'assistant'])
@@ -221,7 +221,7 @@ export const personas = pgTable("personas", {
 	name: text().notNull(),
 	description: text().notNull(),
 	systemPrompt: text("system_prompt").notNull(),
-	temperature: integer().notNull(),
+	temperature: real().notNull(),
 	defaultPersona: boolean("default_persona").default(false).notNull(),
 	color: text().notNull(),
 	icon: text().notNull(),
@@ -243,7 +243,7 @@ export const agents = pgTable("agents", {
 	name: text().notNull(),
 	description: text().notNull(),
 	systemPrompt: text("system_prompt").notNull(),
-	temperature: integer().notNull(),
+	temperature: real().notNull(),
 	modelId: uuid("model_id"),
 	reasoning: reasoningEffort(),
 }, (table) => [

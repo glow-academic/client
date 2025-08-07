@@ -15,13 +15,8 @@ from typing import Any, Dict
 import socketio  # type: ignore
 from agents import gen_trace_id
 from app.db import get_session
-from app.models import (
-    Scenarios,
-    SimulationAttempts,
-    SimulationChats,
-    SimulationMessages,
-    Simulations,
-)
+from app.models import (Scenarios, SimulationAttempts, SimulationChats,
+                        SimulationMessages, Simulations)
 from app.services.agents.collection.grade import run_grade_agent
 from app.services.agents.collection.scenario import run_scenario_agent
 from app.services.agents.collection.simulation import (cancel_simulation_run,
@@ -585,6 +580,33 @@ async def process_simulation_message_websocket(
     except Exception as e:
         logger.error(f"Error in process_simulation_message_websocket: {str(e)}")
         sio_instance = get_sio_instance()
+
+        # Best-effort: if we have already created a placeholder assistant message,
+        # persist the error text onto it and mark it complete so the UI shows it.
+        try:
+            error_text = f"Error: {str(e)}"
+            if "assistant_message" in locals() and assistant_message is not None:
+                assistant_message.content = error_text
+                assistant_message.completed = True
+                db_session.add(assistant_message)
+                db_session.commit()
+
+                # Emit a completion update using the same message so the client updates content
+                await sio_instance.emit(
+                    "simulation_message_complete",
+                    {
+                        "message_id": str(assistant_message.id),
+                        "chat_id": str(chat_id),
+                        "final_content": error_text,
+                    },
+                    room=f"simulation_{chat_id}",
+                )
+        except Exception as persist_error:
+            logger.error(
+                f"Failed to persist/emit error content for chat {chat_id}: {persist_error}"
+            )
+
+        # Also emit the explicit error event for toasts/state resets
         logger.info(f"Emitting error to room simulation_{chat_id}")
         await sio_instance.emit(
             "simulation_message_error",

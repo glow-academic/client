@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime,
                         Enum, ForeignKeyConstraint, Integer,
-                        PrimaryKeyConstraint, String, Text, Uuid, text, Double, Time)
+                        PrimaryKeyConstraint, String, Text, Uuid, text, Double, Time, REAL)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
 from sqlalchemy.orm import Mapped
@@ -191,7 +191,7 @@ class Agents(_Base, table=True):
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     system_prompt: str = Field(sa_column=Column('system_prompt', Text))
-    temperature: int = Field(sa_column=Column('temperature', Integer))
+    temperature: float = Field(sa_column=Column('temperature', REAL))
     model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
     reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('low', 'medium', 'high', name='reasoning_effort')))
 
@@ -229,7 +229,7 @@ class Personas(_Base, table=True):
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     system_prompt: str = Field(sa_column=Column('system_prompt', Text))
-    temperature: int = Field(sa_column=Column('temperature', Integer))
+    temperature: float = Field(sa_column=Column('temperature', REAL))
     default_persona: bool = Field(sa_column=Column('default_persona', Boolean, default=False))
     color: str = Field(sa_column=Column('color', Text))
     icon: str = Field(sa_column=Column('icon', Text))

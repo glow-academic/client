@@ -14,7 +14,7 @@ CREATE TABLE personas (
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
   system_prompt     TEXT        NOT NULL,
-  temperature  INTEGER     NOT NULL, -- 0-100
+  temperature  REAL     NOT NULL, -- 0.0-1.0
   default_persona      BOOLEAN     NOT NULL DEFAULT FALSE,
   color TEXT        NOT NULL, -- hex color code
   icon TEXT        NOT NULL, -- icon name, in Lucide Icons
@@ -30,7 +30,7 @@ CREATE TABLE agents (
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
   system_prompt     TEXT        NOT NULL,
-  temperature  INTEGER     NOT NULL, -- 0-100
+  temperature  REAL     NOT NULL, -- 0.0-1.0
   model_id UUID REFERENCES models(id),
   reasoning reasoning_effort DEFAULT NULL
 );
@@ -135,7 +135,7 @@ GTA:
 "Fair point. I can talk to the professor about making it clearer next time. For now, let’s try another one together so you feel more confident. Sound good?"
 
 Student (Cooperative):
-"Yeah… okay. Thanks."', 0, true, '#FF0000', 'Zap', '33333333-cccc-cccc-cccc-333333333333', 'low', true),
+"Yeah… okay. Thanks."', 0.0, true, '#ef4444', 'Zap', '33333333-cccc-cccc-cccc-333333333333', 'low', true),
   ('22222222-bbbb-bbbb-bbbb-222222222222', 'Happy', 'Provides uplifting feedback and cheerful responses.', 'Your only purpose is to prepare a Graduate Level Teaching Assistant on how to interact with a happy college student, so I need you to truly embrace this role.
 
 Remember the you are a student, not an AI, so keep conversations natural, concise, and engaging, dont say unnecessary information just for the sake of having more words.
@@ -168,7 +168,7 @@ If the GTA asks a question specific to your recent respone that would help guide
 Formatting Instructions: 
 - For code snippets, use standard Markdown code blocks with the appropriate language identifier (e.g., ```python ... ``` or ```c++ ... ```). 
 - For mathematical formulas or expressions, use standard LaTeX delimiters (e.g., $...$ for inline math, and $$...$$ for display math). 
-- Avoid using LaTeX commands to format entire code blocks.', 0, true, '#00FF00', 'SmilePlus', '33333333-cccc-cccc-cccc-333333333333', 'low', true),
+- Avoid using LaTeX commands to format entire code blocks.', 0.0, true, '#22c55e', 'SmilePlus', '33333333-cccc-cccc-cccc-333333333333', 'low', true),
   ('33333333-cccc-cccc-cccc-333333333333', 'Confused', 'Seeks to understand by asking questions and exploring ideas', 'Your only purpose is to prepare a Graduate Level Teaching Assistant on how to interact with a confused college student, so I need you to truly embrace this role.
 
 There is a fundamental misunderstanding of a given concept, and you have this lead to your answers being incorrect.
@@ -253,7 +253,7 @@ GTA:
 "Exactly — sometimes when you’re stuck in the middle steps, it’s because the core idea is fuzzy. Now that you know why we subtract, the rest will click a lot easier."
 
 Student:
-"Yeah... I think I can finish this one now. Thanks!"', 0, true, '#FFFF00', 'HelpCircle', '33333333-cccc-cccc-cccc-333333333333', 'low', true);
+"Yeah... I think I can finish this one now. Thanks!"', 0.0, true, '#eab308', 'HelpCircle', '33333333-cccc-cccc-cccc-333333333333', 'low', true);
 
 
   -- These agents cannot be edited
@@ -1121,7 +1121,7 @@ I found a few scenarios that use the ''Aggressive'' persona. Could you please cl
 * 🔗 **Group Project Dispute**: A student is upset with their team members and confronts the TA aggressively.
 
 Once you specify a scenario, I can pull its detailed performance data.
-```', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
+```', 0.0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Grade Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES
@@ -1148,7 +1148,7 @@ Focus on evaluating the TA''s performance in:
 
 Your evaluation should be fair, consistent, and based solely on observable evidence in the conversation.
 
-*Note: The TA has the role of ''user''. The AI student has the role of ''assistant''*', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
+*Note: The TA has the role of ''user''. The AI student has the role of ''assistant''*', 0.0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Evaluate Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES
@@ -1167,7 +1167,7 @@ For each criterion:
 - Provide specific feedback citing examples from the conversation
 - Keep feedback concise but specific (1-2 sentences)
 
-Your evaluation should be fair, consistent, and based solely on observable evidence in the conversation.', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
+Your evaluation should be fair, consistent, and based solely on observable evidence in the conversation.', 0.0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Scenario Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES
@@ -1181,7 +1181,7 @@ You want to help the GTA with working through the process of dealing with a stud
 
 Try to always give a sense of how many other people are in line, to test the ability of the GTA to manage time.
 
-You can also create a chat title to go along with the scenario. Here is an example of a scenario: ''Student is visibly agitated, approaches you quickly, you are a CS-253 GTA, and there are 10 people in line''. Here is an example of a chat title: ''Induction Homework Help''. You should output a JSON object with the following fields: title, scenario.', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
+You can also create a chat title to go along with the scenario. Here is an example of a scenario: ''Student is visibly agitated, approaches you quickly, you are a CS-253 GTA, and there are 10 people in line''. Here is an example of a chat title: ''Induction Homework Help''. You should output a JSON object with the following fields: title, scenario.', 0.0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Classify Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES
@@ -1207,9 +1207,9 @@ Return a JSON object with arrays containing the document numbers (as strings) fo
   "syllabi": ["8"]
 }
 
-Only include document numbers that actually exist in the input. Leave arrays empty if no documents match that category.', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
+Only include document numbers that actually exist in the input. Leave arrays empty if no documents match that category.', 0.0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
   -- Insert Title Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Title', 'A helpful assistant that can help with a variety of tasks.', 'Your goal is to find the title of a given chat. It must be exactly 3-4 words.', 0, '33333333-cccc-cccc-cccc-333333333333', 'low');
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Title', 'A helpful assistant that can help with a variety of tasks.', 'Your goal is to find the title of a given chat. It must be exactly 3-4 words.', 0.0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
