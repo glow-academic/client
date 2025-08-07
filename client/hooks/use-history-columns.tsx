@@ -607,6 +607,7 @@ export function useHistoryColumns({
               scenarios={attempt.scenarios}
               interactionIds={attempt.interactionIds}
               isIncomplete={isIncomplete}
+              isPractice={showPractice}
             />
           );
         },
@@ -614,7 +615,7 @@ export function useHistoryColumns({
     ];
 
     return attemptColumns;
-  }, [profileOptions, grades, simulations, scenarios, validRubrics, profileId]);
+  }, [profileOptions, grades, simulations, scenarios, validRubrics, profileId, showPractice]);
 
   // Use enhanced attempts data
   let data: unknown[] = enhancedAttempts || [];

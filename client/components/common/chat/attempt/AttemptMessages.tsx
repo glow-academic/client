@@ -6,7 +6,7 @@
  */
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 // UI Components
@@ -61,6 +61,34 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
       })
     );
     simulationContext?.sendMessage(prompt);
+  };
+
+  const handleRetry = (errorMessageIndex: number) => {
+    // Find the previous user message to retry with
+    const sortedMessages = messages.sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+
+    // Find the previous user message (query type) that came before this error
+    const previousUserMessage = sortedMessages
+      .slice(0, errorMessageIndex)
+      .reverse()
+      .find((msg) => msg.type === "query");
+
+    if (previousUserMessage) {
+      // Retry with the previous user message content
+      window.dispatchEvent(
+        new CustomEvent("messageSent", {
+          detail: {
+            message: previousUserMessage.content,
+            chatId: targetChatId,
+            isTourMessage: false,
+          },
+        })
+      );
+      simulationContext?.sendMessage(previousUserMessage.content);
+    }
   };
 
   const scrollToBottom = () => {
@@ -189,11 +217,29 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                               </div>
                             ) : message.completed &&
                               message.content.startsWith("Error:") ? (
-                              // Show error messages in red
+                              // Show error messages in red with retry button
                               <div className="bg-red-50 border border-red-200 rounded-lg p-3 relative">
-                                <div className="text-red-700">
+                                <div className="text-red-700 pr-12">
                                   <Markdown>{message.content}</Markdown>
                                 </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleRetry(messages.indexOf(message))
+                                  }
+                                  className="absolute bottom-2 right-2 h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100"
+                                  disabled={
+                                    simulationContext?.currentChat?.completed ||
+                                    simulationContext?.isSendingMessage ||
+                                    (simulationContext?.simulation?.timeLimit
+                                      ? !simulationContext?.isActive
+                                      : false)
+                                  }
+                                  title="Retry this message"
+                                >
+                                  <RotateCcw className="h-4 w-4" />
+                                </Button>
                               </div>
                             ) : (
                               <div className="bg-muted rounded-lg p-3 relative">

@@ -10,6 +10,7 @@ export interface DataTableRowActionsProps {
   scenarios: Array<{ completed: boolean }>;
   interactionIds: string[];
   isIncomplete?: boolean;
+  isPractice?: boolean;
 }
 
 export function DataTableRowActions({
@@ -18,6 +19,7 @@ export function DataTableRowActions({
   scenarios,
   interactionIds,
   isIncomplete = false,
+  isPractice = false,
 }: DataTableRowActionsProps) {
   const { effectiveProfile } = useProfile();
 
@@ -39,7 +41,7 @@ export function DataTableRowActions({
       : "View";
 
   return (
-    <Link href={`/home/a/${id}`}>
+    <Link href={`/${isPractice ? "practice" : "home"}/a/${id}`}>
       <Button variant="outline" size="sm" className="h-8">
         {buttonText}
       </Button>

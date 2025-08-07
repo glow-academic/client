@@ -4,13 +4,8 @@ from datetime import datetime
 from typing import Any, Dict, List
 
 from agents.items import TResponseInputItem
-from app.models import (
-    AssistantMessages,
-    AssistantToolCalls,
-    Scenarios,
-    SimulationChats,
-    SimulationMessages,
-)
+from app.models import (AssistantMessages, AssistantToolCalls, Scenarios,
+                        SimulationChats, SimulationMessages)
 from openai.types.responses import ResponseFunctionToolCallParam
 from sqlmodel import Session, select
 
@@ -22,6 +17,7 @@ def get_simulation_conversation_history(
 ) -> list[TResponseInputItem]:
     """
     Get the conversation history for a given list of messages.
+    When there are multiple consecutive response messages, only the latest one is kept.
 
     Args:
         messages: List of Messages objects from the database
@@ -37,20 +33,40 @@ def get_simulation_conversation_history(
     # sort items by created_at
     items = sorted(items, key=lambda x: x.created_at)
 
+    # Group messages by type to handle consecutive responses
+    current_response_messages: List[SimulationMessages] = []
+    
     for item in items:
         if isinstance(item, SimulationMessages):
             if item.type == "query" and item.content != "":
+                # If we have pending response messages, add the latest one
+                if current_response_messages:
+                    latest_response = current_response_messages[-1]
+                    assistant_message_item: TResponseInputItem = {
+                        "role": "assistant",
+                        "content": latest_response.content,
+                    }
+                    conversation_history.append(assistant_message_item)
+                    current_response_messages = []
+                
+                # Add the user message
                 user_message_item: TResponseInputItem = {
                     "role": "user",
                     "content": item.content,
                 }
                 conversation_history.append(user_message_item)
-            if item.type == "response" and item.content != "":
-                assistant_message_item: TResponseInputItem = {
-                    "role": "assistant",
-                    "content": item.content,
-                }
-                conversation_history.append(assistant_message_item)
+            elif item.type == "response" and item.content != "":
+                # Collect response messages to find the latest one
+                current_response_messages.append(item)
+    
+    # Handle any remaining response messages at the end
+    if current_response_messages:
+        latest_response = current_response_messages[-1]
+        current_assistant_message_item: TResponseInputItem = {
+            "role": "assistant",
+            "content": latest_response.content,
+        }
+        conversation_history.append(current_assistant_message_item)
 
     return conversation_history
 
