@@ -6,7 +6,7 @@
  */
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDown, RotateCcw } from "lucide-react";
+import { ArrowDown, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 // UI Components
@@ -20,6 +20,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Markdown from "@/components/common/chat/Markdown";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useSimulation } from "@/contexts/simulation-context";
+import { SimulationMessage } from "@/types";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
 
 export interface AttemptMessagesProps {
@@ -34,11 +35,108 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const targetChatId = chatId || simulationContext?.currentChat?.id;
 
+  // State to track which response version is shown for each message group
+  const [responseVersions, setResponseVersions] = useState<
+    Record<string, number>
+  >({});
+
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ["simulationMessages", targetChatId],
     queryFn: () => getSimulationMessagesByChat(targetChatId!),
     enabled: !!targetChatId,
   });
+
+  // Group messages by conversation turns (user message + all its responses)
+  const groupedMessages = useMemo(() => {
+    const sortedMessages = messages.sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+
+    const groups: Array<{
+      userMessage: SimulationMessage;
+      responses: SimulationMessage[];
+      groupId: string;
+    }> = [];
+
+    let currentUserMessage: SimulationMessage | null = null;
+    let currentResponses: SimulationMessage[] = [];
+
+    for (const message of sortedMessages) {
+      if (message.type === "query") {
+        // If we have a previous user message, save the group
+        if (currentUserMessage) {
+          groups.push({
+            userMessage: currentUserMessage,
+            responses: currentResponses,
+            groupId: currentUserMessage.id,
+          });
+        }
+        // Start new group
+        currentUserMessage = message;
+        currentResponses = [];
+      } else if (message.type === "response" && currentUserMessage) {
+        currentResponses.push(message);
+      }
+    }
+
+    // Add the last group
+    if (currentUserMessage) {
+      groups.push({
+        userMessage: currentUserMessage,
+        responses: currentResponses,
+        groupId: currentUserMessage.id,
+      });
+    }
+
+    return groups;
+  }, [messages]);
+
+  // Initialize response versions for new groups (default to latest)
+  useEffect(() => {
+    const newVersions: Record<string, number> = {};
+    groupedMessages.forEach((group) => {
+      if (group.responses.length > 0 && !(group.groupId in responseVersions)) {
+        newVersions[group.groupId] = group.responses.length - 1; // Default to latest (index 0-based)
+      }
+    });
+
+    if (Object.keys(newVersions).length > 0) {
+      setResponseVersions((prev) => ({ ...prev, ...newVersions }));
+    }
+  }, [groupedMessages, responseVersions]);
+
+  const handleResponseNavigation = (
+    groupId: string,
+    direction: "prev" | "next"
+  ) => {
+    const group = groupedMessages.find((g) => g.groupId === groupId);
+    if (!group || group.responses.length <= 1) return;
+
+    const currentIndex =
+      responseVersions[groupId] ?? group.responses.length - 1;
+    let newIndex = currentIndex;
+
+    if (direction === "prev" && currentIndex > 0) {
+      newIndex = currentIndex - 1;
+    } else if (
+      direction === "next" &&
+      currentIndex < group.responses.length - 1
+    ) {
+      newIndex = currentIndex + 1;
+    }
+
+    setResponseVersions((prev) => ({ ...prev, [groupId]: newIndex }));
+  };
+
+  const getCurrentResponse = (groupId: string) => {
+    const group = groupedMessages.find((g) => g.groupId === groupId);
+    if (!group || group.responses.length === 0) return null;
+
+    const currentIndex =
+      responseVersions[groupId] ?? group.responses.length - 1;
+    return group.responses[currentIndex];
+  };
 
   const starterPrompts = useMemo(() => {
     const basePrompts = [
@@ -180,77 +278,140 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                   </div>
                 </div>
               ) : (
-                messages
-                  .sort(
-                    (a, b) =>
-                      new Date(a.createdAt).getTime() -
-                      new Date(b.createdAt).getTime()
-                  )
-                  .map((message) => (
-                    <div key={message.id} className="space-y-3">
-                      {message.type === "query" && (
-                        <div className="flex justify-end mb-3">
-                          <div className="max-w-[80%]">
-                            <div className="bg-primary text-primary-foreground rounded-lg p-3">
-                              <Markdown>{message.content}</Markdown>
-                            </div>
-                          </div>
+                groupedMessages.map((group) => (
+                  <div key={group.groupId} className="space-y-3">
+                    {/* User message */}
+                    <div className="flex justify-end mb-3">
+                      <div className="max-w-[80%]">
+                        <div className="bg-primary text-primary-foreground rounded-lg p-3">
+                          <Markdown>{group.userMessage.content}</Markdown>
                         </div>
-                      )}
-
-                      {message.type === "response" && (
-                        <div className="flex justify-start mb-3">
-                          <div className="max-w-[80%]">
-                            {/* Show loading state for empty/incomplete messages, otherwise show content */}
-                            {!message.completed && message.content === "" ? (
-                              <div className="bg-muted rounded-lg p-3">
-                                <div className="flex items-center">
-                                  <LoadingDots />
-                                </div>
-                              </div>
-                            ) : message.completed && message.content === "" ? (
-                              // Show "No response" for completed messages with empty content
-                              <div className="bg-muted rounded-lg p-3">
-                                <span className="text-gray-500 italic">
-                                  No response
-                                </span>
-                              </div>
-                            ) : message.completed &&
-                              message.content.startsWith("Error:") ? (
-                              // Show error messages in red with retry button
-                              <div className="bg-red-50 border border-red-200 rounded-lg p-3 relative">
-                                <div className="text-red-700 pr-12">
-                                  <Markdown>{message.content}</Markdown>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleRetry(messages.indexOf(message))
-                                  }
-                                  className="absolute bottom-2 right-2 h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100"
-                                  disabled={
-                                    simulationContext?.currentChat?.completed ||
-                                    simulationContext?.isSendingMessage ||
-                                    (simulationContext?.simulation?.timeLimit
-                                      ? !simulationContext?.isActive
-                                      : false)
-                                  }
-                                  title="Retry this message"
-                                >
-                                  <RotateCcw className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <div className="bg-muted rounded-lg p-3 relative">
-                                <Markdown>{message.content}</Markdown>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                      </div>
                     </div>
-                  ))
+
+                    {/* Assistant response(s) */}
+                    {group.responses.length > 0 && (
+                      <div className="flex justify-start mb-3">
+                        <div className="max-w-[80%] relative">
+                          {(() => {
+                            const currentResponse = getCurrentResponse(
+                              group.groupId
+                            );
+                            if (!currentResponse) return null;
+
+                            return (
+                              <>
+                                {/* Show loading state for empty/incomplete messages, otherwise show content */}
+                                {!currentResponse.completed &&
+                                currentResponse.content === "" ? (
+                                  <div className="bg-muted rounded-lg p-3">
+                                    <div className="flex items-center">
+                                      <LoadingDots />
+                                    </div>
+                                  </div>
+                                ) : currentResponse.completed &&
+                                  currentResponse.content === "" ? (
+                                  // Show "No response" for completed messages with empty content
+                                  <div className="bg-muted rounded-lg p-3">
+                                    <span className="text-gray-500 italic">
+                                      No response
+                                    </span>
+                                  </div>
+                                ) : currentResponse.completed &&
+                                  currentResponse.content.startsWith(
+                                    "Error:"
+                                  ) ? (
+                                  // Show error messages in red with retry button
+                                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 relative">
+                                    <div className="text-red-700 pr-12">
+                                      <Markdown>
+                                        {currentResponse.content}
+                                      </Markdown>
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleRetry(
+                                          messages.indexOf(currentResponse)
+                                        )
+                                      }
+                                      className="absolute bottom-2 right-2 h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100"
+                                      disabled={
+                                        simulationContext?.currentChat
+                                          ?.completed ||
+                                        simulationContext?.isSendingMessage ||
+                                        (simulationContext?.simulation
+                                          ?.timeLimit
+                                          ? !simulationContext?.isActive
+                                          : false)
+                                      }
+                                      title="Retry this message"
+                                    >
+                                      <RotateCcw className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <div className="bg-muted rounded-lg p-3 relative">
+                                    <Markdown>
+                                      {currentResponse.content}
+                                    </Markdown>
+                                  </div>
+                                )}
+
+                                {/* Navigation controls for multiple responses */}
+                                {group.responses.length > 1 && (
+                                  <div className="flex items-center justify-end gap-0 mt-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleResponseNavigation(
+                                          group.groupId,
+                                          "prev"
+                                        )
+                                      }
+                                      disabled={
+                                        (responseVersions[group.groupId] ??
+                                          group.responses.length - 1) === 0
+                                      }
+                                      className="h-6 w-6 p-0"
+                                    >
+                                      <ChevronLeft className="h-3 w-3" />
+                                    </Button>
+                                    <span className="text-xs text-muted-foreground px-1">
+                                      {(responseVersions[group.groupId] ??
+                                        group.responses.length - 1) + 1}
+                                      /{group.responses.length}
+                                    </span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleResponseNavigation(
+                                          group.groupId,
+                                          "next"
+                                        )
+                                      }
+                                      disabled={
+                                        (responseVersions[group.groupId] ??
+                                          group.responses.length - 1) ===
+                                        group.responses.length - 1
+                                      }
+                                      className="h-6 w-6 p-0"
+                                    >
+                                      <ChevronRight className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
               )}
               <div ref={messagesEndRef} />
             </div>
