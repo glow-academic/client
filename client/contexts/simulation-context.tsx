@@ -14,6 +14,8 @@ import {
   SimulationMessage,
 } from "@/types";
 import { logInfo } from "@/utils/logger";
+import { createSimulationChat } from "@/utils/mutations/simulation_chats/create-simulation-chat";
+import { updateSimulationChat } from "@/utils/mutations/simulation_chats/update-simulation-chat";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
@@ -21,6 +23,7 @@ import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-si
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempt } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempt";
+import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
@@ -104,6 +107,7 @@ export interface SimulationContextType {
   sendMessage: (message: string, isRetry?: boolean) => void;
   stopMessage: () => void;
   endChat: () => void;
+  endAllChats: () => void;
 
   // Loading states
   isSendingMessage: boolean;
@@ -698,22 +702,124 @@ export function SimulationProvider({
     }
   }, [currentChat, isStoppingMessage, emitStopSimulation]);
 
-  const endChat = useCallback(async () => {
-    if (!currentChat) return;
+  const endChat = useCallback(
+    async (chatId?: string) => {
+      const targetChatId = chatId || currentChat?.id;
+      if (!targetChatId) return;
+
+      setEndChatLoading(true);
+
+      try {
+        // Check if this chat has at least 2 messages
+        const chatMessages = await queryClient.fetchQuery({
+          queryKey: ["simulationMessages", targetChatId],
+          queryFn: () => getSimulationMessagesByChat(targetChatId),
+        });
+
+        if (chatMessages && chatMessages.length >= 2) {
+          // Chat has enough messages, call backend for grading
+          emitContinueSimulation({
+            chat_id: targetChatId,
+            attempt_id: attemptId,
+          });
+        } else {
+          // Chat has insufficient messages, just mark as completed
+          await updateSimulationChat(targetChatId, {
+            completed: true,
+            completedAt: new Date().toISOString(),
+          });
+
+          // Invalidate queries to refresh the UI
+          queryClient.invalidateQueries({
+            queryKey: ["simulationChats", attemptId],
+          });
+          queryClient.invalidateQueries({ queryKey: ["attempt", attemptId] });
+
+          setEndChatLoading(false);
+        }
+      } catch (error) {
+        toast.error(`Failed to end chat: ${error}`);
+        setEndChatLoading(false);
+      }
+    },
+    [currentChat?.id, emitContinueSimulation, attemptId, queryClient]
+  );
+
+  const endAllChats = useCallback(async () => {
+    if (!simulation || !attempt) return;
 
     setEndChatLoading(true);
 
     try {
-      // This just sends the request. The response will be handled by the event listener.
-      emitContinueSimulation({
-        chat_id: currentChat.id,
-        attempt_id: attemptId,
+      // Get all scenario IDs for this simulation
+      const scenarioIds = simulation.scenarioIds || [];
+      const expectedChatCount = scenarioIds.length;
+      const currentChatCount = chats.length;
+
+      // Only proceed if there are at least 2 remaining sessions
+      if (expectedChatCount - currentChatCount < 2) {
+        toast.error("Need at least 2 remaining sessions to use End All");
+        setEndChatLoading(false);
+        return;
+      }
+
+      // End all existing incomplete chats
+      for (let i = 0; i < currentChatCount; i++) {
+        const chat = chats[i];
+        if (chat && !chat.completed) {
+          await endChat(chat.id);
+        }
+      }
+
+      // Create all remaining chats and mark them as completed
+      const remainingScenarioIds = scenarioIds.slice(currentChatCount);
+
+      // For each remaining scenario, create a chat and immediately mark it as completed
+      for (let i = 0; i < remainingScenarioIds.length; i++) {
+        const scenarioId = remainingScenarioIds[i];
+        const chatIndex = currentChatCount + i + 1;
+
+        // Create the chat with completed status
+        if (scenarioId) {
+          await createSimulationChat({
+            title: `Scenario ${chatIndex}`,
+            scenarioId: scenarioId,
+            attemptId: attemptId,
+            completed: true, // Mark as completed immediately
+          });
+        }
+      }
+
+      // Invalidate queries to refresh the UI
+      queryClient.invalidateQueries({
+        queryKey: ["simulationChats", attemptId],
       });
+      queryClient.invalidateQueries({ queryKey: ["attempt", attemptId] });
+      queryClient.invalidateQueries({ queryKey: ["simulationGrades"] });
+      queryClient.invalidateQueries({ queryKey: ["simulationFeedbacks"] });
+
+      toast.success(
+        `Created and completed ${remainingScenarioIds.length} remaining sessions`
+      );
+
+      // Show results since all chats are now completed
+      setShowResults(true);
+      setIsActive(false);
+      onSimulationFinished?.();
     } catch (error) {
-      toast.error(`Failed to end chat: ${error}`);
-      setEndChatLoading(false); // Reset loading state only on an immediate emit error
+      toast.error(`Failed to end all chats: ${error}`);
+    } finally {
+      setEndChatLoading(false);
     }
-  }, [currentChat, emitContinueSimulation, attemptId]);
+  }, [
+    simulation,
+    attempt,
+    chats,
+    attemptId,
+    queryClient,
+    onSimulationFinished,
+    endChat,
+  ]);
 
   // Listen for WebSocket loading state changes
   useEffect(() => {
@@ -965,6 +1071,7 @@ export function SimulationProvider({
     sendMessage,
     stopMessage,
     endChat,
+    endAllChats,
 
     // Loading states
     isSendingMessage,

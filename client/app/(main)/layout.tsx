@@ -351,12 +351,15 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     if (simulationContext) {
       const {
         endChat,
+        endAllChats,
         endChatLoading,
         isSingleChatAttempt,
         isLastAttempt,
         simulation,
         isActive,
         showResults,
+        chats,
+        expectedChatCount,
       } = simulationContext;
 
       let buttonLabel = "End Chat";
@@ -368,31 +371,62 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         buttonLabel = "End & Next Chat";
       }
 
+      // Check if there are at least 2 remaining sessions for End All button
+      const remainingSessions = expectedChatCount - chats.length;
+      const showEndAllButton = remainingSessions >= 2;
+
       return (
         !showResults && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              // Dispatch endChatButtonPressed event for tour progression and navigating state management
-              window.dispatchEvent(
-                new CustomEvent("endChatButtonPressed", {
-                  detail: {
-                    chatId: simulationContext.currentChat?.id,
-                    attemptId: simulationContext.attemptId,
-                  },
-                })
-              );
-              endChat();
-            }}
-            disabled={
-              endChatLoading || (simulation?.timeLimit ? !isActive : false)
-            }
-            className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
-            data-tour-end-chat
-          >
-            {endChatLoading ? "Ending..." : buttonLabel}
-          </Button>
+          <div className="flex gap-2">
+            {showEndAllButton && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => {
+                  // Dispatch endAllChatsButtonPressed event for tour progression
+                  window.dispatchEvent(
+                    new CustomEvent("endAllChatsButtonPressed", {
+                      detail: {
+                        attemptId: simulationContext.attemptId,
+                        remainingSessions,
+                      },
+                    })
+                  );
+                  endAllChats();
+                }}
+                disabled={endChatLoading}
+                className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
+                data-tour-end-all
+              >
+                {endChatLoading
+                  ? "Ending..."
+                  : `End All (${remainingSessions})`}
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                // Dispatch endChatButtonPressed event for tour progression and navigating state management
+                window.dispatchEvent(
+                  new CustomEvent("endChatButtonPressed", {
+                    detail: {
+                      chatId: simulationContext.currentChat?.id,
+                      attemptId: simulationContext.attemptId,
+                    },
+                  })
+                );
+                endChat();
+              }}
+              disabled={
+                endChatLoading || (simulation?.timeLimit ? !isActive : false)
+              }
+              className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
+              data-tour-end-chat
+            >
+              {endChatLoading ? "Ending..." : buttonLabel}
+            </Button>
+          </div>
         )
       );
     }
