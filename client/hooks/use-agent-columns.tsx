@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
-import { Model, Agent } from "@/types";
+import { Agent, Model } from "@/types";
 import { getAllModels } from "@/utils/queries/models/get-all-models";
 
 export function useAgentColumns() {
@@ -21,7 +21,7 @@ export function useAgentColumns() {
       { value: "medium", label: "Medium" },
       { value: "high", label: "High" },
     ],
-    [],
+    []
   );
 
   const modelOptions = useMemo(() => {
@@ -38,14 +38,13 @@ export function useAgentColumns() {
       { value: "medium", label: "Medium (0.34-0.66)" },
       { value: "high", label: "High (0.67-1.0)" },
     ],
-    [],
+    []
   );
 
   // Helper function to get temperature range
   const getTemperatureRange = (temperature: number) => {
-    const temp = temperature / 100;
-    if (temp <= 0.33) return "low";
-    if (temp <= 0.66) return "medium";
+    if (temperature <= 0.33) return "low";
+    if (temperature <= 0.66) return "medium";
     return "high";
   };
 
@@ -95,7 +94,7 @@ export function useAgentColumns() {
         header: "Temperature",
         cell: ({ row }) => {
           const agent = row.original;
-          const temp = (agent.temperature / 100).toFixed(2);
+          const temp = agent.temperature.toFixed(2);
           return <div className="text-sm">{temp}</div>;
         },
         filterFn: (row, id, value) => {
@@ -134,7 +133,7 @@ export function useAgentColumns() {
         },
       },
     ],
-    [models],
+    [models]
   );
 
   return {

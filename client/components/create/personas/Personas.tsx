@@ -176,7 +176,7 @@ export default function Personas() {
   };
 
   const formatTemperature = (temp: number) => {
-    return (temp / 100).toFixed(2);
+    return temp.toFixed(2);
   };
 
   const formatDate = (dateString: string) => {

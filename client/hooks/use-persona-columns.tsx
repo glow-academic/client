@@ -35,7 +35,7 @@ export function usePersonaColumns() {
       { value: "medium", label: "Medium" },
       { value: "high", label: "High" },
     ],
-    [],
+    []
   );
 
   const modelOptions = useMemo(() => {
@@ -52,14 +52,13 @@ export function usePersonaColumns() {
       { value: "medium", label: "Medium (0.34-0.66)" },
       { value: "high", label: "High (0.67-1.0)" },
     ],
-    [],
+    []
   );
 
   // Helper function to get temperature range
   const getTemperatureRange = (temperature: number) => {
-    const temp = temperature / 100;
-    if (temp <= 0.33) return "low";
-    if (temp <= 0.66) return "medium";
+    if (temperature <= 0.33) return "low";
+    if (temperature <= 0.66) return "medium";
     return "high";
   };
 
@@ -118,7 +117,7 @@ export function usePersonaColumns() {
           const persona = row.original;
           const personaScenarios = getScenariosForPersona(persona.id);
           return value.some((scenarioId: string) =>
-            personaScenarios.some((scenario) => scenario.id === scenarioId),
+            personaScenarios.some((scenario) => scenario.id === scenarioId)
           );
         },
       },
@@ -143,7 +142,7 @@ export function usePersonaColumns() {
         header: "Temperature",
         cell: ({ row }) => {
           const persona = row.original;
-          const temp = (persona.temperature / 100).toFixed(2);
+          const temp = persona.temperature.toFixed(2);
           return <div className="text-sm">{temp}</div>;
         },
         filterFn: (row, id, value) => {
