@@ -5,7 +5,7 @@
  * 06/27/2025
  */
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // UI Components
 import { Badge } from "@/components/ui/badge";
@@ -70,6 +70,17 @@ export default function AttemptChat() {
       (chat: SimulationChat) => chat.id === selectedChatId
     );
   }, [selectedChatId, simulationContext?.chats]);
+
+  // Helper function to calculate time taken from chat timestamps
+  const calculateChatTimeTaken = useCallback((chat: SimulationChat): number => {
+    if (!chat.completed || !chat.completedAt) return 0;
+
+    const startTime = new Date(chat.createdAt).getTime();
+    const endTime = new Date(chat.completedAt).getTime();
+    const timeTakenSeconds = Math.floor((endTime - startTime) / 1000);
+
+    return timeTakenSeconds;
+  }, []);
 
   // Auto-select first chat when results show and default to showing rubric if all chats completed
   useEffect(() => {
@@ -266,50 +277,24 @@ export default function AttemptChat() {
                                 <Clock className="h-4 w-4" />
                                 <span
                                   className={`text-sm font-medium ${
-                                    (
-                                      selectedChat &&
-                                      simulationContext?.allDynamicRubrics.find(
-                                        (rubric) =>
-                                          rubric.chatId === selectedChat.id
-                                      )?.timeTaken !== undefined
-                                        ? (simulationContext?.allDynamicRubrics.find(
-                                            (rubric) =>
-                                              rubric.chatId === selectedChat.id
-                                          )?.timeTaken ?? 0) < 0
-                                        : simulationContext?.aggregatedResults
-                                              ?.totalTime !== undefined
-                                          ? simulationContext?.aggregatedResults
-                                              .totalTime < 0
-                                          : false
-                                    )
-                                      ? "text-red-500"
+                                    selectedChat && selectedChat.completed
+                                      ? calculateChatTimeTaken(selectedChat) < 0
+                                        ? "text-red-500"
+                                        : ""
                                       : ""
                                   }`}
                                   data-testid="timer"
                                 >
-                                  {selectedChat &&
-                                  simulationContext?.allDynamicRubrics.find(
-                                    (rubric) =>
-                                      rubric.chatId === selectedChat.id
-                                  )?.timeTaken !== undefined
+                                  {selectedChat && selectedChat.completed
                                     ? formatTime(
-                                        simulationContext?.allDynamicRubrics.find(
-                                          (rubric) =>
-                                            rubric.chatId === selectedChat.id
-                                        )?.timeTaken ?? 0
+                                        calculateChatTimeTaken(selectedChat)
                                       )
-                                    : simulationContext?.aggregatedResults
-                                          ?.totalTime !== undefined
+                                    : simulationContext?.simulation?.timeLimit
                                       ? formatTime(
-                                          simulationContext?.aggregatedResults
-                                            .totalTime
+                                          simulationContext.simulation
+                                            .timeLimit * 60
                                         )
-                                      : simulationContext?.simulation?.timeLimit
-                                        ? formatTime(
-                                            simulationContext.simulation
-                                              .timeLimit * 60
-                                          )
-                                        : "No time limit"}
+                                      : "No time limit"}
                                 </span>
                               </div>
                             </TooltipTrigger>

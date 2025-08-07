@@ -579,24 +579,12 @@ export function SimulationProvider({
       ).length;
 
       if (completedChats === totalExpectedChats) {
-        const completedChatIds = chats
-          .filter((chat: SimulationChat) => chat.completed)
-          .map((chat) => chat.id);
-        const hasGradingData =
-          completedChatIds.length === 0 ||
-          (grades &&
-            grades.some((grade) =>
-              completedChatIds.includes(grade.simulationChatId)
-            ));
-
-        if (hasGradingData) {
-          setShowResults(true);
-          setIsActive(false);
-          onSimulationFinished?.();
-        }
+        setShowResults(true);
+        setIsActive(false);
+        onSimulationFinished?.();
       }
     }
-  }, [chats, showResults, grades, feedbacks, onSimulationFinished]);
+  }, [chats, showResults, onSimulationFinished]);
 
   // Handle case where grading data becomes available after chats are loaded as completed
   useEffect(() => {
