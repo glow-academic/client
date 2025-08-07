@@ -45,12 +45,14 @@ export interface ReportProblemProps {
   children?: React.ReactNode;
   initialType?: "feature" | "bug" | "question" | "other";
   initialMessage?: string;
+  onDialogStateChange?: (isOpen: boolean) => void;
 }
 
 export default function ReportProblem({
   children,
   initialType,
   initialMessage,
+  onDialogStateChange,
 }: ReportProblemProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -166,6 +168,7 @@ export default function ReportProblem({
 
   const handleDialogClose = (open: boolean) => {
     setIsOpen(open);
+    onDialogStateChange?.(open);
     if (!open) {
       resetForm();
     }

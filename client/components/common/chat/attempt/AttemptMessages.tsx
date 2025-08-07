@@ -21,7 +21,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Tooltip
-import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import Markdown from "@/components/common/chat/Markdown";
 import ReportProblem from "@/components/common/layout/ReportProblem";
@@ -46,6 +51,9 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
   const [responseVersions, setResponseVersions] = useState<
     Record<string, number>
   >({});
+
+  // State to track if report dialog is open
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
 
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ["simulationMessages", targetChatId],
@@ -349,51 +357,64 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                       return (
                                         <div className="absolute bottom-2 right-2 flex items-center gap-1">
                                           {/* Report Error Button - Always shown for error messages */}
-                                          <ReportProblem
-                                            initialType="bug"
-                                            initialMessage={`Error in simulation chat: ${currentResponse.content}\n\nChat ID: ${targetChatId}\nMessage ID: ${currentResponse.id}`}
-                                          >
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100"
-                                              title="Report this error"
-                                              onClick={(e) => {
-                                                // Prevent the dialog from opening immediately
-                                                // The ReportProblem component will handle the dialog
-                                                e.stopPropagation();
-                                              }}
-                                            >
-                                              <AlertCircle className="h-4 w-4" />
-                                            </Button>
-                                          </ReportProblem>
+                                            <Tooltip>
+                                              <TooltipTrigger>
+                                                <ReportProblem
+                                                  initialType="bug"
+                                                  initialMessage={`Error in simulation chat: ${currentResponse.content}\n\nChat ID: ${targetChatId}\nMessage ID: ${currentResponse.id}`}
+                                                  onDialogStateChange={
+                                                    setIsReportDialogOpen
+                                                  }
+                                                >
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 border border-red-200 rounded-md"
+                                                  >
+                                                    <AlertCircle className="h-4 w-4" />
+                                                  </Button>
+                                                </ReportProblem>
+                                              </TooltipTrigger>
+                                              {!isReportDialogOpen && (
+                                                <TooltipContent>
+                                                  <p>Report this error</p>
+                                                </TooltipContent>
+                                              )}
+                                            </Tooltip>
 
                                           {/* Retry Button - Only shown if no successful responses exist */}
                                           {!hasSuccessfulResponse && (
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              onClick={() =>
-                                                handleRetry(
-                                                  messages.indexOf(
-                                                    currentResponse
-                                                  )
-                                                )
-                                              }
-                                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100"
-                                              disabled={
-                                                simulationContext?.currentChat
-                                                  ?.completed ||
-                                                simulationContext?.isSendingMessage ||
-                                                (simulationContext?.simulation
-                                                  ?.timeLimit
-                                                  ? !simulationContext?.isActive
-                                                  : false)
-                                              }
-                                              title="Retry this message"
-                                            >
-                                              <RotateCcw className="h-4 w-4" />
-                                            </Button>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  onClick={() =>
+                                                    handleRetry(
+                                                      messages.indexOf(
+                                                        currentResponse
+                                                      )
+                                                    )
+                                                  }
+                                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 border border-red-200 rounded-md"
+                                                  disabled={
+                                                    simulationContext
+                                                      ?.currentChat
+                                                      ?.completed ||
+                                                    simulationContext?.isSendingMessage ||
+                                                    (simulationContext
+                                                      ?.simulation?.timeLimit
+                                                      ? !simulationContext?.isActive
+                                                      : false)
+                                                  }
+                                                >
+                                                  <RotateCcw className="h-4 w-4" />
+                                                </Button>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                <p>Retry this message</p>
+                                              </TooltipContent>
+                                            </Tooltip>
                                           )}
                                         </div>
                                       );
