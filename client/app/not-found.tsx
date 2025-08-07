@@ -1,5 +1,8 @@
 "use client";
+import ReportProblem from "@/components/common/layout/ReportProblem";
+import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
+import { Bug } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function NotFound() {
@@ -31,8 +34,17 @@ export default function NotFound() {
           </div>
         </div>
 
-        {/* Action Button */}
-        <div>
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-2">
+          <ReportProblem
+            initialType="bug"
+            initialMessage={`404 Error - Page Not Found\n\nRequested URL: ${typeof window !== "undefined" ? window.location.href : "Unknown"}\n\nUser Agent: ${typeof window !== "undefined" ? window.navigator.userAgent : "Unknown"}\n\nTimestamp: ${new Date().toISOString()}`}
+          >
+            <Button className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-secondary-foreground bg-secondary hover:bg-secondary/90 transition-colors">
+              <Bug className="h-4 w-4 mr-2" />
+              Report This Issue
+            </Button>
+          </ReportProblem>
           <button
             onClick={handleBackToGlow}
             className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 transition-colors"
