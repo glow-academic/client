@@ -3,7 +3,10 @@
  */
 
 export const formatTime = (seconds: number): string => {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  const isNegative = seconds < 0;
+  const absoluteSeconds = Math.abs(seconds);
+  const minutes = Math.floor(absoluteSeconds / 60);
+  const remainingSeconds = absoluteSeconds % 60;
+  const formattedTime = `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  return isNegative ? `-${formattedTime}` : formattedTime;
 };

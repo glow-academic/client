@@ -442,9 +442,9 @@ export function SimulationProvider({
     return {
       elapsed: elapsedTime,
       remaining: timeRemaining,
-      expired: simulation?.timeLimit ? timeRemaining === 0 : false,
+      expired: false, // Never mark as expired - allow negative timer
     };
-  }, [elapsedTime, timeRemaining, simulation?.timeLimit]);
+  }, [elapsedTime, timeRemaining]);
 
   // Update simulation ref when simulation changes
   useEffect(() => {
@@ -468,7 +468,7 @@ export function SimulationProvider({
 
       if (currentSimulation.timeLimit) {
         const totalTimeSeconds = currentSimulation.timeLimit * 60;
-        const remainingSeconds = Math.max(0, totalTimeSeconds - elapsedSeconds);
+        const remainingSeconds = totalTimeSeconds - elapsedSeconds;
         return { elapsedTime: elapsedSeconds, timeRemaining: remainingSeconds };
       } else {
         return { elapsedTime: elapsedSeconds, timeRemaining: null };
@@ -480,15 +480,8 @@ export function SimulationProvider({
     setElapsedTime(initialElapsed);
     setTimeRemaining(initialRemaining);
 
-    if (currentSimulation.timeLimit && initialRemaining === 0) {
-      setIsActive(false);
-      setShowResults(true);
-      toast.success(
-        isSingleChatAttempt ? "Session completed!" : "Attempt completed!"
-      );
-      onSimulationFinishedRef.current?.();
-      return;
-    }
+    // Don't force session to end when time limit is reached
+    // Allow users to continue with negative timer
 
     const timerInterval = setInterval(() => {
       const { elapsedTime: newElapsed, timeRemaining: newRemaining } =
@@ -496,14 +489,8 @@ export function SimulationProvider({
       setElapsedTime(newElapsed);
       setTimeRemaining(newRemaining);
 
-      if (currentSimulation.timeLimit && newRemaining === 0 && isActive) {
-        setIsActive(false);
-        setShowResults(true);
-        toast.success(
-          isSingleChatAttempt ? "Session completed!" : "Attempt completed!"
-        );
-        onSimulationFinishedRef.current?.(); // Call the latest version of the function
-      }
+      // Don't force session to end when time limit is reached
+      // Allow users to continue with negative timer
     }, 1000);
 
     return () => clearInterval(timerInterval);

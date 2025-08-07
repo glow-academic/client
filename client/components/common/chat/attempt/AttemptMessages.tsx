@@ -281,10 +281,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                         onClick={() => handleStarterPromptClick(prompt)}
                         disabled={
                           simulationContext?.currentChat?.completed ||
-                          simulationContext?.isSendingMessage ||
-                          (simulationContext?.simulation?.timeLimit
-                            ? !simulationContext?.isActive
-                            : false)
+                          simulationContext?.isSendingMessage
                         }
                       >
                         <span className="text-sm">{prompt}</span>
@@ -357,30 +354,30 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                       return (
                                         <div className="absolute bottom-2 right-2 flex items-center gap-1">
                                           {/* Report Error Button - Always shown for error messages */}
-                                            <Tooltip>
-                                              <TooltipTrigger>
-                                                <ReportProblem
-                                                  initialType="bug"
-                                                  initialMessage={`Error in simulation chat: ${currentResponse.content}\n\nChat ID: ${targetChatId}\nMessage ID: ${currentResponse.id}`}
-                                                  onDialogStateChange={
-                                                    setIsReportDialogOpen
-                                                  }
+                                          <Tooltip>
+                                            <TooltipTrigger>
+                                              <ReportProblem
+                                                initialType="bug"
+                                                initialMessage={`Error in simulation chat: ${currentResponse.content}\n\nChat ID: ${targetChatId}\nMessage ID: ${currentResponse.id}`}
+                                                onDialogStateChange={
+                                                  setIsReportDialogOpen
+                                                }
+                                              >
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 border border-red-200 rounded-md"
                                                 >
-                                                  <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 border border-red-200 rounded-md"
-                                                  >
-                                                    <AlertCircle className="h-4 w-4" />
-                                                  </Button>
-                                                </ReportProblem>
-                                              </TooltipTrigger>
-                                              {!isReportDialogOpen && (
-                                                <TooltipContent>
-                                                  <p>Report this error</p>
-                                                </TooltipContent>
-                                              )}
-                                            </Tooltip>
+                                                  <AlertCircle className="h-4 w-4" />
+                                                </Button>
+                                              </ReportProblem>
+                                            </TooltipTrigger>
+                                            {!isReportDialogOpen && (
+                                              <TooltipContent>
+                                                <p>Report this error</p>
+                                              </TooltipContent>
+                                            )}
+                                          </Tooltip>
 
                                           {/* Retry Button - Only shown if no successful responses exist */}
                                           {!hasSuccessfulResponse && (

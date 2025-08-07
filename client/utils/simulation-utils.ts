@@ -10,23 +10,11 @@ export interface SimulationTimeData {
 /**
  * Determines if a simulation attempt is incomplete due to time running out
  * @param timeData - Object containing attempt creation time and simulation time limit
- * @returns true if the simulation ran out of time, false otherwise
+ * @returns false - we no longer mark simulations as timed out since users can continue with negative timer
  */
-export function isSimulationTimedOut(timeData: SimulationTimeData): boolean {
-  const { attemptCreatedAt, simulationTimeLimit } = timeData;
-
-  // If no time limit, it can't time out
-  if (!simulationTimeLimit || simulationTimeLimit <= 0) {
-    return false;
-  }
-
-  const attemptStartTime = new Date(attemptCreatedAt);
-  const currentTime = new Date();
-  const elapsedMinutes =
-    (currentTime.getTime() - attemptStartTime.getTime()) / (1000 * 60);
-
-  // Check if more time has elapsed than the time limit
-  return elapsedMinutes > simulationTimeLimit;
+export function isSimulationTimedOut(_timeData: SimulationTimeData): boolean {
+  // Never mark as timed out - allow users to continue with negative timer
+  return false;
 }
 
 /**
@@ -35,7 +23,7 @@ export function isSimulationTimedOut(timeData: SimulationTimeData): boolean {
  * @returns true if the simulation is still within time limit, false if timed out or no time limit
  */
 export function isSimulationWithinTimeLimit(
-  timeData: SimulationTimeData,
+  timeData: SimulationTimeData
 ): boolean {
   const { attemptCreatedAt, simulationTimeLimit } = timeData;
 
@@ -69,7 +57,7 @@ export function getRemainingTime(timeData: SimulationTimeData): number | null {
   const currentTime = new Date();
   const elapsedMinutes =
     (currentTime.getTime() - attemptStartTime.getTime()) / (1000 * 60);
-  const remainingMinutes = Math.max(0, simulationTimeLimit - elapsedMinutes);
+  const remainingMinutes = simulationTimeLimit - elapsedMinutes;
 
   return Math.floor(remainingMinutes);
 }

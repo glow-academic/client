@@ -265,7 +265,26 @@ export default function AttemptChat() {
                               >
                                 <Clock className="h-4 w-4" />
                                 <span
-                                  className="text-sm font-medium"
+                                  className={`text-sm font-medium ${
+                                    (
+                                      selectedChat &&
+                                      simulationContext?.allDynamicRubrics.find(
+                                        (rubric) =>
+                                          rubric.chatId === selectedChat.id
+                                      )?.timeTaken !== undefined
+                                        ? (simulationContext?.allDynamicRubrics.find(
+                                            (rubric) =>
+                                              rubric.chatId === selectedChat.id
+                                          )?.timeTaken ?? 0) < 0
+                                        : simulationContext?.aggregatedResults
+                                              ?.totalTime !== undefined
+                                          ? simulationContext?.aggregatedResults
+                                              .totalTime < 0
+                                          : false
+                                    )
+                                      ? "text-red-500"
+                                      : ""
+                                  }`}
                                   data-testid="timer"
                                 >
                                   {selectedChat &&
@@ -576,7 +595,19 @@ export default function AttemptChat() {
                                 >
                                   <Clock className="h-4 w-4" />
                                   <span
-                                    className="text-sm font-medium"
+                                    className={`text-sm font-medium ${
+                                      (
+                                        simulationContext?.simulation
+                                          ?.timeLimit &&
+                                        simulationContext?.timer.remaining !==
+                                          null
+                                          ? simulationContext?.timer.remaining <
+                                            0
+                                          : false
+                                      )
+                                        ? "text-red-500"
+                                        : ""
+                                    }`}
                                     data-testid="timer"
                                   >
                                     {simulationContext?.simulation?.timeLimit &&
@@ -588,12 +619,7 @@ export default function AttemptChat() {
                                           simulationContext?.timer.elapsed
                                         )}
                                   </span>
-                                  {simulationContext?.simulation?.timeLimit &&
-                                    simulationContext?.timer.expired && (
-                                      <span className="text-xs text-red-500 ml-1">
-                                        (Expired)
-                                      </span>
-                                    )}
+                                  {/* Removed "(Expired)" text - allow users to continue with negative timer */}
                                 </div>
                               </TooltipTrigger>
                               {simulationContext?.currentChat?.completed &&

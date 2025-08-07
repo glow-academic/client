@@ -97,9 +97,8 @@ export default function AttemptInput() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
         !simulationContext?.currentChat?.completed &&
-        (simulationContext?.simulation?.timeLimit
-          ? simulationContext?.isActive
-          : true) &&
+        // Always allow input - don't disable based on timer
+        true &&
         !e.ctrlKey &&
         !e.altKey &&
         !e.metaKey &&
@@ -115,11 +114,7 @@ export default function AttemptInput() {
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [
-    simulationContext?.currentChat?.completed,
-    simulationContext?.simulation?.timeLimit,
-    simulationContext?.isActive,
-  ]);
+  }, [simulationContext?.currentChat?.completed]);
 
   if (simulationContext?.currentChat?.completed) return null;
 
@@ -137,7 +132,7 @@ export default function AttemptInput() {
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Type your message..."
-              disabled={!simulationContext?.isActive}
+              disabled={false} // Always allow input - don't disable based on timer
               className="w-full text-md resize-none overflow-hidden h-10 min-h-10"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) handleSendMessage(e);
@@ -196,12 +191,7 @@ export default function AttemptInput() {
           </div>
         </div>
 
-        {simulationContext?.simulation?.timeLimit &&
-          !simulationContext?.isActive && (
-            <p className="text-sm text-muted-foreground text-center pt-2">
-              Time's up! The session has ended.
-            </p>
-          )}
+        {/* Removed "Time's up!" message - allow users to continue with negative timer */}
       </CardFooter>
     </TooltipProvider>
   );
