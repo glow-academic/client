@@ -18,6 +18,7 @@ def get_simulation_conversation_history(
     """
     Get the conversation history for a given list of messages.
     When there are multiple consecutive response messages, only the latest one is kept.
+    Error messages (prefixed with "Error:") are excluded from the conversation history.
 
     Args:
         messages: List of Messages objects from the database
@@ -27,8 +28,8 @@ def get_simulation_conversation_history(
     """
     conversation_history: list[TResponseInputItem] = []
 
-    # make a list of all items
-    items = messages
+    # Filter out error messages and make a list of all items
+    items = [msg for msg in messages if not msg.content.startswith("Error:")]
 
     # sort items by created_at
     items = sorted(items, key=lambda x: x.created_at)

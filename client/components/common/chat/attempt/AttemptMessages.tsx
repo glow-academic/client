@@ -87,7 +87,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
           },
         })
       );
-      simulationContext?.sendMessage(previousUserMessage.content);
+      simulationContext?.sendMessage(previousUserMessage.content, true);
     }
   };
 

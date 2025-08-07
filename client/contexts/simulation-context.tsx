@@ -101,7 +101,7 @@ export interface SimulationContextType {
   isConnected: boolean;
 
   // WebSocket operations
-  sendMessage: (message: string) => void;
+  sendMessage: (message: string, isRetry?: boolean) => void;
   stopMessage: () => void;
   endChat: () => void;
 
@@ -673,7 +673,7 @@ export function SimulationProvider({
 
   // WebSocket-based message handler
   const sendMessage = useCallback(
-    async (message: string) => {
+    async (message: string, isRetry?: boolean) => {
       if (!message.trim() || !currentChat || isSendingMessage) return;
 
       setIsSendingMessage(true);
@@ -682,6 +682,7 @@ export function SimulationProvider({
         emitSendSimulationMessage({
           chat_id: currentChat.id,
           message: message,
+          ...(isRetry && { isRetry }),
         });
       } catch (err) {
         toast.error(`Failed to send message: ${err}`);
