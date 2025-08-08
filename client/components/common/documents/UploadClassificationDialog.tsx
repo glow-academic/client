@@ -259,9 +259,34 @@ export function UploadClassificationDialog({
                     <div className="text-sm font-medium truncate mr-2 text-gray-900">
                       {file.name}
                     </div>
-                    <Badge variant="secondary">
-                      {Math.round(file.size / 1024)} KB
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">
+                        {Math.round(file.size / 1024)} KB
+                      </Badge>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => {
+                          // Remove this file from the local classification map and rely on parent to re-render with fewer files
+                          setPerFile((prev) => {
+                            const next = { ...prev };
+                            delete next[file.name];
+                            return next;
+                          });
+                          // Dispatch a custom event to request removal upstream
+                          const evt = new CustomEvent("upload:remove-file", {
+                            detail: { fileName: file.name },
+                          });
+                          window.dispatchEvent(evt);
+                        }}
+                        aria-label="Remove file from upload"
+                        title="Remove file"
+                      >
+                        ✕
+                      </Button>
+                    </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                     <div>

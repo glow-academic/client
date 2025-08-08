@@ -52,6 +52,14 @@ import * as tus from "tus-js-client";
 // Inner component that uses the role context
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "/";
+  React.useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { fileName: string };
+      setPendingFiles((prev) => prev.filter((f) => f.name !== detail.fileName));
+    };
+    window.addEventListener("upload:remove-file", handler);
+    return () => window.removeEventListener("upload:remove-file", handler);
+  }, []);
   const router = useRouter();
   const { effectiveProfile, isLoading } = useProfile();
   const queryClient = useQueryClient();

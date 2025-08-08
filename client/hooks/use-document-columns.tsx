@@ -85,7 +85,7 @@ export function useDocumentColumns(onPreview?: (document: Document) => void) {
         ),
         cell: ({ row }) => {
           const date = new Date(row.getValue("updatedAt"));
-          const active = row.getValue("active") as boolean;
+          const active = row.original.active;
           return (
             <div className="text-xs text-muted-foreground">
               {date.toLocaleDateString()}

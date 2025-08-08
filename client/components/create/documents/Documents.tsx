@@ -305,7 +305,9 @@ export default function Documents() {
           updatedAt: new Date().toISOString(),
         };
         if (bulkType !== "__keep__") updates.type = bulkType;
-        if (bulkTags.length > 0) updates.tags = bulkTags;
+        // If the user used Clear, bulkTags will be [] and should be applied
+        // Apply tags if the user interacted with tags selector (we treat presence of array as intentional)
+        if (Array.isArray(bulkTags)) updates.tags = bulkTags;
         if (Object.keys(updates).length > 0) {
           await updateDocument(id, updates);
         }
