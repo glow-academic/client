@@ -392,7 +392,7 @@ export default function AttemptChat() {
                                 <SelectItem key={chat.id} value={chat.id}>
                                   <div className="flex items-center gap-2">
                                     <span>{chat.title}</span>
-                                    {!chat.completed ? (
+                                    {chat.completed && !rubricResult ? (
                                       <Badge
                                         variant="secondary"
                                         className="text-xs"
