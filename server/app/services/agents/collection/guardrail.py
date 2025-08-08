@@ -2,7 +2,8 @@ import logging
 from typing import Any, Callable, List, Union
 
 import agents as agents_sdk  # type: ignore
-from agents import GuardrailFunctionOutput, Runner
+from agents import (Agent, GuardrailFunctionOutput, OutputGuardrail, Runner,
+                    TContext)
 from agents.items import TResponseInputItem
 from app.db import get_session
 from app.models import Agents, Models, Providers
@@ -48,17 +49,15 @@ def _build_guardrail_agent(session: Session) -> GenericAgent:
 
 def get_output_guardrails(
     session: Session = Depends(get_session),
-) -> List[Any]:
+) -> List[OutputGuardrail[TContext]]:
     """Return a list of output guardrails suitable for attaching to an Agent."""
     guardrail_agent = _build_guardrail_agent(session)
 
-    async def _output_guard(ctx: Any, agent: Any, output: Any) -> GuardrailFunctionOutput:
+    async def _output_guard(ctx: Any, agent: Agent, output: str) -> GuardrailFunctionOutput:
         result = await Runner.run(
-            guardrail_agent.agent(), getattr(output, "response", str(output)), context=ctx.context
+            guardrail_agent.agent(), output, context=ctx.context
         )
         out = result.final_output_as(GuardStudentResponse)
         return GuardrailFunctionOutput(output_info=out, tripwire_triggered=not out.proper)
-
-    output_guardrail_fn = getattr(agents_sdk, "output_guardrail")  # type: ignore[attr-defined]
-    output_guard = output_guardrail_fn(_output_guard)
+    output_guard = OutputGuardrail(_output_guard)
     return [output_guard]
