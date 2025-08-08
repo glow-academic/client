@@ -73,6 +73,7 @@ class Documents(_Base, table=True):
     type: str = Field(sa_column=Column('type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type'), default=r'homework'))
     classified: bool = Field(sa_column=Column('classified', Boolean, default=False))
     active: bool = Field(sa_column=Column('active', Boolean, default=True))
+    tags: List[uuid.UUID] = Field(sa_column=Column('tags', ARRAY(Text()), server_default=text("'{}'::text[]")))
     file_id: Optional[str] = Field(default=None, sa_column=Column('file_id', Text))
 
 

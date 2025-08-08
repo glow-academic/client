@@ -44,6 +44,7 @@ export const documents = pgTable("documents", {
 	classified: boolean().default(false).notNull(),
 	fileId: text("file_id"),
 	active: boolean().default(true).notNull(),
+	tags: text().array().default([""]).notNull(),
 });
 
 export const users = pgTable("users", {

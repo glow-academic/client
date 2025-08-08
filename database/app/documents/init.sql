@@ -17,7 +17,8 @@ CREATE TABLE documents (
     type       document_type   NOT NULL           DEFAULT 'homework',
     classified BOOLEAN     NOT NULL           DEFAULT FALSE,
     file_id    TEXT        NULL,
-    active BOOLEAN     NOT NULL DEFAULT TRUE
+    active BOOLEAN     NOT NULL DEFAULT TRUE,
+    tags TEXT[]        NOT NULL DEFAULT '{}' -- tags to associate and search each document
 );
 
 -- Insert Documents for Training Scenarios

@@ -697,3 +697,38 @@ class TestContinue_Simulation:
             # Since the function handles exceptions internally, we don't expect it to re-raise
             await handle_continue_simulation(sid, data)
             assert True
+
+
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `prepare_and_persist_scenario`")
+class TestPrepare_And_Persist_Scenario:
+    """Tests for prepare_and_persist_scenario function."""
+
+    def test_prepare_and_persist_scenario_success(self):
+        """Test successful prepare_and_persist_scenario execution."""
+        # TODO: Implement test for prepare_and_persist_scenario
+        assert False, "IMPLEMENT: Test for prepare_and_persist_scenario"
+
+    def test_prepare_and_persist_scenario_error(self):
+        """Test prepare_and_persist_scenario error handling."""
+        # TODO: Implement error test for prepare_and_persist_scenario
+        assert False, "IMPLEMENT: Error test for prepare_and_persist_scenario"
+
+
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `create_chat_for_scenario_id`")
+class TestCreate_Chat_For_Scenario_Id:
+    """Tests for create_chat_for_scenario_id function."""
+
+    def test_create_chat_for_scenario_id_success(self):
+        """Test successful create_chat_for_scenario_id execution."""
+        # TODO: Implement test for create_chat_for_scenario_id
+        assert False, "IMPLEMENT: Test for create_chat_for_scenario_id"
+
+    def test_create_chat_for_scenario_id_error(self):
+        """Test create_chat_for_scenario_id error handling."""
+        # TODO: Implement error test for create_chat_for_scenario_id
+        assert False, "IMPLEMENT: Error test for create_chat_for_scenario_id"
+
