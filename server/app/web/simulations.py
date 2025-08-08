@@ -10,7 +10,7 @@ Supports text and audio message processing with real-time streaming
 import logging
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Tuple
 
 import socketio  # type: ignore
 from agents import gen_trace_id
@@ -296,6 +296,56 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
         db_session = next(get_session())
 
         try:
+            # Local helpers to reduce duplication
+            async def prepare_and_persist_scenario(
+                old_scenario: Scenarios,
+            ) -> Tuple[Scenarios, str, str]:
+                scenario = await randomly_fill_scenario_attributes(old_scenario, db_session)
+                if not scenario.description or scenario.description == "":
+                    name, description, trace_id = await run_scenario_agent(
+                        persona_id=scenario.persona_id,
+                        document_ids=scenario.document_ids,
+                        parameter_item_ids=scenario.parameter_item_ids,
+                        group_id=attempt_id,
+                        session=db_session,
+                    )
+                    scenario.name = name
+                    scenario.description = description
+                    chat_title = scenario.name
+                else:
+                    chat_title = scenario.name
+                    trace_id = gen_trace_id()
+
+                db_session.add(scenario)
+                db_session.commit()
+                db_session.refresh(scenario)
+                return scenario, chat_title, trace_id
+
+            async def create_chat_for_scenario_id(
+                next_scenario_id: uuid.UUID, mark_completed: bool
+            ) -> Optional[SimulationChats]:
+                old_next_scenario = db_session.exec(
+                    select(Scenarios).where(Scenarios.id == next_scenario_id)
+                ).one_or_none()
+                if not old_next_scenario:
+                    return None
+
+                scenario, chat_title, trace_id = await prepare_and_persist_scenario(old_next_scenario)
+
+                next_chat = SimulationChats(
+                    created_at=datetime.now(timezone.utc),
+                    title=chat_title,
+                    scenario_id=scenario.id,
+                    attempt_id=attempt_id,
+                    completed=mark_completed,
+                    completed_at=datetime.now(timezone.utc) if mark_completed else None,
+                    trace_id=trace_id,
+                )
+                db_session.add(next_chat)
+                db_session.commit()
+                db_session.refresh(next_chat)
+                return next_chat
+
             # Get the chat
             chat = db_session.exec(
                 select(SimulationChats).where(SimulationChats.id == chat_id)
@@ -322,88 +372,35 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                 await emit_error(sid, "Simulation not found")
                 return
 
-            # Get scenario IDs for this simulation
+            # Scenario list for this simulation
             scenario_ids = simulation.scenario_ids or []
 
+            # Determine how many chats already exist for this attempt
+            existing_chats = db_session.exec(
+                select(SimulationChats).where(
+                    SimulationChats.attempt_id == attempt_id
+                )
+            ).all()
+            next_index = len(existing_chats)
+
+            # If not processing end_all, create at most one next chat
             next_chat_id = chat_id
-            if scenario_ids:
-                # Count existing chats for this attempt to determine the next scenario index
-                existing_chats = db_session.exec(
-                    select(SimulationChats).where(
-                        SimulationChats.attempt_id == attempt_id
-                    )
-                ).all()
+            if not end_all and scenario_ids and next_index < len(scenario_ids):
+                created_next_chat = await create_chat_for_scenario_id(
+                    scenario_ids[next_index], mark_completed=False
+                )
+                if created_next_chat is None:
+                    await emit_error(sid, "Next scenario not found")
+                    return
+                next_chat_id = created_next_chat.id
 
-                next_index = len(existing_chats)
-
-                # Continue if we have more scenarios
-                if next_index < len(scenario_ids):
-                    next_scenario_id = scenario_ids[next_index]
-                    old_next_scenario = db_session.exec(
-                        select(Scenarios).where(Scenarios.id == next_scenario_id)
-                    ).one_or_none()
-                    if not old_next_scenario:
-                        await emit_error(sid, "Next scenario not found")
-                        return
-
-                    # Randomly fill any null attributes in the next scenario
-                    next_scenario = await randomly_fill_scenario_attributes(
-                        old_next_scenario, db_session
-                    )
-
-                    # Generate scenario description if empty
-                    if not next_scenario.description or next_scenario.description == "":
-                        (
-                            name,
-                            description,
-                            trace_id,
-                        ) = await run_scenario_agent(
-                            persona_id=next_scenario.persona_id,
-                            document_ids=next_scenario.document_ids,
-                            parameter_item_ids=next_scenario.parameter_item_ids,
-                            group_id=attempt_id,
-                            session=db_session,
-                        )
-                        next_scenario.name = name
-                        next_scenario.description = description
-                        chat_title = next_scenario.name
-                    else:
-                        chat_title = next_scenario.name
-                        trace_id = gen_trace_id()
-
-                    db_session.add(next_scenario)
-                    db_session.commit()
-                    db_session.refresh(next_scenario)
-
-                    # Create the next chat
-                    next_chat = SimulationChats(
-                        created_at=datetime.now(timezone.utc),
-                        title=chat_title,
-                        scenario_id=next_scenario.id,
-                        attempt_id=attempt_id,
-                        completed=False,
-                        trace_id=trace_id,
-                    )
-
-                    db_session.add(next_chat)
-                    db_session.commit()
-                    db_session.refresh(next_chat)
-                    next_chat_id = next_chat.id
-
-            # Check if this chat has at least 2 messages before running grading
+            # Grade the just-completed chat if it has at least 2 messages
             messages = db_session.exec(
                 select(SimulationMessages).where(SimulationMessages.chat_id == chat_id)
             ).all()
-
-            # Explicitly define which chat was completed and which is next
-            completed_chat_id = chat_id
-            new_chat_id = next_chat_id
-            is_attempt_finished = new_chat_id == completed_chat_id
-
-            # Only run grading if chat has at least 2 messages
             simulation_grade_id = None
             if len(messages) >= 2:
-                simulation_grade_id = await run_grade_agent(completed_chat_id, db_session)
+                simulation_grade_id = await run_grade_agent(chat_id, db_session)
 
             # Mark the current chat as completed
             chat.completed = True
@@ -412,13 +409,75 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
             db_session.commit()
 
             if end_all:
-                # Handle end all functionality - create all remaining chats
-                # Pass the current chat ID to avoid double grading
-                await _handle_end_all_remaining_chats(
-                    sid, attempt_id, scenario_ids, db_session, chat_id
+                logger.info(
+                    f"End all: Starting to create remaining chats for attempt {attempt_id}"
+                )
+
+                # End any other incomplete chats for this attempt (excluding the current one we just completed)
+                incomplete_chats_processed = 0
+                for existing_chat in existing_chats:
+                    if not existing_chat.completed and existing_chat.id != chat_id:
+                        other_messages = db_session.exec(
+                            select(SimulationMessages).where(
+                                SimulationMessages.chat_id == existing_chat.id
+                            )
+                        ).all()
+                        if len(other_messages) >= 2:
+                            logger.info(
+                                f"End all: Running grading for chat {str(existing_chat.id)}"
+                            )
+                            await run_grade_agent(existing_chat.id, db_session)
+                        existing_chat.completed = True
+                        existing_chat.completed_at = datetime.now(timezone.utc)
+                        db_session.add(existing_chat)
+                        incomplete_chats_processed += 1
+
+                db_session.commit()
+
+                # Calculate and create remaining chats in order
+                created_count = 0
+                start_index = len(existing_chats)
+                total_needed = max(0, len(scenario_ids) - start_index)
+                logger.info(
+                    f"End all: Need to create {total_needed} more chats"
+                )
+
+                for offset in range(total_needed):
+                    next_id = scenario_ids[start_index + offset]
+                    created = await create_chat_for_scenario_id(
+                        next_id, mark_completed=True
+                    )
+                    if created is None:
+                        logger.error(
+                            f"End all: Next scenario not found: {next_id}"
+                        )
+                        break
+                    created_count += 1
+                    logger.info(
+                        f"End all: Created chat {created.id} for scenario {start_index + offset + 1}"
+                    )
+
+                # Emit end all completed event
+                sio_instance = get_sio_instance()
+                await sio_instance.emit(
+                    "end_all_completed",
+                    {
+                        "success": True,
+                        "message": f"Ended all chats for this attempt",
+                        "attempt_id": attempt_id,
+                    },
+                    room=sid,
+                )
+
+                logger.info(
+                    f"End all completed for attempt {attempt_id}: processed {incomplete_chats_processed} incomplete chats, created {created_count} new chats"
                 )
             else:
                 # Emit the new, more descriptive success response for single chat
+                completed_chat_id = chat_id
+                new_chat_id = next_chat_id
+                is_attempt_finished = new_chat_id == completed_chat_id
+
                 sio_instance = get_sio_instance()
                 await sio_instance.emit(
                     "simulation_continued",
@@ -445,180 +504,7 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
         await emit_error(sid, f"Failed to continue simulation: {str(e)}")
 
 
-async def _handle_end_all_remaining_chats(
-    sid: str,
-    attempt_id: str,
-    scenario_ids: list[uuid.UUID],
-    db_session: Session,
-    current_chat_id: uuid.UUID | None = None,
-) -> None:
-    """
-    Handle creating all remaining chats and marking them as completed
-    Uses the existing continue_simulation logic to properly handle scenario generation
-    """
-    # Get all existing chats for this attempt
-    existing_chats = db_session.exec(
-        select(SimulationChats).where(SimulationChats.attempt_id == attempt_id)
-    ).all()
 
-    logger.info(f"End all: Found {len(existing_chats)} existing chats for attempt {attempt_id}")
-    logger.info(f"End all: Total scenario IDs: {len(scenario_ids)}")
-
-    # End all existing incomplete chats
-    incomplete_chats_processed = 0
-    for chat in existing_chats:
-        if not chat.completed:
-            # Check message count for each chat
-            messages = db_session.exec(
-                select(SimulationMessages).where(SimulationMessages.chat_id == chat.id)
-            ).all()
-
-            logger.info(f"End all: Chat {chat.id} has {len(messages)} messages")
-
-            # Skip grading if this is the current chat (already graded in main function)
-            should_grade = len(messages) >= 2 and chat.id != current_chat_id
-
-            if should_grade:
-                # Run grading for chats with sufficient messages
-                logger.info(f"End all: Running grading for chat {str(chat.id)}")
-                await run_grade_agent(chat.id, db_session)
-
-            # Mark chat as completed
-            chat.completed = True
-            chat.completed_at = datetime.now(timezone.utc)
-            db_session.add(chat)
-            incomplete_chats_processed += 1
-
-    # Commit the changes for existing chats
-    db_session.commit()
-
-    # Use the existing continue_simulation logic to create remaining chats
-    # We'll simulate continuing from the last chat until all scenarios are covered
-    remaining_scenarios_to_create = len(scenario_ids) - len(existing_chats)
-    chats_created = 0
-
-    logger.info(f"End all: Need to create {remaining_scenarios_to_create} more chats")
-
-    # Create remaining chats using the continue_simulation logic
-    for i in range(remaining_scenarios_to_create):
-        # Find the last chat to continue from
-        from sqlmodel import desc
-        last_chat = db_session.exec(
-            select(SimulationChats)
-            .where(SimulationChats.attempt_id == attempt_id)
-            .order_by(desc(SimulationChats.created_at))
-        ).first()
-
-        if not last_chat:
-            logger.error("End all: No chat found to continue from")
-            break
-
-        # Use the existing continue logic to create the next chat
-        try:
-            # Get the attempt and simulation
-            simulation_attempt = db_session.exec(
-                select(SimulationAttempts).where(SimulationAttempts.id == attempt_id)
-            ).one_or_none()
-            if not simulation_attempt:
-                logger.error("End all: Attempt not found")
-                break
-
-            simulation = db_session.exec(
-                select(Simulations).where(Simulations.id == simulation_attempt.simulation_id)
-            ).one_or_none()
-            if not simulation:
-                logger.error("End all: Simulation not found")
-                break
-
-            # Get scenario IDs for this simulation
-            scenario_ids = simulation.scenario_ids or []
-
-            # Count existing chats to determine next scenario index
-            existing_chats_list = db_session.exec(
-                select(SimulationChats).where(SimulationChats.attempt_id == attempt_id)
-            ).all()
-            existing_chat_count = len(existing_chats_list)
-
-            next_index = existing_chat_count
-
-            # Continue if we have more scenarios
-            if next_index < len(scenario_ids):
-                next_scenario_id = scenario_ids[next_index]
-                old_next_scenario = db_session.exec(
-                    select(Scenarios).where(Scenarios.id == next_scenario_id)
-                ).one_or_none()
-                if not old_next_scenario:
-                    logger.error(f"End all: Next scenario not found: {next_scenario_id}")
-                    break
-
-                # Randomly fill any null attributes in the next scenario
-                next_scenario = await randomly_fill_scenario_attributes(
-                    old_next_scenario, db_session
-                )
-
-                # Generate scenario description if empty
-                if not next_scenario.description or next_scenario.description == "":
-                    (
-                        name,
-                        description,
-                        trace_id,
-                    ) = await run_scenario_agent(
-                        persona_id=next_scenario.persona_id,
-                        document_ids=next_scenario.document_ids,
-                        parameter_item_ids=next_scenario.parameter_item_ids,
-                        group_id=uuid.UUID(attempt_id),
-                        session=db_session,
-                    )
-                    next_scenario.name = name
-                    next_scenario.description = description
-                    chat_title = next_scenario.name
-                else:
-                    chat_title = next_scenario.name
-                    trace_id = gen_trace_id()
-
-                db_session.add(next_scenario)
-                db_session.commit()
-                db_session.refresh(next_scenario)
-
-                # Create the next chat
-                next_chat = SimulationChats(
-                    created_at=datetime.now(timezone.utc),
-                    title=chat_title,
-                    scenario_id=next_scenario.id,
-                    attempt_id=attempt_id,
-                    completed=True,  # Mark as completed immediately
-                    completed_at=datetime.now(timezone.utc),
-                    trace_id=trace_id,
-                )
-
-                db_session.add(next_chat)
-                db_session.commit()
-                db_session.refresh(next_chat)
-                chats_created += 1
-
-                logger.info(f"End all: Created chat {next_chat.id} for scenario {next_index + 1}")
-
-            else:
-                logger.info("End all: No more scenarios to create")
-                break
-
-        except Exception as e:
-            logger.error(f"End all: Error creating chat {i + 1}: {str(e)}")
-            break
-
-    # Emit end all completed event
-    sio_instance = get_sio_instance()
-    await sio_instance.emit(
-        "end_all_completed",
-        {
-            "success": True,
-            "message": f"Ended {incomplete_chats_processed} incomplete chats and created {chats_created} new completed chats",
-            "attempt_id": attempt_id,
-        },
-        room=sid,
-    )
-
-    logger.info(f"End all completed for attempt {attempt_id}: processed {incomplete_chats_processed} incomplete chats, created {chats_created} new chats")
 
 
 async def process_simulation_message_websocket(
