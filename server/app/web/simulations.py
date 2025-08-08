@@ -14,6 +14,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import socketio  # type: ignore
 from agents import gen_trace_id
+from agents.exceptions import OutputGuardrailTripwireTriggered
 from app.db import get_session
 from app.models import (Scenarios, SimulationAttempts, SimulationChats,
                         SimulationMessages, Simulations)
@@ -617,6 +618,50 @@ async def process_simulation_message_websocket(
                     },
                     room=f"simulation_{chat_id}",
                 )
+        except OutputGuardrailTripwireTriggered as e:
+            # Handle guardrail-triggered output: overwrite message with model-provided reason
+            reason = ""
+            try:
+                reason = (
+                    getattr(e, "guardrail_result", None)
+                    and getattr(e.guardrail_result, "output", None)
+                    and getattr(e.guardrail_result.output, "output_info", None)
+                    and getattr(e.guardrail_result.output.output_info, "reason", "")
+                ) or ""
+            except Exception:
+                reason = ""
+
+            error_text = (
+                "Error: this message was detected to be faulty because: "
+                f"{reason or 'Guardrail tripwire triggered'}"
+            )
+
+            # Persist error onto the assistant message and emit completion + error
+            assistant_message.content = error_text
+            assistant_message.completed = True
+            db_session.add(assistant_message)
+            db_session.commit()
+
+            sio_instance = get_sio_instance()
+            await sio_instance.emit(
+                "simulation_message_complete",
+                {
+                    "message_id": str(assistant_message.id),
+                    "chat_id": str(chat_id),
+                    "final_content": error_text,
+                },
+                room=f"simulation_{chat_id}",
+            )
+
+            await sio_instance.emit(
+                "simulation_message_error",
+                {"chat_id": str(chat_id), "error": error_text},
+                room=f"simulation_{chat_id}",
+            )
+
+            # Skip later completion emission
+            cancelled = True
+
         except Exception as e:
             if "cancelled" in str(e).lower() or "canceled" in str(e).lower():
                 # Handle cancellation gracefully
