@@ -150,10 +150,14 @@ export function UploadClassificationDialog({
                 </Select>
               </div>
               <div>
+                <div className="text-xs text-muted-foreground mb-1">
+                  Default tags for extracted documents
+                </div>
                 <TagSelector
                   value={zipDefaults.tags}
                   onChange={(tags) => setZipDefaults((p) => ({ ...p, tags }))}
                   knownTags={knownTags}
+                  placeholder="Add default tags..."
                 />
               </div>
             </div>
@@ -181,10 +185,14 @@ export function UploadClassificationDialog({
               </Select>
             </div>
             <div>
+              <div className="text-xs text-muted-foreground mb-1">
+                Add tags and click "Add" to apply to all files
+              </div>
               <TagSelector
                 value={[]}
                 onChange={(tags) => applyTagsToAll(tags)}
                 knownTags={knownTags}
+                placeholder="Add tags for all files..."
               />
             </div>
           </div>
@@ -224,67 +232,69 @@ export function UploadClassificationDialog({
                 return "to-indigo-300";
               return "to-violet-200";
             };
-            const gradientBorderClass = `border-2 bg-white text-gray-800 border-gradient-to-br ${typeColorMap[fc.type]} ${mimeToColor(mime)}`;
+            const gradientClass = `bg-gradient-to-br ${typeColorMap[fc.type]} ${mimeToColor(mime)}`;
             return (
               <div
                 key={file.name}
-                className={`rounded-md border p-3 ${gradientClass}`}
+                className={`rounded-md p-0.5 ${gradientClass}`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium truncate mr-2 text-gray-900">
-                    {file.name}
+                <div className="rounded-md p-3 bg-white text-gray-800">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-medium truncate mr-2 text-gray-900">
+                      {file.name}
+                    </div>
+                    <Badge variant="secondary">
+                      {Math.round(file.size / 1024)} KB
+                    </Badge>
                   </div>
-                  <Badge variant="secondary">
-                    {Math.round(file.size / 1024)} KB
-                  </Badge>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                  <div>
-                    <Select
-                      value={fc.type}
-                      onValueChange={(v) =>
-                        setPerFile((prev) => {
-                          const prevForFile: FileClassification = prev[
-                            file.name
-                          ] ?? { type: "homework", tags: [] };
-                          return {
-                            ...prev,
-                            [file.name]: {
-                              ...prevForFile,
-                              type: v as DocumentType,
-                            },
-                          } as Record<string, FileClassification>;
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TYPE_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <TagSelector
-                      value={fc.tags}
-                      onChange={(tags) =>
-                        setPerFile((prev) => {
-                          const prevForFile: FileClassification = prev[
-                            file.name
-                          ] ?? { type: fc.type, tags: [] };
-                          return {
-                            ...prev,
-                            [file.name]: { ...prevForFile, tags },
-                          } as Record<string, FileClassification>;
-                        })
-                      }
-                      knownTags={knownTags}
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                    <div>
+                      <Select
+                        value={fc.type}
+                        onValueChange={(v) =>
+                          setPerFile((prev) => {
+                            const prevForFile: FileClassification = prev[
+                              file.name
+                            ] ?? { type: "homework", tags: [] };
+                            return {
+                              ...prev,
+                              [file.name]: {
+                                ...prevForFile,
+                                type: v as DocumentType,
+                              },
+                            } as Record<string, FileClassification>;
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TYPE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <TagSelector
+                        value={fc.tags}
+                        onChange={(tags) =>
+                          setPerFile((prev) => {
+                            const prevForFile: FileClassification = prev[
+                              file.name
+                            ] ?? { type: fc.type, tags: [] };
+                            return {
+                              ...prev,
+                              [file.name]: { ...prevForFile, tags },
+                            } as Record<string, FileClassification>;
+                          })
+                        }
+                        knownTags={knownTags}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

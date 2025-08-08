@@ -104,7 +104,7 @@ export function TagSelector({
             />
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               disabled={disabled}
               onClick={() => addTag(query)}
             >
