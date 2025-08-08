@@ -31,6 +31,8 @@ export interface TagSelectorProps {
   className?: string;
   /** Where to render the selected tag badges relative to the input */
   badgesPosition?: "above" | "below";
+  /** When true, shows a Clear button to remove all selected tags */
+  showClearAll?: boolean;
 }
 
 export function TagSelector({
@@ -41,6 +43,7 @@ export function TagSelector({
   disabled = false,
   className,
   badgesPosition = "above",
+  showClearAll = false,
 }: TagSelectorProps) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
@@ -101,7 +104,7 @@ export function TagSelector({
 
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <Input
               placeholder={placeholder}
               value={query}
@@ -117,6 +120,16 @@ export function TagSelector({
             >
               Add
             </Button>
+            {showClearAll && value.length > 0 && (
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={disabled}
+                onClick={() => onChange([])}
+              >
+                Clear
+              </Button>
+            )}
           </div>
         </PopoverTrigger>
         <PopoverContent className="w-[280px] p-0" align="start">

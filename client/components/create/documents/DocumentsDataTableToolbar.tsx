@@ -106,6 +106,7 @@ export function DocumentsDataTableToolbar({
               onClick={onBulkEdit}
               className="h-8"
             >
+              <Grid3X3 className="mr-2 h-4 w-4" />
               Edit {selectedCount}
             </Button>
             {deletableCount === 0 ? (

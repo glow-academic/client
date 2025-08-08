@@ -219,6 +219,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                     type: classification.type,
                     tags: classification.tags,
                     classified: true,
+                    updatedAt: new Date().toISOString(),
                   });
                 }
                 if (
@@ -234,6 +235,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                       type: zipDefaults.type,
                       tags: zipDefaults.tags,
                       classified: true,
+                      updatedAt: new Date().toISOString(),
                     });
                   }
                 }

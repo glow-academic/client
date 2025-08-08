@@ -171,7 +171,21 @@ export default function Documents() {
   const handleBulkEdit = () => {
     if (selectedDocuments.length > 0) {
       setBulkType("__keep__");
-      setBulkTags([]);
+      // Pre-populate with intersection of tags across selected documents
+      const selectedDocs = documents.filter((doc) =>
+        selectedDocuments.includes(doc.id)
+      );
+      if (selectedDocs.length > 0) {
+        const intersection = selectedDocs
+          .map((doc) => new Set(doc.tags ?? []))
+          .reduce<string[]>((acc, set, index) => {
+            if (index === 0) return Array.from(set);
+            return acc.filter((t) => set.has(t));
+          }, []);
+        setBulkTags(intersection);
+      } else {
+        setBulkTags([]);
+      }
       setShowBulkEditDialog(true);
     }
   };
@@ -259,7 +273,9 @@ export default function Documents() {
       await updateDocument(editingDocument.id, {
         name: editingDocument.name,
         type: editingDocument.type,
+        tags: editingDocument.tags,
         active: editingDocument.active,
+        updatedAt: new Date().toISOString(),
       });
 
       toast.success("Document updated successfully");
@@ -285,7 +301,9 @@ export default function Documents() {
         "@/utils/mutations/documents/update-document"
       );
       for (const id of selectedDocuments) {
-        const updates: Partial<DocumentInsert> = {};
+        const updates: Partial<DocumentInsert> = {
+          updatedAt: new Date().toISOString(),
+        };
         if (bulkType !== "__keep__") updates.type = bulkType;
         if (bulkTags.length > 0) updates.tags = bulkTags;
         if (Object.keys(updates).length > 0) {
@@ -431,6 +449,7 @@ export default function Documents() {
                     new Set(documents.flatMap((d) => d.tags ?? []))
                   )}
                   badgesPosition="below"
+                  showClearAll
                 />
               </div>
 
@@ -503,6 +522,7 @@ export default function Documents() {
                   new Set(documents.flatMap((d) => d.tags ?? []))
                 )}
                 badgesPosition="below"
+                showClearAll
               />
             </div>
           </div>

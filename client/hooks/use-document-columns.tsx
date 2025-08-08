@@ -85,9 +85,15 @@ export function useDocumentColumns(onPreview?: (document: Document) => void) {
         ),
         cell: ({ row }) => {
           const date = new Date(row.getValue("updatedAt"));
+          const active = row.getValue("active") as boolean;
           return (
             <div className="text-xs text-muted-foreground">
               {date.toLocaleDateString()}
+              {!active && (
+                <div className="text-xs text-red-600 dark:text-red-400 mt-1">
+                  Inactive
+                </div>
+              )}
             </div>
           );
         },
@@ -148,6 +154,32 @@ export function useDocumentColumns(onPreview?: (document: Document) => void) {
         },
       },
       {
+        accessorKey: "tags",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Tags" />
+        ),
+        cell: ({ row }) => {
+          const tags = (row.getValue("tags") as string[] | null) ?? [];
+          if (!tags.length) {
+            return <span className="text-xs text-muted-foreground">None</span>;
+          }
+          return (
+            <div className="max-w-[240px] flex flex-wrap gap-1">
+              {tags.slice(0, 4).map((tag) => (
+                <Badge key={tag} variant="default" className="text-[10px]">
+                  {tag}
+                </Badge>
+              ))}
+              {tags.length > 4 && (
+                <Badge variant="outline" className="text-[10px]">
+                  +{tags.length - 4}
+                </Badge>
+              )}
+            </div>
+          );
+        },
+      },
+      {
         accessorKey: "extension",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Extension" />
@@ -204,32 +236,7 @@ export function useDocumentColumns(onPreview?: (document: Document) => void) {
           return value.length === 0 || value.includes(row.getValue(id));
         },
       },
-      {
-        accessorKey: "tags",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Tags" />
-        ),
-        cell: ({ row }) => {
-          const tags = (row.getValue("tags") as string[] | null) ?? [];
-          if (!tags.length) {
-            return <span className="text-xs text-muted-foreground">None</span>;
-          }
-          return (
-            <div className="max-w-[240px] flex flex-wrap gap-1">
-              {tags.slice(0, 4).map((tag) => (
-                <Badge key={tag} variant="secondary" className="text-[10px]">
-                  {tag}
-                </Badge>
-              ))}
-              {tags.length > 4 && (
-                <Badge variant="outline" className="text-[10px]">
-                  +{tags.length - 4}
-                </Badge>
-              )}
-            </div>
-          );
-        },
-      },
+      // (Tags column moved above, remove from here)
       {
         id: "actions",
         header: "Actions",

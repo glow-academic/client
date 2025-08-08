@@ -96,12 +96,29 @@ export function UploadClassificationDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [files.map((f) => f.name).join("|")]);
 
+  // Keep the apply-all UI preselected with the intersection of tags across all files
+  React.useEffect(() => {
+    const allFiles = Object.values(perFile);
+    if (allFiles.length === 0) {
+      setApplyAllTempTags([]);
+      return;
+    }
+    const intersection = allFiles
+      .map((f) => new Set(f.tags ?? []))
+      .reduce<string[]>((acc, set, index) => {
+        if (index === 0) return Array.from(set);
+        return acc.filter((t) => set.has(t));
+      }, []);
+    setApplyAllTempTags(intersection);
+  }, [perFile]);
+
   const applyTypeToAll = (type: DocumentType) => {
     setPerFile((prev) =>
       Object.fromEntries(
         Object.entries(prev).map(([k, v]) => [k, { ...v, type }])
       )
     );
+    setZipDefaults((p) => ({ ...p, type }));
   };
 
   const applyTagsToAll = (incomingTags: string[]) => {
@@ -116,9 +133,32 @@ export function UploadClassificationDialog({
         })
       )
     );
+    setZipDefaults((p) => ({
+      ...p,
+      tags: Array.from(new Set([...(p.tags ?? []), ...incomingTags])),
+    }));
   };
 
-  const hasZip = files.some((f) => f.name.toLowerCase().endsWith(".zip"));
+  const removeTagsFromAll = (tagsToRemove: string[]) => {
+    if (tagsToRemove.length === 0) return;
+    setPerFile((prev) =>
+      Object.fromEntries(
+        Object.entries(prev).map(([k, v]) => {
+          const nextTags = (v.tags ?? []).filter(
+            (t) => !tagsToRemove.includes(t)
+          );
+          return [k, { ...v, tags: nextTags }];
+        })
+      )
+    );
+    setZipDefaults((p) => ({
+      ...p,
+      tags: (p.tags ?? []).filter((t) => !tagsToRemove.includes(t)),
+    }));
+  };
+
+  // Previously used to show a ZIP-specific panel; now unified under apply-to-all controls
+  // const hasZip = files.some((f) => f.name.toLowerCase().endsWith(".zip"));
 
   return (
     <Dialog open={open} onOpenChange={(val) => (!val ? onClose() : undefined)}>
@@ -131,47 +171,7 @@ export function UploadClassificationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {hasZip && (
-          <div className="rounded-md border p-3 bg-muted/40 mb-4">
-            <div className="text-sm mb-2">
-              ZIP detected. These defaults will apply to all extracted
-              documents.
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <Select
-                  value={zipDefaults.type}
-                  onValueChange={(v) =>
-                    setZipDefaults((p) => ({ ...p, type: v as DocumentType }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">
-                  Default tags for extracted documents
-                </div>
-                <TagSelector
-                  value={zipDefaults.tags}
-                  onChange={(tags) => setZipDefaults((p) => ({ ...p, tags }))}
-                  knownTags={knownTags}
-                  placeholder="Add default tags..."
-                  badgesPosition="below"
-                />
-              </div>
-            </div>
-          </div>
-        )}
+        {/* ZIP-specific panel removed; apply-to-all controls below cover ZIP behavior */}
 
         {/* Apply to all controls above the file list */}
         <div className="rounded-md border p-3 bg-muted/40 mb-4">
@@ -197,16 +197,18 @@ export function UploadClassificationDialog({
               <TagSelector
                 value={applyAllTempTags}
                 onChange={(next) => {
-                  // Only add newly added tags to all files; do not remove from files
                   setApplyAllTempTags((prev) => {
                     const added = next.filter((t) => !prev.includes(t));
-                    if (added.length > 0) applyTagsToAll(added);
+                    const removed = prev.filter((t) => !next.includes(t));
+                    if (added.length) applyTagsToAll(added);
+                    if (removed.length) removeTagsFromAll(removed);
                     return next;
                   });
                 }}
                 knownTags={knownTags}
                 placeholder="Add tags for all files..."
                 badgesPosition="below"
+                showClearAll
               />
             </div>
           </div>
@@ -308,6 +310,7 @@ export function UploadClassificationDialog({
                         }
                         knownTags={knownTags}
                         badgesPosition="below"
+                        showClearAll
                       />
                     </div>
                   </div>
