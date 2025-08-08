@@ -79,6 +79,8 @@ export function UploadClassificationDialog({
     type: "homework",
     tags: [],
   });
+  // Additive apply-to-all temporary tags displayed below the input
+  const [applyAllTempTags, setApplyAllTempTags] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     // Initialize defaults for new files
@@ -102,10 +104,16 @@ export function UploadClassificationDialog({
     );
   };
 
-  const applyTagsToAll = (tags: string[]) => {
+  const applyTagsToAll = (incomingTags: string[]) => {
+    if (incomingTags.length === 0) return;
     setPerFile((prev) =>
       Object.fromEntries(
-        Object.entries(prev).map(([k, v]) => [k, { ...v, tags }])
+        Object.entries(prev).map(([k, v]) => {
+          const merged = Array.from(
+            new Set([...(v.tags ?? []), ...incomingTags])
+          );
+          return [k, { ...v, tags: merged }];
+        })
       )
     );
   };
@@ -158,6 +166,7 @@ export function UploadClassificationDialog({
                   onChange={(tags) => setZipDefaults((p) => ({ ...p, tags }))}
                   knownTags={knownTags}
                   placeholder="Add default tags..."
+                  badgesPosition="below"
                 />
               </div>
             </div>
@@ -185,14 +194,19 @@ export function UploadClassificationDialog({
               </Select>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground mb-1">
-                Add tags and click "Add" to apply to all files
-              </div>
               <TagSelector
-                value={[]}
-                onChange={(tags) => applyTagsToAll(tags)}
+                value={applyAllTempTags}
+                onChange={(next) => {
+                  // Only add newly added tags to all files; do not remove from files
+                  setApplyAllTempTags((prev) => {
+                    const added = next.filter((t) => !prev.includes(t));
+                    if (added.length > 0) applyTagsToAll(added);
+                    return next;
+                  });
+                }}
                 knownTags={knownTags}
                 placeholder="Add tags for all files..."
+                badgesPosition="below"
               />
             </div>
           </div>
@@ -293,6 +307,7 @@ export function UploadClassificationDialog({
                           })
                         }
                         knownTags={knownTags}
+                        badgesPosition="below"
                       />
                     </div>
                   </div>

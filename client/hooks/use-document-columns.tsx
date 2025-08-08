@@ -205,16 +205,28 @@ export function useDocumentColumns(onPreview?: (document: Document) => void) {
         },
       },
       {
-        accessorKey: "active",
+        accessorKey: "tags",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Status" />
+          <DataTableColumnHeader column={column} title="Tags" />
         ),
         cell: ({ row }) => {
-          const active = row.getValue("active") as boolean;
+          const tags = (row.getValue("tags") as string[] | null) ?? [];
+          if (!tags.length) {
+            return <span className="text-xs text-muted-foreground">None</span>;
+          }
           return (
-            <Badge variant={active ? "default" : "secondary"}>
-              {active ? "Active" : "Inactive"}
-            </Badge>
+            <div className="max-w-[240px] flex flex-wrap gap-1">
+              {tags.slice(0, 4).map((tag) => (
+                <Badge key={tag} variant="secondary" className="text-[10px]">
+                  {tag}
+                </Badge>
+              ))}
+              {tags.length > 4 && (
+                <Badge variant="outline" className="text-[10px]">
+                  +{tags.length - 4}
+                </Badge>
+              )}
+            </div>
           );
         },
       },

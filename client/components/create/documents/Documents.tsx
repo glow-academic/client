@@ -430,6 +430,7 @@ export default function Documents() {
                   knownTags={Array.from(
                     new Set(documents.flatMap((d) => d.tags ?? []))
                   )}
+                  badgesPosition="below"
                 />
               </div>
 
@@ -501,6 +502,7 @@ export default function Documents() {
                 knownTags={Array.from(
                   new Set(documents.flatMap((d) => d.tags ?? []))
                 )}
+                badgesPosition="below"
               />
             </div>
           </div>

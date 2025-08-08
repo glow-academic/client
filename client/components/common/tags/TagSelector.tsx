@@ -29,6 +29,8 @@ export interface TagSelectorProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  /** Where to render the selected tag badges relative to the input */
+  badgesPosition?: "above" | "below";
 }
 
 export function TagSelector({
@@ -38,6 +40,7 @@ export function TagSelector({
   placeholder = "Add tag...",
   disabled = false,
   className,
+  badgesPosition = "above",
 }: TagSelectorProps) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
@@ -69,28 +72,32 @@ export function TagSelector({
     }
   };
 
+  const Badges = (
+    <div className="flex flex-wrap gap-1">
+      {value.map((tag) => (
+        <Badge
+          key={tag}
+          variant="secondary"
+          className="flex items-center gap-1"
+        >
+          <span>{tag}</span>
+          <button
+            type="button"
+            aria-label={`Remove ${tag}`}
+            onClick={() => removeTag(tag)}
+            className="inline-flex items-center"
+            disabled={disabled}
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </Badge>
+      ))}
+    </div>
+  );
+
   return (
     <div className={className}>
-      <div className="flex flex-wrap gap-1 mb-2">
-        {value.map((tag) => (
-          <Badge
-            key={tag}
-            variant="secondary"
-            className="flex items-center gap-1"
-          >
-            <span>{tag}</span>
-            <button
-              type="button"
-              aria-label={`Remove ${tag}`}
-              onClick={() => removeTag(tag)}
-              className="inline-flex items-center"
-              disabled={disabled}
-            >
-              <X className="h-3 w-3" />
-            </button>
-          </Badge>
-        ))}
-      </div>
+      {badgesPosition === "above" && <div className="mb-2">{Badges}</div>}
 
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
@@ -132,6 +139,8 @@ export function TagSelector({
           </Command>
         </PopoverContent>
       </Popover>
+
+      {badgesPosition === "below" && <div className="mt-2">{Badges}</div>}
     </div>
   );
 }
