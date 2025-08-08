@@ -6,8 +6,10 @@ from agents import (Agent, GuardrailFunctionOutput, OutputGuardrail, Runner,
                     TContext)
 from agents.items import TResponseInputItem
 from app.db import get_session
-from app.models import Agents, Models, Providers
+from app.models import (Agents, Models, Providers, SimulationChats,
+                        SimulationMessages)
 from app.services.agents.generic import GenericAgent
+from app.utils.chat import get_simulation_conversation_history
 from fastapi import Depends
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -54,10 +56,55 @@ def get_output_guardrails(
     guardrail_agent = _build_guardrail_agent(session)
 
     async def _output_guard(ctx: Any, agent: Agent, output: str) -> GuardrailFunctionOutput:
-        result = await Runner.run(
-            guardrail_agent.agent(), output, context=ctx.context
-        )
-        out = result.final_output_as(GuardStudentResponse)
-        return GuardrailFunctionOutput(output_info=out, tripwire_triggered=not out.proper)
+        db_session = next(get_session())
+        try:
+            input_items: List[TResponseInputItem] = []
+
+            # Intro message before the history
+            intro_message: TResponseInputItem = {
+                "role": "user",
+                "content": (
+                    "The following is the conversation between the graduate teaching assistant and "
+                    "student, evalute carefully if the AI student adheres to its role."
+                ),
+            }
+            input_items.append(intro_message)
+
+            # Attempt to derive chat via trace_id from context
+            trace_id = getattr(getattr(ctx, "context", None), "trace_id", None)
+
+            if trace_id:
+                chat = db_session.exec(
+                    select(SimulationChats).where(SimulationChats.trace_id == str(trace_id))
+                ).one_or_none()
+            else:
+                chat = None
+
+            if chat is not None:
+                messages = db_session.exec(
+                    select(SimulationMessages).where(SimulationMessages.chat_id == chat.id)
+                ).all()
+                conversation_history = get_simulation_conversation_history(list(messages))
+                input_items.extend(conversation_history)
+
+                # Append the new assistant output if it doesn't match last assistant content
+                last_content = None
+                if conversation_history:
+                    last_content = conversation_history[-1].get("content")
+                if last_content != output:
+                    input_items.append({"role": "assistant", "content": output})
+            else:
+                # Fallback: no chat context; include only the final output
+                input_items.append({"role": "assistant", "content": output})
+
+            result = await Runner.run(
+                guardrail_agent.agent(), input_items, context=getattr(ctx, "context", None)
+            )
+            out = result.final_output_as(GuardStudentResponse)
+            return GuardrailFunctionOutput(
+                output_info=out, tripwire_triggered=not out.proper
+            )
+        finally:
+            db_session.close()
     output_guard = OutputGuardrail(_output_guard)
     return [output_guard]
