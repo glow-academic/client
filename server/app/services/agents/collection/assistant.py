@@ -105,12 +105,12 @@ async def _handle_assistant_chat(
 
     # get the user's role
     user_role = user_profile.role
-    if user_role == "admin":
+    if user_role == "superadmin":
+        user_role = "Super Administrator"
+    elif user_role == "admin":
         user_role = "Administrator"
-    elif user_role == "instructional_staff":
-        user_role = "Instructional Staff"
-    elif user_role == "instructor":
-        user_role = "Instructor"
+    elif user_role == "instructional":
+        user_role = "Instructional"
     elif user_role == "ta":
         user_role = "GTA"
 

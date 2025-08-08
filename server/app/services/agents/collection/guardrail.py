@@ -46,24 +46,6 @@ def _build_guardrail_agent(session: Session) -> GenericAgent:
     )
 
 
-def get_input_guardrails(
-    session: Session = Depends(get_session),
-) -> List[Any]:
-    """Return a list of input guardrails suitable for attaching to an Agent."""
-    guardrail_agent = _build_guardrail_agent(session)
-
-    async def _input_guard(ctx: Any, agent: Any, input: Any) -> GuardrailFunctionOutput:
-        result = await Runner.run(guardrail_agent.agent(), input, context=ctx.context)
-        output = result.final_output_as(GuardStudentResponse)
-        return GuardrailFunctionOutput(
-            output_info=output, tripwire_triggered=not output.proper
-        )
-
-    input_guardrail_fn = getattr(agents_sdk, "input_guardrail")  # type: ignore[attr-defined]
-    input_guard = input_guardrail_fn(_input_guard)
-    return [input_guard]
-
-
 def get_output_guardrails(
     session: Session = Depends(get_session),
 ) -> List[Any]:

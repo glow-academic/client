@@ -83,7 +83,6 @@ class GenericAgent:
         reasoning: str | None,
         output_type: type[BaseModel] | None = None,
         mcp_servers: list[MCPServer] | None = None,
-        input_guardrails: list[Any] | None = None,
         output_guardrails: list[Any] | None = None,
     ):
         self.agent_name = agent_name
@@ -92,7 +91,6 @@ class GenericAgent:
         self.model = model_provider + "/" + model_name
         self.output_type = output_type
         self.mcp_servers = mcp_servers
-        self.input_guardrails: list[Any] = input_guardrails or []
         self.output_guardrails: list[Any] = output_guardrails or []
         self.base_url = base_url
 
@@ -125,6 +123,5 @@ class GenericAgent:
             ),
             output_type=self.output_type,
             mcp_servers=self.mcp_servers or [],
-            input_guardrails=self.input_guardrails,  # type: ignore[arg-type]
             output_guardrails=self.output_guardrails,  # type: ignore[arg-type]
         )

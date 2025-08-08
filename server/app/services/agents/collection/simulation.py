@@ -10,8 +10,7 @@ from app.extensions import UPLOAD_FOLDER
 from app.models import (Documents, Models, Personas, Providers, Scenarios,
                         SimulationAttempts, SimulationChats,
                         SimulationMessages)
-from app.services.agents.collection.guardrail import (get_input_guardrails,
-                                                      get_output_guardrails)
+from app.services.agents.collection.guardrail import get_output_guardrails
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import (get_chat_scenario,
                             get_simulation_conversation_history)
@@ -167,7 +166,6 @@ async def _handle_simulation_chat(
     if not provider:
         raise ValueError(f"Provider with ID {model.provider_id} not found")
 
-    input_guards = get_input_guardrails(session)
     output_guards = get_output_guardrails(session)
 
     agent_instance = GenericAgent(
@@ -179,7 +177,6 @@ async def _handle_simulation_chat(
         base_url=provider.base_url,
         reasoning=persona.reasoning,
         api_key=provider.api_key,
-        input_guardrails=input_guards,
         output_guardrails=output_guards,
     )
 
