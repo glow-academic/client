@@ -6,20 +6,10 @@ from typing import Any, List
 
 from agents import Runner, trace
 from app.db import get_session
-from app.models import (
-    Models,
-    Providers,
-    Rubrics,
-    SimulationAttempts,
-    SimulationChatFeedbacks,
-    SimulationChatGrades,
-    SimulationChats,
-    SimulationMessages,
-    Simulations,
-    StandardGroups,
-    Standards,
-    Agents,
-)
+from app.models import (Agents, Models, Providers, Rubrics, SimulationAttempts,
+                        SimulationChatFeedbacks, SimulationChatGrades,
+                        SimulationChats, SimulationMessages, Simulations,
+                        StandardGroups, Standards)
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_simulation_conversation_history
 from app.utils.rubric import get_dynamic_rubric
@@ -193,6 +183,7 @@ async def run_grade_agent(
             temperature=agent.temperature,
             model_name=model.name,
             model_provider=provider.name,
+            base_url=provider.base_url,
             api_key=provider.api_key,
             reasoning=agent.reasoning,
             output_type=DynamicRubric,

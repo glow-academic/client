@@ -176,6 +176,7 @@ async def _handle_simulation_chat(
         temperature=persona.temperature,
         model_name=model.name,
         model_provider=provider.name,
+        base_url=provider.base_url,
         reasoning=persona.reasoning,
         api_key=provider.api_key,
         input_guardrails=input_guards,

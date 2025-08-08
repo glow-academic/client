@@ -39,6 +39,7 @@ def _build_guardrail_agent(session: Session) -> GenericAgent:
         temperature=agent_row.temperature,
         model_name=model.name,
         model_provider=provider.name,
+        base_url=provider.base_url,
         api_key=provider.api_key,
         reasoning=agent_row.reasoning,
         output_type=GuardStudentResponse,

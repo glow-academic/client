@@ -52,6 +52,7 @@ async def run_generic_agent(
         temperature=persona.temperature,
         model_name=model.name,
         model_provider=provider.name,
+        base_url=provider.base_url,
         api_key=provider.api_key,
         reasoning=persona.reasoning,
     )
@@ -78,6 +79,7 @@ class GenericAgent:
         model_name: str,
         model_provider: str,
         api_key: str,
+        base_url: str | None,
         reasoning: str | None,
         output_type: type[BaseModel] | None = None,
         mcp_servers: list[MCPServer] | None = None,
@@ -92,6 +94,7 @@ class GenericAgent:
         self.mcp_servers = mcp_servers
         self.input_guardrails: list[Any] = input_guardrails or []
         self.output_guardrails: list[Any] = output_guardrails or []
+        self.base_url = base_url
 
         # convert reasoning to the correct type
         if reasoning == "low":

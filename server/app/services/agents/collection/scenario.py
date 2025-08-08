@@ -5,7 +5,7 @@ from typing import List, Tuple
 from agents import Runner, gen_trace_id, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
-from app.models import Models, Personas, Providers, Agents
+from app.models import Agents, Models, Personas, Providers
 from app.services.agents.generic import GenericAgent
 from app.utils.document import get_document_info
 from app.utils.personas import get_persona_info
@@ -88,6 +88,7 @@ async def run_scenario_agent(
         temperature=scenario_agent.temperature,
         model_name=model.name,
         model_provider=provider.name,
+        base_url=provider.base_url,
         api_key=provider.api_key,
         reasoning=scenario_agent.reasoning,
         output_type=Scenario,

@@ -91,6 +91,7 @@ async def run_classify_agent(
         temperature=agent.temperature,
         model_name=model.name,
         model_provider=provider.name,
+        base_url=provider.base_url,
         api_key=provider.api_key,
         reasoning=agent.reasoning,
         output_type=Classify,

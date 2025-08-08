@@ -46,6 +46,7 @@ async def run_title_agent(
         temperature=agent.temperature,
         model_name=model.name,
         model_provider=provider.name,
+        base_url=provider.base_url,
         reasoning=agent.reasoning,
         api_key=provider.api_key,
     )
