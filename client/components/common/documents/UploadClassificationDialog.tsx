@@ -14,7 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -23,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DocumentType } from "@/types";
+import { inferMimeFromName } from "@/utils/mime-map";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { extractKnownTagsFromDocuments } from "@/utils/tags/search-tags";
 
@@ -116,7 +116,7 @@ export function UploadClassificationDialog({
     <Dialog open={open} onOpenChange={(val) => (!val ? onClose() : undefined)}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Classify documents before upload</DialogTitle>
+          <DialogTitle>Classify Documents Before Upload</DialogTitle>
           <DialogDescription>
             Choose a type and tags for each file. You can also apply choices to
             all files.
@@ -131,7 +131,6 @@ export function UploadClassificationDialog({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <Label>Default Type for ZIP</Label>
                 <Select
                   value={zipDefaults.type}
                   onValueChange={(v) =>
@@ -151,7 +150,6 @@ export function UploadClassificationDialog({
                 </Select>
               </div>
               <div>
-                <Label>Default Tags for ZIP</Label>
                 <TagSelector
                   value={zipDefaults.tags}
                   onChange={(tags) => setZipDefaults((p) => ({ ...p, tags }))}
@@ -162,14 +160,78 @@ export function UploadClassificationDialog({
           </div>
         )}
 
+        {/* Apply to all controls above the file list */}
+        <div className="rounded-md border p-3 bg-muted/40 mb-4">
+          <div className="text-sm font-medium mb-3">
+            Apply to all files below
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <Select onValueChange={(v) => applyTypeToAll(v as DocumentType)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TYPE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <TagSelector
+                value={[]}
+                onChange={(tags) => applyTagsToAll(tags)}
+                knownTags={knownTags}
+              />
+            </div>
+          </div>
+        </div>
+
         <div className="space-y-4 max-h-[50vh] overflow-auto pr-1">
           {files.map((file) => {
             const fc = perFile[file.name] ?? { type: "homework", tags: [] };
-            const isZip = file.name.toLowerCase().endsWith(".zip");
+            const mime = file.type || inferMimeFromName(file.name);
+            // gradient colors based on type (blue/purple theme) and mime
+            const typeColorMap: Record<DocumentType, string> = {
+              homework: "from-indigo-100",
+              project: "from-purple-100",
+              quiz: "from-indigo-200",
+              midterm: "from-violet-200",
+              lab: "from-blue-100",
+              lecture: "from-purple-200",
+              syllabus: "from-indigo-50",
+            };
+            const mimeToColor = (m: string) => {
+              const mm = m.toLowerCase();
+              if (mm.includes("pdf")) return "to-purple-200";
+              if (
+                mm.includes("word") ||
+                mm.includes("msword") ||
+                mm.includes("doc")
+              )
+                return "to-blue-200";
+              if (mm.startsWith("image/")) return "to-purple-300";
+              if (mm.includes("text")) return "to-indigo-200";
+              if (mm.includes("zip")) return "to-indigo-300";
+              if (
+                mm.includes("json") ||
+                mm.includes("yaml") ||
+                mm.includes("xml")
+              )
+                return "to-indigo-300";
+              return "to-violet-200";
+            };
+            const gradientBorderClass = `border-2 bg-white text-gray-800 border-gradient-to-br ${typeColorMap[fc.type]} ${mimeToColor(mime)}`;
             return (
-              <div key={file.name} className="rounded-md border p-3">
+              <div
+                key={file.name}
+                className={`rounded-md border p-3 ${gradientClass}`}
+              >
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium truncate mr-2">
+                  <div className="text-sm font-medium truncate mr-2 text-gray-900">
                     {file.name}
                   </div>
                   <Badge variant="secondary">
@@ -178,14 +240,6 @@ export function UploadClassificationDialog({
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                   <div>
-                    <Label>
-                      Type{" "}
-                      {isZip && (
-                        <span className="text-muted-foreground">
-                          (applies to ZIP file itself)
-                        </span>
-                      )}
-                    </Label>
                     <Select
                       value={fc.type}
                       onValueChange={(v) =>
@@ -216,7 +270,6 @@ export function UploadClassificationDialog({
                     </Select>
                   </div>
                   <div>
-                    <Label>Tags</Label>
                     <TagSelector
                       value={fc.tags}
                       onChange={(tags) =>
@@ -239,39 +292,8 @@ export function UploadClassificationDialog({
           })}
         </div>
 
-        <DialogFooter className="mt-4 flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => applyTypeToAll("homework")}
-            >
-              Reset types
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => applyTagsToAll([])}
-            >
-              Clear tags
-            </Button>
-            <div className="ml-auto flex items-center gap-2">
-              <Label className="text-sm">Apply type to all:</Label>
-              <Select onValueChange={(v) => applyTypeToAll(v as DocumentType)}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TYPE_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="flex items-center justify-end gap-2">
+        <DialogFooter className="mt-4">
+          <div className="flex items-center justify-end gap-2 w-full">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
