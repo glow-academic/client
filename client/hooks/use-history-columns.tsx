@@ -12,7 +12,7 @@ import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_atte
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import { isSimulationTimedOut } from "@/utils/simulation-utils";
+// Removed time-based timeout logic per requirements
 import { useQuery } from "@tanstack/react-query";
 import { Column, ColumnDef, Row } from "@tanstack/react-table";
 import { useMemo } from "react";
@@ -321,15 +321,18 @@ export function useHistoryColumns({
 
           // Ensure chats is an array
           const chatsArray = Array.isArray(chats) ? chats : [];
-
-          const completedChats =
-            chatsArray.filter((chat) => chat.completed).length || 0;
+          // Count only chats that are completed AND have a corresponding rubric/grade
+          const completedWithRubricCount = chatsArray.filter((chat) => {
+            if (!chat.completed) return false;
+            const grade = grades?.find((g) => g.simulationChatId === chat.id);
+            return Boolean(grade);
+          }).length;
           const totalChats = interactionIds?.length || chatsArray.length || 0;
 
           return (
             <div className="text-center">
               <span className="font-medium">
-                {completedChats}/{totalChats}
+                {completedWithRubricCount}/{totalChats}
               </span>
               <div className="text-xs text-muted-foreground">completed</div>
             </div>
@@ -342,11 +345,14 @@ export function useHistoryColumns({
 
           // Ensure chats is an array
           const chatsArray = Array.isArray(chats) ? chats : [];
-
-          const completedChats =
-            chatsArray.filter((chat) => chat.completed).length || 0;
+          // Only count chats that are completed AND have a corresponding rubric/grade
+          const completedWithRubricCount = chatsArray.filter((chat) => {
+            if (!chat.completed) return false;
+            const grade = grades?.find((g) => g.simulationChatId === chat.id);
+            return Boolean(grade);
+          }).length;
           const totalChats = interactionIds?.length || chatsArray.length || 0;
-          return totalChats > 0 ? completedChats / totalChats : 0;
+          return totalChats > 0 ? completedWithRubricCount / totalChats : 0;
         },
         filterFn: (row, id, value) => {
           if (!value || value.length === 0) return true;
@@ -427,24 +433,24 @@ export function useHistoryColumns({
           const chatsArray = Array.isArray(chats) ? chats : [];
           if (chatsArray.length === 0) return 0;
 
-          const chatGrades = chatsArray
+          // Only include chats that are completed AND have a rubric/grade
+          const gradedCompletedChatGrades = chatsArray
+            .filter((chat) => chat.completed)
             .map((chat) =>
               grades?.find((grade) => grade.simulationChatId === chat.id)
             )
             .filter(Boolean);
 
-          if (chatGrades.length === 0) return 0;
+          if (gradedCompletedChatGrades.length === 0) return 0;
 
-          const totalScore = chatGrades.reduce(
+          const totalScore = gradedCompletedChatGrades.reduce(
             (sum: number, grade) => sum + (grade?.score || 0),
             0
           );
-          return totalScore / chatGrades.length;
+          return totalScore / gradedCompletedChatGrades.length;
         },
         cell: ({ row }) => {
           const chats = row.original.scenarios;
-
-          const allChatsCompleted = chats.every((chat) => chat.completed);
           const expectedChats = row.original.interactionIds?.length;
 
           // Ensure chats is an array
@@ -453,36 +459,32 @@ export function useHistoryColumns({
             return <div className="text-muted-foreground">No chats</div>;
           }
 
-          const chatGrades = chatsArray
+          const completedChats = chatsArray.filter((chat) => chat.completed);
+          const gradedCompletedChatGrades = completedChats
             .map((chat: SimulationChat) =>
               grades?.find((grade) => grade.simulationChatId === chat.id)
             )
             .filter(Boolean);
 
-          // Check if simulation timed out
-          const timedOutSimulation = simulations?.find(
-            (s) => s.id === row.original.simulationId
-          );
-          const isTimedOut = isSimulationTimedOut({
-            attemptCreatedAt: row.original.createdAt,
-            simulationTimeLimit: timedOutSimulation?.timeLimit || null,
-          });
+          // Determine if all chats are completed based on expected count
+          const totalExpected = expectedChats || chatsArray.length;
+          const allChatsCompleted = completedChats.length === totalExpected;
 
-          // Only show "Incomplete" if we have timed out and either not all chats are completed or expectedChats !== chats.length
-          if (
-            isTimedOut &&
-            (!allChatsCompleted || expectedChats !== chats.length)
-          ) {
+          // Show Incomplete if all chats are completed but no rubrics exist
+          if (allChatsCompleted && gradedCompletedChatGrades.length === 0) {
             return <div className="text-red-500 font-medium">Incomplete</div>;
           }
 
-          // return <div className="text-muted-foreground">Not graded</div>;
+          // If no graded chats, show Not graded
+          if (gradedCompletedChatGrades.length === 0) {
+            return <div className="text-muted-foreground">Not graded</div>;
+          }
 
-          const totalScore = chatGrades.reduce(
+          const totalScore = gradedCompletedChatGrades.reduce(
             (sum: number, grade) => sum + (grade?.score || 0),
             0
           );
-          const averageScore = totalScore / chatGrades.length;
+          const averageScore = totalScore / gradedCompletedChatGrades.length;
 
           // Calculate percentage based on rubric total points
           // Find the rubric for this simulation
@@ -526,34 +528,29 @@ export function useHistoryColumns({
             return value.includes("not-graded");
           }
 
-          const chatGrades = chatsArray
+          const completedChats = chatsArray.filter((chat) => chat.completed);
+          const gradedCompletedChatGrades = completedChats
             .map((chat: SimulationChat) =>
               grades?.find((grade) => grade.simulationChatId === chat.id)
             )
             .filter(Boolean);
 
-          if (chatGrades.length === 0) {
-            // Check if simulation timed out
-            const simulation = simulations?.find(
-              (s) => s.id === row.original.simulationId
-            );
-            const isTimedOut = isSimulationTimedOut({
-              attemptCreatedAt: row.original.createdAt,
-              simulationTimeLimit: simulation?.timeLimit || null,
-            });
+          const totalExpected =
+            row.original.interactionIds?.length || chatsArray.length;
+          const allChatsCompleted = completedChats.length === totalExpected;
 
-            if (isTimedOut) {
+          if (gradedCompletedChatGrades.length === 0) {
+            if (allChatsCompleted) {
               return value.includes("incomplete");
             }
-
             return value.includes("not-graded");
           }
 
-          const totalScore = chatGrades.reduce(
+          const totalScore = gradedCompletedChatGrades.reduce(
             (sum: number, grade) => sum + (grade?.score || 0),
             0
           );
-          const averageScore = totalScore / chatGrades.length;
+          const averageScore = totalScore / gradedCompletedChatGrades.length;
 
           // Calculate percentage based on rubric total points
           const simulation = simulations?.find(
@@ -583,22 +580,21 @@ export function useHistoryColumns({
           const attempt = row.original;
           const chats = attempt.scenarios;
 
-          const allChatsCompleted = chats.every((chat) => chat.completed);
           const expectedChats = attempt.interactionIds?.length;
+          const chatsArray = Array.isArray(chats) ? chats : [];
+          const completedChats = chatsArray.filter((chat) => chat.completed);
+          const gradedCompletedChatGrades = completedChats
+            .map((chat: SimulationChat) =>
+              grades?.find((grade) => grade.simulationChatId === chat.id)
+            )
+            .filter(Boolean);
 
-          // Check if simulation timed out
-          const timedOutSimulation = simulations?.find(
-            (s) => s.id === attempt.simulationId
-          );
-          const isTimedOut = isSimulationTimedOut({
-            attemptCreatedAt: attempt.createdAt,
-            simulationTimeLimit: timedOutSimulation?.timeLimit || null,
-          });
+          const totalExpected = expectedChats || chatsArray.length;
+          const allChatsCompleted = completedChats.length === totalExpected;
 
-          // Determine if simulation is incomplete based on the same logic as the score column
+          // New definition: incomplete when all chats are completed but none have a rubric
           const isIncomplete =
-            isTimedOut &&
-            (!allChatsCompleted || expectedChats !== chats.length);
+            allChatsCompleted && gradedCompletedChatGrades.length === 0;
 
           return (
             <DataTableRowActions
@@ -615,7 +611,15 @@ export function useHistoryColumns({
     ];
 
     return attemptColumns;
-  }, [profileOptions, grades, simulations, scenarios, validRubrics, profileId, showPractice]);
+  }, [
+    profileOptions,
+    grades,
+    simulations,
+    scenarios,
+    validRubrics,
+    profileId,
+    showPractice,
+  ]);
 
   // Use enhanced attempts data
   let data: unknown[] = enhancedAttempts || [];
