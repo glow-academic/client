@@ -143,6 +143,7 @@ export function DocumentPicker({
         mimeType: "",
         classified: false,
         fileId: null,
+        tags: [],
       });
     }
     setOpen(false);
@@ -186,7 +187,7 @@ export function DocumentPicker({
   };
 
   const getSearchNotFoundMessage = () => {
-    return `No ${label} found.`;
+    return `No ${label} found. Try searching by name or tag`;
   };
 
   // Get document type icon
@@ -324,7 +325,7 @@ export function DocumentPicker({
                 )}
                 <CommandGroup heading="Documents">
                   {documents
-                    .filter((document) => document.active) // Only show active documents
+                    .filter((document) => document.active)
                     .map((document) => (
                       <DocumentItem
                         key={document.id}
@@ -421,6 +422,12 @@ function DocumentItem({
       <div className="flex items-center gap-2 w-full">
         <span className="text-lg">{getDocumentTypeIcon(document.type)}</span>
         <span className="flex-1 truncate">{document.name}</span>
+        {/* Hidden tags text to improve search by tags */}
+        {Array.isArray((document as unknown as { tags?: string[] }).tags) && (
+          <span className="sr-only">
+            {(document as unknown as { tags?: string[] }).tags?.join(" ")}
+          </span>
+        )}
         <Check
           className={cn("ml-auto", isSelected ? "opacity-100" : "opacity-0")}
         />

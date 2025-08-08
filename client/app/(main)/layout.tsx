@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
 import { AnalyticsFilters } from "@/components/common/analytics/AnalyticsFilters";
+import UploadClassificationDialog from "@/components/common/documents/UploadClassificationDialog";
 import ChatDialog from "@/components/common/home/ChatDialog";
 import ChatFab from "@/components/common/home/ChatFab";
 import ChatWidget from "@/components/common/home/ChatWidget";
@@ -64,6 +65,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Upload state - track multiple uploads
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [activeUploads, setActiveUploads] = useState<
     Map<
       string,
@@ -80,14 +83,16 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
-      // Process all selected files in parallel
-      Array.from(files).forEach((file) => {
-        uploadFile(file);
-      });
+      setPendingFiles(Array.from(files));
+      setShowUploadDialog(true);
     }
   };
 
-  const uploadFile = async (file: File) => {
+  const uploadFile = async (
+    file: File,
+    classification?: { type: import("@/types").DocumentType; tags: string[] },
+    zipDefaults?: { type: import("@/types").DocumentType; tags: string[] }
+  ) => {
     // Create a unique file ID for this upload
     const fileId = uuidv4();
 
@@ -203,6 +208,41 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                 }
                 return newMap;
               });
+
+              // Apply client-side classification (type/tags)
+              try {
+                if (!isZipFile && result.document_id && classification) {
+                  const { updateDocument } = await import(
+                    "@/utils/mutations/documents/update-document"
+                  );
+                  await updateDocument(result.document_id, {
+                    type: classification.type,
+                    tags: classification.tags,
+                    classified: true,
+                  });
+                }
+                if (
+                  isZipFile &&
+                  Array.isArray(result.documents) &&
+                  zipDefaults
+                ) {
+                  const { updateDocument } = await import(
+                    "@/utils/mutations/documents/update-document"
+                  );
+                  for (const d of result.documents) {
+                    await updateDocument(d.id, {
+                      type: zipDefaults.type,
+                      tags: zipDefaults.tags,
+                      classified: true,
+                    });
+                  }
+                }
+              } catch (classificationError) {
+                logError(
+                  "Post-upload classification update failed:",
+                  classificationError
+                );
+              }
 
               // Invalidate documents queries to refresh the UI
               await queryClient.invalidateQueries({ queryKey: ["documents"] });
@@ -604,6 +644,28 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
             {actionButton && <div className="px-4">{actionButton}</div>}
           </header>
+          {/* Upload classification dialog */}
+          <UploadClassificationDialog
+            open={showUploadDialog}
+            files={pendingFiles}
+            onClose={() => {
+              setShowUploadDialog(false);
+              setPendingFiles([]);
+              if (fileInputRef.current) fileInputRef.current.value = "";
+            }}
+            onConfirm={async (perFile, zipDefaults) => {
+              setShowUploadDialog(false);
+              // Kick off uploads with provided classifications
+              for (const file of pendingFiles) {
+                const classification = perFile[file.name];
+                // Fire without awaiting to allow parallel uploads
+                (async () => {
+                  await uploadFile(file, classification, zipDefaults);
+                })();
+              }
+              setPendingFiles([]);
+            }}
+          />
           <div
             className={`flex flex-1 flex-col gap-4 p-4 pt-0 ${
               shouldShowChatComponents && canShowChatComponents ? "pb-18" : ""

@@ -48,6 +48,7 @@ export interface DocumentsDataTableProps {
   onDocumentSelect: (documentId: string, checked: boolean) => void;
   onSelectAll: (checked: boolean) => void;
   onBulkDelete: () => void;
+  onBulkEdit: () => void;
 }
 
 export function DocumentsDataTable({
@@ -67,6 +68,7 @@ export function DocumentsDataTable({
   onDocumentSelect,
   onSelectAll,
   onBulkDelete,
+  onBulkEdit,
 }: DocumentsDataTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([
     {
@@ -211,6 +213,7 @@ export function DocumentsDataTable({
         onBulkDelete={onBulkDelete}
         canDeleteDocument={canDelete}
         selectedDocuments={selectedDocuments}
+        onBulkEdit={onBulkEdit}
       />
 
       {viewMode === "list" ? (

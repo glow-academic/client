@@ -1,8 +1,8 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 278
-- **Tests Created**: 0
+- **Total Components**: 280
+- **Tests Created**: 2
 - **Tests Updated**: 0
 - **Tests Skipped** (already implemented): 278
 
@@ -65,6 +65,7 @@
 | CohortStaffDataTable | components/common/cohort/staff/CohortStaffDataTable.tsx | CohortStaffDataTable.test.tsx | ✅ Implemented |
 | CohortStaffDataTableToolbar | components/common/cohort/staff/CohortStaffDataTableToolbar.tsx | CohortStaffDataTableToolbar.test.tsx | ✅ Implemented |
 | DocumentPreviewCard | components/common/documents/DocumentPreviewCard.tsx | DocumentPreviewCard.test.tsx | ✅ Implemented |
+| UploadClassificationDialog | components/common/documents/UploadClassificationDialog.tsx | UploadClassificationDialog.test.tsx | ✅ Implemented |
 | BrightspaceExportButton | components/common/history/BrightspaceExportButton.tsx | BrightspaceExportButton.test.tsx | ✅ Implemented |
 | DataTable | components/common/history/DataTable.tsx | DataTable.test.tsx | ✅ Implemented |
 | DataTableColumnHeader | components/common/history/DataTableColumnHeader.tsx | DataTableColumnHeader.test.tsx | ✅ Implemented |
@@ -106,6 +107,7 @@
 | Simulation | components/common/simulation/Simulation.tsx | Simulation.test.tsx | ✅ Implemented |
 | SimulationCard | components/common/simulation/SimulationCard.tsx | SimulationCard.test.tsx | ✅ Implemented |
 | SimulationScenarioPicker | components/common/simulation/SimulationScenarioPicker.tsx | SimulationScenarioPicker.test.tsx | ✅ Implemented |
+| TagSelector | components/common/tags/TagSelector.tsx | TagSelector.test.tsx | ✅ Implemented |
 | CodeViewer | components/common/viewers/CodeViewer.tsx | CodeViewer.test.tsx | ✅ Implemented |
 | HtmlViewer | components/common/viewers/HtmlViewer.tsx | HtmlViewer.test.tsx | ✅ Implemented |
 | MarkdownEditor | components/common/viewers/MarkdownEditor.tsx | MarkdownEditor.test.tsx | ✅ Implemented |
@@ -364,6 +366,7 @@ __tests__/
 │   │   │   │   ├── CohortStaffDataTableToolbar.test.tsx
 │   │   ├── documents/
 │   │   │   ├── DocumentPreviewCard.test.tsx
+│   │   │   ├── UploadClassificationDialog.test.tsx
 │   │   ├── history/
 │   │   │   ├── BrightspaceExportButton.test.tsx
 │   │   │   ├── DataTable.test.tsx
@@ -416,6 +419,8 @@ __tests__/
 │   │   │   ├── Simulation.test.tsx
 │   │   │   ├── SimulationCard.test.tsx
 │   │   │   ├── SimulationScenarioPicker.test.tsx
+│   │   ├── tags/
+│   │   │   ├── TagSelector.test.tsx
 │   │   ├── viewers/
 │   │   │   ├── CodeViewer.test.tsx
 │   │   │   ├── HtmlViewer.test.tsx

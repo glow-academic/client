@@ -45,8 +45,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Document as DocumentObject, DocumentType } from "@/types";
+import { documents as documentsTable } from "@/utils/drizzle/schema";
 import { UploadCloud } from "lucide-react";
 
+import TagSelector from "@/components/common/tags/TagSelector";
 import { useDocumentColumns } from "@/hooks/use-document-columns";
 import { deleteDocument } from "@/utils/api/documents/delete-document";
 import { logError, logInfo } from "@/utils/logger";
@@ -63,6 +65,7 @@ export default function Documents() {
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const [editingDocument, setEditingDocument] = useState<DocumentObject | null>(
     null
@@ -72,6 +75,11 @@ export default function Documents() {
   );
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  const [bulkType, setBulkType] = useState<DocumentType | "__keep__">(
+    "__keep__"
+  );
+  const [bulkTags, setBulkTags] = useState<string[]>([]);
 
   // Fetch data with optimized caching
   const { data: documents = [], isLoading: isLoadingDocuments } = useQuery({
@@ -156,6 +164,15 @@ export default function Documents() {
   const handleBulkDelete = () => {
     if (selectedDocuments.length > 0) {
       setShowDeleteDialog(true);
+    }
+  };
+
+  // Handle bulk edit
+  const handleBulkEdit = () => {
+    if (selectedDocuments.length > 0) {
+      setBulkType("__keep__");
+      setBulkTags([]);
+      setShowBulkEditDialog(true);
     }
   };
 
@@ -257,6 +274,36 @@ export default function Documents() {
     }
   };
 
+  // Execute bulk update
+  type DocumentInsert = typeof documentsTable.$inferInsert;
+
+  const handleBulkUpdate = async () => {
+    if (selectedDocuments.length === 0) return;
+    setIsBulkUpdating(true);
+    try {
+      const { updateDocument } = await import(
+        "@/utils/mutations/documents/update-document"
+      );
+      for (const id of selectedDocuments) {
+        const updates: Partial<DocumentInsert> = {};
+        if (bulkType !== "__keep__") updates.type = bulkType;
+        if (bulkTags.length > 0) updates.tags = bulkTags;
+        if (Object.keys(updates).length > 0) {
+          await updateDocument(id, updates);
+        }
+      }
+      toast.success("Documents updated successfully");
+      setShowBulkEditDialog(false);
+      setSelectedDocuments([]);
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+    } catch (error) {
+      logError("Error bulk updating documents:", error);
+      toast.error("Failed to update documents");
+    } finally {
+      setIsBulkUpdating(false);
+    }
+  };
+
   // Render document card for grid view
   const renderDocumentCard = (document: DocumentObject) => {
     const canDelete = canDeleteDocument(document.id);
@@ -320,6 +367,7 @@ export default function Documents() {
           onDocumentSelect={handleDocumentSelect}
           onSelectAll={handleSelectAll}
           onBulkDelete={handleBulkDelete}
+          onBulkEdit={handleBulkEdit}
         />
       )}
 
@@ -370,6 +418,21 @@ export default function Documents() {
                 </Select>
               </div>
 
+              <div>
+                <Label htmlFor="tags">Tags</Label>
+                <TagSelector
+                  value={editingDocument.tags ?? []}
+                  onChange={(tags) =>
+                    setEditingDocument((prev) =>
+                      prev ? { ...prev, tags } : null
+                    )
+                  }
+                  knownTags={Array.from(
+                    new Set(documents.flatMap((d) => d.tags ?? []))
+                  )}
+                />
+              </div>
+
               <div className="flex items-center space-x-2">
                 <Switch
                   id="active"
@@ -390,6 +453,66 @@ export default function Documents() {
             </Button>
             <Button onClick={handleUpdate} disabled={isUpdating}>
               {isUpdating ? "Updating..." : "Update"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Edit Dialog */}
+      <Dialog open={showBulkEditDialog} onOpenChange={setShowBulkEditDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Edit {selectedDocuments.length} document
+              {selectedDocuments.length > 1 ? "s" : ""}
+            </DialogTitle>
+            <DialogDescription>
+              Choose the fields to update. Leave a field as-is if you do not
+              want to change it for all selected documents.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Type</Label>
+              <Select
+                value={bulkType}
+                onValueChange={(value) =>
+                  setBulkType(value as DocumentType | "__keep__")
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Keep existing" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__keep__">Keep existing</SelectItem>
+                  {typeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Tags</Label>
+              <TagSelector
+                value={bulkTags}
+                onChange={setBulkTags}
+                knownTags={Array.from(
+                  new Set(documents.flatMap((d) => d.tags ?? []))
+                )}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowBulkEditDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleBulkUpdate} disabled={isBulkUpdating}>
+              {isBulkUpdating ? "Updating..." : "Apply Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -26,6 +26,7 @@ export interface DocumentsDataTableToolbarProps {
   onBulkDelete: () => void;
   canDeleteDocument: (documentId: string) => boolean;
   selectedDocuments: string[];
+  onBulkEdit: () => void;
 }
 
 export function DocumentsDataTableToolbar({
@@ -39,6 +40,7 @@ export function DocumentsDataTableToolbar({
   onBulkDelete,
   canDeleteDocument,
   selectedDocuments,
+  onBulkEdit,
 }: DocumentsDataTableToolbarProps) {
   const isFiltered = table.getState().columnFilters.length > 0;
 
@@ -50,7 +52,7 @@ export function DocumentsDataTableToolbar({
 
   // Calculate deletable documents count
   const deletableCount = selectedDocuments.filter((documentId) =>
-    canDeleteDocument(documentId),
+    canDeleteDocument(documentId)
   ).length;
 
   return (
@@ -95,39 +97,49 @@ export function DocumentsDataTableToolbar({
         )}
       </div>
       <div className="flex items-center space-x-2">
-        {/* Bulk delete button - only show in list view where selection is available */}
-        {viewMode === "list" &&
-          selectedCount > 0 &&
-          (deletableCount === 0 ? (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild={deletableCount !== 0}>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="h-8"
-                    disabled={true}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete {deletableCount} of {selectedCount}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>All documents are currently in use</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ) : (
+        {/* Bulk edit & delete - only show in list view where selection is available */}
+        {viewMode === "list" && selectedCount > 0 && (
+          <>
             <Button
-              variant="destructive"
+              variant="outline"
               size="sm"
-              onClick={onBulkDelete}
+              onClick={onBulkEdit}
               className="h-8"
             >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete {deletableCount} of {selectedCount}
+              Edit {selectedCount}
             </Button>
-          ))}
+            {deletableCount === 0 ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild={deletableCount !== 0}>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="h-8"
+                      disabled={true}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete {deletableCount} of {selectedCount}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>All documents are currently in use</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={onBulkDelete}
+                className="h-8"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete {deletableCount} of {selectedCount}
+              </Button>
+            )}
+          </>
+        )}
 
         {/* View mode toggle */}
         <div className="flex items-center space-x-1 border rounded-md">
