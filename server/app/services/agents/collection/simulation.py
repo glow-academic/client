@@ -7,18 +7,14 @@ from agents import Runner, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
-from app.models import (
-    Documents,
-    Models,
-    Personas,
-    Providers,
-    Scenarios,
-    SimulationAttempts,
-    SimulationChats,
-    SimulationMessages,
-)
+from app.models import (Documents, Models, Personas, Providers, Scenarios,
+                        SimulationAttempts, SimulationChats,
+                        SimulationMessages)
+from app.services.agents.collection.guardrail import (get_input_guardrails,
+                                                      get_output_guardrails)
 from app.services.agents.generic import GenericAgent
-from app.utils.chat import get_chat_scenario, get_simulation_conversation_history
+from app.utils.chat import (get_chat_scenario,
+                            get_simulation_conversation_history)
 from fastapi import Depends
 from openai.types.responses import ResponseTextDeltaEvent
 from sqlmodel import Session, select
@@ -171,6 +167,9 @@ async def _handle_simulation_chat(
     if not provider:
         raise ValueError(f"Provider with ID {model.provider_id} not found")
 
+    input_guards = get_input_guardrails(session)
+    output_guards = get_output_guardrails(session)
+
     agent_instance = GenericAgent(
         agent_name=persona.name,
         system_prompt=persona.system_prompt,
@@ -179,6 +178,8 @@ async def _handle_simulation_chat(
         model_provider=provider.name,
         reasoning=persona.reasoning,
         api_key=provider.api_key,
+        input_guardrails=input_guards,
+        output_guardrails=output_guards,
     )
 
     with trace(chat.title, trace_id=chat.trace_id, group_id=str(attempt.id)):

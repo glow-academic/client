@@ -1,5 +1,5 @@
 import uuid
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator, cast
 
 from agents import Agent, ModelSettings, Runner, trace
 from agents.extensions.models.litellm_model import LitellmModel
@@ -81,6 +81,8 @@ class GenericAgent:
         reasoning: str | None,
         output_type: type[BaseModel] | None = None,
         mcp_servers: list[MCPServer] | None = None,
+        input_guardrails: list[Any] | None = None,
+        output_guardrails: list[Any] | None = None,
     ):
         self.agent_name = agent_name
         self.system_prompt = system_prompt
@@ -88,6 +90,8 @@ class GenericAgent:
         self.model = model_provider + "/" + model_name
         self.output_type = output_type
         self.mcp_servers = mcp_servers
+        self.input_guardrails: list[Any] = input_guardrails or []
+        self.output_guardrails: list[Any] = output_guardrails or []
 
         # convert reasoning to the correct type
         if reasoning == "low":
@@ -109,6 +113,7 @@ class GenericAgent:
             model=LitellmModel(
                 model=self.model,
                 api_key=self.api_key,
+                base_url=self.base_url,
             ),
             model_settings=ModelSettings(
                 temperature=self.temperature,
@@ -117,4 +122,6 @@ class GenericAgent:
             ),
             output_type=self.output_type,
             mcp_servers=self.mcp_servers or [],
+            input_guardrails=self.input_guardrails,  # type: ignore[arg-type]
+            output_guardrails=self.output_guardrails,  # type: ignore[arg-type]
         )

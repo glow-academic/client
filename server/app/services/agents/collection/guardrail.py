@@ -1,10 +1,11 @@
 import logging
-import uuid
-from typing import Any
+from typing import Any, Callable, List, Union
 
-from agents import Runner, trace
+import agents as agents_sdk  # type: ignore
+from agents import GuardrailFunctionOutput, Runner
+from agents.items import TResponseInputItem
 from app.db import get_session
-from app.models import Agents, Documents, Models, Providers
+from app.models import Agents, Models, Providers
 from app.services.agents.generic import GenericAgent
 from fastapi import Depends
 from pydantic import BaseModel
@@ -13,157 +14,68 @@ from sqlmodel import Session, select
 logger = logging.getLogger(__name__)
 
 
-class Guard(BaseModel):
-    homeworks: list[str] = []
-    projects: list[str] = []
-    quizzes: list[str] = []
-    midterms: list[str] = []
-    labs: list[str] = []
-    lectures: list[str] = []
-    syllabi: list[str] = []
+class GuardStudentResponse(BaseModel):
+    proper: bool
+    reason: str
 
 
-async def run_classify_agent(
-    document_ids: list[uuid.UUID],
-    test: bool = False,
-    session: Session = Depends(get_session),
-) -> dict[str, Any]:
-    """
-    This function is used to run the classify agent.
-    Returns a dictionary with classification results.
+def _build_guardrail_agent(session: Session) -> GenericAgent:
+    """Create the internal agent that powers the guardrail from DB-configured Agent named 'Guardrail'."""
+    agent_row = session.exec(select(Agents).where(Agents.name == "Guardrail")).one()
+    if not agent_row:
+        raise ValueError("Guardrail agent not found")
 
-    Args:
-        document_ids: The IDs of the documents to classify
-        test: Whether to run the agent in test mode
-
-    Returns:
-        A dictionary containing classification results and statistics.
-    """
-
-    # find agent with name of "Classify"
-    agent = session.exec(select(Agents).where(Agents.name == "Classify")).one()
-    if not agent:
-        raise ValueError("Classify agent not found")
-
-    # get all the documents for the class that haven't been classified yet
-    # Note: Since there's no 'classified' field in the model, we'll classify all documents
-    documents = session.exec(
-        select(Documents).where(Documents.id.in_(document_ids))
-    ).all()
-
-    if not documents:
-        logger.info(f"No documents found for document_ids {document_ids}")
-        return {
-            "success": True,
-            "message": "No documents to classify",
-            "classified_count": 0,
-            "total_count": 0,
-        }
-
-    # Format documents for the agent: "1: document_name.ext\n2: document_name.ext\n..."
-    document_list = []
-    document_mapping = {}
-    for i, doc in enumerate(documents, 1):
-        document_list.append(f"{i}: {doc.name}")
-        document_mapping[str(i)] = doc
-
-    formatted_documents = "\n".join(document_list)
-
-    logger.info(
-        f"Classifying {len(documents)} documents for document_ids {document_ids}"
-    )
-
-    # getting the model from the agent's model_id
-    model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
+    model = session.exec(select(Models).where(Models.id == agent_row.model_id)).one()
     if not model:
-        raise ValueError(f"Model with ID {agent.model_id} not found")
+        raise ValueError(f"Model with ID {agent_row.model_id} not found")
 
-    # getting the provider from the model's provider_id
-    provider = session.exec(
-        select(Providers).where(Providers.id == model.provider_id)
-    ).one()
+    provider = session.exec(select(Providers).where(Providers.id == model.provider_id)).one()
     if not provider:
         raise ValueError(f"Provider with ID {model.provider_id} not found")
 
-    classify_agent = GenericAgent(
-        agent_name=agent.name,
-        system_prompt=agent.system_prompt,
-        temperature=agent.temperature,
+    return GenericAgent(
+        agent_name=agent_row.name,
+        system_prompt=agent_row.system_prompt,
+        temperature=agent_row.temperature,
         model_name=model.name,
         model_provider=provider.name,
         api_key=provider.api_key,
-        reasoning=agent.reasoning,
-        output_type=Classify,
+        reasoning=agent_row.reasoning,
+        output_type=GuardStudentResponse,
     )
 
-    try:
-        with trace(f"Classification for {len(document_ids)} documents"):
-            if test:
-                # mark all documents as homeworks
-                classification = Classify(
-                    homeworks=[str(i) for i in range(1, len(documents) + 1)],
-                    projects=[],
-                    quizzes=[],
-                    midterms=[],
-                    labs=[],
-                    lectures=[],
-                    syllabi=[],
-                )
-            else:
-                result = await Runner.run(
-                    classify_agent.agent(), input=formatted_documents
-                )
-                classification = result.final_output_as(Classify)
 
-        # Update the type of all the mapped documents
-        classified_count = 0
+def get_input_guardrails(
+    session: Session = Depends(get_session),
+) -> List[Any]:
+    """Return a list of input guardrails suitable for attaching to an Agent."""
+    guardrail_agent = _build_guardrail_agent(session)
 
-        # Process each category
-        for category, doc_numbers in classification.model_dump().items():
-            if doc_numbers:  # Only process if there are documents in this category
-                for doc_num in doc_numbers:
-                    if doc_num in document_mapping:
-                        document = document_mapping[doc_num]
-                        # Map category names to document types
-                        type_mapping = {
-                            "homeworks": "homework",
-                            "projects": "project",
-                            "quizzes": "quiz",
-                            "midterms": "midterm",
-                            "labs": "lab",
-                            "lectures": "lecture",
-                            "syllabi": "syllabus",
-                        }
-
-                        new_type = type_mapping.get(category, "homework")
-                        if document.type != new_type:
-                            document.type = new_type
-                            session.add(document)
-                            classified_count += 1
-                            logger.info(
-                                f"Updated document '{document.name}' to type '{new_type}'"
-                            )
-
-        session.commit()
-
-        logger.info(
-            f"Successfully classified {classified_count} documents for document_ids {document_ids}"
+    async def _input_guard(ctx: Any, agent: Any, input: Any) -> GuardrailFunctionOutput:
+        result = await Runner.run(guardrail_agent.agent(), input, context=ctx.context)
+        output = result.final_output_as(GuardStudentResponse)
+        return GuardrailFunctionOutput(
+            output_info=output, tripwire_triggered=not output.proper
         )
 
-        return {
-            "success": True,
-            "message": f"Successfully classified {classified_count} documents",
-            "classified_count": classified_count,
-            "total_count": len(documents),
-            "classification_results": classification.model_dump(),
-        }
+    input_guardrail_fn = getattr(agents_sdk, "input_guardrail")  # type: ignore[attr-defined]
+    input_guard = input_guardrail_fn(_input_guard)
+    return [input_guard]
 
-    except Exception as e:
-        logger.error(f"Error during classification: {str(e)}")
-        session.rollback()
-        return {
-            "success": False,
-            "message": f"Classification failed: {str(e)}",
-            "classified_count": 0,
-            "total_count": len(documents),
-        }
+
+def get_output_guardrails(
+    session: Session = Depends(get_session),
+) -> List[Any]:
+    """Return a list of output guardrails suitable for attaching to an Agent."""
+    guardrail_agent = _build_guardrail_agent(session)
+
+    async def _output_guard(ctx: Any, agent: Any, output: Any) -> GuardrailFunctionOutput:
+        result = await Runner.run(
+            guardrail_agent.agent(), getattr(output, "response", str(output)), context=ctx.context
+        )
+        out = result.final_output_as(GuardStudentResponse)
+        return GuardrailFunctionOutput(output_info=out, tripwire_triggered=not out.proper)
+
+    output_guardrail_fn = getattr(agents_sdk, "output_guardrail")  # type: ignore[attr-defined]
+    output_guard = output_guardrail_fn(_output_guard)
+    return [output_guard]

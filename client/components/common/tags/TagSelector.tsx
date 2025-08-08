@@ -123,7 +123,7 @@ export function TagSelector({
             {showClearAll && value.length > 0 && (
               <Button
                 type="button"
-                variant="ghost"
+                variant="secondary"
                 disabled={disabled}
                 onClick={() => onChange([])}
               >

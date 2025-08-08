@@ -402,7 +402,7 @@ export default function Documents() {
           </DialogHeader>
           {editingDocument && (
             <div className="space-y-4">
-              <div>
+              <div className="flex flex-col gap-2">
                 <Label htmlFor="name">Name</Label>
                 <Input
                   id="name"
@@ -415,7 +415,20 @@ export default function Documents() {
                 />
               </div>
 
-              <div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="active">Document Active</Label>
+                <Switch
+                  id="active"
+                  checked={editingDocument.active}
+                  onCheckedChange={(checked) =>
+                    setEditingDocument((prev) =>
+                      prev ? { ...prev, active: checked } : null
+                    )
+                  }
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
                 <Label htmlFor="type">Type</Label>
                 <Select
                   value={editingDocument.type}
@@ -438,7 +451,7 @@ export default function Documents() {
                 </Select>
               </div>
 
-              <div>
+              <div className="flex flex-col gap-2">
                 <Label htmlFor="tags">Tags</Label>
                 <TagSelector
                   value={editingDocument.tags ?? []}
@@ -453,19 +466,6 @@ export default function Documents() {
                   badgesPosition="below"
                   showClearAll
                 />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="active"
-                  checked={editingDocument.active}
-                  onCheckedChange={(checked) =>
-                    setEditingDocument((prev) =>
-                      prev ? { ...prev, active: checked } : null
-                    )
-                  }
-                />
-                <Label htmlFor="active">Active</Label>
               </div>
             </div>
           )}
@@ -494,7 +494,7 @@ export default function Documents() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
+            <div className="flex flex-col gap-2">
               <Label>Type</Label>
               <Select
                 value={bulkType}
@@ -515,7 +515,7 @@ export default function Documents() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
+            <div className="flex flex-col gap-2">
               <Label>Tags</Label>
               <TagSelector
                 value={bulkTags}
