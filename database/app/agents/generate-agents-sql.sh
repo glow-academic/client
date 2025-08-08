@@ -12,44 +12,13 @@ SCENARIO_PROMPT=$(cat "$(dirname "$0")/prompts/scenario.md" | sed "s/'/''/g")
 CLASSIFY_PROMPT=$(cat "$(dirname "$0")/prompts/classify.md" | sed "s/'/''/g")
 TITLE_PROMPT=$(cat "$(dirname "$0")/prompts/title.md" | sed "s/'/''/g")
 
-# Generate the SQL file
-cat > "$(dirname "$0")/init.sql" << EOF
--- Enable the gen_random_uuid() function
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+# Resolve target path to database/seed/default/agents.sql
+TARGET_DIR=$(cd "$SCRIPT_DIR/../../seed/default" && pwd)
+mkdir -p "$TARGET_DIR"
+TARGET_FILE="$TARGET_DIR/agents.sql"
 
--- ============================================================================
--- TABLE DEFINITIONS
--- ============================================================================
-
-CREATE TYPE reasoning_effort AS ENUM ('low', 'medium', 'high');
-
-CREATE TABLE personas (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  name       TEXT        NOT NULL,
-  description TEXT        NOT NULL,
-  system_prompt     TEXT        NOT NULL,
-  temperature  REAL     NOT NULL, -- 0.0-1.0
-  default_persona      BOOLEAN     NOT NULL DEFAULT FALSE,
-  color TEXT        NOT NULL, -- hex color code
-  icon TEXT        NOT NULL, -- icon name, in Lucide Icons
-  model_id UUID REFERENCES models(id),
-  reasoning reasoning_effort DEFAULT NULL,
-  active BOOLEAN NOT NULL DEFAULT FALSE
-);
-
-CREATE TABLE agents (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  name       TEXT        NOT NULL,
-  description TEXT        NOT NULL,
-  system_prompt     TEXT        NOT NULL,
-  temperature  REAL     NOT NULL, -- 0.0-1.0
-  model_id UUID REFERENCES models(id),
-  reasoning reasoning_effort DEFAULT NULL
-);
+# Write ONLY insert statements
+cat > "$TARGET_FILE" << EOF
 -- Insert Core Student Agents (Essential for testing)
 INSERT INTO personas (id, name, description, system_prompt, temperature, default_persona, color, icon, model_id, reasoning, active) VALUES
   ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive','Pushes back on your ideas and challenges assumptions.', '$AGGRESSIVE_PROMPT', 0.0, true, '#ef4444', 'Zap', '33333333-cccc-cccc-cccc-333333333333', 'low', true),
@@ -86,4 +55,4 @@ INSERT INTO agents (id, name, description, system_prompt, temperature, model_id,
 
 EOF
 
-echo "Generated init.sql with prompts from markdown files" 
+echo "Generated agents.sql with prompts from markdown files" 

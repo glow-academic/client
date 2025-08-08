@@ -11,9 +11,17 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- 1. Independent tables (no foreign key dependencies)
 \i app/users/init.sql
+\i seed/default/users.sql
+
 \i app/models/init.sql
+\i seed/default/models.sql
+
 \i app/documents/init.sql
+\i seed/default/documents.sql
+
 \i app/rubrics/init.sql
+\i seed/default/rubrics.sql
+
 \i app/system/init.sql
 
 -- 2. Assistant tables
@@ -21,15 +29,19 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- 3. Agents
 \i app/agents/init.sql
+\i seed/default/agents.sql
 
 -- 4. Tables that depend on agents (scenarios references agents)
 \i app/scenarios/init.sql
+\i seed/default/scenarios.sql
 
 -- 5. Tables that depend on multiple previous tables
 \i app/simulations/init.sql
+\i seed/default/simulations.sql
 
 -- 6. Tables that depend on multiple previous tables
 \i app/cohorts/init.sql
+\i seed/default/cohorts.sql
 
 -- ============================================================================
 -- COMPLETION MESSAGE
