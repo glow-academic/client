@@ -660,6 +660,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             files={pendingFiles}
             onClose={() => {
               setShowUploadDialog(false);
+              // Clear dialog local state and allow reselection of same files later
               setPendingFiles([]);
               if (fileInputRef.current) fileInputRef.current.value = "";
             }}
@@ -673,8 +674,16 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                   await uploadFile(file, classification, zipDefaults);
                 })();
               }
+              // Clear state so user can add the same docs again if needed
               setPendingFiles([]);
+              if (fileInputRef.current) fileInputRef.current.value = "";
             }}
+            onAddFiles={(files) => {
+              setPendingFiles((prev) => [...prev, ...files]);
+            }}
+            onRemoveFile={(fileName) =>
+              setPendingFiles((prev) => prev.filter((f) => f.name !== fileName))
+            }
           />
           <div
             className={`flex flex-1 flex-col gap-4 p-4 pt-0 ${

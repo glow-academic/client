@@ -39,6 +39,8 @@ export interface UploadClassificationDialogProps {
     perFile: Record<string, FileClassification>,
     defaultsForZip: FileClassification
   ) => void;
+  onAddFiles?: (files: File[]) => void;
+  onRemoveFile?: (fileName: string) => void;
 }
 
 const TYPE_OPTIONS: { value: DocumentType; label: string }[] = [
@@ -56,6 +58,8 @@ export function UploadClassificationDialog({
   files,
   onClose,
   onConfirm,
+  onAddFiles,
+  onRemoveFile,
 }: UploadClassificationDialogProps) {
   const { data: existingDocuments = [] } = useQuery({
     queryKey: ["documents"],
@@ -275,11 +279,15 @@ export function UploadClassificationDialog({
                             delete next[file.name];
                             return next;
                           });
-                          // Dispatch a custom event to request removal upstream
-                          const evt = new CustomEvent("upload:remove-file", {
-                            detail: { fileName: file.name },
-                          });
-                          window.dispatchEvent(evt);
+                          if (onRemoveFile) {
+                            onRemoveFile(file.name);
+                          } else {
+                            // Dispatch a custom event to request removal upstream
+                            const evt = new CustomEvent("upload:remove-file", {
+                              detail: { fileName: file.name },
+                            });
+                            window.dispatchEvent(evt);
+                          }
                         }}
                         aria-label="Remove file from upload"
                         title="Remove file"
@@ -343,6 +351,47 @@ export function UploadClassificationDialog({
               </div>
             );
           })}
+        </div>
+
+        {/* Add documents inside modal */}
+        <div className="mt-4">
+          <input
+            type="file"
+            multiple
+            onChange={(e) => {
+              const list = e.target.files;
+              if (list && list.length > 0) {
+                const next = Array.from(list);
+                onAddFiles?.(next);
+                // reset input so same file can be selected again later
+                e.currentTarget.value = "";
+              }
+            }}
+            accept={[
+              "application/pdf",
+              "image/*",
+              "application/msword",
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              "text/plain",
+              "application/zip",
+              "text/html",
+              ".java,.py,.c,.h,.cpp,.hpp,.cc,.cs,.js,.jsx,.ts,.tsx,.mjs,.cjs,.html,.css,.scss,.md,.json,.yml,.yaml,.xml,.sh,.bash,.zsh,.rb,.go,.rs,.kt,.swift,.m,.mm,.sql,.ipynb",
+            ].join(",")}
+            className="hidden"
+            id="upload-dialog-file-input"
+          />
+          <Button
+            type="button"
+            className="w-full"
+            onClick={() => {
+              const el = document.getElementById(
+                "upload-dialog-file-input"
+              ) as HTMLInputElement | null;
+              el?.click();
+            }}
+          >
+            Add Documents
+          </Button>
         </div>
 
         <DialogFooter className="mt-4">
