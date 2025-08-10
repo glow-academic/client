@@ -6,6 +6,19 @@
  */
 "use client";
 
+import * as React from "react";
+
+import { Button } from "@/components/ui/button";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -14,13 +27,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import { useProfile } from "@/contexts/profile-context";
 import { Standard, StandardGroup } from "@/types";
+import {
+  simulationChatCrowdsourcedFeedbacks,
+  simulationChatFeedbacks,
+} from "@/utils/drizzle/schema";
+import { createSimulationChatCrowdsourcedFeedback } from "@/utils/mutations/simulation_chat_crowdsourced_feedbacks/create-simulation-chat-crowdsourced-feedback";
 import { getRubric } from "@/utils/queries/rubrics/get-rubric";
+import { getSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedbacks } from "@/utils/queries/simulation_chat_crowdsourced_feedbacks/get-simulation-chat-crowdsourced-feedbacks-by-simulationchatfeedbacks";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getStandardGroupsByRubric } from "@/utils/queries/standard_groups/get-standard-groups-by-rubric";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+type SimulationChatFeedback = typeof simulationChatFeedbacks.$inferSelect;
+type SimulationChatCrowdsourcedFeedback =
+  typeof simulationChatCrowdsourcedFeedbacks.$inferSelect;
 
 export interface TableRubricProps {
   rubricId: string;
@@ -31,6 +56,19 @@ export default function TableRubric({
   rubricId,
   simulationChatId,
 }: TableRubricProps) {
+  const queryClient = useQueryClient();
+  const { effectiveProfile } = useProfile();
+  const canCrowdsource =
+    !!effectiveProfile &&
+    ["instructional", "admin", "superadmin"].includes(
+      effectiveProfile.role as string
+    );
+
+  const [activeStandardId, setActiveStandardId] = React.useState<string | null>(
+    null
+  );
+  const [crowdFeedbackText, setCrowdFeedbackText] = React.useState<string>("");
+
   const { isLoading: loadingRubric } = useQuery({
     queryKey: ["rubric", rubricId],
     queryFn: () => getRubric(rubricId),
@@ -81,6 +119,65 @@ export default function TableRubric({
   const grades = simulationGrades;
   const feedbacks = simulationFeedbacks;
   const chatGrade = grades?.[0]; // Assuming one grade per chat
+
+  // Map standards to their simulation feedback rows for quick lookup
+  const standardIdToFeedback = React.useMemo(() => {
+    const map = new Map<string, SimulationChatFeedback>();
+    (feedbacks || []).forEach((f: SimulationChatFeedback) => {
+      if (f?.standardId) map.set(f.standardId, f);
+    });
+    return map;
+  }, [feedbacks]);
+
+  // Fetch all crowdsourced feedbacks for the feedback rows shown in this rubric
+  const allFeedbackIds = React.useMemo(
+    () => (feedbacks || []).map((f: SimulationChatFeedback) => f.id),
+    [feedbacks]
+  );
+
+  const { data: crowdFeedbacks, isLoading: loadingCrowdFeedbacks } = useQuery({
+    queryKey: ["simulationCrowdFeedbacks", allFeedbackIds],
+    queryFn: () =>
+      getSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedbacks(
+        allFeedbackIds
+      ),
+    enabled: allFeedbackIds.length > 0,
+  });
+
+  const crowdCountsByFeedbackId = React.useMemo(() => {
+    const counts = new Map<string, number>();
+    (crowdFeedbacks || []).forEach((cf: SimulationChatCrowdsourcedFeedback) => {
+      const key = cf.simulationChatFeedbackId as string;
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+    return counts;
+  }, [crowdFeedbacks]);
+
+  const { mutateAsync: submitCrowdFeedback, isPending: isSubmitting } =
+    useMutation({
+      mutationFn: async ({
+        simulationChatFeedbackId,
+        total,
+        feedback,
+      }: {
+        simulationChatFeedbackId: string;
+        total: number;
+        feedback: string | null;
+      }) => {
+        const payload: typeof simulationChatCrowdsourcedFeedbacks.$inferInsert =
+          {
+            simulationChatFeedbackId,
+            total,
+            feedback,
+          };
+        return createSimulationChatCrowdsourcedFeedback(payload);
+      },
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: ["simulationCrowdFeedbacks"],
+        });
+      },
+    });
 
   // Helper function to get feedback for a specific standard
   const getFeedbackForStandard = (standardId: string) => {
@@ -142,7 +239,8 @@ export default function TableRubric({
     loadingStandardGroups ||
     loadingStandards ||
     loadingSimulationGrades ||
-    loadingSimulationFeedbacks
+    loadingSimulationFeedbacks ||
+    loadingCrowdFeedbacks
   ) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -206,9 +304,57 @@ export default function TableRubric({
                     className="font-medium align-top p-2 text-xs"
                     style={{ width: "20%" }}
                   >
-                    <div className="break-words whitespace-normal overflow-hidden">
-                      {group.name}
-                    </div>
+                    <HoverCard openDelay={200} closeDelay={150}>
+                      <HoverCardTrigger asChild>
+                        <div className="break-words whitespace-normal overflow-hidden cursor-help">
+                          {group.name}
+                        </div>
+                      </HoverCardTrigger>
+                      <HoverCardContent side="right" className="w-80">
+                        <div className="space-y-2">
+                          <div className="text-xs font-semibold">
+                            Crowdsourced suggestions
+                          </div>
+                          {groupStandards.length === 0 ? (
+                            <div className="text-xs text-muted-foreground">
+                              No standards in this group.
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-1 gap-1">
+                              {groupStandards.map((s) => {
+                                const f = standardIdToFeedback.get(s.id);
+                                const count = f
+                                  ? crowdCountsByFeedbackId.get(f.id) || 0
+                                  : 0;
+                                const isAchievedForS = isStandardAchieved(
+                                  s,
+                                  groupStandards
+                                );
+                                return (
+                                  <div
+                                    key={s.id}
+                                    className="flex items-center justify-between text-xs"
+                                  >
+                                    <span
+                                      className={
+                                        isAchievedForS
+                                          ? "font-semibold"
+                                          : "text-muted-foreground"
+                                      }
+                                    >
+                                      {s.name} ({s.points})
+                                    </span>
+                                    <span className="inline-flex items-center rounded bg-secondary px-1.5 py-0.5 text-[10px]">
+                                      {count} vote{count === 1 ? "" : "s"}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </HoverCardContent>
+                    </HoverCard>
                   </TableCell>
                   {Array.from({ length: maxStandards }, (_, standardIndex) => {
                     const standard = groupStandards[standardIndex];
@@ -231,6 +377,11 @@ export default function TableRubric({
                       standard,
                       groupStandards
                     );
+                    const isClickable =
+                      canCrowdsource &&
+                      !!simulationChatId &&
+                      !!feedback &&
+                      !isAchieved;
 
                     return (
                       <TableCell
@@ -241,7 +392,22 @@ export default function TableRubric({
                               ? "bg-green-200 dark:bg-green-900/40"
                               : "bg-red-200 dark:bg-red-900/40"
                             : ""
+                        } ${
+                          isClickable ? "cursor-pointer hover:bg-accent/40" : ""
                         }`}
+                        role={isClickable ? "button" : undefined}
+                        tabIndex={isClickable ? 0 : -1}
+                        onKeyDown={(e) => {
+                          if (!isClickable) return;
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setActiveStandardId(standard.id);
+                          }
+                        }}
+                        onClick={() => {
+                          if (!isClickable) return;
+                          setActiveStandardId(standard.id);
+                        }}
                       >
                         <div className="space-y-1">
                           {isAchieved && feedback ? (
@@ -254,6 +420,72 @@ export default function TableRubric({
                             </div>
                           )}
                         </div>
+
+                        {isClickable && activeStandardId === standard.id && (
+                          <Popover
+                            open
+                            onOpenChange={(open) => {
+                              if (!open) {
+                                setActiveStandardId(null);
+                                setCrowdFeedbackText("");
+                              }
+                            }}
+                          >
+                            {/* Anchor to this cell so the popover positions correctly */}
+                            <PopoverAnchor />
+                            <PopoverContent
+                              align="center"
+                              side="top"
+                              className="w-80"
+                            >
+                              <div className="space-y-3">
+                                <div className="text-xs font-semibold">
+                                  Propose this level?
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {standard.name} ({standard.points} points)
+                                </div>
+                                <Textarea
+                                  value={crowdFeedbackText}
+                                  onChange={(e) =>
+                                    setCrowdFeedbackText(e.target.value)
+                                  }
+                                  placeholder="Optional: Why should this be the level?"
+                                  className="min-h-20 text-xs"
+                                />
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setActiveStandardId(null);
+                                      setCrowdFeedbackText("");
+                                    }}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    disabled={isSubmitting}
+                                    onClick={async () => {
+                                      if (!feedback) return;
+                                      await submitCrowdFeedback({
+                                        simulationChatFeedbackId: feedback.id,
+                                        total: standard.points,
+                                        feedback:
+                                          crowdFeedbackText.trim() || null,
+                                      });
+                                      setActiveStandardId(null);
+                                      setCrowdFeedbackText("");
+                                    }}
+                                  >
+                                    {isSubmitting ? "Submitting..." : "Submit"}
+                                  </Button>
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        )}
                       </TableCell>
                     );
                   })}

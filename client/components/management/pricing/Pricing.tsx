@@ -13,8 +13,6 @@ import { format, isAfter, isBefore } from "date-fns";
 import { useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
@@ -23,20 +21,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Command,
-  CommandEmpty,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { DatePickerWithRange } from "@/components/ui/date-picker-range";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from "recharts";
 
@@ -46,7 +30,11 @@ import { getAllModelRuns } from "@/utils/queries/model_runs/get-all-model-runs";
 import { getAllModels } from "@/utils/queries/models/get-all-models";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { RunsDataTable } from "./RunsDataTable";
+import { RunsDataTableToolbar } from "./RunsDataTableToolbar";
+import { getDebugInfoByModelRuns } from "@/utils/queries/debug_info/get-debug-info-by-modelruns";
+import type { DebugInfo } from "@/types";
 
 const currency = (value: number) =>
   new Intl.NumberFormat(undefined, {
@@ -130,12 +118,13 @@ export default function Pricing() {
   }, [personas]);
 
   // Compute spend per run and aggregate by day, filtered by agents/personas/profiles; series per model
-  const { chartData, totals, chartConfig } = useMemo(() => {
+  const { chartData, totals, chartConfig, filteredRuns } = useMemo(() => {
     if (!runs?.length || !models?.length) {
       return {
         chartData: [] as Array<Record<string, number | string>>,
         totals: { totalSpend: 0, runCount: 0, withProfileRuns: 0, avgCost: 0 },
         chartConfig: {} as Record<string, { label: string; color: string }>,
+        filteredRuns: [] as ModelRun[],
       };
     }
 
@@ -162,6 +151,7 @@ export default function Pricing() {
     let runCount = 0;
     let withProfileRuns = 0;
 
+    const matchedRuns: ModelRun[] = [];
     for (const run of dateFiltered) {
       const runProfileId = (run as unknown as { profileId?: string }).profileId;
       const runAgentId = (run as unknown as { agentId?: string }).agentId;
@@ -184,6 +174,8 @@ export default function Pricing() {
         (!runProfileId || !includeProfiles.has(runProfileId))
       )
         continue;
+
+      matchedRuns.push(run);
 
       // Pricing comes from model
       const meta = modelIdToMeta.get(modelId);
@@ -257,6 +249,7 @@ export default function Pricing() {
         avgCost: runCount ? Number((totalSpend / runCount).toFixed(2)) : 0,
       },
       chartConfig: config,
+      filteredRuns: matchedRuns,
     };
   }, [
     runs,
@@ -271,173 +264,98 @@ export default function Pricing() {
 
   const loading = modelsLoading || runsLoading;
 
+  // Debug info by run
+  const filteredRunIds = useMemo(
+    () => (filteredRuns || []).map((r) => r.id as string),
+    [filteredRuns]
+  );
+
+  const { data: debugInfoList = [] } = useQuery({
+    queryKey: ["debug-info", { runIds: filteredRunIds }],
+    queryFn: async () => {
+      if (!filteredRunIds.length) return [] as DebugInfo[];
+      return (await getDebugInfoByModelRuns(filteredRunIds)) as DebugInfo[];
+    },
+    enabled: filteredRunIds.length > 0,
+  });
+
+  const debugInfoByRunId = useMemo(() => {
+    const map = new Map<string, DebugInfo[]>();
+    for (const d of debugInfoList) {
+      const key = (d.modelRunId as unknown as string) ?? "";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(d);
+    }
+    return map;
+  }, [debugInfoList]);
+
+  // Build options for toolbar
+  const modelOptions = useMemo(
+    () => models.map((m) => ({ value: m.id, label: m.name })),
+    [models]
+  );
+  const agentOptions = useMemo(
+    () => agents.map((a) => ({ value: a.id, label: a.name })),
+    [agents]
+  );
+  const profileOptions = useMemo(() => {
+    return profiles.map((p) => {
+      const id = p.id as string;
+      const label = (
+        `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || p.alias || id
+      );
+      return { value: id, label };
+    });
+  }, [profiles]);
+
+  // Build rows for runs table
+  const runRows = useMemo(() => {
+    return (filteredRuns || []).map((run) => {
+      const modelId = (run as unknown as { modelId?: string | null }).modelId || null;
+      const agentId = (run as unknown as { agentId?: string | null }).agentId || null;
+      const personaId = (run as unknown as { personaId?: string | null }).personaId || null;
+      const profileId = (run as unknown as { profileId?: string | null }).profileId || null;
+      return {
+        id: run.id as string,
+        createdAt: run.createdAt as string,
+        modelId,
+        modelName: (modelId && modelIdToMeta.get(modelId)?.name) || modelId || "",
+        agentId,
+        agentName: (agentId && agentIdToMeta.get(agentId)?.name) || agentId || "",
+        personaId,
+        personaName: (personaId && personaIdToMeta.get(personaId)?.name) || personaId || "",
+        profileId,
+        profileName:
+          (profileId &&
+            (() => {
+              const p = profiles.find((pp) => pp.id === profileId);
+              if (!p) return profileId;
+              const lbl = `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim();
+              return lbl || p.alias || profileId;
+            })()) || "",
+        inputTokens: run.inputTokens,
+        outputTokens: run.outputTokens,
+        debugInfo: debugInfoByRunId.get(run.id as string) || [],
+      };
+    });
+  }, [filteredRuns, modelIdToMeta, agentIdToMeta, personaIdToMeta, profiles, debugInfoByRunId]);
+
   return (
     <div className="flex flex-col gap-4">
-      {/* Controls */}
-      <div className="flex flex-wrap items-center gap-2">
-        <DatePickerWithRange
-          dateRange={dateRange}
-          setDateRange={setDateRange}
-        />
-
-        {/* Models selector */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="secondary" size="sm" className="h-8">
-              Models
-              <ChevronDown className="ml-1 h-3.5 w-3.5" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-72 p-0">
-            <Command>
-              <CommandInput placeholder="Search models..." />
-              <CommandEmpty>No models found.</CommandEmpty>
-              <CommandList>
-                {models.map((m) => {
-                  const checked = selectedModelIds.includes(m.id);
-                  return (
-                    <CommandItem
-                      key={m.id}
-                      onSelect={() => {
-                        setSelectedModelIds((prev) => {
-                          const next = new Set(prev);
-                          if (checked) next.delete(m.id);
-                          else next.add(m.id);
-                          return Array.from(next);
-                        });
-                      }}
-                    >
-                      <Checkbox checked={checked} className="mr-2" />
-                      <span className="truncate">{m.name}</span>
-                    </CommandItem>
-                  );
-                })}
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-
-        {/* Profiles multi-select (default All) */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="secondary" size="sm" className="h-8">
-              Profiles
-              <ChevronDown className="ml-1 h-3.5 w-3.5" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-72 p-3">
-            <div className="max-h-64 overflow-y-auto pr-1 space-y-2">
-              {profiles.map((p) => {
-                const id = p.id as string;
-                const label =
-                  `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() ||
-                  p.alias ||
-                  id;
-                const checked = selectedProfileIds.includes(id);
-                return (
-                  <label
-                    key={id}
-                    className="flex items-center gap-2 cursor-pointer text-sm"
-                  >
-                    <Checkbox
-                      checked={checked}
-                      onCheckedChange={(v) => {
-                        setSelectedProfileIds((prev) => {
-                          const next = new Set(prev);
-                          if (v) next.add(id);
-                          else next.delete(id);
-                          return Array.from(next);
-                        });
-                      }}
-                    />
-                    <span className="truncate">{label}</span>
-                  </label>
-                );
-              })}
-            </div>
-            {profiles.length === 0 && (
-              <div className="text-xs text-muted-foreground">No profiles</div>
-            )}
-          </PopoverContent>
-        </Popover>
-
-        {/* Agents selector */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="secondary" size="sm" className="h-8">
-              Agents
-              <ChevronDown className="ml-1 h-3.5 w-3.5" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-72 p-0">
-            <Command>
-              <CommandInput placeholder="Search agents..." />
-              <CommandEmpty>No agents found.</CommandEmpty>
-              <CommandList>
-                {agents.map((a) => {
-                  const checked = selectedAgentIds.includes(a.id);
-                  return (
-                    <CommandItem
-                      key={a.id}
-                      onSelect={() => {
-                        setSelectedAgentIds((prev) => {
-                          const next = new Set(prev);
-                          if (checked) next.delete(a.id);
-                          else next.add(a.id);
-                          return Array.from(next);
-                        });
-                      }}
-                    >
-                      <Checkbox checked={checked} className="mr-2" />
-                      <span className="truncate">{a.name}</span>
-                    </CommandItem>
-                  );
-                })}
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-
-        {/* Selected badges */}
-        <div className="flex flex-wrap gap-1">
-          {(selectedModelIds.length
-            ? selectedModelIds
-            : models.map((m) => m.id)
-          )
-            .slice(0, 6)
-            .map((id) => {
-              const label = modelIdToMeta.get(id)?.name;
-              return (
-                <Badge key={id} variant="secondary" className="font-normal">
-                  {label || id}
-                </Badge>
-              );
-            })}
-          {(selectedAgentIds.length ? selectedAgentIds : [])
-            .slice(0, 3)
-            .map((id) => (
-              <Badge key={id} variant="outline" className="font-normal">
-                {agentIdToMeta.get(id)?.name || id}
-              </Badge>
-            ))}
-          {(selectedPersonaIds.length ? selectedPersonaIds : [])
-            .slice(0, 3)
-            .map((id) => (
-              <Badge key={id} variant="outline" className="font-normal">
-                {personaIdToMeta.get(id)?.name || id}
-              </Badge>
-            ))}
-          {selectedProfileIds.length > 0 && (
-            <Badge variant="outline" className="font-normal">
-              {selectedProfileIds.length} profile
-              {selectedProfileIds.length > 1 ? "s" : ""}
-            </Badge>
-          )}
-          {selectedModelIds.length > 6 && (
-            <Badge variant="outline">+{selectedModelIds.length - 6} more</Badge>
-          )}
-        </div>
-      </div>
+      {/* Faceted filters toolbar */}
+      <RunsDataTableToolbar
+        modelOptions={modelOptions}
+        agentOptions={agentOptions}
+        profileOptions={profileOptions}
+        selectedModelIds={selectedModelIds}
+        selectedAgentIds={selectedAgentIds}
+        selectedProfileIds={selectedProfileIds}
+        setSelectedModelIds={setSelectedModelIds}
+        setSelectedAgentIds={setSelectedAgentIds}
+        setSelectedProfileIds={setSelectedProfileIds}
+        dateRange={dateRange}
+        setDateRange={setDateRange}
+      />
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -576,6 +494,22 @@ export default function Pricing() {
                 />
               </AreaChart>
             </ChartContainer>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Runs table */}
+      <Card className="w-full">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Model runs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex h-40 items-center justify-center text-muted-foreground">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading runs…
+            </div>
+          ) : (
+            <RunsDataTable rows={runRows} />
           )}
         </CardContent>
       </Card>
