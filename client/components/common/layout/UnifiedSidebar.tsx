@@ -417,6 +417,7 @@ export function UnifiedSidebar({
     if (
       availableSections.includes("staff") ||
       availableSections.includes("providers") ||
+      availableSections.includes("pricing") ||
       availableSections.includes("parameters")
     ) {
       const managementItems: MenuItem[] = [];
@@ -441,6 +442,14 @@ export function UnifiedSidebar({
           title: "Providers",
           url: "#",
           section: "providers",
+        });
+      }
+
+      if (availableSections.includes("pricing")) {
+        managementItems.push({
+          title: "Pricing",
+          url: "#",
+          section: "pricing",
         });
       }
 
