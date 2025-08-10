@@ -104,6 +104,8 @@ export const getSectionRoute = (
       return "/management/staff";
     case "providers":
       return "/management/providers";
+    case "pricing":
+      return "/management/pricing";
     case "system":
       return "/management/system";
 

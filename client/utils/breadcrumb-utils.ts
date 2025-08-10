@@ -243,6 +243,9 @@ export const generateEnhancedBreadcrumbs = async (
         case "providers":
           title = "Providers";
           break;
+        case "pricing":
+          title = "Pricing";
+          break;
         case "parameters":
           title = "Parameters";
           break;
@@ -367,6 +370,9 @@ const getSectionFromSegments = (segments: string[]): string => {
           return `provider-${fourth}`;
         }
         return "providers";
+      }
+      if (second === "pricing") {
+        return "pricing";
       }
       if (second === "parameters") {
         if (third === "p" && fourth) {
