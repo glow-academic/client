@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 281
+- **Total Components**: 288
 - **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 281
+- **Tests Skipped** (already implemented): 288
 
 ## Component Coverage
 
@@ -21,7 +21,13 @@
 | CohortsDataTable | components/cohorts/CohortsDataTable.tsx | CohortsDataTable.test.tsx | ✅ Implemented |
 | CohortsDataTableToolbar | components/cohorts/CohortsDataTableToolbar.tsx | CohortsDataTableToolbar.test.tsx | ✅ Implemented |
 | NewCohort | components/cohorts/NewCohort.tsx | NewCohort.test.tsx | ✅ Implemented |
+| AgentDebugInfo | components/common/agent/AgentDebugInfo.tsx | AgentDebugInfo.test.tsx | ✅ Implemented |
+| AgentDebugInfoDataTable | components/common/agent/AgentDebugInfoDataTable.tsx | AgentDebugInfoDataTable.test.tsx | ✅ Implemented |
+| AgentDebugInfoDataTableToolbar | components/common/agent/AgentDebugInfoDataTableToolbar.tsx | AgentDebugInfoDataTableToolbar.test.tsx | ✅ Implemented |
 | Persona | components/common/agent/Persona.tsx | Persona.test.tsx | ✅ Implemented |
+| PersonaDebugInfo | components/common/agent/PersonaDebugInfo.tsx | PersonaDebugInfo.test.tsx | ✅ Implemented |
+| PersonaDebugInfoDataTable | components/common/agent/PersonaDebugInfoDataTable.tsx | PersonaDebugInfoDataTable.test.tsx | ✅ Implemented |
+| PersonaDebugInfoDataTableToolbar | components/common/agent/PersonaDebugInfoDataTableToolbar.tsx | PersonaDebugInfoDataTableToolbar.test.tsx | ✅ Implemented |
 | SystemAgent | components/common/agent/SystemAgent.tsx | SystemAgent.test.tsx | ✅ Implemented |
 | AnalyticsFilters | components/common/analytics/AnalyticsFilters.tsx | AnalyticsFilters.test.tsx | ✅ Implemented |
 | GrowthPicker | components/common/analytics/GrowthPicker.tsx | GrowthPicker.test.tsx | ✅ Implemented |
@@ -91,7 +97,6 @@
 | Login | components/common/login/Login.tsx | Login.test.tsx | ✅ Implemented |
 | Model | components/common/model/Model.tsx | Model.test.tsx | ✅ Implemented |
 | Parameter | components/common/parameter/Parameter.tsx | Parameter.test.tsx | ✅ Implemented |
-| Pricing | components/common/pricing/Pricing.tsx | Pricing.test.tsx | ✅ Implemented |
 | ProfileSelector | components/common/profile/ProfileSelector.tsx | ProfileSelector.test.tsx | ✅ Implemented |
 | Provider | components/common/provider/Provider.tsx | Provider.test.tsx | ✅ Implemented |
 | Rubric | components/common/rubric/Rubric.tsx | Rubric.test.tsx | ✅ Implemented |
@@ -143,6 +148,7 @@
 | Parameters | components/management/parameters/Parameters.tsx | Parameters.test.tsx | ✅ Implemented |
 | ParametersDataTable | components/management/parameters/ParametersDataTable.tsx | ParametersDataTable.test.tsx | ✅ Implemented |
 | ParametersDataTableToolbar | components/management/parameters/ParametersDataTableToolbar.tsx | ParametersDataTableToolbar.test.tsx | ✅ Implemented |
+| Pricing | components/management/pricing/Pricing.tsx | Pricing.test.tsx | ✅ Implemented |
 | ModelEdit | components/management/providers/ModelEdit.tsx | ModelEdit.test.tsx | ✅ Implemented |
 | NewModel | components/management/providers/NewModel.tsx | NewModel.test.tsx | ✅ Implemented |
 | NewProvider | components/management/providers/NewProvider.tsx | NewProvider.test.tsx | ✅ Implemented |
@@ -244,6 +250,7 @@
 | page | app/(main)/management/parameters/p/[parameterId]/page.tsx | page.test.tsx | ✅ Implemented |
 | page | app/(main)/management/parameters/p/page.tsx | page.test.tsx | ✅ Implemented |
 | page | app/(main)/management/parameters/page.tsx | page.test.tsx | ✅ Implemented |
+| page | app/(main)/management/pricing/page.tsx | page.test.tsx | ✅ Implemented |
 | page | app/(main)/management/providers/new/page.tsx | page.test.tsx | ✅ Implemented |
 | page | app/(main)/management/providers/p/[providerId]/m/[modelId]/page.tsx | page.test.tsx | ✅ Implemented |
 | page | app/(main)/management/providers/p/[providerId]/m/page.tsx | page.test.tsx | ✅ Implemented |
@@ -313,7 +320,13 @@ __tests__/
 │   │   ├── NewCohort.test.tsx
 │   ├── common/
 │   │   ├── agent/
+│   │   │   ├── AgentDebugInfo.test.tsx
+│   │   │   ├── AgentDebugInfoDataTable.test.tsx
+│   │   │   ├── AgentDebugInfoDataTableToolbar.test.tsx
 │   │   │   ├── Persona.test.tsx
+│   │   │   ├── PersonaDebugInfo.test.tsx
+│   │   │   ├── PersonaDebugInfoDataTable.test.tsx
+│   │   │   ├── PersonaDebugInfoDataTableToolbar.test.tsx
 │   │   │   ├── SystemAgent.test.tsx
 │   │   ├── analytics/
 │   │   │   ├── AnalyticsFilters.test.tsx
@@ -399,8 +412,6 @@ __tests__/
 │   │   │   ├── Model.test.tsx
 │   │   ├── parameter/
 │   │   │   ├── Parameter.test.tsx
-│   │   ├── pricing/
-│   │   │   ├── Pricing.test.tsx
 │   │   ├── profile/
 │   │   │   ├── ProfileSelector.test.tsx
 │   │   ├── provider/
@@ -468,6 +479,8 @@ __tests__/
 │   │   │   ├── Parameters.test.tsx
 │   │   │   ├── ParametersDataTable.test.tsx
 │   │   │   ├── ParametersDataTableToolbar.test.tsx
+│   │   ├── pricing/
+│   │   │   ├── Pricing.test.tsx
 │   │   ├── providers/
 │   │   │   ├── ModelEdit.test.tsx
 │   │   │   ├── NewModel.test.tsx
@@ -618,6 +631,8 @@ __tests__/
 │   │   │   │   │   ├── [parameterId]/
 │   │   │   │   │   │   ├── page.test.tsx
 │   │   │   │   │   ├── page.test.tsx
+│   │   │   │   ├── page.test.tsx
+│   │   │   ├── pricing/
 │   │   │   │   ├── page.test.tsx
 │   │   │   ├── providers/
 │   │   │   │   ├── new/

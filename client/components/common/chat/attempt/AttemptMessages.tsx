@@ -5,12 +5,14 @@
  * 06/27/2025
  */
 "use client";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
   ArrowDown,
   ChevronLeft,
   ChevronRight,
+  Loader2,
   RotateCcw,
   ThumbsDown,
   ThumbsUp,
@@ -32,7 +34,6 @@ import {
 
 import Markdown from "@/components/common/chat/Markdown";
 import ReportProblem from "@/components/common/layout/ReportProblem";
-import { LoadingDots } from "@/components/ui/loading-dots";
 import { useProfile } from "@/contexts/profile-context";
 import { useSimulation } from "@/contexts/simulation-context";
 import { SimulationMessage } from "@/types";
@@ -437,7 +438,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                 currentResponse.content === "" ? (
                                   <div className="bg-muted rounded-lg p-3">
                                     <div className="flex items-center">
-                                      <LoadingDots />
+                                      <Loader2 className="h-4 w-4 animate-spin" />
                                     </div>
                                   </div>
                                 ) : currentResponse.completed &&
@@ -557,7 +558,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                             ratingsByMessageId[
                                               currentResponse.id
                                             ]?.response === true
-                                              ? "text-green-600"
+                                              ? "text-green-600 hover:text-green-600"
                                               : "text-muted-foreground"
                                           }`}
                                           onClick={() =>
@@ -572,9 +573,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                             currentResponse.id,
                                             true
                                           ) ? (
-                                            <div className="h-3 w-3 flex items-center justify-center">
-                                              <LoadingDots />
-                                            </div>
+                                            <Loader2 className="h-3 w-3 animate-spin" />
                                           ) : (
                                             <ThumbsUp className="h-3 w-3" />
                                           )}
@@ -586,7 +585,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                             ratingsByMessageId[
                                               currentResponse.id
                                             ]?.response === false
-                                              ? "text-red-600"
+                                              ? "text-red-600 hover:text-red-600"
                                               : "text-muted-foreground"
                                           }`}
                                           onClick={() =>
@@ -604,9 +603,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                             currentResponse.id,
                                             false
                                           ) ? (
-                                            <div className="h-3 w-3 flex items-center justify-center">
-                                              <LoadingDots />
-                                            </div>
+                                            <Loader2 className="h-3 w-3 animate-spin" />
                                           ) : (
                                             <ThumbsDown className="h-3 w-3" />
                                           )}
@@ -669,7 +666,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                       className={`h-6 w-6 p-0 ${
                                         ratingsByMessageId[currentResponse.id]
                                           ?.response === true
-                                          ? "text-green-600"
+                                          ? "text-green-600 hover:text-green-600"
                                           : "text-muted-foreground"
                                       }`}
                                       onClick={() =>
@@ -684,9 +681,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                         currentResponse.id,
                                         true
                                       ) ? (
-                                        <div className="h-3 w-3 flex items-center justify-center">
-                                          <LoadingDots />
-                                        </div>
+                                        <Loader2 className="h-3 w-3 animate-spin" />
                                       ) : (
                                         <ThumbsUp className="h-3 w-3" />
                                       )}
@@ -697,7 +692,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                       className={`h-6 w-6 p-0 ${
                                         ratingsByMessageId[currentResponse.id]
                                           ?.response === false
-                                          ? "text-red-600"
+                                          ? "text-red-600 hover:text-red-600"
                                           : "text-muted-foreground"
                                       }`}
                                       onClick={() =>
@@ -712,9 +707,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                         currentResponse.id,
                                         false
                                       ) ? (
-                                        <div className="h-3 w-3 flex items-center justify-center">
-                                          <LoadingDots />
-                                        </div>
+                                        <Loader2 className="h-3 w-3 animate-spin" />
                                       ) : (
                                         <ThumbsDown className="h-3 w-3" />
                                       )}
