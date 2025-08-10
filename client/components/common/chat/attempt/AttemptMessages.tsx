@@ -5,13 +5,15 @@
  * 06/27/2025
  */
 "use client";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
   ArrowDown,
   ChevronLeft,
   ChevronRight,
   RotateCcw,
+  ThumbsDown,
+  ThumbsUp,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -31,8 +33,13 @@ import {
 import Markdown from "@/components/common/chat/Markdown";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { LoadingDots } from "@/components/ui/loading-dots";
+import { useProfile } from "@/contexts/profile-context";
 import { useSimulation } from "@/contexts/simulation-context";
 import { SimulationMessage } from "@/types";
+import { simulationCrowdsourcedMessages } from "@/utils/drizzle/schema";
+import { createSimulationCrowdsourcedMessage } from "@/utils/mutations/simulation_crowdsourced_messages/create-simulation-crowdsourced-message";
+import { updateSimulationCrowdsourcedMessage } from "@/utils/mutations/simulation_crowdsourced_messages/update-simulation-crowdsourced-message";
+import { getSimulationCrowdsourcedMessagesBySimulationMessages } from "@/utils/queries/simulation_crowdsourced_messages/get-simulation-crowdsourced-messages-by-simulationmessages";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
 
 export interface AttemptMessagesProps {
@@ -41,6 +48,8 @@ export interface AttemptMessagesProps {
 
 export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
   const simulationContext = useSimulation();
+  const { effectiveProfile } = useProfile();
+  const queryClient = useQueryClient();
 
   const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -60,6 +69,101 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
     queryFn: () => getSimulationMessagesByChat(targetChatId!),
     enabled: !!targetChatId,
   });
+
+  // IDs of assistant responses in this chat
+  const responseMessageIds = useMemo(
+    () =>
+      (messages || [])
+        .filter((m) => m.type === "response")
+        .map((m) => m.id)
+        .sort(),
+    [messages]
+  );
+
+  // Fetch crowdsourced ratings for these messages, then filter to current profile
+  const { data: crowdsourcedAll = [] } = useQuery({
+    queryKey: [
+      "simulationCrowdsourcedMessages",
+      targetChatId,
+      effectiveProfile?.id,
+      responseMessageIds.join("|"),
+    ],
+    queryFn: () =>
+      getSimulationCrowdsourcedMessagesBySimulationMessages(responseMessageIds),
+    enabled: responseMessageIds.length > 0,
+    staleTime: 30_000,
+  });
+
+  type CrowdsourcedSelect = typeof simulationCrowdsourcedMessages.$inferSelect;
+  type CrowdsourcedInsert = typeof simulationCrowdsourcedMessages.$inferInsert;
+
+  const myCrowdsourced = useMemo(
+    () =>
+      (crowdsourcedAll as CrowdsourcedSelect[]).filter(
+        (c) => c.profileId === effectiveProfile?.id
+      ),
+    [crowdsourcedAll, effectiveProfile?.id]
+  );
+
+  const ratingsByMessageId = useMemo(() => {
+    const map: Record<string, { id: string; response: boolean }> = {};
+    for (const c of myCrowdsourced as Array<{
+      id: string;
+      simulationMessageId: string;
+      response: boolean;
+    }>) {
+      if (!(c.simulationMessageId in map)) {
+        map[c.simulationMessageId] = { id: c.id, response: c.response };
+      }
+    }
+    return map;
+  }, [myCrowdsourced]);
+
+  const createRatingMutation = useMutation({
+    mutationFn: async (vars: { messageId: string; up: boolean }) => {
+      const payload: CrowdsourcedInsert = {
+        simulationMessageId: vars.messageId,
+        profileId: effectiveProfile!.id,
+        response: vars.up,
+      };
+      return await createSimulationCrowdsourcedMessage(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["simulationCrowdsourcedMessages", targetChatId],
+      });
+    },
+  });
+
+  const updateRatingMutation = useMutation({
+    mutationFn: async (vars: { id: string; up: boolean }) => {
+      const updatePayload: Partial<CrowdsourcedInsert> = { response: vars.up };
+      return await updateSimulationCrowdsourcedMessage(vars.id, updatePayload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["simulationCrowdsourcedMessages", targetChatId],
+      });
+    },
+  });
+
+  const canRate = useMemo(() => {
+    const role = effectiveProfile?.role;
+    return (
+      role === "instructional" || role === "admin" || role === "superadmin"
+    );
+  }, [effectiveProfile?.role]);
+
+  const handleRate = (messageId: string, up: boolean) => {
+    if (!effectiveProfile?.id) return;
+    const existing = ratingsByMessageId[messageId];
+    if (existing) {
+      if (existing.response === up) return;
+      updateRatingMutation.mutate({ id: existing.id, up });
+    } else {
+      createRatingMutation.mutate({ messageId, up });
+    }
+  };
 
   // Group messages by conversation turns (user message + all its responses)
   const groupedMessages = useMemo(() => {
@@ -426,48 +530,96 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                 )}
 
                                 {/* Navigation controls for multiple responses */}
-                                {group.responses.length > 1 && (
-                                  <div className="flex items-center justify-end gap-0 mt-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() =>
-                                        handleResponseNavigation(
-                                          group.groupId,
-                                          "prev"
-                                        )
-                                      }
-                                      disabled={
-                                        (responseVersions[group.groupId] ??
-                                          group.responses.length - 1) === 0
-                                      }
-                                      className="h-6 w-6 p-0"
-                                    >
-                                      <ChevronLeft className="h-3 w-3" />
-                                    </Button>
-                                    <span className="text-xs text-muted-foreground px-1">
-                                      {(responseVersions[group.groupId] ??
-                                        group.responses.length - 1) + 1}
-                                      /{group.responses.length}
-                                    </span>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() =>
-                                        handleResponseNavigation(
-                                          group.groupId,
-                                          "next"
-                                        )
-                                      }
-                                      disabled={
-                                        (responseVersions[group.groupId] ??
-                                          group.responses.length - 1) ===
-                                        group.responses.length - 1
-                                      }
-                                      className="h-6 w-6 p-0"
-                                    >
-                                      <ChevronRight className="h-3 w-3" />
-                                    </Button>
+                                {(group.responses.length > 1 || canRate) && (
+                                  <div className="flex items-center justify-between mt-1">
+                                    {/* Thumbs rating (left) */}
+                                    {canRate ? (
+                                      <div className="flex items-center gap-1">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className={`h-6 w-6 p-0 ${
+                                            ratingsByMessageId[
+                                              currentResponse.id
+                                            ]?.response === true
+                                              ? "text-green-600"
+                                              : "text-muted-foreground"
+                                          }`}
+                                          onClick={() =>
+                                            handleRate(currentResponse.id, true)
+                                          }
+                                        >
+                                          <ThumbsUp className="h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className={`h-6 w-6 p-0 ${
+                                            ratingsByMessageId[
+                                              currentResponse.id
+                                            ]?.response === false
+                                              ? "text-red-600"
+                                              : "text-muted-foreground"
+                                          }`}
+                                          onClick={() =>
+                                            handleRate(
+                                              currentResponse.id,
+                                              false
+                                            )
+                                          }
+                                        >
+                                          <ThumbsDown className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <div />
+                                    )}
+
+                                    {/* Response navigation (right) */}
+                                    {group.responses.length > 1 && (
+                                      <div className="flex items-center justify-end gap-0">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() =>
+                                            handleResponseNavigation(
+                                              group.groupId,
+                                              "prev"
+                                            )
+                                          }
+                                          disabled={
+                                            (responseVersions[group.groupId] ??
+                                              group.responses.length - 1) === 0
+                                          }
+                                          className="h-6 w-6 p-0"
+                                        >
+                                          <ChevronLeft className="h-3 w-3" />
+                                        </Button>
+                                        <span className="text-xs text-muted-foreground px-1">
+                                          {(responseVersions[group.groupId] ??
+                                            group.responses.length - 1) + 1}
+                                          /{group.responses.length}
+                                        </span>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() =>
+                                            handleResponseNavigation(
+                                              group.groupId,
+                                              "next"
+                                            )
+                                          }
+                                          disabled={
+                                            (responseVersions[group.groupId] ??
+                                              group.responses.length - 1) ===
+                                            group.responses.length - 1
+                                          }
+                                          className="h-6 w-6 p-0"
+                                        >
+                                          <ChevronRight className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </>
