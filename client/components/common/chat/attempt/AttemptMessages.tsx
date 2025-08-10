@@ -531,10 +531,10 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
 
                                 {/* Response navigation and rating (right) - add a row only when chevrons exist */}
                                 {group.responses.length > 1 && (
-                                  <div className="flex items-center justify-between gap-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-                                    {/* Thumbs rating (left side) */}
+                                  <div className="flex items-center justify-between gap-0 mt-1">
+                                    {/* Thumbs rating (left side) - show on hover */}
                                     {canRate && (
-                                      <div className="flex items-center gap-1">
+                                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                                         <Button
                                           variant="ghost"
                                           size="sm"
@@ -554,7 +554,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                         <Button
                                           variant="ghost"
                                           size="sm"
-                                          className={`h-6 w-6 p-0 ${
+                                          className={`h-6 w-6 p-0 flex items-center justify-center ${
                                             ratingsByMessageId[
                                               currentResponse.id
                                             ]?.response === false
@@ -573,7 +573,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                       </div>
                                     )}
 
-                                    {/* Response navigation (right side) */}
+                                    {/* Response navigation (right side) - always visible */}
                                     <div className="flex items-center gap-0">
                                       <Button
                                         variant="ghost"
@@ -621,7 +621,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
 
                                 {/* Thumbs rating overlay (left-below); shows on hover only when no chevron navigation exists */}
                                 {canRate && group.responses.length <= 1 && (
-                                  <div className="absolute left-1 top-full mt-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center gap-1">
+                                  <div className="absolute left-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center gap-1">
                                     <Button
                                       variant="ghost"
                                       size="sm"
