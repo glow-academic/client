@@ -408,7 +408,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                     {/* Assistant response(s) */}
                     {group.responses.length > 0 && (
                       <div className="flex justify-start mb-3">
-                        <div className="max-w-[80%] relative">
+                        <div className="max-w-[80%] relative group">
                           {(() => {
                             const currentResponse = getCurrentResponse(
                               group.groupId
@@ -529,97 +529,85 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                   </div>
                                 )}
 
-                                {/* Navigation controls for multiple responses */}
-                                {(group.responses.length > 1 || canRate) && (
-                                  <div className="flex items-center justify-between mt-1">
-                                    {/* Thumbs rating (left) */}
-                                    {canRate ? (
-                                      <div className="flex items-center gap-1">
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className={`h-6 w-6 p-0 ${
-                                            ratingsByMessageId[
-                                              currentResponse.id
-                                            ]?.response === true
-                                              ? "text-green-600"
-                                              : "text-muted-foreground"
-                                          }`}
-                                          onClick={() =>
-                                            handleRate(currentResponse.id, true)
-                                          }
-                                        >
-                                          <ThumbsUp className="h-3 w-3" />
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className={`h-6 w-6 p-0 ${
-                                            ratingsByMessageId[
-                                              currentResponse.id
-                                            ]?.response === false
-                                              ? "text-red-600"
-                                              : "text-muted-foreground"
-                                          }`}
-                                          onClick={() =>
-                                            handleRate(
-                                              currentResponse.id,
-                                              false
-                                            )
-                                          }
-                                        >
-                                          <ThumbsDown className="h-3 w-3" />
-                                        </Button>
-                                      </div>
-                                    ) : (
-                                      <div />
-                                    )}
+                                {/* Response navigation (right) - add a row only when chevrons exist */}
+                                {group.responses.length > 1 && (
+                                  <div className="flex items-center justify-end gap-0 mt-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleResponseNavigation(
+                                          group.groupId,
+                                          "prev"
+                                        )
+                                      }
+                                      disabled={
+                                        (responseVersions[group.groupId] ??
+                                          group.responses.length - 1) === 0
+                                      }
+                                      className="h-6 w-6 p-0"
+                                    >
+                                      <ChevronLeft className="h-3 w-3" />
+                                    </Button>
+                                    <span className="text-xs text-muted-foreground px-1">
+                                      {(responseVersions[group.groupId] ??
+                                        group.responses.length - 1) + 1}
+                                      /{group.responses.length}
+                                    </span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleResponseNavigation(
+                                          group.groupId,
+                                          "next"
+                                        )
+                                      }
+                                      disabled={
+                                        (responseVersions[group.groupId] ??
+                                          group.responses.length - 1) ===
+                                        group.responses.length - 1
+                                      }
+                                      className="h-6 w-6 p-0"
+                                    >
+                                      <ChevronRight className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                )}
 
-                                    {/* Response navigation (right) */}
-                                    {group.responses.length > 1 && (
-                                      <div className="flex items-center justify-end gap-0">
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() =>
-                                            handleResponseNavigation(
-                                              group.groupId,
-                                              "prev"
-                                            )
-                                          }
-                                          disabled={
-                                            (responseVersions[group.groupId] ??
-                                              group.responses.length - 1) === 0
-                                          }
-                                          className="h-6 w-6 p-0"
-                                        >
-                                          <ChevronLeft className="h-3 w-3" />
-                                        </Button>
-                                        <span className="text-xs text-muted-foreground px-1">
-                                          {(responseVersions[group.groupId] ??
-                                            group.responses.length - 1) + 1}
-                                          /{group.responses.length}
-                                        </span>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() =>
-                                            handleResponseNavigation(
-                                              group.groupId,
-                                              "next"
-                                            )
-                                          }
-                                          disabled={
-                                            (responseVersions[group.groupId] ??
-                                              group.responses.length - 1) ===
-                                            group.responses.length - 1
-                                          }
-                                          className="h-6 w-6 p-0"
-                                        >
-                                          <ChevronRight className="h-3 w-3" />
-                                        </Button>
-                                      </div>
-                                    )}
+                                {/* Thumbs rating overlay (left-below); shows on hover only; no extra spacing */}
+                                {canRate && (
+                                  <div className="absolute left-1 top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className={`h-6 w-6 p-0 ${
+                                        ratingsByMessageId[currentResponse.id]
+                                          ?.response === true
+                                          ? "text-green-600"
+                                          : "text-muted-foreground"
+                                      }`}
+                                      onClick={() =>
+                                        handleRate(currentResponse.id, true)
+                                      }
+                                    >
+                                      <ThumbsUp className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className={`h-6 w-6 p-0 ${
+                                        ratingsByMessageId[currentResponse.id]
+                                          ?.response === false
+                                          ? "text-red-600"
+                                          : "text-muted-foreground"
+                                      }`}
+                                      onClick={() =>
+                                        handleRate(currentResponse.id, false)
+                                      }
+                                    >
+                                      <ThumbsDown className="h-3 w-3" />
+                                    </Button>
                                   </div>
                                 )}
                               </>
