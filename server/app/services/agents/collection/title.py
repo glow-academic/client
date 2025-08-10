@@ -2,8 +2,10 @@ import uuid
 
 from agents import Runner, trace
 from app.db import get_session
-from app.models import Agents, AssistantChats, ModelRuns, Models, Providers
+from app.models import (Agents, AssistantChats, ModelRuns, Models,
+                        Providers)
 from app.services.agents.generic import GenericAgent
+from app.utils.debug_info import DebugContext
 from fastapi import Depends
 from sqlmodel import Session, select
 
@@ -51,25 +53,30 @@ async def run_title_agent(
         api_key=provider.api_key,
     )
 
+    # create model run
+    model_run = ModelRuns(
+        model_id=model.id,
+        input_tokens=0,
+        output_tokens=0,
+        profile_id=chat.profile_id,
+        agent_id=agent.id,
+    )
+    session.add(model_run)
+    session.commit()
+
     with trace(chat.title, trace_id=chat.trace_id):
         result = await Runner.run(
             agent_instance.agent(),
             input=[{"role": "user", "content": initial_message}],
+            context=DebugContext(session=session, model_run_id=model_run.id)
         )
 
     title = result.final_output
 
     usage = result.context_wrapper.usage
 
-    # create model run
-    model_run = ModelRuns(
-        model_id=model.id,
-        input_tokens=usage.input_tokens,
-        output_tokens=usage.output_tokens,
-        profile_id=chat.profile_id,
-        agent_id=agent.id,
-    )
-    session.add(model_run)
+    model_run.input_tokens = usage.input_tokens
+    model_run.output_tokens = usage.output_tokens
     session.commit()
 
     # add the title to the trace by making an empty call

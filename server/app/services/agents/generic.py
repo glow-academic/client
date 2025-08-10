@@ -1,9 +1,10 @@
 from typing import Any
 
-from agents import Agent, ModelSettings, Runner, trace
+from agents import Agent, ModelSettings, Runner, Tool, trace
 from agents.extensions.models.litellm_model import LitellmModel
 from agents.mcp.server import MCPServer
 from app.utils.auth import decrypt_api_key
+from app.utils.debug_info import DebugContext, debug_info
 from openai.types import Reasoning
 from pydantic import BaseModel
 
@@ -28,10 +29,10 @@ class GenericAgent:
         self.temperature = temperature
         self.model = model_provider + "/" + model_name
         self.output_type = output_type
-        self.mcp_servers = mcp_servers
+        self.mcp_servers = mcp_servers or []
         self.output_guardrails: list[Any] = output_guardrails or []
         self.base_url = base_url
-
+        self.extra_body = None
         # convert reasoning to the correct type
         if reasoning == "low":
             self.reasoning = Reasoning(effort="low")
@@ -40,13 +41,17 @@ class GenericAgent:
         elif reasoning == "high":
             self.reasoning = Reasoning(effort="high")
         else:
+            if reasoning == "minimal":
+                self.extra_body = {
+                    "reasoning_effort": "minimal",
+                }
             self.reasoning = Reasoning(effort=None)
 
         # decrypt the api key
         self.api_key = decrypt_api_key(api_key)
 
-    def agent(self) -> Agent:
-        return Agent(
+    def agent(self) -> Agent[DebugContext]:
+        return Agent[DebugContext](
             name=f"{self.agent_name} Agent",
             instructions=self.system_prompt,
             model=LitellmModel(
@@ -58,8 +63,10 @@ class GenericAgent:
                 temperature=self.temperature,
                 include_usage=True,
                 reasoning=self.reasoning,
+                extra_body=self.extra_body,
             ),
             output_type=self.output_type,
-            mcp_servers=self.mcp_servers or [],
+            mcp_servers=self.mcp_servers,
+            tools=[debug_info],
             output_guardrails=self.output_guardrails,  # type: ignore[arg-type]
         )

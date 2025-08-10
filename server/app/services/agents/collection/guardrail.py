@@ -7,11 +7,12 @@ from agents import (Agent, GuardrailFunctionOutput, OutputGuardrail, Runner,
                     TContext)
 from agents.items import TResponseInputItem
 from app.db import get_session
-from app.models import (Agents, ModelRuns, Models, Providers,
+from app.models import (Agents, DebugInfo, ModelRuns, Models, Providers,
                         SimulationAttempts, SimulationChats,
                         SimulationMessages)
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_simulation_conversation_history
+from app.utils.debug_info import DebugContext
 from fastapi import Depends
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -99,27 +100,31 @@ def get_output_guardrails(
                 # Fallback: no chat context; include only the final output
                 input_items.append({"role": "assistant", "content": output})
 
-            result = await Runner.run(
-                guardrail_agent.agent(), input_items, context=getattr(ctx, "context", None)
-            )
-
             if chat:
                 attempt = db_session.exec(
                     select(SimulationAttempts).where(SimulationAttempts.id == chat.attempt_id)
                 ).one()
 
-                usage = result.context_wrapper.usage
+            # create model run
+            model_run = ModelRuns(
+                model_id=model_id,
+                input_tokens=0,
+                output_tokens=0,
+                profile_id=attempt.profile_id if attempt else None,
+                agent_id=agent_id,
+            )
+            session.add(model_run)
+            session.commit()
+
+            result = await Runner.run(
+                guardrail_agent.agent(), input_items, context=DebugContext(session=session, model_run_id=model_run.id)
+            )
+
+            usage = result.context_wrapper.usage
+            model_run.input_tokens = usage.input_tokens
+            model_run.output_tokens = usage.output_tokens
+            session.commit()
             
-                # create model run
-                model_run = ModelRuns(
-                    model_id=model_id,
-                    input_tokens=usage.input_tokens,
-                    output_tokens=usage.output_tokens,
-                    profile_id=attempt.profile_id,
-                    agent_id=agent_id,
-                )
-                session.add(model_run)
-                session.commit()
             out = result.final_output_as(GuardStudentResponse)
             return GuardrailFunctionOutput(
                 output_info=out, tripwire_triggered=not out.proper

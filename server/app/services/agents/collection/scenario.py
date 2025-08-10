@@ -5,8 +5,10 @@ from typing import List, Tuple
 from agents import Runner, gen_trace_id, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
-from app.models import Agents, ModelRuns, Models, Personas, Providers
+from app.models import (Agents, DebugInfo, ModelRuns, Models, Personas,
+                        Providers)
 from app.services.agents.generic import GenericAgent
+from app.utils.debug_info import DebugContext
 from app.utils.document import get_document_info
 from app.utils.personas import get_persona_info
 from app.utils.scenario import get_parameter_item_info
@@ -108,23 +110,28 @@ async def run_scenario_agent(
     # generate a trace id for the scenario
     trace_id = gen_trace_id()
 
+    # create model run
+    model_run = ModelRuns(
+        model_id=model.id,
+        input_tokens=0,
+        output_tokens=0,
+        profile_id=profile_id,
+        agent_id=scenario_agent.id,
+    )
+    session.add(model_run)
+    session.commit()
+
+
     with trace("Scenario Agent", group_id=str(group_id), trace_id=trace_id):
-        result = await Runner.run(agent_instance, input=clean_input_items)
+        result = await Runner.run(agent_instance, input=clean_input_items, context=DebugContext(session=session, model_run_id=model_run.id))
 
     # call the agents sdk to come up with a scenario description
     scenario_result = result.final_output_as(Scenario)
 
     usage = result.context_wrapper.usage
 
-    # create model run
-    model_run = ModelRuns(
-        model_id=model.id,
-        input_tokens=usage.input_tokens,
-        output_tokens=usage.output_tokens,
-        profile_id=profile_id,
-        agent_id=scenario_agent.id,
-    )
-    session.add(model_run)
+    model_run.input_tokens = usage.input_tokens
+    model_run.output_tokens = usage.output_tokens
     session.commit()
 
     return scenario_result.title, scenario_result.scenario, trace_id

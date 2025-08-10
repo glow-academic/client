@@ -6,6 +6,7 @@ from agents import Runner, trace
 from app.db import get_session
 from app.models import Agents, Documents, ModelRuns, Models, Providers
 from app.services.agents.generic import GenericAgent
+from app.utils.debug_info import DebugContext
 from fastapi import Depends
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -112,22 +113,29 @@ async def run_classify_agent(
                     syllabi=[],
                 )
             else:
-                result = await Runner.run(
-                    classify_agent.agent(), input=formatted_documents
-                )
-
-                usage = result.context_wrapper.usage
 
                 # create model run
                 model_run = ModelRuns(
                     model_id=model.id,
-                    input_tokens=usage.input_tokens,
-                    output_tokens=usage.output_tokens,
+                    input_tokens=0,
+                    output_tokens=0,
                     profile_id=profile_id,
                     agent_id=agent.id,
                 )
                 session.add(model_run)
                 session.commit()
+
+
+                result = await Runner.run(
+                    classify_agent.agent(), input=formatted_documents, context=DebugContext(session=session, model_run_id=model_run.id)
+                )
+
+                usage = result.context_wrapper.usage
+
+                model_run.input_tokens = usage.input_tokens
+                model_run.output_tokens = usage.output_tokens
+                session.commit()
+
                 classification = result.final_output_as(Classify)
 
         # Update the type of all the mapped documents

@@ -7,13 +7,14 @@ from agents import Runner, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
-from app.models import (Documents, ModelRuns, Models, Personas, Providers,
-                        Scenarios, SimulationAttempts, SimulationChats,
-                        SimulationMessages)
+from app.models import (DebugInfo, Documents, ModelRuns, Models, Personas,
+                        Providers, Scenarios, SimulationAttempts,
+                        SimulationChats, SimulationMessages)
 from app.services.agents.collection.guardrail import get_output_guardrails
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import (get_chat_scenario,
                             get_simulation_conversation_history)
+from app.utils.debug_info import DebugContext
 from fastapi import Depends
 from openai.types.responses import ResponseTextDeltaEvent
 from sqlmodel import Session, select
@@ -180,10 +181,22 @@ async def _handle_simulation_chat(
         output_guardrails=output_guards,
     )
 
+    # create model run
+    model_run = ModelRuns(
+        model_id=model.id,
+        input_tokens=0,
+        output_tokens=0,
+        profile_id=attempt.profile_id,
+        persona_id=persona.id,
+    )
+    session.add(model_run)
+    session.commit()
+
     with trace(chat.title, trace_id=chat.trace_id, group_id=str(attempt.id)):
         result = Runner.run_streamed(
             agent_instance.agent(),
             input=input_items,
+            context=DebugContext(session=session, model_run_id=model_run.id)
         )
 
     # Store the result in active runs for potential cancellation using unified tracking
@@ -201,16 +214,8 @@ async def _handle_simulation_chat(
                     yield chunk
 
         usage = result.context_wrapper.usage
-
-        # create model run
-        model_run = ModelRuns(
-            model_id=model.id,
-            input_tokens=usage.input_tokens,
-            output_tokens=usage.output_tokens,
-            profile_id=attempt.profile_id,
-            persona_id=persona.id,
-        )
-        session.add(model_run)
+        model_run.input_tokens = usage.input_tokens
+        model_run.output_tokens = usage.output_tokens
         session.commit()
     except Exception as e:
         # Handle cancellation or other errors

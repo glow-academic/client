@@ -6,13 +6,14 @@ from typing import Any, List
 
 from agents import Runner, trace
 from app.db import get_session
-from app.models import (Agents, ModelRuns, Models, Providers, Rubrics,
-                        SimulationAttempts, SimulationChatFeedbacks,
+from app.models import (Agents, DebugInfo, ModelRuns, Models, Providers,
+                        Rubrics, SimulationAttempts, SimulationChatFeedbacks,
                         SimulationChatGrades, SimulationChats,
                         SimulationMessages, Simulations, StandardGroups,
                         Standards)
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_simulation_conversation_history
+from app.utils.debug_info import DebugContext
 from app.utils.rubric import get_dynamic_rubric
 from fastapi import Depends
 from pydantic import BaseModel, Field, create_model
@@ -195,22 +196,26 @@ async def run_grade_agent(
         # Prepare input with rubric and conversation history
         input_items = [rubric_input] + conversation_history
 
-        # Run the grading
-        logger.info("Running grading agent...")
-        with trace(chat.title, trace_id=chat.trace_id, group_id=str(attempt.id)):
-            result = await Runner.run(agent_instance, input=input_items)
-
-        usage = result.context_wrapper.usage
-
         # create model run
         model_run = ModelRuns(
             model_id=model.id,
-            input_tokens=usage.input_tokens,
-            output_tokens=usage.output_tokens,
+            input_tokens=0,
+            output_tokens=0,
             profile_id=attempt.profile_id,
             agent_id=agent.id,
         )
         session.add(model_run)
+        session.commit()
+
+        # Run the grading
+        logger.info("Running grading agent...")
+        with trace(chat.title, trace_id=chat.trace_id, group_id=str(attempt.id)):
+            result = await Runner.run(agent_instance, input=input_items, context=DebugContext(session=session, model_run_id=model_run.id))
+
+        usage = result.context_wrapper.usage
+
+        model_run.input_tokens = usage.input_tokens
+        model_run.output_tokens = usage.output_tokens
         session.commit()
 
         grading_result = result.final_output_as(DynamicRubric)
