@@ -2,7 +2,7 @@ import logging
 import re
 import uuid
 from datetime import datetime, timezone
-from typing import Any, List
+from typing import Any, List, Optional
 
 from agents import Runner, trace
 from app.db import get_session
@@ -73,6 +73,9 @@ def create_dynamic_rubric_model(
     fields["overall_score"] = (int, Field(description="Overall total score"))
     fields["passed"] = (bool, Field(description="Whether the evaluation passed"))
     fields["summary"] = (str, Field(description="Overall evaluation summary"))
+
+    # Optional internal debug field (never shown to end users)
+    fields["debug_info"] = (Optional[str], Field(default=None, description="Optional internal debug info"))
 
     return create_model("DynamicRubricGrade", **fields)  # type: ignore
 
@@ -219,6 +222,15 @@ async def run_grade_agent(
         session.commit()
 
         grading_result = result.final_output_as(DynamicRubric)
+
+        # Store debug info if present on dynamic rubric
+        if hasattr(grading_result, "debug_info") and getattr(grading_result, "debug_info"):
+            debug = DebugInfo(
+                model_run_id=model_run.id,
+                content=getattr(grading_result, "debug_info") or "",
+            )
+            session.add(debug)
+            session.commit()
         logger.info("Grading agent completed successfully")
 
         # Calculate time taken - ensure both times are in UTC

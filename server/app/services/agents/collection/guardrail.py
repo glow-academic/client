@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 class GuardStudentResponse(BaseModel):
     proper: bool
     reason: str
+    debug_info: str | None = None
 
 
 def _build_guardrail_agent(session: Session) -> tuple[GenericAgent, uuid.UUID, uuid.UUID]:
@@ -126,6 +127,15 @@ def get_output_guardrails(
             session.commit()
             
             out = result.final_output_as(GuardStudentResponse)
+
+            # Store debug info if present
+            if getattr(out, "debug_info", None):
+                debug = DebugInfo(
+                    model_run_id=model_run.id,
+                    content=out.debug_info or "",
+                )
+                session.add(debug)
+                session.commit()
             return GuardrailFunctionOutput(
                 output_info=out, tripwire_triggered=not out.proper
             )

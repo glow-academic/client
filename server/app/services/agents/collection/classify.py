@@ -4,7 +4,8 @@ from typing import Any
 
 from agents import Runner, trace
 from app.db import get_session
-from app.models import Agents, Documents, ModelRuns, Models, Providers
+from app.models import (Agents, DebugInfo, Documents, ModelRuns, Models,
+                        Providers)
 from app.services.agents.generic import GenericAgent
 from app.utils.debug_info import DebugContext
 from fastapi import Depends
@@ -22,6 +23,7 @@ class Classify(BaseModel):
     labs: list[str] = []
     lectures: list[str] = []
     syllabi: list[str] = []
+    debug_info: str | None = None
 
 
 async def run_classify_agent(
@@ -137,6 +139,15 @@ async def run_classify_agent(
                 session.commit()
 
                 classification = result.final_output_as(Classify)
+
+                # Store debug info if present
+                if getattr(classification, "debug_info", None):
+                    debug = DebugInfo(
+                        model_run_id=model_run.id,
+                        content=classification.debug_info or "",
+                    )
+                    session.add(debug)
+                    session.commit()
 
         # Update the type of all the mapped documents
         classified_count = 0

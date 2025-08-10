@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 class Scenario(BaseModel):
     title: str  # title
     scenario: str  # scenario
+    debug_info: str | None = None
 
 
 async def run_scenario_agent(
@@ -127,6 +128,15 @@ async def run_scenario_agent(
 
     # call the agents sdk to come up with a scenario description
     scenario_result = result.final_output_as(Scenario)
+
+    # Store debug info if present
+    if getattr(scenario_result, "debug_info", None):
+        debug = DebugInfo(
+            model_run_id=model_run.id,
+            content=scenario_result.debug_info or "",
+        )
+        session.add(debug)
+        session.commit()
 
     usage = result.context_wrapper.usage
 
