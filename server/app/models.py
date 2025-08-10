@@ -77,20 +77,6 @@ class Documents(_Base, table=True):
     file_id: Optional[str] = Field(default=None, sa_column=Column('file_id', Text))
 
 
-class ModelRuns(_Base, table=True):
-    __tablename__ = 'model_runs'
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='model_runs_pkey'),
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    model_id: Mapped[uuid.UUID] = Field(sa_column=Column('model_id', Uuid(as_uuid=True)))
-    input_tokens: int = Field(sa_column=Column('input_tokens', Integer, default=0))
-    output_tokens: int = Field(sa_column=Column('output_tokens', Integer, default=0))
-
-
 class Models(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='models_pkey'),
@@ -108,6 +94,7 @@ class Models(_Base, table=True):
 
     agents: List['Agents'] = Relationship(back_populates='model')
     personas: List['Personas'] = Relationship(back_populates='model')
+    model_runs: List['ModelRuns'] = Relationship(back_populates='model')
 
 
 class Parameters(_Base, table=True):
@@ -213,6 +200,7 @@ class Agents(_Base, table=True):
     reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('minimal', 'low', 'medium', 'high', name='reasoning_effort')))
 
     model: Optional['Models'] = Relationship(back_populates='agents')
+    model_runs: List['ModelRuns'] = Relationship(back_populates='agent')
 
 
 class ParameterItems(_Base, table=True):
@@ -255,6 +243,7 @@ class Personas(_Base, table=True):
     reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('minimal', 'low', 'medium', 'high', name='reasoning_effort')))
 
     model: Optional['Models'] = Relationship(back_populates='personas')
+    model_runs: List['ModelRuns'] = Relationship(back_populates='persona')
     scenarios: List['Scenarios'] = Relationship(back_populates='persona')
 
 
@@ -282,6 +271,7 @@ class Profiles(_Base, table=True):
     user: Optional['Users'] = Relationship(back_populates='profiles')
     app_feedback: List['AppFeedback'] = Relationship(back_populates='profile')
     assistant_chats: List['AssistantChats'] = Relationship(back_populates='profile')
+    model_runs: List['ModelRuns'] = Relationship(back_populates='profile')
     simulation_attempts: List['SimulationAttempts'] = Relationship(back_populates='profile')
 
 
@@ -359,6 +349,32 @@ class AssistantChats(_Base, table=True):
     profile: Optional['Profiles'] = Relationship(back_populates='assistant_chats')
     assistant_messages: List['AssistantMessages'] = Relationship(back_populates='chat')
     assistant_tool_calls: List['AssistantToolCalls'] = Relationship(back_populates='chat')
+
+
+class ModelRuns(_Base, table=True):
+    __tablename__ = 'model_runs'
+    __table_args__ = (
+        ForeignKeyConstraint(['agent_id'], ['agents.id'], name='model_runs_agent_id_fkey'),
+        ForeignKeyConstraint(['model_id'], ['models.id'], name='model_runs_model_id_fkey'),
+        ForeignKeyConstraint(['persona_id'], ['personas.id'], name='model_runs_persona_id_fkey'),
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], name='model_runs_profile_id_fkey'),
+        PrimaryKeyConstraint('id', name='model_runs_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
+    input_tokens: int = Field(sa_column=Column('input_tokens', Integer, default=0))
+    output_tokens: int = Field(sa_column=Column('output_tokens', Integer, default=0))
+    model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
+    persona_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('persona_id', Uuid(as_uuid=True)))
+    agent_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('agent_id', Uuid(as_uuid=True)))
+    profile_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('profile_id', Uuid(as_uuid=True)))
+
+    agent: Optional['Agents'] = Relationship(back_populates='model_runs')
+    model: Optional['Models'] = Relationship(back_populates='model_runs')
+    persona: Optional['Personas'] = Relationship(back_populates='model_runs')
+    profile: Optional['Profiles'] = Relationship(back_populates='model_runs')
 
 
 class Scenarios(_Base, table=True):

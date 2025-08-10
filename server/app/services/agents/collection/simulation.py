@@ -206,7 +206,9 @@ async def _handle_simulation_chat(
         model_run = ModelRuns(
             model_id=model.id,
             input_tokens=usage.input_tokens,
-            output_tokens=usage.output_tokens
+            output_tokens=usage.output_tokens,
+            profile_id=attempt.profile_id,
+            persona_id=persona.id,
         )
         session.add(model_run)
         session.commit()

@@ -26,12 +26,3 @@ CREATE TABLE models (
   input_ppm   FLOAT       NOT NULL DEFAULT 0.0, -- price per million input tokens (dollars) (free is 0.0)
   output_ppm  FLOAT       NOT NULL DEFAULT 0.0 -- price per million output tokens (dollars) (free is 0.0)
 );
-
-CREATE TABLE model_runs (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  model_id   UUID        NOT NULL,
-  input_tokens INTEGER     NOT NULL DEFAULT 0,
-  output_tokens INTEGER     NOT NULL DEFAULT 0
-);

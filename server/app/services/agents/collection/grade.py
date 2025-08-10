@@ -206,7 +206,9 @@ async def run_grade_agent(
         model_run = ModelRuns(
             model_id=model.id,
             input_tokens=usage.input_tokens,
-            output_tokens=usage.output_tokens
+            output_tokens=usage.output_tokens,
+            profile_id=attempt.profile_id,
+            agent_id=agent.id,
         )
         session.add(model_run)
         session.commit()

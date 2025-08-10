@@ -7,7 +7,8 @@ from agents import (Agent, GuardrailFunctionOutput, OutputGuardrail, Runner,
                     TContext)
 from agents.items import TResponseInputItem
 from app.db import get_session
-from app.models import (Agents, ModelRuns, Models, Providers, SimulationChats,
+from app.models import (Agents, ModelRuns, Models, Providers,
+                        SimulationAttempts, SimulationChats,
                         SimulationMessages)
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_simulation_conversation_history
@@ -23,7 +24,7 @@ class GuardStudentResponse(BaseModel):
     reason: str
 
 
-def _build_guardrail_agent(session: Session) -> tuple[GenericAgent, uuid.UUID]:
+def _build_guardrail_agent(session: Session) -> tuple[GenericAgent, uuid.UUID, uuid.UUID]:
     """Create the internal agent that powers the guardrail from DB-configured Agent named 'Guardrail'."""
     agent_row = session.exec(select(Agents).where(Agents.name == "Guardrail")).one()
     if not agent_row:
@@ -47,14 +48,14 @@ def _build_guardrail_agent(session: Session) -> tuple[GenericAgent, uuid.UUID]:
         api_key=provider.api_key,
         reasoning=agent_row.reasoning,
         output_type=GuardStudentResponse,
-    ), model.id
+    ), agent_row.id, model.id
 
 
 def get_output_guardrails(
     session: Session = Depends(get_session),
 ) -> List[OutputGuardrail[TContext]]:
     """Return a list of output guardrails suitable for attaching to an Agent."""
-    guardrail_agent, model_id = _build_guardrail_agent(session)
+    guardrail_agent, agent_id, model_id = _build_guardrail_agent(session)
 
     async def _output_guard(ctx: Any, agent: Agent, output: str) -> GuardrailFunctionOutput:
         db_session = next(get_session())
@@ -102,16 +103,23 @@ def get_output_guardrails(
                 guardrail_agent.agent(), input_items, context=getattr(ctx, "context", None)
             )
 
-            usage = result.context_wrapper.usage
-        
-            # create model run
-            model_run = ModelRuns(
-                model_id=model_id,
-                input_tokens=usage.input_tokens,
-                output_tokens=usage.output_tokens
-            )
-            session.add(model_run)
-            session.commit()
+            if chat:
+                attempt = db_session.exec(
+                    select(SimulationAttempts).where(SimulationAttempts.id == chat.attempt_id)
+                ).one()
+
+                usage = result.context_wrapper.usage
+            
+                # create model run
+                model_run = ModelRuns(
+                    model_id=model_id,
+                    input_tokens=usage.input_tokens,
+                    output_tokens=usage.output_tokens,
+                    profile_id=attempt.profile_id,
+                    agent_id=agent_id,
+                )
+                session.add(model_run)
+                session.commit()
             out = result.final_output_as(GuardStudentResponse)
             return GuardrailFunctionOutput(
                 output_info=out, tripwire_triggered=not out.proper

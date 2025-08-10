@@ -129,6 +129,7 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
                     parameter_item_ids=scenario.parameter_item_ids,
                     group_id=new_attempt.id,
                     session=db_session,
+                    profile_id=new_attempt.profile_id,
                 )
                 scenario.name = name
                 scenario.description = description
@@ -309,6 +310,7 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                         parameter_item_ids=scenario.parameter_item_ids,
                         group_id=attempt_id,
                         session=db_session,
+                        profile_id=simulation_attempt.profile_id if simulation_attempt else None,
                     )
                     scenario.name = name
                     scenario.description = description

@@ -13,7 +13,7 @@ export interface FinalizeDocumentUploadParams {
   zip?: boolean;
   autoClassify?: boolean;
   csv?: boolean;
-  profile?: string;
+  profileId?: string;
 }
 
 export interface ExtractedDocument {
@@ -59,8 +59,8 @@ export async function finalizeDocumentUpload(
   fileId: string,
   zip?: boolean,
   autoClassify?: boolean,
+  profileId?: string,
   csv?: boolean,
-  profile?: string,
   test?: boolean,
 ): Promise<FinalizeDocumentUploadResponse> {
   try {
@@ -69,7 +69,7 @@ export async function finalizeDocumentUpload(
       ...(zip !== undefined && { zip }),
       ...(autoClassify !== undefined && { autoClassify }),
       ...(csv !== undefined && { csv }),
-      ...(profile !== undefined && { profile }),
+      ...(profileId !== undefined && { profileId }),
       ...(test !== undefined && { test }),
     };
 

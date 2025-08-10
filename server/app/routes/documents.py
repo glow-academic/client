@@ -60,52 +60,6 @@ async def documents_health_check() -> JSONResponse:
             content={"status": "error", "service": "documents", "error": str(e)},
         )
 
-
-@router.post("/classify")
-async def classify_documents(
-    document_ids: list[uuid.UUID],
-    test: bool = False,
-    session: Session = Depends(get_session),
-) -> JSONResponse:
-    """
-    Classify documents for a class
-    """
-    try:
-        # Run the classification agent
-        result = await run_classify_agent(document_ids, test, session)
-
-        if result["success"]:
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "status": "success",
-                    "message": result["message"],
-                    "classified_count": result["classified_count"],
-                    "total_count": result["total_count"],
-                    "classification_results": result.get("classification_results", {}),
-                },
-            )
-        else:
-            return JSONResponse(
-                status_code=400,
-                content={"status": "error", "message": result["message"]},
-            )
-
-    except ValueError as e:
-        return JSONResponse(
-            status_code=404, content={"status": "error", "message": str(e)}
-        )
-    except Exception as e:
-        logger.error(f"Error classifying documents: {str(e)}")
-        return JSONResponse(
-            status_code=500,
-            content={
-                "status": "error",
-                "message": f"Failed to classify documents: {str(e)}",
-            },
-        )
-
-
 # Regular file upload endpoint (alternative to TUS for simple uploads)
 @router.post("/upload")
 async def upload_document(
@@ -414,6 +368,7 @@ async def finalize_upload(
         file_id = body.get("fileId")
         is_csv = body.get("csv", False)
         test = body.get("test", False)
+        profile_id = body.get("profile_id")
 
         if not file_id:
             return JSONResponse(
@@ -630,6 +585,7 @@ async def finalize_upload(
                             document_ids,
                             test,
                             session,
+                            profile_id,
                         )
                         logger.info(
                             f"Auto-classification completed: {classification_result}"

@@ -12,6 +12,7 @@ export interface NewScenarioParams {
   personaId?: string | null;
   documentIds?: string[];
   parameterItemIds?: string[];
+  profileId?: string | null;
 }
 
 export interface NewScenarioResponse {
@@ -46,7 +47,9 @@ export async function newScenario(
         }
       });
     }
-
+    if (params.profileId) {
+      formData.append("profile_id", params.profileId);
+    }
     const response = await fetch(`${getApiBase()}/scenarios/new`, {
       method: "POST",
       credentials: "include",

@@ -190,7 +190,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             const result = await finalizeDocumentUpload(
               fileId,
               isZipFile, // zip parameter
-              shouldAutoClassify // autoClassify parameter
+              shouldAutoClassify, // autoClassify parameter
+              effectiveProfile?.id,
             );
 
             if (result.success) {

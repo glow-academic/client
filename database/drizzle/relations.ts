@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, profiles, rubrics, standardGroups, standards, appFeedback, assistantChats, assistantMessages, assistantToolCalls, models, personas, agents, simulationAttempts, simulations, parameters, parameterItems, scenarios, simulationChats, simulationMessages, simulationChatGrades, simulationChatFeedbacks } from "./schema";
+import { users, profiles, rubrics, standardGroups, standards, appFeedback, assistantChats, assistantMessages, assistantToolCalls, models, personas, agents, modelRuns, simulations, parameters, parameterItems, scenarios, simulationAttempts, simulationChats, simulationMessages, simulationChatGrades, simulationChatFeedbacks } from "./schema";
 
 export const profilesRelations = relations(profiles, ({one, many}) => ({
 	user: one(users, {
@@ -8,6 +8,7 @@ export const profilesRelations = relations(profiles, ({one, many}) => ({
 	}),
 	appFeedbacks: many(appFeedback),
 	assistantChats: many(assistantChats),
+	modelRuns: many(modelRuns),
 	simulationAttempts: many(simulationAttempts),
 }));
 
@@ -44,20 +45,20 @@ export const appFeedbackRelations = relations(appFeedback, ({one}) => ({
 	}),
 }));
 
+export const assistantChatsRelations = relations(assistantChats, ({one, many}) => ({
+	profile: one(profiles, {
+		fields: [assistantChats.profileId],
+		references: [profiles.id]
+	}),
+	assistantMessages: many(assistantMessages),
+	assistantToolCalls: many(assistantToolCalls),
+}));
+
 export const assistantMessagesRelations = relations(assistantMessages, ({one}) => ({
 	assistantChat: one(assistantChats, {
 		fields: [assistantMessages.chatId],
 		references: [assistantChats.id]
 	}),
-}));
-
-export const assistantChatsRelations = relations(assistantChats, ({one, many}) => ({
-	assistantMessages: many(assistantMessages),
-	profile: one(profiles, {
-		fields: [assistantChats.profileId],
-		references: [profiles.id]
-	}),
-	assistantToolCalls: many(assistantToolCalls),
 }));
 
 export const assistantToolCallsRelations = relations(assistantToolCalls, ({one}) => ({
@@ -72,39 +73,49 @@ export const personasRelations = relations(personas, ({one, many}) => ({
 		fields: [personas.modelId],
 		references: [models.id]
 	}),
+	modelRuns: many(modelRuns),
 	scenarios: many(scenarios),
 }));
 
 export const modelsRelations = relations(models, ({many}) => ({
 	personas: many(personas),
 	agents: many(agents),
+	modelRuns: many(modelRuns),
 }));
 
-export const agentsRelations = relations(agents, ({one}) => ({
+export const agentsRelations = relations(agents, ({one, many}) => ({
 	model: one(models, {
 		fields: [agents.modelId],
 		references: [models.id]
 	}),
+	modelRuns: many(modelRuns),
 }));
 
-export const simulationAttemptsRelations = relations(simulationAttempts, ({one, many}) => ({
+export const modelRunsRelations = relations(modelRuns, ({one}) => ({
+	model: one(models, {
+		fields: [modelRuns.modelId],
+		references: [models.id]
+	}),
+	persona: one(personas, {
+		fields: [modelRuns.personaId],
+		references: [personas.id]
+	}),
+	agent: one(agents, {
+		fields: [modelRuns.agentId],
+		references: [agents.id]
+	}),
 	profile: one(profiles, {
-		fields: [simulationAttempts.profileId],
+		fields: [modelRuns.profileId],
 		references: [profiles.id]
 	}),
-	simulation: one(simulations, {
-		fields: [simulationAttempts.simulationId],
-		references: [simulations.id]
-	}),
-	simulationChats: many(simulationChats),
 }));
 
 export const simulationsRelations = relations(simulations, ({one, many}) => ({
-	simulationAttempts: many(simulationAttempts),
 	rubric: one(rubrics, {
 		fields: [simulations.rubricId],
 		references: [rubrics.id]
 	}),
+	simulationAttempts: many(simulationAttempts),
 }));
 
 export const parameterItemsRelations = relations(parameterItems, ({one}) => ({
@@ -122,6 +133,18 @@ export const scenariosRelations = relations(scenarios, ({one, many}) => ({
 	persona: one(personas, {
 		fields: [scenarios.personaId],
 		references: [personas.id]
+	}),
+	simulationChats: many(simulationChats),
+}));
+
+export const simulationAttemptsRelations = relations(simulationAttempts, ({one, many}) => ({
+	profile: one(profiles, {
+		fields: [simulationAttempts.profileId],
+		references: [profiles.id]
+	}),
+	simulation: one(simulations, {
+		fields: [simulationAttempts.simulationId],
+		references: [simulations.id]
 	}),
 	simulationChats: many(simulationChats),
 }));

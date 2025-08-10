@@ -1,84 +1,11 @@
-import uuid
-from typing import Any, AsyncGenerator, cast
+from typing import Any
 
 from agents import Agent, ModelSettings, Runner, trace
 from agents.extensions.models.litellm_model import LitellmModel
-from agents.items import TResponseInputItem
 from agents.mcp.server import MCPServer
-from app.db import get_session
-from app.models import ModelRuns, Models, Personas, Providers
 from app.utils.auth import decrypt_api_key
-from fastapi import Depends
 from openai.types import Reasoning
-from openai.types.responses import ResponseTextDeltaEvent
 from pydantic import BaseModel
-from sqlmodel import Session, select
-
-
-# this becomes main. Put those other in the files
-async def run_generic_agent(
-    persona_id: uuid.UUID,
-    input_items: list[TResponseInputItem],
-    session: Session = Depends(get_session),
-) -> AsyncGenerator[str, None]:
-    """
-    This function is used to run the generic agent using the OpenAI Agents SDK.
-
-    Args:
-        persona_id: The ID of the persona
-        input_text: Optional input text to send to the agent
-    Yields:
-        Text chunks from the agent's response
-    """
-    persona = session.exec(select(Personas).where(Personas.id == persona_id)).one()
-    if not persona:
-        raise ValueError(f"Persona with ID {persona_id} not found")
-
-    # getting the model from the agent's model_id
-    model = session.exec(select(Models).where(Models.id == persona.model_id)).one()
-    if not model:
-        raise ValueError(f"Model with ID {persona.model_id} not found")
-
-    # getting the provider from the model's provider_id
-    provider = session.exec(
-        select(Providers).where(Providers.id == model.provider_id)
-    ).one()
-    if not provider:
-        raise ValueError(f"Provider with ID {model.provider_id} not found")
-
-    agent_instance = GenericAgent(
-        agent_name=persona.name,
-        system_prompt=persona.system_prompt,
-        temperature=persona.temperature,
-        model_name=model.name,
-        model_provider=provider.name,
-        base_url=provider.base_url,
-        api_key=provider.api_key,
-        reasoning=persona.reasoning,
-    )
-
-    with trace(f"Testing {persona.name} Agent"):
-        result = Runner.run_streamed(
-            agent_instance.agent(),
-            input=input_items,
-        )
-
-    async for event in result.stream_events():
-        if event.type == "raw_response_event":
-            if isinstance(event.data, ResponseTextDeltaEvent):
-                chunk = event.data.delta
-                yield chunk
-
-    usage = result.context_wrapper.usage
-
-    # create model run
-    model_run = ModelRuns(
-        model_id=model.id,
-        input_tokens=usage.input_tokens,
-        output_tokens=usage.output_tokens
-    )
-    session.add(model_run)
-    session.commit()
 
 
 class GenericAgent:

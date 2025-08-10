@@ -28,6 +28,7 @@ async def run_scenario_agent(
     parameter_item_ids: List[uuid.UUID] | None = None,
     group_id: uuid.UUID | None = None,
     session: Session = Depends(get_session),
+    profile_id: uuid.UUID | None = None,
 ) -> Tuple[str, str, str]:
     """
     This function is used to run the scenario agent.
@@ -119,7 +120,9 @@ async def run_scenario_agent(
     model_run = ModelRuns(
         model_id=model.id,
         input_tokens=usage.input_tokens,
-        output_tokens=usage.output_tokens
+        output_tokens=usage.output_tokens,
+        profile_id=profile_id,
+        agent_id=scenario_agent.id,
     )
     session.add(model_run)
     session.commit()

@@ -266,6 +266,7 @@ export default function Scenario({
         personaId: formData.personaId || null,
         documentIds: formData.documentIds || [],
         parameterItemIds: formData.parameterItemIds || [],
+        profileId: effectiveProfile?.id || null,
       });
 
       if (!result.success) {
