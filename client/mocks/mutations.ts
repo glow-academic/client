@@ -117,6 +117,15 @@ vi.mock('@/utils/mutations/cohorts/delete-cohorts', () => ({ deleteCohorts: dele
 vi.mock('@/utils/mutations/cohorts/update-cohort', () => ({ updateCohort: updateCohortMock }));
 vi.mock('@/utils/mutations/cohorts/update-cohorts', () => ({ updateCohorts: updateCohortsMock }));
 
+// DEBUG_INFO MUTATIONS
+export const createDebugInfoMock = vi.fn(() => mockSchema.debugInfo?.[0] || {});
+export const deleteDebugInfoMock = vi.fn(() => mockSchema.debugInfo?.[0] || {});
+export const updateDebugInfoMock = vi.fn(() => mockSchema.debugInfo?.[0] || {});
+
+vi.mock('@/utils/mutations/debug_info/create-debug-info', () => ({ createDebugInfo: createDebugInfoMock }));
+vi.mock('@/utils/mutations/debug_info/delete-debug-info', () => ({ deleteDebugInfo: deleteDebugInfoMock }));
+vi.mock('@/utils/mutations/debug_info/update-debug-info', () => ({ updateDebugInfo: updateDebugInfoMock }));
+
 // DOCUMENTS MUTATIONS
 export const createDocumentMock = vi.fn(() => mockSchema.documents?.[0] || {});
 export const createDocumentsMock = vi.fn(() => mockSchema.documents || []);
@@ -297,6 +306,21 @@ vi.mock('@/utils/mutations/simulation_attempts/delete-simulation-attempts', () =
 vi.mock('@/utils/mutations/simulation_attempts/update-simulation-attempt', () => ({ updateSimulationAttempt: updateSimulationAttemptMock }));
 vi.mock('@/utils/mutations/simulation_attempts/update-simulation-attempts', () => ({ updateSimulationAttempts: updateSimulationAttemptsMock }));
 
+// SIMULATION_CHAT_CROWDSOURCED_FEEDBACKS MUTATIONS
+export const createSimulationChatCrowdsourcedFeedbackMock = vi.fn(() => mockSchema.simulationChatCrowdsourcedFeedbacks?.[0] || {});
+export const createSimulationChatCrowdsourcedFeedbacksMock = vi.fn(() => mockSchema.simulationChatCrowdsourcedFeedbacks || []);
+export const deleteSimulationChatCrowdsourcedFeedbackMock = vi.fn(() => mockSchema.simulationChatCrowdsourcedFeedbacks?.[0] || {});
+export const deleteSimulationChatCrowdsourcedFeedbacksMock = vi.fn(() => mockSchema.simulationChatCrowdsourcedFeedbacks || []);
+export const updateSimulationChatCrowdsourcedFeedbackMock = vi.fn(() => mockSchema.simulationChatCrowdsourcedFeedbacks?.[0] || {});
+export const updateSimulationChatCrowdsourcedFeedbacksMock = vi.fn(() => mockSchema.simulationChatCrowdsourcedFeedbacks || []);
+
+vi.mock('@/utils/mutations/simulation_chat_crowdsourced_feedbacks/create-simulation-chat-crowdsourced-feedback', () => ({ createSimulationChatCrowdsourcedFeedback: createSimulationChatCrowdsourcedFeedbackMock }));
+vi.mock('@/utils/mutations/simulation_chat_crowdsourced_feedbacks/create-simulation-chat-crowdsourced-feedbacks', () => ({ createSimulationChatCrowdsourcedFeedbacks: createSimulationChatCrowdsourcedFeedbacksMock }));
+vi.mock('@/utils/mutations/simulation_chat_crowdsourced_feedbacks/delete-simulation-chat-crowdsourced-feedback', () => ({ deleteSimulationChatCrowdsourcedFeedback: deleteSimulationChatCrowdsourcedFeedbackMock }));
+vi.mock('@/utils/mutations/simulation_chat_crowdsourced_feedbacks/delete-simulation-chat-crowdsourced-feedbacks', () => ({ deleteSimulationChatCrowdsourcedFeedbacks: deleteSimulationChatCrowdsourcedFeedbacksMock }));
+vi.mock('@/utils/mutations/simulation_chat_crowdsourced_feedbacks/update-simulation-chat-crowdsourced-feedback', () => ({ updateSimulationChatCrowdsourcedFeedback: updateSimulationChatCrowdsourcedFeedbackMock }));
+vi.mock('@/utils/mutations/simulation_chat_crowdsourced_feedbacks/update-simulation-chat-crowdsourced-feedbacks', () => ({ updateSimulationChatCrowdsourcedFeedbacks: updateSimulationChatCrowdsourcedFeedbacksMock }));
+
 // SIMULATION_CHAT_FEEDBACKS MUTATIONS
 export const createSimulationChatFeedbackMock = vi.fn(() => mockSchema.simulationChatFeedbacks?.[0] || {});
 export const createSimulationChatFeedbacksMock = vi.fn(() => mockSchema.simulationChatFeedbacks || []);
@@ -341,6 +365,21 @@ vi.mock('@/utils/mutations/simulation_chats/delete-simulation-chat', () => ({ de
 vi.mock('@/utils/mutations/simulation_chats/delete-simulation-chats', () => ({ deleteSimulationChats: deleteSimulationChatsMock }));
 vi.mock('@/utils/mutations/simulation_chats/update-simulation-chat', () => ({ updateSimulationChat: updateSimulationChatMock }));
 vi.mock('@/utils/mutations/simulation_chats/update-simulation-chats', () => ({ updateSimulationChats: updateSimulationChatsMock }));
+
+// SIMULATION_CROWDSOURCED_MESSAGES MUTATIONS
+export const createSimulationCrowdsourcedMessageMock = vi.fn(() => mockSchema.simulationCrowdsourcedMessages?.[0] || {});
+export const createSimulationCrowdsourcedMessagesMock = vi.fn(() => mockSchema.simulationCrowdsourcedMessages || []);
+export const deleteSimulationCrowdsourcedMessageMock = vi.fn(() => mockSchema.simulationCrowdsourcedMessages?.[0] || {});
+export const deleteSimulationCrowdsourcedMessagesMock = vi.fn(() => mockSchema.simulationCrowdsourcedMessages || []);
+export const updateSimulationCrowdsourcedMessageMock = vi.fn(() => mockSchema.simulationCrowdsourcedMessages?.[0] || {});
+export const updateSimulationCrowdsourcedMessagesMock = vi.fn(() => mockSchema.simulationCrowdsourcedMessages || []);
+
+vi.mock('@/utils/mutations/simulation_crowdsourced_messages/create-simulation-crowdsourced-message', () => ({ createSimulationCrowdsourcedMessage: createSimulationCrowdsourcedMessageMock }));
+vi.mock('@/utils/mutations/simulation_crowdsourced_messages/create-simulation-crowdsourced-messages', () => ({ createSimulationCrowdsourcedMessages: createSimulationCrowdsourcedMessagesMock }));
+vi.mock('@/utils/mutations/simulation_crowdsourced_messages/delete-simulation-crowdsourced-message', () => ({ deleteSimulationCrowdsourcedMessage: deleteSimulationCrowdsourcedMessageMock }));
+vi.mock('@/utils/mutations/simulation_crowdsourced_messages/delete-simulation-crowdsourced-messages', () => ({ deleteSimulationCrowdsourcedMessages: deleteSimulationCrowdsourcedMessagesMock }));
+vi.mock('@/utils/mutations/simulation_crowdsourced_messages/update-simulation-crowdsourced-message', () => ({ updateSimulationCrowdsourcedMessage: updateSimulationCrowdsourcedMessageMock }));
+vi.mock('@/utils/mutations/simulation_crowdsourced_messages/update-simulation-crowdsourced-messages', () => ({ updateSimulationCrowdsourcedMessages: updateSimulationCrowdsourcedMessagesMock }));
 
 // SIMULATION_MESSAGES MUTATIONS
 export const createSimulationMessageMock = vi.fn(() => mockSchema.simulationMessages?.[0] || {});

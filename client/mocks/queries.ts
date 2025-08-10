@@ -97,6 +97,20 @@ vi.mock('@/utils/queries/cohorts/get-cohort', () => ({
   getCohort: vi.fn(() => mockSchema.cohorts?.[0] || null),
 }));
 
+// DEBUG_INFO QUERIES
+vi.mock('@/utils/queries/debug_info/get-all-debug-info', () => ({
+  getAllDebugInfo: vi.fn(() => mockSchema.debugInfo || []),
+}));
+vi.mock('@/utils/queries/debug_info/get-debug-info-by-modelrun', () => ({
+  getDebugInfoByModelrun: vi.fn(() => mockSchema.debugInfo || []),
+}));
+vi.mock('@/utils/queries/debug_info/get-debug-info-by-modelruns', () => ({
+  getDebugInfoByModelruns: vi.fn(() => mockSchema.debugInfo || []),
+}));
+vi.mock('@/utils/queries/debug_info/get-debug-info', () => ({
+  getDebugInfo: vi.fn(() => mockSchema.debugInfo?.[0] || null),
+}));
+
 // DOCUMENTS QUERIES
 vi.mock('@/utils/queries/documents/get-all-documents', () => ({
   getAllDocuments: vi.fn(() => mockSchema.documents || []),
@@ -111,6 +125,30 @@ vi.mock('@/utils/queries/model_runs/get-all-model-runs', () => ({
 }));
 vi.mock('@/utils/queries/model_runs/get-model-run', () => ({
   getModelRun: vi.fn(() => mockSchema.modelRuns?.[0] || null),
+}));
+vi.mock('@/utils/queries/model_runs/get-model-runs-by-agent', () => ({
+  getModelRunsByAgent: vi.fn(() => mockSchema.modelRuns || []),
+}));
+vi.mock('@/utils/queries/model_runs/get-model-runs-by-agents', () => ({
+  getModelRunsByAgents: vi.fn(() => mockSchema.modelRuns || []),
+}));
+vi.mock('@/utils/queries/model_runs/get-model-runs-by-model', () => ({
+  getModelRunsByModel: vi.fn(() => mockSchema.modelRuns || []),
+}));
+vi.mock('@/utils/queries/model_runs/get-model-runs-by-models', () => ({
+  getModelRunsByModels: vi.fn(() => mockSchema.modelRuns || []),
+}));
+vi.mock('@/utils/queries/model_runs/get-model-runs-by-persona', () => ({
+  getModelRunsByPersona: vi.fn(() => mockSchema.modelRuns || []),
+}));
+vi.mock('@/utils/queries/model_runs/get-model-runs-by-personas', () => ({
+  getModelRunsByPersonas: vi.fn(() => mockSchema.modelRuns || []),
+}));
+vi.mock('@/utils/queries/model_runs/get-model-runs-by-profile', () => ({
+  getModelRunsByProfile: vi.fn(() => mockSchema.modelRuns || []),
+}));
+vi.mock('@/utils/queries/model_runs/get-model-runs-by-profiles', () => ({
+  getModelRunsByProfiles: vi.fn(() => mockSchema.modelRuns || []),
 }));
 
 // MODELS QUERIES
@@ -229,6 +267,20 @@ vi.mock('@/utils/queries/simulation_attempts/get-simulation-attempts-by-simulati
   getSimulationAttemptsBySimulations: vi.fn(() => mockSchema.simulationAttempts || []),
 }));
 
+// SIMULATION_CHAT_CROWDSOURCED_FEEDBACKS QUERIES
+vi.mock('@/utils/queries/simulation_chat_crowdsourced_feedbacks/get-all-simulation-chat-crowdsourced-feedbacks', () => ({
+  getAllSimulationChatCrowdsourcedFeedbacks: vi.fn(() => mockSchema.simulationChatCrowdsourcedFeedbacks || []),
+}));
+vi.mock('@/utils/queries/simulation_chat_crowdsourced_feedbacks/get-simulation-chat-crowdsourced-feedback', () => ({
+  getSimulationChatCrowdsourcedFeedback: vi.fn(() => mockSchema.simulationChatCrowdsourcedFeedbacks?.[0] || null),
+}));
+vi.mock('@/utils/queries/simulation_chat_crowdsourced_feedbacks/get-simulation-chat-crowdsourced-feedbacks-by-simulationchatfeedback', () => ({
+  getSimulationChatCrowdsourcedFeedbacksBySimulationchatfeedback: vi.fn(() => mockSchema.simulationChatCrowdsourcedFeedbacks || []),
+}));
+vi.mock('@/utils/queries/simulation_chat_crowdsourced_feedbacks/get-simulation-chat-crowdsourced-feedbacks-by-simulationchatfeedbacks', () => ({
+  getSimulationChatCrowdsourcedFeedbacksBySimulationchatfeedbacks: vi.fn(() => mockSchema.simulationChatCrowdsourcedFeedbacks || []),
+}));
+
 // SIMULATION_CHAT_FEEDBACKS QUERIES
 vi.mock('@/utils/queries/simulation_chat_feedbacks/get-all-simulation-chat-feedbacks', () => ({
   getAllSimulationChatFeedbacks: vi.fn(() => mockSchema.simulationChatFeedbacks || []),
@@ -287,6 +339,26 @@ vi.mock('@/utils/queries/simulation_chats/get-simulation-chats-by-scenario', () 
 }));
 vi.mock('@/utils/queries/simulation_chats/get-simulation-chats-by-scenarios', () => ({
   getSimulationChatsByScenarios: vi.fn(() => mockSchema.simulationChats || []),
+}));
+
+// SIMULATION_CROWDSOURCED_MESSAGES QUERIES
+vi.mock('@/utils/queries/simulation_crowdsourced_messages/get-all-simulation-crowdsourced-messages', () => ({
+  getAllSimulationCrowdsourcedMessages: vi.fn(() => mockSchema.simulationCrowdsourcedMessages || []),
+}));
+vi.mock('@/utils/queries/simulation_crowdsourced_messages/get-simulation-crowdsourced-message', () => ({
+  getSimulationCrowdsourcedMessage: vi.fn(() => mockSchema.simulationCrowdsourcedMessages?.[0] || null),
+}));
+vi.mock('@/utils/queries/simulation_crowdsourced_messages/get-simulation-crowdsourced-messages-by-profile', () => ({
+  getSimulationCrowdsourcedMessagesByProfile: vi.fn(() => mockSchema.simulationCrowdsourcedMessages || []),
+}));
+vi.mock('@/utils/queries/simulation_crowdsourced_messages/get-simulation-crowdsourced-messages-by-profiles', () => ({
+  getSimulationCrowdsourcedMessagesByProfiles: vi.fn(() => mockSchema.simulationCrowdsourcedMessages || []),
+}));
+vi.mock('@/utils/queries/simulation_crowdsourced_messages/get-simulation-crowdsourced-messages-by-simulationmessage', () => ({
+  getSimulationCrowdsourcedMessagesBySimulationmessage: vi.fn(() => mockSchema.simulationCrowdsourcedMessages || []),
+}));
+vi.mock('@/utils/queries/simulation_crowdsourced_messages/get-simulation-crowdsourced-messages-by-simulationmessages', () => ({
+  getSimulationCrowdsourcedMessagesBySimulationmessages: vi.fn(() => mockSchema.simulationCrowdsourcedMessages || []),
 }));
 
 // SIMULATION_MESSAGES QUERIES

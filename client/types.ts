@@ -1,31 +1,34 @@
 import { 
   accounts as Accounts,
   sessions as Sessions,
+  documents as Documents,
   users as Users,
   profiles as Profiles,
   providers as Providers,
-  modelRuns as ModelRuns,
-  documents as Documents,
   models as Models,
   rubrics as Rubrics,
   standardGroups as StandardGroups,
-  standards as Standards,
   appLogs as AppLogs,
+  standards as Standards,
   appFeedback as AppFeedback,
-  assistantMessages as AssistantMessages,
   assistantChats as AssistantChats,
+  assistantMessages as AssistantMessages,
   assistantToolCalls as AssistantToolCalls,
   personas as Personas,
   agents as Agents,
-  simulationAttempts as SimulationAttempts,
+  modelRuns as ModelRuns,
+  debugInfo as DebugInfo,
+  scenarios as Scenarios,
   parameters as Parameters,
   parameterItems as ParameterItems,
-  scenarios as Scenarios,
-  simulationChats as SimulationChats,
+  simulationAttempts as SimulationAttempts,
   simulations as Simulations,
+  simulationChats as SimulationChats,
   simulationMessages as SimulationMessages,
   simulationChatGrades as SimulationChatGrades,
   simulationChatFeedbacks as SimulationChatFeedbacks,
+  simulationChatCrowdsourcedFeedbacks as SimulationChatCrowdsourcedFeedbacks,
+  simulationCrowdsourcedMessages as SimulationCrowdsourcedMessages,
   cohorts as Cohorts,
   verificationToken as VerificationToken,
   assistantMessageType, assistantToolType, documentType, feedbackType, profileRole, reasoningEffort, simulationMessageType
@@ -34,31 +37,34 @@ import {
 // Use Drizzle schema types
 type Account = typeof Accounts.$inferSelect;
 type Session = typeof Sessions.$inferSelect;
+type Document = typeof Documents.$inferSelect;
 type User = typeof Users.$inferSelect;
 type Profile = typeof Profiles.$inferSelect;
 type Provider = typeof Providers.$inferSelect;
-type ModelRun = typeof ModelRuns.$inferSelect;
-type Document = typeof Documents.$inferSelect;
 type Model = typeof Models.$inferSelect;
 type Rubric = typeof Rubrics.$inferSelect;
 type StandardGroup = typeof StandardGroups.$inferSelect;
-type Standard = typeof Standards.$inferSelect;
 type AppLog = typeof AppLogs.$inferSelect;
+type Standard = typeof Standards.$inferSelect;
 type AppFeedback = typeof AppFeedback.$inferSelect;
-type AssistantMessage = typeof AssistantMessages.$inferSelect;
 type AssistantChat = typeof AssistantChats.$inferSelect;
+type AssistantMessage = typeof AssistantMessages.$inferSelect;
 type AssistantToolCall = typeof AssistantToolCalls.$inferSelect;
 type Persona = typeof Personas.$inferSelect;
 type Agent = typeof Agents.$inferSelect;
-type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
+type ModelRun = typeof ModelRuns.$inferSelect;
+type DebugInfo = typeof DebugInfo.$inferSelect;
+type Scenario = typeof Scenarios.$inferSelect;
 type Parameter = typeof Parameters.$inferSelect;
 type ParameterItem = typeof ParameterItems.$inferSelect;
-type Scenario = typeof Scenarios.$inferSelect;
-type SimulationChat = typeof SimulationChats.$inferSelect;
+type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
 type Simulation = typeof Simulations.$inferSelect;
+type SimulationChat = typeof SimulationChats.$inferSelect;
 type SimulationMessage = typeof SimulationMessages.$inferSelect;
 type SimulationChatGrade = typeof SimulationChatGrades.$inferSelect;
 type SimulationChatFeedback = typeof SimulationChatFeedbacks.$inferSelect;
+type SimulationChatCrowdsourcedFeedback = typeof SimulationChatCrowdsourcedFeedbacks.$inferSelect;
+type SimulationCrowdsourcedMessage = typeof SimulationCrowdsourcedMessages.$inferSelect;
 type Cohort = typeof Cohorts.$inferSelect;
 type VerificationToken = typeof VerificationToken.$inferSelect;
 
@@ -73,31 +79,34 @@ type SimulationMessageType = (typeof simulationMessageType.enumValues)[number];
 export type { 
   Account,
   Session,
+  Document,
   User,
   Profile,
   Provider,
-  ModelRun,
-  Document,
   Model,
   Rubric,
   StandardGroup,
-  Standard,
   AppLog,
+  Standard,
   AppFeedback,
-  AssistantMessage,
   AssistantChat,
+  AssistantMessage,
   AssistantToolCall,
   Persona,
   Agent,
-  SimulationAttempt,
+  ModelRun,
+  DebugInfo,
+  Scenario,
   Parameter,
   ParameterItem,
-  Scenario,
-  SimulationChat,
+  SimulationAttempt,
   Simulation,
+  SimulationChat,
   SimulationMessage,
   SimulationChatGrade,
   SimulationChatFeedback,
+  SimulationChatCrowdsourcedFeedback,
+  SimulationCrowdsourcedMessage,
   Cohort,
   VerificationToken,
   AssistantMessageType,
