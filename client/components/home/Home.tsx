@@ -99,125 +99,10 @@ export default function Home() {
     enabled: !!allChats && allChats.length > 0,
   });
 
-  // Transform cohorts for display with completion status
-  const cohortsForDisplay = useMemo(() => {
-    if (
-      !cohorts ||
-      !allSimulations ||
-      !allProfiles ||
-      !allAttempts ||
-      !allChats ||
-      !allGrades
-    ) {
-      return [];
-    }
+  // Removed heavy `cohortsForDisplay` computation; filtering is handled by `filteredCohorts` below.
 
-    // Filter to only active cohorts
-    const activeCohorts = cohorts.filter((cohort) => cohort.active);
-
-    return activeCohorts.map((cohort) => {
-      // Get simulations for this cohort
-      const cohortSimulations = allSimulations.filter((sim) =>
-        cohort.simulationIds?.includes(sim.id)
-      );
-
-      // Get the profiles of members in this cohort
-      const cohortMembers = allProfiles.filter((p) =>
-        cohort.profileIds?.includes(p.id)
-      );
-
-      // Calculate completion status
-      let isCompleted = false;
-
-      if (shouldShowAll) {
-        // Instructor view: Check if all members have completed all simulations
-        const cohortAttempts = allAttempts.filter(
-          (att) =>
-            att.profileId &&
-            cohort.profileIds?.includes(att.profileId) &&
-            cohortSimulations.some((sim) => sim.id === att.simulationId)
-        );
-
-        const cohortAttemptIds = cohortAttempts.map((att) => att.id);
-        const cohortChats = allChats?.filter((c) =>
-          cohortAttemptIds.includes(c.attemptId)
-        );
-        const cohortGrades = allGrades.filter((g) =>
-          cohortChats?.some((c) => c.id === g.simulationChatId)
-        );
-
-        const passedCount = cohortGrades.filter((g) => g.passed).length || 0;
-        const totalExpectedAttempts =
-          cohortMembers.length * cohortSimulations.length;
-
-        isCompleted = passedCount >= totalExpectedAttempts;
-      } else {
-        // TA view: Check if current TA has completed all simulations
-        if (!effectiveProfile?.id) {
-          isCompleted = false;
-        } else {
-          const taAttempts = allAttempts.filter(
-            (att) =>
-              att.profileId === effectiveProfile.id! &&
-              cohortSimulations.some((sim) => sim.id === att.simulationId)
-          );
-
-          const taAttemptIds = taAttempts.map((att) => att.id);
-          const taChats = allChats?.filter((c) =>
-            taAttemptIds.includes(c.attemptId)
-          );
-          const taGrades = allGrades.filter((g) =>
-            taChats?.some((c) => c.id === g.simulationChatId)
-          );
-
-          const passedCount = taGrades.filter((g) => g.passed).length || 0;
-          isCompleted = passedCount >= cohortSimulations.length;
-        }
-      }
-
-      return {
-        id: cohort.id,
-        title: cohort.title,
-        description: `Cohort with ${cohort.profileIds?.length || 0} members`,
-        memberCount: cohort.profileIds?.length || 0,
-        isCompleted,
-      };
-    });
-  }, [
-    cohorts,
-    allSimulations,
-    allProfiles,
-    allAttempts,
-    allChats,
-    allGrades,
-    shouldShowAll,
-    effectiveProfile?.id,
-  ]);
-
-  // Get available cohorts based on user role
-  const availableCohorts = useMemo(() => {
-    if (!cohortsForDisplay) return [];
-
-    if (shouldShowAll || effectiveProfile?.defaultProfile) {
-      // Instructors see all active cohorts
-      return cohortsForDisplay;
-    } else if (isTA && effectiveProfile?.id) {
-      // TAs see only their assigned active cohorts
-      return cohortsForDisplay.filter((cohort) => {
-        const originalCohort = cohorts?.find((c) => c.id === cohort.id);
-        return originalCohort?.profileIds?.includes(effectiveProfile.id);
-      });
-    }
-
-    return [];
-  }, [
-    cohortsForDisplay,
-    shouldShowAll,
-    isTA,
-    effectiveProfile?.id,
-    cohorts,
-    effectiveProfile?.defaultProfile,
-  ]);
+  // Note: available cohorts should be derived from actual cohort availability, not
+  // heavy computed data (attempts/chats/grades). Use `filteredCohorts` downstream.
 
   // Filter cohorts to only selected ones from analytics context, or show all available cohorts if none selected
   const filteredCohorts = useMemo(() => {
@@ -1080,7 +965,7 @@ export default function Home() {
     );
   }
 
-  if (!availableCohorts.length) {
+  if (!filteredCohorts.length) {
     return (
       <div className="container mx-auto p-4">
         <div className="text-center">

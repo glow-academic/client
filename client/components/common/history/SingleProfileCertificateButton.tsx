@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Table } from "@tanstack/react-table";
-import { FileText } from "lucide-react";
+import { FileBadge2 } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -300,7 +300,7 @@ export function SingleProfileCertificateButton<TData>({
         </>
       ) : (
         <>
-          <FileText className="mr-2 h-4 w-4" />
+          <FileBadge2 className="h-4 w-4" />
           Download Certificate {selectedRows > 0 ? `(${selectedRows})` : ""}
         </>
       )}

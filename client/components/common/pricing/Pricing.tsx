@@ -10,7 +10,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { format, isAfter, isBefore } from "date-fns";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
 
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,13 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import {
   Popover,
@@ -33,9 +40,12 @@ import {
 
 import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from "recharts";
 
-import { Model, ModelRun } from "@/types";
+import { Agent, Model, ModelRun, Persona, Profile } from "@/types";
+import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllModelRuns } from "@/utils/queries/model_runs/get-all-model-runs";
 import { getAllModels } from "@/utils/queries/models/get-all-models";
+import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { ChevronDown, Loader2 } from "lucide-react";
 
 const currency = (value: number) =>
@@ -80,29 +90,51 @@ export default function Pricing() {
     queryFn: () => getAllModelRuns() as Promise<ModelRun[]>,
   });
 
-  const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
+  const { data: agents = [] } = useQuery({
+    queryKey: ["agents"],
+    queryFn: () => getAllAgents() as Promise<Agent[]>,
+  });
 
-  // Ensure at least one model selected by default once models load
-  useEffect(() => {
-    if (models.length && selectedModelIds.length === 0) {
-      setSelectedModelIds(
-        models.slice(0, Math.min(4, models.length)).map((m) => m.id)
-      );
-    }
-  }, [models, selectedModelIds.length]);
+  const { data: personas = [] } = useQuery({
+    queryKey: ["personas"],
+    queryFn: () => getAllPersonas() as Promise<Persona[]>,
+  });
+
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getAllProfiles() as Promise<Profile[]>,
+  });
+
+  const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
+  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
+  const [selectedPersonaIds, _setSelectedPersonaIds] = useState<string[]>([]);
+  // Grouping removed; always series by model with filters
+  const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
+
+  // Default to All: no pre-selections
 
   const modelIdToMeta = useMemo(() => {
     const map = new Map<string, Model>();
     models.forEach((m) => map.set(m.id, m));
     return map;
   }, [models]);
+  const agentIdToMeta = useMemo(() => {
+    const map = new Map<string, Agent>();
+    agents.forEach((a) => map.set(a.id, a));
+    return map;
+  }, [agents]);
+  const personaIdToMeta = useMemo(() => {
+    const map = new Map<string, Persona>();
+    personas.forEach((p) => map.set(p.id, p));
+    return map;
+  }, [personas]);
 
-  // Compute spend per run and aggregate by day per model
+  // Compute spend per run and aggregate by day, filtered by agents/personas/profiles; series per model
   const { chartData, totals, chartConfig } = useMemo(() => {
     if (!runs?.length || !models?.length) {
       return {
         chartData: [] as Array<Record<string, number | string>>,
-        totals: { totalSpend: 0, runCount: 0, avgCost: 0 },
+        totals: { totalSpend: 0, runCount: 0, withProfileRuns: 0, avgCost: 0 },
         chartConfig: {} as Record<string, { label: string; color: string }>,
       };
     }
@@ -113,9 +145,13 @@ export default function Pricing() {
       return isAfter(d, dateRange.from) && isBefore(d, dateRange.to);
     });
 
-    const include = new Set(
+    // Build include sets (empty selection means All)
+    const includeModels = new Set(
       selectedModelIds.length ? selectedModelIds : models.map((m) => m.id)
     );
+    const includeAgents = new Set(selectedAgentIds);
+    const includePersonas = new Set(selectedPersonaIds);
+    const includeProfiles = new Set(selectedProfileIds);
 
     const byDay = new Map<
       string,
@@ -124,9 +160,31 @@ export default function Pricing() {
 
     let totalSpend = 0;
     let runCount = 0;
+    let withProfileRuns = 0;
 
     for (const run of dateFiltered) {
-      if (!include.has(run.modelId)) continue;
+      const runProfileId = (run as unknown as { profileId?: string }).profileId;
+      const runAgentId = (run as unknown as { agentId?: string }).agentId;
+      const runPersonaId = (run as unknown as { personaId?: string }).personaId;
+
+      if (!includeModels.has(run.modelId)) continue;
+      if (
+        includeAgents.size > 0 &&
+        (!runAgentId || !includeAgents.has(runAgentId))
+      )
+        continue;
+      if (
+        includePersonas.size > 0 &&
+        (!runPersonaId || !includePersonas.has(runPersonaId))
+      )
+        continue;
+      if (
+        includeProfiles.size > 0 &&
+        (!runProfileId || !includeProfiles.has(runProfileId))
+      )
+        continue;
+
+      // Pricing comes from model
       const meta = modelIdToMeta.get(run.modelId);
       if (!meta) continue;
 
@@ -142,18 +200,26 @@ export default function Pricing() {
       }
 
       const bucket = byDay.get(dateKey)!;
-      bucket.values[run.modelId] = (bucket.values[run.modelId] || 0) + spend;
+      const seriesKey = run.modelId;
+      bucket.values[seriesKey] = (bucket.values[seriesKey] || 0) + spend;
 
       totalSpend += spend;
       runCount += 1;
+      if (selectedProfileIds.length > 0) {
+        // count all included runs (they matched selected profiles)
+        withProfileRuns += 1;
+      } else if (runProfileId) {
+        // when no profiles selected (All), count those that have any profile
+        withProfileRuns += 1;
+      }
     }
 
     const data = Array.from(byDay.entries())
       .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
       .map(([_, { dateLabel, values }]) => {
         const row: Record<string, number | string> = { date: dateLabel };
-        for (const modelId of include) {
-          row[modelId] = Number((values[modelId] || 0).toFixed(2));
+        for (const id of includeModels) {
+          row[id] = Number((values[id] || 0).toFixed(2));
         }
         row["total"] = Number(
           Object.values(values)
@@ -165,18 +231,18 @@ export default function Pricing() {
 
     const modelIdToColor: Record<string, string> = {};
     let colorIdx = 0;
-    for (const modelId of include) {
-      modelIdToColor[modelId] =
+    for (const id of includeModels) {
+      modelIdToColor[id] =
         COLOR_PALETTE[colorIdx % COLOR_PALETTE.length] ?? "#999999";
       colorIdx += 1;
     }
 
     const config: Record<string, { label: string; color: string }> = {};
-    for (const modelId of include) {
-      const meta = modelIdToMeta.get(modelId);
-      config[modelId] = {
-        label: meta?.name ?? modelId,
-        color: modelIdToColor[modelId] ?? "#999999",
+    for (const id of includeModels) {
+      const label = modelIdToMeta.get(id)?.name;
+      config[id] = {
+        label: label ?? id,
+        color: modelIdToColor[id] ?? "#999999",
       };
     }
     config["total"] = { label: "Total", color: "#334155" };
@@ -186,11 +252,21 @@ export default function Pricing() {
       totals: {
         totalSpend: Number(totalSpend.toFixed(2)),
         runCount,
+        selectedProfileRuns: withProfileRuns,
         avgCost: runCount ? Number((totalSpend / runCount).toFixed(2)) : 0,
       },
       chartConfig: config,
     };
-  }, [runs, models, dateRange, selectedModelIds, modelIdToMeta]);
+  }, [
+    runs,
+    models,
+    dateRange,
+    selectedModelIds,
+    selectedAgentIds,
+    selectedPersonaIds,
+    selectedProfileIds,
+    modelIdToMeta,
+  ]);
 
   const loading = modelsLoading || runsLoading;
 
@@ -203,7 +279,7 @@ export default function Pricing() {
           setDateRange={setDateRange}
         />
 
-        {/* Model Multi-select */}
+        {/* Models selector */}
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="secondary" size="sm" className="h-8">
@@ -211,31 +287,113 @@ export default function Pricing() {
               <ChevronDown className="ml-1 h-3.5 w-3.5" />
             </Button>
           </PopoverTrigger>
+          <PopoverContent align="start" className="w-72 p-0">
+            <Command>
+              <CommandInput placeholder="Search models..." />
+              <CommandEmpty>No models found.</CommandEmpty>
+              <CommandList>
+                {models.map((m) => {
+                  const checked = selectedModelIds.includes(m.id);
+                  return (
+                    <CommandItem
+                      key={m.id}
+                      onSelect={() => {
+                        setSelectedModelIds((prev) => {
+                          const next = new Set(prev);
+                          if (checked) next.delete(m.id);
+                          else next.add(m.id);
+                          return Array.from(next);
+                        });
+                      }}
+                    >
+                      <Checkbox checked={checked} className="mr-2" />
+                      <span className="truncate">{m.name}</span>
+                    </CommandItem>
+                  );
+                })}
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+
+        {/* Profiles multi-select (default All) */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="secondary" size="sm" className="h-8">
+              Profiles
+              <ChevronDown className="ml-1 h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
           <PopoverContent align="start" className="w-72 p-3">
             <div className="max-h-64 overflow-y-auto pr-1 space-y-2">
-              {models.map((m) => {
-                const checked = selectedModelIds.includes(m.id);
+              {profiles.map((p) => {
+                const id = p.id as string;
+                const label =
+                  `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() ||
+                  p.alias ||
+                  id;
+                const checked = selectedProfileIds.includes(id);
                 return (
                   <label
-                    key={m.id}
+                    key={id}
                     className="flex items-center gap-2 cursor-pointer text-sm"
                   >
                     <Checkbox
                       checked={checked}
                       onCheckedChange={(v) => {
-                        setSelectedModelIds((prev) => {
+                        setSelectedProfileIds((prev) => {
                           const next = new Set(prev);
-                          if (v) next.add(m.id);
-                          else next.delete(m.id);
+                          if (v) next.add(id);
+                          else next.delete(id);
                           return Array.from(next);
                         });
                       }}
                     />
-                    <span className="truncate">{m.name}</span>
+                    <span className="truncate">{label}</span>
                   </label>
                 );
               })}
             </div>
+            {profiles.length === 0 && (
+              <div className="text-xs text-muted-foreground">No profiles</div>
+            )}
+          </PopoverContent>
+        </Popover>
+
+        {/* Agents selector */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="secondary" size="sm" className="h-8">
+              Agents
+              <ChevronDown className="ml-1 h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-72 p-0">
+            <Command>
+              <CommandInput placeholder="Search agents..." />
+              <CommandEmpty>No agents found.</CommandEmpty>
+              <CommandList>
+                {agents.map((a) => {
+                  const checked = selectedAgentIds.includes(a.id);
+                  return (
+                    <CommandItem
+                      key={a.id}
+                      onSelect={() => {
+                        setSelectedAgentIds((prev) => {
+                          const next = new Set(prev);
+                          if (checked) next.delete(a.id);
+                          else next.add(a.id);
+                          return Array.from(next);
+                        });
+                      }}
+                    >
+                      <Checkbox checked={checked} className="mr-2" />
+                      <span className="truncate">{a.name}</span>
+                    </CommandItem>
+                  );
+                })}
+              </CommandList>
+            </Command>
           </PopoverContent>
         </Popover>
 
@@ -247,15 +405,35 @@ export default function Pricing() {
           )
             .slice(0, 6)
             .map((id) => {
-              const meta = modelIdToMeta.get(id);
+              const label = modelIdToMeta.get(id)?.name;
               return (
                 <Badge key={id} variant="secondary" className="font-normal">
-                  {meta?.name || id}
+                  {label || id}
                 </Badge>
               );
             })}
+          {(selectedAgentIds.length ? selectedAgentIds : [])
+            .slice(0, 3)
+            .map((id) => (
+              <Badge key={id} variant="outline" className="font-normal">
+                {agentIdToMeta.get(id)?.name || id}
+              </Badge>
+            ))}
+          {(selectedPersonaIds.length ? selectedPersonaIds : [])
+            .slice(0, 3)
+            .map((id) => (
+              <Badge key={id} variant="outline" className="font-normal">
+                {personaIdToMeta.get(id)?.name || id}
+              </Badge>
+            ))}
+          {selectedProfileIds.length > 0 && (
+            <Badge variant="outline" className="font-normal">
+              {selectedProfileIds.length} profile
+              {selectedProfileIds.length > 1 ? "s" : ""}
+            </Badge>
+          )}
           {selectedModelIds.length > 6 && (
-            <Badge variant="outline">+{selectedModelIds.length - 6}</Badge>
+            <Badge variant="outline">+{selectedModelIds.length - 6} more</Badge>
           )}
         </div>
       </div>
@@ -347,15 +525,15 @@ export default function Pricing() {
                 />
                 <ChartLegend content={<ChartLegendContent />} />
 
-                {/* Stacked areas per model */}
+                {/* Stacked areas per selected models */}
                 {(selectedModelIds.length
                   ? selectedModelIds
                   : models.map((m) => m.id)
-                ).map((modelId) => (
+                ).map((id) => (
                   <Area
-                    key={modelId}
+                    key={id}
                     type="monotone"
-                    dataKey={modelId}
+                    dataKey={id}
                     stackId="1"
                     stroke={
                       (
@@ -363,7 +541,7 @@ export default function Pricing() {
                           string,
                           { label: string; color: string }
                         >
-                      )[modelId]?.color
+                      )[id]?.color
                     }
                     fill={
                       (
@@ -371,7 +549,7 @@ export default function Pricing() {
                           string,
                           { label: string; color: string }
                         >
-                      )[modelId]?.color
+                      )[id]?.color
                     }
                     fillOpacity={0.2}
                     strokeWidth={2}

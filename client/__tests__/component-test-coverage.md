@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 280
+- **Total Components**: 281
 - **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 280
+- **Tests Skipped** (already implemented): 281
 
 ## Component Coverage
 
@@ -91,6 +91,7 @@
 | Login | components/common/login/Login.tsx | Login.test.tsx | ✅ Implemented |
 | Model | components/common/model/Model.tsx | Model.test.tsx | ✅ Implemented |
 | Parameter | components/common/parameter/Parameter.tsx | Parameter.test.tsx | ✅ Implemented |
+| Pricing | components/common/pricing/Pricing.tsx | Pricing.test.tsx | ✅ Implemented |
 | ProfileSelector | components/common/profile/ProfileSelector.tsx | ProfileSelector.test.tsx | ✅ Implemented |
 | Provider | components/common/provider/Provider.tsx | Provider.test.tsx | ✅ Implemented |
 | Rubric | components/common/rubric/Rubric.tsx | Rubric.test.tsx | ✅ Implemented |
@@ -398,6 +399,8 @@ __tests__/
 │   │   │   ├── Model.test.tsx
 │   │   ├── parameter/
 │   │   │   ├── Parameter.test.tsx
+│   │   ├── pricing/
+│   │   │   ├── Pricing.test.tsx
 │   │   ├── profile/
 │   │   │   ├── ProfileSelector.test.tsx
 │   │   ├── provider/

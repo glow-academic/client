@@ -109,6 +109,7 @@ class Parameters(_Base, table=True):
     description: str = Field(sa_column=Column('description', Text))
     numerical: bool = Field(sa_column=Column('numerical', Boolean, default=False))
     active: bool = Field(sa_column=Column('active', Boolean, default=False))
+    default_parameter: bool = Field(sa_column=Column('default_parameter', Boolean, default=False))
 
     parameter_items: List['ParameterItems'] = Relationship(back_populates='parameter')
 
@@ -273,6 +274,7 @@ class Profiles(_Base, table=True):
     assistant_chats: List['AssistantChats'] = Relationship(back_populates='profile')
     model_runs: List['ModelRuns'] = Relationship(back_populates='profile')
     simulation_attempts: List['SimulationAttempts'] = Relationship(back_populates='profile')
+    simulation_crowdsourced_messages: List['SimulationCrowdsourcedMessages'] = Relationship(back_populates='profile')
 
 
 class Simulations(_Base, table=True):
@@ -375,6 +377,7 @@ class ModelRuns(_Base, table=True):
     model: Optional['Models'] = Relationship(back_populates='model_runs')
     persona: Optional['Personas'] = Relationship(back_populates='model_runs')
     profile: Optional['Profiles'] = Relationship(back_populates='model_runs')
+    debug_info: List['DebugInfo'] = Relationship(back_populates='model_run')
 
 
 class Scenarios(_Base, table=True):
@@ -396,6 +399,7 @@ class Scenarios(_Base, table=True):
     parameter_item_ids: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('parameter_item_ids', ARRAY(Uuid(as_uuid=True))))
     document_ids: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('document_ids', ARRAY(Uuid(as_uuid=True))))
     parent_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('parent_id', Uuid(as_uuid=True)))
+    checkpoints: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('checkpoints', ARRAY(Text())))
 
     persona: Optional['Personas'] = Relationship(back_populates='scenarios')
     simulation_chats: List['SimulationChats'] = Relationship(back_populates='scenario')
@@ -412,6 +416,7 @@ class SimulationAttempts(_Base, table=True):
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     simulation_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_id', Uuid(as_uuid=True)))
+    infinite_mode: bool = Field(sa_column=Column('infinite_mode', Boolean, default=False))
     profile_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('profile_id', Uuid(as_uuid=True)))
 
     profile: Optional['Profiles'] = Relationship(back_populates='simulation_attempts')
@@ -476,6 +481,21 @@ class AssistantToolCalls(_Base, table=True):
     chat: Optional['AssistantChats'] = Relationship(back_populates='assistant_tool_calls')
 
 
+class DebugInfo(_Base, table=True):
+    __tablename__ = 'debug_info'
+    __table_args__ = (
+        ForeignKeyConstraint(['model_run_id'], ['model_runs.id'], name='debug_info_model_run_id_fkey'),
+        PrimaryKeyConstraint('id', name='debug_info_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    model_run_id: Mapped[uuid.UUID] = Field(sa_column=Column('model_run_id', Uuid(as_uuid=True)))
+    content: str = Field(sa_column=Column('content', Text))
+
+    model_run: Optional['ModelRuns'] = Relationship(back_populates='debug_info')
+
+
 class SimulationChats(_Base, table=True):
     __tablename__ = 'simulation_chats'
     __table_args__ = (
@@ -515,6 +535,7 @@ class SimulationChatGrades(_Base, table=True):
     time_taken: int = Field(sa_column=Column('time_taken', Integer))
     rubric_id: Mapped[uuid.UUID] = Field(sa_column=Column('rubric_id', Uuid(as_uuid=True)))
     simulation_chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_chat_id', Uuid(as_uuid=True)))
+    checkpoints_reached: List[uuid.UUID] = Field(sa_column=Column('checkpoints_reached', ARRAY(Boolean(_create_events=False)), server_default=text('ARRAY[]::boolean[]')))
 
     rubric: Optional['Rubrics'] = Relationship(back_populates='simulation_chat_grades')
     simulation_chat: Optional['SimulationChats'] = Relationship(back_populates='simulation_chat_grades')
@@ -537,6 +558,7 @@ class SimulationMessages(_Base, table=True):
     completed: bool = Field(sa_column=Column('completed', Boolean, default=False))
 
     chat: Optional['SimulationChats'] = Relationship(back_populates='simulation_messages')
+    simulation_crowdsourced_messages: List['SimulationCrowdsourcedMessages'] = Relationship(back_populates='simulation_message')
 
 
 class SimulationChatFeedbacks(_Base, table=True):
@@ -556,3 +578,38 @@ class SimulationChatFeedbacks(_Base, table=True):
 
     simulation_chat_grade: Optional['SimulationChatGrades'] = Relationship(back_populates='simulation_chat_feedbacks')
     standard: Optional['Standards'] = Relationship(back_populates='simulation_chat_feedbacks')
+    simulation_chat_crowdsourced_feedbacks: List['SimulationChatCrowdsourcedFeedbacks'] = Relationship(back_populates='simulation_chat_feedback')
+
+
+class SimulationCrowdsourcedMessages(_Base, table=True):
+    __tablename__ = 'simulation_crowdsourced_messages'
+    __table_args__ = (
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='simulation_crowdsourced_messages_profile_id_fkey'),
+        ForeignKeyConstraint(['simulation_message_id'], ['simulation_messages.id'], ondelete='CASCADE', name='simulation_crowdsourced_messages_simulation_message_id_fkey'),
+        PrimaryKeyConstraint('id', name='simulation_crowdsourced_messages_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    simulation_message_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_message_id', Uuid(as_uuid=True)))
+    profile_id: Mapped[uuid.UUID] = Field(sa_column=Column('profile_id', Uuid(as_uuid=True)))
+    response: bool = Field(sa_column=Column('response', Boolean))
+
+    profile: Optional['Profiles'] = Relationship(back_populates='simulation_crowdsourced_messages')
+    simulation_message: Optional['SimulationMessages'] = Relationship(back_populates='simulation_crowdsourced_messages')
+
+
+class SimulationChatCrowdsourcedFeedbacks(_Base, table=True):
+    __tablename__ = 'simulation_chat_crowdsourced_feedbacks'
+    __table_args__ = (
+        ForeignKeyConstraint(['simulation_chat_feedback_id'], ['simulation_chat_feedbacks.id'], ondelete='CASCADE', name='simulation_chat_crowdsourced_f_simulation_chat_feedback_id_fkey'),
+        PrimaryKeyConstraint('id', name='simulation_chat_crowdsourced_feedbacks_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    simulation_chat_feedback_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_chat_feedback_id', Uuid(as_uuid=True)))
+    total: int = Field(sa_column=Column('total', Integer))
+    feedback: Optional[str] = Field(default=None, sa_column=Column('feedback', Text))
+
+    simulation_chat_feedback: Optional['SimulationChatFeedbacks'] = Relationship(back_populates='simulation_chat_crowdsourced_feedbacks')

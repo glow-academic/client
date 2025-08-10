@@ -24,7 +24,8 @@ CREATE TABLE simulation_attempts (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   profile_id    UUID         NULL REFERENCES profiles(id)  ON DELETE CASCADE,
-  simulation_id    UUID        NOT NULL REFERENCES simulations(id)  ON DELETE CASCADE
+  simulation_id    UUID        NOT NULL REFERENCES simulations(id)  ON DELETE CASCADE,
+  infinite_mode BOOLEAN     NOT NULL           DEFAULT FALSE -- we will rotate through all the scenarios in simulation, creating new ones every time 
 );
 
 CREATE TABLE simulation_chats (
@@ -56,7 +57,8 @@ CREATE TABLE simulation_chat_grades (
     score      INTEGER     NOT NULL,
     time_taken INTEGER     NOT NULL, -- in seconds
     rubric_id   UUID        NOT NULL REFERENCES rubrics(id)  ON DELETE CASCADE,
-    simulation_chat_id   UUID        NOT NULL REFERENCES simulation_chats(id)  ON DELETE CASCADE
+    simulation_chat_id   UUID        NOT NULL REFERENCES simulation_chats(id)  ON DELETE CASCADE,
+    checkpoints_reached BOOLEAN[] NOT NULL DEFAULT ARRAY[]::BOOLEAN[]
   );
 
   CREATE TABLE simulation_chat_feedbacks (
@@ -66,4 +68,20 @@ CREATE TABLE simulation_chat_grades (
     simulation_chat_grade_id   UUID        NOT NULL REFERENCES simulation_chat_grades(id)  ON DELETE CASCADE,
     total INTEGER     NOT NULL,
     feedback TEXT
+  );
+
+  CREATE TABLE simulation_chat_crowdsourced_feedbacks (
+    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    simulation_chat_feedback_id   UUID        NOT NULL REFERENCES simulation_chat_feedbacks(id)  ON DELETE CASCADE,
+    total INTEGER     NOT NULL,
+    feedback TEXT
+  );
+
+  CREATE TABLE simulation_crowdsourced_messages (
+    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    simulation_message_id   UUID        NOT NULL REFERENCES simulation_messages(id)  ON DELETE CASCADE,
+    profile_id   UUID        NOT NULL REFERENCES profiles(id)  ON DELETE CASCADE,
+    response BOOLEAN     NOT NULL
   );

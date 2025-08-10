@@ -46,3 +46,10 @@ CREATE TABLE model_runs (
   agent_id     UUID        NULL REFERENCES agents(id),
   profile_id   UUID        NULL REFERENCES profiles(id)
 );
+
+CREATE TABLE debug_info (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  model_run_id   UUID        NOT NULL REFERENCES model_runs(id),
+  content TEXT        NOT NULL
+);
