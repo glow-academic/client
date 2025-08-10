@@ -54,6 +54,7 @@ import { getPersona } from "@/utils/queries/personas/get-persona";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { Check, ChevronsUpDown } from "lucide-react";
 import MarkdownEditor from "../viewers/MarkdownEditor";
+import PersonaDebugInfo from "./PersonaDebugInfo";
 
 interface FormData {
   name?: string;
@@ -61,7 +62,7 @@ interface FormData {
   systemPrompt?: string;
   temperature?: number;
   modelId?: string;
-  reasoning?: "none" | "low" | "medium" | "high";
+  reasoning?: "none" | "minimal" | "low" | "medium" | "high";
   color?: string;
   icon?: string;
   active?: boolean;
@@ -153,7 +154,13 @@ export default function Persona({
         systemPrompt: persona.systemPrompt,
         temperature: persona.temperature,
         modelId: persona.modelId || "",
-        reasoning: persona.reasoning || "none",
+        reasoning:
+          (persona.reasoning as
+            | "minimal"
+            | "low"
+            | "medium"
+            | "high"
+            | undefined) || "none",
         color: persona.color || "#000000",
         icon: persona.icon || "Zap",
         active: persona.active ?? true,
@@ -653,7 +660,12 @@ export default function Persona({
                     onValueChange={(value) =>
                       setFormData((prev) => ({
                         ...prev,
-                        reasoning: value as "none" | "low" | "medium" | "high",
+                        reasoning: value as
+                          | "none"
+                          | "minimal"
+                          | "low"
+                          | "medium"
+                          | "high",
                       }))
                     }
                     disabled={isReadonly}
@@ -663,6 +675,7 @@ export default function Persona({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="minimal">Minimal</SelectItem>
                       <SelectItem value="low">Low</SelectItem>
                       <SelectItem value="medium">Medium</SelectItem>
                       <SelectItem value="high">High</SelectItem>
@@ -738,6 +751,14 @@ export default function Persona({
               <Skeleton className="h-100 w-full" />
             )}
           </div>
+
+          {/* Debug Info Section - Only for superadmin and edit mode */}
+          {isEditMode && effectiveProfile?.role === "superadmin" && (
+            <div className="space-y-2">
+              <Label>Debug Info</Label>
+              <PersonaDebugInfo personaId={personaId!} />
+            </div>
+          )}
 
           <div className="flex gap-2 justify-end">
             <Button
