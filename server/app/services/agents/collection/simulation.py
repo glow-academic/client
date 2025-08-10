@@ -7,8 +7,8 @@ from agents import Runner, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
-from app.models import (Documents, Models, Personas, Providers, Scenarios,
-                        SimulationAttempts, SimulationChats,
+from app.models import (Documents, ModelRuns, Models, Personas, Providers,
+                        Scenarios, SimulationAttempts, SimulationChats,
                         SimulationMessages)
 from app.services.agents.collection.guardrail import get_output_guardrails
 from app.services.agents.generic import GenericAgent
@@ -199,6 +199,17 @@ async def _handle_simulation_chat(
                 if isinstance(event.data, ResponseTextDeltaEvent):
                     chunk = event.data.delta
                     yield chunk
+
+        usage = result.context_wrapper.usage
+
+        # create model run
+        model_run = ModelRuns(
+            model_id=model.id,
+            input_tokens=usage.input_tokens,
+            output_tokens=usage.output_tokens
+        )
+        session.add(model_run)
+        session.commit()
     except Exception as e:
         # Handle cancellation or other errors
         if "cancelled" in str(e).lower():

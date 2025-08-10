@@ -1,1 +1,0 @@
-ALTER TABLE "app_logs" RENAME COLUMN "message" TO "message_test";

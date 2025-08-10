@@ -1,18 +1,19 @@
 import { 
   accounts as Accounts,
   sessions as Sessions,
-  documents as Documents,
   users as Users,
   profiles as Profiles,
   providers as Providers,
+  modelRuns as ModelRuns,
+  documents as Documents,
   models as Models,
   rubrics as Rubrics,
   standardGroups as StandardGroups,
-  appLogs as AppLogs,
   standards as Standards,
+  appLogs as AppLogs,
   appFeedback as AppFeedback,
-  assistantChats as AssistantChats,
   assistantMessages as AssistantMessages,
+  assistantChats as AssistantChats,
   assistantToolCalls as AssistantToolCalls,
   personas as Personas,
   agents as Agents,
@@ -33,18 +34,19 @@ import {
 // Use Drizzle schema types
 type Account = typeof Accounts.$inferSelect;
 type Session = typeof Sessions.$inferSelect;
-type Document = typeof Documents.$inferSelect;
 type User = typeof Users.$inferSelect;
 type Profile = typeof Profiles.$inferSelect;
 type Provider = typeof Providers.$inferSelect;
+type ModelRun = typeof ModelRuns.$inferSelect;
+type Document = typeof Documents.$inferSelect;
 type Model = typeof Models.$inferSelect;
 type Rubric = typeof Rubrics.$inferSelect;
 type StandardGroup = typeof StandardGroups.$inferSelect;
-type AppLog = typeof AppLogs.$inferSelect;
 type Standard = typeof Standards.$inferSelect;
+type AppLog = typeof AppLogs.$inferSelect;
 type AppFeedback = typeof AppFeedback.$inferSelect;
-type AssistantChat = typeof AssistantChats.$inferSelect;
 type AssistantMessage = typeof AssistantMessages.$inferSelect;
+type AssistantChat = typeof AssistantChats.$inferSelect;
 type AssistantToolCall = typeof AssistantToolCalls.$inferSelect;
 type Persona = typeof Personas.$inferSelect;
 type Agent = typeof Agents.$inferSelect;
@@ -71,18 +73,19 @@ type SimulationMessageType = (typeof simulationMessageType.enumValues)[number];
 export type { 
   Account,
   Session,
-  Document,
   User,
   Profile,
   Provider,
+  ModelRun,
+  Document,
   Model,
   Rubric,
   StandardGroup,
-  AppLog,
   Standard,
+  AppLog,
   AppFeedback,
-  AssistantChat,
   AssistantMessage,
+  AssistantChat,
   AssistantToolCall,
   Persona,
   Agent,

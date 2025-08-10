@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Read markdown files and escape single quotes for SQL
 AGGRESSIVE_PROMPT=$(cat "$(dirname "$0")/prompts/aggresive.md" | sed "s/'/''/g")
 CONFUSED_PROMPT=$(cat "$(dirname "$0")/prompts/confused.md" | sed "s/'/''/g")
@@ -13,7 +16,7 @@ CLASSIFY_PROMPT=$(cat "$(dirname "$0")/prompts/classify.md" | sed "s/'/''/g")
 TITLE_PROMPT=$(cat "$(dirname "$0")/prompts/title.md" | sed "s/'/''/g")
 
 # Resolve target path to database/seed/default/agents.sql
-TARGET_DIR=$(cd "$SCRIPT_DIR/../../seed/default" && pwd)
+TARGET_DIR="$SCRIPT_DIR/../../seed/default"
 mkdir -p "$TARGET_DIR"
 TARGET_FILE="$TARGET_DIR/agents.sql"
 

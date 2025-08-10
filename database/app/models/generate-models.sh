@@ -47,8 +47,12 @@ INSERT INTO providers (id, name, description, api_key) VALUES
 
 -- Insert models
 INSERT INTO models (id, name, description, provider_id) VALUES
-('11111111-aaaa-aaaa-aaaa-111111111111', 'gpt-4o', 'GPT-4o is a language model that can be used to generate text, images, and audio.', '11111111-aaaa-aaaa-aaaa-111111111111'),
-('33333333-cccc-cccc-cccc-333333333333', 'gemini-2.5-flash', 'Gemini 2.5 Flash is a language model that can be used to generate text, images, and audio.', '33333333-cccc-cccc-cccc-333333333333');
+('22222222-bbbb-bbbb-bbbb-222222222222', 'gpt5', 'GPT-5 is OpenAI''s latest language model with advanced reasoning and multimodal capabilities.', '11111111-aaaa-aaaa-aaaa-111111111111'),
+('44444444-dddd-dddd-dddd-444444444444', 'gpt5-mini', 'GPT-5 Mini is a faster, more efficient version of GPT-5 optimized for speed and cost.', '11111111-aaaa-aaaa-aaaa-111111111111'),
+('55555555-eeee-eeee-eeee-555555555555', 'gpt5-nano', 'GPT-5 Nano is the smallest and fastest GPT-5 variant, ideal for real-time applications.', '11111111-aaaa-aaaa-aaaa-111111111111'),
+('33333333-cccc-cccc-cccc-333333333333', 'gemini-2.5-flash', 'Gemini 2.5 Flash is a language model that can be used to generate text, images, and audio.', '33333333-cccc-cccc-cccc-333333333333'),
+('66666666-ffff-ffff-ffff-666666666666', 'gemini-2.5-flash-lite', 'Gemini 2.5 Flash Lite is a lightweight version of Gemini 2.5 Flash optimized for speed and efficiency.', '33333333-cccc-cccc-cccc-333333333333'),
+('77777777-aaaa-aaaa-aaaa-777777777777', 'gemini-2.5-pro', 'Gemini 2.5 Pro is Google''s most advanced language model with enhanced reasoning and multimodal capabilities.', '33333333-cccc-cccc-cccc-333333333333');
 EOF
 
 echo "Wrote model/provider inserts to $TARGET_FILE"

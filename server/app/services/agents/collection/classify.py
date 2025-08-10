@@ -4,7 +4,7 @@ from typing import Any
 
 from agents import Runner, trace
 from app.db import get_session
-from app.models import Agents, Documents, Models, Providers
+from app.models import Agents, Documents, ModelRuns, Models, Providers
 from app.services.agents.generic import GenericAgent
 from fastapi import Depends
 from pydantic import BaseModel
@@ -114,6 +114,17 @@ async def run_classify_agent(
                 result = await Runner.run(
                     classify_agent.agent(), input=formatted_documents
                 )
+
+                usage = result.context_wrapper.usage
+
+                # create model run
+                model_run = ModelRuns(
+                    model_id=model.id,
+                    input_tokens=usage.input_tokens,
+                    output_tokens=usage.output_tokens
+                )
+                session.add(model_run)
+                session.commit()
                 classification = result.final_output_as(Classify)
 
         # Update the type of all the mapped documents

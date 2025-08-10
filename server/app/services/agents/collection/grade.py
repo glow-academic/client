@@ -6,10 +6,11 @@ from typing import Any, List
 
 from agents import Runner, trace
 from app.db import get_session
-from app.models import (Agents, Models, Providers, Rubrics, SimulationAttempts,
-                        SimulationChatFeedbacks, SimulationChatGrades,
-                        SimulationChats, SimulationMessages, Simulations,
-                        StandardGroups, Standards)
+from app.models import (Agents, ModelRuns, Models, Providers, Rubrics,
+                        SimulationAttempts, SimulationChatFeedbacks,
+                        SimulationChatGrades, SimulationChats,
+                        SimulationMessages, Simulations, StandardGroups,
+                        Standards)
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_simulation_conversation_history
 from app.utils.rubric import get_dynamic_rubric
@@ -198,6 +199,17 @@ async def run_grade_agent(
         logger.info("Running grading agent...")
         with trace(chat.title, trace_id=chat.trace_id, group_id=str(attempt.id)):
             result = await Runner.run(agent_instance, input=input_items)
+
+        usage = result.context_wrapper.usage
+
+        # create model run
+        model_run = ModelRuns(
+            model_id=model.id,
+            input_tokens=usage.input_tokens,
+            output_tokens=usage.output_tokens
+        )
+        session.add(model_run)
+        session.commit()
 
         grading_result = result.final_output_as(DynamicRubric)
         logger.info("Grading agent completed successfully")

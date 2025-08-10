@@ -132,6 +132,21 @@ vi.mock('@/utils/mutations/documents/delete-documents', () => ({ deleteDocuments
 vi.mock('@/utils/mutations/documents/update-document', () => ({ updateDocument: updateDocumentMock }));
 vi.mock('@/utils/mutations/documents/update-documents', () => ({ updateDocuments: updateDocumentsMock }));
 
+// MODEL_RUNS MUTATIONS
+export const createModelRunMock = vi.fn(() => mockSchema.modelRuns?.[0] || {});
+export const createModelRunsMock = vi.fn(() => mockSchema.modelRuns || []);
+export const deleteModelRunMock = vi.fn(() => mockSchema.modelRuns?.[0] || {});
+export const deleteModelRunsMock = vi.fn(() => mockSchema.modelRuns || []);
+export const updateModelRunMock = vi.fn(() => mockSchema.modelRuns?.[0] || {});
+export const updateModelRunsMock = vi.fn(() => mockSchema.modelRuns || []);
+
+vi.mock('@/utils/mutations/model_runs/create-model-run', () => ({ createModelRun: createModelRunMock }));
+vi.mock('@/utils/mutations/model_runs/create-model-runs', () => ({ createModelRuns: createModelRunsMock }));
+vi.mock('@/utils/mutations/model_runs/delete-model-run', () => ({ deleteModelRun: deleteModelRunMock }));
+vi.mock('@/utils/mutations/model_runs/delete-model-runs', () => ({ deleteModelRuns: deleteModelRunsMock }));
+vi.mock('@/utils/mutations/model_runs/update-model-run', () => ({ updateModelRun: updateModelRunMock }));
+vi.mock('@/utils/mutations/model_runs/update-model-runs', () => ({ updateModelRuns: updateModelRunsMock }));
+
 // MODELS MUTATIONS
 export const createModelMock = vi.fn(() => mockSchema.models?.[0] || {});
 export const createModelsMock = vi.fn(() => mockSchema.models || []);

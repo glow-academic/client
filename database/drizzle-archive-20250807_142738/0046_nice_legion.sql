@@ -1,1 +1,0 @@
-ALTER TABLE "profiles" ADD COLUMN "viewed_chat" boolean DEFAULT false NOT NULL;

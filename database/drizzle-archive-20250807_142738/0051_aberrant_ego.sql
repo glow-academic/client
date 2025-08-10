@@ -1,1 +1,0 @@
-ALTER TABLE "personas" RENAME COLUMN "default_agent" TO "default_persona";

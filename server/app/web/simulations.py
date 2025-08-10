@@ -632,7 +632,7 @@ async def process_simulation_message_websocket(
                 reason = ""
 
             error_text = (
-                "Error: this message was detected to be faulty because: "
+                "Error: "
                 f"{reason or 'Guardrail tripwire triggered'}"
             )
 

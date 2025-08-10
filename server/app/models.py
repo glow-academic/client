@@ -77,6 +77,20 @@ class Documents(_Base, table=True):
     file_id: Optional[str] = Field(default=None, sa_column=Column('file_id', Text))
 
 
+class ModelRuns(_Base, table=True):
+    __tablename__ = 'model_runs'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='model_runs_pkey'),
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
+    model_id: Mapped[uuid.UUID] = Field(sa_column=Column('model_id', Uuid(as_uuid=True)))
+    input_tokens: int = Field(sa_column=Column('input_tokens', Integer, default=0))
+    output_tokens: int = Field(sa_column=Column('output_tokens', Integer, default=0))
+
+
 class Models(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='models_pkey'),
@@ -89,6 +103,8 @@ class Models(_Base, table=True):
     description: str = Field(sa_column=Column('description', Text))
     provider_id: Mapped[uuid.UUID] = Field(sa_column=Column('provider_id', Uuid(as_uuid=True)))
     active: bool = Field(sa_column=Column('active', Boolean, default=True))
+    input_ppm: float = Field(sa_column=Column('input_ppm', Double(53), default=0.0))
+    output_ppm: float = Field(sa_column=Column('output_ppm', Double(53), default=0.0))
 
     agents: List['Agents'] = Relationship(back_populates='model')
     personas: List['Personas'] = Relationship(back_populates='model')
@@ -194,7 +210,7 @@ class Agents(_Base, table=True):
     system_prompt: str = Field(sa_column=Column('system_prompt', Text))
     temperature: float = Field(sa_column=Column('temperature', REAL))
     model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
-    reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('low', 'medium', 'high', name='reasoning_effort')))
+    reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('minimal', 'low', 'medium', 'high', name='reasoning_effort')))
 
     model: Optional['Models'] = Relationship(back_populates='agents')
 
@@ -236,7 +252,7 @@ class Personas(_Base, table=True):
     icon: str = Field(sa_column=Column('icon', Text))
     active: bool = Field(sa_column=Column('active', Boolean, default=False))
     model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
-    reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('low', 'medium', 'high', name='reasoning_effort')))
+    reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('minimal', 'low', 'medium', 'high', name='reasoning_effort')))
 
     model: Optional['Models'] = Relationship(back_populates='personas')
     scenarios: List['Scenarios'] = Relationship(back_populates='persona')

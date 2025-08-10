@@ -1,1 +1,0 @@
-ALTER TABLE "cohorts" ADD COLUMN "default_cohort" boolean DEFAULT false NOT NULL;

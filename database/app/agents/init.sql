@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- TABLE DEFINITIONS
 -- ============================================================================
 
-CREATE TYPE reasoning_effort AS ENUM ('low', 'medium', 'high');
+CREATE TYPE reasoning_effort AS ENUM ('minimal', 'low', 'medium', 'high');
 
 CREATE TABLE personas (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),

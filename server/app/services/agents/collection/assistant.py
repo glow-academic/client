@@ -10,7 +10,8 @@ from agents.items import (ReasoningItem, ToolCallItem, ToolCallOutputItem,
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
 from app.db import get_session
 from app.models import (Agents, AssistantChats, AssistantMessages,
-                        AssistantToolCalls, Models, Profiles, Providers)
+                        AssistantToolCalls, ModelRuns, Models, Profiles,
+                        Providers)
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_assistant_conversation_history
 from dotenv import load_dotenv
@@ -249,6 +250,17 @@ async def _handle_assistant_chat(
                     pass
             else:
                 pass
+
+        usage = result.context_wrapper.usage
+
+        # create model run
+        model_run = ModelRuns(
+            model_id=model.id,
+            input_tokens=usage.input_tokens,
+            output_tokens=usage.output_tokens
+        )
+        session.add(model_run)
+        session.commit()
 
     except Exception as e:
         # Handle cancellation or other errors

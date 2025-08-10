@@ -44,20 +44,20 @@ export const appFeedbackRelations = relations(appFeedback, ({one}) => ({
 	}),
 }));
 
-export const assistantChatsRelations = relations(assistantChats, ({one, many}) => ({
-	profile: one(profiles, {
-		fields: [assistantChats.profileId],
-		references: [profiles.id]
-	}),
-	assistantMessages: many(assistantMessages),
-	assistantToolCalls: many(assistantToolCalls),
-}));
-
 export const assistantMessagesRelations = relations(assistantMessages, ({one}) => ({
 	assistantChat: one(assistantChats, {
 		fields: [assistantMessages.chatId],
 		references: [assistantChats.id]
 	}),
+}));
+
+export const assistantChatsRelations = relations(assistantChats, ({one, many}) => ({
+	assistantMessages: many(assistantMessages),
+	profile: one(profiles, {
+		fields: [assistantChats.profileId],
+		references: [profiles.id]
+	}),
+	assistantToolCalls: many(assistantToolCalls),
 }));
 
 export const assistantToolCallsRelations = relations(assistantToolCalls, ({one}) => ({

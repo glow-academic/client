@@ -1,1 +1,0 @@
-ALTER TABLE "personas" ADD COLUMN "active" boolean DEFAULT false NOT NULL;

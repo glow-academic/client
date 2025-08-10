@@ -23,9 +23,11 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 \i seed/default/rubrics.sql
 
 \i app/system/init.sql
+\i seed/default/system.sql
 
 -- 2. Assistant tables
 \i app/assistants/init.sql
+\i seed/default/assistants.sql
 
 -- 3. Agents
 \i app/agents/init.sql
@@ -42,6 +44,9 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- 6. Tables that depend on multiple previous tables
 \i app/cohorts/init.sql
 \i seed/default/cohorts.sql
+
+-- 7. Insert seed init file
+\i seed/init.sql
 
 -- ============================================================================
 -- COMPLETION MESSAGE

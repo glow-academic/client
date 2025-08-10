@@ -105,6 +105,14 @@ vi.mock('@/utils/queries/documents/get-document', () => ({
   getDocument: vi.fn(() => mockSchema.documents?.[0] || null),
 }));
 
+// MODEL_RUNS QUERIES
+vi.mock('@/utils/queries/model_runs/get-all-model-runs', () => ({
+  getAllModelRuns: vi.fn(() => mockSchema.modelRuns || []),
+}));
+vi.mock('@/utils/queries/model_runs/get-model-run', () => ({
+  getModelRun: vi.fn(() => mockSchema.modelRuns?.[0] || null),
+}));
+
 // MODELS QUERIES
 vi.mock('@/utils/queries/models/get-all-models', () => ({
   getAllModels: vi.fn(() => mockSchema.models || []),

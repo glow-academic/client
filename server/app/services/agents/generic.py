@@ -6,7 +6,7 @@ from agents.extensions.models.litellm_model import LitellmModel
 from agents.items import TResponseInputItem
 from agents.mcp.server import MCPServer
 from app.db import get_session
-from app.models import Models, Personas, Providers
+from app.models import ModelRuns, Models, Personas, Providers
 from app.utils.auth import decrypt_api_key
 from fastapi import Depends
 from openai.types import Reasoning
@@ -68,6 +68,17 @@ async def run_generic_agent(
             if isinstance(event.data, ResponseTextDeltaEvent):
                 chunk = event.data.delta
                 yield chunk
+
+    usage = result.context_wrapper.usage
+
+    # create model run
+    model_run = ModelRuns(
+        model_id=model.id,
+        input_tokens=usage.input_tokens,
+        output_tokens=usage.output_tokens
+    )
+    session.add(model_run)
+    session.commit()
 
 
 class GenericAgent:
