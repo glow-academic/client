@@ -335,6 +335,22 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
       .find((msg) => msg.type === "query");
 
     if (previousUserMessage) {
+      // Find the group that contains this error message
+      const errorMessage = sortedMessages[errorMessageIndex];
+      if (errorMessage) {
+        const group = groupedMessages.find((g) =>
+          g.responses.some((r) => r.id === errorMessage.id)
+        );
+
+        if (group) {
+          // Set the response version to the latest (where the new response will appear)
+          setResponseVersions((prev) => ({
+            ...prev,
+            [group.groupId]: group.responses.length,
+          }));
+        }
+      }
+
       // Retry with the previous user message content
       window.dispatchEvent(
         new CustomEvent("messageSent", {
