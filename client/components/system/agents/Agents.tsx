@@ -58,6 +58,14 @@ export default function Agents() {
                     {agent.reasoning}
                   </Badge>
                 )}
+                {agent.reasoning === "minimal" && (
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] uppercase tracking-wide"
+                  >
+                    gpt5
+                  </Badge>
+                )}
                 <Badge variant="outline" className="text-xs">
                   <Thermometer className="h-3 w-3 mr-1" />
                   {formatTemperature(agent.temperature)}

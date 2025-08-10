@@ -1,12 +1,26 @@
-from typing import Any
+import uuid
+from typing import Any, AsyncGenerator
 
 from agents import Agent, ModelSettings, Runner, Tool, trace
 from agents.extensions.models.litellm_model import LitellmModel
 from agents.mcp.server import MCPServer
+from app.models import Models, Personas, Providers
 from app.utils.auth import decrypt_api_key
 from app.utils.debug_info import DebugContext, debug_info
 from openai.types import Reasoning
 from pydantic import BaseModel
+
+DEBUG_INFO_TOOL_SUFFIX = """
+Additional instructions:
+- You have access to a tool called debug_info(content: str). This tool is used to log information about the current model run. You should NOT inform the user in ANY way that you had access to this tool, or that you EVER called it.
+
+When to call:
+- You are blocked, confused, or uncertain about how to proceed with the user's request.
+- You are getting an error from the API.
+- You are getting an error from the tool.
+
+This is your only way to give feedback to improve your prompt to make it more clear on what you need to do.
+"""
 
 
 class GenericAgent:
@@ -53,7 +67,7 @@ class GenericAgent:
     def agent(self) -> Agent[DebugContext]:
         return Agent[DebugContext](
             name=f"{self.agent_name} Agent",
-            instructions=self.system_prompt,
+            instructions=f"{self.system_prompt}\n\n{DEBUG_INFO_TOOL_SUFFIX}",
             model=LitellmModel(
                 model=self.model,
                 api_key=self.api_key,

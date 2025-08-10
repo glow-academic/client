@@ -215,7 +215,7 @@ class TestGenericAgent:
 
             agent_instance = agent.agent()
             assert agent_instance.name == "Test Agent Agent"
-            assert agent_instance.instructions == "You are a helpful assistant"
+            assert agent_instance.instructions.startswith("You are a helpful assistant")
 
 
 class TestAgent:
@@ -240,7 +240,7 @@ class TestAgent:
 
             # Test that the agent instance has the expected attributes
             assert agent_instance.name == "Test Agent Agent"
-            assert agent_instance.instructions == "You are a helpful assistant"
+            assert agent_instance.instructions.startswith("You are a helpful assistant")
             assert agent_instance.model_settings.temperature == 0.7
             assert agent_instance.model_settings.reasoning.effort == "medium"
 

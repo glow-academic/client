@@ -2,8 +2,7 @@ import uuid
 
 from agents import Runner, trace
 from app.db import get_session
-from app.models import (Agents, AssistantChats, ModelRuns, Models,
-                        Providers)
+from app.models import Agents, AssistantChats, ModelRuns, Models, Providers
 from app.services.agents.generic import GenericAgent
 from app.utils.debug_info import DebugContext
 from fastapi import Depends

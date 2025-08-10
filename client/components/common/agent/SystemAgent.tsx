@@ -28,6 +28,7 @@ import { updateAgent } from "@/utils/mutations/agents/update-agent";
 import { getAgent } from "@/utils/queries/agents/get-agent";
 import { getAllModels } from "@/utils/queries/models/get-all-models";
 import MarkdownEditor from "../viewers/MarkdownEditor";
+import AgentDebugInfo from "./AgentDebugInfo";
 
 interface SystemAgentFormData {
   name?: string;
@@ -35,7 +36,7 @@ interface SystemAgentFormData {
   systemPrompt?: string;
   temperature?: number;
   modelId?: string;
-  reasoning?: "none" | "low" | "medium" | "high";
+  reasoning?: "none" | "minimal" | "low" | "medium" | "high";
 }
 
 export interface SystemAgentProps {
@@ -70,7 +71,13 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
         systemPrompt: agent.systemPrompt,
         temperature: agent.temperature,
         modelId: agent.modelId || "",
-        reasoning: agent.reasoning || "none",
+        reasoning:
+          (agent.reasoning as
+            | "minimal"
+            | "low"
+            | "medium"
+            | "high"
+            | undefined) || "none",
       });
     }
   }, [agent]);
@@ -211,7 +218,12 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                     onValueChange={(value) =>
                       setFormData((prev) => ({
                         ...prev,
-                        reasoning: value as "none" | "low" | "medium" | "high",
+                        reasoning: value as
+                          | "none"
+                          | "minimal"
+                          | "low"
+                          | "medium"
+                          | "high",
                       }))
                     }
                   >
@@ -220,6 +232,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="minimal">Minimal</SelectItem>
                       <SelectItem value="low">Low</SelectItem>
                       <SelectItem value="medium">Medium</SelectItem>
                       <SelectItem value="high">High</SelectItem>
@@ -292,6 +305,16 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
             ) : (
               <Skeleton className="h-[500px] w-full" />
             )}
+          </div>
+
+          {/* Debug Info Section */}
+          <div className="space-y-2">
+            <Label>Debug Info</Label>
+            <AgentDebugInfo agentId={agentId} />
+            <p className="text-sm text-muted-foreground">
+              These are debug instructions provided by the model, when it
+              believed the prompt/tools was not clear or needed to be improved.
+            </p>
           </div>
 
           <div className="flex gap-2 justify-end">

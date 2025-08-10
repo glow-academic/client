@@ -56,6 +56,7 @@ const columnMap = {
   cohortNames: "Cohorts",
   email: "Email",
   actions: "Actions",
+  modelId: "Model",
 };
 
 export interface DataTableViewOptionsProps<TData> {
