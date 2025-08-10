@@ -101,17 +101,20 @@ def get_output_guardrails(
                 # Fallback: no chat context; include only the final output
                 input_items.append({"role": "assistant", "content": output})
 
+            # Safely resolve attempt for profile attribution
+            attempt = None
             if chat:
                 attempt = db_session.exec(
                     select(SimulationAttempts).where(SimulationAttempts.id == chat.attempt_id)
-                ).one()
+                ).one_or_none()
 
             # create model run
+            profile_id = attempt.profile_id if attempt is not None else None
             model_run = ModelRuns(
                 model_id=model_id,
                 input_tokens=0,
                 output_tokens=0,
-                profile_id=attempt.profile_id if attempt else None,
+                profile_id=profile_id,
                 agent_id=agent_id,
             )
             session.add(model_run)
