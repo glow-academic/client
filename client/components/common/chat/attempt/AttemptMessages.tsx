@@ -147,6 +147,21 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
     },
   });
 
+  // Helper function to check if a specific rating is being updated
+  const isRatingLoading = (messageId: string, isUpvote: boolean) => {
+    const existing = ratingsByMessageId[messageId];
+    if (existing) {
+      // For existing ratings, check if we're updating to the same value
+      return updateRatingMutation.isPending && existing.response === isUpvote;
+    } else {
+      // For new ratings, check if we're creating with this value
+      return (
+        createRatingMutation.isPending &&
+        createRatingMutation.variables?.up === isUpvote
+      );
+    }
+  };
+
   const canRate = useMemo(() => {
     const role = effectiveProfile?.role;
     return (
@@ -548,8 +563,21 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                           onClick={() =>
                                             handleRate(currentResponse.id, true)
                                           }
+                                          disabled={isRatingLoading(
+                                            currentResponse.id,
+                                            true
+                                          )}
                                         >
-                                          <ThumbsUp className="h-3 w-3" />
+                                          {isRatingLoading(
+                                            currentResponse.id,
+                                            true
+                                          ) ? (
+                                            <div className="h-3 w-3 flex items-center justify-center">
+                                              <LoadingDots />
+                                            </div>
+                                          ) : (
+                                            <ThumbsUp className="h-3 w-3" />
+                                          )}
                                         </Button>
                                         <Button
                                           variant="ghost"
@@ -567,8 +595,21 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                               false
                                             )
                                           }
+                                          disabled={isRatingLoading(
+                                            currentResponse.id,
+                                            false
+                                          )}
                                         >
-                                          <ThumbsDown className="h-3 w-3" />
+                                          {isRatingLoading(
+                                            currentResponse.id,
+                                            false
+                                          ) ? (
+                                            <div className="h-3 w-3 flex items-center justify-center">
+                                              <LoadingDots />
+                                            </div>
+                                          ) : (
+                                            <ThumbsDown className="h-3 w-3" />
+                                          )}
                                         </Button>
                                       </div>
                                     )}
@@ -634,8 +675,21 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                       onClick={() =>
                                         handleRate(currentResponse.id, true)
                                       }
+                                      disabled={isRatingLoading(
+                                        currentResponse.id,
+                                        true
+                                      )}
                                     >
-                                      <ThumbsUp className="h-3 w-3" />
+                                      {isRatingLoading(
+                                        currentResponse.id,
+                                        true
+                                      ) ? (
+                                        <div className="h-3 w-3 flex items-center justify-center">
+                                          <LoadingDots />
+                                        </div>
+                                      ) : (
+                                        <ThumbsUp className="h-3 w-3" />
+                                      )}
                                     </Button>
                                     <Button
                                       variant="ghost"
@@ -649,8 +703,21 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                       onClick={() =>
                                         handleRate(currentResponse.id, false)
                                       }
+                                      disabled={isRatingLoading(
+                                        currentResponse.id,
+                                        false
+                                      )}
                                     >
-                                      <ThumbsDown className="h-3 w-3" />
+                                      {isRatingLoading(
+                                        currentResponse.id,
+                                        false
+                                      ) ? (
+                                        <div className="h-3 w-3 flex items-center justify-center">
+                                          <LoadingDots />
+                                        </div>
+                                      ) : (
+                                        <ThumbsDown className="h-3 w-3" />
+                                      )}
                                     </Button>
                                   </div>
                                 )}
