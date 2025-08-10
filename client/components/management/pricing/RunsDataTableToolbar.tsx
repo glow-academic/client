@@ -1,13 +1,8 @@
 "use client";
 
-import { RefreshCw } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Command,
   CommandEmpty,
@@ -15,9 +10,14 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
+import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { RefreshCw } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 
 export interface OptionItem {
@@ -188,7 +188,8 @@ export function RunsDataTableToolbar({
           })}
           {selectedProfileIds.length > 0 && (
             <Badge variant="outline" className="font-normal">
-              {selectedProfileIds.length} person{selectedProfileIds.length > 1 ? "s" : ""}
+              {selectedProfileIds.length} person
+              {selectedProfileIds.length > 1 ? "s" : ""}
             </Badge>
           )}
         </div>
@@ -196,7 +197,10 @@ export function RunsDataTableToolbar({
 
       <div className="flex items-center gap-2">
         {/* Date range on the right for consistency */}
-        <DatePickerWithRange dateRange={dateRange} setDateRange={setDateRange} />
+        <DatePickerWithRange
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+        />
 
         {/* Refresh */}
         {onRefresh && (
@@ -207,12 +211,12 @@ export function RunsDataTableToolbar({
             disabled={isRefreshing}
             className="h-8 px-2"
           >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+            />
           </Button>
         )}
       </div>
     </div>
   );
 }
-
-

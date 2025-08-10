@@ -6,22 +6,26 @@ import {
   SortingState,
   VisibilityState,
   getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
   useReactTable,
 } from "@tanstack/react-table";
-import * as React from "react";
 import { Bug } from "lucide-react";
+import * as React from "react";
 
-import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
-import { Button } from "@/components/ui/button";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
+import { Button } from "@/components/ui/button";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { DebugInfo } from "@/types";
 import { format } from "date-fns";
 
@@ -46,8 +50,11 @@ export interface RunsDataTableProps {
 }
 
 export function RunsDataTable({ rows }: RunsDataTableProps) {
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "createdAt", desc: true },
   ]);
@@ -71,7 +78,9 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Model" />
         ),
-        cell: ({ row }) => <div className="text-sm">{row.getValue("modelName")}</div>,
+        cell: ({ row }) => (
+          <div className="text-sm">{row.getValue("modelName")}</div>
+        ),
         filterFn: (row, id, value) => {
           return (value as string[]).includes(row.original.modelId || "");
         },
@@ -81,7 +90,9 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Person" />
         ),
-        cell: ({ row }) => <div className="text-sm">{row.getValue("profileName")}</div>,
+        cell: ({ row }) => (
+          <div className="text-sm">{row.getValue("profileName")}</div>
+        ),
         filterFn: (row, _id, value) => {
           return (value as string[]).includes(row.original.profileId || "");
         },
@@ -91,7 +102,9 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Agent" />
         ),
-        cell: ({ row }) => <div className="text-sm">{row.getValue("agentName")}</div>,
+        cell: ({ row }) => (
+          <div className="text-sm">{row.getValue("agentName")}</div>
+        ),
         filterFn: (row, _id, value) => {
           return (value as string[]).includes(row.original.agentId || "");
         },
@@ -101,7 +114,9 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Persona" />
         ),
-        cell: ({ row }) => <div className="text-sm">{row.getValue("personaName")}</div>,
+        cell: ({ row }) => (
+          <div className="text-sm">{row.getValue("personaName")}</div>
+        ),
         filterFn: (row, _id, value) => {
           return (value as string[]).includes(row.original.personaId || "");
         },
@@ -111,7 +126,11 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Input tokens" />
         ),
-        cell: ({ row }) => <div className="text-sm tabular-nums">{row.getValue("inputTokens")}</div>,
+        cell: ({ row }) => (
+          <div className="text-sm tabular-nums">
+            {row.getValue("inputTokens")}
+          </div>
+        ),
         enableSorting: true,
       },
       {
@@ -120,7 +139,9 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
           <DataTableColumnHeader column={column} title="Output tokens" />
         ),
         cell: ({ row }) => (
-          <div className="text-sm tabular-nums">{row.getValue("outputTokens")}</div>
+          <div className="text-sm tabular-nums">
+            {row.getValue("outputTokens")}
+          </div>
         ),
         enableSorting: true,
       },
@@ -136,15 +157,26 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
           return (
             <HoverCard>
               <HoverCardTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={!has}>
-                  <Bug className={`h-4 w-4 ${has ? "text-amber-600" : "text-muted-foreground"}`} />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  disabled={!has}
+                >
+                  <Bug
+                    className={`h-4 w-4 ${has ? "text-amber-600" : "text-muted-foreground"}`}
+                  />
                 </Button>
               </HoverCardTrigger>
               <HoverCardContent align="start" className="max-w-[480px]">
                 {content ? (
-                  <pre className="text-xs whitespace-pre-wrap break-words">{content}</pre>
+                  <pre className="text-xs whitespace-pre-wrap break-words">
+                    {content}
+                  </pre>
                 ) : (
-                  <span className="text-xs text-muted-foreground">No debug info</span>
+                  <span className="text-xs text-muted-foreground">
+                    No debug info
+                  </span>
                 )}
               </HoverCardContent>
             </HoverCard>
@@ -152,7 +184,7 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
         },
       },
     ],
-    [],
+    []
   );
 
   const table = useReactTable({
@@ -185,21 +217,30 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
     rows.forEach((r) => {
       if (r.modelId) set.set(r.modelId, r.modelName);
     });
-    return Array.from(set.entries()).map(([value, label]) => ({ value, label }));
+    return Array.from(set.entries()).map(([value, label]) => ({
+      value,
+      label,
+    }));
   }, [rows]);
   const agentOptions = React.useMemo(() => {
     const set = new Map<string, string>();
     rows.forEach((r) => {
       if (r.agentId) set.set(r.agentId, r.agentName || r.agentId);
     });
-    return Array.from(set.entries()).map(([value, label]) => ({ value, label }));
+    return Array.from(set.entries()).map(([value, label]) => ({
+      value,
+      label,
+    }));
   }, [rows]);
   const profileOptions = React.useMemo(() => {
     const set = new Map<string, string>();
     rows.forEach((r) => {
       if (r.profileId) set.set(r.profileId, r.profileName || r.profileId);
     });
-    return Array.from(set.entries()).map(([value, label]) => ({ value, label }));
+    return Array.from(set.entries()).map(([value, label]) => ({
+      value,
+      label,
+    }));
   }, [rows]);
 
   return (
@@ -239,7 +280,10 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className="px-4 py-3 text-left text-sm font-medium">
+                  <th
+                    key={header.id}
+                    className="px-4 py-3 text-left text-sm font-medium"
+                  >
                     {header.isPlaceholder
                       ? null
                       : typeof header.column.columnDef.header === "string"
@@ -253,7 +297,10 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
           <tbody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="border-b hover:bg-muted/50 transition-colors">
+                <tr
+                  key={row.id}
+                  className="border-b hover:bg-muted/50 transition-colors"
+                >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="px-4 py-3 text-sm">
                       {typeof cell.column.columnDef.cell === "function"
@@ -265,7 +312,10 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
               ))
             ) : (
               <tr>
-                <td colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+                <td
+                  colSpan={columns.length}
+                  className="h-24 text-center text-muted-foreground"
+                >
                   No runs match the current filters.
                 </td>
               </tr>
@@ -277,5 +327,3 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
     </div>
   );
 }
-
-

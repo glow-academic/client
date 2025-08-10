@@ -24,8 +24,10 @@ import {
 
 import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from "recharts";
 
+import type { DebugInfo } from "@/types";
 import { Agent, Model, ModelRun, Persona, Profile } from "@/types";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+import { getDebugInfoByModelRuns } from "@/utils/queries/debug_info/get-debug-info-by-modelruns";
 import { getAllModelRuns } from "@/utils/queries/model_runs/get-all-model-runs";
 import { getAllModels } from "@/utils/queries/models/get-all-models";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
@@ -33,8 +35,6 @@ import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { Loader2 } from "lucide-react";
 import { RunsDataTable } from "./RunsDataTable";
 import { RunsDataTableToolbar } from "./RunsDataTableToolbar";
-import { getDebugInfoByModelRuns } from "@/utils/queries/debug_info/get-debug-info-by-modelruns";
-import type { DebugInfo } from "@/types";
 
 const currency = (value: number) =>
   new Intl.NumberFormat(undefined, {
@@ -301,9 +301,8 @@ export default function Pricing() {
   const profileOptions = useMemo(() => {
     return profiles.map((p) => {
       const id = p.id as string;
-      const label = (
-        `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || p.alias || id
-      );
+      const label =
+        `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || p.alias || id;
       return { value: id, label };
     });
   }, [profiles]);
@@ -311,19 +310,28 @@ export default function Pricing() {
   // Build rows for runs table
   const runRows = useMemo(() => {
     return (filteredRuns || []).map((run) => {
-      const modelId = (run as unknown as { modelId?: string | null }).modelId || null;
-      const agentId = (run as unknown as { agentId?: string | null }).agentId || null;
-      const personaId = (run as unknown as { personaId?: string | null }).personaId || null;
-      const profileId = (run as unknown as { profileId?: string | null }).profileId || null;
+      const modelId =
+        (run as unknown as { modelId?: string | null }).modelId || null;
+      const agentId =
+        (run as unknown as { agentId?: string | null }).agentId || null;
+      const personaId =
+        (run as unknown as { personaId?: string | null }).personaId || null;
+      const profileId =
+        (run as unknown as { profileId?: string | null }).profileId || null;
       return {
         id: run.id as string,
         createdAt: run.createdAt as string,
         modelId,
-        modelName: (modelId && modelIdToMeta.get(modelId)?.name) || modelId || "",
+        modelName:
+          (modelId && modelIdToMeta.get(modelId)?.name) || modelId || "",
         agentId,
-        agentName: (agentId && agentIdToMeta.get(agentId)?.name) || agentId || "",
+        agentName:
+          (agentId && agentIdToMeta.get(agentId)?.name) || agentId || "",
         personaId,
-        personaName: (personaId && personaIdToMeta.get(personaId)?.name) || personaId || "",
+        personaName:
+          (personaId && personaIdToMeta.get(personaId)?.name) ||
+          personaId ||
+          "",
         profileId,
         profileName:
           (profileId &&
@@ -332,13 +340,21 @@ export default function Pricing() {
               if (!p) return profileId;
               const lbl = `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim();
               return lbl || p.alias || profileId;
-            })()) || "",
+            })()) ||
+          "",
         inputTokens: run.inputTokens,
         outputTokens: run.outputTokens,
         debugInfo: debugInfoByRunId.get(run.id as string) || [],
       };
     });
-  }, [filteredRuns, modelIdToMeta, agentIdToMeta, personaIdToMeta, profiles, debugInfoByRunId]);
+  }, [
+    filteredRuns,
+    modelIdToMeta,
+    agentIdToMeta,
+    personaIdToMeta,
+    profiles,
+    debugInfoByRunId,
+  ]);
 
   return (
     <div className="flex flex-col gap-4">

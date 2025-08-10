@@ -57,6 +57,12 @@ const columnMap = {
   email: "Email",
   actions: "Actions",
   modelId: "Model",
+  modelName: "Model",
+  agentName: "Agent",
+  personaName: "Persona",
+  inputTokens: "Input Tokens",
+  outputTokens: "Output Tokens",
+  profileName: "Person",
 };
 
 export interface DataTableViewOptionsProps<TData> {
