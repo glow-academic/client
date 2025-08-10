@@ -408,7 +408,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                     {/* Assistant response(s) */}
                     {group.responses.length > 0 && (
                       <div className="flex justify-start mb-3">
-                        <div className="max-w-[80%] relative group">
+                        <div className="max-w-[80%] relative group p-2 -m-2">
                           {(() => {
                             const currentResponse = getCurrentResponse(
                               group.groupId
@@ -531,7 +531,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
 
                                 {/* Response navigation and rating (right) - add a row only when chevrons exist */}
                                 {group.responses.length > 1 && (
-                                  <div className="flex items-center justify-between gap-0 mt-1">
+                                  <div className="flex items-center justify-between gap-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                                     {/* Thumbs rating (left side) */}
                                     {canRate && (
                                       <div className="flex items-center gap-1">
@@ -621,7 +621,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
 
                                 {/* Thumbs rating overlay (left-below); shows on hover only when no chevron navigation exists */}
                                 {canRate && group.responses.length <= 1 && (
-                                  <div className="absolute left-1 top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center gap-1">
+                                  <div className="absolute left-1 top-full mt-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center gap-1">
                                     <Button
                                       variant="ghost"
                                       size="sm"
