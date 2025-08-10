@@ -18,6 +18,7 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ import { useSimulation } from "@/contexts/simulation-context";
 import { SimulationMessage } from "@/types";
 import { simulationCrowdsourcedMessages } from "@/utils/drizzle/schema";
 import { createSimulationCrowdsourcedMessage } from "@/utils/mutations/simulation_crowdsourced_messages/create-simulation-crowdsourced-message";
+import { deleteSimulationCrowdsourcedMessage } from "@/utils/mutations/simulation_crowdsourced_messages/delete-simulation-crowdsourced-message";
 import { updateSimulationCrowdsourcedMessage } from "@/utils/mutations/simulation_crowdsourced_messages/update-simulation-crowdsourced-message";
 import { getSimulationCrowdsourcedMessagesBySimulationMessages } from "@/utils/queries/simulation_crowdsourced_messages/get-simulation-crowdsourced-messages-by-simulationmessages";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
@@ -148,12 +150,26 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
     },
   });
 
+  const deleteRatingMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await deleteSimulationCrowdsourcedMessage(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["simulationCrowdsourcedMessages", targetChatId],
+      });
+    },
+  });
+
   // Helper function to check if a specific rating is being updated
   const isRatingLoading = (messageId: string, isUpvote: boolean) => {
     const existing = ratingsByMessageId[messageId];
     if (existing) {
-      // For existing ratings, check if we're updating to the same value
-      return updateRatingMutation.isPending && existing.response === isUpvote;
+      // For existing ratings, check if we're updating to the same value or deleting
+      return (
+        (updateRatingMutation.isPending && existing.response === isUpvote) ||
+        (deleteRatingMutation.isPending && existing.response === isUpvote)
+      );
     } else {
       // For new ratings, check if we're creating with this value
       return (
@@ -174,10 +190,19 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
     if (!effectiveProfile?.id) return;
     const existing = ratingsByMessageId[messageId];
     if (existing) {
-      if (existing.response === up) return;
-      updateRatingMutation.mutate({ id: existing.id, up });
+      if (existing.response === up) {
+        // If clicking the same rating, deselect it
+        deleteRatingMutation.mutate(existing.id);
+      } else {
+        // If clicking a different rating, update it
+        updateRatingMutation.mutate({ id: existing.id, up });
+      }
     } else {
+      // First time rating - show thank you toast
       createRatingMutation.mutate({ messageId, up });
+      toast.success(
+        "Thank you for your feedback! Your rating helps make GLOW better."
+      );
     }
   };
 
