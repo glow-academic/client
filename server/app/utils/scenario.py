@@ -10,6 +10,8 @@ from typing import Any, Dict, List, Optional
 from agents.items import TResponseInputItem
 from app.models import (Documents, ParameterItems, Parameters, Personas,
                         Scenarios)
+from app.utils.document import _read_document_content
+from rapidfuzz import fuzz  # type: ignore
 from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
@@ -277,6 +279,52 @@ def _tokens(text: str | None) -> list[str]:
     return [t for t in _norm(text).split(" ") if t]
 
 
+def _weighted_choice(weighted_items: list[tuple[Any, float]]) -> Any | None:
+    """Return one item chosen with probability proportional to its weight.
+    Returns None when all weights are non-positive or list is empty.
+    """
+    if not weighted_items:
+        return None
+    # Ensure non-negative weights
+    weights = [max(0.0, float(w)) for _, w in weighted_items]
+    total = sum(weights)
+    if total <= 0.0:
+        return None
+    r = random.random() * total
+    cumsum = 0.0
+    for item, w in weighted_items:
+        cumsum += max(0.0, float(w))
+        if r <= cumsum:
+            return item
+    return weighted_items[-1][0]
+
+
+def _weighted_sample_without_replacement(items: list[Any], scores: list[float], k: int) -> list[Any]:
+    """Sample up to k unique items proportionally to scores without replacement.
+    Falls back to fewer items if necessary.
+    """
+    selected: list[Any] = []
+    pool_items = list(items)
+    pool_scores = [max(0.0, float(s)) for s in scores]
+    for _ in range(min(k, len(pool_items))):
+        total = sum(pool_scores)
+        if total <= 0.0:
+            # pick uniformly at random from remaining
+            choice_idx = random.randrange(len(pool_items))
+        else:
+            r = random.random() * total
+            cumsum = 0.0
+            choice_idx = 0
+            for i, s in enumerate(pool_scores):
+                cumsum += s
+                if r <= cumsum:
+                    choice_idx = i
+                    break
+        selected.append(pool_items.pop(choice_idx))
+        pool_scores.pop(choice_idx)
+    return selected
+
+
 def suggest_randomized_sections(
     *,
     name: Optional[str],
@@ -297,6 +345,8 @@ def suggest_randomized_sections(
 
     base_text = f"{name or ''} {description or ''}"
     context_tokens: set[str] = set(_tokens(base_text))
+    # Keep a raw context string for fuzzy similarity (in addition to tokens)
+    context_text = _norm(base_text)
 
     # Load current persona/documents if provided to enrich context
     current_persona: Personas | None = None
@@ -305,6 +355,7 @@ def suggest_randomized_sections(
         if current_persona:
             context_tokens.update(_tokens(current_persona.name))
             context_tokens.update(_tokens(current_persona.description))
+            context_text = f"{context_text} {_norm(current_persona.name)} {_norm(current_persona.description)}"
 
     current_documents: list[Documents] = []
     if document_ids:
@@ -318,6 +369,14 @@ def suggest_randomized_sections(
             for tag in (d.tags or []):
                 context_tokens.update(_tokens(tag))
             context_tokens.add(_norm(d.type))
+            # Include current document content to help parameter/persona choice
+            try:
+                doc_text = _read_document_content(d.file_path)
+                # Limit size for performance
+                doc_text = doc_text[:5000]
+                context_text = f"{context_text} {_norm(doc_text)}"
+            except Exception:
+                pass
 
     # Suggest persona -----------------------------------------------------
     suggested_persona_id = persona_id
@@ -369,6 +428,14 @@ def suggest_randomized_sections(
                 score += 10.0
             if d_type and d_type in scenario_text_norm:
                 score += 3.0
+            # Content similarity (token set ratio over truncated content)
+            try:
+                doc_text = _read_document_content(doc.file_path)
+                doc_text = doc_text[:5000]
+                sim = fuzz.token_set_ratio(context_text, _norm(doc_text))  # 0..100
+                score += sim * 0.15  # weight content moderately
+            except Exception:
+                pass
             return score
 
         if active_documents:
@@ -390,14 +457,13 @@ def suggest_randomized_sections(
                     if s > best:
                         best = s
                 tag_scores.append((t, best + random.random() * 0.1))
-            tag_scores.sort(key=lambda x: x[1], reverse=True)
-            chosen_tag = tag_scores[0][0] if tag_scores else "__untagged__"
+            # Pick a tag by weighted probability (less deterministic)
+            chosen_tag = _weighted_choice(tag_scores) or (tag_scores[0][0] if tag_scores else "__untagged__")
             candidates = tag_to_docs.get(chosen_tag, [])
-            cand_scored = [(d, score_doc(d)) for d in candidates]
-            cand_scored.sort(key=lambda x: x[1], reverse=True)
-            top_n = cand_scored[: min(6, len(cand_scored))]
-            k = min(3, len(top_n))
-            selected = [d for d, _ in random.sample(top_n, k)] if k > 0 else []
+            # Score candidates and sample up to 3 without replacement by weight
+            cand_docs = candidates
+            cand_scores = [score_doc(d) for d in cand_docs]
+            selected = _weighted_sample_without_replacement(cand_docs, cand_scores, 3)
             suggested_document_ids = [d.id for d in selected]
 
     # Suggest parameters --------------------------------------------------
@@ -418,17 +484,44 @@ def suggest_randomized_sections(
                     # non-default: similarity-based with randomness
                     def score_item(it: ParameterItems) -> float:
                         score = 0.0
-                        it_tokens = set(_tokens(it.name)) | set(_tokens(it.description)) | set(_tokens(it.value))
-                        score += 4.0 * len(it_tokens & context_tokens)
-                        # boost if parameter name/desc matches context
+                        name_norm = _norm(it.name)
+                        desc_norm = _norm(it.description)
+                        value_norm = _norm(it.value)
+
+                        # Token overlaps
+                        name_tokens = set(_tokens(name_norm))
+                        desc_tokens = set(_tokens(desc_norm))
+                        value_tokens = set(_tokens(value_norm))
                         p_tokens = set(_tokens(param.name)) | set(_tokens(param.description))
-                        score += 1.0 * len(p_tokens & context_tokens)
-                        # add jitter
-                        score += random.random() * 0.5
+
+                        # Item tokens overlap with context (value gets higher weight)
+                        score += 2.0 * len(name_tokens & context_tokens)
+                        score += 2.0 * len(desc_tokens & context_tokens)
+                        score += 6.0 * len(value_tokens & context_tokens)
+
+                        # Parameter name/desc overlap with context
+                        score += 1.5 * len(p_tokens & context_tokens)
+
+                        # Exact phrase boost for value if appears in context
+                        if value_norm and value_norm in context_text:
+                            score += 25.0
+
+                        # Fuzzy similarity with heavier emphasis on value
+                        sim_all: float = float(
+                            fuzz.token_set_ratio(
+                                context_text, _norm(f"{it.name} {it.description} {it.value}")
+                            )
+                        )
+                        sim_value: float = float(fuzz.token_set_ratio(context_text, value_norm))
+                        score += sim_all * 0.06
+                        score += sim_value * 0.20
+
+                        # Small randomness to avoid determinism
+                        score += random.random() * 0.75
                         return score
 
                     ranked_items = sorted(items, key=score_item, reverse=True)
-                    top_pool = ranked_items[: min(3, len(ranked_items))]
+                    top_pool = ranked_items[: min(5, len(ranked_items))]
                     if top_pool:
                         chosen_item = random.choice(top_pool)
                         chosen.append(chosen_item.id)

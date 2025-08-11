@@ -2,14 +2,14 @@
 import logging
 import uuid
 from typing import List
+from typing import List as _List
 
 from app.db import get_session
 from app.services.agents.collection.scenario import run_scenario_agent
+from app.utils.scenario import suggest_randomized_sections
 from fastapi import APIRouter, Depends, Form, HTTPException
 from fastapi.responses import JSONResponse
 from sqlmodel import Session
-from typing import List as _List
-from app.utils.scenario import suggest_randomized_sections
 
 logger = logging.getLogger(__name__)
 

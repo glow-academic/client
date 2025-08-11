@@ -36,10 +36,14 @@ export async function randomizeScenario(
     if (params.personaId) formData.append("persona_id", params.personaId);
 
     if (params.documentIds && params.documentIds.length > 0) {
-      params.documentIds.forEach((id) => id && formData.append("document_ids", id));
+      params.documentIds.forEach(
+        (id) => id && formData.append("document_ids", id)
+      );
     }
     if (params.parameterItemIds && params.parameterItemIds.length > 0) {
-      params.parameterItemIds.forEach((id) => id && formData.append("parameter_item_ids", id));
+      params.parameterItemIds.forEach(
+        (id) => id && formData.append("parameter_item_ids", id)
+      );
     }
     if (params.targets && params.targets.length > 0) {
       params.targets.forEach((t) => t && formData.append("targets", t));
@@ -78,5 +82,3 @@ export async function randomizeScenario(
     return { success: false, message: errorMessage, status: "error" };
   }
 }
-
-

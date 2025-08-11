@@ -234,3 +234,20 @@ class TestTest_Scenario:
         assert response.status_code == 200
         # The response should be a streaming response with Server-Sent Events format
         assert "text/event-stream" in response.headers["content-type"]
+
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `randomize_scenario`")
+class TestRandomize_Scenario:
+    """Tests for randomize_scenario endpoint."""
+
+    def test_randomize_scenario_success(self, client):
+        """Test successful randomize_scenario request."""
+        # TODO: Implement test for randomize_scenario
+        assert False, "IMPLEMENT: Test for randomize_scenario"
+
+    def test_randomize_scenario_error(self, client):
+        """Test randomize_scenario error handling."""
+        # TODO: Implement error test for randomize_scenario
+        assert False, "IMPLEMENT: Error test for randomize_scenario"
+

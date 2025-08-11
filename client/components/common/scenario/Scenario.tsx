@@ -801,7 +801,9 @@ export default function Scenario({
                     variant="ghost"
                     size="icon"
                     onClick={handleRandomizeDocuments}
-                    disabled={isReadonly || isRandomizingDocuments || noDocuments}
+                    disabled={
+                      isReadonly || isRandomizingDocuments || noDocuments
+                    }
                   >
                     {isRandomizingDocuments ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
