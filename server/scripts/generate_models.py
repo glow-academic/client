@@ -140,10 +140,45 @@ def generate_sqlmodel_from_sql():
         class_definitions = re.sub(
             r": Optional\[UUID\]", r": Optional[uuid.UUID]", class_definitions
         )
-        class_definitions = re.sub(r": list", r": List[uuid.UUID]", class_definitions)
+
+        # Map array element types based on the ARRAY inner SQL type instead of blanket UUID
+        # Uuid arrays → List[uuid.UUID]
         class_definitions = re.sub(
-            r": Optional\[list\]", r": Optional[List[uuid.UUID]]", class_definitions
+            r": Optional\[list\](?=\s*=.*ARRAY\(Uuid\(.*\)\))",
+            r": Optional[List[uuid.UUID]]",
+            class_definitions,
         )
+        class_definitions = re.sub(
+            r": list(?=\s*=.*ARRAY\(Uuid\(.*\)\))",
+            r": List[uuid.UUID]",
+            class_definitions,
+        )
+
+        # Text arrays → List[str]
+        class_definitions = re.sub(
+            r": Optional\[(?:List\[uuid\.UUID\]|list)\](?=\s*=.*ARRAY\(Text\(\)\))",
+            r": Optional[List[str]]",
+            class_definitions,
+        )
+        class_definitions = re.sub(
+            r": (?:List\[uuid\.UUID\]|list)(?=\s*=.*ARRAY\(Text\(\)\))",
+            r": List[str]",
+            class_definitions,
+        )
+
+        # Boolean arrays → List[bool]
+        class_definitions = re.sub(
+            r": Optional\[(?:List\[uuid\.UUID\]|list)\](?=\s*=.*ARRAY\(Boolean\(.*\)\))",
+            r": Optional[List[bool]]",
+            class_definitions,
+        )
+        class_definitions = re.sub(
+            r": (?:List\[uuid\.UUID\]|list)(?=\s*=.*ARRAY\(Boolean\(.*\)\))",
+            r": List[bool]",
+            class_definitions,
+        )
+
+        # JSON objects
         class_definitions = re.sub(r": dict", r": Dict[str, Any]", class_definitions)
         class_definitions = re.sub(
             r": Optional\[dict\]", r": Optional[Dict[str, Any]]", class_definitions

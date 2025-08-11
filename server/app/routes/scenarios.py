@@ -19,6 +19,7 @@ async def new_scenario(
     persona_id: uuid.UUID | None = Form(None),
     document_ids: List[uuid.UUID] | None = Form(None),
     parameter_item_ids: List[uuid.UUID] | None = Form(None),
+    checkpoints: List[str] | None = Form(None),
     session: Session = Depends(get_session),
     profile_id: uuid.UUID | None = Form(None),
 ) -> JSONResponse:
@@ -36,13 +37,14 @@ async def new_scenario(
                 document_ids = None
 
         # Run the scenario agent to generate title and description
-        title, description, _ = await run_scenario_agent(
+        title, description, checkpoints, _ = await run_scenario_agent(
             persona_id=persona_id,
             document_ids=document_ids,
             parameter_item_ids=parameter_item_ids,
             group_id=None,  # no group id for scenarios
             session=session,
             profile_id=profile_id,
+            checkpoints=checkpoints,
         )
 
         return JSONResponse(
@@ -52,6 +54,7 @@ async def new_scenario(
                 "message": "Scenario generated successfully",
                 "title": title,
                 "description": description,
+                "checkpoints": checkpoints,
             },
         )
 

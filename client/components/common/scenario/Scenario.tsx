@@ -6,7 +6,16 @@
  */
 "use client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronRight, Loader2, Settings } from "lucide-react";
+import {
+  Check,
+  GripVertical,
+  Loader2,
+  PlusCircle,
+  RotateCcw,
+  Settings,
+  Shuffle,
+  Trash2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -31,9 +40,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Custom Components
 import { DocumentPicker } from "./DocumentPicker";
@@ -42,7 +57,12 @@ import { PersonaPicker } from "./PersonaPicker";
 
 // Types and API functions
 import { useProfile } from "@/contexts/profile-context";
-import { Scenario as ScenarioType, Simulation } from "@/types";
+import {
+  Parameter,
+  ParameterItem,
+  Scenario as ScenarioType,
+  Simulation,
+} from "@/types";
 import { newScenario } from "@/utils/api/scenarios/new-scenario";
 import { logError } from "@/utils/logger";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
@@ -87,16 +107,23 @@ export default function Scenario({
     description: "",
     defaultScenario: false,
     practiceScenario: false,
+    checkpoints: [],
   };
 
   const [formData, setFormData] =
     useState<Partial<ScenarioType>>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
+  const [isRandomizingPersona, setIsRandomizingPersona] = useState(false);
+  const [isRandomizingDocuments, setIsRandomizingDocuments] = useState(false);
+  const [isRandomizingParameters, setIsRandomizingParameters] = useState(false);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [originalFormData, setOriginalFormData] =
     useState<Partial<ScenarioType>>(initialFormData);
+  const [draggedCheckpointIndex, setDraggedCheckpointIndex] = useState<
+    number | null
+  >(null);
 
   // Data fetching
   const { data: documents = [] } = useQuery({
@@ -143,6 +170,7 @@ export default function Scenario({
         description: scenario.description || "",
         defaultScenario: scenario.defaultScenario ?? false,
         practiceScenario: scenario.practiceScenario ?? false,
+        checkpoints: scenario.checkpoints || [],
       };
       setFormData(scenarioData);
       setOriginalFormData(scenarioData); // Set original data for comparison
@@ -165,7 +193,9 @@ export default function Scenario({
       JSON.stringify(current.documentIds?.sort()) !==
         JSON.stringify(original.documentIds?.sort()) ||
       JSON.stringify(current.parameterItemIds?.sort()) !==
-        JSON.stringify(original.parameterItemIds?.sort())
+        JSON.stringify(original.parameterItemIds?.sort()) ||
+      JSON.stringify(current.checkpoints || []) !==
+        JSON.stringify(original.checkpoints || [])
     );
   }, [formData, originalFormData, isEditMode]);
 
@@ -258,6 +288,186 @@ export default function Scenario({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Checkpoint handlers
+  const addCheckpoint = () => {
+    setFormData((prev) => ({
+      ...prev,
+      checkpoints: [...(prev.checkpoints || []), ""],
+    }));
+  };
+
+  const removeCheckpoint = (index: number) => {
+    setFormData((prev) => {
+      const next = [...(prev.checkpoints || [])];
+      next.splice(index, 1);
+      return { ...prev, checkpoints: next };
+    });
+  };
+
+  const updateCheckpoint = (index: number, value: string) => {
+    setFormData((prev) => {
+      const next = [...(prev.checkpoints || [])];
+      next[index] = value;
+      return { ...prev, checkpoints: next };
+    });
+  };
+
+  const handleDragStartCheckpoint = (
+    e: React.DragEvent<HTMLDivElement>,
+    index: number
+  ) => {
+    setDraggedCheckpointIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDropCheckpoint = (
+    e: React.DragEvent<HTMLDivElement>,
+    targetIndex: number
+  ) => {
+    e.preventDefault();
+    if (draggedCheckpointIndex === null) return;
+    setFormData((prev) => {
+      const next = [...(prev.checkpoints || [])];
+      const [removed] = next.splice(draggedCheckpointIndex, 1);
+      next.splice(targetIndex, 0, removed || "");
+      return { ...prev, checkpoints: next };
+    });
+    setDraggedCheckpointIndex(null);
+  };
+
+  const handleRandomizeParameters = () => {
+    try {
+      setIsRandomizingParameters(true);
+      // Only consider active parameters
+      const parameterList = (parameters || []) as Parameter[];
+      const parameterItemList = (parameterItems || []) as ParameterItem[];
+      const activeParameters: Parameter[] = parameterList.filter(
+        (p) => p.active
+      );
+      if (!activeParameters.length) {
+        toast("No active parameters to randomize");
+        return;
+      }
+
+      const itemsByParameter: Record<string, ParameterItem[]> = {};
+      for (const item of parameterItemList) {
+        const key = item.parameterId as string;
+        if (!itemsByParameter[key]) itemsByParameter[key] = [];
+        itemsByParameter[key].push(item);
+      }
+
+      const randomizedIds: string[] = [];
+      for (const parameter of activeParameters) {
+        const pid = parameter.id as string;
+        const items = itemsByParameter[pid] || [];
+        if (items.length === 0) continue;
+        const randomIndex = Math.floor(Math.random() * items.length);
+        const chosen: ParameterItem | undefined = items[randomIndex];
+        if (chosen?.id) randomizedIds.push(chosen.id);
+      }
+
+      handleInputChange("parameterItemIds", randomizedIds);
+      toast.success("Parameters randomized");
+    } catch (error) {
+      logError("Error randomizing parameters", error);
+      toast.error("Failed to randomize parameters");
+    } finally {
+      setIsRandomizingParameters(false);
+    }
+  };
+
+  const handleResetParameters = () => {
+    try {
+      handleInputChange("parameterItemIds", []);
+      toast.success("Parameters reset");
+    } catch (error) {
+      logError("Error resetting parameters", error);
+      toast.error("Failed to reset parameters");
+    }
+  };
+
+  // Persona actions
+  const handleRandomizePersona = () => {
+    try {
+      setIsRandomizingPersona(true);
+      if (!personas || personas.length === 0) {
+        toast("No personas available to randomize");
+        return;
+      }
+      const randomIndex = Math.floor(Math.random() * personas.length);
+      const chosen = personas[randomIndex];
+      if (!chosen) return;
+      handleInputChange("personaId", chosen.id);
+      toast.success("Persona randomized");
+    } catch (error) {
+      logError("Error randomizing persona", error);
+      toast.error("Failed to randomize persona");
+    } finally {
+      setIsRandomizingPersona(false);
+    }
+  };
+
+  const handleResetPersona = () => {
+    try {
+      handleInputChange("personaId", null);
+      toast.success("Persona reset");
+    } catch (error) {
+      logError("Error resetting persona", error);
+      toast.error("Failed to reset persona");
+    }
+  };
+
+  // Documents actions
+  const handleRandomizeDocuments = () => {
+    try {
+      setIsRandomizingDocuments(true);
+      if (!documents || documents.length === 0) {
+        toast("No documents available to randomize");
+        return;
+      }
+      // Choose a random subset size between 1 and min(5, total)
+      const maxSelect = Math.min(5, documents.length);
+      const subsetSize = Math.max(
+        1,
+        Math.floor(Math.random() * (maxSelect + 1))
+      );
+      const shuffled = [...documents].sort(() => Math.random() - 0.5);
+      const chosen = shuffled.slice(0, subsetSize).map((d) => d.id);
+      handleInputChange("documentIds", chosen);
+      toast.success("Documents randomized");
+    } catch (error) {
+      logError("Error randomizing documents", error);
+      toast.error("Failed to randomize documents");
+    } finally {
+      setIsRandomizingDocuments(false);
+    }
+  };
+
+  const handleResetDocuments = () => {
+    try {
+      handleInputChange("documentIds", []);
+      toast.success("Documents reset");
+    } catch (error) {
+      logError("Error resetting documents", error);
+      toast.error("Failed to reset documents");
+    }
+  };
+
+  const handleResetContent = () => {
+    try {
+      setFormData((prev) => ({ ...prev, description: "", checkpoints: [] }));
+      toast.success("Scenario content reset");
+    } catch (error) {
+      logError("Error resetting content", error);
+      toast.error("Failed to reset content");
+    }
+  };
+
   const handleGenerateScenario = async () => {
     setIsGeneratingScenario(true);
 
@@ -267,6 +477,9 @@ export default function Scenario({
         documentIds: formData.documentIds || [],
         parameterItemIds: formData.parameterItemIds || [],
         profileId: effectiveProfile?.id || null,
+        checkpoints: (formData.checkpoints || [])
+          .map((c) => (c ?? "").trim())
+          .filter((c) => c.length > 0),
       });
 
       if (!result.success) {
@@ -278,6 +491,7 @@ export default function Scenario({
           ...prev,
           name: result.title || prev.name || "",
           description: result.description || prev.description || "",
+          checkpoints: result.checkpoints || prev.checkpoints || [],
         }));
         toast.success("Scenario generated successfully!");
       } else {
@@ -305,6 +519,9 @@ export default function Scenario({
         parameterItemIds: formData.parameterItemIds,
         defaultScenario: formData.defaultScenario || false,
         practiceScenario: formData.practiceScenario || false,
+        checkpoints: (formData.checkpoints || [])
+          .map((c) => (c ?? "").trim())
+          .filter((c) => c.length > 0),
       };
 
       if (isEditMode) {
@@ -498,9 +715,38 @@ export default function Scenario({
                 <CardDescription>{steps[0]?.description || ""}</CardDescription>
               </div>
             </div>
-            {getStepStatus("persona") === "completed" && (
-              <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto" />
-            )}
+            <div className="ml-auto flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleRandomizePersona}
+                    disabled={isReadonly || isRandomizingPersona}
+                  >
+                    {isRandomizingPersona ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Shuffle className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Randomize</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleResetPersona}
+                    disabled={isReadonly}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reset</TooltipContent>
+              </Tooltip>
+            </div>
           </CardHeader>
           <CardContent>
             <PersonaPicker
@@ -552,9 +798,38 @@ export default function Scenario({
                 <CardDescription>{steps[1]?.description || ""}</CardDescription>
               </div>
             </div>
-            {getStepStatus("documents") === "completed" && (
-              <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto" />
-            )}
+            <div className="ml-auto flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleRandomizeDocuments}
+                    disabled={isReadonly || isRandomizingDocuments}
+                  >
+                    {isRandomizingDocuments ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Shuffle className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Randomize</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleResetDocuments}
+                    disabled={isReadonly}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reset</TooltipContent>
+              </Tooltip>
+            </div>
           </CardHeader>
           <CardContent>
             <DocumentPicker
@@ -612,9 +887,38 @@ export default function Scenario({
                 <CardDescription>{steps[2]?.description || ""}</CardDescription>
               </div>
             </div>
-            {getStepStatus("parameters") === "completed" && (
-              <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto" />
-            )}
+            <div className="ml-auto flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleRandomizeParameters}
+                    disabled={isReadonly || isRandomizingParameters}
+                  >
+                    {isRandomizingParameters ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Shuffle className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Randomize</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleResetParameters}
+                    disabled={isReadonly}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reset</TooltipContent>
+              </Tooltip>
+            </div>
           </CardHeader>
           <CardContent>
             <ParameterSelector
@@ -662,6 +966,19 @@ export default function Scenario({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleResetContent}
+                    disabled={isReadonly}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reset</TooltipContent>
+              </Tooltip>
               <Button
                 variant="default"
                 size="sm"
@@ -679,9 +996,6 @@ export default function Scenario({
                   "Generate"
                 )}
               </Button>
-              {getStepStatus("content") === "completed" && (
-                <ChevronRight className="w-5 h-5 text-muted-foreground" />
-              )}
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -696,6 +1010,59 @@ export default function Scenario({
                 className="min-h-[120px]"
                 disabled={isReadonly}
               />
+            </div>
+
+            {/* Checkpoints Section */}
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Add checkpoints for the scenario. You can think of these as
+                general instructions for the AI model to follow.
+              </p>
+
+              <div className="space-y-2">
+                {(formData.checkpoints || []).map((checkpoint, index) => (
+                  <div
+                    key={`checkpoint-${index}`}
+                    className={`flex items-center gap-2 rounded-md p-2 bg-white ${
+                      draggedCheckpointIndex === index ? "opacity-50" : ""
+                    }`}
+                    draggable={!isReadonly}
+                    onDragStart={(e) => handleDragStartCheckpoint(e, index)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDropCheckpoint(e, index)}
+                  >
+                    <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <Input
+                      value={checkpoint || ""}
+                      onChange={(e) => updateCheckpoint(index, e.target.value)}
+                      placeholder={`Checkpoint ${index + 1}`}
+                      className="flex-1"
+                      disabled={isReadonly}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => removeCheckpoint(index)}
+                      className="h-8 w-8"
+                      disabled={isReadonly}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={addCheckpoint}
+                  disabled={isReadonly}
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" /> Add checkpoint
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

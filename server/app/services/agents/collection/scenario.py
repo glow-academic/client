@@ -11,7 +11,7 @@ from app.services.agents.generic import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.document import get_document_info
 from app.utils.personas import get_persona_info
-from app.utils.scenario import get_parameter_item_info
+from app.utils.scenario import get_checkpoints_info, get_parameter_item_info
 from fastapi import Depends
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 class Scenario(BaseModel):
     title: str  # title
     scenario: str  # scenario
+    checkpoints: List[str] = []
     debug_info: str | None = None
 
 
@@ -29,10 +30,11 @@ async def run_scenario_agent(
     persona_id: uuid.UUID | None = None,
     document_ids: List[uuid.UUID] | None = None,
     parameter_item_ids: List[uuid.UUID] | None = None,
+    checkpoints: List[str] | None = None,
     group_id: uuid.UUID | None = None,
     session: Session = Depends(get_session),
     profile_id: uuid.UUID | None = None,
-) -> Tuple[str, str, str]:
+) -> Tuple[str, str, List[str], str]:
     """
     This function is used to run the scenario agent.
 
@@ -66,6 +68,11 @@ async def run_scenario_agent(
         parameter_item_info = None
     else:
         parameter_item_info = get_parameter_item_info(parameter_item_ids, session)
+
+    if checkpoints is None or len(checkpoints) == 0:
+        checkpoints_info = None
+    else:
+        checkpoints_info = get_checkpoints_info(checkpoints)
 
     # find agent with name of "Scenario"
     scenario_agent = session.exec(select(Agents).where(Agents.name == "Scenario")).one()
@@ -104,6 +111,7 @@ async def run_scenario_agent(
         persona_info,
         document_info,
         parameter_item_info,
+        checkpoints_info,
     ]
     clean_input_items = [item for item in input_items if item is not None]
     logger.info(f"Input items: {clean_input_items}")
@@ -144,4 +152,4 @@ async def run_scenario_agent(
     model_run.output_tokens = usage.output_tokens
     session.commit()
 
-    return scenario_result.title, scenario_result.scenario, trace_id
+    return scenario_result.title, scenario_result.scenario, scenario_result.checkpoints, trace_id

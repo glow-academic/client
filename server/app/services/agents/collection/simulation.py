@@ -15,6 +15,7 @@ from app.services.agents.generic import GenericAgent
 from app.utils.chat import (get_chat_scenario,
                             get_simulation_conversation_history)
 from app.utils.debug_info import DebugContext
+from app.utils.document import get_document_info
 from fastapi import Depends
 from openai.types.responses import ResponseTextDeltaEvent
 from sqlmodel import Session, select
@@ -98,46 +99,8 @@ async def _handle_simulation_chat(
 
     input_items: list[TResponseInputItem] = []
     if scenario.document_ids:
-        # get the documents for the scenario
-        documents = session.exec(
-            select(Documents).where(Documents.id.in_(scenario.document_ids))
-        ).all()
-        if not documents:
-            raise ValueError(f"Documents not found for scenario {scenario.id}")
-        for document in documents:
-            file_path = document.file_path
-            full_path = os.path.join(UPLOAD_FOLDER, file_path)
-
-            # Determine file type and read content accordingly
-            content = ""
-            if file_path.lower().endswith(".pdf"):
-                # Handle PDF files
-                try:
-                    with open(full_path, "rb") as file:
-                        pdf_reader = pypdf.PdfReader(file)
-                        for page in pdf_reader.pages:
-                            content += page.extract_text() + "\n"
-                except Exception as e:
-                    raise ValueError(f"Error reading PDF file {file_path}: {str(e)}")
-            else:
-                # Handle text files and other text-based formats
-                try:
-                    with open(full_path, "r", encoding="utf-8") as file:
-                        content = file.read()
-                except UnicodeDecodeError:
-                    # Try with different encoding if UTF-8 fails
-                    try:
-                        with open(full_path, "r", encoding="latin-1") as file:
-                            content = file.read()
-                    except Exception as e:
-                        raise ValueError(
-                            f"Error reading text file {file_path}: {str(e)}"
-                        )
-                except Exception as e:
-                    raise ValueError(f"Error reading file {file_path}: {str(e)}")
-
-            if content.strip():  # Only add non-empty content
-                input_items.append({"role": "user", "content": content})
+        document_info = get_document_info(scenario.document_ids, session)
+        input_items.append(document_info)
 
     # Get all the messages for the chat_id, order by created_at
     messages = session.exec(

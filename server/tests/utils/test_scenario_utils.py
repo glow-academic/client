@@ -196,3 +196,21 @@ class TestRandomly_Fill_Scenario_Attributes:
         assert result.parameter_item_ids == []
         assert result.generated is True
         assert result.parent_id == mock_scenario.id
+
+
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `get_checkpoints_info`")
+class TestGet_Checkpoints_Info:
+    """Tests for get_checkpoints_info function."""
+
+    def test_get_checkpoints_info_success(self):
+        """Test successful get_checkpoints_info execution."""
+        # TODO: Implement test for get_checkpoints_info
+        assert False, "IMPLEMENT: Test for get_checkpoints_info"
+
+    def test_get_checkpoints_info_error(self):
+        """Test get_checkpoints_info error handling."""
+        # TODO: Implement error test for get_checkpoints_info
+        assert False, "IMPLEMENT: Error test for get_checkpoints_info"
+

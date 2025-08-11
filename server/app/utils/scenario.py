@@ -8,7 +8,8 @@ import uuid
 from typing import List
 
 from agents.items import TResponseInputItem
-from app.models import Documents, ParameterItems, Parameters, Personas, Scenarios
+from app.models import (Documents, ParameterItems, Parameters, Personas,
+                        Scenarios)
 from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)

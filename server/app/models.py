@@ -73,7 +73,7 @@ class Documents(_Base, table=True):
     type: str = Field(sa_column=Column('type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type'), default=r'homework'))
     classified: bool = Field(sa_column=Column('classified', Boolean, default=False))
     active: bool = Field(sa_column=Column('active', Boolean, default=True))
-    tags: List[uuid.UUID] = Field(sa_column=Column('tags', ARRAY(Text()), server_default=text("'{}'::text[]")))
+    tags: List[str] = Field(sa_column=Column('tags', ARRAY(Text()), server_default=text("'{}'::text[]")))
     file_id: Optional[str] = Field(default=None, sa_column=Column('file_id', Text))
 
 
@@ -401,7 +401,7 @@ class Scenarios(_Base, table=True):
     parameter_item_ids: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('parameter_item_ids', ARRAY(Uuid(as_uuid=True))))
     document_ids: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('document_ids', ARRAY(Uuid(as_uuid=True))))
     parent_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('parent_id', Uuid(as_uuid=True)))
-    checkpoints: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('checkpoints', ARRAY(Text())))
+    checkpoints: Optional[List[str]] = Field(default=None, sa_column=Column('checkpoints', ARRAY(Text())))
 
     persona: Optional['Personas'] = Relationship(back_populates='scenarios')
     simulation_chats: List['SimulationChats'] = Relationship(back_populates='scenario')
@@ -537,7 +537,7 @@ class SimulationChatGrades(_Base, table=True):
     time_taken: int = Field(sa_column=Column('time_taken', Integer))
     rubric_id: Mapped[uuid.UUID] = Field(sa_column=Column('rubric_id', Uuid(as_uuid=True)))
     simulation_chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_chat_id', Uuid(as_uuid=True)))
-    checkpoints_reached: List[uuid.UUID] = Field(sa_column=Column('checkpoints_reached', ARRAY(Boolean(_create_events=False)), server_default=text('ARRAY[]::boolean[]')))
+    checkpoints_reached: List[bool] = Field(sa_column=Column('checkpoints_reached', ARRAY(Boolean(_create_events=False)), server_default=text('ARRAY[]::boolean[]')))
 
     rubric: Optional['Rubrics'] = Relationship(back_populates='simulation_chat_grades')
     simulation_chat: Optional['SimulationChats'] = Relationship(back_populates='simulation_chat_grades')

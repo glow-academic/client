@@ -253,7 +253,7 @@ export function ParameterSelector({
 
                     {selectedItem && (
                       <p className="text-xs text-muted-foreground">
-                        {selectedItem.description}
+                        {!parameters.find((p) => selectedItem.parameterId === p.id)?.defaultParameter && `${selectedItem.value}: `} {selectedItem.description}
                       </p>
                     )}
                   </div>
