@@ -2,6 +2,8 @@
 
 import logging
 import random
+import re
+import unicodedata
 import uuid
 from typing import List
 
@@ -12,11 +14,20 @@ from sqlmodel import Session, select
 logger = logging.getLogger(__name__)
 
 
+def get_checkpoints_info(checkpoints: List[str]) -> TResponseInputItem:
+    """
+    Get the checkpoint information for a given checkpoints.
+    """
+    return {
+        "role": "user",
+        "content": "The following is the checkpoint information:\n" + "\n".join(checkpoints),
+    }
+
 def get_parameter_item_info(
     parameter_item_ids: List[uuid.UUID], session: Session
 ) -> TResponseInputItem:
     """
-    Get the parameter item information for a given parameter item ids.
+    Get the parameter item information for a given parameter item ids, including their value.
     """
     # Join ParameterItems with Parameters to get parameter name and description
     parameter_items_with_params = session.exec(
@@ -31,10 +42,14 @@ def get_parameter_item_info(
             "content": "No parameter items found.",
         }
 
-    # Format each parameter item using the template
+    # Format each parameter item using the template, including .value
     formatted_items = []
     for param_item, param in parameter_items_with_params:
-        formatted_item = f"This is the {param.name} ({param.description}) for this chat: {param_item.name}. Description: {param_item.description}"
+        value_str = f"Value: {param_item.value}" if getattr(param_item, "value", None) is not None else "Value: None"
+        formatted_item = (
+            f"This is the {param.name} ({param.description}) for this chat: {param_item.name}. "
+            f"{value_str}. Description: {param_item.description}"
+        )
         formatted_items.append(formatted_item)
 
     content = "The following is the parameter item information:\n" + "\n".join(
@@ -74,22 +89,82 @@ async def randomly_fill_scenario_attributes(
     else:
         scenario_persona_id = scenario.persona_id
 
-    # Random document selection if documents is null
+    # Document selection if documents is null
     if scenario.document_ids is None:
         # Only select from active documents
         active_documents = session.exec(select(Documents).where(Documents.active)).all()
+
+        def _norm(s: str) -> str:
+            s_norm = unicodedata.normalize("NFKD", s or "")
+            s_norm = "".join(ch for ch in s_norm if not unicodedata.combining(ch))
+            return re.sub(r"\s+", " ", s_norm.strip().lower())
+
+        def _tokens(s: str) -> list[str]:
+            return [t for t in _norm(s).split(" ") if t]
+
         if active_documents:
-            # Randomly select 0-3 documents
-            num_docs = random.randint(0, min(3, len(active_documents)))
-            if num_docs > 0:
-                selected_docs = random.sample(active_documents, num_docs)
-                scenario_documents = [doc.id for doc in selected_docs]
+            # Build scenario signal text from name/description
+            scenario_text = f"{scenario.name or ''} {scenario.description or ''}"
+            scenario_tokens = set(_tokens(scenario_text))
+
+            # Known class/type hints to boost when present in scenario text
+            known_types = [
+                "homework",
+                "project",
+                "quiz",
+                "midterm",
+                "lab",
+                "lecture",
+                "syllabus",
+            ]
+            scenario_has_type = {t: (t in scenario_tokens) or (t in _norm(scenario_text)) for t in known_types}
+
+            def _score(doc: Documents) -> float:
+                score = 0.0
+                # Tag overlap
+                tag_tokens: set[str] = set()
+                for tag in (doc.tags or []):
+                    tag_tokens.update(_tokens(tag))
+                overlap = scenario_tokens.intersection(tag_tokens)
+                score += 5.0 * len(overlap)
+
+                # Document name token overlap
+                name_tokens = set(_tokens(doc.name or ""))
+                score += 2.0 * len(scenario_tokens.intersection(name_tokens))
+
+                # Type boost if scenario hints at this kind of doc
+                doc_type = (doc.type or "").lower()
+                if doc_type and (scenario_has_type.get(doc_type, False)):
+                    score += 10.0
+
+                # Soft contains of type keyword in scenario text
+                if doc_type and doc_type in _norm(scenario_text):
+                    score += 3.0
+
+                return score
+
+            # Rank docs by score (stable sort with random jitter to avoid ties looking identical)
+            scored = [
+                (doc, _score(doc) + random.random() * 0.01)  # tiny jitter
+                for doc in active_documents
+            ]
+            scored.sort(key=lambda x: x[1], reverse=True)
+
+            # Choose up to 3 with positive scores; if none positive, fall back to up to 3 random
+            top_positive = [doc for doc, s in scored if s > 0][:3]
+            if top_positive:
+                selected_docs = top_positive
                 logger.info(
-                    f"Randomly selected {num_docs} active documents: {scenario_documents}"
+                    f"Selected documents by similarity (count={len(selected_docs)}): {[d.id for d in selected_docs]}"
                 )
             else:
-                scenario_documents = []
-                logger.info("Randomly selected 0 documents (empty list)")
+                num_docs = random.randint(0, min(3, len(active_documents)))
+                selected_docs = random.sample(active_documents, num_docs) if num_docs > 0 else []
+                logger.info(
+                    f"Fallback random selection (count={len(selected_docs)}): {[d.id for d in selected_docs]}"
+                )
+
+            scenario_documents = [doc.id for doc in selected_docs]
         else:
             scenario_documents = []
             logger.info("No active documents found")
