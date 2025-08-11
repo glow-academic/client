@@ -6,11 +6,18 @@
  */
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -190,6 +197,7 @@ export function UnifiedSidebar({
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [profileSearchTerm, setProfileSearchTerm] = React.useState("");
+  const [isEmulateDialogOpen, setIsEmulateDialogOpen] = useState(false);
 
   // Create a ref for the profile search input
   const profileSearchInputRef = React.useRef<HTMLInputElement>(null);
@@ -617,6 +625,7 @@ export function UnifiedSidebar({
           localStorage.removeItem("simulatedRole");
           localStorage.removeItem("guestMode");
           localStorage.removeItem("simulatedProfileId");
+          localStorage.removeItem("emulate");
           await signOut({ redirectTo: `${appPrefix}/` });
           return "Logged out successfully";
         } catch (error) {
@@ -645,265 +654,227 @@ export function UnifiedSidebar({
   }
 
   return (
-    <Sidebar {...props}>
-      <SidebarHeader>
-        {/* Profile Switcher */}
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu
-              onOpenChange={(open) => {
-                if (open) {
-                  // Focus the search input when the dropdown opens
-                  setTimeout(() => {
-                    profileSearchInputRef.current?.focus();
-                  }, 0);
-                }
-              }}
-            >
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                  <Avatar
-                    className="h-8 w-8 outline outline-muted-foreground"
-                    style={{ outlineWidth: "1px", outlineStyle: "solid" }}
-                  >
-                    <AvatarFallback>
-                      {getInitials(
-                        `${effectiveProfile.firstName} ${effectiveProfile.lastName}`
-                      )}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col gap-0.5 leading-none text-left">
-                    <span className="font-medium truncate">{`${effectiveProfile.firstName} ${effectiveProfile.lastName}`}</span>
-                    {/* Capitalize the role for display */}
-                    <span className="text-xs capitalize">
-                      {effectiveProfile.role}
-                    </span>
-                  </div>
-                  <ChevronsUpDown className="ml-auto" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-64"
-                align="start"
+    <>
+      <Sidebar {...props}>
+        <SidebarHeader>
+          {/* Profile Switcher */}
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu
+                onOpenChange={(open) => {
+                  if (open) {
+                    // Focus the search input when the dropdown opens
+                    setTimeout(() => {
+                      profileSearchInputRef.current?.focus();
+                    }, 0);
+                  }
+                }}
               >
-                {/* Search input for profiles */}
-                <div className="px-2 py-1.5">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                    <input
-                      ref={profileSearchInputRef}
-                      type="text"
-                      placeholder="Search profiles..."
-                      value={profileSearchTerm}
-                      onChange={(e) => setProfileSearchTerm(e.target.value)}
-                      onKeyDown={(e) => e.stopPropagation()}
-                      className="w-full pl-7 pr-2 py-1.5 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <DropdownMenuSeparator />
-
-                {isLoadingProfiles ? (
-                  <DropdownMenuItem disabled>
-                    Loading profiles...
-                  </DropdownMenuItem>
-                ) : (
-                  <div className="max-h-60 overflow-y-auto">
-                    {profileOptions.map((profile) => (
-                      <DropdownMenuItem
-                        key={profile.id}
-                        onSelect={() => handleProfileSelect(profile.id)}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Avatar
-                            className="h-6 w-6 text-xs outline outline-muted-foreground"
-                            style={{
-                              outlineWidth: "1px",
-                              outlineStyle: "solid",
-                            }}
-                          >
-                            <AvatarFallback>
-                              {getInitials(
-                                `${profile.firstName} ${profile.lastName}`
-                              )}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col leading-tight">
-                            <span>{`${profile.firstName} ${profile.lastName}`}</span>
-                            <span className="text-xs capitalize text-muted-foreground">
-                              {profile.role}
-                            </span>
-                          </div>
-                        </div>
-                        {profile.id === effectiveProfile.id && (
-                          <Check className="ml-auto size-4" />
-                        )}
-                      </DropdownMenuItem>
-                    ))}
-                  </div>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
-
-        {/* Search Form */}
-        <SidebarGroup className="py-0">
-          <SidebarGroupContent className="relative">
-            <Label htmlFor="search" className="sr-only">
-              Search
-            </Label>
-            <SidebarInput
-              id="search"
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="pl-8"
-            />
-            <Search className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 opacity-50 select-none" />
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarHeader>
-
-      <SidebarContent className="gap-0">
-        {navMain.map((item) => {
-          // If item has no sub-items and has a section, render as standalone menu item
-          if (!item.items && item.section) {
-            return (
-              <SidebarGroup key={item.title}>
-                <SidebarGroupLabel
-                  asChild
-                  className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm font-medium cursor-pointer"
-                >
-                  <div
-                    onClick={() =>
-                      handleItemClick({
-                        title: item.title,
-                        url: item.url,
-                        section: item.section!,
-                      })
-                    }
-                    className={`flex items-center gap-2 px-2 py-1.5 ${activeSection === item.section ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}`}
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton
+                    size="lg"
+                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                   >
-                    <item.icon className="h-4 w-4" />
-                    {item.title}
-                  </div>
-                </SidebarGroupLabel>
-              </SidebarGroup>
-            );
-          }
-
-          // Otherwise render as collapsible section with sub-items
-          return (
-            <Collapsible
-              key={item.title}
-              title={item.title}
-              defaultOpen
-              className="group/collapsible"
-            >
-              <SidebarGroup>
-                <SidebarGroupLabel
-                  asChild
-                  className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm"
+                    <Avatar
+                      className="h-8 w-8 outline outline-muted-foreground"
+                      style={{ outlineWidth: "1px", outlineStyle: "solid" }}
+                    >
+                      <AvatarFallback>
+                        {getInitials(
+                          `${effectiveProfile.firstName} ${effectiveProfile.lastName}`
+                        )}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col gap-0.5 leading-none text-left">
+                      <span className="font-medium truncate">{`${effectiveProfile.firstName} ${effectiveProfile.lastName}`}</span>
+                      {/* Capitalize the role for display */}
+                      <span className="text-xs capitalize">
+                        {effectiveProfile.role}
+                      </span>
+                    </div>
+                    <ChevronsUpDown className="ml-auto" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-[--radix-dropdown-menu-trigger-width] min-w-64"
+                  align="start"
                 >
-                  <CollapsibleTrigger>
-                    <item.icon className="h-4 w-4 mr-2" />
-                    {item.title}
-                    <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                  </CollapsibleTrigger>
-                </SidebarGroupLabel>
-                <CollapsibleContent>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      {item.items?.map((subItem: MenuItem) => (
-                        <SidebarMenuItem key={subItem.title}>
-                          <SidebarMenuButton
-                            isActive={activeSection === subItem.section}
-                            onClick={() => handleItemClick(subItem)}
-                            className={`${subItem.isSubItem ? "pl-8 text-sm" : "pl-8"}`}
-                          >
-                            {subItem.title}
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </CollapsibleContent>
-              </SidebarGroup>
-            </Collapsible>
-          );
-        })}
-      </SidebarContent>
-
-      {/* User Profile in Footer */}
-      <SidebarFooter>
-        <SidebarMenu>
-          {/* Report Problem Button - Enhanced with bubble styling */}
-          <SidebarMenuItem>
-            <div className="px-2 pb-2">
-              <ReportProblem>
-                <div className="relative group">
-                  <div className="relative border border-blue-500 dark:border-purple-600 rounded-lg px-4 py-2.5 transition-all duration-200 bg-transparent hover:bg-blue-50 dark:hover:bg-purple-950 text-blue-700 dark:text-purple-200 shadow-none hover:shadow-md">
-                    <div className="flex items-center justify-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
-                      <span className="font-medium text-sm">Feedback</span>
+                  {/* Search input for profiles */}
+                  <div className="px-2 py-1.5">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                      <input
+                        ref={profileSearchInputRef}
+                        type="text"
+                        placeholder="Search profiles..."
+                        value={profileSearchTerm}
+                        onChange={(e) => setProfileSearchTerm(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        className="w-full pl-7 pr-2 py-1.5 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                      />
                     </div>
                   </div>
-                </div>
-              </ReportProblem>
-            </div>
-          </SidebarMenuItem>
 
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                  <Avatar
-                    className="h-8 w-8 outline outline-muted-foreground"
-                    style={{ outlineWidth: "1px", outlineStyle: "solid" }}
-                  >
-                    <AvatarFallback>
-                      {effectiveProfile.role === "guest" || !activeProfile
-                        ? "GU"
-                        : getInitials(
-                            activeProfile?.firstName +
-                              " " +
-                              activeProfile?.lastName
+                  <DropdownMenuSeparator />
+
+                  {isLoadingProfiles ? (
+                    <DropdownMenuItem disabled>
+                      Loading profiles...
+                    </DropdownMenuItem>
+                  ) : (
+                    <div className="max-h-60 overflow-y-auto">
+                      {profileOptions.map((profile) => (
+                        <DropdownMenuItem
+                          key={profile.id}
+                          onSelect={() => handleProfileSelect(profile.id)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Avatar
+                              className="h-6 w-6 text-xs outline outline-muted-foreground"
+                              style={{
+                                outlineWidth: "1px",
+                                outlineStyle: "solid",
+                              }}
+                            >
+                              <AvatarFallback>
+                                {getInitials(
+                                  `${profile.firstName} ${profile.lastName}`
+                                )}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col leading-tight">
+                              <span>{`${profile.firstName} ${profile.lastName}`}</span>
+                              <span className="text-xs capitalize text-muted-foreground">
+                                {profile.role}
+                              </span>
+                            </div>
+                          </div>
+                          {profile.id === effectiveProfile.id && (
+                            <Check className="ml-auto size-4" />
                           )}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">
-                      {effectiveProfile.role === "guest" || !activeProfile
-                        ? "Guest User"
-                        : activeProfile?.firstName +
-                          " " +
-                          activeProfile?.lastName}
-                    </span>
-                    <span className="truncate text-xs">
-                      {effectiveProfile.role === "guest" || !activeProfile
-                        ? "Not logged in"
-                        : `${activeProfile?.alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}`}
-                    </span>
-                  </div>
-                  <ChevronRight className="ml-auto size-4" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                side="bottom"
-                align="end"
-                sideOffset={4}
+                        </DropdownMenuItem>
+                      ))}
+                    </div>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+
+          {/* Search Form */}
+          <SidebarGroup className="py-0">
+            <SidebarGroupContent className="relative">
+              <Label htmlFor="search" className="sr-only">
+                Search
+              </Label>
+              <SidebarInput
+                id="search"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="pl-8"
+              />
+              <Search className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 opacity-50 select-none" />
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarHeader>
+
+        <SidebarContent className="gap-0">
+          {navMain.map((item) => {
+            // If item has no sub-items and has a section, render as standalone menu item
+            if (!item.items && item.section) {
+              return (
+                <SidebarGroup key={item.title}>
+                  <SidebarGroupLabel
+                    asChild
+                    className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm font-medium cursor-pointer"
+                  >
+                    <div
+                      onClick={() =>
+                        handleItemClick({
+                          title: item.title,
+                          url: item.url,
+                          section: item.section!,
+                        })
+                      }
+                      className={`flex items-center gap-2 px-2 py-1.5 ${activeSection === item.section ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}`}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {item.title}
+                    </div>
+                  </SidebarGroupLabel>
+                </SidebarGroup>
+              );
+            }
+
+            // Otherwise render as collapsible section with sub-items
+            return (
+              <Collapsible
+                key={item.title}
+                title={item.title}
+                defaultOpen
+                className="group/collapsible"
               >
-                <DropdownMenuLabel className="p-0 font-normal">
-                  <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                <SidebarGroup>
+                  <SidebarGroupLabel
+                    asChild
+                    className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm"
+                  >
+                    <CollapsibleTrigger>
+                      <item.icon className="h-4 w-4 mr-2" />
+                      {item.title}
+                      <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                    </CollapsibleTrigger>
+                  </SidebarGroupLabel>
+                  <CollapsibleContent>
+                    <SidebarGroupContent>
+                      <SidebarMenu>
+                        {item.items?.map((subItem: MenuItem) => (
+                          <SidebarMenuItem key={subItem.title}>
+                            <SidebarMenuButton
+                              isActive={activeSection === subItem.section}
+                              onClick={() => handleItemClick(subItem)}
+                              className={`${subItem.isSubItem ? "pl-8 text-sm" : "pl-8"}`}
+                            >
+                              {subItem.title}
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        ))}
+                      </SidebarMenu>
+                    </SidebarGroupContent>
+                  </CollapsibleContent>
+                </SidebarGroup>
+              </Collapsible>
+            );
+          })}
+        </SidebarContent>
+
+        {/* User Profile in Footer */}
+        <SidebarFooter>
+          <SidebarMenu>
+            {/* Report Problem Button - Enhanced with bubble styling */}
+            <SidebarMenuItem>
+              <div className="px-2 pb-2">
+                <ReportProblem>
+                  <div className="relative group">
+                    <div className="relative border border-blue-500 dark:border-purple-600 rounded-lg px-4 py-2.5 transition-all duration-200 bg-transparent hover:bg-blue-50 dark:hover:bg-purple-950 text-blue-700 dark:text-purple-200 shadow-none hover:shadow-md">
+                      <div className="flex items-center justify-center gap-2">
+                        <MessageSquare className="h-4 w-4" />
+                        <span className="font-medium text-sm">Feedback</span>
+                      </div>
+                    </div>
+                  </div>
+                </ReportProblem>
+              </div>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton
+                    size="lg"
+                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  >
                     <Avatar
                       className="h-8 w-8 outline outline-muted-foreground"
                       style={{ outlineWidth: "1px", outlineStyle: "solid" }}
@@ -932,53 +903,139 @@ export function UnifiedSidebar({
                           : `${activeProfile?.alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}`}
                       </span>
                     </div>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {activeProfile && effectiveProfile.role !== "guest" && (
-                  <>
-                    <DropdownMenuItem
-                      onClick={() => handleSectionChange("profile")}
-                    >
-                      <User className="h-4 w-4 mr-2" />
-                      Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
-                {activeProfile && activeProfile.role === "superadmin" && effectiveProfile.id !== activeProfile.id && (
-                  <>
-                    <DropdownMenuItem
-                      onClick={() => {}}
-                      variant="default"
-                    >
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Emulate
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
-                <DropdownMenuItem
-                  onClick={handleLoginOrLogout}
-                  disabled={isLoggingOut}
-                  className={
-                    isLoggingOut ? "opacity-70 cursor-not-allowed" : ""
-                  }
+                    <ChevronRight className="ml-auto size-4" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                  side="bottom"
+                  align="end"
+                  sideOffset={4}
                 >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  {isLoggingOut
-                    ? "Logging out..."
-                    : effectiveProfile.role === "guest" || !activeProfile
-                      ? "Log in"
-                      : "Logout"}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
+                  <DropdownMenuLabel className="p-0 font-normal">
+                    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                      <Avatar
+                        className="h-8 w-8 outline outline-muted-foreground"
+                        style={{ outlineWidth: "1px", outlineStyle: "solid" }}
+                      >
+                        <AvatarFallback>
+                          {effectiveProfile.role === "guest" || !activeProfile
+                            ? "GU"
+                            : getInitials(
+                                activeProfile?.firstName +
+                                  " " +
+                                  activeProfile?.lastName
+                              )}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="grid flex-1 text-left text-sm leading-tight">
+                        <span className="truncate font-semibold">
+                          {effectiveProfile.role === "guest" || !activeProfile
+                            ? "Guest User"
+                            : activeProfile?.firstName +
+                              " " +
+                              activeProfile?.lastName}
+                        </span>
+                        <span className="truncate text-xs">
+                          {effectiveProfile.role === "guest" || !activeProfile
+                            ? "Not logged in"
+                            : `${activeProfile?.alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}`}
+                        </span>
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {activeProfile &&
+                    activeProfile.role === "superadmin" &&
+                    effectiveProfile.id !== activeProfile.id && (
+                      <>
+                        <DropdownMenuItem
+                          onClick={() => setIsEmulateDialogOpen(true)}
+                          className="group text-white hover:text-white focus:text-white data-[highlighted]:text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                        >
+                          <Sparkles className="h-4 w-4 mr-2 text-white group-hover:text-white/90" />
+                          Emulate
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                  {activeProfile && effectiveProfile.role !== "guest" && (
+                    <>
+                      <DropdownMenuItem
+                        onClick={() => handleSectionChange("profile")}
+                      >
+                        <User className="h-4 w-4 mr-2" />
+                        Profile
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem
+                    onClick={handleLoginOrLogout}
+                    disabled={isLoggingOut}
+                    className={
+                      isLoggingOut ? "opacity-70 cursor-not-allowed" : ""
+                    }
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    {isLoggingOut
+                      ? "Logging out..."
+                      : effectiveProfile.role === "guest" || !activeProfile
+                        ? "Log in"
+                        : "Logout"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
 
-      <SidebarRail />
-    </Sidebar>
+        <SidebarRail />
+      </Sidebar>
+
+      {/* Emulate Confirmation Dialog */}
+      <Dialog open={isEmulateDialogOpen} onOpenChange={setIsEmulateDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Enable Emulation</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 text-sm">
+            <p>
+              You are about to enable emulation. You will be embodied as{" "}
+              {effectiveProfile?.firstName} {effectiveProfile?.lastName} and
+              may take simulations on their behalf.
+            </p>
+            <p className="font-medium">
+              The only way to exit emulation is to log out.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsEmulateDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="group text-white hover:text-white focus:text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+              onClick={() => {
+                try {
+                  if (typeof window !== "undefined") {
+                    localStorage.setItem("emulate", "true");
+                    window.dispatchEvent(new Event("profile:emulate-changed"));
+                  }
+                } catch {}
+                setIsEmulateDialogOpen(false);
+              }}
+            >
+              <span className="inline-flex items-center">
+                <Sparkles className="h-4 w-4 mr-2 text-white group-hover:text-white/90" />
+                Enable Emulation
+              </span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

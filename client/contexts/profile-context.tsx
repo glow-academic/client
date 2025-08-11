@@ -51,7 +51,7 @@ interface ProfileContextType {
   isLoading: boolean;
   setSimulatedProfile: (
     profileId: string | null,
-    shouldNavigate?: boolean,
+    shouldNavigate?: boolean
   ) => void;
   clearSimulation: () => void;
   navigateToDefault: (role: ProfileRole) => void;
@@ -79,11 +79,16 @@ export function ProfileProvider({
   activeProfile,
   isProfileLoading = false,
 }: ProfileProviderProps) {
+  const [isEmulateMode, setIsEmulateMode] = useState<boolean>(
+    () =>
+      typeof window !== "undefined" &&
+      localStorage.getItem("emulate") === "true"
+  );
   const [simulatedProfileId, setSimulatedProfileId] = useState<string | null>(
     () =>
       typeof window === "undefined"
         ? null
-        : localStorage.getItem("simulatedProfileId"),
+        : localStorage.getItem("simulatedProfileId")
   );
   const [isClient, setIsClient] = useState(false);
   const queryClient = useQueryClient();
@@ -92,6 +97,41 @@ export function ProfileProvider({
 
   useEffect(() => {
     setIsClient(true);
+  }, []);
+
+  // Keep local emulate flag in sync with localStorage and custom events
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const updateEmulateFromStorage = () => {
+      try {
+        setIsEmulateMode(localStorage.getItem("emulate") === "true");
+      } catch {
+        setIsEmulateMode(false);
+      }
+    };
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "emulate") {
+        updateEmulateFromStorage();
+      }
+    };
+
+    window.addEventListener("storage", onStorage);
+    window.addEventListener(
+      "profile:emulate-changed",
+      updateEmulateFromStorage as EventListener
+    );
+    // Initialize once on mount
+    updateEmulateFromStorage();
+
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(
+        "profile:emulate-changed",
+        updateEmulateFromStorage as EventListener
+      );
+    };
   }, []);
 
   const { data: simulatedProfileData, isLoading: isSimulatingProfileLoading } =
@@ -190,7 +230,7 @@ export function ProfileProvider({
       const route = getSectionRoute(defaultSection, pathname);
       router.push(route);
     },
-    [router, pathname],
+    [router, pathname]
   );
 
   const setSimulatedProfile = React.useCallback(
@@ -213,7 +253,7 @@ export function ProfileProvider({
         navigateToDefault(activeProfile.role);
       }
     },
-    [isClient, queryClient, navigateToDefault, activeProfile],
+    [isClient, queryClient, navigateToDefault, activeProfile]
   );
 
   const clearSimulation = React.useCallback(() => {
@@ -225,11 +265,16 @@ export function ProfileProvider({
       const targetRole = role || effectiveProfile?.role || "guest";
       return isSectionAvailableForRole(section, targetRole);
     },
-    [effectiveProfile?.role],
+    [effectiveProfile?.role]
   );
 
+  const resolvedActiveProfile = useMemo<Profile | null>(() => {
+    if (isEmulateMode && effectiveProfile) return effectiveProfile;
+    return activeProfile;
+  }, [isEmulateMode, effectiveProfile, activeProfile]);
+
   const value: ProfileContextType = {
-    activeProfile,
+    activeProfile: resolvedActiveProfile,
     simulatedProfile,
     effectiveProfile,
     isSimulating: !!simulatedProfile,

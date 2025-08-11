@@ -691,7 +691,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             open={confirmEndAllOpen}
             onOpenChange={setConfirmEndAllOpen}
           >
-            <AlertDialogContent>
+            <AlertDialogContent className="max-w-md">
               <AlertDialogHeader>
                 <AlertDialogTitle>End all remaining sessions?</AlertDialogTitle>
                 <AlertDialogDescription>
