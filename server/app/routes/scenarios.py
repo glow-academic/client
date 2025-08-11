@@ -8,6 +8,8 @@ from app.services.agents.collection.scenario import run_scenario_agent
 from fastapi import APIRouter, Depends, Form, HTTPException
 from fastapi.responses import JSONResponse
 from sqlmodel import Session
+from typing import List as _List
+from app.utils.scenario import suggest_randomized_sections
 
 logger = logging.getLogger(__name__)
 
@@ -66,3 +68,51 @@ async def new_scenario(
         raise HTTPException(
             status_code=500, detail=f"Failed to generate new scenario: {str(e)}"
         )
+
+
+@router.post("/randomize")
+async def randomize_scenario(
+    # Optional current inputs and scenario text
+    name: str | None = Form(None),
+    description: str | None = Form(None),
+    persona_id: uuid.UUID | None = Form(None),
+    document_ids: _List[uuid.UUID] | None = Form(None),
+    parameter_item_ids: _List[uuid.UUID] | None = Form(None),
+    # Which sections to randomize: any of ["persona", "documents", "parameters"]
+    targets: _List[str] | None = Form(None),
+    session: Session = Depends(get_session),
+) -> JSONResponse:
+    try:
+        # Normalize empty lists
+        if document_ids:
+            document_ids = [d for d in document_ids if d]
+        if parameter_item_ids:
+            parameter_item_ids = [p for p in parameter_item_ids if p]
+        if targets:
+            targets = [t for t in targets if (t or "").strip()]
+
+        suggestions = suggest_randomized_sections(
+            name=name,
+            description=description,
+            persona_id=persona_id,
+            document_ids=document_ids,
+            parameter_item_ids=parameter_item_ids,
+            targets=targets or [],
+            session=session,
+        )
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "success": True,
+                "message": "Randomization suggestions generated",
+                "personaId": str(suggestions["persona_id"]) if suggestions.get("persona_id") else None,
+                "documentIds": [str(x) for x in (suggestions.get("document_ids") or [])],
+                "parameterItemIds": [str(x) for x in (suggestions.get("parameter_item_ids") or [])],
+            },
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error randomizing scenario: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to randomize scenario: {str(e)}")

@@ -5,7 +5,7 @@ import random
 import re
 import unicodedata
 import uuid
-from typing import List
+from typing import Any, Dict, List, Optional
 
 from agents.items import TResponseInputItem
 from app.models import (Documents, ParameterItems, Parameters, Personas,
@@ -258,3 +258,156 @@ async def randomly_fill_scenario_attributes(
         generated=True,
         parent_id=scenario.id,  # since we are creating a new scenario, we need to set the parent_id to the original scenario
     )
+
+
+# -------------------------- Suggestion Utilities ---------------------------
+def _norm(text: str | None) -> str:
+    text = text or ""
+    text = unicodedata.normalize("NFKD", text)
+    text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    return re.sub(r"\s+", " ", text.strip().lower())
+
+
+def _tokens(text: str | None) -> list[str]:
+    return [t for t in _norm(text).split(" ") if t]
+
+
+def suggest_randomized_sections(
+    *,
+    name: Optional[str],
+    description: Optional[str],
+    persona_id: Optional[uuid.UUID],
+    document_ids: Optional[List[uuid.UUID]],
+    parameter_item_ids: Optional[List[uuid.UUID]],
+    targets: List[str],
+    session: Session,
+) -> Dict[str, Any]:
+    """Suggest persona/documents/parameters based on current inputs and text.
+
+    - If a section isn't listed in targets, it is returned unchanged.
+    - If listed, it is suggested using similarity heuristics against scenario text,
+      selected persona, and selected documents.
+    """
+    targets_set = {t.lower() for t in (targets or [])}
+
+    base_text = f"{name or ''} {description or ''}"
+    context_tokens: set[str] = set(_tokens(base_text))
+
+    # Load current persona/documents if provided to enrich context
+    current_persona: Personas | None = None
+    if persona_id:
+        current_persona = session.exec(select(Personas).where(Personas.id == persona_id)).one_or_none()
+        if current_persona:
+            context_tokens.update(_tokens(current_persona.name))
+            context_tokens.update(_tokens(current_persona.description))
+
+    current_documents: list[Documents] = []
+    if document_ids:
+        current_documents = list(
+            session.exec(
+                select(Documents).where(Documents.id.in_(document_ids))
+            ).all()
+        )
+        for d in current_documents:
+            context_tokens.update(_tokens(d.name))
+            for tag in (d.tags or []):
+                context_tokens.update(_tokens(tag))
+            context_tokens.add(_norm(d.type))
+
+    # Suggest persona -----------------------------------------------------
+    suggested_persona_id = persona_id
+    if "persona" in targets_set:
+        active_personas = session.exec(select(Personas).where(Personas.active)).all()
+
+        def score_persona(p: Personas) -> float:
+            score = 0.0
+            ptok = set(_tokens(p.name)) | set(_tokens(p.description))
+            score += 3.0 * len(ptok & context_tokens)
+            # Boost default_persona slightly
+            if p.default_persona:
+                score += 0.5
+            return score
+
+        if active_personas:
+            ranked = sorted(active_personas, key=score_persona, reverse=True)
+            suggested_persona_id = ranked[0].id if ranked else None
+
+    # Suggest documents ---------------------------------------------------
+    suggested_document_ids = list(document_ids or [])
+    if "documents" in targets_set:
+        active_documents = session.exec(select(Documents).where(Documents.active)).all()
+        known_types = [
+            "homework",
+            "project",
+            "quiz",
+            "midterm",
+            "lab",
+            "lecture",
+            "syllabus",
+        ]
+        scenario_text_norm = _norm(base_text)
+        has_type = {t: (t in context_tokens) or (t in scenario_text_norm) for t in known_types}
+
+        def score_doc(doc: Documents) -> float:
+            score = 0.0
+            tag_tokens: set[str] = set()
+            for tag in (doc.tags or []):
+                tag_tokens.update(_tokens(tag))
+            overlap = context_tokens.intersection(tag_tokens)
+            score += 5.0 * len(overlap)
+            name_overlap = context_tokens.intersection(set(_tokens(doc.name or "")))
+            score += 2.0 * len(name_overlap)
+            d_type = (doc.type or "").lower()
+            if d_type and has_type.get(d_type, False):
+                score += 10.0
+            if d_type and d_type in scenario_text_norm:
+                score += 3.0
+            return score
+
+        if active_documents:
+            scored = [(doc, score_doc(doc) + random.random() * 0.01) for doc in active_documents]
+            scored.sort(key=lambda x: x[1], reverse=True)
+            top = [doc for doc, s in scored if s > 0][:3]
+            if not top:
+                # fallback: keep up to 3 random
+                k = min(3, len(active_documents))
+                top = random.sample(active_documents, k) if k > 0 else []
+            suggested_document_ids = [d.id for d in top]
+
+    # Suggest parameters --------------------------------------------------
+    suggested_parameter_item_ids = list(parameter_item_ids or [])
+    if "parameters" in targets_set:
+        active_parameters = session.exec(select(Parameters).where(Parameters.active)).all()
+        if active_parameters:
+            chosen: list[uuid.UUID] = []
+            for param in active_parameters:
+                items = session.exec(select(ParameterItems).where(ParameterItems.parameter_id == param.id)).all()
+                if not items:
+                    continue
+
+                def score_item(it: ParameterItems) -> float:
+                    score = 0.0
+                    it_tokens = set(_tokens(it.name)) | set(_tokens(it.description)) | set(_tokens(it.value))
+                    score += 4.0 * len(it_tokens & context_tokens)
+                    # slight boost for default item
+                    if it.default_item:
+                        score += 0.5
+                    # slight boost if parameter name/desc matches context
+                    p_tokens = set(_tokens(param.name)) | set(_tokens(param.description))
+                    score += 1.0 * len(p_tokens & context_tokens)
+                    return score
+
+                ranked_items = sorted(items, key=score_item, reverse=True)
+                top_item = ranked_items[0] if ranked_items else None
+                if top_item and score_item(top_item) > 0:
+                    chosen.append(top_item.id)
+                else:
+                    # fallback random
+                    chosen.append(random.choice(items).id)
+            suggested_parameter_item_ids = chosen
+
+    return {
+        "persona_id": suggested_persona_id,
+        "document_ids": suggested_document_ids,
+        "parameter_item_ids": suggested_parameter_item_ids,
+    }

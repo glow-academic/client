@@ -57,13 +57,9 @@ import { PersonaPicker } from "./PersonaPicker";
 
 // Types and API functions
 import { useProfile } from "@/contexts/profile-context";
-import {
-  Parameter,
-  ParameterItem,
-  Scenario as ScenarioType,
-  Simulation,
-} from "@/types";
+import { Scenario as ScenarioType, Simulation } from "@/types";
 import { newScenario } from "@/utils/api/scenarios/new-scenario";
+import { randomizeScenario } from "@/utils/api/scenarios/randomize";
 import { logError } from "@/utils/logger";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
 import { updateScenario } from "@/utils/mutations/scenarios/update-scenario";
@@ -340,39 +336,20 @@ export default function Scenario({
     setDraggedCheckpointIndex(null);
   };
 
-  const handleRandomizeParameters = () => {
+  const handleRandomizeParameters = async () => {
     try {
       setIsRandomizingParameters(true);
-      // Only consider active parameters
-      const parameterList = (parameters || []) as Parameter[];
-      const parameterItemList = (parameterItems || []) as ParameterItem[];
-      const activeParameters: Parameter[] = parameterList.filter(
-        (p) => p.active
-      );
-      if (!activeParameters.length) {
-        toast("No active parameters to randomize");
-        return;
-      }
-
-      const itemsByParameter: Record<string, ParameterItem[]> = {};
-      for (const item of parameterItemList) {
-        const key = item.parameterId as string;
-        if (!itemsByParameter[key]) itemsByParameter[key] = [];
-        itemsByParameter[key].push(item);
-      }
-
-      const randomizedIds: string[] = [];
-      for (const parameter of activeParameters) {
-        const pid = parameter.id as string;
-        const items = itemsByParameter[pid] || [];
-        if (items.length === 0) continue;
-        const randomIndex = Math.floor(Math.random() * items.length);
-        const chosen: ParameterItem | undefined = items[randomIndex];
-        if (chosen?.id) randomizedIds.push(chosen.id);
-      }
-
-      handleInputChange("parameterItemIds", randomizedIds);
-      toast.success("Parameters randomized");
+      const resp = await randomizeScenario({
+        name: formData.name || "",
+        description: formData.description || "",
+        personaId: formData.personaId || null,
+        documentIds: (formData.documentIds as string[]) || [],
+        parameterItemIds: (formData.parameterItemIds as string[]) || [],
+        targets: ["parameters"],
+      });
+      if (!resp.success) throw new Error(resp.message);
+      handleInputChange("parameterItemIds", resp.parameterItemIds || []);
+      toast.success("Parameter suggestions applied");
     } catch (error) {
       logError("Error randomizing parameters", error);
       toast.error("Failed to randomize parameters");
@@ -392,18 +369,20 @@ export default function Scenario({
   };
 
   // Persona actions
-  const handleRandomizePersona = () => {
+  const handleRandomizePersona = async () => {
     try {
       setIsRandomizingPersona(true);
-      if (!personas || personas.length === 0) {
-        toast("No personas available to randomize");
-        return;
-      }
-      const randomIndex = Math.floor(Math.random() * personas.length);
-      const chosen = personas[randomIndex];
-      if (!chosen) return;
-      handleInputChange("personaId", chosen.id);
-      toast.success("Persona randomized");
+      const resp = await randomizeScenario({
+        name: formData.name || "",
+        description: formData.description || "",
+        personaId: formData.personaId || null,
+        documentIds: (formData.documentIds as string[]) || [],
+        parameterItemIds: (formData.parameterItemIds as string[]) || [],
+        targets: ["persona"],
+      });
+      if (!resp.success) throw new Error(resp.message);
+      if (resp.personaId) handleInputChange("personaId", resp.personaId);
+      toast.success("Persona suggestion applied");
     } catch (error) {
       logError("Error randomizing persona", error);
       toast.error("Failed to randomize persona");
@@ -423,23 +402,20 @@ export default function Scenario({
   };
 
   // Documents actions
-  const handleRandomizeDocuments = () => {
+  const handleRandomizeDocuments = async () => {
     try {
       setIsRandomizingDocuments(true);
-      if (!documents || documents.length === 0) {
-        toast("No documents available to randomize");
-        return;
-      }
-      // Choose a random subset size between 1 and min(5, total)
-      const maxSelect = Math.min(5, documents.length);
-      const subsetSize = Math.max(
-        1,
-        Math.floor(Math.random() * (maxSelect + 1))
-      );
-      const shuffled = [...documents].sort(() => Math.random() - 0.5);
-      const chosen = shuffled.slice(0, subsetSize).map((d) => d.id);
-      handleInputChange("documentIds", chosen);
-      toast.success("Documents randomized");
+      const resp = await randomizeScenario({
+        name: formData.name || "",
+        description: formData.description || "",
+        personaId: formData.personaId || null,
+        documentIds: (formData.documentIds as string[]) || [],
+        parameterItemIds: (formData.parameterItemIds as string[]) || [],
+        targets: ["documents"],
+      });
+      if (!resp.success) throw new Error(resp.message);
+      handleInputChange("documentIds", resp.documentIds || []);
+      toast.success("Document suggestions applied");
     } catch (error) {
       logError("Error randomizing documents", error);
       toast.error("Failed to randomize documents");
@@ -966,19 +942,6 @@ export default function Scenario({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleResetContent}
-                    disabled={isReadonly}
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Reset</TooltipContent>
-              </Tooltip>
               <Button
                 variant="default"
                 size="sm"
@@ -996,6 +959,19 @@ export default function Scenario({
                   "Generate"
                 )}
               </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleResetContent}
+                    disabled={isReadonly}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reset</TooltipContent>
+              </Tooltip>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
