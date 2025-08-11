@@ -26,6 +26,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import { useProfile } from "@/contexts/profile-context";
 import { DebugInfo } from "@/types";
 import { format } from "date-fns";
 
@@ -50,6 +51,8 @@ export interface RunsDataTableProps {
 }
 
 export function RunsDataTable({ rows }: RunsDataTableProps) {
+  const { effectiveProfile } = useProfile();
+  const isSuperadmin = effectiveProfile?.role === "superadmin";
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -59,8 +62,8 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
     { id: "createdAt", desc: true },
   ]);
 
-  const columns = React.useMemo<ColumnDef<ModelRunRow>[]>(
-    () => [
+  const columns = React.useMemo<ColumnDef<ModelRunRow>[]>(() => {
+    const cols: ColumnDef<ModelRunRow>[] = [
       {
         accessorKey: "createdAt",
         header: ({ column }) => (
@@ -98,27 +101,22 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
         },
       },
       {
-        accessorKey: "agentName",
+        id: "actor",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Agent" />
+          <DataTableColumnHeader column={column} title="Agent/Persona" />
         ),
-        cell: ({ row }) => (
-          <div className="text-sm">{row.getValue("agentName")}</div>
-        ),
-        filterFn: (row, _id, value) => {
-          return (value as string[]).includes(row.original.agentId || "");
+        cell: ({ row }) => {
+          const label =
+            row.original.agentName || row.original.personaName || "";
+          return <div className="text-sm">{label}</div>;
         },
-      },
-      {
-        accessorKey: "personaName",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Persona" />
-        ),
-        cell: ({ row }) => (
-          <div className="text-sm">{row.getValue("personaName")}</div>
-        ),
         filterFn: (row, _id, value) => {
-          return (value as string[]).includes(row.original.personaId || "");
+          const selected = value as string[];
+          const { agentId, personaId } = row.original;
+          if (!selected?.length) return true;
+          if (agentId && selected.includes(agentId)) return true;
+          if (personaId && selected.includes(personaId)) return true;
+          return false;
         },
       },
       {
@@ -145,7 +143,10 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
         ),
         enableSorting: true,
       },
-      {
+    ];
+
+    if (isSuperadmin) {
+      cols.push({
         id: "debug",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Debug" />
@@ -182,10 +183,11 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
             </HoverCard>
           );
         },
-      },
-    ],
-    []
-  );
+      });
+    }
+
+    return cols;
+  }, [isSuperadmin]);
 
   const table = useReactTable({
     data: rows,
@@ -222,10 +224,11 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
       label,
     }));
   }, [rows]);
-  const agentOptions = React.useMemo(() => {
+  const actorOptions = React.useMemo(() => {
     const set = new Map<string, string>();
     rows.forEach((r) => {
       if (r.agentId) set.set(r.agentId, r.agentName || r.agentId);
+      if (r.personaId) set.set(r.personaId, r.personaName || r.personaId);
     });
     return Array.from(set.entries()).map(([value, label]) => ({
       value,
@@ -253,9 +256,9 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
             options={modelOptions}
           />
           <DataTableFacetedFilter
-            column={table.getColumn("agentName")}
-            title="Agent"
-            options={agentOptions}
+            column={table.getColumn("actor")}
+            title="Agent/Persona"
+            options={actorOptions}
           />
           <DataTableFacetedFilter
             column={table.getColumn("profileName")}
@@ -313,7 +316,7 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
             ) : (
               <tr>
                 <td
-                  colSpan={columns.length}
+                  colSpan={table.getVisibleLeafColumns().length || 1}
                   className="h-24 text-center text-muted-foreground"
                 >
                   No runs match the current filters.
