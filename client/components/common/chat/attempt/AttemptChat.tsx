@@ -51,6 +51,7 @@ import { useQuery } from "@tanstack/react-query";
 import TableRubric from "../../rubric/TableRubric";
 import AttemptInput from "./AttemptInput";
 import AttemptMessages from "./AttemptMessages";
+import { useRouter } from "next/navigation";
 
 export default function AttemptChat() {
   const router = useRouter();

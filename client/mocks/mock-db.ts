@@ -1,8 +1,8 @@
 
 import * as mockSchema from './schema';
 import { faker } from '@faker-js/faker';
-import { createMockAgent, createMockAppFeedback, createMockAppLog, createMockAssistantChat, createMockAssistantMessage, createMockAssistantToolCall, createMockCohort, createMockDocument, createMockModel, createMockParameterItem, createMockParameter, createMockPersona, createMockProfile, createMockProvider, createMockRubric, createMockScenario, createMockSimulationAttempt, createMockSimulationChatFeedback, createMockSimulationChatGrade, createMockSimulationChat, createMockSimulationMessage, createMockSimulation, createMockStandardGroup, createMockStandard } from './factories';
-import type { Agent, AppFeedback, AppLog, AssistantChat, AssistantMessage, AssistantToolCall, Cohort, Document, Model, ParameterItem, Parameter, Persona, Profile, Provider, Rubric, Scenario, SimulationAttempt, SimulationChatFeedback, SimulationChatGrade, SimulationChat, SimulationMessage, Simulation, StandardGroup, Standard } from '@/types';
+import { createMockAgent, createMockAppFeedback, createMockAppLog, createMockAssistantChat, createMockAssistantMessage, createMockAssistantToolCall, createMockCohort, createMockDebugInfo, createMockDocument, createMockModelRun, createMockModel, createMockParameterItem, createMockParameter, createMockPersona, createMockProfile, createMockProvider, createMockRubric, createMockScenario, createMockSimulationAttempt, createMockSimulationChatCrowdsourcedFeedback, createMockSimulationChatFeedback, createMockSimulationChatGrade, createMockSimulationChat, createMockSimulationCrowdsourcedMessage, createMockSimulationMessage, createMockSimulation, createMockStandardGroup, createMockStandard } from './factories';
+import type { Agent, AppFeedback, AppLog, AssistantChat, AssistantMessage, AssistantToolCall, Cohort, DebugInfo, Document, ModelRun, Model, ParameterItem, Parameter, Persona, Profile, Provider, Rubric, Scenario, SimulationAttempt, SimulationChatCrowdsourcedFeedback, SimulationChatFeedback, SimulationChatGrade, SimulationChat, SimulationCrowdsourcedMessage, SimulationMessage, Simulation, StandardGroup, Standard } from '@/types';
 
 // A type-safe, in-memory database for testing
 export class MockDb {
@@ -13,7 +13,9 @@ export class MockDb {
   assistantMessages: AssistantMessage[];
   assistantToolCalls: AssistantToolCall[];
   cohorts: Cohort[];
+  debugInfo: DebugInfo[];
   documents: Document[];
+  modelRuns: ModelRun[];
   models: Model[];
   parameterItems: ParameterItem[];
   parameters: Parameter[];
@@ -23,9 +25,11 @@ export class MockDb {
   rubrics: Rubric[];
   scenarios: Scenario[];
   simulationAttempts: SimulationAttempt[];
+  simulationChatCrowdsourcedFeedbacks: SimulationChatCrowdsourcedFeedback[];
   simulationChatFeedbacks: SimulationChatFeedback[];
   simulationChatGrades: SimulationChatGrade[];
   simulationChats: SimulationChat[];
+  simulationCrowdsourcedMessages: SimulationCrowdsourcedMessage[];
   simulationMessages: SimulationMessage[];
   simulations: Simulation[];
   standardGroups: StandardGroup[];
@@ -40,7 +44,9 @@ export class MockDb {
     this.assistantMessages = JSON.parse(JSON.stringify(mockSchema.assistantMessages));
     this.assistantToolCalls = JSON.parse(JSON.stringify(mockSchema.assistantToolCalls));
     this.cohorts = JSON.parse(JSON.stringify(mockSchema.cohorts));
+    this.debugInfo = JSON.parse(JSON.stringify(mockSchema.debugInfo));
     this.documents = JSON.parse(JSON.stringify(mockSchema.documents));
+    this.modelRuns = JSON.parse(JSON.stringify(mockSchema.modelRuns));
     this.models = JSON.parse(JSON.stringify(mockSchema.models));
     this.parameterItems = JSON.parse(JSON.stringify(mockSchema.parameterItems));
     this.parameters = JSON.parse(JSON.stringify(mockSchema.parameters));
@@ -50,9 +56,11 @@ export class MockDb {
     this.rubrics = JSON.parse(JSON.stringify(mockSchema.rubrics));
     this.scenarios = JSON.parse(JSON.stringify(mockSchema.scenarios));
     this.simulationAttempts = JSON.parse(JSON.stringify(mockSchema.simulationAttempts));
+    this.simulationChatCrowdsourcedFeedbacks = JSON.parse(JSON.stringify(mockSchema.simulationChatCrowdsourcedFeedbacks));
     this.simulationChatFeedbacks = JSON.parse(JSON.stringify(mockSchema.simulationChatFeedbacks));
     this.simulationChatGrades = JSON.parse(JSON.stringify(mockSchema.simulationChatGrades));
     this.simulationChats = JSON.parse(JSON.stringify(mockSchema.simulationChats));
+    this.simulationCrowdsourcedMessages = JSON.parse(JSON.stringify(mockSchema.simulationCrowdsourcedMessages));
     this.simulationMessages = JSON.parse(JSON.stringify(mockSchema.simulationMessages));
     this.simulations = JSON.parse(JSON.stringify(mockSchema.simulations));
     this.standardGroups = JSON.parse(JSON.stringify(mockSchema.standardGroups));
@@ -87,24 +95,24 @@ export class MockDb {
 
   // APPFEEDBACK Queries
   getAllAppFeedback() { return this.appFeedback; }
-  getAppFeedback(id: string) { return this.appFeedback.find(item => item.id === id) || null; }
+  getAppFeedback(id: number) { return this.appFeedback.find(item => item.id === id) || null; }
   getAppFeedbackByProfile(profileId: string) { 
     return this.appFeedback.filter(item => item.profileId === profileId); 
   }
 
   // APPFEEDBACK Mutations
   createAppFeedback(data: Partial<AppFeedback>) {
-    const newItem = createMockAppFeedback({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockAppFeedback({ ...data, id: data.id || faker.number.int({ min: 1, max: 1000 }) });
     this.appFeedback.push(newItem);
     return newItem;
   }
-  updateAppFeedback(id: string, data: Partial<AppFeedback>) {
+  updateAppFeedback(id: number, data: Partial<AppFeedback>) {
     const itemIndex = this.appFeedback.findIndex(item => item.id === id);
     if (itemIndex === -1) return null;
     this.appFeedback[itemIndex] = { ...this.appFeedback[itemIndex], ...data } as AppFeedback;
     return this.appFeedback[itemIndex];
   }
-  deleteAppFeedback(id: string) {
+  deleteAppFeedback(id: number) {
     const itemIndex = this.appFeedback.findIndex(item => item.id === id);
     if (itemIndex === -1) return null;
     const deletedItem = this.appFeedback.splice(itemIndex, 1);
@@ -113,21 +121,21 @@ export class MockDb {
 
   // APPLOGS Queries
   getAllAppLogs() { return this.appLogs; }
-  getAppLog(id: string) { return this.appLogs.find(item => item.id === id) || null; }
+  getAppLog(id: number) { return this.appLogs.find(item => item.id === id) || null; }
 
   // APPLOGS Mutations
   createAppLog(data: Partial<AppLog>) {
-    const newItem = createMockAppLog({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockAppLog({ ...data, id: data.id || faker.number.int({ min: 1, max: 1000 }) });
     this.appLogs.push(newItem);
     return newItem;
   }
-  updateAppLog(id: string, data: Partial<AppLog>) {
+  updateAppLog(id: number, data: Partial<AppLog>) {
     const itemIndex = this.appLogs.findIndex(item => item.id === id);
     if (itemIndex === -1) return null;
     this.appLogs[itemIndex] = { ...this.appLogs[itemIndex], ...data } as AppLog;
     return this.appLogs[itemIndex];
   }
-  deleteAppLog(id: string) {
+  deleteAppLog(id: number) {
     const itemIndex = this.appLogs.findIndex(item => item.id === id);
     if (itemIndex === -1) return null;
     const deletedItem = this.appLogs.splice(itemIndex, 1);
@@ -235,6 +243,32 @@ export class MockDb {
     return deletedItem[0];
   }
 
+  // DEBUGINFO Queries
+  getAllDebugInfo() { return this.debugInfo; }
+  getDebugInfo(id: string) { return this.debugInfo.find(item => item.id === id) || null; }
+  getDebugInfoByModelRun(modelRunId: string) { 
+    return this.debugInfo.filter(item => item.modelRunId === modelRunId); 
+  }
+
+  // DEBUGINFO Mutations
+  createDebugInfo(data: Partial<DebugInfo>) {
+    const newItem = createMockDebugInfo({ ...data, id: data.id || faker.string.uuid() });
+    this.debugInfo.push(newItem);
+    return newItem;
+  }
+  updateDebugInfo(id: string, data: Partial<DebugInfo>) {
+    const itemIndex = this.debugInfo.findIndex(item => item.id === id);
+    if (itemIndex === -1) return null;
+    this.debugInfo[itemIndex] = { ...this.debugInfo[itemIndex], ...data } as DebugInfo;
+    return this.debugInfo[itemIndex];
+  }
+  deleteDebugInfo(id: string) {
+    const itemIndex = this.debugInfo.findIndex(item => item.id === id);
+    if (itemIndex === -1) return null;
+    const deletedItem = this.debugInfo.splice(itemIndex, 1);
+    return deletedItem[0];
+  }
+
   // DOCUMENTS Queries
   getAllDocuments() { return this.documents; }
   getDocument(id: string) { return this.documents.find(item => item.id === id) || null; }
@@ -255,6 +289,41 @@ export class MockDb {
     const itemIndex = this.documents.findIndex(item => item.id === id);
     if (itemIndex === -1) return null;
     const deletedItem = this.documents.splice(itemIndex, 1);
+    return deletedItem[0];
+  }
+
+  // MODELRUNS Queries
+  getAllModelRuns() { return this.modelRuns; }
+  getModelRun(id: string) { return this.modelRuns.find(item => item.id === id) || null; }
+  getModelRunsByModel(modelId: string) { 
+    return this.modelRuns.filter(item => item.modelId === modelId); 
+  }
+  getModelRunsByPersona(personaId: string) { 
+    return this.modelRuns.filter(item => item.personaId === personaId); 
+  }
+  getModelRunsByAgent(agentId: string) { 
+    return this.modelRuns.filter(item => item.agentId === agentId); 
+  }
+  getModelRunsByProfile(profileId: string) { 
+    return this.modelRuns.filter(item => item.profileId === profileId); 
+  }
+
+  // MODELRUNS Mutations
+  createModelRun(data: Partial<ModelRun>) {
+    const newItem = createMockModelRun({ ...data, id: data.id || faker.string.uuid() });
+    this.modelRuns.push(newItem);
+    return newItem;
+  }
+  updateModelRun(id: string, data: Partial<ModelRun>) {
+    const itemIndex = this.modelRuns.findIndex(item => item.id === id);
+    if (itemIndex === -1) return null;
+    this.modelRuns[itemIndex] = { ...this.modelRuns[itemIndex], ...data } as ModelRun;
+    return this.modelRuns[itemIndex];
+  }
+  deleteModelRun(id: string) {
+    const itemIndex = this.modelRuns.findIndex(item => item.id === id);
+    if (itemIndex === -1) return null;
+    const deletedItem = this.modelRuns.splice(itemIndex, 1);
     return deletedItem[0];
   }
 
@@ -480,6 +549,35 @@ export class MockDb {
     return deletedItem[0];
   }
 
+  // SIMULATIONCHATCROWDSOURCEDFEEDBACKS Queries
+  getAllSimulationChatCrowdsourcedFeedbacks() { return this.simulationChatCrowdsourcedFeedbacks; }
+  getSimulationChatCrowdsourcedFeedback(id: string) { return this.simulationChatCrowdsourcedFeedbacks.find(item => item.id === id) || null; }
+  getSimulationChatCrowdsourcedFeedbacksByProfile(profileId: string) { 
+    return this.simulationChatCrowdsourcedFeedbacks.filter(item => item.profileId === profileId); 
+  }
+  getSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedback(simulationChatFeedbackId: string) { 
+    return this.simulationChatCrowdsourcedFeedbacks.filter(item => item.simulationChatFeedbackId === simulationChatFeedbackId); 
+  }
+
+  // SIMULATIONCHATCROWDSOURCEDFEEDBACKS Mutations
+  createSimulationChatCrowdsourcedFeedback(data: Partial<SimulationChatCrowdsourcedFeedback>) {
+    const newItem = createMockSimulationChatCrowdsourcedFeedback({ ...data, id: data.id || faker.string.uuid() });
+    this.simulationChatCrowdsourcedFeedbacks.push(newItem);
+    return newItem;
+  }
+  updateSimulationChatCrowdsourcedFeedback(id: string, data: Partial<SimulationChatCrowdsourcedFeedback>) {
+    const itemIndex = this.simulationChatCrowdsourcedFeedbacks.findIndex(item => item.id === id);
+    if (itemIndex === -1) return null;
+    this.simulationChatCrowdsourcedFeedbacks[itemIndex] = { ...this.simulationChatCrowdsourcedFeedbacks[itemIndex], ...data } as SimulationChatCrowdsourcedFeedback;
+    return this.simulationChatCrowdsourcedFeedbacks[itemIndex];
+  }
+  deleteSimulationChatCrowdsourcedFeedback(id: string) {
+    const itemIndex = this.simulationChatCrowdsourcedFeedbacks.findIndex(item => item.id === id);
+    if (itemIndex === -1) return null;
+    const deletedItem = this.simulationChatCrowdsourcedFeedbacks.splice(itemIndex, 1);
+    return deletedItem[0];
+  }
+
   // SIMULATIONCHATFEEDBACKS Queries
   getAllSimulationChatFeedbacks() { return this.simulationChatFeedbacks; }
   getSimulationChatFeedback(id: string) { return this.simulationChatFeedbacks.find(item => item.id === id) || null; }
@@ -564,6 +662,35 @@ export class MockDb {
     const itemIndex = this.simulationChats.findIndex(item => item.id === id);
     if (itemIndex === -1) return null;
     const deletedItem = this.simulationChats.splice(itemIndex, 1);
+    return deletedItem[0];
+  }
+
+  // SIMULATIONCROWDSOURCEDMESSAGES Queries
+  getAllSimulationCrowdsourcedMessages() { return this.simulationCrowdsourcedMessages; }
+  getSimulationCrowdsourcedMessage(id: string) { return this.simulationCrowdsourcedMessages.find(item => item.id === id) || null; }
+  getSimulationCrowdsourcedMessagesBySimulationMessage(simulationMessageId: string) { 
+    return this.simulationCrowdsourcedMessages.filter(item => item.simulationMessageId === simulationMessageId); 
+  }
+  getSimulationCrowdsourcedMessagesByProfile(profileId: string) { 
+    return this.simulationCrowdsourcedMessages.filter(item => item.profileId === profileId); 
+  }
+
+  // SIMULATIONCROWDSOURCEDMESSAGES Mutations
+  createSimulationCrowdsourcedMessage(data: Partial<SimulationCrowdsourcedMessage>) {
+    const newItem = createMockSimulationCrowdsourcedMessage({ ...data, id: data.id || faker.string.uuid() });
+    this.simulationCrowdsourcedMessages.push(newItem);
+    return newItem;
+  }
+  updateSimulationCrowdsourcedMessage(id: string, data: Partial<SimulationCrowdsourcedMessage>) {
+    const itemIndex = this.simulationCrowdsourcedMessages.findIndex(item => item.id === id);
+    if (itemIndex === -1) return null;
+    this.simulationCrowdsourcedMessages[itemIndex] = { ...this.simulationCrowdsourcedMessages[itemIndex], ...data } as SimulationCrowdsourcedMessage;
+    return this.simulationCrowdsourcedMessages[itemIndex];
+  }
+  deleteSimulationCrowdsourcedMessage(id: string) {
+    const itemIndex = this.simulationCrowdsourcedMessages.findIndex(item => item.id === id);
+    if (itemIndex === -1) return null;
+    const deletedItem = this.simulationCrowdsourcedMessages.splice(itemIndex, 1);
     return deletedItem[0];
   }
 

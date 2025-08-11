@@ -7,7 +7,7 @@ import { logError } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
-async function _getProfilesByUsers(userIds: string[]) {
+async function _getProfilesByUsers(userIds: number[]) {
   try {
     return await db.select().from(profiles).where(inArray(profiles.userId, userIds));
   } catch (error) {

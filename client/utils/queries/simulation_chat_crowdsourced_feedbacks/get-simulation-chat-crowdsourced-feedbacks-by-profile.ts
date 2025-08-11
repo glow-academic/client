@@ -4,8 +4,10 @@ import { db } from "@/utils/drizzle/db";
 import { simulationChatCrowdsourcedFeedbacks } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function getSimulationChatCrowdsourcedFeedbacksByProfile(profileId: string) {
+// Original logic is now a "private" function
+async function _getSimulationChatCrowdsourcedFeedbacksByProfile(profileId: string) {
   try {
     return await db.select().from(simulationChatCrowdsourcedFeedbacks).where(eq(simulationChatCrowdsourcedFeedbacks.profileId, profileId));
   } catch (error) {
@@ -13,3 +15,6 @@ export async function getSimulationChatCrowdsourcedFeedbacksByProfile(profileId:
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const getSimulationChatCrowdsourcedFeedbacksByProfile = createMockableAction('getSimulationChatCrowdsourcedFeedbacksByProfile', _getSimulationChatCrowdsourcedFeedbacksByProfile);

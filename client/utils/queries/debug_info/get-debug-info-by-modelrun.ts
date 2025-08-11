@@ -4,8 +4,10 @@ import { db } from "@/utils/drizzle/db";
 import { debugInfo } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function getDebugInfoByModelRun(modelRunId: string) {
+// Original logic is now a "private" function
+async function _getDebugInfoByModelRun(modelRunId: string) {
   try {
     return await db.select().from(debugInfo).where(eq(debugInfo.modelRunId, modelRunId));
   } catch (error) {
@@ -13,3 +15,6 @@ export async function getDebugInfoByModelRun(modelRunId: string) {
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const getDebugInfoByModelRun = createMockableAction('getDebugInfoByModelRun', _getDebugInfoByModelRun);

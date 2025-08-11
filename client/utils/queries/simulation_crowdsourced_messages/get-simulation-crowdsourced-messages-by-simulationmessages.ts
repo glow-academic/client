@@ -4,8 +4,10 @@ import { db } from "@/utils/drizzle/db";
 import { simulationCrowdsourcedMessages } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function getSimulationCrowdsourcedMessagesBySimulationMessages(simulationMessageIds: string[]) {
+// Original logic is now a "private" function
+async function _getSimulationCrowdsourcedMessagesBySimulationMessages(simulationMessageIds: string[]) {
   try {
     return await db.select().from(simulationCrowdsourcedMessages).where(inArray(simulationCrowdsourcedMessages.simulationMessageId, simulationMessageIds));
   } catch (error) {
@@ -13,3 +15,6 @@ export async function getSimulationCrowdsourcedMessagesBySimulationMessages(simu
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const getSimulationCrowdsourcedMessagesBySimulationMessages = createMockableAction('getSimulationCrowdsourcedMessagesBySimulationMessages', _getSimulationCrowdsourcedMessagesBySimulationMessages);

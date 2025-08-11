@@ -305,17 +305,17 @@ export default function CohortPerformance({
             const passRatePercentage =
               (cohort.passedStudents / cohort.totalStudents) * 100;
 
-              // Determine background color based on pass rate
-              let bgColor: string;
-              if (passRatePercentage === 0) {
-                bgColor = "#ef4444"; // Red for 0%
-              } else if (passRatePercentage >= thresholds.success) {
-                bgColor = "#22c55e"; // Green for success
-              } else if (passRatePercentage >= thresholds.warning) {
-                bgColor = "#eab308"; // Yellow for warning
-              } else {
-                bgColor = "#ef4444"; // Red for danger
-              }
+            // Determine background color based on pass rate
+            let bgColor: string;
+            if (passRatePercentage === 0) {
+              bgColor = "#ef4444"; // Red for 0%
+            } else if (passRatePercentage >= thresholds.success) {
+              bgColor = "#22c55e"; // Green for success
+            } else if (passRatePercentage >= thresholds.warning) {
+              bgColor = "#eab308"; // Yellow for warning
+            } else {
+              bgColor = "#ef4444"; // Red for danger
+            }
 
             return (
               <Dialog key={cohort.id}>
@@ -323,23 +323,18 @@ export default function CohortPerformance({
                   <div className="p-2 border rounded-md cursor-pointer hover:bg-muted transition-colors relative overflow-hidden">
                     {/* Progress bar background */}
                     <div
-                      className="p-2 border rounded-md cursor-pointer hover:bg-muted transition-colors relative overflow-hidden"
-                      onClick={() => setSelectedCohort(cohort.id)}
-                    >
-                      {/* Progress bar background */}
-                      <div
-                        className="absolute inset-0 opacity-10"
-                        style={{ backgroundColor: bgColor }}
-                      />
+                      className="absolute inset-0 opacity-10"
+                      style={{ backgroundColor: bgColor }}
+                    />
 
-                      {/* Progress bar fill */}
-                      <div
-                        className="absolute inset-y-0 left-0 opacity-20 transition-all duration-300"
-                        style={{
-                          backgroundColor: bgColor,
-                          width: `${Math.max(passRatePercentage, 1)}%`, // Minimum 1% width for visibility
-                        }}
-                      />
+                    {/* Progress bar fill */}
+                    <div
+                      className="absolute inset-y-0 left-0 opacity-20 transition-all duration-300"
+                      style={{
+                        backgroundColor: bgColor,
+                        width: `${Math.max(passRatePercentage, 1)}%`, // Minimum 1% width for visibility
+                      }}
+                    />
 
                     <div className="flex items-center justify-between relative z-10">
                       <div className="flex-1 min-w-0">
@@ -357,6 +352,7 @@ export default function CohortPerformance({
                           % or better
                         </p>
                       </div>
+                      <TrendingUp className="h-3 w-3 text-muted-foreground ml-2 flex-shrink-0" />
                     </div>
                   </div>
                 </DialogTrigger>

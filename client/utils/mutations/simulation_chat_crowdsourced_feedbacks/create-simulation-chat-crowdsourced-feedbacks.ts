@@ -3,8 +3,10 @@
 import { db } from "@/utils/drizzle/db";
 import { simulationChatCrowdsourcedFeedbacks } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function createSimulationChatCrowdsourcedFeedbacks(data: (typeof simulationChatCrowdsourcedFeedbacks.$inferInsert)[]) {
+// Original logic is now a "private" function
+async function _createSimulationChatCrowdsourcedFeedbacks(data: (typeof simulationChatCrowdsourcedFeedbacks.$inferInsert)[]) {
   try {
     return await db.insert(simulationChatCrowdsourcedFeedbacks).values(data).returning();
   } catch (error) {
@@ -12,3 +14,6 @@ export async function createSimulationChatCrowdsourcedFeedbacks(data: (typeof si
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const createSimulationChatCrowdsourcedFeedbacks = createMockableAction('createSimulationChatCrowdsourcedFeedbacks', _createSimulationChatCrowdsourcedFeedbacks);

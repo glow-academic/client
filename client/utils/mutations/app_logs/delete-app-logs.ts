@@ -7,7 +7,7 @@ import { logError } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
-async function _deleteAppLogs(ids: string[]) {
+async function _deleteAppLogs(ids: number[]) {
   try {
     return await db.delete(appLogs).where(inArray(appLogs.id, ids)).returning();
   } catch (error) {

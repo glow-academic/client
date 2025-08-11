@@ -7,7 +7,7 @@ import { logError } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
-async function _updateAppLog(id: string, data: Partial<typeof appLogs.$inferInsert>) {
+async function _updateAppLog(id: number, data: Partial<typeof appLogs.$inferInsert>) {
   try {
     const result = await db.update(appLogs).set(data).where(eq(appLogs.id, id)).returning();
     return result[0];

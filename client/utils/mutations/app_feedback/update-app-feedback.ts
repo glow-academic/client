@@ -7,7 +7,7 @@ import { logError } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
-async function _updateAppFeedback(ids: string[], data: Partial<typeof appFeedback.$inferInsert>) {
+async function _updateAppFeedback(ids: number[], data: Partial<typeof appFeedback.$inferInsert>) {
   try {
     return await db.update(appFeedback).set(data).where(inArray(appFeedback.id, ids)).returning();
   } catch (error) {

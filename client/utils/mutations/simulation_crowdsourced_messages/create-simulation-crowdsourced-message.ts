@@ -3,8 +3,10 @@
 import { db } from "@/utils/drizzle/db";
 import { simulationCrowdsourcedMessages } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function createSimulationCrowdsourcedMessage(data: typeof simulationCrowdsourcedMessages.$inferInsert) {
+// Original logic is now a "private" function
+async function _createSimulationCrowdsourcedMessage(data: typeof simulationCrowdsourcedMessages.$inferInsert) {
   try {
     const result = await db.insert(simulationCrowdsourcedMessages).values(data).returning();
     return result[0];
@@ -13,3 +15,6 @@ export async function createSimulationCrowdsourcedMessage(data: typeof simulatio
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const createSimulationCrowdsourcedMessage = createMockableAction('createSimulationCrowdsourcedMessage', _createSimulationCrowdsourcedMessage);

@@ -3,8 +3,10 @@
 import { db } from "@/utils/drizzle/db";
 import { simulationChatCrowdsourcedFeedbacks } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function getAllSimulationChatCrowdsourcedFeedbacks() {
+// Original logic is now a "private" function
+async function _getAllSimulationChatCrowdsourcedFeedbacks() {
   try {
     return await db.select().from(simulationChatCrowdsourcedFeedbacks);
   } catch (error) {
@@ -12,3 +14,6 @@ export async function getAllSimulationChatCrowdsourcedFeedbacks() {
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const getAllSimulationChatCrowdsourcedFeedbacks = createMockableAction('getAllSimulationChatCrowdsourcedFeedbacks', _getAllSimulationChatCrowdsourcedFeedbacks);

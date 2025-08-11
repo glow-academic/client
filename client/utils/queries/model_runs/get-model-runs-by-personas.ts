@@ -4,8 +4,10 @@ import { db } from "@/utils/drizzle/db";
 import { modelRuns } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function getModelRunsByPersonas(personaIds: string[]) {
+// Original logic is now a "private" function
+async function _getModelRunsByPersonas(personaIds: string[]) {
   try {
     return await db.select().from(modelRuns).where(inArray(modelRuns.personaId, personaIds));
   } catch (error) {
@@ -13,3 +15,6 @@ export async function getModelRunsByPersonas(personaIds: string[]) {
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const getModelRunsByPersonas = createMockableAction('getModelRunsByPersonas', _getModelRunsByPersonas);
