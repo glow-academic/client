@@ -1,8 +1,8 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 288
-- **Tests Created**: 0
+- **Total Components**: 290
+- **Tests Created**: 2
 - **Tests Updated**: 0
 - **Tests Skipped** (already implemented): 288
 
@@ -149,6 +149,8 @@
 | ParametersDataTable | components/management/parameters/ParametersDataTable.tsx | ParametersDataTable.test.tsx | ✅ Implemented |
 | ParametersDataTableToolbar | components/management/parameters/ParametersDataTableToolbar.tsx | ParametersDataTableToolbar.test.tsx | ✅ Implemented |
 | Pricing | components/management/pricing/Pricing.tsx | Pricing.test.tsx | ✅ Implemented |
+| RunsDataTable | components/management/pricing/RunsDataTable.tsx | RunsDataTable.test.tsx | ✅ Implemented |
+| RunsDataTableToolbar | components/management/pricing/RunsDataTableToolbar.tsx | RunsDataTableToolbar.test.tsx | ✅ Implemented |
 | ModelEdit | components/management/providers/ModelEdit.tsx | ModelEdit.test.tsx | ✅ Implemented |
 | NewModel | components/management/providers/NewModel.tsx | NewModel.test.tsx | ✅ Implemented |
 | NewProvider | components/management/providers/NewProvider.tsx | NewProvider.test.tsx | ✅ Implemented |
@@ -481,6 +483,8 @@ __tests__/
 │   │   │   ├── ParametersDataTableToolbar.test.tsx
 │   │   ├── pricing/
 │   │   │   ├── Pricing.test.tsx
+│   │   │   ├── RunsDataTable.test.tsx
+│   │   │   ├── RunsDataTableToolbar.test.tsx
 │   │   ├── providers/
 │   │   │   ├── ModelEdit.test.tsx
 │   │   │   ├── NewModel.test.tsx

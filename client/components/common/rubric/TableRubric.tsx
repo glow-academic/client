@@ -144,13 +144,17 @@ export default function TableRubric({
     enabled: allFeedbackIds.length > 0,
   });
 
-  const crowdCountsByFeedbackId = React.useMemo(() => {
-    const counts = new Map<string, number>();
+  // Build counts per (anchorFeedbackId -> total points -> count)
+  const countsByAnchorAndTotal = React.useMemo(() => {
+    const outer = new Map<string, Map<number, number>>();
     (crowdFeedbacks || []).forEach((cf: SimulationChatCrowdsourcedFeedback) => {
-      const key = cf.simulationChatFeedbackId as string;
-      counts.set(key, (counts.get(key) || 0) + 1);
+      const anchorId = cf.simulationChatFeedbackId as string;
+      const total = cf.total as number;
+      if (!outer.has(anchorId)) outer.set(anchorId, new Map<number, number>());
+      const inner = outer.get(anchorId)!;
+      inner.set(total, (inner.get(total) || 0) + 1);
     });
-    return counts;
+    return outer;
   }, [crowdFeedbacks]);
 
   const { mutateAsync: submitCrowdFeedback, isPending: isSubmitting } =
@@ -321,35 +325,45 @@ export default function TableRubric({
                             </div>
                           ) : (
                             <div className="grid grid-cols-1 gap-1">
-                              {groupStandards.map((s) => {
-                                const f = standardIdToFeedback.get(s.id);
-                                const count = f
-                                  ? crowdCountsByFeedbackId.get(f.id) || 0
-                                  : 0;
-                                const isAchievedForS = isStandardAchieved(
-                                  s,
-                                  groupStandards
+                              {(() => {
+                                const achievedStandard = groupStandards.find(
+                                  (s) => isStandardAchieved(s, groupStandards)
                                 );
-                                return (
-                                  <div
-                                    key={s.id}
-                                    className="flex items-center justify-between text-xs"
-                                  >
-                                    <span
-                                      className={
-                                        isAchievedForS
-                                          ? "font-semibold"
-                                          : "text-muted-foreground"
-                                      }
+                                const anchorId = achievedStandard
+                                  ? standardIdToFeedback.get(
+                                      achievedStandard.id
+                                    )?.id
+                                  : undefined;
+                                return groupStandards.map((s) => {
+                                  const inner = anchorId
+                                    ? countsByAnchorAndTotal.get(anchorId)
+                                    : undefined;
+                                  const count = inner?.get(s.points) || 0;
+                                  const isAchievedForS = isStandardAchieved(
+                                    s,
+                                    groupStandards
+                                  );
+                                  return (
+                                    <div
+                                      key={s.id}
+                                      className="flex items-center justify-between text-xs"
                                     >
-                                      {s.name} ({s.points})
-                                    </span>
-                                    <span className="inline-flex items-center rounded bg-secondary px-1.5 py-0.5 text-[10px]">
-                                      {count} vote{count === 1 ? "" : "s"}
-                                    </span>
-                                  </div>
-                                );
-                              })}
+                                      <span
+                                        className={
+                                          isAchievedForS
+                                            ? "font-semibold"
+                                            : "text-muted-foreground"
+                                        }
+                                      >
+                                        {s.name} ({s.points})
+                                      </span>
+                                      <span className="inline-flex items-center rounded bg-secondary px-1.5 py-0.5 text-[10px]">
+                                        {count} vote{count === 1 ? "" : "s"}
+                                      </span>
+                                    </div>
+                                  );
+                                });
+                              })()}
                             </div>
                           )}
                         </div>
@@ -377,10 +391,18 @@ export default function TableRubric({
                       standard,
                       groupStandards
                     );
+                    // Use the achieved standard's feedback id as row anchor for crowdsourced suggestions
+                    const achievedStandardForRow = groupStandards.find((s) =>
+                      isStandardAchieved(s, groupStandards)
+                    );
+                    const rowAnchorFeedbackId = achievedStandardForRow
+                      ? standardIdToFeedback.get(achievedStandardForRow.id)?.id
+                      : undefined;
+
                     const isClickable =
                       canCrowdsource &&
                       !!simulationChatId &&
-                      !!feedback &&
+                      !!rowAnchorFeedbackId &&
                       !isAchieved;
 
                     return (
@@ -468,9 +490,10 @@ export default function TableRubric({
                                     size="sm"
                                     disabled={isSubmitting}
                                     onClick={async () => {
-                                      if (!feedback) return;
+                                      if (!rowAnchorFeedbackId) return;
                                       await submitCrowdFeedback({
-                                        simulationChatFeedbackId: feedback.id,
+                                        simulationChatFeedbackId:
+                                          rowAnchorFeedbackId,
                                         total: standard.points,
                                         feedback:
                                           crowdFeedbackText.trim() || null,
