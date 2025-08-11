@@ -116,6 +116,7 @@ export function PersonaPicker({
       updatedAt: "",
       systemPrompt: "",
       modelId: "",
+      guardrailActive: false,
     });
     setOpen(false);
   };
