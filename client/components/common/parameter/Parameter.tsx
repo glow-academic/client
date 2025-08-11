@@ -12,6 +12,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,6 +26,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { createParameterItem } from "@/utils/mutations/parameter_items/create-parameter-item";
 import { deleteParameterItem } from "@/utils/mutations/parameter_items/delete-parameter-item";
@@ -122,7 +128,7 @@ export default function Parameter({
         description: parameter.description,
         numerical: parameter.numerical,
         active: parameter.active,
-        defaultParameter: (parameter as any).defaultParameter ?? false,
+        defaultParameter: parameter.defaultParameter ?? false,
       });
     } else if (!isEditMode) {
       setFormData(initialFormData);
@@ -142,7 +148,7 @@ export default function Parameter({
         name: item.name,
         description: item.description,
         value: item.value,
-        defaultItem: (item as any).defaultItem ?? false,
+        defaultItem: item.defaultItem ?? false,
         isNew: false,
         isDeleted: false,
       }));
@@ -264,7 +270,7 @@ export default function Parameter({
   const handleParameterItemInputChange = (
     itemIndex: number,
     field: keyof ParameterItemFormData,
-    value: string
+    value: string | boolean
   ) => {
     setParameterItemsFormData((prev) => {
       const updated = [...prev];
@@ -528,28 +534,45 @@ export default function Parameter({
                       <TableCell className="w-20">
                         <div className="flex items-center gap-2">
                           {effectiveProfile?.role === "superadmin" && (
-                            <Switch
-                              checked={!!item.defaultItem}
-                              onCheckedChange={(checked) =>
-                                handleParameterItemInputChange(
-                                  itemIndex,
-                                  "defaultItem",
-                                  checked
-                                    ? ("true" as unknown as string)
-                                    : ("false" as unknown as string)
-                                )
-                              }
-                              aria-label="Approved"
-                            />
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div>
+                                  <Checkbox
+                                    checked={!!item.defaultItem}
+                                    onCheckedChange={(checked) =>
+                                      handleParameterItemInputChange(
+                                        itemIndex,
+                                        "defaultItem",
+                                        Boolean(checked)
+                                      )
+                                    }
+                                    aria-label="Save as system item"
+                                  />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                Save as system item
+                              </TooltipContent>
+                            </Tooltip>
                           )}
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteParameterItem(itemIndex)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  handleDeleteParameterItem(itemIndex)
+                                }
+                                aria-label="Delete parameter item"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              Delete parameter item
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       </TableCell>
                     </TableRow>
