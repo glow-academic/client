@@ -11,11 +11,14 @@ import {
   CohortPicker,
   Cohort as CohortPickerCohort,
 } from "@/components/common/cohort/CohortPicker";
+import { RolePicker } from "@/components/common/profile/RolePicker";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useAnalytics } from "@/contexts/analytics-context";
+import { profileRole } from "@/utils/drizzle/schema";
 import { useEffect, useMemo } from "react";
 import { DateRange } from "react-day-picker";
-
 export function AnalyticsFilters() {
   const {
     startDate,
@@ -24,6 +27,10 @@ export function AnalyticsFilters() {
     selectedCohortIds,
     setSelectedCohortIds,
     cohorts,
+    selectedRoles,
+    setSelectedRoles,
+    includePractice,
+    setIncludePractice,
   } = useAnalytics();
 
   // Convert to DateRange for the date picker component
@@ -95,8 +102,27 @@ export function AnalyticsFilters() {
     setSelectedCohortIds(selectedCohorts.map((cohort) => cohort.id));
   };
 
+  const handleRoleSelect = (
+    roles: (typeof profileRole.enumValues)[number][]
+  ) => {
+    // Narrow to ProfileRole
+    const validRoles = profileRole.enumValues as readonly string[];
+    const filtered = roles.filter((r) => validRoles.includes(r));
+    setSelectedRoles(filtered as (typeof profileRole.enumValues)[number][]);
+  };
+
   return (
     <div className="flex items-center gap-2">
+      {/* Include Practice Switch */}
+      <div className="flex items-center gap-2 pr-2">
+        <Switch
+          id="include-practice"
+          checked={includePractice}
+          onCheckedChange={(checked) => setIncludePractice(!!checked)}
+        />
+        <Label htmlFor="include-practice">Include practice</Label>
+      </div>
+
       {/* Date Range Picker */}
       <DatePickerWithRange
         dateRange={dateRange}
@@ -111,6 +137,15 @@ export function AnalyticsFilters() {
         onSelect={handleCohortSelect}
         placeholder="All cohorts"
         hideSelectedChips={true}
+      />
+
+      {/* Role Picker */}
+      <RolePicker
+        roles={["superadmin", "admin", "instructional", "ta", "guest"]}
+        selectedRoles={selectedRoles}
+        onChange={handleRoleSelect}
+        placeholder="All roles"
+        className="min-w-[220px]"
       />
     </div>
   );

@@ -694,7 +694,7 @@ export default function RubricHeatmap({
                       <TableHead
                         key={group.id}
                         className={cn(
-                          "p-1 h-30 w-24 relative", // Increased width from w-16 to w-24
+                          "p-1 h-30 w-20 relative", // Slightly narrower than before
                           hoveredCell.col === colIndex && "bg-muted" // Highlight on hover
                         )}
                       >
@@ -739,7 +739,7 @@ export default function RubricHeatmap({
                           return (
                             <TableCell
                               key={colIndex}
-                              className="text-center p-1 w-24"
+                              className="text-center p-1 w-20"
                               onMouseEnter={() =>
                                 setHoveredCell({ row: rowIndex, col: colIndex })
                               }
@@ -747,7 +747,7 @@ export default function RubricHeatmap({
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div
-                                    className="w-24 h-8 rounded-sm flex items-center justify-center text-xs font-mono"
+                                    className="w-20 h-7 rounded-sm flex items-center justify-center text-xs font-mono"
                                     style={{ backgroundColor: cell.color }}
                                   >
                                     <span

@@ -8,11 +8,14 @@
 "use client";
 
 import { Cohort } from "@/types";
+import { profileRole } from "@/utils/drizzle/schema";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { useQuery } from "@tanstack/react-query";
 import { subDays } from "date-fns";
 import React, { createContext, useContext, useMemo, useState } from "react";
 import { useProfile } from "./profile-context";
+
+type ProfileRole = (typeof profileRole.enumValues)[number];
 
 interface AnalyticsContextType {
   // Date range state
@@ -23,6 +26,14 @@ interface AnalyticsContextType {
   // Cohort filtering state
   selectedCohortIds: string[];
   setSelectedCohortIds: (cohortIds: string[]) => void;
+
+  // Role filtering state
+  selectedRoles: ProfileRole[];
+  setSelectedRoles: (roles: ProfileRole[]) => void;
+
+  // Practice data include flag
+  includePractice: boolean;
+  setIncludePractice: (include: boolean) => void;
 
   // Available cohorts data
   cohorts: Cohort[];
@@ -118,6 +129,10 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
 
   // Cohort filtering - empty array means all cohorts
   const [selectedCohortIds, setSelectedCohortIds] = useState<string[]>([]);
+  // Role filtering - empty array means all roles
+  const [selectedRoles, setSelectedRoles] = useState<ProfileRole[]>([]);
+  // Include practice data in analytics
+  const [includePractice, setIncludePractice] = useState<boolean>(false);
 
   // Compute effective cohort IDs for filtering
   const effectiveCohortIds = useMemo(() => {
@@ -140,6 +155,8 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     setStartDate(earliestCohortDate);
     setEndDate(new Date());
     setSelectedCohortIds([]);
+    setSelectedRoles([]);
+    setIncludePractice(false);
     setHasUserSetDateRange(false); // Reset user-set date range
   };
 
@@ -151,6 +168,10 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     setDateRange,
     selectedCohortIds,
     setSelectedCohortIds,
+    selectedRoles,
+    setSelectedRoles,
+    includePractice,
+    setIncludePractice,
     cohorts,
     isLoadingCohorts,
     effectiveCohortIds,
