@@ -1,9 +1,9 @@
 import type { TAPerformanceData } from "@/hooks/use-report-columns";
 import { getMockTable } from "@/mocks/navigation";
 import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import type { Column } from "@tanstack/react-table";
+import { fireEvent, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
 import {
@@ -67,20 +67,45 @@ describe("ReportsDataTableToolbar", () => {
   });
 
   describe("User Interactions", () => {
-    it("should handle search input changes", async () => {
-      const user = userEvent.setup();
+    it("should call setFilterValue when the user types in the search input", async () => {
+      // 1. Arrange
+      const mockSetFilterValue = vi.fn(); // The only mock we need to spy on
 
-      renderWithMocks(<ReportsDataTableToolbar {...mockProps} />);
+      const mockTable = getMockTable<TAPerformanceData>();
+      vi.spyOn(mockTable, "getColumn").mockImplementation((id) => {
+        // Return a very simple mock for the 'firstName' column
+        if (id === "firstName") {
+          return {
+            getFilterValue: () => "", // The initial value doesn't matter
+            setFilterValue: mockSetFilterValue,
+          } as unknown as Column<TAPerformanceData, unknown>;
+        }
+        // A default mock for any other columns
+        return {
+          getFilterValue: () => undefined,
+          setFilterValue: vi.fn(),
+        } as unknown as Column<TAPerformanceData, unknown>;
+      });
 
+      const testProps = {
+        ...mockProps,
+        table: mockTable,
+      };
+
+      renderWithMocks(<ReportsDataTableToolbar {...testProps} />);
       const searchInput = screen.getByPlaceholderText(
         "Search TAs by name or alias..."
       );
 
-      // Type into the input
-      await user.type(searchInput, "John");
+      // 2. Act
+      const searchValue = "John";
+      // Fire a single change event with the final desired value
+      fireEvent.change(searchInput, { target: { value: searchValue } });
 
-      // The input should be present and interactive
-      expect(searchInput).toBeInTheDocument();
+      // 3. Assert
+      // Now we can be sure only one event was fired with the correct value
+      expect(mockSetFilterValue).toHaveBeenCalledWith(searchValue);
+      expect(mockSetFilterValue).toHaveBeenCalledTimes(1);
     });
 
     it("should handle filter interactions", async () => {

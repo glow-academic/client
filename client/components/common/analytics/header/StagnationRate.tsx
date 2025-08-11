@@ -12,7 +12,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
+import { calculateStagnationRate } from "@/utils/analytics/header";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -21,7 +23,6 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
-import { eachDayOfInterval, format } from "date-fns";
 import { TrendingDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -126,171 +127,30 @@ export default function StagnationRate({
     queryFn: () => getAllCohorts(),
   });
 
-  // Calculate stagnation rate for the specified date range and profile
-  const stagnationRate = useMemo(() => {
-    if (!attempts || !chats || !grades || !simulations || !rubrics || !cohorts)
-      return 0;
-
-    // Get cohort filtering data
-    let cohortFiltering: {
-      allowedProfileIds: string[];
-      allowedSimulationIds: string[];
-    } | null = null;
-    if (cohortIds && cohortIds.length > 0) {
-      const matchingCohorts = cohorts.filter(
-        (cohort) => cohortIds.includes(cohort.id) && cohort.active,
-      );
-
-      if (matchingCohorts.length > 0) {
-        // Collect all profile IDs and simulation IDs from matching cohorts
-        const allowedProfileIds = new Set<string>();
-        const allowedSimulationIds = new Set<string>();
-
-        matchingCohorts.forEach((cohort) => {
-          cohort.profileIds.forEach((profileId: string) =>
-            allowedProfileIds.add(profileId),
-          );
-          cohort.simulationIds.forEach((simulationId: string) =>
-            allowedSimulationIds.add(simulationId),
-          );
-        });
-
-        cohortFiltering = {
-          allowedProfileIds: Array.from(allowedProfileIds),
-          allowedSimulationIds: Array.from(allowedSimulationIds),
-        };
-      }
+  // Calculate stagnation rate using utility function
+  const stagnationRateResult = useMemo(() => {
+    if (
+      !attempts ||
+      !chats ||
+      !grades ||
+      !simulations ||
+      !rubrics ||
+      !cohorts
+    ) {
+      return { currentValue: 0, trendData: [], hasData: false };
     }
 
-    // Filter attempts by date range and exclude practice simulations
-    const filteredAttempts = attempts.filter((attempt) => {
-      const attemptDate = new Date(attempt.createdAt);
-      const simulation = simulations.find((s) => s.id === attempt.simulationId);
-      return (
-        attemptDate >= dateStart &&
-        attemptDate <= dateEnd &&
-        !simulation?.practiceSimulation
-      );
-    });
-
-    // Apply cohort filtering if available
-    const cohortFilteredAttempts = cohortFiltering
-      ? filteredAttempts.filter((attempt) => {
-          return (
-            attempt.profileId &&
-            cohortFiltering.allowedProfileIds.includes(attempt.profileId) &&
-            attempt.simulationId &&
-            cohortFiltering.allowedSimulationIds.includes(attempt.simulationId)
-          );
-        })
-      : filteredAttempts;
-
-    // Filter by profileId if provided (tighter restriction)
-    const profileFilteredAttempts = profileId
-      ? cohortFilteredAttempts.filter(
-          (attempt) => attempt.profileId === profileId,
-        )
-      : cohortFilteredAttempts;
-
-    if (profileFilteredAttempts.length === 0) return 0;
-
-    // Group attempts by profile and simulation
-    const attemptsByProfileAndSimulation = new Map<
-      string,
-      typeof profileFilteredAttempts
-    >();
-
-    profileFilteredAttempts.forEach((attempt) => {
-      const key = `${attempt.profileId}-${attempt.simulationId}`;
-      if (!attemptsByProfileAndSimulation.has(key)) {
-        attemptsByProfileAndSimulation.set(key, []);
-      }
-      attemptsByProfileAndSimulation.get(key)!.push(attempt);
-    });
-
-    // Calculate stagnation for each profile-simulation combination
-    let stagnantProfiles = 0;
-    let totalProfilesWithMultipleAttempts = 0;
-
-    attemptsByProfileAndSimulation.forEach((profileAttempts) => {
-      // Only consider profiles with 3+ attempts on the same simulation
-      if (profileAttempts.length >= 3) {
-        totalProfilesWithMultipleAttempts++;
-
-        // Sort attempts by creation time
-        const sortedAttempts = profileAttempts.sort(
-          (a, b) =>
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-        );
-
-        // Get first and last attempt scores
-        const firstAttempt = sortedAttempts[0];
-        const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
-
-        if (!firstAttempt || !lastAttempt) return;
-
-        // Find grades for first and last attempts
-        const firstAttemptChats = chats.filter(
-          (chat) => chat.attemptId === firstAttempt.id,
-        );
-        const lastAttemptChats = chats.filter(
-          (chat) => chat.attemptId === lastAttempt.id,
-        );
-
-        const firstAttemptGrades = grades.filter((grade) =>
-          firstAttemptChats.some((chat) => chat.id === grade.simulationChatId),
-        );
-        const lastAttemptGrades = grades.filter((grade) =>
-          lastAttemptChats.some((chat) => chat.id === grade.simulationChatId),
-        );
-
-        if (firstAttemptGrades.length > 0 && lastAttemptGrades.length > 0) {
-          // Calculate average scores for first and last attempts
-          const firstAttemptScores = firstAttemptGrades.map((grade) => {
-            const chat = chats.find((c) => c.id === grade.simulationChatId);
-            const attempt = attempts.find((a) => a.id === chat?.attemptId);
-            const simulation = simulations.find(
-              (s) => s.id === attempt?.simulationId,
-            );
-            const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
-            const rubricTotalPoints = rubric?.points || 100;
-            return (grade.score / rubricTotalPoints) * 100;
-          });
-
-          const lastAttemptScores = lastAttemptGrades.map((grade) => {
-            const chat = chats.find((c) => c.id === grade.simulationChatId);
-            const attempt = attempts.find((a) => a.id === chat?.attemptId);
-            const simulation = simulations.find(
-              (s) => s.id === attempt?.simulationId,
-            );
-            const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
-            const rubricTotalPoints = rubric?.points || 100;
-            return (grade.score / rubricTotalPoints) * 100;
-          });
-
-          const firstAttemptAvg =
-            firstAttemptScores.reduce((sum, score) => sum + score, 0) /
-            firstAttemptScores.length;
-          const lastAttemptAvg =
-            lastAttemptScores.reduce((sum, score) => sum + score, 0) /
-            lastAttemptScores.length;
-
-          // Calculate improvement percentage
-          const improvement =
-            ((lastAttemptAvg - firstAttemptAvg) / firstAttemptAvg) * 100;
-
-          // Consider stagnant if improvement < 5%
-          if (improvement < 5) {
-            stagnantProfiles++;
-          }
-        }
-      }
-    });
-
-    if (totalProfilesWithMultipleAttempts === 0) return 0;
-
-    return Math.round(
-      (stagnantProfiles / totalProfilesWithMultipleAttempts) * 100,
+    return calculateStagnationRate(
+      attempts,
+      chats,
+      grades,
+      simulations,
+      rubrics,
+      dateStart,
+      dateEnd,
+      profileId,
+      cohorts,
+      cohortIds
     );
   }, [
     attempts,
@@ -298,112 +158,18 @@ export default function StagnationRate({
     grades,
     simulations,
     rubrics,
+    cohorts,
     dateStart,
     dateEnd,
     profileId,
     cohortIds,
-    cohorts,
   ]);
 
-  // Stagnation rate trend data for the specified date range
-  const stagnationTrend = useMemo(() => {
-    if (!attempts || !chats || !grades || !simulations || !rubrics || !cohorts)
-      return [];
-
-    // Get cohort filtering data
-    let cohortFiltering: {
-      allowedProfileIds: string[];
-      allowedSimulationIds: string[];
-    } | null = null;
-    if (cohortIds && cohortIds.length > 0) {
-      const matchingCohorts = cohorts.filter(
-        (cohort) => cohortIds.includes(cohort.id) && cohort.active,
-      );
-
-      if (matchingCohorts.length > 0) {
-        // Collect all profile IDs and simulation IDs from matching cohorts
-        const allowedProfileIds = new Set<string>();
-        const allowedSimulationIds = new Set<string>();
-
-        matchingCohorts.forEach((cohort) => {
-          cohort.profileIds.forEach((profileId: string) =>
-            allowedProfileIds.add(profileId),
-          );
-          cohort.simulationIds.forEach((simulationId: string) =>
-            allowedSimulationIds.add(simulationId),
-          );
-        });
-
-        cohortFiltering = {
-          allowedProfileIds: Array.from(allowedProfileIds),
-          allowedSimulationIds: Array.from(allowedSimulationIds),
-        };
-      }
-    }
-
-    // Get all days in the date range
-    const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
-
-    return days.map((date) => {
-      const dateStr = format(date, "yyyy-MM-dd");
-
-      // Filter attempts for this specific day and exclude practice simulations
-      const dayAttempts = attempts.filter((attempt) => {
-        const attemptDate = format(new Date(attempt.createdAt), "yyyy-MM-dd");
-        const simulation = simulations.find(
-          (s) => s.id === attempt.simulationId,
-        );
-        return attemptDate === dateStr && !simulation?.practiceSimulation;
-      });
-
-      // Apply cohort filtering if available
-      const cohortFilteredDayAttempts = cohortFiltering
-        ? dayAttempts.filter((attempt) => {
-            return (
-              attempt.profileId &&
-              cohortFiltering.allowedProfileIds.includes(attempt.profileId) &&
-              attempt.simulationId &&
-              cohortFiltering.allowedSimulationIds.includes(
-                attempt.simulationId,
-              )
-            );
-          })
-        : dayAttempts;
-
-      // Filter by profileId if provided
-      const profileFilteredDayAttempts = profileId
-        ? cohortFilteredDayAttempts.filter(
-            (attempt) => attempt.profileId === profileId,
-          )
-        : cohortFilteredDayAttempts;
-
-      // Calculate stagnation rate for the day (simplified - just count attempts)
-      const dayStagnationRate =
-        profileFilteredDayAttempts.length > 0
-          ? Math.min(
-              100,
-              Math.round((profileFilteredDayAttempts.length / 10) * 100),
-            )
-          : 0; // Heuristic
-
-      return {
-        date: format(date, "MM/dd"),
-        stagnationRate: dayStagnationRate,
-        attempts: profileFilteredDayAttempts.length,
-      };
-    });
-  }, [
-    attempts,
-    chats,
-    grades,
-    simulations,
-    rubrics,
-    dateStart,
-    dateEnd,
-    profileId,
-    cohortIds,
-    cohorts,
-  ]);
+  const {
+    currentValue: stagnationRate,
+    trendData: stagnationTrend,
+    hasData: hasDataAvailable,
+  } = stagnationRateResult;
 
   // Determine color based on stagnation rate and thresholds (lower is better)
   const getColorConfig = (stagnationRate: number) => {
@@ -418,9 +184,6 @@ export default function StagnationRate({
     setIsDialogOpen(true);
   };
 
-  // Check if we have data to display
-  const hasData = stagnationTrend.some((day) => day.attempts > 0);
-
   // Check if cohort filtering resulted in no data
   const hasNoCohortData =
     cohortIds &&
@@ -431,7 +194,7 @@ export default function StagnationRate({
 
   // Calculate actual trend from data
   const getTrendAnalysis = () => {
-    if (!hasData || stagnationTrend.length < 2) return null;
+    if (!hasDataAvailable || stagnationTrend.length < 2) return null;
 
     // Get recent data (last 3 days, 1 week, or 1 month depending on data availability)
     const recentData = stagnationTrend.slice(-3);
@@ -440,11 +203,9 @@ export default function StagnationRate({
     if (recentData.length === 0 || earlierData.length === 0) return null;
 
     const recentAvg =
-      recentData.reduce((sum, day) => sum + day.stagnationRate, 0) /
-      recentData.length;
+      recentData.reduce((sum, day) => sum + day.value, 0) / recentData.length;
     const earlierAvg =
-      earlierData.reduce((sum, day) => sum + day.stagnationRate, 0) /
-      earlierData.length;
+      earlierData.reduce((sum, day) => sum + day.value, 0) / earlierData.length;
     const change = recentAvg - earlierAvg;
     const changePercent =
       earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
@@ -478,7 +239,7 @@ export default function StagnationRate({
           <div className={`text-2xl font-bold ${colorConfig.text}`}>
             {hasNoCohortData
               ? "No cohort data"
-              : hasData
+              : hasDataAvailable
                 ? `${stagnationRate}%`
                 : "No data"}
           </div>
@@ -486,12 +247,17 @@ export default function StagnationRate({
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent
+          className="max-w-2xl"
+        >
           <DialogHeader>
             <DialogTitle>Stagnation Rate Trend</DialogTitle>
+            <DialogDescription hidden>
+              This chart shows the stagnation rate over time.
+            </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-            {hasData ? (
+            {hasDataAvailable ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={stagnationTrend}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -499,15 +265,13 @@ export default function StagnationRate({
                   <YAxis domain={[0, 100]} />
                   <Tooltip
                     formatter={(value: number, name: string) => [
-                      name === "stagnationRate" ? `${value}%` : value,
-                      name === "stagnationRate"
-                        ? "Stagnation Rate"
-                        : "Attempts",
+                      name === "value" ? `${value}%` : value,
+                      name === "value" ? "Stagnation Rate" : "Attempts",
                     ]}
                   />
                   <Line
                     type="monotone"
-                    dataKey="stagnationRate"
+                    dataKey="value"
                     stroke={colorConfig.primary}
                     strokeWidth={2}
                     dot={{ r: 4 }}

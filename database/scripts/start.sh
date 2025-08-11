@@ -251,19 +251,11 @@ generate_and_copy_files() {
     return 1
   fi
   
-  # Generate types and copy to client
-  if node scripts/generate-types.js; then
-    echo "✅ Types generated and copied"
+    # Generate queries and mutations
+  if node scripts/generate-test-harness.js; then
+    echo "✅ Test harness generated"
   else
-    echo "❌ Failed to generate types"
-    return 1
-  fi
-  
-  # Generate queries and mutations
-  if node scripts/generate-queries-mutations.js --with-mocks; then
-    echo "✅ Queries and mutations generated"
-  else
-    echo "❌ Failed to generate queries and mutations"
+    echo "❌ Failed to generate test harness"
     return 1
   fi
 }

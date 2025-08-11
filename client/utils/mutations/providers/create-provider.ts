@@ -3,8 +3,10 @@
 import { db } from "@/utils/drizzle/db";
 import { providers } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function createProvider(data: typeof providers.$inferInsert) {
+// Original logic is now a "private" function
+async function _createProvider(data: typeof providers.$inferInsert) {
   try {
     const result = await db.insert(providers).values(data).returning();
     return result[0];
@@ -13,3 +15,6 @@ export async function createProvider(data: typeof providers.$inferInsert) {
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const createProvider = createMockableAction('createProvider', _createProvider);

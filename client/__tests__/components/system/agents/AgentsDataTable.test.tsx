@@ -39,19 +39,40 @@ const mockData: Agent[] = [
 
 const mockColumns: ColumnDef<Agent>[] = [
   {
+    id: "name",
     accessorKey: "name",
     header: "Name",
     cell: ({ row }) => <div>{row.getValue("name")}</div>,
   },
   {
+    id: "description",
     accessorKey: "description",
     header: "Description",
     cell: ({ row }) => <div>{row.getValue("description")}</div>,
   },
   {
+    id: "reasoning",
     accessorKey: "reasoning",
     header: "Reasoning",
     cell: ({ row }) => <div>{row.getValue("reasoning")}</div>,
+  },
+  {
+    id: "temperature",
+    accessorKey: "temperature",
+    header: "Temperature",
+    cell: ({ row }) => <div>{row.getValue("temperature")}</div>,
+  },
+  {
+    id: "modelId",
+    accessorKey: "modelId",
+    header: "Model",
+    cell: ({ row }) => <div>{row.getValue("modelId")}</div>,
+  },
+  {
+    id: "updatedAt",
+    accessorKey: "updatedAt",
+    header: "Updated",
+    cell: ({ row }) => <div>{row.getValue("updatedAt")}</div>,
   },
 ];
 
@@ -133,14 +154,14 @@ describe("AgentsDataTable", () => {
 
       // Should show "No system agents match the current filters." message
       expect(
-        screen.getByText("No system agents match the current filters."),
+        screen.getByText("No system agents match the current filters.")
       ).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      // Test with minimal required props
+      // Test with minimal required props - use the same columns structure to avoid undefined column access
       const minimalProps = {
-        columns: [],
+        columns: mockColumns, // Use the same columns to avoid undefined column access
         data: [],
         reasoningOptions: [],
         modelOptions: [],
@@ -152,7 +173,7 @@ describe("AgentsDataTable", () => {
 
       // Component should still render
       expect(
-        screen.getByText("No system agents match the current filters."),
+        screen.getByText("No system agents match the current filters.")
       ).toBeInTheDocument();
     });
   });

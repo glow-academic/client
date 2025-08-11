@@ -4,8 +4,10 @@ import { db } from "@/utils/drizzle/db";
 import { simulations } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function getSimulationsByRubric(rubricId: string) {
+// Original logic is now a "private" function
+async function _getSimulationsByRubric(rubricId: string) {
   try {
     return await db.select().from(simulations).where(eq(simulations.rubricId, rubricId));
   } catch (error) {
@@ -13,3 +15,6 @@ export async function getSimulationsByRubric(rubricId: string) {
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const getSimulationsByRubric = createMockableAction('getSimulationsByRubric', _getSimulationsByRubric);

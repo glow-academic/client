@@ -4,8 +4,10 @@ import { db } from "@/utils/drizzle/db";
 import { simulationChatGrades } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function getSimulationChatGradesBySimulationChats(simulationChatIds: string[]) {
+// Original logic is now a "private" function
+async function _getSimulationChatGradesBySimulationChats(simulationChatIds: string[]) {
   try {
     return await db.select().from(simulationChatGrades).where(inArray(simulationChatGrades.simulationChatId, simulationChatIds));
   } catch (error) {
@@ -13,3 +15,6 @@ export async function getSimulationChatGradesBySimulationChats(simulationChatIds
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const getSimulationChatGradesBySimulationChats = createMockableAction('getSimulationChatGradesBySimulationChats', _getSimulationChatGradesBySimulationChats);

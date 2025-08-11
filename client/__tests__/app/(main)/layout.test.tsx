@@ -1,6 +1,6 @@
 import { useProfile } from "@/contexts/profile-context";
 import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
 import { usePathname } from "next/navigation";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -15,8 +15,53 @@ vi.mock("@/contexts/simulation-context", () => ({
     <div data-testid="simulation-provider">{children}</div>
   ),
   useSimulation: vi.fn(() => ({
+    // Attempt and simulation data
+    attemptId: "test-attempt-id",
+    attempt: null,
+    simulation: null,
+    scenario: null,
+    documents: [],
+    scenarioDocuments: [],
+
+    // Current chat management
+    currentChatIndex: 0,
+    setCurrentChatIndex: vi.fn(),
+    currentChat: null,
+    chats: [],
+    isLoadingChats: false,
+
+    // Results and grading
+    currentDynamicRubric: null,
+    allDynamicRubrics: [],
+    aggregatedResults: null,
+
+    // Timer state
+    timer: { elapsed: 0, remaining: null, expired: false },
+    isActive: false,
+
+    // UI state
+    showResults: false,
+    isSingleChatAttempt: false,
+    isLastAttempt: false,
+    expectedChatCount: 1,
+    freshlyCompletedChats: new Set(),
+    setFreshlyCompletedChats: vi.fn(),
+
+    // Connection state
     isConnected: false,
+
+    // WebSocket operations
     sendMessage: vi.fn(),
+    stopMessage: vi.fn(),
+    endChat: vi.fn(),
+
+    // Loading states
+    isSendingMessage: false,
+    isStoppingMessage: false,
+    endChatLoading: false,
+
+    // Event handlers
+    onSimulationFinished: undefined,
   })),
 }));
 
@@ -127,6 +172,18 @@ vi.mock("@tanstack/react-query", () => ({
   ),
 }));
 
+// Mock breadcrumb utilities to prevent async state updates
+vi.mock("@/utils/breadcrumb-utils", () => ({
+  generateEnhancedBreadcrumbs: vi.fn(() => []), // Make it synchronous
+  getActiveSectionFromPath: vi.fn(() => "home"),
+}));
+
+// Mock navigation utilities
+vi.mock("@/utils/navigation-utils", () => ({
+  createSectionChangeHandler: vi.fn(() => vi.fn()),
+  isMainScreen: vi.fn(() => true), // Default to true to show chat components
+}));
+
 // Mock components
 vi.mock("@/components/ui/sidebar", () => ({
   SidebarProvider: ({ children }: { children: React.ReactNode }) => (
@@ -181,22 +238,26 @@ describe("MainLayout", () => {
   });
 
   describe("basic render smoke-test", () => {
-    it("renders without crashing", () => {
-      renderWithMocks(
-        <MainLayout>
-          <div data-testid="test-content">Test Content</div>
-        </MainLayout>
-      );
+    it("renders without crashing", async () => {
+      await act(async () => {
+        renderWithMocks(
+          <MainLayout>
+            <div data-testid="test-content">Test Content</div>
+          </MainLayout>
+        );
+      });
 
       expect(screen.getByTestId("test-content")).toBeInTheDocument();
     });
 
-    it("should have correct layout structure", () => {
-      renderWithMocks(
-        <MainLayout>
-          <div data-testid="test-content">Test Content</div>
-        </MainLayout>
-      );
+    it("should have correct layout structure", async () => {
+      await act(async () => {
+        renderWithMocks(
+          <MainLayout>
+            <div data-testid="test-content">Test Content</div>
+          </MainLayout>
+        );
+      });
 
       expect(screen.getAllByTestId("sidebar-provider")).toHaveLength(2);
       expect(screen.getByTestId("sidebar-inset")).toBeInTheDocument();
@@ -205,40 +266,46 @@ describe("MainLayout", () => {
   });
 
   describe("Header Components", () => {
-    it("should render header with sidebar trigger and breadcrumbs", () => {
-      renderWithMocks(
-        <MainLayout>
-          <div data-testid="test-content">Test Content</div>
-        </MainLayout>
-      );
+    it("should render header with sidebar trigger and breadcrumbs", async () => {
+      await act(async () => {
+        renderWithMocks(
+          <MainLayout>
+            <div data-testid="test-content">Test Content</div>
+          </MainLayout>
+        );
+      });
 
       expect(screen.getByTestId("sidebar-trigger")).toBeInTheDocument();
       expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
     });
 
-    it("should show analytics filters for analytics pages with admin role", () => {
+    it("should show analytics filters for analytics pages with admin role", async () => {
       // Mock usePathname to return an analytics path
       vi.mocked(usePathname).mockReturnValue("/analytics/overview");
 
-      renderWithMocks(
-        <MainLayout>
-          <div data-testid="test-content">Test Content</div>
-        </MainLayout>
-      );
+      await act(async () => {
+        renderWithMocks(
+          <MainLayout>
+            <div data-testid="test-content">Test Content</div>
+          </MainLayout>
+        );
+      });
 
       // Analytics filters should be present for admin role on analytics pages
       expect(screen.getByTestId("analytics-filters")).toBeInTheDocument();
     });
 
-    it("should not show analytics filters for non-analytics pages", () => {
-      // Mock usePathname to return a non-analytics path
-      vi.mocked(usePathname).mockReturnValue("/home");
+    it("should not show analytics filters for non-analytics pages", async () => {
+      // Mock usePathname to return a non-analytics path that's also not home
+      vi.mocked(usePathname).mockReturnValue("/cohorts");
 
-      renderWithMocks(
-        <MainLayout>
-          <div data-testid="test-content">Test Content</div>
-        </MainLayout>
-      );
+      await act(async () => {
+        renderWithMocks(
+          <MainLayout>
+            <div data-testid="test-content">Test Content</div>
+          </MainLayout>
+        );
+      });
 
       // Analytics filters should not be present on non-analytics pages
       expect(screen.queryByTestId("analytics-filters")).not.toBeInTheDocument();
@@ -246,34 +313,21 @@ describe("MainLayout", () => {
   });
 
   describe("Chat Components", () => {
-    it("should show chat components for main screens with admin role", () => {
-      renderWithMocks(
-        <MainLayout>
-          <div data-testid="test-content">Test Content</div>
-        </MainLayout>
-      );
+    it("should show chat components for main screens with admin role", async () => {
+      await act(async () => {
+        renderWithMocks(
+          <MainLayout>
+            <div data-testid="test-content">Test Content</div>
+          </MainLayout>
+        );
+      });
 
       expect(screen.getByTestId("chat-dialog")).toBeInTheDocument();
       expect(screen.getByTestId("chat-widget")).toBeInTheDocument();
       expect(screen.getByTestId("chat-fab")).toBeInTheDocument();
     });
 
-    it("should not show chat components for ta role", () => {
-      renderWithMocks(
-        <MainLayout>
-          <div data-testid="test-content">Test Content</div>
-        </MainLayout>
-      );
-
-      // Chat components should still be present as they're always rendered
-      expect(screen.getByTestId("chat-dialog")).toBeInTheDocument();
-      expect(screen.getByTestId("chat-widget")).toBeInTheDocument();
-      expect(screen.getByTestId("chat-fab")).toBeInTheDocument();
-    });
-  });
-
-  describe("TA Tour", () => {
-    it("should show TA tour for ta role", () => {
+    it("should not show chat components for ta role", async () => {
       // Mock useProfile to return a TA profile
       vi.mocked(useProfile).mockReturnValue({
         activeProfile: {
@@ -317,16 +371,78 @@ describe("MainLayout", () => {
         isSectionAvailable: vi.fn(() => true),
       });
 
-      renderWithMocks(
-        <MainLayout>
-          <div data-testid="test-content">Test Content</div>
-        </MainLayout>
-      );
+      await act(async () => {
+        renderWithMocks(
+          <MainLayout>
+            <div data-testid="test-content">Test Content</div>
+          </MainLayout>
+        );
+      });
+
+      // Chat components should not be present for TA role
+      expect(screen.queryByTestId("chat-dialog")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("chat-widget")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("chat-fab")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("TA Tour", () => {
+    it("should show TA tour for ta role", async () => {
+      // Mock useProfile to return a TA profile
+      vi.mocked(useProfile).mockReturnValue({
+        activeProfile: {
+          id: "test-profile-id",
+          userId: 1,
+          firstName: "Test",
+          lastName: "User",
+          alias: "testuser",
+          role: "ta",
+          active: true,
+          viewedIntro: true,
+          viewedChat: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
+          lastActive: new Date().toISOString(),
+          defaultProfile: false,
+        },
+        simulatedProfile: null,
+        effectiveProfile: {
+          id: "test-profile-id",
+          userId: 1,
+          firstName: "Test",
+          lastName: "User",
+          alias: "testuser",
+          role: "ta",
+          active: true,
+          viewedIntro: true,
+          viewedChat: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
+          lastActive: new Date().toISOString(),
+          defaultProfile: false,
+        },
+        isSimulating: false,
+        isLoading: false,
+        setSimulatedProfile: vi.fn(),
+        clearSimulation: vi.fn(),
+        navigateToDefault: vi.fn(),
+        isSectionAvailable: vi.fn(() => true),
+      });
+
+      await act(async () => {
+        renderWithMocks(
+          <MainLayout>
+            <div data-testid="test-content">Test Content</div>
+          </MainLayout>
+        );
+      });
 
       expect(screen.getByTestId("ta-tour")).toBeInTheDocument();
     });
 
-    it("should not show TA tour for non-ta roles", () => {
+    it("should not show TA tour for non-ta roles", async () => {
       // Reset useProfile to return admin profile
       vi.mocked(useProfile).mockReturnValue({
         activeProfile: {
@@ -370,59 +486,69 @@ describe("MainLayout", () => {
         isSectionAvailable: vi.fn(() => true),
       });
 
-      renderWithMocks(
-        <MainLayout>
-          <div data-testid="test-content">Test Content</div>
-        </MainLayout>
-      );
+      await act(async () => {
+        renderWithMocks(
+          <MainLayout>
+            <div data-testid="test-content">Test Content</div>
+          </MainLayout>
+        );
+      });
 
       expect(screen.queryByTestId("ta-tour")).not.toBeInTheDocument();
     });
   });
 
   describe("Simulation Provider", () => {
-    it("should wrap content in SimulationProvider when attemptId is present", () => {
-      renderWithMocks(
-        <MainLayout>
-          <div data-testid="test-content">Test Content</div>
-        </MainLayout>
-      );
+    it("should wrap content in SimulationProvider when attemptId is present", async () => {
+      await act(async () => {
+        renderWithMocks(
+          <MainLayout>
+            <div data-testid="test-content">Test Content</div>
+          </MainLayout>
+        );
+      });
 
       expect(screen.getByTestId("test-content")).toBeInTheDocument();
     });
 
-    it("should not wrap content in SimulationProvider when no attemptId", () => {
-      renderWithMocks(
-        <MainLayout>
-          <div data-testid="test-content">Test Content</div>
-        </MainLayout>
-      );
+    it("should not wrap content in SimulationProvider when no attemptId", async () => {
+      await act(async () => {
+        renderWithMocks(
+          <MainLayout>
+            <div data-testid="test-content">Test Content</div>
+          </MainLayout>
+        );
+      });
 
       expect(screen.getByTestId("test-content")).toBeInTheDocument();
     });
   });
 
   describe("Children Rendering", () => {
-    it("should render children correctly", () => {
-      renderWithMocks(
-        <MainLayout>
-          <div data-testid="child-1">Child 1</div>
-          <div data-testid="child-2">Child 2</div>
-        </MainLayout>
-      );
+    it("should render children correctly", async () => {
+      await act(async () => {
+        renderWithMocks(
+          <MainLayout>
+            <div data-testid="child-1">Child 1</div>
+            <div data-testid="child-2">Child 2</div>
+          </MainLayout>
+        );
+      });
 
       expect(screen.getByTestId("child-1")).toBeInTheDocument();
       expect(screen.getByTestId("child-2")).toBeInTheDocument();
     });
 
-    it("should render multiple children", () => {
-      renderWithMocks(
-        <MainLayout>
-          <div data-testid="child-1">Child 1</div>
-          <div data-testid="child-2">Child 2</div>
-          <div data-testid="child-3">Child 3</div>
-        </MainLayout>
-      );
+    it("should render multiple children", async () => {
+      await act(async () => {
+        renderWithMocks(
+          <MainLayout>
+            <div data-testid="child-1">Child 1</div>
+            <div data-testid="child-2">Child 2</div>
+            <div data-testid="child-3">Child 3</div>
+          </MainLayout>
+        );
+      });
 
       expect(screen.getByTestId("child-1")).toBeInTheDocument();
       expect(screen.getByTestId("child-2")).toBeInTheDocument();
@@ -431,28 +557,34 @@ describe("MainLayout", () => {
   });
 
   describe("Edge Cases", () => {
-    it("should handle missing profile gracefully", () => {
-      renderWithMocks(
-        <MainLayout>
-          <div data-testid="test-content">Test Content</div>
-        </MainLayout>
-      );
+    it("should handle missing profile gracefully", async () => {
+      await act(async () => {
+        renderWithMocks(
+          <MainLayout>
+            <div data-testid="test-content">Test Content</div>
+          </MainLayout>
+        );
+      });
 
       expect(screen.getByTestId("test-content")).toBeInTheDocument();
     });
 
-    it("should handle loading profile gracefully", () => {
-      renderWithMocks(
-        <MainLayout>
-          <div data-testid="test-content">Test Content</div>
-        </MainLayout>
-      );
+    it("should handle loading profile gracefully", async () => {
+      await act(async () => {
+        renderWithMocks(
+          <MainLayout>
+            <div data-testid="test-content">Test Content</div>
+          </MainLayout>
+        );
+      });
 
       expect(screen.getByTestId("test-content")).toBeInTheDocument();
     });
 
-    it("should handle empty children gracefully", () => {
-      renderWithMocks(<MainLayout>{null}</MainLayout>);
+    it("should handle empty children gracefully", async () => {
+      await act(async () => {
+        renderWithMocks(<MainLayout>{null}</MainLayout>);
+      });
 
       expect(screen.getAllByTestId("sidebar-provider")).toHaveLength(2);
       expect(screen.getByTestId("sidebar-inset")).toBeInTheDocument();

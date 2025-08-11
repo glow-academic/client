@@ -3,8 +3,10 @@
 import { db } from "@/utils/drizzle/db";
 import { profiles } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function getAllProfiles() {
+// Original logic is now a "private" function
+async function _getAllProfiles() {
   try {
     return await db.select().from(profiles);
   } catch (error) {
@@ -12,3 +14,6 @@ export async function getAllProfiles() {
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const getAllProfiles = createMockableAction('getAllProfiles', _getAllProfiles);

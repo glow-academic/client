@@ -10,15 +10,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { calculateTotalAttempts } from "@/utils/analytics/header";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
-import { eachDayOfInterval, format } from "date-fns";
 import { Target } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -104,170 +105,36 @@ export default function TotalAttempts({
     queryFn: () => getAllCohorts(),
   });
 
-  // Calculate total attempts for the specified date range and profile
-  const totalAttempts = useMemo(() => {
-    if (!attempts || !simulations || !cohorts) return 0;
-
-    // Get cohort filtering data
-    let cohortFiltering: {
-      allowedProfileIds: string[];
-      allowedSimulationIds: string[];
-    } | null = null;
-    if (cohortIds && cohortIds.length > 0) {
-      const matchingCohorts = cohorts.filter(
-        (cohort) => cohortIds.includes(cohort.id) && cohort.active,
-      );
-
-      if (matchingCohorts.length > 0) {
-        // Collect all profile IDs and simulation IDs from matching cohorts
-        const allowedProfileIds = new Set<string>();
-        const allowedSimulationIds = new Set<string>();
-
-        matchingCohorts.forEach((cohort) => {
-          cohort.profileIds.forEach((profileId: string) =>
-            allowedProfileIds.add(profileId),
-          );
-          cohort.simulationIds.forEach((simulationId: string) =>
-            allowedSimulationIds.add(simulationId),
-          );
-        });
-
-        cohortFiltering = {
-          allowedProfileIds: Array.from(allowedProfileIds),
-          allowedSimulationIds: Array.from(allowedSimulationIds),
-        };
-      }
+  // Calculate total attempts using utility function
+  const totalAttemptsResult = useMemo(() => {
+    if (!attempts || !simulations || !cohorts) {
+      return { currentValue: 0, trendData: [], hasData: false };
     }
 
-    // Filter attempts by date range and exclude practice simulations
-    const filteredAttempts = attempts.filter((attempt) => {
-      const attemptDate = new Date(attempt.createdAt);
-      const simulation = simulations.find((s) => s.id === attempt.simulationId);
-      return (
-        attemptDate >= dateStart &&
-        attemptDate <= dateEnd &&
-        !simulation?.practiceSimulation
-      );
-    });
-
-    // Apply cohort filtering if available
-    const cohortFilteredAttempts = cohortFiltering
-      ? filteredAttempts.filter((attempt) => {
-          return (
-            attempt.profileId &&
-            cohortFiltering.allowedProfileIds.includes(attempt.profileId) &&
-            attempt.simulationId &&
-            cohortFiltering.allowedSimulationIds.includes(attempt.simulationId)
-          );
-        })
-      : filteredAttempts;
-
-    // Filter by profileId if provided (tighter restriction)
-    const profileFilteredAttempts = profileId
-      ? cohortFilteredAttempts.filter(
-          (attempt) => attempt.profileId === profileId,
-        )
-      : cohortFilteredAttempts;
-
-    // Count completed attempts only
-    return profileFilteredAttempts.length;
+    return calculateTotalAttempts(
+      attempts,
+      simulations,
+      dateStart,
+      dateEnd,
+      profileId,
+      cohorts,
+      cohortIds
+    );
   }, [
     attempts,
     simulations,
+    cohorts,
     dateStart,
     dateEnd,
     profileId,
     cohortIds,
-    cohorts,
   ]);
 
-  // Total attempts trend data for the specified date range
-  const attemptsTrend = useMemo(() => {
-    if (!attempts || !simulations || !cohorts) return [];
-
-    // Get cohort filtering data
-    let cohortFiltering: {
-      allowedProfileIds: string[];
-      allowedSimulationIds: string[];
-    } | null = null;
-    if (cohortIds && cohortIds.length > 0) {
-      const matchingCohorts = cohorts.filter(
-        (cohort) => cohortIds.includes(cohort.id) && cohort.active,
-      );
-
-      if (matchingCohorts.length > 0) {
-        // Collect all profile IDs and simulation IDs from matching cohorts
-        const allowedProfileIds = new Set<string>();
-        const allowedSimulationIds = new Set<string>();
-
-        matchingCohorts.forEach((cohort) => {
-          cohort.profileIds.forEach((profileId: string) =>
-            allowedProfileIds.add(profileId),
-          );
-          cohort.simulationIds.forEach((simulationId: string) =>
-            allowedSimulationIds.add(simulationId),
-          );
-        });
-
-        cohortFiltering = {
-          allowedProfileIds: Array.from(allowedProfileIds),
-          allowedSimulationIds: Array.from(allowedSimulationIds),
-        };
-      }
-    }
-
-    // Get all days in the date range
-    const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
-
-    return days.map((date) => {
-      const dateStr = format(date, "yyyy-MM-dd");
-
-      // Filter attempts for this specific day and exclude practice simulations
-      const dayAttempts = attempts.filter((attempt) => {
-        const attemptDate = format(new Date(attempt.createdAt), "yyyy-MM-dd");
-        const simulation = simulations.find(
-          (s) => s.id === attempt.simulationId,
-        );
-        return attemptDate === dateStr && !simulation?.practiceSimulation;
-      });
-
-      // Apply cohort filtering if available
-      const cohortFilteredDayAttempts = cohortFiltering
-        ? dayAttempts.filter((attempt) => {
-            return (
-              attempt.profileId &&
-              cohortFiltering.allowedProfileIds.includes(attempt.profileId) &&
-              attempt.simulationId &&
-              cohortFiltering.allowedSimulationIds.includes(
-                attempt.simulationId,
-              )
-            );
-          })
-        : dayAttempts;
-
-      // Filter by profileId if provided
-      const profileFilteredDayAttempts = profileId
-        ? cohortFilteredDayAttempts.filter(
-            (attempt) => attempt.profileId === profileId,
-          )
-        : cohortFilteredDayAttempts;
-
-      return {
-        date: format(date, "MM/dd"),
-        attempts: profileFilteredDayAttempts.length,
-        profiles: new Set(profileFilteredDayAttempts.map((a) => a.profileId))
-          .size,
-      };
-    });
-  }, [
-    attempts,
-    simulations,
-    dateStart,
-    dateEnd,
-    profileId,
-    cohortIds,
-    cohorts,
-  ]);
+  const {
+    currentValue: totalAttempts,
+    trendData: attemptsTrend,
+    hasData: hasDataAvailable,
+  } = totalAttemptsResult;
 
   // Determine color based on total attempts and thresholds (more attempts is better)
   const getColorConfig = (attempts: number) => {
@@ -282,20 +149,9 @@ export default function TotalAttempts({
     setIsDialogOpen(true);
   };
 
-  // Check if we have data to display
-  const hasData = attemptsTrend.some((day) => day.attempts > 0);
-
-  // Check if cohort filtering resulted in no data
-  const hasNoCohortData =
-    cohortIds &&
-    cohortIds.length > 0 &&
-    cohorts &&
-    cohorts.filter((cohort) => cohortIds.includes(cohort.id) && cohort.active)
-      .length === 0;
-
   // Calculate actual trend from data
   const getTrendAnalysis = () => {
-    if (!hasData || attemptsTrend.length < 2) return null;
+    if (!hasDataAvailable || attemptsTrend.length < 2) return null;
 
     // Get recent data (last 3 days, 1 week, or 1 month depending on data availability)
     const recentData = attemptsTrend.slice(-3);
@@ -304,11 +160,9 @@ export default function TotalAttempts({
     if (recentData.length === 0 || earlierData.length === 0) return null;
 
     const recentAvg =
-      recentData.reduce((sum, day) => sum + day.attempts, 0) /
-      recentData.length;
+      recentData.reduce((sum, day) => sum + day.value, 0) / recentData.length;
     const earlierAvg =
-      earlierData.reduce((sum, day) => sum + day.attempts, 0) /
-      earlierData.length;
+      earlierData.reduce((sum, day) => sum + day.value, 0) / earlierData.length;
     const change = recentAvg - earlierAvg;
     const changePercent =
       earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
@@ -328,6 +182,14 @@ export default function TotalAttempts({
 
   const trendAnalysis = getTrendAnalysis();
 
+  // Check if cohort filtering resulted in no data
+  const hasNoCohortData =
+    cohortIds &&
+    cohortIds.length > 0 &&
+    cohorts &&
+    cohorts.filter((cohort) => cohortIds.includes(cohort.id) && cohort.active)
+      .length === 0;
+
   return (
     <>
       <Card
@@ -342,7 +204,7 @@ export default function TotalAttempts({
           <div className={`text-2xl font-bold ${colorConfig.text}`}>
             {hasNoCohortData
               ? "No cohort data"
-              : hasData
+              : hasDataAvailable
                 ? totalAttempts
                 : "No data"}
           </div>
@@ -350,12 +212,17 @@ export default function TotalAttempts({
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent
+          className="max-w-2xl"
+        >
           <DialogHeader>
             <DialogTitle>Total Attempts Trend</DialogTitle>
+            <DialogDescription hidden>
+              This chart shows the total attempts over time.
+            </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-            {hasData ? (
+            {hasDataAvailable ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={attemptsTrend}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -364,13 +231,13 @@ export default function TotalAttempts({
                   <Tooltip
                     formatter={(value: number, name: string) => [
                       value,
-                      name === "attempts" ? "Attempts" : "Profiles",
+                      name === "value" ? "Attempts" : "Sessions",
                     ]}
                   />
                   <Bar
-                    dataKey="attempts"
+                    dataKey="value"
                     fill={colorConfig.primary}
-                    name="attempts"
+                    name="value"
                     radius={[4, 4, 0, 0]}
                   />
                 </BarChart>

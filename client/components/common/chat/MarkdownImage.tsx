@@ -24,7 +24,7 @@ export default function MarkdownImage({
       sizes="100vw"
       // 🔑 stretch to container width, keep aspect ratio, but never exceed 700 px tall
       style={{ width: "70%", height: "auto", objectFit: "contain" }}
-      unoptimized /* delete once remotePatterns list is complete */
+      unoptimized={true} /* delete once remotePatterns list is complete */
       {...rest}
     />
   );

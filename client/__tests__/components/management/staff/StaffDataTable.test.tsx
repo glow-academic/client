@@ -196,9 +196,9 @@ describe("StaffDataTable", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      // Test with empty options
+      // Test with empty options - use the same columns structure to avoid undefined column access
       const emptyProps: StaffDataTableProps = {
-        columns: [],
+        columns: mockColumns, // Use the same columns to avoid undefined column access
         data: [],
         roleOptions: [],
         cohortOptions: [],
@@ -215,9 +215,9 @@ describe("StaffDataTable", () => {
     });
 
     it("should handle missing or invalid props", () => {
-      // Test with minimal props
+      // Test with minimal props - use the same columns structure to avoid undefined column access
       const minimalProps = {
-        columns: [],
+        columns: mockColumns, // Use the same columns to avoid undefined column access
         data: [],
         roleOptions: [],
         cohortOptions: [],

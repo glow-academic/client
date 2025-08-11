@@ -14,38 +14,8 @@
 // ***********************************************************
 
 // Import commands.js using ES2015 syntax:
-import "@testing-library/cypress/add-commands"; // 👈 Add this line
+import "@testing-library/cypress/add-commands";
 import "./commands";
 
 // Alternatively you can use CommonJS syntax:
 // require('./commands')
-
-declare global {
-  namespace Cypress {
-    interface Chainable {
-      /**
-       * Custom command to login as a regular user
-       * @example cy.loginAsUser('testuser', 'password123')
-       */
-      loginAsUser(username: string, password: string): Chainable<void>;
-
-      /**
-       * Custom command to login as an admin
-       * @example cy.loginAsAdmin('admin', 'adminpass')
-       */
-      loginAsAdmin(username: string, password: string): Chainable<void>;
-
-      /**
-       * Custom command to access as guest
-       * @example cy.accessAsGuest()
-       */
-      accessAsGuest(): Chainable<void>;
-
-      /**
-       * Custom command to clear all storage
-       * @example cy.clearAllStorage()
-       */
-      clearAllStorage(): Chainable<void>;
-    }
-  }
-}

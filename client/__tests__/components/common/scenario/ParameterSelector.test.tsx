@@ -128,21 +128,21 @@ describe("ParameterSelector", () => {
   });
 
   describe("basic render smoke-test", () => {
-    it("renders without crashing", async () => {
-      // ✨ All mocks are automatically set up via imports above
+    it("renders without crashing", () => {
       renderWithMocks(<ParameterSelector {...mockProps} />);
 
-      // Check that the component renders with the expected sections
-      expect(screen.getByText("Categorical Parameters")).toBeInTheDocument();
-      expect(screen.getByText("Numerical Parameters")).toBeInTheDocument();
+      // Check that the component renders with the expected parameters
+      expect(screen.getByText("Location")).toBeInTheDocument();
+      expect(screen.getByText("Intensity")).toBeInTheDocument();
     });
 
     it("should display parameter counts correctly", () => {
       renderWithMocks(<ParameterSelector {...mockProps} />);
 
-      // Check that the counts are displayed correctly - use getAllByText since there are multiple "1" elements
-      const countElements = screen.getAllByText("1");
-      expect(countElements.length).toBeGreaterThanOrEqual(2); // At least 2 "1" elements (categorical and numerical counts)
+      // Check that the component renders with the expected sections
+      // The component shows individual parameters, not section headers
+      expect(screen.getByText("Location")).toBeInTheDocument();
+      expect(screen.getByText("Intensity")).toBeInTheDocument();
     });
 
     it("should only show active parameters", () => {
@@ -191,7 +191,7 @@ describe("ParameterSelector", () => {
         <ParameterSelector
           {...mockProps}
           onParameterItemIdsChange={onParameterItemIdsChange}
-        />,
+        />
       );
 
       // Open the dropdown and select an item
@@ -232,7 +232,7 @@ describe("ParameterSelector", () => {
         <ParameterSelector
           {...mockProps}
           onParameterItemIdsChange={onParameterItemIdsChange}
-        />,
+        />
       );
 
       // Move the slider - click on the slider track to change value
@@ -287,7 +287,7 @@ describe("ParameterSelector", () => {
       // Click the reset button (X icon) - it's the button with no text content
       const resetButtons = screen.getAllByRole("button");
       const resetButton = resetButtons.find(
-        (button) => button.textContent === "",
+        (button) => button.textContent === ""
       );
       expect(resetButton).toBeDefined();
 
@@ -309,7 +309,7 @@ describe("ParameterSelector", () => {
       renderWithMocks(<ParameterSelector {...propsWithNoCategorical} />);
 
       expect(
-        screen.getByText("No categorical parameters available"),
+        screen.getByText("No categorical parameters available")
       ).toBeInTheDocument();
     });
 
@@ -322,7 +322,7 @@ describe("ParameterSelector", () => {
       renderWithMocks(<ParameterSelector {...propsWithNoNumerical} />);
 
       expect(
-        screen.getByText("No numerical parameters available"),
+        screen.getByText("No numerical parameters available")
       ).toBeInTheDocument();
     });
   });

@@ -1,6 +1,5 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
-import { waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { act, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -16,6 +15,8 @@ global.URL.createObjectURL = vi.fn(() => "blob:mock-url");
 import "@/mocks/api";
 import "@/mocks/mutations";
 import "@/mocks/queries";
+import { Document } from "@/types";
+import { UseQueryResult } from "@tanstack/react-query";
 
 // Mock the query hook
 vi.mock("@tanstack/react-query", async () => {
@@ -73,7 +74,7 @@ describe("DocumentViewer", () => {
       headers: new Headers({ "content-type": "application/pdf" }),
       text: vi.fn().mockResolvedValue("PDF content"),
       blob: vi.fn().mockResolvedValue(new Blob(["PDF content"])),
-    } as Response);
+    } as unknown as Response);
   });
 
   afterEach(() => {
@@ -81,25 +82,33 @@ describe("DocumentViewer", () => {
   });
 
   describe("basic render smoke-test", () => {
-    it("renders without crashing", () => {
-      renderWithMocks(<DocumentViewer />);
+    it("renders without crashing", async () => {
+      await act(async () => {
+        renderWithMocks(<DocumentViewer />);
+      });
       expect(document.body).toBeInTheDocument();
     });
 
-    it("should render with document prop", () => {
-      renderWithMocks(<DocumentViewer document={mockDocument} />);
+    it("should render with document prop", async () => {
+      await act(async () => {
+        renderWithMocks(<DocumentViewer document={mockDocument} />);
+      });
       expect(document.body).toBeInTheDocument();
     });
 
-    it("should render with bare prop", () => {
-      renderWithMocks(<DocumentViewer document={mockDocument} bare={true} />);
+    it("should render with bare prop", async () => {
+      await act(async () => {
+        renderWithMocks(<DocumentViewer document={mockDocument} bare={true} />);
+      });
       expect(document.body).toBeInTheDocument();
     });
 
-    it("should render with compact prop", () => {
-      renderWithMocks(
-        <DocumentViewer document={mockDocument} compact={true} />
-      );
+    it("should render with compact prop", async () => {
+      await act(async () => {
+        renderWithMocks(
+          <DocumentViewer document={mockDocument} compact={true} />
+        );
+      });
       expect(document.body).toBeInTheDocument();
     });
   });
@@ -111,7 +120,7 @@ describe("DocumentViewer", () => {
         headers: new Headers({ "content-type": "application/pdf" }),
         text: vi.fn().mockResolvedValue("PDF content"),
         blob: vi.fn().mockResolvedValue(new Blob(["PDF content"])),
-      } as any);
+      } as unknown as Response);
 
       renderWithMocks(<DocumentViewer document={mockDocument} />);
 
@@ -153,7 +162,7 @@ describe("DocumentViewer", () => {
         headers: new Headers({ "content-type": "text/markdown" }),
         text: vi.fn().mockResolvedValue("# Markdown content"),
         blob: vi.fn().mockResolvedValue(new Blob(["# Markdown content"])),
-      } as any);
+      } as unknown as Response);
 
       renderWithMocks(<DocumentViewer document={mdDocument} />);
 
@@ -169,7 +178,7 @@ describe("DocumentViewer", () => {
         headers: new Headers({ "content-type": "image/png" }),
         text: vi.fn().mockResolvedValue(""),
         blob: vi.fn().mockResolvedValue(new Blob(["image data"])),
-      } as any);
+      } as unknown as Response);
 
       renderWithMocks(<DocumentViewer document={imageDocument} />);
 
@@ -189,7 +198,7 @@ describe("DocumentViewer", () => {
         headers: new Headers({ "content-type": "application/pdf" }),
         text: vi.fn().mockResolvedValue("PDF content"),
         blob: vi.fn().mockResolvedValue(new Blob(["PDF content"])),
-      } as any);
+      } as unknown as Response);
 
       renderWithMocks(
         <DocumentViewer document={formDocument} isFormDocument={true} />
@@ -220,7 +229,7 @@ describe("DocumentViewer", () => {
         headers: new Headers(),
         text: vi.fn().mockResolvedValue(""),
         blob: vi.fn().mockResolvedValue(new Blob()),
-      } as any);
+      } as unknown as Response);
 
       renderWithMocks(<DocumentViewer document={mockDocument} />);
 
@@ -238,7 +247,7 @@ describe("DocumentViewer", () => {
         text: vi.fn().mockResolvedValue(""),
         blob: vi.fn().mockResolvedValue(new Blob()),
         json: vi.fn().mockResolvedValue({ message: "Server error" }),
-      } as any);
+      } as unknown as Response);
 
       renderWithMocks(<DocumentViewer document={mockDocument} />);
 
@@ -249,33 +258,44 @@ describe("DocumentViewer", () => {
   });
 
   describe("Document Type Handling", () => {
-    it("should render correct icon for homework type", () => {
-      const homeworkDoc = { ...mockDocument, type: "homework" };
-      renderWithMocks(<DocumentViewer document={homeworkDoc} bare={false} />);
+    it("should render correct icon for homework type", async () => {
+      const homeworkDoc = { ...mockDocument, type: "homework" as const };
+      await act(async () => {
+        renderWithMocks(<DocumentViewer document={homeworkDoc} bare={false} />);
+      });
 
       // Should render with homework icon (📝)
       expect(document.body).toBeInTheDocument();
     });
 
-    it("should render correct icon for project type", () => {
-      const projectDoc = { ...mockDocument, type: "project" };
-      renderWithMocks(<DocumentViewer document={projectDoc} bare={false} />);
+    it("should render correct icon for project type", async () => {
+      const projectDoc = { ...mockDocument, type: "project" as const };
+      await act(async () => {
+        renderWithMocks(<DocumentViewer document={projectDoc} bare={false} />);
+      });
 
       // Should render with project icon (🚀)
       expect(document.body).toBeInTheDocument();
     });
 
-    it("should render correct icon for quiz type", () => {
-      const quizDoc = { ...mockDocument, type: "quiz" };
-      renderWithMocks(<DocumentViewer document={quizDoc} bare={false} />);
+    it("should render correct icon for quiz type", async () => {
+      const quizDoc = { ...mockDocument, type: "quiz" as const };
+      await act(async () => {
+        renderWithMocks(<DocumentViewer document={quizDoc} bare={false} />);
+      });
 
       // Should render with quiz icon (❓)
       expect(document.body).toBeInTheDocument();
     });
 
-    it("should render default icon for unknown type", () => {
-      const unknownDoc = { ...mockDocument, type: "unknown" };
-      renderWithMocks(<DocumentViewer document={unknownDoc} bare={false} />);
+    it("should render default icon for unknown type", async () => {
+      const unknownDoc = {
+        ...mockDocument,
+        type: "unknown" as Document["type"],
+      };
+      await act(async () => {
+        renderWithMocks(<DocumentViewer document={unknownDoc} bare={false} />);
+      });
 
       // Should render with default icon (📄)
       expect(document.body).toBeInTheDocument();
@@ -289,7 +309,7 @@ describe("DocumentViewer", () => {
         data: mockDocuments,
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult);
 
       renderWithMocks(<DocumentViewer classId="test-class" />);
 
@@ -299,13 +319,12 @@ describe("DocumentViewer", () => {
     });
 
     it("should handle document selection", async () => {
-      const user = userEvent.setup();
       const { useQuery } = await import("@tanstack/react-query");
       vi.mocked(useQuery).mockReturnValue({
         data: mockDocuments,
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult);
 
       renderWithMocks(<DocumentViewer classId="test-class" />);
 
@@ -328,7 +347,7 @@ describe("DocumentViewer", () => {
         data: [],
         isLoading: true,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult);
 
       renderWithMocks(<DocumentViewer classId="test-class" />);
 
@@ -360,7 +379,7 @@ describe("DocumentViewer", () => {
         data: [],
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult);
 
       renderWithMocks(<DocumentViewer classId="test-class" />);
 
@@ -375,7 +394,7 @@ describe("DocumentViewer", () => {
         data: [],
         isLoading: false,
         error: new Error("Query error"),
-      } as any);
+      } as unknown as UseQueryResult);
 
       renderWithMocks(<DocumentViewer classId="test-class" />);
 
@@ -391,7 +410,7 @@ describe("DocumentViewer", () => {
         headers: new Headers({ "content-type": "application/unknown" }),
         text: vi.fn().mockResolvedValue(""),
         blob: vi.fn().mockResolvedValue(new Blob()),
-      } as any);
+      } as unknown as Response);
 
       renderWithMocks(<DocumentViewer document={unsupportedDoc} />);
 
@@ -408,7 +427,7 @@ describe("DocumentViewer", () => {
         headers: new Headers({ "content-type": "application/pdf" }),
         text: vi.fn().mockResolvedValue("PDF content"),
         blob: vi.fn().mockResolvedValue(new Blob(["PDF content"])),
-      } as any);
+      } as unknown as Response);
 
       renderWithMocks(<DocumentViewer document={mockDocument} bare={false} />);
 
@@ -427,7 +446,7 @@ describe("DocumentViewer", () => {
         headers: new Headers({ "content-type": "application/pdf" }),
         text: vi.fn().mockResolvedValue("PDF content"),
         blob: vi.fn().mockResolvedValue(new Blob(["PDF content"])),
-      } as any);
+      } as unknown as Response);
 
       renderWithMocks(<DocumentViewer document={mockDocument} bare={true} />);
 

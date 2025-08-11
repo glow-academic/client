@@ -554,9 +554,7 @@ function generateMutations(tables) {
     // 2. Create multiple
     const createMultipleMutation = generateCreateMultipleMutation(
       exportName,
-      tableName,
-      singularName,
-      fields
+      tableName
     );
     const createMultipleResult = writeMutationFile(
       tableName,
@@ -658,13 +656,18 @@ function generateMutations(tables) {
  * Generate get all query
  */
 function generateGetAllQuery(exportName, tableName) {
+  // Define the function name for reusability
+  const functionName = `getAll${capitalize(exportName)}`;
+
   return `// utils/queries/${tableName}/get-all-${toKebabCase(tableName)}.ts
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function getAll${capitalize(exportName)}() {
+// Original logic is now a "private" function
+async function _${functionName}() {
   try {
     return await db.select().from(${exportName});
   } catch (error) {
@@ -672,6 +675,9 @@ export async function getAll${capitalize(exportName)}() {
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const ${functionName} = createMockableAction('${functionName}', _${functionName});
 `;
 }
 
@@ -685,16 +691,19 @@ function generateGetByIdQuery(
   primaryKey,
   primaryKeyType
 ) {
+  // Define the function name for reusability
+  const functionName = `get${capitalize(singularName)}`;
+
   return `// utils/queries/${tableName}/get-${toKebabCase(singularName)}.ts
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function get${capitalize(
-    singularName
-  )}(${primaryKey}: ${primaryKeyType}) {
+// Original logic is now a "private" function
+async function _${functionName}(${primaryKey}: ${primaryKeyType}) {
   try {
     const result = await db.select().from(${exportName}).where(eq(${exportName}.${primaryKey}, ${primaryKey}));
     return result[0] || null;
@@ -703,6 +712,9 @@ export async function get${capitalize(
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const ${functionName} = createMockableAction('${functionName}', _${functionName});
 `;
 }
 
@@ -726,6 +738,9 @@ function generateGetByForeignKeyQuery(
   );
   const paramType = foreignTable ? foreignTable.primaryKeyType : "string";
 
+  // Define the function name for reusability
+  const functionName = `get${capitalize(exportName)}By${capitalize(paramName)}`;
+
   return `// utils/queries/${tableName}/get-${toKebabCase(
     tableName
   )}-by-${cleanParamName}.ts
@@ -734,10 +749,10 @@ import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function get${capitalize(exportName)}By${capitalize(
-    paramName
-  )}(${paramName}Id: ${paramType}) {
+// Original logic is now a "private" function
+async function _${functionName}(${paramName}Id: ${paramType}) {
   try {
     return await db.select().from(${exportName}).where(eq(${exportName}.${tsPropertyName}, ${paramName}Id));
   } catch (error) {
@@ -745,6 +760,9 @@ export async function get${capitalize(exportName)}By${capitalize(
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const ${functionName} = createMockableAction('${functionName}', _${functionName});
 `;
 }
 
@@ -769,6 +787,11 @@ function generateGetByForeignKeyPluralQuery(
   );
   const paramType = foreignTable ? foreignTable.primaryKeyType : "string";
 
+  // Define the function name for reusability
+  const functionName = `get${capitalize(exportName)}By${capitalize(
+    pluralParamName
+  )}`;
+
   return `// utils/queries/${tableName}/get-${toKebabCase(
     tableName
   )}-by-${cleanPluralParamName}.ts
@@ -777,10 +800,10 @@ import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function get${capitalize(exportName)}By${capitalize(
-    pluralParamName
-  )}(${paramName}Ids: ${paramType}[]) {
+// Original logic is now a "private" function
+async function _${functionName}(${paramName}Ids: ${paramType}[]) {
   try {
     return await db.select().from(${exportName}).where(inArray(${exportName}.${tsPropertyName}, ${paramName}Ids));
   } catch (error) {
@@ -788,6 +811,9 @@ export async function get${capitalize(exportName)}By${capitalize(
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const ${functionName} = createMockableAction('${functionName}', _${functionName});
 `;
 }
 
@@ -795,15 +821,18 @@ export async function get${capitalize(exportName)}By${capitalize(
  * Generate create mutation
  */
 function generateCreateMutation(exportName, tableName, singularName) {
+  // Define the function name for reusability
+  const functionName = `create${capitalize(singularName)}`;
+
   return `// utils/mutations/${tableName}/create-${toKebabCase(singularName)}.ts
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function create${capitalize(
-    singularName
-  )}(data: typeof ${exportName}.$inferInsert) {
+// Original logic is now a "private" function
+async function _${functionName}(data: typeof ${exportName}.$inferInsert) {
   try {
     const result = await db.insert(${exportName}).values(data).returning();
     return result[0];
@@ -812,6 +841,9 @@ export async function create${capitalize(
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const ${functionName} = createMockableAction('${functionName}', _${functionName});
 `;
 }
 
@@ -819,15 +851,18 @@ export async function create${capitalize(
  * Generate create multiple mutation
  */
 function generateCreateMultipleMutation(exportName, tableName) {
+  // Define the function name for reusability
+  const functionName = `create${capitalize(exportName)}`;
+
   return `// utils/mutations/${tableName}/create-${toKebabCase(tableName)}.ts
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function create${capitalize(
-    exportName
-  )}(data: (typeof ${exportName}.$inferInsert)[]) {
+// Original logic is now a "private" function
+async function _${functionName}(data: (typeof ${exportName}.$inferInsert)[]) {
   try {
     return await db.insert(${exportName}).values(data).returning();
   } catch (error) {
@@ -835,6 +870,9 @@ export async function create${capitalize(
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const ${functionName} = createMockableAction('${functionName}', _${functionName});
 `;
 }
 
@@ -849,16 +887,19 @@ function generateUpdateMutation(
   primaryKey,
   primaryKeyType
 ) {
+  // Define the function name for reusability
+  const functionName = `update${capitalize(singularName)}`;
+
   return `// utils/mutations/${tableName}/update-${toKebabCase(singularName)}.ts
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function update${capitalize(
-    singularName
-  )}(${primaryKey}: ${primaryKeyType}, data: Partial<typeof ${exportName}.$inferInsert>) {
+// Original logic is now a "private" function
+async function _${functionName}(${primaryKey}: ${primaryKeyType}, data: Partial<typeof ${exportName}.$inferInsert>) {
   try {
     const result = await db.update(${exportName}).set(data).where(eq(${exportName}.${primaryKey}, ${primaryKey})).returning();
     return result[0];
@@ -867,6 +908,9 @@ export async function update${capitalize(
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const ${functionName} = createMockableAction('${functionName}', _${functionName});
 `;
 }
 
@@ -881,16 +925,19 @@ function generateUpdateMultipleMutation(
   primaryKey,
   primaryKeyType
 ) {
+  // Define the function name for reusability
+  const functionName = `update${capitalize(exportName)}`;
+
   return `// utils/mutations/${tableName}/update-${toKebabCase(tableName)}.ts
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function update${capitalize(
-    exportName
-  )}(${primaryKey}s: ${primaryKeyType}[], data: Partial<typeof ${exportName}.$inferInsert>) {
+// Original logic is now a "private" function
+async function _${functionName}(${primaryKey}s: ${primaryKeyType}[], data: Partial<typeof ${exportName}.$inferInsert>) {
   try {
     return await db.update(${exportName}).set(data).where(inArray(${exportName}.${primaryKey}, ${primaryKey}s)).returning();
   } catch (error) {
@@ -898,6 +945,9 @@ export async function update${capitalize(
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const ${functionName} = createMockableAction('${functionName}', _${functionName});
 `;
 }
 
@@ -911,16 +961,19 @@ function generateDeleteMutation(
   primaryKey,
   primaryKeyType
 ) {
+  // Define the function name for reusability
+  const functionName = `delete${capitalize(singularName)}`;
+
   return `// utils/mutations/${tableName}/delete-${toKebabCase(singularName)}.ts
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function delete${capitalize(
-    singularName
-  )}(${primaryKey}: ${primaryKeyType}) {
+// Original logic is now a "private" function
+async function _${functionName}(${primaryKey}: ${primaryKeyType}) {
   try {
     const result = await db.delete(${exportName}).where(eq(${exportName}.${primaryKey}, ${primaryKey})).returning();
     return result[0];
@@ -929,6 +982,9 @@ export async function delete${capitalize(
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const ${functionName} = createMockableAction('${functionName}', _${functionName});
 `;
 }
 
@@ -942,16 +998,19 @@ function generateDeleteMultipleMutation(
   primaryKey,
   primaryKeyType
 ) {
+  // Define the function name for reusability
+  const functionName = `delete${capitalize(exportName)}`;
+
   return `// utils/mutations/${tableName}/delete-${toKebabCase(tableName)}.ts
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function delete${capitalize(
-    exportName
-  )}(${primaryKey}s: ${primaryKeyType}[]) {
+// Original logic is now a "private" function
+async function _${functionName}(${primaryKey}s: ${primaryKeyType}[]) {
   try {
     return await db.delete(${exportName}).where(inArray(${exportName}.${primaryKey}, ${primaryKey}s)).returning();
   } catch (error) {
@@ -959,6 +1018,9 @@ export async function delete${capitalize(
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const ${functionName} = createMockableAction('${functionName}', _${functionName});
 `;
 }
 

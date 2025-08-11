@@ -1,100 +1,46 @@
-import { describe, it, vi } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
-import type {  } from '@tanstack/react-table';
+import { screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-// ——————————————————————————————————————————
-import { UseLogColumnsProps } from '@/hooks/use-log-columns';
+// Import the hook to test
+import { useLogColumns } from "@/hooks/use-log-columns";
 
+// Import mocks to ensure all API calls are stubbed
+import "@/mocks/api";
+import "@/mocks/mutations";
+import "@/mocks/queries";
 
+// Import the test helper
+import { renderWithMocks } from "@/test/renderWithMocks";
 
-// ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
-const mockProps: UseLogColumnsProps = {
-  onViewLog: vi.fn(),
-};
-// ------------------------------------------------------------------
-describe('use-log-columns', () => {
-  
+// Test component that uses the hook
+function TestComponent() {
+  const result = useLogColumns({ onViewLog: vi.fn() });
+  return (
+    <div data-testid="hook-result">
+      <div data-testid="columns-length">{result.columns.length}</div>
+      <div data-testid="has-level-options">
+        {result.levelOptions ? "true" : "false"}
+      </div>
+    </div>
+  );
+}
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<use-log-columns {...mockProps} />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-    });
-
-    it.skip('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: UseLogColumnsProps
-      
-      // TODO add props assertions
-    });
-
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
-    });
+describe("useLogColumns", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
-  
+  it("can be called and returns columns", () => {
+    renderWithMocks(<TestComponent />);
 
-  
+    // Check that the component rendered successfully
+    expect(screen.getByTestId("hook-result")).toBeInTheDocument();
 
-  
+    // Check that columns were returned
+    const columnsLength = screen.getByTestId("columns-length");
+    expect(parseInt(columnsLength.textContent || "0")).toBeGreaterThan(0);
 
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
-    });
-
-    it.skip('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // TODO: invalid props assertions
-    });
+    // Check that all expected properties are present
+    expect(screen.getByTestId("has-level-options")).toHaveTextContent("true");
   });
 });
-
-/*
- * Component Analysis for use-log-columns:
- * Path: use-log-columns.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: useLogColumns, AppLog, UseLogColumnsProps
- * - Has props: true
- * - Props interface: UseLogColumnsProps
- * - Client component: true
- * - Uses hooks: useLogColumns
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<use-log-columns {...mockProps} />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<use-log-columns {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

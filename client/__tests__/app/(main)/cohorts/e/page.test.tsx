@@ -1,52 +1,53 @@
-import { describe, it } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
+// Import centralized mocks
+import "@/mocks/navigation";
+import CohortEditPage from "@/app/(main)/cohorts/e/page";
 
-describe('page', () => {
-  
+describe("CohortEditPage", () => {
+  // ✨ Reset mocks after each test
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<page  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      // This component redirects, so we test that it calls redirect
+      renderWithMocks(<CohortEditPage />);
+
+      // The component should have called redirect
+      const { redirect } = await import("next/navigation");
+      expect(redirect).toHaveBeenCalledWith("/cohorts");
     });
 
-    
+    it("should redirect to cohorts page", async () => {
+      // Test that the component redirects to the correct path
+      renderWithMocks(<CohortEditPage />);
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      // The component should have called redirect with the correct path
+      const { redirect } = await import("next/navigation");
+      expect(redirect).toHaveBeenCalledWith("/cohorts");
     });
   });
 
-  
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", async () => {
+      // Test that the component always redirects regardless of context
+      renderWithMocks(<CohortEditPage />);
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      // The component should have called redirect
+      const { redirect } = await import("next/navigation");
+      expect(redirect).toHaveBeenCalledWith("/cohorts");
     });
-
-    
   });
 });
 
 /*
  * Component Analysis for page:
  * Path: (main)/cohorts/e/page.tsx
- * 
+ *
  * Features detected:
  * - Default export: true
  * - Named exports: metadata
@@ -60,20 +61,20 @@ describe('page', () => {
  * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
- * 
+ *
  * TODO: Implement the failing tests above with actual test logic
- * 
+ *
  * Example implementations:
- * 
+ *
  * Basic rendering:
  * render(<page />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
+ *
  * Props testing:
  * const props = { ... };
  * render(<page {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
+ *
  * User interaction:
  * const button = screen.getByRole('button');
  * await user.click(button);

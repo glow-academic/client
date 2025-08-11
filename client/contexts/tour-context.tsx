@@ -22,7 +22,7 @@ import { TourStep } from "@/utils/tour-steps";
 import { useRouter } from "next/navigation";
 
 // Tour state interface
-interface TourContextState {
+export interface TourContextState {
   isOpen: boolean;
   currentStep: number;
   steps: TourStep[];

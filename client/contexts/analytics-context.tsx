@@ -15,9 +15,7 @@ import { subDays } from "date-fns";
 import React, { createContext, useContext, useMemo, useState } from "react";
 import { useProfile } from "./profile-context";
 
-type ProfileRole = (typeof profileRole.enumValues)[number];
-
-interface AnalyticsContextType {
+export interface AnalyticsContextType {
   // Date range state
   startDate: Date;
   endDate: Date;

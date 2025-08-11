@@ -1,52 +1,51 @@
-import { describe, it } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
+import ProviderEditPage from "@/app/(main)/management/providers/p/[providerId]/m/page";
 
-describe('page', () => {
-  
+// Import centralized mocks
+import "@/mocks/navigation";
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<page  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+describe("ProviderEditPage", () => {
+  // ✨ Reset mocks after each test
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      renderWithMocks(<ProviderEditPage />);
+
+      // Should redirect to /management/providers
+      const { redirect } = await import("next/navigation");
+      expect(redirect).toHaveBeenCalledWith("/management/providers");
     });
 
-    
+    it("should have correct accessibility attributes", async () => {
+      renderWithMocks(<ProviderEditPage />);
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      // Should redirect to /management/providers
+      const { redirect } = await import("next/navigation");
+      expect(redirect).toHaveBeenCalledWith("/management/providers");
     });
   });
 
-  
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", async () => {
+      renderWithMocks(<ProviderEditPage />);
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      // Should redirect to /management/providers
+      const { redirect } = await import("next/navigation");
+      expect(redirect).toHaveBeenCalledWith("/management/providers");
     });
-
-    
   });
 });
 
 /*
  * Component Analysis for page:
  * Path: (main)/management/providers/p/[providerId]/m/page.tsx
- * 
+ *
  * Features detected:
  * - Default export: true
  * - Named exports: metadata
@@ -60,20 +59,20 @@ describe('page', () => {
  * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
- * 
+ *
  * TODO: Implement the failing tests above with actual test logic
- * 
+ *
  * Example implementations:
- * 
+ *
  * Basic rendering:
  * render(<page />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
+ *
  * Props testing:
  * const props = { ... };
  * render(<page {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
+ *
  * User interaction:
  * const button = screen.getByRole('button');
  * await user.click(button);

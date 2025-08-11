@@ -7,7 +7,7 @@
 
 import { renderWithMocks } from "@/test/renderWithMocks";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
 // Import centralized mocks
 import "@/mocks/auth";
@@ -64,7 +64,7 @@ describe("Health", () => {
     vi.clearAllMocks();
 
     // Default successful fetch responses
-    (global.fetch as any).mockResolvedValue({
+    (global.fetch as unknown as Mock).mockResolvedValue({
       ok: true,
       status: 200,
       json: () => Promise.resolve({ status: "ok" }),
@@ -76,9 +76,13 @@ describe("Health", () => {
   });
 
   describe("basic render smoke-test", () => {
-    it("renders without crashing", () => {
+    it("renders without crashing", async () => {
       renderWithMocks(<Health />);
-      expect(screen.getByText(/System Health Monitor/i)).toBeInTheDocument();
+
+      // Wait for initial health checks to complete to avoid act() warnings
+      await waitFor(() => {
+        expect(screen.getByText(/System Health Monitor/i)).toBeInTheDocument();
+      });
     });
 
     it("should display all health check cards", async () => {
@@ -164,7 +168,7 @@ describe("Health", () => {
     });
 
     it("should handle API error responses", async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as unknown as Mock).mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: "Internal Server Error",
@@ -178,7 +182,7 @@ describe("Health", () => {
     });
 
     it("should handle network errors", async () => {
-      (global.fetch as any).mockRejectedValueOnce(new Error("Network error"));
+      (global.fetch as unknown as Mock).mockRejectedValueOnce(new Error("Network error"));
 
       renderWithMocks(<Health />);
 
@@ -208,7 +212,7 @@ describe("Health", () => {
     });
 
     it("should display unhealthy status correctly", async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as Mock).mockResolvedValue({
         ok: false,
         status: 500,
       });
@@ -306,7 +310,7 @@ describe("Health", () => {
     });
 
     it("should show error toast when health checks fail", async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as Mock).mockResolvedValue({
         ok: false,
         status: 500,
       });

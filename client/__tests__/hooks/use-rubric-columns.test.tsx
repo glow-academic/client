@@ -1,82 +1,60 @@
-import { describe, it } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
-import type {  } from '@tanstack/react-table';
+import { screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-// ——————————————————————————————————————————
+// Import the hook to test
+import { useRubricColumns } from "@/hooks/use-rubric-columns";
 
-describe('use-rubric-columns', () => {
-  
+// Import mocks to ensure all API calls are stubbed
+import "@/mocks/api";
+import "@/mocks/mutations";
+import "@/mocks/queries";
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      renderWithMocks(<use-rubric-columns  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-    });
+// Import the test helper
+import { renderWithMocks } from "@/test/renderWithMocks";
 
-    
+// Test component that uses the hook
+function TestComponent() {
+  const result = useRubricColumns();
+  return (
+    <div data-testid="hook-result">
+      <div data-testid="columns-length">{result.columns.length}</div>
+      <div data-testid="has-pass-points-options">
+        {result.passPointsOptions ? "true" : "false"}
+      </div>
+      <div data-testid="has-total-points-options">
+        {result.totalPointsOptions ? "true" : "false"}
+      </div>
+      <div data-testid="has-pass-percentage-options">
+        {result.passPercentageOptions ? "true" : "false"}
+      </div>
+    </div>
+  );
+}
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
-    });
+describe("useRubricColumns", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
-  
+  it("can be called and returns columns", () => {
+    renderWithMocks(<TestComponent />);
 
-  
+    // Check that the component rendered successfully
+    expect(screen.getByTestId("hook-result")).toBeInTheDocument();
 
-  
+    // Check that columns were returned
+    const columnsLength = screen.getByTestId("columns-length");
+    expect(parseInt(columnsLength.textContent || "0")).toBeGreaterThan(0);
 
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
-    });
-
-    
+    // Check that all expected properties are present
+    expect(screen.getByTestId("has-pass-points-options")).toHaveTextContent(
+      "true"
+    );
+    expect(screen.getByTestId("has-total-points-options")).toHaveTextContent(
+      "true"
+    );
+    expect(screen.getByTestId("has-pass-percentage-options")).toHaveTextContent(
+      "true"
+    );
   });
 });
-
-/*
- * Component Analysis for use-rubric-columns:
- * Path: use-rubric-columns.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: useRubricColumns
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: useRubricColumns
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<use-rubric-columns />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<use-rubric-columns {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

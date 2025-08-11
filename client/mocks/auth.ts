@@ -1,87 +1,137 @@
-// Centralized mock module for next-auth and authentication
-// This file is imported once in test setup and contains all vi.mock() calls for auth
+// client/mocks/auth.ts
 
 import { vi } from "vitest";
 
-// Create shared mock functions to avoid duplication
-const useSession = vi.fn(() => ({
+// --- Core Session Data ---
+export const mockSessionData = {
+  data: {
+    user: {
+      id: "test-user-id-123",
+      name: "Test User",
+      email: "test@example.com",
+    },
+    expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+  },
+  status: "authenticated" as const,
+};
+
+export const mockUnauthenticatedSession = {
   data: null,
-  status: "loading",
-  update: vi.fn(),
-}));
-const signIn = vi.fn();
-const signOut = vi.fn();
-const getSession = vi.fn();
-const getCsrfToken = vi.fn();
-const getProviders = vi.fn();
+  status: "unauthenticated" as const,
+};
 
-// Mock next-auth/react
+// --- Profile Context Mocks ---
+export const mockProfile = {
+  id: "test-profile-id-abc",
+  userId: 1,
+  firstName: "Test",
+  lastName: "User",
+  alias: "testuser",
+  role: "admin" as const,
+  active: true,
+  viewedIntro: true,
+  viewedChat: true,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  lastLogin: new Date().toISOString(),
+  lastActive: new Date().toISOString(),
+  defaultProfile: false,
+};
+
+// --- NextAuth Mocks ---
 vi.mock("next-auth/react", () => ({
-  useSession,
-  signIn,
-  signOut,
-  getSession,
-  getCsrfToken,
-  getProviders,
-}));
-
-// Mock next-auth to prevent module resolution issues
-vi.mock("next-auth", () => ({
-  default: vi.fn(() => ({
-    handlers: vi.fn(),
-    auth: vi.fn(),
-    signIn: vi.fn(),
-    signOut: vi.fn(),
-  })),
-  getServerSession: vi.fn(),
-  getToken: vi.fn(),
+  useSession: vi.fn().mockReturnValue(mockSessionData),
   signIn: vi.fn(),
   signOut: vi.fn(),
+  getSession: vi.fn().mockResolvedValue(mockSessionData),
+  getProviders: vi.fn().mockResolvedValue({}),
 }));
 
-// Mock auth helpers
+// --- Profile Context Mocks ---
+vi.mock("@/contexts/profile-context", () => ({
+  useProfile: vi.fn(() => ({
+    activeProfile: mockProfile,
+    profiles: [mockProfile],
+    isLoading: false,
+    error: null,
+    switchProfile: vi.fn(),
+    updateProfile: vi.fn(),
+    createProfile: vi.fn(),
+    deleteProfile: vi.fn(),
+  })),
+  ProfileProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+// --- Authentication Utility Mocks ---
 vi.mock("@/utils/auth/get-profile-by-alias", () => ({
-  getProfileByAlias: vi.fn(),
+  getProfileByAlias: vi.fn().mockResolvedValue(mockProfile),
 }));
 
-// Mock WebSocket context
-vi.mock("@/contexts/websocket-context", () => ({
-  useWebSocket: vi.fn(() => ({
-    isConnected: false,
-    sendMessage: vi.fn(),
-    subscribe: vi.fn(),
-    unsubscribe: vi.fn(),
-  })),
-  WebSocketProvider: ({ children }: { children: React.ReactNode }) => children,
+vi.mock("@/utils/auth/get-simulatable-profiles", () => ({
+  getSimulatableProfiles: vi.fn().mockResolvedValue([mockProfile]),
 }));
 
-// Mock role context
-vi.mock("@/contexts/role-context", () => ({
-  useRole: vi.fn(() => ({
-    effectiveRole: "admin",
-    userRole: "admin",
-    isAdmin: true,
-    isInstructional: false,
-    isInstructor: false,
-    isTA: false,
-    isGuest: false,
-    canAccessAnalytics: true,
-    canAccessManagement: true,
-    canAccessSimulations: true,
-    canAccessScenarios: true,
-    canAccessClasses: true,
-    canAccessCohorts: true,
-  })),
-  RoleProvider: ({ children }: { children: React.ReactNode }) => children,
-}));
-
-// Export auth mocks for direct access in tests
+// --- Test Utilities ---
+// Note: These mocks are set up above with vi.mock(), so we can access them directly
 export const authMocks = {
-  useSession,
-  signIn,
-  signOut,
-  getSession,
-  getCsrfToken,
-  getProviders,
-  getProfileByAlias: vi.fn(),
+  useSession: vi.fn().mockReturnValue(mockSessionData),
+  signIn: vi.fn(),
+  signOut: vi.fn(),
+  useProfile: vi.fn(() => ({
+    activeProfile: mockProfile,
+    profiles: [mockProfile],
+    isLoading: false,
+    error: null,
+    switchProfile: vi.fn(),
+    updateProfile: vi.fn(),
+    createProfile: vi.fn(),
+    deleteProfile: vi.fn(),
+  })),
+};
+
+/** Reset all auth mocks to their default state */
+export const resetAuthMocks = () => {
+  authMocks.useSession.mockReturnValue(mockSessionData);
+  authMocks.signIn.mockResolvedValue(undefined);
+  authMocks.signOut.mockResolvedValue(undefined);
+  authMocks.useProfile.mockReturnValue({
+    activeProfile: mockProfile,
+    profiles: [mockProfile],
+    isLoading: false,
+    error: null,
+    switchProfile: vi.fn(),
+    updateProfile: vi.fn(),
+    createProfile: vi.fn(),
+    deleteProfile: vi.fn(),
+  });
+};
+
+/** Set up authenticated user for a test */
+export const setupAuthenticatedUser = (userData = {}) => {
+  authMocks.useSession.mockReturnValue({
+    ...mockSessionData,
+    data: {
+      ...mockSessionData.data,
+      user: { ...mockSessionData.data.user, ...userData },
+    },
+  });
+};
+
+/** Set up unauthenticated user for a test */
+export const setupUnauthenticatedUser = () => {
+  authMocks.useSession.mockReturnValue(mockUnauthenticatedSession);
+};
+
+/** Set up specific profile for a test */
+export const setupProfile = (profileData = {}) => {
+  authMocks.useProfile.mockReturnValue({
+    activeProfile: { ...mockProfile, ...profileData },
+    profiles: [{ ...mockProfile, ...profileData }],
+    isLoading: false,
+    error: null,
+    switchProfile: vi.fn(),
+    updateProfile: vi.fn(),
+    createProfile: vi.fn(),
+    deleteProfile: vi.fn(),
+  });
 };

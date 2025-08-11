@@ -17,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { calculateAttemptImprovement } from "@/utils/analytics/primary";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -132,23 +133,6 @@ export default function AttemptImprovement({
     };
   }, [cohortIds, cohorts]);
 
-  // Filter simulations based on selection and cohorts
-  const filteredSimulations = useMemo(() => {
-    if (!simulations) return [];
-    let filtered = simulations;
-
-    // Filter by cohorts first
-    if (cohortIds && cohortIds.length > 0) {
-      filtered = filtered.filter((s) => isSimulationInCohorts(s.id));
-    }
-
-    // Then filter by selection
-    if (selectedSimulations.length === 0) return filtered;
-    return filtered.filter((s) =>
-      selectedSimulations.some((ss) => ss.id === s.id)
-    );
-  }, [simulations, selectedSimulations, cohortIds, isSimulationInCohorts]);
-
   // Get simulations that have data available
   const simulationsWithData = useMemo(() => {
     if (!simulations || !grades || !chats || !attempts) return [];
@@ -197,204 +181,40 @@ export default function AttemptImprovement({
       !chats ||
       !grades ||
       !attempts ||
-      !filteredSimulations ||
-      !rubrics
+      !simulations ||
+      !rubrics ||
+      !cohorts
     ) {
       return [];
     }
 
-    // Filter data by date range, exclude practice simulations, filter by TA role, filter by selected simulations, and filter by cohorts
-    const filteredGrades = grades.filter((grade) => {
-      const gradeDate = new Date(grade.createdAt);
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const simulation = filteredSimulations.find(
-        (s) => s.id === attempt?.simulationId
-      );
-      const profile = profiles?.find((p) => p.id === attempt?.profileId);
-
-      // Check date range
-      const inDateRange =
-        isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
-
-      // Exclude practice simulations
-      const notPractice = !simulation?.practiceSimulation;
-
-      // Filter by TA role
-      const isTA = profile?.role === "ta";
-
-      // Filter by profile if provided
-      const profileMatch = profileId ? attempt?.profileId === profileId : true;
-
-      // Filter by selected simulations
-      const simulationMatch =
-        selectedSimulations.length === 0 ||
-        (simulation &&
-          selectedSimulations.some((ss) => ss.id === simulation.id));
-
-      // Filter by cohorts
-      const cohortMatch = profile ? isProfileInCohorts(profile.id) : true;
-
-      return (
-        inDateRange &&
-        notPractice &&
-        isTA &&
-        profileMatch &&
-        simulationMatch &&
-        cohortMatch
-      );
-    });
-
-    if (filteredGrades.length === 0) return [];
-
-    // Group attempts by simulation and profile
-    const simulationAttempts = new Map<
-      string,
-      {
-        simulationId: string;
-        profileId: string;
-        attempts: Array<{
-          attemptId: string;
-          attemptNumber: number;
-          score: number;
-          timeTaken: number;
-          passed: boolean;
-          createdAt: Date;
-        }>;
-      }
-    >();
-
-    // Group attempts by simulation and profile
-    attempts.forEach((attempt) => {
-      const chat = chats.find((c) => c.attemptId === attempt.id);
-      const grade = filteredGrades.find((g) => g.simulationChatId === chat?.id);
-
-      if (!chat || !grade) return;
-
-      const simulation = filteredSimulations.find(
-        (s) => s.id === attempt.simulationId
-      );
-      if (!simulation) return;
-
-      const key = `${attempt.simulationId}-${attempt.profileId || "unknown"}`;
-
-      if (!simulationAttempts.has(key)) {
-        simulationAttempts.set(key, {
-          simulationId: attempt.simulationId,
-          profileId: attempt.profileId || "unknown",
-          attempts: [],
-        });
-      }
-
-      const simulationData = simulationAttempts.get(key);
-      if (!simulationData) return;
-
-      // Calculate score percentage
-      const rubric = rubrics.find((r) => r.id === simulation.rubricId);
-      const rubricTotalPoints = rubric?.points || 100;
-      const scorePercent = Math.round((grade.score / rubricTotalPoints) * 100);
-
-      simulationData.attempts.push({
-        attemptId: attempt.id,
-        attemptNumber: simulationData.attempts.length + 1,
-        score: scorePercent,
-        timeTaken: grade.timeTaken,
-        passed: grade.passed,
-        createdAt: new Date(grade.createdAt),
-      });
-    });
-
-    // Filter to only include simulations with multiple attempts
-    const multiAttemptSimulations = Array.from(simulationAttempts.values())
-      .filter((sim) => sim.attempts.length > 1)
-      .sort((a, b) => {
-        const aFirst = a.attempts[0];
-        const bFirst = b.attempts[0];
-        if (!aFirst || !bFirst) return 0;
-        return aFirst.createdAt.getTime() - bFirst.createdAt.getTime();
-      });
-
-    if (multiAttemptSimulations.length === 0) return [];
-
-    // Calculate average metrics by attempt number
-    const maxAttempts = Math.min(
-      Math.max(...multiAttemptSimulations.map((sim) => sim.attempts.length)),
-      5 // Limit to 5 attempts for clean visualization
+    return calculateAttemptImprovement(
+      grades,
+      chats,
+      attempts,
+      simulations,
+      rubrics,
+      profiles,
+      dateStart,
+      dateEnd,
+      profileId,
+      cohorts,
+      cohortIds,
+      selectedSimulations.map((s) => s.id)
     );
-
-    const attemptMetrics = new Map<
-      number,
-      {
-        attemptNumber: number;
-        scores: number[];
-        times: number[];
-        passRates: number[];
-        count: number;
-      }
-    >();
-
-    // Initialize attempt metrics
-    for (let i = 1; i <= maxAttempts; i++) {
-      attemptMetrics.set(i, {
-        attemptNumber: i,
-        scores: [],
-        times: [],
-        passRates: [],
-        count: 0,
-      });
-    }
-
-    // Aggregate data by attempt number
-    multiAttemptSimulations.forEach((sim) => {
-      sim.attempts.slice(0, maxAttempts).forEach((attempt) => {
-        const metrics = attemptMetrics.get(attempt.attemptNumber);
-        if (metrics) {
-          metrics.scores.push(attempt.score);
-          metrics.times.push(attempt.timeTaken / 60); // Convert to minutes
-          metrics.passRates.push(attempt.passed ? 100 : 0);
-          metrics.count++;
-        }
-      });
-    });
-
-    // Calculate averages and create chart data
-    const chartData = Array.from(attemptMetrics.values())
-      .filter((metrics) => metrics.count > 0)
-      .map((metrics) => {
-        const avgScore = Math.round(
-          metrics.scores.reduce((sum, score) => sum + score, 0) /
-            metrics.scores.length
-        );
-        const avgTime = Math.round(
-          metrics.times.reduce((sum, time) => sum + time, 0) /
-            metrics.times.length
-        );
-        const avgPassRate = Math.round(
-          metrics.passRates.reduce((sum, rate) => sum + rate, 0) /
-            metrics.passRates.length
-        );
-
-        return {
-          attempt: `Attempt ${metrics.attemptNumber}`,
-          "Average Score": avgScore,
-          "Average Time": avgTime,
-          "Pass Rate": avgPassRate,
-        };
-      });
-
-    return chartData;
   }, [
     profiles,
     chats,
     grades,
     attempts,
-    filteredSimulations,
+    simulations,
     rubrics,
+    cohorts,
     dateStart,
     dateEnd,
     profileId,
+    cohortIds,
     selectedSimulations,
-    isProfileInCohorts,
   ]);
 
   // Get actionable insights

@@ -14,9 +14,26 @@ import '@/mocks/api';
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { AssistantProviderProps } from '@/contexts/assistant-context';
-const mockProps: AssistantProviderProps = {
-  children: <div>test-children</div>,
+import { AssistantProvider, type AssistantContextType } from '@/contexts/assistant-context';
+const mockProps: AssistantContextType = {
+  uiState: "closed",
+  setUiState: vi.fn(),
+  openWidget: vi.fn(),
+  expand: vi.fn(),
+  close: vi.fn(),
+  currentChatId: null,
+  setCurrentChatId: vi.fn(),
+  chats: [],
+  pastChats: [],
+  isLoadingChats: false,
+  selectChat: vi.fn(),
+  startBlankChat: vi.fn(),
+  isConnected: false,
+  createNewChat: vi.fn(),
+  sendMessage: vi.fn(),
+  stopMessage: vi.fn(),
+  isSendingMessage: false,
+  isStoppingMessage: false,
 };
 // ------------------------------------------------------------------
 describe('assistant-context', () => {
@@ -45,7 +62,9 @@ describe('assistant-context', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<assistant-context {...mockProps} />);
+      renderWithMocks(<AssistantProvider {...mockProps}>
+        <div>test-children</div>
+      </AssistantProvider>);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
@@ -89,7 +108,9 @@ describe('assistant-context', () => {
       // Arrange: Override the default success mock with an error for this test.
       // Example: vi.mocked(getAssistantChatsByProfile).mockRejectedValue(new Error('API Error'));
 
-      renderWithMocks(<assistant-context {...mockProps} />);
+      renderWithMocks(<AssistantProvider {...mockProps}>
+        <div>test-children</div>
+      </AssistantProvider>);
       
       // Assert: Check that your component shows an error message.
       // TODO: Add specific error state assertions

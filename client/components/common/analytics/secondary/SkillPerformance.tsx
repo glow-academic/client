@@ -17,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { calculateSkillPerformance } from "@/utils/analytics/secondary";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -27,7 +28,6 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useQuery } from "@tanstack/react-query";
-import { isAfter, isBefore } from "date-fns";
 import { GraduationCap, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -106,7 +106,7 @@ export default function SkillPerformance({
     queryKey: ["feedbacks", grades?.map((g) => g.id) || []],
     queryFn: () =>
       getSimulationChatFeedbacksBySimulationChatGrades(
-        grades?.map((g) => g.id) || [],
+        grades?.map((g) => g.id) || []
       ),
     enabled: !!grades && grades.length > 0,
   });
@@ -117,35 +117,7 @@ export default function SkillPerformance({
     queryFn: () => getAllCohorts(),
   });
 
-  // Filter cohorts based on cohortIds and profileId
-  const filteredCohorts = useMemo(() => {
-    if (!allCohorts) return [];
-
-    let availableCohorts = allCohorts;
-
-    // If profileId is provided, filter to cohorts that contain this profile
-    if (profileId) {
-      availableCohorts = availableCohorts.filter((cohort) =>
-        cohort.profileIds.includes(profileId),
-      );
-    }
-
-    // If cohortIds are provided, filter to only those cohorts
-    if (cohortIds && cohortIds.length > 0) {
-      availableCohorts = availableCohorts.filter((cohort) =>
-        cohortIds.includes(cohort.id),
-      );
-    }
-
-    return availableCohorts;
-  }, [allCohorts, profileId, cohortIds]);
-
-  // Check if user has access to any cohorts
-  const hasCohortAccess = useMemo(() => {
-    return filteredCohorts.length > 0;
-  }, [filteredCohorts]);
-
-  // Fetch chats and attempts for profile filtering
+  // Fetch profiles and related data
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
@@ -165,182 +137,65 @@ export default function SkillPerformance({
     enabled: !!attempts && attempts.length > 0,
   });
 
-  // Calculate radar chart data (skill development) - filtered by date range and selected rubrics
-  const radarData = useMemo(() => {
+  // Calculate skill performance using utility function
+  const skillPerformanceResult = useMemo(() => {
     if (
       !grades ||
       !feedbacks ||
       !standards ||
       !standardGroups ||
       !filteredRubrics ||
-      !filteredCohorts
+      !allCohorts ||
+      !profiles ||
+      !attempts ||
+      !chats
     ) {
-      return [];
+      return null;
     }
 
-    if (grades.length === 0) return [];
-
-    // Filter grades by date range, profile, and cohort access
-    const filteredGrades = grades.filter((grade) => {
-      const gradeDate = new Date(grade.createdAt);
-      const inDateRange =
-        isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
-
-      // Filter by profile if provided - need to get profile through chat -> attempt
-      let profileMatch = true;
-      if (profileId) {
-        // Find the chat for this grade
-        const chat = chats?.find((c) => c.id === grade.simulationChatId);
-        if (chat) {
-          // Find the attempt for this chat
-          const attempt = attempts?.find((a) => a.id === chat.attemptId);
-          profileMatch = attempt?.profileId === profileId;
-        } else {
-          profileMatch = false;
-        }
-      }
-
-      // Filter by cohort access - check if the profile belongs to any of the filtered cohorts
-      let cohortMatch = true;
-      if (filteredCohorts.length > 0) {
-        const chat = chats?.find((c) => c.id === grade.simulationChatId);
-        if (chat) {
-          const attempt = attempts?.find((a) => a.id === chat.attemptId);
-          if (attempt?.profileId) {
-            const profile = profiles?.find((p) => p.id === attempt.profileId);
-            if (profile) {
-              // Check if this profile belongs to any of the filtered cohorts
-              cohortMatch = filteredCohorts.some((cohort) =>
-                cohort.profileIds.includes(profile.id),
-              );
-            } else {
-              cohortMatch = false;
-            }
-          } else {
-            cohortMatch = false;
-          }
-        } else {
-          cohortMatch = false;
-        }
-      }
-
-      return inDateRange && profileMatch && cohortMatch;
-    });
-
-    if (filteredGrades.length === 0) return [];
-
-    // Filter feedbacks to only include those from filtered grades
-    const filteredFeedbacks = feedbacks.filter((feedback) =>
-      filteredGrades.some(
-        (grade) => grade.id === feedback.simulationChatGradeId,
-      ),
+    return calculateSkillPerformance(
+      grades,
+      feedbacks,
+      standards,
+      standardGroups,
+      filteredRubrics,
+      chats,
+      attempts,
+      profiles,
+      allCohorts,
+      dateStart,
+      dateEnd,
+      profileId,
+      cohortIds,
+      filteredRubrics.map((r) => r.id)
     );
-
-    // Calculate skill-based scores from feedbacks and standards
-    const skillScores = standardGroups.reduce(
-      (acc, group) => {
-        // Find all standards that belong to this standard group
-        const groupStandards = standards.filter(
-          (s) => s.standardGroupId === group.id,
-        );
-
-        // Find all feedbacks that correspond to standards in this group
-        const groupFeedbacks = filteredFeedbacks.filter((feedback) =>
-          groupStandards.some(
-            (standard) => standard.id === feedback.standardId,
-          ),
-        );
-
-        if (groupFeedbacks.length > 0) {
-          // Group feedbacks by grade (user session) to calculate per-user performance
-          const feedbacksByGrade = new Map<string, typeof groupFeedbacks>();
-
-          groupFeedbacks.forEach((feedback) => {
-            const gradeId = feedback.simulationChatGradeId;
-            if (!feedbacksByGrade.has(gradeId)) {
-              feedbacksByGrade.set(gradeId, []);
-            }
-            feedbacksByGrade.get(gradeId)!.push(feedback);
-          });
-
-          // Calculate performance for each user session
-          const userPerformances: number[] = [];
-
-          feedbacksByGrade.forEach((userFeedbacks) => {
-            // Sum up all feedback totals for this user in this standard group
-            const userTotalPoints = userFeedbacks.reduce(
-              (sum, feedback) => sum + feedback.total,
-              0,
-            );
-
-            // Calculate user's percentage for this standard group
-            const userPercentage =
-              group.points > 0 ? (userTotalPoints / group.points) * 100 : 0;
-
-            userPerformances.push(userPercentage);
-          });
-
-          // Calculate average performance across all users for this standard group
-          const averagePerformance =
-            userPerformances.length > 0
-              ? Math.round(
-                  userPerformances.reduce((sum, perf) => sum + perf, 0) /
-                    userPerformances.length,
-                )
-              : 0;
-
-          acc[group.shortName || group.name] = averagePerformance;
-        } else {
-          // No feedback for this standard group, set to 0
-          acc[group.shortName || group.name] = 0;
-        }
-
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
-    // Create metrics based on standard groups using shortName
-    const dynamicMetrics: Array<{
-      metric: string;
-      value: number;
-      fullMark: number;
-    }> = [];
-
-    // Add skill scores based on standard groups
-    standardGroups.forEach((group) => {
-      const skillKey = group.shortName || group.name;
-      const skillValue = skillScores[skillKey] || 0;
-      dynamicMetrics.push({
-        metric: skillKey,
-        value: skillValue,
-        fullMark: 100,
-      });
-    });
-
-    return dynamicMetrics;
   }, [
     grades,
     feedbacks,
     standards,
     standardGroups,
     filteredRubrics,
+    allCohorts,
+    profiles,
+    attempts,
+    chats,
     dateStart,
     dateEnd,
     profileId,
-    chats,
-    attempts,
-    filteredCohorts,
-    profiles,
+    cohortIds,
   ]);
 
   // Calculate threshold status based on skill performance data
   const getThresholdStatus = () => {
-    if (radarData.length === 0) return "neutral";
+    if (!skillPerformanceResult || !skillPerformanceResult.hasData)
+      return "neutral";
 
     // Calculate average skill performance across all skills
     const avgSkillPerformance =
-      radarData.reduce((sum, skill) => sum + skill.value, 0) / radarData.length;
+      skillPerformanceResult.radarData.reduce(
+        (sum, skill) => sum + skill.value,
+        0
+      ) / skillPerformanceResult.radarData.length;
 
     if (avgSkillPerformance >= thresholds.success) return "success";
     if (avgSkillPerformance >= thresholds.warning) return "warning";
@@ -411,64 +266,7 @@ export default function SkillPerformance({
   }
 
   // Show no access message if user doesn't have access to any cohorts
-  if (!hasCohortAccess) {
-    return (
-      <Card className="w-full h-full flex flex-col relative">
-        <div
-          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
-            thresholdStatus === "success"
-              ? "bg-green-500"
-              : thresholdStatus === "warning"
-                ? "bg-yellow-500"
-                : thresholdStatus === "danger"
-                  ? "bg-red-500"
-                  : "bg-gray-400"
-          }`}
-        />
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5" />
-                Skill Performance
-              </CardTitle>
-              <CardDescription>
-                Performance across key teaching competencies
-              </CardDescription>
-            </div>
-            {rubrics && rubrics.length > 0 && (
-              <RubricPicker
-                rubrics={rubrics.map((r) => ({
-                  id: r.id,
-                  name: r.name,
-                  description: r.description,
-                  points: r.points,
-                  active: r.active,
-                }))}
-                placeholder="Filter by rubric..."
-                onSelect={setSelectedRubrics}
-                selectedRubrics={defaultRubrics}
-                buttonClassName="w-48"
-              />
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1">
-          <div className="text-center text-muted-foreground">
-            <p>No cohort access available</p>
-            <p className="text-sm">
-              {profileId
-                ? "You don't have access to any of the specified cohorts."
-                : "No cohorts match the specified criteria."}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Show empty state if no data
-  if (!radarData.length) {
+  if (!skillPerformanceResult || !skillPerformanceResult.hasData) {
     return (
       <Card className="w-full h-full flex flex-col relative">
         <div
@@ -566,7 +364,7 @@ export default function SkillPerformance({
       <CardContent className="flex-1 overflow-hidden">
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <RadarChart data={radarData}>
+            <RadarChart data={skillPerformanceResult.radarData}>
               <PolarAngleAxis dataKey="metric" />
               <PolarGrid />
               <Tooltip

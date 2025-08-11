@@ -4,8 +4,10 @@ import { db } from "@/utils/drizzle/db";
 import { parameterItems } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function updateParameterItem(id: string, data: Partial<typeof parameterItems.$inferInsert>) {
+// Original logic is now a "private" function
+async function _updateParameterItem(id: string, data: Partial<typeof parameterItems.$inferInsert>) {
   try {
     const result = await db.update(parameterItems).set(data).where(eq(parameterItems.id, id)).returning();
     return result[0];
@@ -14,3 +16,6 @@ export async function updateParameterItem(id: string, data: Partial<typeof param
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const updateParameterItem = createMockableAction('updateParameterItem', _updateParameterItem);

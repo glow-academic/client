@@ -1,125 +1,62 @@
-import { describe, it, vi, afterEach } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
-import type {  } from '@tanstack/react-table';
+import { screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-// ——————————————————————————————————————————
+// Import the hook to test
+import { useScenarioColumns } from "@/hooks/use-scenario-columns";
 
+// Import mocks to ensure all API calls are stubbed
+import "@/mocks/api";
+import "@/mocks/mutations";
+import "@/mocks/queries";
 
+// Import the test helper
+import { renderWithMocks } from "@/test/renderWithMocks";
 
-// ✨ Import comprehensive mock data from our centralized mock system
-import '@/mocks/queries';
-import '@/mocks/mutations';
-import '@/mocks/api';
-describe('use-scenario-columns', () => {
-  
-  /* ------------------------------------------------------------------ *
-   * 💡 Mock Data Usage Guide:
-   * 
-   * All API functions are automatically mocked via imports above.
-   * Use mockSchema.* for realistic test data:
-   * 
-   * Examples:
-   * - mockSchema.users[0] - First user object
-   * - mockSchema.classes - Array of class objects  
-   * - mockSchema.profiles - Array of profile objects
-   * 
-   * To override specific mocks in individual tests:
-   * - vi.mocked(queryFunction).mockResolvedValue(customData)
-   * - vi.mocked(mutationFunction).mockResolvedValue(customResponse)
-   * ------------------------------------------------------------------ */
-  
-  // ✨ Reset mocks after each test
+// Test component that uses the hook
+function TestComponent() {
+  const result = useScenarioColumns();
+  return (
+    <div data-testid="hook-result">
+      <div data-testid="columns-length">{result.columns.length}</div>
+      <div data-testid="has-simulation-options">
+        {result.simulationOptions ? "true" : "false"}
+      </div>
+      <div data-testid="has-cohort-options">
+        {result.cohortOptions ? "true" : "false"}
+      </div>
+      <div data-testid="has-persona-options">
+        {result.personaOptions ? "true" : "false"}
+      </div>
+      <div data-testid="has-scenario-type-options">
+        {result.scenarioTypeOptions ? "true" : "false"}
+      </div>
+    </div>
+  );
+}
+
+describe("useScenarioColumns", () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<use-scenario-columns  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
-    });
+  it("can be called and returns columns", () => {
+    renderWithMocks(<TestComponent />);
 
-    
+    // Check that the component rendered successfully
+    expect(screen.getByTestId("hook-result")).toBeInTheDocument();
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
+    // Check that columns were returned
+    const columnsLength = screen.getByTestId("columns-length");
+    expect(parseInt(columnsLength.textContent || "0")).toBeGreaterThan(0);
 
-    });
-  });
-
-  
-
-  describe('API Integration', () => {
-    it.skip('should handle and display an API error state', async () => {
-      // Arrange: Override the default success mock with an error for this test.
-      // Example: vi.mocked(getAllCohorts).mockRejectedValue(new Error('API Error'));
-
-      renderWithMocks(<use-scenario-columns  />);
-      
-      // Assert: Check that your component shows an error message.
-      // TODO: Add specific error state assertions
-    });
-
-    it.skip('should handle loading states', () => {
-      // TODO: Test loading states
-      // Mock data is automatically loaded from @/mocks/schema
-      
-      // TODO: loading states assertions
-    });
-  });
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
-    });
-
-    
+    // Check that all expected properties are present
+    expect(screen.getByTestId("has-simulation-options")).toHaveTextContent(
+      "true"
+    );
+    expect(screen.getByTestId("has-cohort-options")).toHaveTextContent("true");
+    expect(screen.getByTestId("has-persona-options")).toHaveTextContent("true");
+    expect(screen.getByTestId("has-scenario-type-options")).toHaveTextContent(
+      "true"
+    );
   });
 });
-
-/*
- * Component Analysis for use-scenario-columns:
- * Path: use-scenario-columns.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: useScenarioColumns
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: useQuery, useMemo, useScenarioColumns
- * - Uses router: false
- * - Has API calls: true
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<use-scenario-columns />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<use-scenario-columns {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

@@ -50,7 +50,7 @@ describe("DocumentsDataTableToolbar", () => {
 
       // Check that the search input is rendered
       expect(
-        screen.getByPlaceholderText("Filter documents..."),
+        screen.getByPlaceholderText("Filter documents...")
       ).toBeInTheDocument();
 
       // Check that the view options are rendered
@@ -62,16 +62,16 @@ describe("DocumentsDataTableToolbar", () => {
 
       // Check that the search input is rendered
       expect(
-        screen.getByPlaceholderText("Filter documents..."),
+        screen.getByPlaceholderText("Filter documents...")
       ).toBeInTheDocument();
 
       // Check that the view mode toggle buttons are rendered (using icon selectors)
       const buttons = screen.getAllByRole("button");
       const listButton = buttons.find((button) =>
-        button.querySelector('svg[class*="lucide-list"]'),
+        button.querySelector('svg[class*="lucide-list"]')
       );
       const gridButton = buttons.find((button) =>
-        button.querySelector('svg[class*="lucide-grid3x3"]'),
+        button.querySelector('svg[class*="lucide-grid3x3"]')
       );
       expect(listButton).toBeDefined();
       expect(gridButton).toBeDefined();
@@ -87,10 +87,10 @@ describe("DocumentsDataTableToolbar", () => {
       // Check that the view mode buttons are accessible (using icon selectors)
       const buttons = screen.getAllByRole("button");
       const listButton = buttons.find((button) =>
-        button.querySelector('svg[class*="lucide-list"]'),
+        button.querySelector('svg[class*="lucide-list"]')
       );
       const gridButton = buttons.find((button) =>
-        button.querySelector('svg[class*="lucide-grid3x3"]'),
+        button.querySelector('svg[class*="lucide-grid3x3"]')
       );
       expect(listButton).toBeDefined();
       expect(gridButton).toBeDefined();
@@ -106,13 +106,13 @@ describe("DocumentsDataTableToolbar", () => {
         <DocumentsDataTableToolbar
           {...defaultProps}
           onViewModeChange={onViewModeChange}
-        />,
+        />
       );
 
       // Click the grid view button (using icon selector)
       const buttons = screen.getAllByRole("button");
       const gridButton = buttons.find((button) =>
-        button.querySelector('svg[class*="lucide-grid3x3"]'),
+        button.querySelector('svg[class*="lucide-grid3x3"]')
       );
       expect(gridButton).toBeDefined();
       await user.click(gridButton!);
@@ -143,7 +143,7 @@ describe("DocumentsDataTableToolbar", () => {
           selectedDocuments={["doc-1", "doc-2"]}
           onBulkDelete={onBulkDelete}
           viewMode="list"
-        />,
+        />
       );
 
       // The bulk delete button should be visible when documents are selected
@@ -167,23 +167,15 @@ describe("DocumentsDataTableToolbar", () => {
           onBulkDelete={onBulkDelete}
           canDeleteDocument={canDeleteDocument}
           viewMode="list"
-        />,
+        />
       );
 
-      // The bulk delete button should be disabled - find the actual button inside the tooltip
-      const deleteButtons = screen.getAllByRole("button", {
+      // The bulk delete button should be disabled
+      const deleteButton = screen.getByRole("button", {
         name: /delete 0 of 2/i,
       });
-      expect(deleteButtons.length).toBeGreaterThan(0);
-
-      // Find the actual button element (not the tooltip trigger)
-      const actualButton = deleteButtons.find(
-        (button) =>
-          button.getAttribute("data-slot") === "button" &&
-          (button as HTMLButtonElement).disabled,
-      );
-      expect(actualButton).toBeDefined();
-      expect(actualButton as HTMLButtonElement).toBeDisabled();
+      expect(deleteButton).toBeInTheDocument();
+      expect(deleteButton as HTMLButtonElement).toBeDisabled();
     });
   });
 
@@ -201,7 +193,7 @@ describe("DocumentsDataTableToolbar", () => {
 
       // Component should still render without crashing
       expect(
-        screen.getByPlaceholderText("Filter documents..."),
+        screen.getByPlaceholderText("Filter documents...")
       ).toBeInTheDocument();
     });
 
@@ -224,7 +216,7 @@ describe("DocumentsDataTableToolbar", () => {
 
       // Component should still render
       expect(
-        screen.getByPlaceholderText("Filter documents..."),
+        screen.getByPlaceholderText("Filter documents...")
       ).toBeInTheDocument();
     });
 
@@ -235,12 +227,12 @@ describe("DocumentsDataTableToolbar", () => {
           selectedCount={2}
           selectedDocuments={["doc-1", "doc-2"]}
           viewMode="grid"
-        />,
+        />
       );
 
       // Bulk delete button should not be present in grid view
       expect(
-        screen.queryByRole("button", { name: /delete/i }),
+        screen.queryByRole("button", { name: /delete/i })
       ).not.toBeInTheDocument();
     });
 
@@ -251,12 +243,12 @@ describe("DocumentsDataTableToolbar", () => {
           selectedCount={0}
           selectedDocuments={[]}
           viewMode="list"
-        />,
+        />
       );
 
       // Bulk delete button should not be present when no documents are selected
       expect(
-        screen.queryByRole("button", { name: /delete/i }),
+        screen.queryByRole("button", { name: /delete/i })
       ).not.toBeInTheDocument();
     });
   });

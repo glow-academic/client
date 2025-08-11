@@ -105,10 +105,10 @@ describe("ProfileSelector", () => {
       expect(screen.getByRole("tablist")).toBeInTheDocument();
       expect(screen.getByRole("tab", { name: "Search" })).toBeInTheDocument();
       expect(
-        screen.getByRole("tab", { name: "CSV Import" }),
+        screen.getByRole("tab", { name: "CSV Import" })
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("tab", { name: "Quick Add" }),
+        screen.getByRole("tab", { name: "Quick Add" })
       ).toBeInTheDocument();
     });
   });
@@ -124,7 +124,7 @@ describe("ProfileSelector", () => {
 
       // Check that CSV content is shown
       expect(
-        screen.getByText(/Upload a CSV file with profiles/),
+        screen.getByText(/Upload a CSV file with profiles/)
       ).toBeInTheDocument();
     });
 
@@ -134,7 +134,7 @@ describe("ProfileSelector", () => {
 
       // Test search functionality
       const searchInput = screen.getByPlaceholderText(
-        "Search profiles by name or alias...",
+        "Search profiles by name or alias..."
       );
       await user.type(searchInput, "test");
 
@@ -148,7 +148,7 @@ describe("ProfileSelector", () => {
 
       // Test search input
       const searchInput = screen.getByPlaceholderText(
-        "Search profiles by name or alias...",
+        "Search profiles by name or alias..."
       );
       await user.type(searchInput, "admin");
 
@@ -172,6 +172,27 @@ describe("ProfileSelector", () => {
         writable: true,
       });
 
+      // Store original createElement
+      const originalCreateElement = document.createElement;
+
+      // Mock document.createElement to prevent navigation
+      const mockClick = vi.fn();
+      const mockCreateElement = vi.fn((tagName) => {
+        if (tagName === "a") {
+          return {
+            href: "",
+            download: "",
+            click: mockClick,
+          };
+        }
+        // For other elements, use the original createElement
+        return originalCreateElement.call(document, tagName);
+      });
+      Object.defineProperty(document, "createElement", {
+        value: mockCreateElement,
+        writable: true,
+      });
+
       renderWithMocks(<ProfileSelector {...mockProps} />);
 
       const downloadButton = screen.getByText("Download Template");
@@ -179,6 +200,15 @@ describe("ProfileSelector", () => {
 
       // Check that download functionality was triggered
       expect(mockCreateObjectURL).toHaveBeenCalled();
+      expect(mockCreateElement).toHaveBeenCalledWith("a");
+      expect(mockClick).toHaveBeenCalled();
+      expect(mockRevokeObjectURL).toHaveBeenCalled();
+
+      // Restore original createElement
+      Object.defineProperty(document, "createElement", {
+        value: originalCreateElement,
+        writable: true,
+      });
     });
   });
 
@@ -207,7 +237,7 @@ describe("ProfileSelector", () => {
       const onProfilesChange = vi.fn();
 
       renderWithMocks(
-        <ProfileSelector {...mockProps} onProfilesChange={onProfilesChange} />,
+        <ProfileSelector {...mockProps} onProfilesChange={onProfilesChange} />
       );
 
       // Test that the callback is available
@@ -227,7 +257,7 @@ describe("ProfileSelector", () => {
       ];
 
       renderWithMocks(
-        <ProfileSelector {...mockProps} selectedProfiles={selectedProfiles} />,
+        <ProfileSelector {...mockProps} selectedProfiles={selectedProfiles} />
       );
 
       // Check that selected profiles are displayed

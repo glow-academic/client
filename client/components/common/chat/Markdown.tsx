@@ -164,7 +164,7 @@ export default function Markdown({ children }: MarkdownProps) {
       >
         {processedText}
       </ReactMarkdown>
-      <style jsx global>{`
+      <style jsx={true} global={true}>{`
         .latex-container {
           /* Consider renaming to .markdown-container or similar */
           font-size: 1rem;

@@ -210,10 +210,7 @@ describe("Home", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("Access Denied")).toBeInTheDocument();
-        expect(
-          screen.getByText("You need TA permissions to view this dashboard.")
-        ).toBeInTheDocument();
+        expect(screen.getByText("No Cohorts Available")).toBeInTheDocument();
       });
     });
   });

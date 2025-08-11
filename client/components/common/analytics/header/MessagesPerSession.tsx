@@ -10,9 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { calculateMessagesPerSession } from "@/utils/analytics/header";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -20,7 +22,6 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getSimulationMessagesByChats } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chats";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
-import { eachDayOfInterval, format } from "date-fns";
 import { MessageSquare } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -119,195 +120,40 @@ export default function MessagesPerSession({
     queryFn: () => getAllSimulations(),
   });
 
-  // Helper function to get allowed simulation IDs based on cohort filtering
-  const getAllowedSimulationIds = useMemo(() => {
-    if (!cohorts || !cohortIds || cohortIds.length === 0) {
-      return null; // No cohort filtering, allow all simulations
+  // Calculate messages per session using utility function
+  const messagesPerSessionResult = useMemo(() => {
+    if (!messages || !chats || !attempts || !simulations || !cohorts) {
+      return { currentValue: 0, trendData: [], hasData: false };
     }
 
-    // Filter cohorts to only those in cohortIds
-    const filteredCohorts = cohorts.filter((cohort) =>
-      cohortIds.includes(cohort.id),
+    return calculateMessagesPerSession(
+      messages,
+      chats,
+      attempts,
+      simulations,
+      dateStart,
+      dateEnd,
+      profileId,
+      cohorts,
+      cohortIds
     );
-
-    if (filteredCohorts.length === 0) {
-      return []; // No matching cohorts, no data allowed
-    }
-
-    // If profileId is provided, check if profile belongs to any of the filtered cohorts
-    if (profileId) {
-      const profileInCohorts = filteredCohorts.some((cohort) =>
-        cohort.profileIds.includes(profileId),
-      );
-
-      if (!profileInCohorts) {
-        return []; // Profile not in any of the specified cohorts, no data allowed
-      }
-    }
-
-    // Get union of all simulation IDs from matching cohorts
-    const allowedSimulationIds = new Set<string>();
-    filteredCohorts.forEach((cohort) => {
-      cohort.simulationIds.forEach((simId) => {
-        if (simId !== "RAY") {
-          // Exclude placeholder
-          allowedSimulationIds.add(simId);
-        }
-      });
-    });
-
-    return Array.from(allowedSimulationIds);
-  }, [cohorts, cohortIds, profileId]);
-
-  // Calculate average messages per session for the specified date range and profile
-  const averageMessagesPerSession = useMemo(() => {
-    if (!chats || !messages || !attempts || !simulations) return 0;
-
-    // Filter chats by date range and exclude practice simulations
-    const filteredChats = chats.filter((chat) => {
-      const chatDate = new Date(chat.createdAt);
-      const attempt = attempts.find((a) => a.id === chat.attemptId);
-      const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId,
-      );
-      return (
-        chatDate >= dateStart &&
-        chatDate <= dateEnd &&
-        !simulation?.practiceSimulation
-      );
-    });
-
-    // Filter by profileId if provided
-    let profileFilteredChats = profileId
-      ? filteredChats.filter((chat) => {
-          const attempt = attempts.find((a) => a.id === chat.attemptId);
-          return attempt?.profileId === profileId;
-        })
-      : filteredChats;
-
-    // Apply cohort filtering if simulation IDs are restricted
-    if (getAllowedSimulationIds !== null) {
-      if (getAllowedSimulationIds.length === 0) {
-        return 0; // No data allowed due to cohort restrictions
-      }
-
-      profileFilteredChats = profileFilteredChats.filter((chat) => {
-        const attempt = attempts.find((a) => a.id === chat.attemptId);
-        return getAllowedSimulationIds.includes(attempt?.simulationId || "");
-      });
-    }
-
-    if (profileFilteredChats.length === 0) return 0;
-
-    // Calculate messages per chat (only completed query messages)
-    const messagesPerChat = profileFilteredChats.map((chat) => {
-      const chatMessages = messages.filter(
-        (message) =>
-          message.chatId === chat.id &&
-          message.type === "query" &&
-          message.completed,
-      );
-      return chatMessages.length;
-    });
-
-    // Calculate average
-    const totalMessages = messagesPerChat.reduce(
-      (sum, count) => sum + count,
-      0,
-    );
-    return Math.round((totalMessages / profileFilteredChats.length) * 10) / 10;
   }, [
-    chats,
     messages,
+    chats,
     attempts,
     simulations,
+    cohorts,
     dateStart,
     dateEnd,
     profileId,
-    getAllowedSimulationIds,
+    cohortIds,
   ]);
 
-  // Messages per session trend data for the specified date range
-  const messagesTrend = useMemo(() => {
-    if (!chats || !messages || !attempts || !simulations) return [];
-
-    // Get all days in the date range
-    const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
-
-    return days.map((date) => {
-      const dateStr = format(date, "yyyy-MM-dd");
-
-      // Filter chats for this specific day and exclude practice simulations
-      const dayChats = chats.filter((chat) => {
-        const chatDate = format(new Date(chat.createdAt), "yyyy-MM-dd");
-        const attempt = attempts.find((a) => a.id === chat.attemptId);
-        const simulation = simulations.find(
-          (s) => s.id === attempt?.simulationId,
-        );
-        return chatDate === dateStr && !simulation?.practiceSimulation;
-      });
-
-      // Filter by profileId if provided
-      let profileFilteredDayChats = profileId
-        ? dayChats.filter((chat) => {
-            const attempt = attempts.find((a) => a.id === chat.attemptId);
-            return attempt?.profileId === profileId;
-          })
-        : dayChats;
-
-      // Apply cohort filtering if simulation IDs are restricted
-      if (getAllowedSimulationIds !== null) {
-        if (getAllowedSimulationIds.length === 0) {
-          return {
-            date: format(date, "MM/dd"),
-            messages: 0,
-            sessions: 0,
-          };
-        }
-
-        profileFilteredDayChats = profileFilteredDayChats.filter((chat) => {
-          const attempt = attempts.find((a) => a.id === chat.attemptId);
-          return getAllowedSimulationIds.includes(attempt?.simulationId || "");
-        });
-      }
-
-      // Calculate average messages per session for the day
-      let avgMessages = 0;
-      if (profileFilteredDayChats.length > 0) {
-        const dayMessagesPerChat = profileFilteredDayChats.map((chat) => {
-          const chatMessages = messages.filter(
-            (message) =>
-              message.chatId === chat.id &&
-              message.type === "query" &&
-              message.completed,
-          );
-          return chatMessages.length;
-        });
-        const totalDayMessages = dayMessagesPerChat.reduce(
-          (sum, count) => sum + count,
-          0,
-        );
-        avgMessages =
-          Math.round((totalDayMessages / profileFilteredDayChats.length) * 10) /
-          10;
-      }
-
-      return {
-        date: format(date, "MM/dd"),
-        messages: avgMessages,
-        sessions: profileFilteredDayChats.length,
-      };
-    });
-  }, [
-    chats,
-    messages,
-    attempts,
-    simulations,
-    dateStart,
-    dateEnd,
-    profileId,
-    getAllowedSimulationIds,
-  ]);
+  const {
+    currentValue: averageMessagesPerSession,
+    trendData: messagesTrend,
+    hasData: hasDataAvailable,
+  } = messagesPerSessionResult;
 
   // Determine color based on messages per session and thresholds
   const getColorConfig = (avgMessages: number) => {
@@ -322,12 +168,9 @@ export default function MessagesPerSession({
     setIsDialogOpen(true);
   };
 
-  // Check if we have data to display
-  const hasData = messagesTrend.some((day) => day.sessions > 0);
-
   // Calculate actual trend from data
   const getTrendAnalysis = () => {
-    if (!hasData || messagesTrend.length < 2) return null;
+    if (!hasDataAvailable || messagesTrend.length < 2) return null;
 
     // Get recent data (last 3 days, 1 week, or 1 month depending on data availability)
     const recentData = messagesTrend.slice(-3);
@@ -336,11 +179,9 @@ export default function MessagesPerSession({
     if (recentData.length === 0 || earlierData.length === 0) return null;
 
     const recentAvg =
-      recentData.reduce((sum, day) => sum + day.messages, 0) /
-      recentData.length;
+      recentData.reduce((sum, day) => sum + day.value, 0) / recentData.length;
     const earlierAvg =
-      earlierData.reduce((sum, day) => sum + day.messages, 0) /
-      earlierData.length;
+      earlierData.reduce((sum, day) => sum + day.value, 0) / earlierData.length;
     const change = recentAvg - earlierAvg;
     const changePercent =
       earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
@@ -360,6 +201,14 @@ export default function MessagesPerSession({
 
   const trendAnalysis = getTrendAnalysis();
 
+  // Check if cohort filtering resulted in no data
+  const hasNoCohortData =
+    cohortIds &&
+    cohortIds.length > 0 &&
+    cohorts &&
+    cohorts.filter((cohort) => cohortIds.includes(cohort.id) && cohort.active)
+      .length === 0;
+
   return (
     <>
       <Card
@@ -374,18 +223,27 @@ export default function MessagesPerSession({
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
           <div className={`text-2xl font-bold ${colorConfig.text}`}>
-            {hasData ? `${averageMessagesPerSession}` : "No data"}
+            {hasNoCohortData
+              ? "No cohort data"
+              : hasDataAvailable
+                ? `${averageMessagesPerSession}`
+                : "No data"}
           </div>
         </CardContent>
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent
+          className="max-w-2xl"
+        >
           <DialogHeader>
             <DialogTitle>Messages Per Session Trend</DialogTitle>
+            <DialogDescription hidden>
+              This chart shows the messages per session over time.
+            </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-            {hasData ? (
+            {hasDataAvailable ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={messagesTrend}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -393,13 +251,13 @@ export default function MessagesPerSession({
                   <YAxis />
                   <Tooltip
                     formatter={(value: number, name: string) => [
-                      name === "messages" ? value.toFixed(1) : value,
-                      name === "messages" ? "Avg Messages" : "Sessions",
+                      name === "value" ? value.toFixed(1) : value,
+                      name === "value" ? "Avg Messages" : "Sessions",
                     ]}
                   />
                   <Line
                     type="monotone"
-                    dataKey="messages"
+                    dataKey="value"
                     stroke={colorConfig.primary}
                     strokeWidth={2}
                     dot={{ r: 4 }}
@@ -408,8 +266,9 @@ export default function MessagesPerSession({
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">
-                No data available for the selected date range
-                {profileId && " and profile"}
+                {hasNoCohortData
+                  ? "No data available for the selected cohorts"
+                  : `No data available for the selected date range${profileId ? " and profile" : ""}`}
               </div>
             )}
           </div>

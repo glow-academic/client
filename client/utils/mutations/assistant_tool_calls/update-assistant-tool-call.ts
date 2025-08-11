@@ -4,8 +4,10 @@ import { db } from "@/utils/drizzle/db";
 import { assistantToolCalls } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function updateAssistantToolCall(id: string, data: Partial<typeof assistantToolCalls.$inferInsert>) {
+// Original logic is now a "private" function
+async function _updateAssistantToolCall(id: string, data: Partial<typeof assistantToolCalls.$inferInsert>) {
   try {
     const result = await db.update(assistantToolCalls).set(data).where(eq(assistantToolCalls.id, id)).returning();
     return result[0];
@@ -14,3 +16,6 @@ export async function updateAssistantToolCall(id: string, data: Partial<typeof a
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const updateAssistantToolCall = createMockableAction('updateAssistantToolCall', _updateAssistantToolCall);

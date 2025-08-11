@@ -4,8 +4,10 @@ import { db } from "@/utils/drizzle/db";
 import { simulations } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function updateSimulations(ids: string[], data: Partial<typeof simulations.$inferInsert>) {
+// Original logic is now a "private" function
+async function _updateSimulations(ids: string[], data: Partial<typeof simulations.$inferInsert>) {
   try {
     return await db.update(simulations).set(data).where(inArray(simulations.id, ids)).returning();
   } catch (error) {
@@ -13,3 +15,6 @@ export async function updateSimulations(ids: string[], data: Partial<typeof simu
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const updateSimulations = createMockableAction('updateSimulations', _updateSimulations);

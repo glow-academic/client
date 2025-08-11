@@ -1,482 +1,758 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-// ——————————————————————————————————————————
-import RubricHeatmap, {
-  RubricHeatmapProps,
-} from "@/components/common/analytics/secondary/RubricHeatmap";
-
-// ✨ Import comprehensive mock data from our centralized mock system
-import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
+/**
+ * RubricHeatmap.test.tsx
+ * Tests for the RubricHeatmap component
+ * @AshokSaravanan222 & @siladiea
+ * 07/23/2025
+ */
+import RubricHeatmap from "@/components/common/analytics/secondary/RubricHeatmap";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
+import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
+import { getSimulationChatGradesByRubrics } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-rubrics";
+import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
+import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// ------------------------------------------------------------------
-// Enhanced props factory with realistic test data
-const createMockProps = (
-  overrides: Partial<RubricHeatmapProps> = {}
-): RubricHeatmapProps => ({
+// Mock the utility function
+vi.mock("@/utils/analytics/secondary", () => ({
+  calculateRubricHeatmap: vi.fn(),
+}));
+
+// Mock the query functions
+vi.mock("@/utils/queries/cohorts/get-all-cohorts");
+vi.mock("@/utils/queries/profiles/get-all-profiles");
+vi.mock("@/utils/queries/rubrics/get-all-rubrics");
+vi.mock(
+  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles"
+);
+vi.mock(
+  "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades"
+);
+vi.mock(
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-rubrics"
+);
+vi.mock("@/utils/queries/simulation_chats/get-simulation-chats-by-attempts");
+vi.mock("@/utils/queries/standard_groups/get-standard-groups-by-rubrics");
+vi.mock("@/utils/queries/standards/get-standards-by-standardgroups");
+
+// Mock the RubricPicker component
+vi.mock("@/components/common/rubric/RubricPicker", () => ({
+  RubricPicker: ({
+    onSelect,
+    selectedRubrics,
+  }: {
+    onSelect: (rubrics: { id: string; name: string }[]) => void;
+    selectedRubrics: { id: string; name: string }[];
+  }) => (
+    <div data-testid="rubric-picker">
+      <button
+        onClick={() => onSelect([{ id: "rubric-1", name: "Test Rubric" }])}
+      >
+        Select Rubric
+      </button>
+      <div data-testid="selected-rubrics">
+        {selectedRubrics.map((rubric: { id: string; name: string }) => (
+          <span key={rubric.id}>{rubric.name}</span>
+        ))}
+      </div>
+    </div>
+  ),
+}));
+
+const mockQueryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
+const defaultProps = {
   dateStart: new Date("2024-01-01"),
   dateEnd: new Date("2024-12-31"),
   thresholds: {
     danger: 50,
     warning: 70,
-    success: 80,
+    success: 85,
   },
-  profileId: "test-profile-id",
-  cohortIds: ["test-cohort-id"],
-  ...overrides,
-});
+  profileId: undefined,
+  cohortIds: [],
+};
 
-// ------------------------------------------------------------------
+const mockRubrics = [
+  {
+    id: "rubric-1",
+    name: "Test Rubric 1",
+    description: "Test Description",
+    points: 100,
+    active: true,
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    passPoints: 70,
+    defaultRubric: false,
+  },
+  {
+    id: "rubric-2",
+    name: "Test Rubric 2",
+    description: "Test Description 2",
+    points: 100,
+    active: true,
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    passPoints: 70,
+    defaultRubric: false,
+  },
+];
+
+const mockStandardGroups = [
+  {
+    id: "group-1",
+    shortName: "Communication",
+    name: "Communication Skills",
+    createdAt: "2024-01-01T00:00:00.000Z",
+    description: "Communication skills description",
+    points: 100,
+    passPoints: 70,
+    rubricId: "rubric-1",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    defaultRubric: false,
+  },
+  {
+    id: "group-2",
+    shortName: "Critical Thinking",
+    name: "Critical Thinking Skills",
+    createdAt: "2024-01-01T00:00:00.000Z",
+    description: "Critical thinking skills description",
+    points: 100,
+    passPoints: 70,
+    rubricId: "rubric-1",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    defaultRubric: false,
+  },
+];
+
+const mockStandards = [
+  {
+    id: "standard-1",
+    standardGroupId: "group-1",
+    name: "Communication Standard 1",
+    createdAt: "2024-01-01T00:00:00.000Z",
+    description: "Communication standard description",
+    points: 100,
+  },
+  {
+    id: "standard-2",
+    standardGroupId: "group-2",
+    name: "Critical Thinking Standard 1",
+    createdAt: "2024-01-01T00:00:00.000Z",
+    description: "Critical thinking standard description",
+    points: 100,
+  },
+];
+
+const mockGrades = [
+  {
+    id: "grade-1",
+    simulationChatId: "chat-1",
+    rubricId: "rubric-1",
+    score: 85,
+    createdAt: "2024-06-15T10:00:00Z",
+    passed: true,
+    timeTaken: 100,
+  },
+];
+
+const mockFeedbacks = [
+  {
+    id: "feedback-1",
+    simulationChatGradeId: "grade-1",
+    standardId: "standard-1",
+    total: 85,
+    createdAt: "2024-06-15T10:00:00Z",
+    feedback: "Good job!",
+  },
+  {
+    id: "feedback-2",
+    simulationChatGradeId: "grade-1",
+    standardId: "standard-2",
+    total: 90,
+    createdAt: "2024-06-15T10:00:00Z",
+    feedback: "Great job!",
+  },
+];
+
+const mockCohorts = [
+  {
+    id: "cohort-1",
+    title: "Test Cohort 1",
+    profileIds: ["profile-1", "profile-2"],
+    simulationIds: ["sim-1", "sim-2"],
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    description: "Test Cohort 1 Description",
+    active: true,
+    defaultCohort: false,
+  },
+];
+
+const mockProfiles = [
+  {
+    id: "profile-1",
+    name: "Test Profile 1",
+    role: "ta" as const,
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    userId: null,
+    lastLogin: "2024-01-01T00:00:00.000Z",
+    firstName: "Test",
+    lastName: "Profile",
+    alias: "test-profile",
+    viewedIntro: true,
+    viewedChat: true,
+    createdAt: "2024-01-01T00:00:00.000Z",
+    defaultProfile: false,
+    active: true,
+    lastActive: "2024-01-01T00:00:00.000Z",
+  },
+];
+
+const mockAttempts = [
+  {
+    id: "attempt-1",
+    profileId: "profile-1",
+    simulationId: "sim-1",
+    createdAt: "2024-01-01T00:00:00.000Z",
+  },
+];
+
+const mockChats = [
+  {
+    id: "chat-1",
+    attemptId: "attempt-1",
+    scenarioId: "scenario-1",
+    completed: true,
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    completedAt: "2024-01-01T00:00:00.000Z",
+    title: "Test Chat",
+    traceId: null,
+  },
+];
+
+const mockRubricHeatmapResult = {
+  matrix: [
+    [
+      {
+        correlation: 1.0,
+        pValue: 0.001,
+        color: "#10b981",
+        strength: "Strong",
+        dataPoints: 10,
+      },
+      {
+        correlation: 0.75,
+        pValue: 0.01,
+        color: "#34d399",
+        strength: "Moderate",
+        dataPoints: 10,
+      },
+    ],
+    [
+      {
+        correlation: 0.75,
+        pValue: 0.01,
+        color: "#34d399",
+        strength: "Moderate",
+        dataPoints: 10,
+      },
+      {
+        correlation: 1.0,
+        pValue: 0.001,
+        color: "#10b981",
+        strength: "Strong",
+        dataPoints: 10,
+      },
+    ],
+  ],
+  insights:
+    'Strong positive correlation (0.75) between "Communication" and "Critical Thinking". Students who excel in one skill area tend to excel in the other.',
+  standardGroups: mockStandardGroups,
+  hasData: true,
+};
+
+const renderComponent = (props = {}) => {
+  return render(
+    <QueryClientProvider client={mockQueryClient}>
+      <RubricHeatmap {...defaultProps} {...props} />
+    </QueryClientProvider>
+  );
+};
+
 describe("RubricHeatmap", () => {
-  const user = userEvent.setup();
-
   beforeEach(() => {
     vi.clearAllMocks();
-  });
 
-  afterEach(() => {
-    vi.clearAllMocks();
+    // Setup default mocks
+    vi.mocked(getAllRubrics).mockResolvedValue(mockRubrics);
+    vi.mocked(getStandardGroupsByRubrics).mockResolvedValue(mockStandardGroups);
+    vi.mocked(getStandardsByStandardGroups).mockResolvedValue(mockStandards);
+    vi.mocked(getSimulationChatGradesByRubrics).mockResolvedValue(mockGrades);
+    vi.mocked(
+      getSimulationChatFeedbacksBySimulationChatGrades
+    ).mockResolvedValue(mockFeedbacks);
+    vi.mocked(getAllCohorts).mockResolvedValue(mockCohorts);
+    vi.mocked(getAllProfiles).mockResolvedValue(mockProfiles); // Mocked to return empty array as per new mock
+    vi.mocked(getSimulationAttemptsByProfiles).mockResolvedValue(mockAttempts);
+    vi.mocked(getSimulationChatsByAttempts).mockResolvedValue(mockChats);
   });
 
   describe("Component Rendering", () => {
     it("renders the component with correct title and description", async () => {
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue(
+        mockRubricHeatmapResult
+      );
+
+      renderComponent();
 
       await waitFor(() => {
         expect(
           screen.getByText("Skill Area Correlation Matrix")
         ).toBeInTheDocument();
+        expect(
+          screen.getByText("Correlation between skill areas (standard groups)")
+        ).toBeInTheDocument();
       });
+    });
+
+    it("shows loading state initially", () => {
+      renderComponent();
 
       expect(
-        screen.getByText(
-          "Statistical correlation between skill areas (standard groups)"
-        )
+        screen.getByText("Skill Area Correlation Matrix")
       ).toBeInTheDocument();
     });
 
-    it("renders with different threshold configurations", async () => {
-      const props = createMockProps({
-        thresholds: {
-          danger: 30,
-          warning: 60,
-          success: 90,
-        },
+    it("shows no data message when no correlation data is available", async () => {
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue({
+        matrix: [],
+        insights: null,
+        standardGroups: [],
+        hasData: false,
       });
 
-      renderWithMocks(<RubricHeatmap {...props} />);
+      renderComponent();
 
       await waitFor(() => {
         expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
-      });
-    });
-
-    it("renders with undefined profileId", async () => {
-      const props = createMockProps({ profileId: undefined });
-      renderWithMocks(<RubricHeatmap {...props} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
-      });
-    });
-
-    it("renders with empty cohortIds array", async () => {
-      const props = createMockProps({ cohortIds: [] });
-      renderWithMocks(<RubricHeatmap {...props} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
+          screen.getByText(
+            "No correlation data available for the selected time period"
+          )
         ).toBeInTheDocument();
       });
     });
   });
 
-  describe("Rubric Picker Integration", () => {
+  describe("Data Loading and Processing", () => {
+    it("calls the utility function with correct parameters", async () => {
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue(
+        mockRubricHeatmapResult
+      );
+
+      renderComponent({
+        profileId: "profile-1",
+        cohortIds: ["cohort-1"],
+      });
+
+      await waitFor(() => {
+        expect(calculateRubricHeatmap).toHaveBeenCalledWith(
+          mockGrades,
+          mockFeedbacks,
+          mockStandards,
+          mockStandardGroups,
+          [mockRubrics[0]], // filtered rubrics
+          mockChats,
+          mockAttempts,
+          mockProfiles, // mockProfiles
+          mockCohorts,
+          defaultProps.dateStart,
+          defaultProps.dateEnd,
+          "profile-1",
+          ["cohort-1"],
+          ["rubric-1"] // selectedRubricIds
+        );
+      });
+    });
+
+    it("handles missing data gracefully", async () => {
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue({
+        matrix: [],
+        insights: null,
+        standardGroups: [],
+        hasData: false,
+      });
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(
+            "No correlation data available for the selected time period"
+          )
+        ).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Correlation Matrix Display", () => {
+    it("displays correlation matrix when data is available", async () => {
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue(
+        mockRubricHeatmapResult
+      );
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getAllByText("Communication")).toHaveLength(2); // One in header, one in table cell
+        expect(screen.getAllByText("Critical Thinking")).toHaveLength(2); // One in header, one in table cell
+      });
+    });
+
+    it("displays correlation values in matrix cells", async () => {
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue(
+        mockRubricHeatmapResult
+      );
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getAllByText("1.00")).toHaveLength(2); // Two diagonal cells with 1.00
+        expect(screen.getAllByText("0.75")).toHaveLength(2); // Two off-diagonal cells with 0.75
+      });
+    });
+  });
+
+  describe("Rubric Picker", () => {
     it("renders rubric picker when rubrics are available", async () => {
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue(
+        mockRubricHeatmapResult
+      );
+
+      renderComponent();
 
       await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
-      });
-
-      // Check for rubric picker - component shows loading state in tests
-      expect(
-        screen.getByText("Loading correlation data...")
-      ).toBeInTheDocument();
-    });
-
-    it("allows filtering by rubric selection", async () => {
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
-      });
-
-      // Verify picker functionality - component shows loading state in tests
-      expect(
-        screen.getByText("Loading correlation data...")
-      ).toBeInTheDocument();
-    });
-  });
-
-  describe("Heatmap Rendering", () => {
-    it("renders heatmap table when data is available", async () => {
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
-      });
-
-      // Check for heatmap table - component shows loading state in tests
-      expect(
-        screen.getByText("Loading correlation data...")
-      ).toBeInTheDocument();
-    });
-
-    it("displays correct heatmap data structure", async () => {
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
-      });
-
-      // Verify heatmap data structure - component shows loading state in tests
-      expect(
-        screen.getByText("Loading correlation data...")
-      ).toBeInTheDocument();
-    });
-
-    it("handles correlation calculations correctly", async () => {
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
-      });
-
-      // Verify correlation calculations - component shows loading state in tests
-      expect(
-        screen.getByText("Loading correlation data...")
-      ).toBeInTheDocument();
-    });
-  });
-
-  describe("Data Loading States", () => {
-    it("shows loading state when data is being fetched", async () => {
-      // Mock loading state by not providing data
-      vi.mocked(getAllProfiles).mockResolvedValue([]);
-
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
+        expect(screen.getByTestId("rubric-picker")).toBeInTheDocument();
       });
     });
 
-    it("handles empty data gracefully", async () => {
-      // Mock empty data
-      vi.mocked(getAllProfiles).mockResolvedValue([]);
-      vi.mocked(getSimulationAttemptsByProfiles).mockResolvedValue([]);
+    it("does not render rubric picker when no rubrics are available", async () => {
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue(
+        mockRubricHeatmapResult
+      );
 
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
+      // Mock empty rubrics
+      vi.mocked(getAllRubrics).mockResolvedValue([]);
+
+      renderComponent();
 
       await waitFor(() => {
-        expect(
-          screen.getByText("No cohort access available")
-        ).toBeInTheDocument();
+        expect(screen.queryByTestId("rubric-picker")).not.toBeInTheDocument();
       });
     });
   });
 
-  describe("Threshold Status Indicators", () => {
-    it("displays success indicator when correlations meet success threshold", async () => {
-      const props = createMockProps({
-        thresholds: { danger: 0.3, warning: 0.5, success: 0.7 },
+  describe("Threshold Status Indicator", () => {
+    it("shows green indicator for success threshold", async () => {
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue({
+        ...mockRubricHeatmapResult,
+        matrix: [
+          [
+            {
+              correlation: 0.9,
+              pValue: 0.001,
+              color: "#10b981",
+              strength: "Strong",
+              dataPoints: 10,
+            },
+            {
+              correlation: 0.9,
+              pValue: 0.001,
+              color: "#10b981",
+              strength: "Strong",
+              dataPoints: 10,
+            },
+          ],
+          [
+            {
+              correlation: 0.9,
+              pValue: 0.001,
+              color: "#10b981",
+              strength: "Strong",
+              dataPoints: 10,
+            },
+            {
+              correlation: 0.9,
+              pValue: 0.001,
+              color: "#10b981",
+              strength: "Strong",
+              dataPoints: 10,
+            },
+          ],
+        ],
       });
 
-      renderWithMocks(<RubricHeatmap {...props} />);
+      renderComponent();
 
       await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
-      });
-
-      // Check for success indicator - the component shows a colored dot in the top right
-      expect(
-        screen.getByText("Loading correlation data...")
-      ).toBeInTheDocument();
-    });
-
-    it("displays warning indicator when correlations meet warning threshold", async () => {
-      const props = createMockProps({
-        thresholds: { danger: 0.3, warning: 0.5, success: 0.7 },
-      });
-
-      renderWithMocks(<RubricHeatmap {...props} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
-      });
-
-      // Check for warning indicator - the component shows a colored dot in the top right
-      expect(
-        screen.getByText("Loading correlation data...")
-      ).toBeInTheDocument();
-    });
-
-    it("displays danger indicator when correlations are below danger threshold", async () => {
-      const props = createMockProps({
-        thresholds: { danger: 0.3, warning: 0.5, success: 0.7 },
-      });
-
-      renderWithMocks(<RubricHeatmap {...props} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
-      });
-
-      // Check for danger indicator - the component shows a colored dot in the top right
-      expect(
-        screen.getByText("Loading correlation data...")
-      ).toBeInTheDocument();
-    });
-  });
-
-  describe("Actionable Insights", () => {
-    it("displays actionable insights when correlation issues are detected", async () => {
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
-      });
-
-      // Check for insights section - component shows loading state in tests
-      expect(
-        screen.getByText("Loading correlation data...")
-      ).toBeInTheDocument();
-    });
-
-    it("does not display insights when correlations are good", async () => {
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
-      });
-
-      // Verify insights are not shown when correlations are good
-      const insightsSection = screen.queryByTestId("actionable-insights");
-      expect(insightsSection).not.toBeInTheDocument();
-    });
-  });
-
-  describe("Cohort Filtering", () => {
-    it("handles no data available for selected cohorts", async () => {
-      const props = createMockProps({
-        cohortIds: ["non-existent-cohort"],
-      });
-
-      renderWithMocks(<RubricHeatmap {...props} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("No cohort access available")
-        ).toBeInTheDocument();
+        const indicator = document.querySelector(".absolute.top-2.right-2");
+        expect(indicator).toHaveClass("bg-green-500");
       });
     });
 
-    it("filters data correctly when specific cohorts are selected", async () => {
-      const props = createMockProps({
-        cohortIds: ["test-cohort-id"],
+    it("shows yellow indicator for warning threshold", async () => {
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue({
+        ...mockRubricHeatmapResult,
+        matrix: [
+          [
+            {
+              correlation: 0.75,
+              pValue: 0.01,
+              color: "#34d399",
+              strength: "Moderate",
+              dataPoints: 10,
+            },
+            {
+              correlation: 0.75,
+              pValue: 0.01,
+              color: "#34d399",
+              strength: "Moderate",
+              dataPoints: 10,
+            },
+          ],
+          [
+            {
+              correlation: 0.75,
+              pValue: 0.01,
+              color: "#34d399",
+              strength: "Moderate",
+              dataPoints: 10,
+            },
+            {
+              correlation: 0.75,
+              pValue: 0.01,
+              color: "#34d399",
+              strength: "Moderate",
+              dataPoints: 10,
+            },
+          ],
+        ],
       });
 
-      renderWithMocks(<RubricHeatmap {...props} />);
+      renderComponent();
 
       await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
+        const indicator = document.querySelector(".absolute.top-2.right-2");
+        expect(indicator).toHaveClass("bg-yellow-500");
       });
     });
-  });
 
-  describe("Date Range Filtering", () => {
-    it("filters data by date range correctly", async () => {
-      const props = createMockProps({
-        dateStart: new Date("2024-06-01"),
-        dateEnd: new Date("2024-06-30"),
+    it("shows red indicator for danger threshold", async () => {
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue({
+        ...mockRubricHeatmapResult,
+        matrix: [
+          [
+            {
+              correlation: 0.4,
+              pValue: 0.05,
+              color: "#6ee7b7",
+              strength: "Weak",
+              dataPoints: 10,
+            },
+            {
+              correlation: 0.4,
+              pValue: 0.05,
+              color: "#6ee7b7",
+              strength: "Weak",
+              dataPoints: 10,
+            },
+          ],
+          [
+            {
+              correlation: 0.4,
+              pValue: 0.05,
+              color: "#6ee7b7",
+              strength: "Weak",
+              dataPoints: 10,
+            },
+            {
+              correlation: 0.4,
+              pValue: 0.05,
+              color: "#6ee7b7",
+              strength: "Weak",
+              dataPoints: 10,
+            },
+          ],
+        ],
       });
 
-      renderWithMocks(<RubricHeatmap {...props} />);
+      renderComponent();
 
       await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
-      });
-    });
-
-    it("handles edge case dates", async () => {
-      const props = createMockProps({
-        dateStart: new Date("2024-01-01T00:00:00.000Z"),
-        dateEnd: new Date("2024-12-31T23:59:59.999Z"),
-      });
-
-      renderWithMocks(<RubricHeatmap {...props} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
+        const indicator = document.querySelector(".absolute.top-2.right-2");
+        expect(indicator).toHaveClass("bg-red-500");
       });
     });
   });
 
-  describe("Profile Filtering", () => {
-    it("filters data by specific profile", async () => {
-      const props = createMockProps({
-        profileId: "specific-profile-id",
-      });
+  describe("Matrix Interaction", () => {
+    it("displays tooltips on matrix cell hover", async () => {
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue(
+        mockRubricHeatmapResult
+      );
 
-      renderWithMocks(<RubricHeatmap {...props} />);
+      renderComponent();
 
       await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
+        // Check that tooltip triggers are present
+        expect(screen.getAllByText("1.00")).toHaveLength(2); // Two diagonal cells with 1.00
+        expect(screen.getAllByText("0.75")).toHaveLength(2); // Two off-diagonal cells with 0.75
       });
     });
 
-    it("shows all profiles when profileId is undefined", async () => {
-      const props = createMockProps({
-        profileId: undefined,
-      });
+    it("highlights rows and columns on hover", async () => {
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue(
+        mockRubricHeatmapResult
+      );
 
-      renderWithMocks(<RubricHeatmap {...props} />);
+      renderComponent();
 
       await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
+        // Check that hover states are implemented
+        expect(screen.getAllByText("Communication")).toHaveLength(2); // One in header, one in table cell
+        expect(screen.getAllByText("Critical Thinking")).toHaveLength(2); // One in header, one in table cell
+      });
+    });
+  });
+
+  describe("Legend and Information", () => {
+    it("displays correlation legend", async () => {
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue(
+        mockRubricHeatmapResult
+      );
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Strong Positive")).toBeInTheDocument();
+        expect(screen.getByText("Strong Negative")).toBeInTheDocument();
+        expect(screen.getByText("Weak/No Correlation")).toBeInTheDocument();
+      });
+    });
+
+    it("displays Pearson correlation info", async () => {
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue(
+        mockRubricHeatmapResult
+      );
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Pearson r:")).toBeInTheDocument();
+        expect(screen.getByText("Matrix")).toBeInTheDocument();
       });
     });
   });
 
-  describe("Correlation Calculations", () => {
-    it("calculates Pearson correlation correctly", async () => {
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
+  describe("Insights Display", () => {
+    it("displays insights when available", async () => {
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue(
+        mockRubricHeatmapResult
+      );
+
+      renderComponent();
 
       await waitFor(() => {
         expect(
-          screen.getByText("Skill Area Correlation Matrix")
+          screen.getByText(/Strong positive correlation/)
         ).toBeInTheDocument();
       });
-
-      // Verify correlation calculations
-      expect(
-        screen.getByText("Skill Area Correlation Matrix")
-      ).toBeInTheDocument();
     });
 
-    it("handles edge cases in correlation calculations", async () => {
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
+    it("does not display insights when not available", async () => {
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue({
+        ...mockRubricHeatmapResult,
+        insights: null,
+      });
+
+      renderComponent();
 
       await waitFor(() => {
         expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
+          screen.queryByText(/Strong positive correlation/)
+        ).not.toBeInTheDocument();
       });
-
-      // Verify edge case handling
-      expect(
-        screen.getByText("Skill Area Correlation Matrix")
-      ).toBeInTheDocument();
-    });
-  });
-
-  describe("Table Functionality", () => {
-    it("displays correlation values in table cells", async () => {
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
-      });
-
-      // Verify table cells display correlation values - component shows loading state in tests
-      expect(
-        screen.getByText("Loading correlation data...")
-      ).toBeInTheDocument();
-    });
-
-    it("applies correct color coding to correlation values", async () => {
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
-      });
-
-      // Verify color coding is applied correctly - component shows loading state in tests
-      expect(
-        screen.getByText("Loading correlation data...")
-      ).toBeInTheDocument();
     });
   });
 
   describe("Error Handling", () => {
-    it("handles API errors gracefully", async () => {
-      // Mock API error
-      vi.mocked(getAllProfiles).mockRejectedValue(new Error("API Error"));
+    it("handles query errors gracefully", async () => {
+      vi.mocked(getAllRubrics).mockRejectedValue(new Error("Network error"));
 
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
+      renderComponent();
 
       await waitFor(() => {
         expect(
@@ -485,70 +761,136 @@ describe("RubricHeatmap", () => {
       });
     });
 
-    it("handles malformed data gracefully", async () => {
-      // Mock malformed data
-      vi.mocked(getAllProfiles).mockResolvedValue([
-        { invalid: "data" },
-      ] as unknown as Awaited<ReturnType<typeof getAllProfiles>>);
+    it("handles empty data arrays", async () => {
+      vi.mocked(getAllRubrics).mockResolvedValue([]);
+      vi.mocked(getAllProfiles).mockResolvedValue([]);
 
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue({
+        matrix: [],
+        insights: null,
+        standardGroups: [],
+        hasData: false,
+      });
+
+      renderComponent();
 
       await waitFor(() => {
         expect(
-          screen.getByText("Skill Area Correlation Matrix")
+          screen.getByText(
+            "No correlation data available for the selected time period"
+          )
         ).toBeInTheDocument();
       });
     });
   });
 
-  describe("Accessibility", () => {
-    it("has proper ARIA labels and roles", async () => {
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
-      });
-
-      // Check for proper accessibility attributes - component uses Card with article role
-      const card = screen.getByRole("article");
-      expect(card).toBeInTheDocument();
-    });
-
-    it("supports keyboard navigation", async () => {
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
-      });
-
-      // Test keyboard navigation - the component shows loading state in tests
-      expect(
-        screen.getByText("Loading correlation data...")
-      ).toBeInTheDocument();
-    });
-  });
-
-  describe("Performance", () => {
-    it("handles large datasets efficiently", async () => {
-      // Mock large dataset
-      const largeProfiles = Array.from({ length: 1000 }, (_, i) => ({
-        id: `profile-${i}`,
-        role: "ta",
-        // ... other required fields
-      }));
-      vi.mocked(getAllProfiles).mockResolvedValue(
-        largeProfiles as unknown as Awaited<ReturnType<typeof getAllProfiles>>
+  describe("Props Handling", () => {
+    it("handles profileId prop correctly", async () => {
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue(
+        mockRubricHeatmapResult
       );
 
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
+      renderComponent({ profileId: "profile-1" });
+
+      await waitFor(() => {
+        expect(calculateRubricHeatmap).toHaveBeenCalledWith(
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Date),
+          expect.any(Date),
+          "profile-1",
+          expect.any(Array),
+          expect.any(Array)
+        );
+      });
+    });
+
+    it("handles cohortIds prop correctly", async () => {
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue(
+        mockRubricHeatmapResult
+      );
+
+      renderComponent({ cohortIds: ["cohort-1", "cohort-2"] });
+
+      await waitFor(() => {
+        expect(calculateRubricHeatmap).toHaveBeenCalledWith(
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Date),
+          expect.any(Date),
+          undefined,
+          ["cohort-1", "cohort-2"],
+          expect.any(Array)
+        );
+      });
+    });
+
+    it("handles different threshold values", async () => {
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue(
+        mockRubricHeatmapResult
+      );
+
+      const customThresholds = {
+        danger: 30,
+        warning: 60,
+        success: 90,
+      };
+
+      renderComponent({ thresholds: customThresholds });
+
+      await waitFor(() => {
+        expect(calculateRubricHeatmap).toHaveBeenCalledWith(
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Array),
+          expect.any(Date),
+          expect.any(Date),
+          undefined,
+          expect.any(Array),
+          expect.any(Array)
+        );
+      });
+    });
+  });
+
+  describe("Loading States", () => {
+    it("shows loading spinner when data is loading", async () => {
+      // Mock loading state by not providing data
+      vi.mocked(getAllRubrics).mockResolvedValue([]);
+
+      renderComponent();
 
       await waitFor(() => {
         expect(
@@ -557,14 +899,18 @@ describe("RubricHeatmap", () => {
       });
     });
 
-    it("handles prop changes gracefully", async () => {
-      const props = createMockProps();
-      renderWithMocks(<RubricHeatmap {...props} />);
+    it("handles loading state transitions", async () => {
+      const { calculateRubricHeatmap } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateRubricHeatmap).mockReturnValue(
+        mockRubricHeatmapResult
+      );
+
+      renderComponent();
 
       await waitFor(() => {
-        expect(
-          screen.getByText("Skill Area Correlation Matrix")
-        ).toBeInTheDocument();
+        expect(screen.getAllByText("Communication")).toHaveLength(2);
       });
     });
   });

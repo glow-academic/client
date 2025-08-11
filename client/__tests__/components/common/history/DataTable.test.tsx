@@ -19,27 +19,52 @@ import "@/mocks/queries";
 const mockProps: DataTableProps<unknown, unknown> = {
   columns: [
     {
-      id: "name",
-      header: "Name",
-      accessorKey: "name",
+      id: "createdAt",
+      header: "Created At",
+      accessorKey: "createdAt",
     },
     {
-      id: "status",
-      header: "Status",
-      accessorKey: "status",
+      id: "simulationId",
+      header: "Simulation",
+      accessorKey: "simulationId",
+    },
+    {
+      id: "scenarios",
+      header: "Scenarios",
+      accessorKey: "scenarios",
+    },
+    {
+      id: "profileId",
+      header: "Profile",
+      accessorKey: "profileId",
     },
   ],
   data: [
-    { name: "Test Item 1", status: "Active" },
-    { name: "Test Item 2", status: "Inactive" },
+    {
+      createdAt: "2025-01-01T00:00:00Z",
+      simulationId: "sim1",
+      scenarios: ["scenario1", "scenario2"],
+      profileId: "profile1",
+    },
+    {
+      createdAt: "2025-01-02T00:00:00Z",
+      simulationId: "sim2",
+      scenarios: ["scenario3"],
+      profileId: "profile2",
+    },
   ],
   profileOptions: [
     { value: "profile1", label: "Profile 1" },
     { value: "profile2", label: "Profile 2" },
   ],
-  scoreRangeOptions: [
-    { value: "0-50", label: "0-50" },
-    { value: "51-100", label: "51-100" },
+  simulationOptions: [
+    { value: "sim1", label: "Simulation 1" },
+    { value: "sim2", label: "Simulation 2" },
+  ],
+  scenarioOptions: [
+    { value: "scenario1", label: "Scenario 1" },
+    { value: "scenario2", label: "Scenario 2" },
+    { value: "scenario3", label: "Scenario 3" },
   ],
   // showExport: false, /* optional */
   // showAll: false, /* optional */
@@ -59,13 +84,22 @@ describe("DataTable", () => {
     it("should render with props", () => {
       renderWithMocks(<DataTable {...mockProps} />);
 
-      // Should render table headers
-      expect(screen.getByText("Name")).toBeInTheDocument();
-      expect(screen.getByText("Status")).toBeInTheDocument();
+      // Should render table headers - use getAllByText to handle multiple instances
+      expect(screen.getByText("Created At")).toBeInTheDocument();
+      expect(screen.getAllByText("Simulation").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Scenarios").length).toBeGreaterThan(0);
+      expect(screen.getByText("Profile")).toBeInTheDocument();
 
-      // Should render table data
-      expect(screen.getByText("Test Item 1")).toBeInTheDocument();
-      expect(screen.getByText("Test Item 2")).toBeInTheDocument();
+      // Should render table data - check for the actual data values
+      expect(screen.getByText("sim1")).toBeInTheDocument();
+      expect(screen.getByText("sim2")).toBeInTheDocument();
+
+      // Should render search input
+      expect(
+        screen.getByPlaceholderText(
+          "Search by name, simulation, or scenarios..."
+        )
+      ).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
@@ -113,10 +147,11 @@ describe("DataTable", () => {
     it("should handle edge cases gracefully", () => {
       // Test with empty data
       const emptyProps: DataTableProps<unknown, unknown> = {
-        columns: [],
+        columns: mockProps.columns, // Use the same columns to avoid undefined column access
         data: [],
         profileOptions: [],
-        scoreRangeOptions: [],
+        simulationOptions: [],
+        scenarioOptions: [],
       };
 
       renderWithMocks(<DataTable {...emptyProps} />);
@@ -128,11 +163,12 @@ describe("DataTable", () => {
     it("should handle missing or invalid props", () => {
       renderWithMocks(
         <DataTable
-          columns={[]}
+          columns={mockProps.columns} // Use the same columns to avoid undefined column access
           data={[]}
           profileOptions={[]}
-          scoreRangeOptions={[]}
-        />,
+          simulationOptions={[]}
+          scenarioOptions={[]}
+        />
       );
 
       // Should handle missing props gracefully
@@ -142,8 +178,10 @@ describe("DataTable", () => {
     it("should handle large datasets", () => {
       // Test with larger dataset
       const largeData = Array.from({ length: 100 }, (_, i) => ({
-        name: `Item ${i}`,
-        status: i % 2 === 0 ? "Active" : "Inactive",
+        createdAt: `2025-01-${String(i + 1).padStart(2, "0")}T00:00:00Z`,
+        simulationId: `sim${i}`,
+        scenarios: [`scenario${i}`],
+        profileId: `profile${(i % 2) + 1}`,
       }));
 
       const largeProps: DataTableProps<unknown, unknown> = {

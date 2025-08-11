@@ -3,8 +3,10 @@
 import { db } from "@/utils/drizzle/db";
 import { assistantChats } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function createAssistantChats(data: (typeof assistantChats.$inferInsert)[]) {
+// Original logic is now a "private" function
+async function _createAssistantChats(data: (typeof assistantChats.$inferInsert)[]) {
   try {
     return await db.insert(assistantChats).values(data).returning();
   } catch (error) {
@@ -12,3 +14,6 @@ export async function createAssistantChats(data: (typeof assistantChats.$inferIn
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const createAssistantChats = createMockableAction('createAssistantChats', _createAssistantChats);

@@ -40,7 +40,7 @@ export function RubricsDataTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "updatedAt", desc: true }, // Default to descending order by date
@@ -74,7 +74,7 @@ export function RubricsDataTable({
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="rubrics-data-table">
       <RubricsDataTableToolbar
         table={table}
         passPointsOptions={passPointsOptions}

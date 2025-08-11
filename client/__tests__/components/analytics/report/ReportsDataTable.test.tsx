@@ -16,21 +16,6 @@ import "@/mocks/api";
 import "@/mocks/mutations";
 import "@/mocks/queries";
 
-// ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
-const mockProps: ReportsDataTableProps = {
-  columns: [],
-  data: [],
-  roleOptions: [],
-  cohortOptions: [],
-  personaOptions: [],
-  scenarioOptions: [],
-  simulationOptions: [],
-  simulations: [],
-  onViewReport: vi.fn(),
-  // showExport: false, /* optional */
-};
-
 // Mock data for testing
 const mockTAPerformanceData: TAPerformanceData[] = [
   {
@@ -79,16 +64,96 @@ const mockTAPerformanceData: TAPerformanceData[] = [
 
 const mockColumns: ColumnDef<TAPerformanceData>[] = [
   {
+    id: "firstName",
     accessorKey: "firstName",
     header: "Name",
     cell: ({ row }) => `${row.original.firstName} ${row.original.lastName}`,
   },
   {
+    id: "averageScore",
     accessorKey: "averageScore",
     header: "Average Score",
     cell: ({ row }) => `${row.original.averageScore}%`,
   },
+  {
+    id: "taCohorts",
+    accessorKey: "taCohorts",
+    header: "Cohorts",
+    cell: () => null,
+    enableSorting: false,
+    enableHiding: false,
+    enableColumnFilter: true,
+  },
+  {
+    id: "role",
+    accessorKey: "role",
+    header: "Role",
+    cell: () => null,
+    enableSorting: false,
+    enableHiding: false,
+    enableColumnFilter: true,
+  },
+  {
+    id: "personasTested",
+    accessorKey: "personasTested",
+    header: "Personas Tested",
+    cell: () => null,
+    enableSorting: false,
+    enableHiding: false,
+    enableColumnFilter: true,
+  },
+  {
+    id: "scenarioIds",
+    accessorKey: "scenarioIds",
+    header: "Scenario IDs",
+    cell: () => null,
+    enableSorting: false,
+    enableHiding: false,
+    enableColumnFilter: true,
+  },
+  {
+    id: "simulationIds",
+    accessorKey: "simulationIds",
+    header: "Simulation IDs",
+    cell: () => null,
+    enableSorting: false,
+    enableHiding: false,
+    enableColumnFilter: true,
+  },
+  {
+    id: "personaResponseTimes",
+    accessorKey: "personaResponseTimes",
+    header: "Response Time",
+    cell: () => null,
+    enableSorting: false,
+    enableHiding: false,
+    enableColumnFilter: true,
+  },
+  {
+    id: "stagnationRate",
+    accessorKey: "stagnationRate",
+    header: "Stagnation",
+    cell: () => null,
+    enableSorting: false,
+    enableHiding: false,
+    enableColumnFilter: true,
+  },
 ];
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: ReportsDataTableProps = {
+  columns: mockColumns,
+  data: [],
+  roleOptions: [],
+  cohortOptions: [],
+  personaOptions: [],
+  scenarioOptions: [],
+  simulationOptions: [],
+  simulations: [],
+  onViewReport: vi.fn(),
+  // showExport: false, /* optional */
+};
 
 // ------------------------------------------------------------------
 describe("ReportsDataTable", () => {
@@ -222,9 +287,9 @@ describe("ReportsDataTable", () => {
     });
 
     it("should handle missing or invalid props", () => {
-      // Test with minimal required props
+      // Test with minimal required props - use the same columns structure to avoid undefined column access
       const minimalProps = {
-        columns: [],
+        columns: mockColumns, // Use the same columns to avoid undefined column access
         data: [],
         roleOptions: [],
         cohortOptions: [],

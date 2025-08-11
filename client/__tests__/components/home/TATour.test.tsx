@@ -1,5 +1,5 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -8,181 +8,489 @@ import TATour from "@/components/home/TATour";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
+import "@/mocks/auth";
 import "@/mocks/mutations";
+import "@/mocks/navigation";
 import "@/mocks/queries";
 
 // Mock the tour context
+const mockTourContext = {
+  state: {
+    isOpen: false,
+    currentStep: 0,
+    steps: [],
+    isLoading: false,
+    isNavigating: false,
+    showGuideButton: true,
+    profile: null,
+    attemptId: null,
+  },
+  openTour: vi.fn(),
+  closeTour: vi.fn(),
+  nextStep: vi.fn(),
+  completeStep: vi.fn(),
+  setNavigating: vi.fn(),
+  setLoadingSimulation: vi.fn(),
+  setShowGuideButton: vi.fn(),
+  setAttemptId: vi.fn(),
+  openGuide: vi.fn(),
+  getGuideButtonState: vi.fn(() => "start"),
+};
+
 vi.mock("@/contexts/tour-context", () => ({
-  useTour: () => ({
-    state: {
+  useTour: () => mockTourContext,
+  TourProvider: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+}));
+
+// Mock the tour steps creation
+vi.mock("@/utils/tour-steps", () => ({
+  createTATourSteps: vi.fn(() => [
+    {
+      id: "step-0",
+      title: "Welcome",
+      content: "Welcome to the tour",
+      page: "/home",
+      isCompleted: false,
+    },
+    {
+      id: "step-1",
+      title: "Cohort Leaderboard",
+      content: "View your cohort leaderboard",
+      page: "/cohorts/c/test-cohort",
+      isCompleted: false,
+    },
+    {
+      id: "step-2",
+      title: "Practice Simulation",
+      content: "Start a practice simulation",
+      page: "/practice",
+      isCompleted: false,
+    },
+    {
+      id: "step-3",
+      title: "Send Message",
+      content: "Send your first message",
+      page: "/practice/a/test-attempt",
+      isCompleted: false,
+    },
+    {
+      id: "step-4",
+      title: "End Chat",
+      content: "End the chat session",
+      page: "/practice/a/test-attempt",
+      isCompleted: false,
+    },
+  ]),
+}));
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps = {};
+// ------------------------------------------------------------------
+
+describe("TATour", () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+
+    // Reset mock contexts to default state
+    Object.assign(mockTourContext.state, {
       isOpen: false,
       currentStep: 0,
       steps: [],
       isLoading: false,
       isNavigating: false,
       showGuideButton: true,
-    },
-    openTour: vi.fn(),
-    closeTour: vi.fn(),
-    nextStep: vi.fn(),
-    completeStep: vi.fn(),
-    setNavigating: vi.fn(),
-    setLoadingSimulation: vi.fn(),
-    setShowGuideButton: vi.fn(),
-    openGuide: vi.fn(),
-    getGuideButtonState: () => "start",
-  }),
-  TourProvider: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-}));
+      profile: null,
+      attemptId: null,
+    });
 
-// Mock the websocket context
-vi.mock("@/contexts/websocket-context", () => ({
-  useWebSocket: () => ({
-    isConnected: true,
-    emitStartSimulation: vi.fn(),
-  }),
-  WebSocketProvider: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-}));
+    // Reset mock functions
+    mockTourContext.getGuideButtonState.mockReturnValue("start");
 
-// Mock the profile context to return a TA user
-vi.mock("@/contexts/profile-context", () => ({
-  useProfile: () => ({
-    effectiveProfile: {
-      id: "test-profile-id",
-      firstName: "Test",
-      lastName: "User",
-      role: "ta",
-      viewedIntro: false,
-      viewedChat: false,
-    },
-    activeProfile: {
-      id: "test-profile-id",
-      firstName: "Test",
-      lastName: "User",
-      role: "ta",
-      viewedIntro: false,
-      viewedChat: false,
-    },
-    isLoading: false,
-  }),
-  ProfileProvider: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-}));
-
-// Mock the analytics context
-vi.mock("@/contexts/analytics-context", () => ({
-  useAnalytics: () => ({
-    startDate: new Date(),
-    endDate: new Date(),
-    effectiveCohortIds: [],
-    cohorts: [],
-  }),
-  AnalyticsProvider: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-}));
-
-// Mock the assistant context
-vi.mock("@/contexts/assistant-context", () => ({
-  AssistantProvider: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-}));
-
-describe("TATour", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+    // Reset profile context to default TA user
+    const { useProfile } = await import("@/contexts/profile-context");
+    vi.mocked(useProfile).mockReturnValue({
+      effectiveProfile: {
+        id: "test-profile-id",
+        userId: 1,
+        firstName: "Test",
+        lastName: "User",
+        alias: "testuser",
+        role: "ta",
+        active: true,
+        viewedIntro: false,
+        viewedChat: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastLogin: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        defaultProfile: false,
+      },
+      activeProfile: null,
+      simulatedProfile: null,
+      isLoading: false,
+      isSimulating: false,
+      setSimulatedProfile: vi.fn(),
+      clearSimulation: vi.fn(),
+      navigateToDefault: vi.fn(),
+      isSectionAvailable: vi.fn(() => true),
+    });
   });
 
-  describe("Rendering", () => {
+  describe("Component Rendering", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<TATour />);
-
-      // Tour should not be visible initially since isOpen is false
-      expect(document.querySelector('[data-testid="tour-overlay"]')).toBeNull();
+      renderWithMocks(<TATour {...mockProps} />);
+      await waitFor(() => {
+        expect(screen.getByText("Start Tour")).toBeInTheDocument();
+      });
     });
 
     it("shows guide button for TA users", async () => {
-      renderWithMocks(<TATour />);
+      renderWithMocks(<TATour {...mockProps} />);
+      await waitFor(() => {
+        expect(screen.getByText("Start Tour")).toBeInTheDocument();
+      });
+    });
 
-      // Should render the guide button
-      expect(screen.getByText("Start Tour")).toBeInTheDocument();
+    it("does not show guide button for non-TA users", async () => {
+      // Mock the tour context to return "hidden" state for non-TA users
+      mockTourContext.getGuideButtonState.mockReturnValue("hidden");
+
+      // Update the profile context mock to return a non-TA user
+      const { useProfile } = await import("@/contexts/profile-context");
+      vi.mocked(useProfile).mockReturnValue({
+        effectiveProfile: {
+          id: "test-profile-id",
+          userId: 1,
+          firstName: "Test",
+          lastName: "User",
+          alias: "testuser",
+          role: "admin",
+          active: true,
+          viewedIntro: false,
+          viewedChat: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
+          lastActive: new Date().toISOString(),
+          defaultProfile: false,
+        },
+        activeProfile: null,
+        simulatedProfile: null,
+        isLoading: false,
+        isSimulating: false,
+        setSimulatedProfile: vi.fn(),
+        clearSimulation: vi.fn(),
+        navigateToDefault: vi.fn(),
+        isSectionAvailable: vi.fn(() => true),
+      });
+
+      renderWithMocks(<TATour {...mockProps} />);
+      await waitFor(() => {
+        expect(screen.queryByText("Start Tour")).not.toBeInTheDocument();
+      });
+    });
+
+    it("does not show guide button when profile is loading", async () => {
+      // Update the profile context mock to return loading state
+      const { useProfile } = await import("@/contexts/profile-context");
+      vi.mocked(useProfile).mockReturnValue({
+        effectiveProfile: null,
+        activeProfile: null,
+        simulatedProfile: null,
+        isLoading: true,
+        isSimulating: false,
+        setSimulatedProfile: vi.fn(),
+        clearSimulation: vi.fn(),
+        navigateToDefault: vi.fn(),
+        isSectionAvailable: vi.fn(() => true),
+      });
+
+      renderWithMocks(<TATour {...mockProps} />);
+      await waitFor(() => {
+        expect(screen.queryByText("Start Tour")).not.toBeInTheDocument();
+      });
+    });
+
+    it("does not show guide button when no profile exists", async () => {
+      // Update the profile context mock to return no profile
+      const { useProfile } = await import("@/contexts/profile-context");
+      vi.mocked(useProfile).mockReturnValue({
+        effectiveProfile: null,
+        activeProfile: null,
+        simulatedProfile: null,
+        isLoading: false,
+        isSimulating: false,
+        setSimulatedProfile: vi.fn(),
+        clearSimulation: vi.fn(),
+        navigateToDefault: vi.fn(),
+        isSectionAvailable: vi.fn(() => true),
+      });
+
+      renderWithMocks(<TATour {...mockProps} />);
+      await waitFor(() => {
+        expect(screen.queryByText("Start Tour")).not.toBeInTheDocument();
+      });
     });
   });
 
-  describe("Tour Steps", () => {
-    it("has correct guide button state", async () => {
-      renderWithMocks(<TATour />);
-
-      // Should show start tour button
-      expect(screen.getByText("Start Tour")).toBeInTheDocument();
+  describe("Guide Button States", () => {
+    it("shows start state when tour not started", async () => {
+      mockTourContext.getGuideButtonState.mockReturnValue("start");
+      renderWithMocks(<TATour {...mockProps} />);
+      await waitFor(() => {
+        expect(screen.getByText("Start Tour")).toBeInTheDocument();
+      });
     });
 
-    it("has correct button content", async () => {
-      renderWithMocks(<TATour />);
+    it("shows resume state when tour in progress", async () => {
+      mockTourContext.getGuideButtonState.mockReturnValue("resume");
+      renderWithMocks(<TATour {...mockProps} />);
+      await waitFor(() => {
+        expect(screen.getByText("Resume Tour")).toBeInTheDocument();
+      });
+    });
 
-      // Check button content
-      const button = screen.getByText("Start Tour");
-      expect(button).toBeInTheDocument();
-      expect(button.closest("button")).toHaveTextContent("Start Tour");
+    it("shows complete state when tour finished", async () => {
+      mockTourContext.getGuideButtonState.mockReturnValue("complete");
+      renderWithMocks(<TATour {...mockProps} />);
+      await waitFor(() => {
+        expect(screen.getByText("Tour Complete")).toBeInTheDocument();
+      });
+    });
+
+    it("hides button when state is hidden", async () => {
+      mockTourContext.getGuideButtonState.mockReturnValue("hidden");
+      renderWithMocks(<TATour {...mockProps} />);
+      await waitFor(() => {
+        expect(screen.queryByText("Start Tour")).not.toBeInTheDocument();
+      });
     });
   });
 
-  describe("Tour Actions", () => {
+  describe("Tour Initialization", () => {
+    it("initializes tour for TA users with incomplete profile", async () => {
+      // Update the profile context mock to return a TA user with incomplete profile
+      const { useProfile } = await import("@/contexts/profile-context");
+      vi.mocked(useProfile).mockReturnValue({
+        effectiveProfile: {
+          id: "test-profile-id",
+          updatedAt: "2025-07-29T14:36:26.938Z",
+          userId: 1,
+          lastLogin: "2025-07-29T14:36:26.938Z",
+          firstName: "Test",
+          lastName: "User",
+          alias: "testuser",
+          viewedIntro: false,
+          viewedChat: false,
+          createdAt: "2025-07-29T14:36:26.938Z",
+          role: "ta",
+          defaultProfile: false,
+          active: true,
+          lastActive: "2025-07-29T14:36:26.938Z",
+        },
+        activeProfile: null,
+        simulatedProfile: null,
+        isLoading: false,
+        isSimulating: false,
+        setSimulatedProfile: vi.fn(),
+        clearSimulation: vi.fn(),
+        navigateToDefault: vi.fn(),
+        isSectionAvailable: vi.fn(() => true),
+      });
+
+      renderWithMocks(<TATour {...mockProps} />);
+
+      await waitFor(() => {
+        expect(mockTourContext.openTour).toHaveBeenCalled();
+      });
+    });
+
+    it("does not initialize tour for non-TA users", async () => {
+      // Update the profile context mock to return a non-TA user
+      const { useProfile } = await import("@/contexts/profile-context");
+      vi.mocked(useProfile).mockReturnValue({
+        effectiveProfile: {
+          id: "test-profile-id",
+          updatedAt: "2025-07-29T14:36:26.938Z",
+          userId: 1,
+          lastLogin: "2025-07-29T14:36:26.938Z",
+          firstName: "Test",
+          lastName: "User",
+          alias: "testuser",
+          viewedIntro: false,
+          viewedChat: false,
+          createdAt: "2025-07-29T14:36:26.938Z",
+          role: "admin",
+          defaultProfile: false,
+          active: true,
+          lastActive: "2025-07-29T14:36:26.938Z",
+        },
+        activeProfile: null,
+        simulatedProfile: null,
+        isLoading: false,
+        isSimulating: false,
+        setSimulatedProfile: vi.fn(),
+        clearSimulation: vi.fn(),
+        navigateToDefault: vi.fn(),
+        isSectionAvailable: vi.fn(() => true),
+      });
+
+      renderWithMocks(<TATour {...mockProps} />);
+
+      await waitFor(() => {
+        expect(mockTourContext.openTour).not.toHaveBeenCalled();
+      });
+    });
+
+    it("does not re-initialize tour if already initialized for same profile", async () => {
+      // Update the profile context mock to return a TA user
+      const { useProfile } = await import("@/contexts/profile-context");
+      vi.mocked(useProfile).mockReturnValue({
+        effectiveProfile: {
+          id: "test-profile-id",
+          updatedAt: "2025-07-29T14:36:26.938Z",
+          userId: 1,
+          lastLogin: "2025-07-29T14:36:26.938Z",
+          firstName: "Test",
+          lastName: "User",
+          alias: "testuser",
+          viewedIntro: false,
+          viewedChat: false,
+          createdAt: "2025-07-29T14:36:26.938Z",
+          role: "ta",
+          defaultProfile: false,
+          active: true,
+          lastActive: "2025-07-29T14:36:26.938Z",
+        },
+        activeProfile: null,
+        simulatedProfile: null,
+        isLoading: false,
+        isSimulating: false,
+        setSimulatedProfile: vi.fn(),
+        clearSimulation: vi.fn(),
+        navigateToDefault: vi.fn(),
+        isSectionAvailable: vi.fn(() => true),
+      });
+
+      renderWithMocks(<TATour {...mockProps} />);
+
+      await waitFor(() => {
+        expect(mockTourContext.openTour).toHaveBeenCalledTimes(1);
+      });
+    });
+  });
+
+  describe("User Interactions", () => {
     it("calls openGuide when guide button is clicked", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<TATour />);
+      renderWithMocks(<TATour {...mockProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Start Tour")).toBeInTheDocument();
+      });
 
       const guideButton = screen.getByText("Start Tour");
       await user.click(guideButton);
 
-      // The mock should have been called
-      // Note: We can't easily test the actual function call due to the mock structure
-      expect(guideButton).toBeInTheDocument();
+      expect(mockTourContext.openGuide).toHaveBeenCalled();
+    });
+
+    it("handles button state changes correctly", async () => {
+      // Test different button states
+      const states = ["start", "resume", "complete"];
+
+      for (const state of states) {
+        mockTourContext.getGuideButtonState.mockReturnValue(state);
+        renderWithMocks(<TATour {...mockProps} />);
+
+        await waitFor(() => {
+          if (state === "start") {
+            expect(screen.getByText("Start Tour")).toBeInTheDocument();
+          } else if (state === "resume") {
+            expect(screen.getByText("Resume Tour")).toBeInTheDocument();
+          } else if (state === "complete") {
+            expect(screen.getByText("Tour Complete")).toBeInTheDocument();
+          }
+        });
+      }
     });
   });
 
-  it("should handle step 2 to 3 transition with attemptId logic", () => {
-    // Test case 1: No attemptId - should trigger simulation card click
-    // Mock DOM elements for simulation cards
-    const mockCard = document.createElement("div");
-    mockCard.setAttribute("data-testid", "simulation-card");
+  describe("Guide Button Visibility Logic", () => {
+    it("shows guide button for TA users who haven't completed tour", async () => {
+      const { useProfile } = await import("@/contexts/profile-context");
+      vi.mocked(useProfile).mockReturnValue({
+        effectiveProfile: {
+          id: "test-profile-id",
+          updatedAt: "2025-07-29T14:36:26.938Z",
+          userId: 1,
+          lastLogin: "2025-07-29T14:36:26.938Z",
+          firstName: "Test",
+          lastName: "User",
+          alias: "testuser",
+          viewedIntro: false,
+          viewedChat: false,
+          createdAt: "2025-07-29T14:36:26.938Z",
+          role: "ta",
+          defaultProfile: false,
+          active: true,
+          lastActive: "2025-07-29T14:36:26.938Z",
+        },
+        activeProfile: null,
+        simulatedProfile: null,
+        isLoading: false,
+        isSimulating: false,
+        setSimulatedProfile: vi.fn(),
+        clearSimulation: vi.fn(),
+        navigateToDefault: vi.fn(),
+        isSectionAvailable: vi.fn(() => true),
+      });
 
-    const mockButton = document.createElement("button");
-    mockButton.setAttribute("data-testid", "start-simulation-test-id");
-    mockButton.textContent = "Start Simulation";
+      renderWithMocks(<TATour {...mockProps} />);
+      await waitFor(() => {
+        expect(screen.getByText("Start Tour")).toBeInTheDocument();
+      });
+    });
 
-    const mockTitle = document.createElement("div");
-    mockTitle.setAttribute("data-testid", "simulation-title");
-    mockTitle.textContent = "Test Simulation";
+    it("hides guide button for TA users who have completed tour", async () => {
+      // Mock the tour context to return "hidden" state for completed tours
+      mockTourContext.getGuideButtonState.mockReturnValue("hidden");
 
-    mockCard.appendChild(mockButton);
-    mockCard.appendChild(mockTitle);
-    document.body.appendChild(mockCard);
+      const { useProfile } = await import("@/contexts/profile-context");
+      vi.mocked(useProfile).mockReturnValue({
+        effectiveProfile: {
+          id: "test-profile-id",
+          userId: 1,
+          firstName: "Test",
+          lastName: "User",
+          alias: "testuser",
+          role: "ta",
+          active: true,
+          viewedIntro: true,
+          viewedChat: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
+          lastActive: new Date().toISOString(),
+          defaultProfile: false,
+        },
+        activeProfile: null,
+        simulatedProfile: null,
+        isLoading: false,
+        isSimulating: false,
+        setSimulatedProfile: vi.fn(),
+        clearSimulation: vi.fn(),
+        navigateToDefault: vi.fn(),
+        isSectionAvailable: vi.fn(() => true),
+      });
 
-    // Spy on button click
-    const clickSpy = vi.spyOn(mockButton, "click");
-
-    // Trigger step 2 action via custom event (simulating Next button click)
-    window.dispatchEvent(
-      new CustomEvent("tourAction", { detail: { stepIndex: 2 } }),
-    );
-
-    // Should trigger simulation card click after timeout
-    setTimeout(() => {
-      expect(clickSpy).toHaveBeenCalled();
-    }, 600);
-
-    // Clean up
-    document.body.removeChild(mockCard);
-
-    // Test case 2: With attemptId - should navigate directly
-    // This would require mocking the router.push, which is already mocked in the setup
-    // The actual navigation logic is tested through integration
+      renderWithMocks(<TATour {...mockProps} />);
+      await waitFor(() => {
+        expect(screen.queryByText("Start Tour")).not.toBeInTheDocument();
+      });
+    });
   });
 });

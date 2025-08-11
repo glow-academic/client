@@ -22,7 +22,7 @@ import { useWebSocket } from "./websocket-context";
 
 type ChatUIState = "closed" | "open" | "minimized" | "widget" | "expanded";
 
-interface AssistantContextType {
+export interface AssistantContextType {
   // UI State
   uiState: ChatUIState;
   setUiState: (state: ChatUIState) => void;

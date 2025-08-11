@@ -4,8 +4,10 @@ import { db } from "@/utils/drizzle/db";
 import { simulationChatFeedbacks } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function getSimulationChatFeedbacksByStandards(standardIds: string[]) {
+// Original logic is now a "private" function
+async function _getSimulationChatFeedbacksByStandards(standardIds: string[]) {
   try {
     return await db.select().from(simulationChatFeedbacks).where(inArray(simulationChatFeedbacks.standardId, standardIds));
   } catch (error) {
@@ -13,3 +15,6 @@ export async function getSimulationChatFeedbacksByStandards(standardIds: string[
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const getSimulationChatFeedbacksByStandards = createMockableAction('getSimulationChatFeedbacksByStandards', _getSimulationChatFeedbacksByStandards);

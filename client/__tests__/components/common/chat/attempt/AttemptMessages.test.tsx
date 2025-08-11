@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
 import AttemptMessages from "@/components/common/chat/attempt/AttemptMessages";
+import { SimulationMessage } from "@/types";
+import { UseQueryResult } from "@tanstack/react-query";
 
 // Mock the query hook
 vi.mock("@tanstack/react-query", async () => {
@@ -105,7 +107,7 @@ describe("AttemptMessages", () => {
         data: [],
         isLoading: true,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -120,7 +122,7 @@ describe("AttemptMessages", () => {
         data: [],
         isLoading: true,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -137,7 +139,7 @@ describe("AttemptMessages", () => {
         data: [],
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -154,7 +156,7 @@ describe("AttemptMessages", () => {
         data: [],
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -176,7 +178,7 @@ describe("AttemptMessages", () => {
         data: [],
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -196,7 +198,7 @@ describe("AttemptMessages", () => {
         data: [],
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       mockSimulationContext.currentChat.completed = true;
 
@@ -216,7 +218,7 @@ describe("AttemptMessages", () => {
         data: [],
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       mockSimulationContext.isSendingMessage = true;
 
@@ -236,7 +238,7 @@ describe("AttemptMessages", () => {
         data: [],
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       mockSimulationContext.simulation.timeLimit = 300;
       mockSimulationContext.isActive = false;
@@ -259,7 +261,7 @@ describe("AttemptMessages", () => {
         data: [mockMessages[1]], // Query message
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -276,7 +278,7 @@ describe("AttemptMessages", () => {
         data: [mockMessages[0]], // Response message
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -293,7 +295,7 @@ describe("AttemptMessages", () => {
         data: [mockMessages[2]], // Incomplete message
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -312,7 +314,7 @@ describe("AttemptMessages", () => {
         data: [emptyCompletedMessage],
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -343,7 +345,7 @@ describe("AttemptMessages", () => {
         data: sortedMessages,
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -366,7 +368,7 @@ describe("AttemptMessages", () => {
         data: mockMessages,
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -386,7 +388,7 @@ describe("AttemptMessages", () => {
         data: mockMessages,
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -416,7 +418,7 @@ describe("AttemptMessages", () => {
         data: [markdownMessage],
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -438,7 +440,7 @@ describe("AttemptMessages", () => {
         data: [codeMessage],
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -460,7 +462,7 @@ describe("AttemptMessages", () => {
         data: [linkMessage],
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -477,7 +479,7 @@ describe("AttemptMessages", () => {
         data: [],
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages chatId="" />);
 
@@ -492,9 +494,9 @@ describe("AttemptMessages", () => {
         data: [],
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages chatId={null as any} />);
+      renderWithMocks(<AttemptMessages chatId={null as unknown as string} />);
 
       await waitFor(() => {
         expect(document.body).toBeInTheDocument();
@@ -507,7 +509,7 @@ describe("AttemptMessages", () => {
         data: [],
         isLoading: false,
         error: new Error("Query failed"),
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -528,7 +530,7 @@ describe("AttemptMessages", () => {
         data: [incompleteMessage],
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -550,7 +552,7 @@ describe("AttemptMessages", () => {
         data: [longMessage],
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -573,7 +575,7 @@ describe("AttemptMessages", () => {
         data: [specialMessage],
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -590,7 +592,7 @@ describe("AttemptMessages", () => {
         data: [],
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages />);
 
@@ -612,7 +614,7 @@ describe("AttemptMessages", () => {
         data: [],
         isLoading: false,
         error: null,
-      } as any);
+      } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
       renderWithMocks(<AttemptMessages chatId="custom-chat-id" />);
 

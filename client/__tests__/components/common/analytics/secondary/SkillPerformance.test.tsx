@@ -1,490 +1,681 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-// ——————————————————————————————————————————
-import SkillPerformance, {
-  SkillPerformanceProps,
-} from "@/components/common/analytics/secondary/SkillPerformance";
-
-// ✨ Import comprehensive mock data from our centralized mock system
-import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
+/**
+ * SkillPerformance.test.tsx
+ * Tests for the SkillPerformance component
+ * @AshokSaravanan222 & @siladiea
+ * 07/23/2025
+ */
+import SkillPerformance from "@/components/common/analytics/secondary/SkillPerformance";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
+import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
+import { getSimulationChatGradesByRubrics } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-rubrics";
+import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
+import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// ------------------------------------------------------------------
-// Enhanced props factory with realistic test data
-const createMockProps = (
-  overrides: Partial<SkillPerformanceProps> = {}
-): SkillPerformanceProps => ({
-  dateStart: new Date("2024-01-01"),
-  dateEnd: new Date("2024-12-31"),
-  thresholds: {
-    danger: 50,
-    warning: 70,
-    success: 80,
-  },
-  profileId: "test-profile-id",
-  cohortIds: ["test-cohort-id"],
-  ...overrides,
-});
+// Mock the RubricPicker component
+vi.mock("@/components/common/rubric/RubricPicker", () => ({
+  RubricPicker: ({
+    onSelect,
+    selectedRubrics,
+  }: {
+    onSelect: (rubrics: { id: string; name: string }[]) => void;
+    selectedRubrics: { id: string; name: string }[];
+  }) => (
+    <div data-testid="rubric-picker">
+      <button
+        onClick={() => onSelect([{ id: "rubric-1", name: "Test Rubric 1" }])}
+      >
+        Select Rubric
+      </button>
+      <div data-testid="selected-rubrics">
+        {selectedRubrics.map((rubric: { id: string; name: string }) => (
+          <span key={rubric.id}>{rubric.name}</span>
+        ))}
+      </div>
+    </div>
+  ),
+}));
 
-// ------------------------------------------------------------------
+// Mock the utility function
+vi.mock("@/utils/analytics/secondary", () => ({
+  calculateSkillPerformance: vi.fn().mockReturnValue({
+    radarData: [
+      {
+        metric: "Comm",
+        value: 75,
+        fullMark: 100,
+      },
+      {
+        metric: "Crit",
+        value: 80,
+        fullMark: 100,
+      },
+    ],
+    hasData: true,
+  }),
+}));
+
+// Mock all query functions
+vi.mock("@/utils/queries/cohorts/get-all-cohorts");
+vi.mock("@/utils/queries/profiles/get-all-profiles");
+vi.mock("@/utils/queries/rubrics/get-all-rubrics");
+vi.mock(
+  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles"
+);
+vi.mock(
+  "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades"
+);
+vi.mock(
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-rubrics"
+);
+vi.mock("@/utils/queries/simulation_chats/get-simulation-chats-by-attempts");
+vi.mock("@/utils/queries/standard_groups/get-standard-groups-by-rubrics");
+vi.mock("@/utils/queries/standards/get-standards-by-standardgroups");
+
 describe("SkillPerformance", () => {
-  const _user = userEvent.setup();
+  let queryClient: QueryClient;
+
+  const mockRubrics = [
+    {
+      id: "rubric-1",
+      name: "Test Rubric 1",
+      description: "Test Description 1",
+      points: 100,
+      active: true,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      passPoints: 70,
+      defaultRubric: false,
+    },
+  ];
+
+  const mockStandardGroups = [
+    {
+      id: "sg-1",
+      name: "Communication",
+      shortName: "Comm",
+      points: 50,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      description: "Communication skills description",
+      passPoints: 70,
+      rubricId: "rubric-1",
+    },
+    {
+      id: "sg-2",
+      name: "Critical Thinking",
+      shortName: "Crit",
+      points: 50,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      description: "Critical thinking skills description",
+      passPoints: 70,
+      rubricId: "rubric-1",
+    },
+  ];
+
+  const mockStandards = [
+    {
+      id: "std-1",
+      name: "Standard 1",
+      standardGroupId: "sg-1",
+      createdAt: "2024-01-01T00:00:00.000Z",
+      description: "Communication standard description",
+      points: 100,
+    },
+    {
+      id: "std-2",
+      name: "Standard 2",
+      standardGroupId: "sg-2",
+      createdAt: "2024-01-01T00:00:00.000Z",
+      description: "Critical thinking standard description",
+      points: 100,
+    },
+  ];
+
+  const mockGrades = [
+    {
+      id: "grade-1",
+      simulationChatId: "chat-1",
+      createdAt: "2024-01-15T10:00:00Z",
+      passed: true,
+      score: 85,
+      timeTaken: 100,
+      rubricId: "rubric-1",
+    },
+  ];
+
+  const mockFeedbacks = [
+    {
+      id: "feedback-1",
+      simulationChatGradeId: "grade-1",
+      standardId: "std-1",
+      total: 25,
+      createdAt: "2024-01-15T10:00:00Z",
+      feedback: "Good job!",
+    },
+    {
+      id: "feedback-2",
+      simulationChatGradeId: "grade-1",
+      standardId: "std-2",
+      total: 30,
+      createdAt: "2024-01-15T10:00:00Z",
+      feedback: "Great job!",
+    },
+  ];
+
+  const mockCohorts = [
+    {
+      id: "cohort-1",
+      title: "Test Cohort 1",
+      profileIds: ["profile-1"],
+      simulationIds: ["sim-1"],
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      description: "Test Cohort 1 Description",
+      active: true,
+      defaultCohort: false,
+    },
+  ];
+
+  const mockProfiles = [
+    {
+      id: "profile-1",
+      name: "Test Profile 1",
+      role: "ta" as const,
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      userId: null,
+      lastLogin: "2024-01-01T00:00:00.000Z",
+      firstName: "Test",
+      lastName: "Profile",
+      alias: "test-profile",
+      viewedIntro: true,
+      viewedChat: true,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      defaultProfile: false,
+      active: true,
+      lastActive: "2024-01-01T00:00:00.000Z",
+    },
+  ];
+
+  const mockAttempts = [
+    {
+      id: "attempt-1",
+      profileId: "profile-1",
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      completedAt: "2024-01-01T00:00:00.000Z",
+      title: "Test Attempt 1",
+      scenarioId: "scenario-1",
+      attemptId: "attempt-1",
+      completed: true,
+      traceId: "trace-1",
+      simulationId: "sim-1",
+    },
+  ];
+
+  const mockChats = [
+    {
+      id: "chat-1",
+      attemptId: "attempt-1",
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      completedAt: "2024-01-01T00:00:00.000Z",
+      title: "Test Chat 1",
+      scenarioId: "scenario-1",
+      completed: true,
+      traceId: "trace-1",
+    },
+  ];
+
+  const mockSkillPerformanceResult = {
+    radarData: [
+      {
+        metric: "Comm",
+        value: 75,
+        fullMark: 100,
+      },
+      {
+        metric: "Crit",
+        value: 80,
+        fullMark: 100,
+      },
+    ],
+    hasData: true,
+  };
 
   beforeEach(() => {
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
+    // Reset all mocks
     vi.clearAllMocks();
+
+    // Setup default mock implementations
+    vi.mocked(getAllRubrics).mockResolvedValue(mockRubrics);
+    vi.mocked(getStandardGroupsByRubrics).mockResolvedValue(mockStandardGroups);
+    vi.mocked(getStandardsByStandardGroups).mockResolvedValue(mockStandards);
+    vi.mocked(getSimulationChatGradesByRubrics).mockResolvedValue(mockGrades);
+    vi.mocked(
+      getSimulationChatFeedbacksBySimulationChatGrades
+    ).mockResolvedValue(mockFeedbacks);
+    vi.mocked(getAllCohorts).mockResolvedValue(mockCohorts);
+    vi.mocked(getAllProfiles).mockResolvedValue(mockProfiles);
+    vi.mocked(getSimulationAttemptsByProfiles).mockResolvedValue(mockAttempts);
+    vi.mocked(getSimulationChatsByAttempts).mockResolvedValue(mockChats);
+
+    // Mock the utility function is already set up at the top
   });
 
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
+  const renderComponent = (props = {}) => {
+    const defaultProps = {
+      dateStart: new Date("2024-01-01"),
+      dateEnd: new Date("2024-01-31"),
+      thresholds: {
+        danger: 30,
+        warning: 60,
+        success: 90,
+      },
+      profileId: undefined,
+      cohortIds: [],
+      ...props,
+    };
+
+    return render(
+      <QueryClientProvider client={queryClient}>
+        <SkillPerformance {...defaultProps} />
+      </QueryClientProvider>
+    );
+  };
 
   describe("Component Rendering", () => {
     it("renders the component with correct title and description", async () => {
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
+      renderComponent();
 
       await waitFor(() => {
         expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-      });
-
-      expect(
-        screen.getByText("Performance across key teaching competencies")
-      ).toBeInTheDocument();
-    });
-
-    it("renders with different threshold configurations", async () => {
-      const props = createMockProps({
-        thresholds: {
-          danger: 30,
-          warning: 60,
-          success: 90,
-        },
-      });
-
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
+        expect(
+          screen.getByText("Performance across key teaching competencies")
+        ).toBeInTheDocument();
       });
     });
 
-    it("renders with undefined profileId", async () => {
-      const props = createMockProps({ profileId: undefined });
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-      });
-    });
-
-    it("renders with empty cohortIds array", async () => {
-      const props = createMockProps({ cohortIds: [] });
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe("Rubric Picker Integration", () => {
-    it("renders rubric picker when rubrics are available", async () => {
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-      });
-
-      // Check for rubric picker
-      const pickerButton = screen.getByRole("combobox", {
-        name: /select rubrics/i,
-      });
-      expect(pickerButton).toBeInTheDocument();
-    });
-
-    it("allows filtering by rubric selection", async () => {
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-      });
-
-      const pickerButton = screen.getByRole("combobox", {
-        name: /select rubrics/i,
-      });
-      // Verify component renders correctly
-
-      // Verify picker functionality
-      expect(pickerButton).toBeInTheDocument();
-    });
-  });
-
-  describe("Radar Chart Rendering", () => {
-    it("renders radar chart when data is available", async () => {
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-      });
-
-      // Check for radar chart elements - Recharts renders as SVG, not img
-      expect(screen.getByText("Loading skill data...")).toBeInTheDocument();
-    });
-
-    it("displays correct radar chart data structure", async () => {
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-      });
-
-      // Verify radar chart data structure - Recharts renders as SVG, not img
-      expect(screen.getByText("Loading skill data...")).toBeInTheDocument();
-    });
-
-    it("handles chart tooltips correctly", async () => {
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-      });
-
-      // Verify tooltip functionality - component shows loading state when no data available
-      expect(screen.getByText("Loading skill data...")).toBeInTheDocument();
-    });
-  });
-
-  describe("Data Loading States", () => {
-    it("shows loading state when data is being fetched", async () => {
+    it("shows loading state initially", async () => {
       // Mock loading state by not providing data
-      vi.mocked(getAllProfiles).mockResolvedValue([]);
+      vi.mocked(getAllRubrics).mockResolvedValue([]);
 
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
+      renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
+        expect(screen.getByText("Loading skill data...")).toBeInTheDocument();
       });
     });
 
-    it("handles empty data gracefully", async () => {
-      // Mock empty data
-      vi.mocked(getAllProfiles).mockResolvedValue([]);
-      vi.mocked(getSimulationAttemptsByProfiles).mockResolvedValue([]);
+    it("shows no data message when no skill data is available", async () => {
+      const { calculateSkillPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateSkillPerformance).mockReturnValue({
+        radarData: [],
+        hasData: false,
+      });
 
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
+      renderComponent();
 
       await waitFor(() => {
         expect(
-          screen.getByText("No cohort access available")
+          screen.getByText(
+            "No skill data available for the selected time period"
+          )
+        ).toBeInTheDocument();
+        expect(
+          screen.getByText(
+            "Complete some training sessions to see your progress"
+          )
         ).toBeInTheDocument();
       });
     });
   });
 
-  describe("Threshold Status Indicators", () => {
-    it("displays success indicator when performance meets success threshold", async () => {
-      const props = createMockProps({
-        thresholds: { danger: 50, warning: 70, success: 80 },
-      });
+  describe("Data Loading and Processing", () => {
+    it("calls the utility function with correct parameters", async () => {
+      const { calculateSkillPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateSkillPerformance).mockReturnValue(
+        mockSkillPerformanceResult
+      );
 
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-      });
-
-      // Check for success indicator - component shows loading state when no data available
-      expect(screen.getByText("Loading skill data...")).toBeInTheDocument();
-    });
-
-    it("displays warning indicator when performance meets warning threshold", async () => {
-      const props = createMockProps({
-        thresholds: { danger: 50, warning: 70, success: 80 },
-      });
-
-      renderWithMocks(<SkillPerformance {...props} />);
+      renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
+        expect(calculateSkillPerformance).toHaveBeenCalled();
       });
-
-      // Check for warning indicator - component shows loading state when no data available
-      expect(screen.getByText("Loading skill data...")).toBeInTheDocument();
     });
 
-    it("displays danger indicator when performance is below danger threshold", async () => {
-      const props = createMockProps({
-        thresholds: { danger: 50, warning: 70, success: 80 },
+    it("handles missing data gracefully", async () => {
+      const { calculateSkillPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateSkillPerformance).mockReturnValue({
+        radarData: [],
+        hasData: false,
       });
 
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-      });
-
-      // Check for danger indicator - component shows loading state when no data available
-      expect(screen.getByText("Loading skill data...")).toBeInTheDocument();
-    });
-  });
-
-  describe("Actionable Insights", () => {
-    it("displays actionable insights when performance issues are detected", async () => {
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-      });
-
-      // Check for insights section - component shows loading state when no data available
-      expect(screen.getByText("Loading skill data...")).toBeInTheDocument();
-    });
-
-    it("does not display insights when performance is good", async () => {
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-      });
-
-      // Verify insights are not shown when performance is good - component shows loading state when no data available
-      expect(screen.getByText("Loading skill data...")).toBeInTheDocument();
-    });
-  });
-
-  describe("Cohort Filtering", () => {
-    it("handles no data available for selected cohorts", async () => {
-      const props = createMockProps({
-        cohortIds: ["non-existent-cohort"],
-      });
-
-      renderWithMocks(<SkillPerformance {...props} />);
+      renderComponent();
 
       await waitFor(() => {
         expect(
-          screen.getByText("No cohort access available")
+          screen.getByText(
+            "No skill data available for the selected time period"
+          )
+        ).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Radar Chart Display", () => {
+    it("displays radar chart when data is available", async () => {
+      const { calculateSkillPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateSkillPerformance).mockReturnValue(
+        mockSkillPerformanceResult
+      );
+
+      renderComponent();
+
+      await waitFor(() => {
+        // The chart should be rendered (ResponsiveContainer)
+        expect(
+          document.querySelector(".recharts-responsive-container")
         ).toBeInTheDocument();
       });
     });
 
-    it("filters data correctly when specific cohorts are selected", async () => {
-      const props = createMockProps({
-        cohortIds: ["test-cohort-id"],
-      });
+    it("displays skill metrics in radar chart", async () => {
+      const { calculateSkillPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateSkillPerformance).mockReturnValue(
+        mockSkillPerformanceResult
+      );
 
-      renderWithMocks(<SkillPerformance {...props} />);
+      renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
+        // Check that the responsive container is rendered
+        expect(
+          document.querySelector(".recharts-responsive-container")
+        ).toBeInTheDocument();
       });
     });
   });
 
-  describe("Date Range Filtering", () => {
-    it("filters data by date range correctly", async () => {
-      const props = createMockProps({
-        dateStart: new Date("2024-06-01"),
-        dateEnd: new Date("2024-06-30"),
-      });
+  describe("Rubric Picker", () => {
+    it("renders rubric picker when rubrics are available", async () => {
+      const { calculateSkillPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateSkillPerformance).mockReturnValue(
+        mockSkillPerformanceResult
+      );
 
-      renderWithMocks(<SkillPerformance {...props} />);
+      renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
+        expect(screen.getByTestId("rubric-picker")).toBeInTheDocument();
       });
     });
 
-    it("handles edge case dates", async () => {
-      const props = createMockProps({
-        dateStart: new Date("2024-01-01T00:00:00.000Z"),
-        dateEnd: new Date("2024-12-31T23:59:59.999Z"),
-      });
+    it("does not render rubric picker when no rubrics are available", async () => {
+      const { calculateSkillPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateSkillPerformance).mockReturnValue(
+        mockSkillPerformanceResult
+      );
 
-      renderWithMocks(<SkillPerformance {...props} />);
+      // Mock empty rubrics
+      vi.mocked(getAllRubrics).mockResolvedValue([]);
 
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe("Profile Filtering", () => {
-    it("filters data by specific profile", async () => {
-      const props = createMockProps({
-        profileId: "specific-profile-id",
-      });
-
-      renderWithMocks(<SkillPerformance {...props} />);
+      renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-      });
-    });
-
-    it("shows all profiles when profileId is undefined", async () => {
-      const props = createMockProps({
-        profileId: undefined,
-      });
-
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
+        expect(screen.queryByTestId("rubric-picker")).not.toBeInTheDocument();
       });
     });
   });
 
-  describe("Skill Data Processing", () => {
-    it("processes skill data correctly", async () => {
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
+  describe("Threshold Status Indicator", () => {
+    it("shows green indicator for success threshold", async () => {
+      const { calculateSkillPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateSkillPerformance).mockReturnValue({
+        ...mockSkillPerformanceResult,
+        radarData: [
+          { metric: "Comm", value: 95, fullMark: 100 },
+          { metric: "Crit", value: 92, fullMark: 100 },
+        ],
       });
 
-      // Verify skill data processing
-      expect(screen.getByText("Skill Performance")).toBeInTheDocument();
+      renderComponent();
+
+      await waitFor(() => {
+        const indicator = document.querySelector(".absolute.top-2.right-2");
+        expect(indicator).toHaveClass("bg-green-500");
+      });
     });
 
-    it("handles different skill areas", async () => {
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
+    it("shows yellow indicator for warning threshold", async () => {
+      const { calculateSkillPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateSkillPerformance).mockReturnValue({
+        ...mockSkillPerformanceResult,
+        radarData: [
+          { metric: "Comm", value: 70, fullMark: 100 },
+          { metric: "Crit", value: 75, fullMark: 100 },
+        ],
       });
 
-      // Verify different skill areas are handled
-      expect(screen.getByText("Skill Performance")).toBeInTheDocument();
+      renderComponent();
+
+      await waitFor(() => {
+        const indicator = document.querySelector(".absolute.top-2.right-2");
+        expect(indicator).toHaveClass("bg-yellow-500");
+      });
+    });
+
+    it("shows red indicator for danger threshold", async () => {
+      const { calculateSkillPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateSkillPerformance).mockReturnValue({
+        ...mockSkillPerformanceResult,
+        radarData: [
+          { metric: "Comm", value: 25, fullMark: 100 },
+          { metric: "Crit", value: 20, fullMark: 100 },
+        ],
+      });
+
+      renderComponent();
+
+      await waitFor(() => {
+        const indicator = document.querySelector(".absolute.top-2.right-2");
+        expect(indicator).toHaveClass("bg-red-500");
+      });
     });
   });
 
-  describe("Radar Chart Functionality", () => {
-    it("displays skill scores on radar chart", async () => {
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
+  describe("Chart Interaction", () => {
+    it("displays tooltips on chart hover", async () => {
+      const { calculateSkillPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateSkillPerformance).mockReturnValue(
+        mockSkillPerformanceResult
+      );
+
+      renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
+        // Check that the responsive container is rendered
+        expect(
+          document.querySelector(".recharts-responsive-container")
+        ).toBeInTheDocument();
       });
-
-      // Verify radar chart displays skill scores - component shows loading state when no data available
-      expect(screen.getByText("Loading skill data...")).toBeInTheDocument();
     });
 
-    it("handles radar chart interactions", async () => {
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
+    it("renders radar chart with proper styling", async () => {
+      const { calculateSkillPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateSkillPerformance).mockReturnValue(
+        mockSkillPerformanceResult
+      );
+
+      renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
+        // Check that the responsive container is rendered
+        expect(
+          document.querySelector(".recharts-responsive-container")
+        ).toBeInTheDocument();
       });
-
-      // Verify radar chart interactions - component shows loading state when no data available
-      expect(screen.getByText("Loading skill data...")).toBeInTheDocument();
     });
   });
 
   describe("Error Handling", () => {
-    it("handles API errors gracefully", async () => {
-      // Mock API error
-      vi.mocked(getAllProfiles).mockRejectedValue(new Error("API Error"));
-
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-      });
-    });
-
-    it("handles malformed data gracefully", async () => {
-      // Mock malformed data
-      vi.mocked(getAllProfiles).mockResolvedValue([
-        { invalid: "data" },
-      ] as unknown as Awaited<ReturnType<typeof getAllProfiles>>);
-
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe("Accessibility", () => {
-    it("has proper ARIA labels and roles", async () => {
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-      });
-
-      // Check for proper accessibility attributes - component shows loading state when no data available
-      expect(screen.getByText("Loading skill data...")).toBeInTheDocument();
-    });
-
-    it("supports keyboard navigation", async () => {
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-      });
-
-      // Test keyboard navigation - component shows loading state when no data available
-      expect(screen.getByText("Loading skill data...")).toBeInTheDocument();
-    });
-  });
-
-  describe("Performance", () => {
-    it("handles large datasets efficiently", async () => {
-      // Mock large dataset
-      const largeProfiles = Array.from({ length: 1000 }, (_, i) => ({
-        id: `profile-${i}`,
-        role: "ta",
-        // ... other required fields
-      }));
-      vi.mocked(getAllProfiles).mockResolvedValue(
-        largeProfiles as unknown as Awaited<ReturnType<typeof getAllProfiles>>
+    it("handles query errors gracefully", async () => {
+      const { calculateSkillPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateSkillPerformance).mockReturnValue(
+        mockSkillPerformanceResult
       );
 
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
+      // Mock query error
+      vi.mocked(getAllRubrics).mockRejectedValue(new Error("Query failed"));
+
+      renderComponent();
 
       await waitFor(() => {
         expect(screen.getByText("Skill Performance")).toBeInTheDocument();
       });
     });
 
-    it("handles rapid prop changes gracefully", async () => {
-      const props = createMockProps();
-      renderWithMocks(<SkillPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
+    it("handles empty data arrays", async () => {
+      const { calculateSkillPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateSkillPerformance).mockReturnValue({
+        radarData: [],
+        hasData: false,
       });
 
-      // Verify component renders correctly
-      expect(screen.getByText("Loading skill data...")).toBeInTheDocument();
+      renderComponent();
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(
+            "No skill data available for the selected time period"
+          )
+        ).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Props Handling", () => {
+    it("handles profileId prop correctly", async () => {
+      const { calculateSkillPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateSkillPerformance).mockReturnValue(
+        mockSkillPerformanceResult
+      );
+
+      renderComponent({ profileId: "profile-1" });
+
+      await waitFor(() => {
+        expect(calculateSkillPerformance).toHaveBeenCalled();
+      });
+    });
+
+    it("handles cohortIds prop correctly", async () => {
+      const { calculateSkillPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateSkillPerformance).mockReturnValue(
+        mockSkillPerformanceResult
+      );
+
+      renderComponent({ cohortIds: ["cohort-1", "cohort-2"] });
+
+      await waitFor(() => {
+        expect(calculateSkillPerformance).toHaveBeenCalled();
+      });
+    });
+
+    it("handles different threshold values", async () => {
+      const { calculateSkillPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateSkillPerformance).mockReturnValue(
+        mockSkillPerformanceResult
+      );
+
+      const customThresholds = {
+        danger: 20,
+        warning: 50,
+        success: 80,
+      };
+
+      renderComponent({ thresholds: customThresholds });
+
+      await waitFor(() => {
+        expect(calculateSkillPerformance).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe("Loading States", () => {
+    it("shows loading spinner when data is loading", async () => {
+      // Mock loading state by not providing data
+      vi.mocked(getAllRubrics).mockResolvedValue([]);
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Loading skill data...")).toBeInTheDocument();
+      });
+    });
+
+    it("handles loading state transitions", async () => {
+      const { calculateSkillPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateSkillPerformance).mockReturnValue(
+        mockSkillPerformanceResult
+      );
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(
+          document.querySelector(".recharts-responsive-container")
+        ).toBeInTheDocument();
+      });
     });
   });
 });

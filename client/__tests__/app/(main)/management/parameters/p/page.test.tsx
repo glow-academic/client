@@ -1,27 +1,37 @@
-import { describe, it } from 'vitest';
+import { describe, it, vi, afterEach, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
+import ParameterPage from '@/app/(main)/management/parameters/p/page';
 
-describe('page', () => {
+// Import centralized mocks
+import "@/mocks/navigation";
+
+describe('ParameterPage', () => {
   
+
+  // ✨ Reset mocks after each test
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
 
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
+      renderWithMocks(<ParameterPage />);
       
-      renderWithMocks(<page  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      // Should redirect to /management/parameters/new
+      const { redirect } = await import("next/navigation");
+      expect(redirect).toHaveBeenCalledWith("/management/parameters/new");
     });
 
     
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
+    it('should have correct accessibility attributes', async () => {
+      renderWithMocks(<ParameterPage />);
       
-      // TODO add accessibility assertions
-
+      // Should redirect to /management/parameters/new
+      const { redirect } = await import("next/navigation");
+      expect(redirect).toHaveBeenCalledWith("/management/parameters/new");
     });
   });
 
@@ -32,14 +42,13 @@ describe('page', () => {
   
 
   describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
+    it('should handle edge cases gracefully', async () => {
+      renderWithMocks(<ParameterPage />);
       
-      // TODO: edge-case assertions
-
+      // Should redirect to /management/parameters/new
+      const { redirect } = await import("next/navigation");
+      expect(redirect).toHaveBeenCalledWith("/management/parameters/new");
     });
-
-    
   });
 });
 

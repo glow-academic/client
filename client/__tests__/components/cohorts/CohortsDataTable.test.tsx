@@ -1,4 +1,5 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
+import type { ColumnDef } from "@tanstack/react-table";
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -6,11 +7,39 @@ import {
   CohortsDataTable,
   CohortsDataTableProps,
 } from "@/components/cohorts/CohortsDataTable";
+import { Cohort } from "@/types";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
+const mockColumns: ColumnDef<Cohort>[] = [
+  {
+    id: "title",
+    accessorKey: "title",
+    header: "Title",
+    cell: ({ row }) => <div>{row.getValue("title")}</div>,
+  },
+  {
+    id: "profileIds",
+    accessorKey: "profileIds",
+    header: "Profiles",
+    cell: ({ row }) => <div>{row.getValue("profileIds")}</div>,
+  },
+  {
+    id: "simulationIds",
+    accessorKey: "simulationIds",
+    header: "Simulations",
+    cell: ({ row }) => <div>{row.getValue("simulationIds")}</div>,
+  },
+  {
+    id: "updatedAt",
+    accessorKey: "updatedAt",
+    header: "Updated",
+    cell: ({ row }) => <div>{row.getValue("updatedAt")}</div>,
+  },
+];
+
 const mockProps: CohortsDataTableProps = {
-  columns: [],
+  columns: mockColumns,
   data: [],
   profileOptions: [],
   simulationOptions: [],
@@ -66,10 +95,10 @@ describe("CohortsDataTable", () => {
     });
 
     it("should handle empty data", () => {
-      // Test with empty data
+      // Test with empty data - use the same columns structure to avoid undefined column access
       renderWithMocks(
         <CohortsDataTable
-          columns={[]}
+          columns={mockColumns} // Use the same columns to avoid undefined column access
           data={[]}
           profileOptions={[]}
           simulationOptions={[]}

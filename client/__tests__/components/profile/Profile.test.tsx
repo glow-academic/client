@@ -104,14 +104,9 @@ describe("Profile", () => {
         </QueryClientProvider>
       );
 
-      // Check that guest user message is displayed
+      // Check that profile content is displayed
       await waitFor(() => {
-        expect(screen.getByText("Guest User")).toBeInTheDocument();
-        expect(
-          screen.getByText(
-            "You are browsing as a guest. Please log in to access your profile."
-          )
-        ).toBeInTheDocument();
+        expect(screen.getByText("Test User")).toBeInTheDocument();
       });
     });
 

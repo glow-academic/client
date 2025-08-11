@@ -102,7 +102,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 3,
         animationDuration: Math.random() * 3 + 2,
-      })),
+      }))
     );
 
     setMovingSparkles(
@@ -112,7 +112,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 2,
         animationDuration: Math.random() * 2 + 3,
-      })),
+      }))
     );
 
     setFloatingSparkles(
@@ -122,7 +122,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 4,
         animationDuration: Math.random() * 3 + 4,
-      })),
+      }))
     );
 
     setMounted(true);
@@ -201,13 +201,13 @@ export default function Login() {
       // Log the login attempt start
       await logInfo("Microsoft login attempt started");
 
-      // Clear guest mode and simulated role from localStorage
+      // Clear guest mode and simulated profile from localStorage
       localStorage.removeItem("guestMode");
-      localStorage.removeItem("simulatedRole");
       localStorage.removeItem("simulatedProfileId");
 
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
 
+      // Redirect to home for authenticated users (TA level and above)
       const redirectTo = `${appPrefix}/home`;
 
       await signIn("microsoft-entra-id", { redirectTo: redirectTo });
@@ -241,12 +241,10 @@ export default function Login() {
         redirectTo: "/practice",
       });
 
-      // Set guest mode in localStorage and redirect
+      // Set guest mode in localStorage and redirect to practice
       localStorage.removeItem("guestMode");
-      localStorage.removeItem("simulatedRole");
       localStorage.removeItem("simulatedProfileId");
       localStorage.setItem("guestMode", "true");
-      localStorage.setItem("simulatedRole", "guest");
 
       // Log successful guest access
       await logInfo("Guest access attempt successful", {

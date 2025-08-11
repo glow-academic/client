@@ -333,11 +333,8 @@ export default function Personas() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Persona</AlertDialogTitle>
               <AlertDialogDescription>
-                <p>
-                  Are you sure you want to delete the persona "
-                  {deleteItem?.name}
-                  "? This action cannot be undone.
-                </p>
+                Are you sure you want to delete the persona "{deleteItem?.name}
+                "? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

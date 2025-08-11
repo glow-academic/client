@@ -393,7 +393,9 @@ export default function Documents() {
 
       {/* Edit Document Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent
+          className="sm:max-w-md"
+        >
           <DialogHeader>
             <DialogTitle>Edit Document</DialogTitle>
             <DialogDescription>

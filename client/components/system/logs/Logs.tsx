@@ -15,7 +15,11 @@ import { AppLog, useLogColumns } from "@/hooks/use-log-columns";
 import { getAppLogs } from "@/utils/logs/get-logs";
 import { LogsDataTable } from "./LogsDataTable";
 
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 export default function Logs() {
   const [selectedLog, setSelectedLog] = useState<AppLog | null>(null);
@@ -66,6 +70,9 @@ export default function Logs() {
         onOpenChange={(open) => !open && setSelectedLog(null)}
       >
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogDescription hidden>
+            This dialog shows the log details.
+          </DialogDescription>
           <div className="space-y-4">
             {selectedLog && (
               <div className="pt-4 pb-4">
@@ -75,7 +82,7 @@ export default function Logs() {
                       ? JSON.stringify(
                           selectedLog.context as Record<string, unknown>,
                           null,
-                          2,
+                          2
                         )
                       : "No context data"}
                   </pre>

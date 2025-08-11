@@ -33,6 +33,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { calculateScenarioPerformance } from "@/utils/analytics/footer";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
@@ -46,7 +47,6 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
-import { isAfter, isBefore } from "date-fns";
 import { BarChart3, Check, ChevronsUpDown, Info } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -186,14 +186,6 @@ export default function ScenarioStats({
     return numericalParameters.find((p) => p.id === selectedParameterId);
   }, [selectedParameterId, numericalParameters]);
 
-  // Get parameter items for the selected parameter
-  const parameterItemsForSelected = useMemo(() => {
-    if (!parameterItems || !selectedParameter) return [];
-    return parameterItems
-      .filter((item) => item.parameterId === selectedParameter.id)
-      .sort((a, b) => parseFloat(a.value) - parseFloat(b.value));
-  }, [parameterItems, selectedParameter]);
-
   // Generate metric options from numerical parameters
   const METRIC_OPTIONS: MetricOption[] = useMemo(() => {
     return numericalParameters.map((parameter) => ({
@@ -242,218 +234,62 @@ export default function ScenarioStats({
     };
   }, [cohorts, cohortIds]);
 
-  // Calculate aggregated performance data by metric level
-  const aggregatedPerformanceData = useMemo(() => {
-    if (
-      !scenarios ||
-      !personas ||
-      !documents ||
-      !attempts ||
-      !chats ||
-      !grades ||
-      !simulations ||
-      !profiles ||
-      !rubrics ||
-      !parameterItemsForSelected ||
-      !selectedParameter
-    ) {
-      return [];
-    }
-
-    // Filter data by date range, exclude practice simulations, and filter by TA role
-    const filteredGrades = grades.filter((grade) => {
-      const gradeDate = new Date(grade.createdAt);
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId
-      );
-      const profile = profiles?.find((p) => p.id === attempt?.profileId);
-
-      // Check date range
-      const inDateRange =
-        isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
-
-      // Exclude practice simulations
-      const notPractice = !simulation?.practiceSimulation;
-
-      // Filter by TA role (temporarily relaxed for debugging)
-      const isTA = profile?.role === "ta" || true; // Temporarily allow all roles for debugging
-
-      // Filter by profile if provided
-      const profileMatch = profileId ? attempt?.profileId === profileId : true;
-
-      // Apply cohort-based profile filtering
-      const cohortProfileMatch = cohortFilters.allowedProfileIds
-        ? profile && cohortFilters.allowedProfileIds.includes(profile.id)
-        : true;
-
-      // Apply cohort-based simulation filtering
-      const cohortSimulationMatch = cohortFilters.allowedSimulationIds
-        ? simulation &&
-          cohortFilters.allowedSimulationIds.includes(simulation.id)
-        : true;
-
-      return (
-        inDateRange &&
-        notPractice &&
-        isTA &&
-        profileMatch &&
-        cohortProfileMatch &&
-        cohortSimulationMatch
-      );
-    });
-
-    if (filteredGrades.length === 0) {
-      return [];
-    }
-
-    // Group scenarios by metric level and calculate average performance
-    const metricGroups: {
-      [key: string]: { scores: number[]; count: number; rubricPoints: number };
-    } = {};
-
-    scenarios.forEach((scenario) => {
-      const scenarioChats = chats.filter(
-        (chat) => chat.scenarioId === scenario.id
-      );
-      const scenarioGrades = filteredGrades.filter((grade) =>
-        scenarioChats.some((chat) => chat.id === grade.simulationChatId)
-      );
-
-      if (scenarioGrades.length === 0) return;
-
-      // Find the parameter item for this scenario that matches our selected parameter
-      const scenarioParameterItem = scenario.parameterItemIds?.find(
-        (itemId) => {
-          const item = parameterItemsForSelected.find((pi) => pi.id === itemId);
-          return item && item.parameterId === selectedParameter?.id;
-        }
-      );
-
-      if (scenarioParameterItem) {
-        const item = parameterItemsForSelected.find(
-          (pi) => pi.id === scenarioParameterItem
-        );
-        const metricValue = item?.value || "";
-
-        if (metricValue) {
-          // Calculate percentage scores based on rubric points
-          const percentageScores = scenarioGrades.map((grade) => {
-            const rubric = rubrics.find((r) => r.id === grade.rubricId);
-            if (!rubric || rubric.points === 0) return 0;
-
-            // Calculate percentage score (score out of rubric.points)
-            return Math.round((grade.score / rubric.points) * 100);
-          });
-
-          const avgScore = Math.round(
-            percentageScores.reduce((sum, score) => sum + score, 0) /
-              percentageScores.length
-          );
-
-          if (!metricGroups[metricValue]) {
-            metricGroups[metricValue] = {
-              scores: [],
-              count: 0,
-              rubricPoints: 0,
-            };
-          }
-          const group = metricGroups[metricValue];
-          if (group) {
-            group.scores.push(avgScore);
-            group.count += scenarioChats.length;
-
-            // Store rubric points for reference (use the first one found)
-            if (group.rubricPoints === 0) {
-              const firstGrade = scenarioGrades[0];
-              if (firstGrade) {
-                const rubric = rubrics.find(
-                  (r) => r.id === firstGrade.rubricId
-                );
-                group.rubricPoints = rubric?.points || 0;
-              }
-            }
-          }
-        }
+  // Calculate performance data using utility function
+  const { performanceData: aggregatedPerformanceData, correlationData } =
+    useMemo(() => {
+      if (
+        !scenarios ||
+        !personas ||
+        !documents ||
+        !attempts ||
+        !chats ||
+        !grades ||
+        !simulations ||
+        !profiles ||
+        !rubrics ||
+        !parameterItems ||
+        !selectedParameter
+      ) {
+        return {
+          performanceData: [],
+          correlationData: { correlation: 0, pValue: 1 },
+        };
       }
-    });
 
-    // Convert to array format for chart
-    const chartData = Object.entries(metricGroups)
-      .map(([metricLevel, data]) => ({
-        metricLevel,
-        avgScore: Math.round(
-          data.scores.reduce((sum, score) => sum + score, 0) /
-            data.scores.length
-        ),
-        scenarioCount: data.scores.length,
-        totalAttempts: data.count,
-        rubricPoints: data.rubricPoints,
-      }))
-      .sort((a, b) => parseFloat(a.metricLevel) - parseFloat(b.metricLevel))
-      .filter((item) => item.scenarioCount >= 1); // Show all levels with at least 1 scenario
-
-    return chartData;
-  }, [
-    scenarios,
-    personas,
-    documents,
-    attempts,
-    chats,
-    grades,
-    simulations,
-    profiles,
-    rubrics,
-    dateStart,
-    dateEnd,
-    profileId,
-    cohortFilters,
-    parameterItemsForSelected,
-    selectedParameter,
-  ]);
-
-  // Calculate Pearson correlation coefficient and p-value
-  const correlationData = useMemo(() => {
-    if (aggregatedPerformanceData.length < 2)
-      return { correlation: 0, pValue: 1 };
-
-    const n = aggregatedPerformanceData.length;
-    const sumX = aggregatedPerformanceData.reduce(
-      (sum, item) => sum + parseFloat(item.metricLevel),
-      0
-    );
-    const sumY = aggregatedPerformanceData.reduce(
-      (sum, item) => sum + item.avgScore,
-      0
-    );
-    const sumXY = aggregatedPerformanceData.reduce(
-      (sum, item) => sum + parseFloat(item.metricLevel) * item.avgScore,
-      0
-    );
-    const sumX2 = aggregatedPerformanceData.reduce(
-      (sum, item) => sum + Math.pow(parseFloat(item.metricLevel), 2),
-      0
-    );
-    const sumY2 = aggregatedPerformanceData.reduce(
-      (sum, item) => sum + item.avgScore * item.avgScore,
-      0
-    );
-
-    const numerator = n * sumXY - sumX * sumY;
-    const denominator = Math.sqrt(
-      (n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY)
-    );
-
-    const correlation = denominator === 0 ? 0 : numerator / denominator;
-
-    // Calculate p-value using t-test
-    const tStat =
-      correlation * Math.sqrt((n - 2) / (1 - correlation * correlation));
-    const pValue = 2 * (1 - Math.abs(tStat) / Math.sqrt(tStat * tStat + n - 2));
-
-    return { correlation, pValue };
-  }, [aggregatedPerformanceData]);
+      return calculateScenarioPerformance(
+        grades,
+        chats,
+        attempts,
+        simulations,
+        scenarios,
+        rubrics,
+        profiles,
+        parameterItems,
+        selectedParameter,
+        dateStart,
+        dateEnd,
+        profileId,
+        cohorts || [],
+        cohortIds
+      );
+    }, [
+      scenarios,
+      personas,
+      documents,
+      attempts,
+      chats,
+      grades,
+      simulations,
+      profiles,
+      rubrics,
+      parameterItems,
+      selectedParameter,
+      dateStart,
+      dateEnd,
+      profileId,
+      cohorts,
+      cohortIds,
+    ]);
 
   const { correlation, pValue } = correlationData;
 
@@ -588,6 +424,7 @@ export default function ScenarioStats({
     <TooltipProvider>
       <Card className="w-full h-full flex flex-col relative">
         <div
+          data-testid="status-indicator"
           className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
             thresholdStatus === "success"
               ? "bg-green-500"

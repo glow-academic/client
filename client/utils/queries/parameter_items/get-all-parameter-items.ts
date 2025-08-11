@@ -3,8 +3,10 @@
 import { db } from "@/utils/drizzle/db";
 import { parameterItems } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function getAllParameterItems() {
+// Original logic is now a "private" function
+async function _getAllParameterItems() {
   try {
     return await db.select().from(parameterItems);
   } catch (error) {
@@ -12,3 +14,6 @@ export async function getAllParameterItems() {
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const getAllParameterItems = createMockableAction('getAllParameterItems', _getAllParameterItems);

@@ -17,7 +17,7 @@ import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { FeedbackDataTable } from "./FeedbackDataTable";
 
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription } from "@/components/ui/dialog";
 
 interface Profile {
   id: string;
@@ -191,7 +191,12 @@ export default function Feedback() {
         open={selectedFeedback !== null}
         onOpenChange={(open) => !open && setSelectedFeedback(null)}
       >
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent
+          className="max-w-2xl max-h-[80vh] overflow-y-auto"
+        >
+          <DialogDescription hidden>
+            This dialog shows the feedback details.
+          </DialogDescription>
           <div className="space-y-4">
             {selectedFeedback && (
               <>

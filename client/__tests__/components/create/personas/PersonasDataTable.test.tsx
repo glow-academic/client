@@ -37,6 +37,36 @@ const mockColumns: ColumnDef<Persona>[] = [
     header: "Description",
     cell: ({ row }) => <div>{row.getValue("description")}</div>,
   },
+  {
+    id: "scenarios",
+    accessorKey: "scenarios",
+    header: "Scenarios",
+    cell: ({ row }) => <div>{row.getValue("scenarios")}</div>,
+  },
+  {
+    id: "reasoning",
+    accessorKey: "reasoning",
+    header: "Reasoning",
+    cell: ({ row }) => <div>{row.getValue("reasoning")}</div>,
+  },
+  {
+    id: "temperature",
+    accessorKey: "temperature",
+    header: "Temperature",
+    cell: ({ row }) => <div>{row.getValue("temperature")}</div>,
+  },
+  {
+    id: "modelId",
+    accessorKey: "modelId",
+    header: "Model",
+    cell: ({ row }) => <div>{row.getValue("modelId")}</div>,
+  },
+  {
+    id: "updatedAt",
+    accessorKey: "updatedAt",
+    header: "Updated",
+    cell: ({ row }) => <div>{row.getValue("updatedAt")}</div>,
+  },
 ];
 
 const mockPersonas: Persona[] = [
@@ -125,7 +155,7 @@ describe("PersonasDataTable", () => {
 
       // Check that the toolbar is rendered
       expect(
-        screen.getByTestId("personas-data-table-toolbar"),
+        screen.getByTestId("personas-data-table-toolbar")
       ).toBeInTheDocument();
 
       // Check that the pagination is rendered
@@ -137,7 +167,7 @@ describe("PersonasDataTable", () => {
 
       // Check that the toolbar is rendered
       expect(
-        screen.getByTestId("personas-data-table-toolbar"),
+        screen.getByTestId("personas-data-table-toolbar")
       ).toBeInTheDocument();
 
       // Check that the pagination is rendered
@@ -157,7 +187,7 @@ describe("PersonasDataTable", () => {
 
       // Check that the toolbar is accessible
       expect(
-        screen.getByTestId("personas-data-table-toolbar"),
+        screen.getByTestId("personas-data-table-toolbar")
       ).toBeInTheDocument();
 
       // Check that the pagination is accessible
@@ -172,7 +202,7 @@ describe("PersonasDataTable", () => {
       // The component uses internal state for table management
       // We can verify that the component renders correctly
       expect(
-        screen.getByTestId("personas-data-table-toolbar"),
+        screen.getByTestId("personas-data-table-toolbar")
       ).toBeInTheDocument();
     });
 
@@ -182,7 +212,7 @@ describe("PersonasDataTable", () => {
       // The component handles user interactions through the toolbar
       // which is mocked, so we just verify the component renders
       expect(
-        screen.getByTestId("personas-data-table-toolbar"),
+        screen.getByTestId("personas-data-table-toolbar")
       ).toBeInTheDocument();
     });
   });
@@ -199,14 +229,14 @@ describe("PersonasDataTable", () => {
 
       // Should show no results message
       expect(
-        screen.getByText("No personas match the current filters."),
+        screen.getByText("No personas match the current filters.")
       ).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      // Test with minimal required props
+      // Test with minimal required props - use the same columns structure to avoid undefined column access
       const minimalProps = {
-        columns: [],
+        columns: mockColumns, // Use the same columns to avoid undefined column access
         data: [],
         scenarios: [],
         scenarioOptions: [],
@@ -220,7 +250,7 @@ describe("PersonasDataTable", () => {
 
       // Component should still render
       expect(
-        screen.getByTestId("personas-data-table-toolbar"),
+        screen.getByTestId("personas-data-table-toolbar")
       ).toBeInTheDocument();
     });
 

@@ -10,9 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { calculateSessionEfficiency } from "@/utils/analytics/header";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -21,7 +23,6 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
-import { eachDayOfInterval, format } from "date-fns";
 import { TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -126,254 +127,42 @@ export default function SessionEfficiency({
     queryFn: () => getAllCohorts(),
   });
 
-  // Calculate session efficiency for the specified date range and profile
-  const sessionEfficiency = useMemo(() => {
-    if (!grades || !attempts || !chats || !simulations || !rubrics || !cohorts)
-      return 0;
-
-    // Get cohort filtering data
-    let cohortFiltering: {
-      allowedProfileIds: string[];
-      allowedSimulationIds: string[];
-    } | null = null;
-    if (cohortIds && cohortIds.length > 0) {
-      const matchingCohorts = cohorts.filter(
-        (cohort) => cohortIds.includes(cohort.id) && cohort.active,
-      );
-
-      if (matchingCohorts.length > 0) {
-        // Collect all profile IDs and simulation IDs from matching cohorts
-        const allowedProfileIds = new Set<string>();
-        const allowedSimulationIds = new Set<string>();
-
-        matchingCohorts.forEach((cohort) => {
-          cohort.profileIds.forEach((profileId: string) =>
-            allowedProfileIds.add(profileId),
-          );
-          cohort.simulationIds.forEach((simulationId: string) =>
-            allowedSimulationIds.add(simulationId),
-          );
-        });
-
-        cohortFiltering = {
-          allowedProfileIds: Array.from(allowedProfileIds),
-          allowedSimulationIds: Array.from(allowedSimulationIds),
-        };
-      }
+  // Calculate session efficiency using utility function
+  const sessionEfficiencyResult = useMemo(() => {
+    if (!grades || !attempts || !chats || !simulations || !rubrics || !cohorts) {
+      return { currentValue: 0, trendData: [], hasData: false };
     }
 
-    // Filter grades by date range and exclude practice simulations
-    const filteredGrades = grades.filter((grade) => {
-      const gradeDate = new Date(grade.createdAt);
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId,
-      );
-      return (
-        gradeDate >= dateStart &&
-        gradeDate <= dateEnd &&
-        !simulation?.practiceSimulation
-      );
-    });
-
-    // Apply cohort filtering if available
-    const cohortFilteredGrades = cohortFiltering
-      ? filteredGrades.filter((grade) => {
-          const chat = chats.find((c) => c.id === grade.simulationChatId);
-          const attempt = attempts.find((a) => a.id === chat?.attemptId);
-          return (
-            attempt?.profileId &&
-            cohortFiltering.allowedProfileIds.includes(attempt.profileId) &&
-            attempt.simulationId &&
-            cohortFiltering.allowedSimulationIds.includes(attempt.simulationId)
-          );
-        })
-      : filteredGrades;
-
-    // Filter by profileId if provided (tighter restriction)
-    const profileFilteredGrades = profileId
-      ? cohortFilteredGrades.filter((grade) => {
-          const chat = chats.find((c) => c.id === grade.simulationChatId);
-          const attempt = attempts.find((a) => a.id === chat?.attemptId);
-          return attempt?.profileId === profileId;
-        })
-      : cohortFilteredGrades;
-
-    if (profileFilteredGrades.length === 0) return 0;
-
-    // Calculate average score percentage
-    const scores = profileFilteredGrades.map((grade) => {
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId,
-      );
-      const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
-      const rubricTotalPoints = rubric?.points || 100;
-      return Math.round((grade.score / rubricTotalPoints) * 100);
-    });
-
-    const averageScore =
-      scores.reduce((sum, score) => sum + score, 0) / scores.length;
-
-    // Calculate average time per session in minutes
-    const timesInMinutes = profileFilteredGrades.map((grade) => {
-      return grade.timeTaken / 60; // Convert seconds to minutes
-    });
-
-    const averageTimeInMinutes =
-      timesInMinutes.reduce((sum, time) => sum + time, 0) /
-      timesInMinutes.length;
-
-    // Avoid division by zero
-    if (averageTimeInMinutes === 0) return 0;
-
-    // Calculate efficiency: (Average Score %) / (Average Time per Session in minutes)
-    return Math.round((averageScore / averageTimeInMinutes) * 10) / 10;
+    return calculateSessionEfficiency(
+      grades,
+      chats,
+      attempts,
+      simulations,
+      rubrics,
+      dateStart,
+      dateEnd,
+      profileId,
+      cohorts,
+      cohortIds
+    );
   }, [
     grades,
     attempts,
     chats,
     simulations,
     rubrics,
+    cohorts,
     dateStart,
     dateEnd,
     profileId,
     cohortIds,
-    cohorts,
   ]);
 
-  // Session efficiency trend data for the specified date range
-  const efficiencyTrend = useMemo(() => {
-    if (!grades || !attempts || !chats || !simulations || !rubrics || !cohorts)
-      return [];
-
-    // Get cohort filtering data
-    let cohortFiltering: {
-      allowedProfileIds: string[];
-      allowedSimulationIds: string[];
-    } | null = null;
-    if (cohortIds && cohortIds.length > 0) {
-      const matchingCohorts = cohorts.filter(
-        (cohort) => cohortIds.includes(cohort.id) && cohort.active,
-      );
-
-      if (matchingCohorts.length > 0) {
-        // Collect all profile IDs and simulation IDs from matching cohorts
-        const allowedProfileIds = new Set<string>();
-        const allowedSimulationIds = new Set<string>();
-
-        matchingCohorts.forEach((cohort) => {
-          cohort.profileIds.forEach((profileId: string) =>
-            allowedProfileIds.add(profileId),
-          );
-          cohort.simulationIds.forEach((simulationId: string) =>
-            allowedSimulationIds.add(simulationId),
-          );
-        });
-
-        cohortFiltering = {
-          allowedProfileIds: Array.from(allowedProfileIds),
-          allowedSimulationIds: Array.from(allowedSimulationIds),
-        };
-      }
-    }
-
-    // Get all days in the date range
-    const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
-
-    return days.map((date) => {
-      const dateStr = format(date, "yyyy-MM-dd");
-
-      // Filter grades for this specific day and exclude practice simulations
-      const dayGrades = grades.filter((grade) => {
-        const gradeDate = format(new Date(grade.createdAt), "yyyy-MM-dd");
-        const chat = chats.find((c) => c.id === grade.simulationChatId);
-        const attempt = attempts.find((a) => a.id === chat?.attemptId);
-        const simulation = simulations.find(
-          (s) => s.id === attempt?.simulationId,
-        );
-        return gradeDate === dateStr && !simulation?.practiceSimulation;
-      });
-
-      // Apply cohort filtering if available
-      const cohortFilteredDayGrades = cohortFiltering
-        ? dayGrades.filter((grade) => {
-            const chat = chats.find((c) => c.id === grade.simulationChatId);
-            const attempt = attempts.find((a) => a.id === chat?.attemptId);
-            return (
-              attempt?.profileId &&
-              cohortFiltering.allowedProfileIds.includes(attempt.profileId) &&
-              attempt.simulationId &&
-              cohortFiltering.allowedSimulationIds.includes(
-                attempt.simulationId,
-              )
-            );
-          })
-        : dayGrades;
-
-      // Filter by profileId if provided
-      const profileFilteredDayGrades = profileId
-        ? cohortFilteredDayGrades.filter((grade) => {
-            const chat = chats.find((c) => c.id === grade.simulationChatId);
-            const attempt = attempts.find((a) => a.id === chat?.attemptId);
-            return attempt?.profileId === profileId;
-          })
-        : cohortFilteredDayGrades;
-
-      // Calculate efficiency for the day
-      let dayEfficiency = 0;
-      if (profileFilteredDayGrades.length > 0) {
-        // Calculate average score percentage for the day
-        const dayScores = profileFilteredDayGrades.map((grade) => {
-          const chat = chats.find((c) => c.id === grade.simulationChatId);
-          const attempt = attempts.find((a) => a.id === chat?.attemptId);
-          const simulation = simulations.find(
-            (s) => s.id === attempt?.simulationId,
-          );
-          const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
-          const rubricTotalPoints = rubric?.points || 100;
-          return Math.round((grade.score / rubricTotalPoints) * 100);
-        });
-
-        const dayAverageScore =
-          dayScores.reduce((sum, score) => sum + score, 0) / dayScores.length;
-
-        // Calculate average time per session in minutes for the day
-        const dayTimesInMinutes = profileFilteredDayGrades.map((grade) => {
-          return grade.timeTaken / 60; // Convert seconds to minutes
-        });
-
-        const dayAverageTimeInMinutes =
-          dayTimesInMinutes.reduce((sum, time) => sum + time, 0) /
-          dayTimesInMinutes.length;
-
-        // Avoid division by zero
-        if (dayAverageTimeInMinutes > 0) {
-          dayEfficiency =
-            Math.round((dayAverageScore / dayAverageTimeInMinutes) * 10) / 10;
-        }
-      }
-
-      return {
-        date: format(date, "MM/dd"),
-        efficiency: dayEfficiency,
-        sessions: profileFilteredDayGrades.length,
-      };
-    });
-  }, [
-    grades,
-    attempts,
-    chats,
-    simulations,
-    rubrics,
-    dateStart,
-    dateEnd,
-    profileId,
-    cohortIds,
-    cohorts,
-  ]);
+  const {
+    currentValue: sessionEfficiency,
+    trendData: efficiencyTrend,
+    hasData: hasDataAvailable,
+  } = sessionEfficiencyResult;
 
   // Determine color based on efficiency and thresholds (higher is better)
   const getColorConfig = (efficiency: number) => {
@@ -388,9 +177,6 @@ export default function SessionEfficiency({
     setIsDialogOpen(true);
   };
 
-  // Check if we have data to display
-  const hasData = efficiencyTrend.some((day) => day.sessions > 0);
-
   // Check if cohort filtering resulted in no data
   const hasNoCohortData =
     cohortIds &&
@@ -401,7 +187,7 @@ export default function SessionEfficiency({
 
   // Calculate actual trend from data
   const getTrendAnalysis = () => {
-    if (!hasData || efficiencyTrend.length < 2) return null;
+    if (!hasDataAvailable || efficiencyTrend.length < 2) return null;
 
     // Get recent data (last 3 days, 1 week, or 1 month depending on data availability)
     const recentData = efficiencyTrend.slice(-3);
@@ -410,10 +196,10 @@ export default function SessionEfficiency({
     if (recentData.length === 0 || earlierData.length === 0) return null;
 
     const recentAvg =
-      recentData.reduce((sum, day) => sum + day.efficiency, 0) /
+      recentData.reduce((sum, day) => sum + day.value, 0) /
       recentData.length;
     const earlierAvg =
-      earlierData.reduce((sum, day) => sum + day.efficiency, 0) /
+      earlierData.reduce((sum, day) => sum + day.value, 0) /
       earlierData.length;
     const change = recentAvg - earlierAvg;
     const changePercent =
@@ -450,7 +236,7 @@ export default function SessionEfficiency({
           <div className={`text-2xl font-bold ${colorConfig.text}`}>
             {hasNoCohortData
               ? "No cohort data"
-              : hasData
+              : hasDataAvailable
                 ? `${sessionEfficiency}`
                 : "No data"}
           </div>
@@ -458,12 +244,17 @@ export default function SessionEfficiency({
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent
+          className="max-w-2xl"
+        >
           <DialogHeader>
             <DialogTitle>Session Efficiency Trend</DialogTitle>
+            <DialogDescription hidden>
+              This chart shows the session efficiency over time.
+            </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-            {hasData ? (
+            {hasDataAvailable ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={efficiencyTrend}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -471,13 +262,13 @@ export default function SessionEfficiency({
                   <YAxis />
                   <Tooltip
                     formatter={(value: number, name: string) => [
-                      name === "efficiency" ? value.toFixed(1) : value,
-                      name === "efficiency" ? "Efficiency" : "Sessions",
+                      name === "value" ? value.toFixed(1) : value,
+                      name === "value" ? "Efficiency" : "Sessions",
                     ]}
                   />
                   <Line
                     type="monotone"
-                    dataKey="efficiency"
+                    dataKey="value"
                     stroke={colorConfig.primary}
                     strokeWidth={2}
                     dot={{ r: 4 }}

@@ -32,6 +32,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { calculateRubricHeatmap } from "@/utils/analytics/secondary";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -42,7 +43,6 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useQuery } from "@tanstack/react-query";
-import { isAfter, isBefore } from "date-fns";
 import { Info, Loader2, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -58,40 +58,6 @@ export interface RubricHeatmapProps {
   cohortIds: string[];
 }
 
-// Calculate Pearson correlation coefficient
-function calculateCorrelation(x: number[], y: number[]): number {
-  if (x.length !== y.length || x.length === 0) return 0;
-
-  const n = x.length;
-  const sumX = x.reduce((a, b) => a + b, 0);
-  const sumY = y.reduce((a, b) => a + b, 0);
-  const sumXY = x.reduce((sum, xi, i) => sum + xi * (y[i] || 0), 0);
-  const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
-  const sumY2 = y.reduce((sum, yi) => sum + yi * yi, 0);
-
-  const numerator = n * sumXY - sumX * sumY;
-  const denominator = Math.sqrt(
-    (n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY)
-  );
-
-  return denominator === 0 ? 0 : numerator / denominator;
-}
-
-// Calculate p-value for correlation coefficient
-function calculatePValue(correlation: number, n: number): number {
-  if (n < 3) return 1;
-
-  // Calculate t-statistic
-  const tStat =
-    correlation * Math.sqrt((n - 2) / (1 - correlation * correlation));
-
-  // Calculate p-value using t-distribution approximation
-  // This is a simplified calculation - for more accuracy, you'd use a proper t-distribution table
-  const pValue = 2 * (1 - Math.abs(tStat) / Math.sqrt(tStat * tStat + n - 2));
-
-  return Math.max(0, Math.min(1, pValue)); // Clamp between 0 and 1
-}
-
 export default function RubricHeatmap({
   dateStart,
   dateEnd,
@@ -101,7 +67,7 @@ export default function RubricHeatmap({
 }: RubricHeatmapProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<Rubric[]>([]);
 
-  // ADDED: State to track hovered cell for highlighting
+  // State to track hovered cell for highlighting
   const [hoveredCell, setHoveredCell] = useState<{
     row: number | null;
     col: number | null;
@@ -164,34 +130,6 @@ export default function RubricHeatmap({
     queryFn: () => getAllCohorts(),
   });
 
-  // Filter cohorts based on cohortIds and profileId
-  const filteredCohorts = useMemo(() => {
-    if (!allCohorts) return [];
-
-    let availableCohorts = allCohorts;
-
-    // If profileId is provided, filter to cohorts that contain this profile
-    if (profileId) {
-      availableCohorts = availableCohorts.filter((cohort) =>
-        cohort.profileIds.includes(profileId)
-      );
-    }
-
-    // If cohortIds are provided, filter to only those cohorts
-    if (cohortIds && cohortIds.length > 0) {
-      availableCohorts = availableCohorts.filter((cohort) =>
-        cohortIds.includes(cohort.id)
-      );
-    }
-
-    return availableCohorts;
-  }, [allCohorts, profileId, cohortIds]);
-
-  // Check if user has access to any cohorts
-  const hasCohortAccess = useMemo(() => {
-    return filteredCohorts.length > 0;
-  }, [filteredCohorts]);
-
   // Fetch chats and attempts for profile filtering
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -212,295 +150,68 @@ export default function RubricHeatmap({
     enabled: !!attempts && attempts.length > 0,
   });
 
-  // Calculate correlation matrix for standard groups
-  const correlationMatrix = useMemo(() => {
+  // Use the utility function to calculate rubric heatmap
+  const rubricHeatmapResult = useMemo(() => {
     if (
       !grades ||
       !feedbacks ||
       !standards ||
       !standardGroups ||
       !filteredRubrics ||
-      !filteredCohorts
+      !allCohorts ||
+      !profiles ||
+      !attempts ||
+      !chats
     ) {
-      return { matrix: [], insights: null };
+      return null;
     }
 
-    if (grades.length === 0) return { matrix: [], insights: null };
-
-    // Filter grades by date range, profile, and cohort access
-    const filteredGrades = grades.filter((grade) => {
-      const gradeDate = new Date(grade.createdAt);
-      const inDateRange =
-        isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
-
-      // Filter by profile if provided - need to get profile through chat -> attempt
-      let profileMatch = true;
-      if (profileId) {
-        // Find the chat for this grade
-        const chat = chats?.find((c) => c.id === grade.simulationChatId);
-        if (chat) {
-          // Find the attempt for this chat
-          const attempt = attempts?.find((a) => a.id === chat.attemptId);
-          profileMatch = attempt?.profileId === profileId;
-        } else {
-          profileMatch = false;
-        }
-      }
-
-      // Filter by cohort access - check if the profile belongs to any of the filtered cohorts
-      let cohortMatch = true;
-      if (filteredCohorts.length > 0) {
-        const chat = chats?.find((c) => c.id === grade.simulationChatId);
-        if (chat) {
-          const attempt = attempts?.find((a) => a.id === chat.attemptId);
-          if (attempt?.profileId) {
-            const profile = profiles?.find((p) => p.id === attempt.profileId);
-            if (profile) {
-              // Check if this profile belongs to any of the filtered cohorts
-              cohortMatch = filteredCohorts.some((cohort) =>
-                cohort.profileIds.includes(profile.id)
-              );
-            } else {
-              cohortMatch = false;
-            }
-          } else {
-            cohortMatch = false;
-          }
-        } else {
-          cohortMatch = false;
-        }
-      }
-
-      return inDateRange && profileMatch && cohortMatch;
-    });
-
-    if (filteredGrades.length === 0) return { matrix: [], insights: null };
-
-    // Filter feedbacks to only include those from filtered grades
-    const filteredFeedbacks = feedbacks.filter((feedback) =>
-      filteredGrades.some(
-        (grade) => grade.id === feedback.simulationChatGradeId
-      )
+    return calculateRubricHeatmap(
+      grades,
+      feedbacks,
+      standards,
+      standardGroups,
+      filteredRubrics,
+      chats,
+      attempts,
+      profiles,
+      allCohorts,
+      dateStart,
+      dateEnd,
+      profileId,
+      cohortIds,
+      defaultRubrics.map((r) => r.id)
     );
-
-    // Get all standard groups that have feedback data
-    const standardGroupsWithData = standardGroups.filter((group) =>
-      filteredFeedbacks.some((feedback) => {
-        const standard = standards.find((s) => s.id === feedback.standardId);
-        return standard && standard.standardGroupId === group.id;
-      })
-    );
-
-    if (standardGroupsWithData.length < 2)
-      return { matrix: [], insights: null };
-
-    // Create n x n correlation matrix
-    const matrix: Array<
-      Array<{
-        correlation: number;
-        pValue: number;
-        color: string;
-        strength: string;
-        dataPoints: number;
-      }>
-    > = [];
-
-    // Initialize matrix with zeros
-    for (let i = 0; i < standardGroupsWithData.length; i++) {
-      matrix[i] = [];
-      for (let j = 0; j < standardGroupsWithData.length; j++) {
-        if (matrix[i]) {
-          matrix[i]![j] = {
-            correlation: 0,
-            pValue: 1,
-            color: "#e5e7eb",
-            strength: "No Data",
-            dataPoints: 0,
-          };
-        }
-      }
-    }
-
-    // Calculate correlations between all pairs of standard groups
-    for (let i = 0; i < standardGroupsWithData.length; i++) {
-      for (let j = 0; j < standardGroupsWithData.length; j++) {
-        const group1 = standardGroupsWithData[i];
-        const group2 = standardGroupsWithData[j];
-
-        if (!group1 || !group2) continue;
-
-        // Get all grades that have feedback for both standard groups
-        const gradesWithBothGroups = filteredGrades.filter((grade) => {
-          const gradeFeedbacks = filteredFeedbacks.filter(
-            (f) => f.simulationChatGradeId === grade.id
-          );
-
-          const hasGroup1 = gradeFeedbacks.some((f) => {
-            const standard = standards.find((s) => s.id === f.standardId);
-            return standard && standard.standardGroupId === group1.id;
-          });
-
-          const hasGroup2 = gradeFeedbacks.some((f) => {
-            const standard = standards.find((s) => s.id === f.standardId);
-            return standard && standard.standardGroupId === group2.id;
-          });
-
-          return hasGroup1 && hasGroup2;
-        });
-
-        if (gradesWithBothGroups.length < 3) continue; // Need at least 3 data points
-
-        // Extract scores for both standard groups
-        const scores1: number[] = [];
-        const scores2: number[] = [];
-
-        gradesWithBothGroups.forEach((grade) => {
-          // Get average score for group1
-          const group1Feedbacks = filteredFeedbacks.filter((f) => {
-            const standard = standards.find((s) => s.id === f.standardId);
-            return (
-              f.simulationChatGradeId === grade.id &&
-              standard &&
-              standard.standardGroupId === group1.id
-            );
-          });
-
-          // Get average score for group2
-          const group2Feedbacks = filteredFeedbacks.filter((f) => {
-            const standard = standards.find((s) => s.id === f.standardId);
-            return (
-              f.simulationChatGradeId === grade.id &&
-              standard &&
-              standard.standardGroupId === group2.id
-            );
-          });
-
-          if (group1Feedbacks.length > 0 && group2Feedbacks.length > 0) {
-            // Calculate average scores for each group
-            const rubric = filteredRubrics.find((r) => r.id === grade.rubricId);
-            const rubricTotalPoints = rubric?.points || 100;
-
-            const avgScore1 =
-              group1Feedbacks.reduce((sum, f) => sum + f.total, 0) /
-              group1Feedbacks.length;
-            const avgScore2 =
-              group2Feedbacks.reduce((sum, f) => sum + f.total, 0) /
-              group2Feedbacks.length;
-
-            // Normalize to percentage
-            scores1.push((avgScore1 / rubricTotalPoints) * 100);
-            scores2.push((avgScore2 / rubricTotalPoints) * 100);
-          }
-        });
-
-        if (scores1.length >= 3) {
-          const correlation = calculateCorrelation(scores1, scores2);
-          const pValue = calculatePValue(correlation, scores1.length);
-          const absCorrelation = Math.abs(correlation);
-
-          // Determine color and strength based on correlation strength
-          let color = "#e5e7eb"; // Light gray for weak correlation
-          let strength = "Weak";
-
-          if (absCorrelation >= 0.7) {
-            color = correlation > 0 ? "#10b981" : "#ef4444"; // Green for positive, red for negative
-            strength = "Strong";
-          } else if (absCorrelation >= 0.5) {
-            color = correlation > 0 ? "#34d399" : "#f87171"; // Lighter green/red
-            strength = "Moderate";
-          } else if (absCorrelation >= 0.3) {
-            color = correlation > 0 ? "#6ee7b7" : "#fca5a5"; // Even lighter
-            strength = "Weak";
-          }
-
-          if (matrix[i]) {
-            matrix[i]![j] = {
-              correlation: Math.round(correlation * 100) / 100,
-              pValue,
-              color,
-              strength,
-              dataPoints: scores1.length,
-            };
-          }
-        }
-      }
-    }
-
-    // Generate insights
-    let insights = null;
-    if (standardGroupsWithData.length > 0) {
-      // Find strongest correlations
-      let strongestPositive = { correlation: 0, group1: "", group2: "" };
-      let strongestNegative = { correlation: 0, group1: "", group2: "" };
-
-      for (let i = 0; i < standardGroupsWithData.length; i++) {
-        for (let j = i + 1; j < standardGroupsWithData.length; j++) {
-          const cell = matrix[i]?.[j];
-          if (cell && cell.correlation > strongestPositive.correlation) {
-            const group1 = standardGroupsWithData[i];
-            const group2 = standardGroupsWithData[j];
-            if (group1 && group2) {
-              strongestPositive = {
-                correlation: cell.correlation,
-                group1: group1.shortName,
-                group2: group2.shortName,
-              };
-            }
-          }
-          if (cell && cell.correlation < strongestNegative.correlation) {
-            const group1 = standardGroupsWithData[i];
-            const group2 = standardGroupsWithData[j];
-            if (group1 && group2) {
-              strongestNegative = {
-                correlation: cell.correlation,
-                group1: group1.shortName,
-                group2: group2.shortName,
-              };
-            }
-          }
-        }
-      }
-
-      if (strongestPositive.correlation > 0.5) {
-        insights = `Strong positive correlation (${strongestPositive.correlation}) between "${strongestPositive.group1}" and "${strongestPositive.group2}". Students who excel in one skill area tend to excel in the other.`;
-      } else if (strongestNegative.correlation < -0.5) {
-        insights = `Strong negative correlation (${strongestNegative.correlation}) between "${strongestNegative.group1}" and "${strongestNegative.group2}". Consider if these skill areas are competing for attention.`;
-      } else {
-        insights =
-          "Most skill area correlations are moderate. Skill areas appear to be relatively independent.";
-      }
-    }
-
-    return { matrix, insights, standardGroups: standardGroupsWithData };
   }, [
     grades,
     feedbacks,
     standards,
     standardGroups,
     filteredRubrics,
+    allCohorts,
+    profiles,
+    attempts,
+    chats,
     dateStart,
     dateEnd,
     profileId,
-    attempts,
-    chats,
-    filteredCohorts,
-    profiles,
+    cohortIds,
+    defaultRubrics,
   ]);
 
   // Calculate threshold status based on correlation matrix data
   const getThresholdStatus = () => {
-    if (!correlationMatrix.matrix.length || !correlationMatrix.standardGroups)
-      return "neutral";
+    if (!rubricHeatmapResult || !rubricHeatmapResult.hasData) return "neutral";
 
     // Calculate average correlation strength across all non-diagonal cells
     let totalCorrelation = 0;
     let correlationCount = 0;
 
-    for (let i = 0; i < correlationMatrix.matrix.length; i++) {
-      for (let j = 0; j < correlationMatrix.matrix[i]!.length; j++) {
+    for (let i = 0; i < rubricHeatmapResult.matrix.length; i++) {
+      for (let j = 0; j < rubricHeatmapResult.matrix[i]!.length; j++) {
         if (i !== j) {
           // Skip diagonal cells (self-correlation)
-          const cell = correlationMatrix.matrix[i]![j];
+          const cell = rubricHeatmapResult.matrix[i]![j];
           if (cell && cell.dataPoints > 0) {
             totalCorrelation += Math.abs(cell.correlation);
             correlationCount++;
@@ -566,45 +277,7 @@ export default function RubricHeatmap({
   }
 
   // Show no access message if user doesn't have access to any cohorts
-  if (!hasCohortAccess) {
-    return (
-      <Card className="w-full h-full flex flex-col relative">
-        <div
-          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
-            thresholdStatus === "success"
-              ? "bg-green-500"
-              : thresholdStatus === "warning"
-                ? "bg-yellow-500"
-                : thresholdStatus === "danger"
-                  ? "bg-red-500"
-                  : "bg-gray-400"
-          }`}
-        />
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <TrendingUp className="h-4 w-4" />
-            Skill Area Correlation Matrix
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Statistical correlation between skill areas (standard groups)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1 p-3">
-          <div className="text-center text-muted-foreground text-sm">
-            <p>No cohort access available</p>
-            <p className="text-xs mt-1">
-              {profileId
-                ? "You don't have access to any of the specified cohorts."
-                : "No cohorts match the specified criteria."}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Show empty state if no data
-  if (!correlationMatrix.matrix.length || !correlationMatrix.standardGroups) {
+  if (!rubricHeatmapResult?.hasData) {
     return (
       <Card className="w-full h-full flex flex-col relative">
         <div
@@ -682,7 +355,7 @@ export default function RubricHeatmap({
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
         <div className="space-y-3 flex flex-col items-center h-full">
-          {/* MODIFIED: Correlation Matrix Table for a more compact, square layout */}
+          {/* Correlation Matrix Table for a more compact, square layout */}
           <TooltipProvider delayDuration={150}>
             <div className="overflow-x-auto flex-1">
               <Table className="w-auto border-collapse h-full">
@@ -690,36 +363,38 @@ export default function RubricHeatmap({
                   <TableRow>
                     {/* The first empty cell for alignment */}
                     <TableHead className="p-1 w-12"></TableHead>
-                    {correlationMatrix.standardGroups.map((group, colIndex) => (
-                      <TableHead
-                        key={group.id}
-                        className={cn(
-                          "p-1 h-30 w-20 relative", // Slightly narrower than before
-                          hoveredCell.col === colIndex && "bg-muted" // Highlight on hover
-                        )}
-                      >
-                        {/* MODIFIED: Rotated Label */}
-                        <div
-                          className="absolute bottom-2 left-1/2 -translate-x-1/2"
-                          style={{ writingMode: "vertical-rl" }}
+                    {rubricHeatmapResult.standardGroups.map(
+                      (group, colIndex) => (
+                        <TableHead
+                          key={group.id}
+                          className={cn(
+                            "p-1 h-30 w-24 relative", // Increased width from w-16 to w-24
+                            hoveredCell.col === colIndex && "bg-muted" // Highlight on hover
+                          )}
                         >
-                          <span className="text-xs font-normal text-muted-foreground whitespace-nowrap">
-                            {group.shortName}
-                          </span>
-                        </div>
-                      </TableHead>
-                    ))}
+                          {/* Rotated Label */}
+                          <div
+                            className="absolute bottom-2 left-1/2 -translate-x-1/2"
+                            style={{ writingMode: "vertical-rl" }}
+                          >
+                            <span className="text-xs font-normal text-muted-foreground whitespace-nowrap">
+                              {group.shortName}
+                            </span>
+                          </div>
+                        </TableHead>
+                      )
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {correlationMatrix.standardGroups.map((group, rowIndex) => (
+                  {rubricHeatmapResult.standardGroups.map((group, rowIndex) => (
                     <TableRow
                       key={group.id}
                       onMouseLeave={() =>
                         setHoveredCell({ row: null, col: null })
                       }
                     >
-                      {/* MODIFIED: This is now the row header, not part of the grid */}
+                      {/* This is now the row header, not part of the grid */}
                       <TableCell
                         className={cn(
                           "font-medium text-xs p-1 text-right text-muted-foreground",
@@ -728,10 +403,10 @@ export default function RubricHeatmap({
                       >
                         {group.shortName}
                       </TableCell>
-                      {correlationMatrix.standardGroups.map(
+                      {rubricHeatmapResult.standardGroups.map(
                         (colGroup, colIndex) => {
                           const cell =
-                            correlationMatrix.matrix[rowIndex]?.[colIndex];
+                            rubricHeatmapResult.matrix[rowIndex]?.[colIndex];
                           if (!cell) {
                             return <TableCell key={colIndex} className="p-1" />;
                           }
@@ -826,10 +501,10 @@ export default function RubricHeatmap({
           </div>
 
           {/* Actionable Insights */}
-          {correlationMatrix.insights && (
+          {rubricHeatmapResult.insights && (
             <div className="p-3 bg-muted rounded-lg text-left flex-shrink-0 w-full">
               <p className="text-xs text-muted-foreground">
-                {correlationMatrix.insights}
+                {rubricHeatmapResult.insights}
               </p>
             </div>
           )}

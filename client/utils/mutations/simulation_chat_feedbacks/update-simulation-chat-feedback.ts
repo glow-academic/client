@@ -4,8 +4,10 @@ import { db } from "@/utils/drizzle/db";
 import { simulationChatFeedbacks } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function updateSimulationChatFeedback(id: string, data: Partial<typeof simulationChatFeedbacks.$inferInsert>) {
+// Original logic is now a "private" function
+async function _updateSimulationChatFeedback(id: string, data: Partial<typeof simulationChatFeedbacks.$inferInsert>) {
   try {
     const result = await db.update(simulationChatFeedbacks).set(data).where(eq(simulationChatFeedbacks.id, id)).returning();
     return result[0];
@@ -14,3 +16,6 @@ export async function updateSimulationChatFeedback(id: string, data: Partial<typ
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const updateSimulationChatFeedback = createMockableAction('updateSimulationChatFeedback', _updateSimulationChatFeedback);

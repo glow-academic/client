@@ -14,10 +14,37 @@ import '@/mocks/api';
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { SimulationProviderProps } from '@/contexts/simulation-context';
-const mockProps: SimulationProviderProps = {
-  children: <div>test-children</div>,
+import { SimulationProvider, type SimulationContextType } from '@/contexts/simulation-context';
+const mockProps: SimulationContextType = {
   attemptId: 'test-attemptId',
+  attempt: null,
+  simulation: null,
+  scenario: null,
+  documents: [],
+  scenarioDocuments: [],
+  currentChatIndex: 0,
+  setCurrentChatIndex: vi.fn(),
+  currentChat: null,
+  isLoadingChats: false,
+  chats: [],
+  currentDynamicRubric: null,
+  allDynamicRubrics: [],
+  aggregatedResults: null,
+  timer: { elapsed: 0, remaining: null, expired: false },
+  isActive: false,
+  showResults: false,
+  isSingleChatAttempt: false,
+  isLastAttempt: false,
+  expectedChatCount: 0,
+  freshlyCompletedChats: new Set(),
+  setFreshlyCompletedChats: vi.fn(),
+  isConnected: false,
+  sendMessage: vi.fn(),
+  stopMessage: vi.fn(),
+  endChat: vi.fn(),
+  isSendingMessage: false,
+  isStoppingMessage: false,
+  endChatLoading: false,
 };
 // ------------------------------------------------------------------
 describe('simulation-context', () => {
@@ -46,7 +73,9 @@ describe('simulation-context', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<simulation-context {...mockProps} />);
+      renderWithMocks(<SimulationProvider {...mockProps} onSimulationFinished={vi.fn()}>
+        <div>test-children</div>
+      </SimulationProvider>);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
@@ -90,7 +119,9 @@ describe('simulation-context', () => {
       // Arrange: Override the default success mock with an error for this test.
       // Example: vi.mocked(getAllDocuments).mockRejectedValue(new Error('API Error'));
 
-      renderWithMocks(<simulation-context {...mockProps} />);
+      renderWithMocks(<SimulationProvider {...mockProps} onSimulationFinished={vi.fn()}>
+        <div>test-children</div>
+      </SimulationProvider>);
       
       // Assert: Check that your component shows an error message.
       // TODO: Add specific error state assertions

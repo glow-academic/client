@@ -92,7 +92,7 @@ describe("DataTableRowActions", () => {
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(<DataTableRowActions id="test" />);
+      renderWithMocks(<DataTableRowActions id="test" profileId="test-profile-id" scenarios={[]} interactionIds={[]} />);
 
       // Component should handle missing props
       expect(document.body).toBeInTheDocument();

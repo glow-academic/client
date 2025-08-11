@@ -4,8 +4,10 @@ import { db } from "@/utils/drizzle/db";
 import { simulationChatGrades } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function deleteSimulationChatGrades(ids: string[]) {
+// Original logic is now a "private" function
+async function _deleteSimulationChatGrades(ids: string[]) {
   try {
     return await db.delete(simulationChatGrades).where(inArray(simulationChatGrades.id, ids)).returning();
   } catch (error) {
@@ -13,3 +15,6 @@ export async function deleteSimulationChatGrades(ids: string[]) {
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const deleteSimulationChatGrades = createMockableAction('deleteSimulationChatGrades', _deleteSimulationChatGrades);

@@ -1,4 +1,4 @@
-import { describe, it } from 'vitest';
+import { describe, it, vi } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 import userEvent from '@testing-library/user-event';
 
@@ -8,10 +8,26 @@ import userEvent from '@testing-library/user-event';
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { WebSocketProviderProps } from '@/contexts/websocket-context';
-const mockProps: WebSocketProviderProps = {
-  children: <div>test-children</div>,
-  profileId: null,
+import { WebSocketProvider, type WebSocketContextType } from '@/contexts/websocket-context';
+const mockProps: WebSocketContextType = {
+  isConnected: false,
+  socket: null,
+  isStartingSimulation: false,
+  isSendingSimulationMessage: false,
+  isStoppingSimulation: false,
+  isContinuingSimulation: false,
+  isStartingAssistant: false,
+  isSendingAssistantMessage: false,
+  isStoppingAssistant: false,
+  joinRoom: vi.fn(),
+  leaveRoom: vi.fn(),
+  emitStartSimulation: vi.fn(),
+  emitSendSimulationMessage: vi.fn(),
+  emitStopSimulation: vi.fn(),
+  emitContinueSimulation: vi.fn(),
+  emitStartAssistant: vi.fn(),
+  emitSendAssistantMessage: vi.fn(),
+  emitStopAssistant: vi.fn(),
 };
 // ------------------------------------------------------------------
 describe('websocket-context', () => {
@@ -20,7 +36,9 @@ describe('websocket-context', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       
-      renderWithMocks(<websocket-context {...mockProps} />);
+      renderWithMocks(<WebSocketProvider {...mockProps} profileId={null}>
+        <div>test-children</div>
+      </WebSocketProvider>);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();

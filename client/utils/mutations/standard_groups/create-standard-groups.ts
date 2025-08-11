@@ -3,8 +3,10 @@
 import { db } from "@/utils/drizzle/db";
 import { standardGroups } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function createStandardGroups(data: (typeof standardGroups.$inferInsert)[]) {
+// Original logic is now a "private" function
+async function _createStandardGroups(data: (typeof standardGroups.$inferInsert)[]) {
   try {
     return await db.insert(standardGroups).values(data).returning();
   } catch (error) {
@@ -12,3 +14,6 @@ export async function createStandardGroups(data: (typeof standardGroups.$inferIn
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const createStandardGroups = createMockableAction('createStandardGroups', _createStandardGroups);

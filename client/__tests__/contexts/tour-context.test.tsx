@@ -7,9 +7,16 @@ import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { TourProviderProps } from '@/contexts/tour-context';
-const mockProps: TourProviderProps = {
-  children: <div>test-children</div>,
+  import { TourProvider, type TourContextState } from '@/contexts/tour-context';
+const mockProps: TourContextState = {
+  isOpen: false,
+  currentStep: 0,
+  steps: [],
+  profile: null,
+  isNavigating: false,
+  loadingSimulation: null,
+  showGuideButton: false,
+  attemptId: null,
 };
 // ------------------------------------------------------------------
 describe('tour-context', () => {
@@ -18,7 +25,9 @@ describe('tour-context', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       
-      renderWithMocks(<tour-context {...mockProps} />);
+      renderWithMocks(<TourProvider {...mockProps} >
+        <div>test-children</div>
+      </TourProvider>);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();

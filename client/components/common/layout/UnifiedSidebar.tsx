@@ -589,7 +589,6 @@ export function UnifiedSidebar({
 
     // Clear guest flags (simulatedProfileId is managed by setSimulatedProfile)
     localStorage.removeItem("guestMode");
-    localStorage.removeItem("simulatedRole");
   };
 
   // Watch for profile changes and redirect if current page is not accessible
@@ -631,8 +630,6 @@ export function UnifiedSidebar({
       async () => {
         try {
           // Clear guest mode if it exists
-          localStorage.removeItem("guestAttemptIds");
-          localStorage.removeItem("simulatedRole");
           localStorage.removeItem("guestMode");
           localStorage.removeItem("simulatedProfileId");
           localStorage.removeItem("emulate");

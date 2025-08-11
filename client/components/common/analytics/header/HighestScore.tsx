@@ -10,9 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { calculateHighestScore } from "@/utils/analytics/header";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -21,7 +23,6 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
-import { eachDayOfInterval, format } from "date-fns";
 import { Trophy } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -126,251 +127,49 @@ export default function HighestScore({
     queryFn: () => getAllRubrics(),
   });
 
-  // Helper function to get allowed simulation IDs based on cohort filtering
-  const getAllowedSimulationIds = useMemo(() => {
-    if (!cohorts || !cohortIds || cohortIds.length === 0) {
-      return null; // No cohort filtering, allow all simulations
+  // Calculate highest score using utility function
+  const highestScoreResult = useMemo(() => {
+    if (
+      !grades ||
+      !attempts ||
+      !chats ||
+      !simulations ||
+      !rubrics ||
+      !cohorts
+    ) {
+      return { currentValue: 0, trendData: [], hasData: false };
     }
 
-    // Filter cohorts to only those in cohortIds
-    const filteredCohorts = cohorts.filter((cohort) =>
-      cohortIds.includes(cohort.id)
+    return calculateHighestScore(
+      grades,
+      chats,
+      attempts,
+      simulations,
+      rubrics,
+      dateStart,
+      dateEnd,
+      profileId,
+      cohorts,
+      cohortIds
     );
-
-    if (filteredCohorts.length === 0) {
-      return []; // No matching cohorts, no data allowed
-    }
-
-    // If profileId is provided, check if profile belongs to any of the filtered cohorts
-    if (profileId) {
-      const profileInCohorts = filteredCohorts.some((cohort) =>
-        cohort.profileIds.includes(profileId)
-      );
-
-      if (!profileInCohorts) {
-        return []; // Profile not in any of the specified cohorts, no data allowed
-      }
-    }
-
-    // Get union of all simulation IDs from matching cohorts
-    const allowedSimulationIds = new Set<string>();
-    filteredCohorts.forEach((cohort) => {
-      cohort.simulationIds.forEach((simId) => {
-        if (simId !== "RAY") {
-          // Exclude placeholder
-          allowedSimulationIds.add(simId);
-        }
-      });
-    });
-
-    return Array.from(allowedSimulationIds);
-  }, [cohorts, cohortIds, profileId]);
-
-  // Calculate highest score for the specified date range and profile
-  const highestScore = useMemo(() => {
-    if (!grades || !attempts || !chats || !simulations || !rubrics) return 0;
-
-    // Filter grades by date range and exclude practice simulations
-    const filteredGrades = grades.filter((grade) => {
-      const gradeDate = new Date(grade.createdAt);
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId
-      );
-      return (
-        gradeDate >= dateStart &&
-        gradeDate <= dateEnd &&
-        !simulation?.practiceSimulation
-      );
-    });
-
-    // Filter by profileId if provided
-    let profileFilteredGrades = profileId
-      ? filteredGrades.filter((grade) => {
-          const chat = chats.find((c) => c.id === grade.simulationChatId);
-          const attempt = attempts.find((a) => a.id === chat?.attemptId);
-          return attempt?.profileId === profileId;
-        })
-      : filteredGrades;
-
-    // Apply cohort filtering if simulation IDs are restricted
-    if (getAllowedSimulationIds !== null) {
-      if (getAllowedSimulationIds.length === 0) {
-        return 0; // No data allowed due to cohort restrictions
-      }
-
-      profileFilteredGrades = profileFilteredGrades.filter((grade) => {
-        const chat = chats.find((c) => c.id === grade.simulationChatId);
-        const attempt = attempts.find((a) => a.id === chat?.attemptId);
-        return getAllowedSimulationIds.includes(attempt?.simulationId || "");
-      });
-    }
-
-    if (profileFilteredGrades.length === 0) return 0;
-
-    // Group grades by attempt and calculate average scores
-    const attemptScores = new Map<
-      string,
-      { scores: number[]; rubricTotalPoints: number }
-    >();
-
-    profileFilteredGrades.forEach((grade) => {
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId
-      );
-      const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
-      const rubricTotalPoints = rubric?.points || 100;
-
-      if (attempt?.id) {
-        const existing = attemptScores.get(attempt.id);
-        if (existing) {
-          existing.scores.push(grade.score);
-        } else {
-          attemptScores.set(attempt.id, {
-            scores: [grade.score],
-            rubricTotalPoints,
-          });
-        }
-      }
-    });
-
-    // Calculate average score for each attempt and find the highest
-    const attemptAverages = Array.from(attemptScores.values()).map(
-      (attemptData) => {
-        const averageScore =
-          attemptData.scores.reduce((sum, score) => sum + score, 0) /
-          attemptData.scores.length;
-        return Math.round((averageScore / attemptData.rubricTotalPoints) * 100);
-      }
-    );
-
-    return attemptAverages.length > 0 ? Math.max(...attemptAverages) : 0;
   }, [
     grades,
     attempts,
     chats,
     simulations,
     rubrics,
+    cohorts,
     dateStart,
     dateEnd,
     profileId,
-    getAllowedSimulationIds,
+    cohortIds,
   ]);
 
-  // Highest score trend data for the specified date range
-  const highestScoreTrend = useMemo(() => {
-    if (!grades || !attempts || !chats || !simulations || !rubrics) return [];
-
-    // Get all days in the date range
-    const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
-
-    return days.map((date) => {
-      const dateStr = format(date, "yyyy-MM-dd");
-
-      // Filter grades for this specific day and exclude practice simulations
-      const dayGrades = grades.filter((grade) => {
-        const gradeDate = format(new Date(grade.createdAt), "yyyy-MM-dd");
-        const chat = chats.find((c) => c.id === grade.simulationChatId);
-        const attempt = attempts.find((a) => a.id === chat?.attemptId);
-        const simulation = simulations.find(
-          (s) => s.id === attempt?.simulationId
-        );
-        return gradeDate === dateStr && !simulation?.practiceSimulation;
-      });
-
-      // Filter by profileId if provided
-      let profileFilteredDayGrades = profileId
-        ? dayGrades.filter((grade) => {
-            const chat = chats.find((c) => c.id === grade.simulationChatId);
-            const attempt = attempts.find((a) => a.id === chat?.attemptId);
-            return attempt?.profileId === profileId;
-          })
-        : dayGrades;
-
-      // Apply cohort filtering if simulation IDs are restricted
-      if (getAllowedSimulationIds !== null) {
-        if (getAllowedSimulationIds.length === 0) {
-          return {
-            date: format(date, "MM/dd"),
-            score: 0,
-            sessions: 0,
-          };
-        }
-
-        profileFilteredDayGrades = profileFilteredDayGrades.filter((grade) => {
-          const chat = chats.find((c) => c.id === grade.simulationChatId);
-          const attempt = attempts.find((a) => a.id === chat?.attemptId);
-          return getAllowedSimulationIds.includes(attempt?.simulationId || "");
-        });
-      }
-
-      // Calculate highest score for the day using average scores per attempt
-      let dayHighestScore = 0;
-      if (profileFilteredDayGrades.length > 0) {
-        // Group grades by attempt for this day
-        const dayAttemptScores = new Map<
-          string,
-          { scores: number[]; rubricTotalPoints: number }
-        >();
-
-        profileFilteredDayGrades.forEach((grade) => {
-          const chat = chats.find((c) => c.id === grade.simulationChatId);
-          const attempt = attempts.find((a) => a.id === chat?.attemptId);
-          const simulation = simulations.find(
-            (s) => s.id === attempt?.simulationId
-          );
-          const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
-          const rubricTotalPoints = rubric?.points || 100;
-
-          if (attempt?.id) {
-            const existing = dayAttemptScores.get(attempt.id);
-            if (existing) {
-              existing.scores.push(grade.score);
-            } else {
-              dayAttemptScores.set(attempt.id, {
-                scores: [grade.score],
-                rubricTotalPoints,
-              });
-            }
-          }
-        });
-
-        // Calculate average score for each attempt and find the highest
-        const dayAttemptAverages = Array.from(dayAttemptScores.values()).map(
-          (attemptData) => {
-            const averageScore =
-              attemptData.scores.reduce((sum, score) => sum + score, 0) /
-              attemptData.scores.length;
-            return Math.round(
-              (averageScore / attemptData.rubricTotalPoints) * 100
-            );
-          }
-        );
-
-        dayHighestScore =
-          dayAttemptAverages.length > 0 ? Math.max(...dayAttemptAverages) : 0;
-      }
-
-      return {
-        date: format(date, "MM/dd"),
-        score: dayHighestScore,
-        sessions: profileFilteredDayGrades.length,
-      };
-    });
-  }, [
-    grades,
-    attempts,
-    chats,
-    simulations,
-    rubrics,
-    dateStart,
-    dateEnd,
-    profileId,
-    getAllowedSimulationIds,
-  ]);
+  const {
+    currentValue: highestScore,
+    trendData: scoreTrend,
+    hasData: hasDataAvailable,
+  } = highestScoreResult;
 
   // Determine color based on score and thresholds
   const getColorConfig = (score: number) => {
@@ -385,23 +184,20 @@ export default function HighestScore({
     setIsDialogOpen(true);
   };
 
-  // Check if we have data to display
-  const hasData = highestScoreTrend.some((day) => day.sessions > 0);
-
   // Calculate actual trend from data
   const getTrendAnalysis = () => {
-    if (!hasData || highestScoreTrend.length < 2) return null;
+    if (!hasDataAvailable || scoreTrend.length < 2) return null;
 
     // Get recent data (last 3 days, 1 week, or 1 month depending on data availability)
-    const recentData = highestScoreTrend.slice(-3);
-    const earlierData = highestScoreTrend.slice(0, 3);
+    const recentData = scoreTrend.slice(-3);
+    const earlierData = scoreTrend.slice(0, 3);
 
     if (recentData.length === 0 || earlierData.length === 0) return null;
 
     const recentAvg =
-      recentData.reduce((sum, day) => sum + day.score, 0) / recentData.length;
+      recentData.reduce((sum, day) => sum + day.value, 0) / recentData.length;
     const earlierAvg =
-      earlierData.reduce((sum, day) => sum + day.score, 0) / earlierData.length;
+      earlierData.reduce((sum, day) => sum + day.value, 0) / earlierData.length;
     const change = recentAvg - earlierAvg;
     const changePercent =
       earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
@@ -409,9 +205,9 @@ export default function HighestScore({
     if (Math.abs(changePercent) < 1) return null;
 
     const period =
-      highestScoreTrend.length <= 7
+      scoreTrend.length <= 7
         ? "3 days"
-        : highestScoreTrend.length <= 14
+        : scoreTrend.length <= 14
           ? "1 week"
           : "1 month";
     const direction = changePercent > 0 ? "increased" : "decreased";
@@ -420,6 +216,14 @@ export default function HighestScore({
   };
 
   const trendAnalysis = getTrendAnalysis();
+
+  // Check if cohort filtering resulted in no data
+  const hasNoCohortData =
+    cohortIds &&
+    cohortIds.length > 0 &&
+    cohorts &&
+    cohorts.filter((cohort) => cohortIds.includes(cohort.id) && cohort.active)
+      .length === 0;
 
   return (
     <>
@@ -433,41 +237,51 @@ export default function HighestScore({
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
           <div className={`text-2xl font-bold ${colorConfig.text}`}>
-            {hasData ? `${highestScore}%` : "No data"}
+            {hasNoCohortData
+              ? "No cohort data"
+              : hasDataAvailable
+                ? `${highestScore}%`
+                : "No data"}
           </div>
         </CardContent>
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent
+          className="max-w-2xl"
+        >
           <DialogHeader>
             <DialogTitle>Highest Score Trend</DialogTitle>
+            <DialogDescription hidden>
+              This chart shows the highest score over time.
+            </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-            {hasData ? (
+            {hasDataAvailable ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={highestScoreTrend}>
+                <BarChart data={scoreTrend}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis domain={[0, 100]} />
                   <Tooltip
                     formatter={(value: number, name: string) => [
-                      name === "score" ? `${value}%` : value,
-                      name === "score" ? "Highest Score" : "Sessions",
+                      name === "value" ? `${value}%` : value,
+                      name === "value" ? "Highest Score" : "Sessions",
                     ]}
                   />
                   <Bar
-                    dataKey="score"
+                    dataKey="value"
                     fill={colorConfig.primary}
-                    name="score"
+                    name="value"
                     radius={[4, 4, 0, 0]}
                   />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">
-                No data available for the selected date range
-                {profileId && " and profile"}
+                {hasNoCohortData
+                  ? "No data available for the selected cohorts"
+                  : `No data available for the selected date range${profileId ? " and profile" : ""}`}
               </div>
             )}
           </div>

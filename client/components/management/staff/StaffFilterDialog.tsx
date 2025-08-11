@@ -3,6 +3,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -95,7 +96,12 @@ export function StaffFilterDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent
+        className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col"
+      >
+        <DialogDescription hidden>
+          This dialog shows the staff members and allows you to edit them.
+        </DialogDescription>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>

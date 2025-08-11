@@ -1,6 +1,7 @@
 import { ParametersDataTable } from "@/components/management/parameters/ParametersDataTable";
 import { renderWithMocks } from "@/test/renderWithMocks";
 import { Parameter } from "@/types";
+import type { ColumnDef } from "@tanstack/react-table";
 import { describe, expect, it, vi } from "vitest";
 
 // Mock the toolbar component
@@ -41,14 +42,42 @@ const mockParameters: Parameter[] = [
   },
 ];
 
-const mockColumns = [
+const mockColumns: ColumnDef<Parameter>[] = [
   {
+    id: "name",
     accessorKey: "name",
     header: "Name",
+    cell: ({ row }) => <div>{row.getValue("name")}</div>,
   },
   {
+    id: "numerical",
     accessorKey: "numerical",
     header: "Type",
+    cell: ({ row }) => <div>{row.getValue("numerical")}</div>,
+  },
+  {
+    id: "itemCount",
+    accessorKey: "itemCount",
+    header: "Items",
+    cell: ({ row }) => <div>{row.getValue("itemCount")}</div>,
+  },
+  {
+    id: "active",
+    accessorKey: "active",
+    header: "Status",
+    cell: ({ row }) => <div>{row.getValue("active")}</div>,
+  },
+  {
+    id: "scenarioIds",
+    accessorKey: "scenarioIds",
+    header: "Scenarios",
+    cell: ({ row }) => <div>{row.getValue("scenarioIds")}</div>,
+  },
+  {
+    id: "updatedAt",
+    accessorKey: "updatedAt",
+    header: "Updated",
+    cell: ({ row }) => <div>{row.getValue("updatedAt")}</div>,
   },
 ];
 

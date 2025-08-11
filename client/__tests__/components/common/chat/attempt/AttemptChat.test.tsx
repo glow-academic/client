@@ -1,10 +1,23 @@
 import { renderWithMocks } from "@/test/renderWithMocks";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
 import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
+
+// Mock Next.js router
+const mockPush = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: mockPush,
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+}));
 
 describe("AttemptChat", () => {
   describe("basic render smoke-test", () => {
@@ -32,13 +45,17 @@ describe("AttemptChat", () => {
 
       // Test for proper paragraph text
       const description = screen.getByText(
-        "The attempt you're looking for doesn't exist or has no chats available.",
+        "The attempt you're looking for doesn't exist or has no chats available."
       );
       expect(description).toBeInTheDocument();
     });
   });
 
   describe("User Interactions", () => {
+    beforeEach(() => {
+      mockPush.mockClear();
+    });
+
     it("should handle state changes", async () => {
       const user = userEvent.setup();
       renderWithMocks(<AttemptChat />);
@@ -49,9 +66,9 @@ describe("AttemptChat", () => {
       });
       expect(returnButton).toBeInTheDocument();
 
-      // The button should be clickable
+      // The button should be clickable and navigate
       await user.click(returnButton);
-      expect(returnButton).toBeInTheDocument();
+      expect(mockPush).toHaveBeenCalledWith("/home");
     });
 
     it("should handle user events", async () => {
@@ -63,10 +80,9 @@ describe("AttemptChat", () => {
         name: "Return To Dashboard",
       });
       await user.click(returnButton);
-      expect(returnButton).toBeInTheDocument();
 
-      // Test that button is still accessible after click
-      expect(returnButton).toBeInTheDocument();
+      // Verify navigation was called
+      expect(mockPush).toHaveBeenCalledWith("/home");
     });
   });
 
@@ -81,7 +97,7 @@ describe("AttemptChat", () => {
 
       // Should show appropriate error message
       const errorMessage = screen.getByText(
-        "The attempt you're looking for doesn't exist or has no chats available.",
+        "The attempt you're looking for doesn't exist or has no chats available."
       );
       expect(errorMessage).toBeInTheDocument();
 

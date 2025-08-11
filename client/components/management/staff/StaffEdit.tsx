@@ -18,7 +18,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -38,7 +37,7 @@ import { getProfile } from "@/utils/queries/profiles/get-profile";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Shield, Trash2, User as UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type FormData = {
@@ -52,10 +51,10 @@ export interface StaffEditProps {
   profileId: string;
 }
 
-export default function StaffEdit({ profileId }: StaffEditProps) {
+// Internal business logic functions for better testability
+const useStaffEditBusinessLogic = (profileId: string) => {
   const queryClient = useQueryClient();
   const router = useRouter();
-  const [formData, setFormData] = useState<FormData>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const { effectiveProfile } = useProfile();
@@ -68,39 +67,37 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
   });
 
   const isCurrentUserAdmin = effectiveProfile?.role === "admin";
-
-  // Determine overall loading state
   const isLoading = isProfileLoading;
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleInputChange = useCallback((_field: string, _value: string) => {
     setHasChanges(true);
-  };
+  }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async (formData: FormData) => {
+      setIsSubmitting(true);
+      try {
+        await updateProfile(profileId, {
+          firstName: formData.firstName || "",
+          lastName: formData.lastName || "",
+          alias: formData.alias || "",
+          role: formData.role as ProfileRole,
+        });
+        setHasChanges(false);
+        queryClient.invalidateQueries({ queryKey: ["profiles"] });
+        queryClient.invalidateQueries({ queryKey: ["profile", profileId] });
+        toast.success("User updated successfully");
+        router.push("/management/staff");
+      } catch (error) {
+        logError("Error updating user:", error);
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [profileId, queryClient, router]
+  );
 
-    setIsSubmitting(true);
-    try {
-      await updateProfile(profileId, {
-        firstName: formData.firstName || "",
-        lastName: formData.lastName || "",
-        alias: formData.alias || "",
-        role: formData.role as ProfileRole,
-      });
-      setHasChanges(false);
-      queryClient.invalidateQueries({ queryKey: ["profiles"] });
-      queryClient.invalidateQueries({ queryKey: ["profile", profileId] });
-      toast.success("User updated successfully");
-      router.push("/management/staff");
-    } catch (error) {
-      logError("Error updating user:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     setIsSubmitting(true);
     try {
       await deleteProfile(profileId);
@@ -113,7 +110,41 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
     } finally {
       setIsSubmitting(false);
     }
+  }, [profileId, queryClient, router]);
+
+  const handleBackNavigation = useCallback(() => {
+    router.push("/management/staff");
+  }, [router]);
+
+  return {
+    targetUser,
+    isLoading,
+    isSubmitting,
+    hasChanges,
+    isCurrentUserAdmin,
+    effectiveProfile,
+    handleInputChange,
+    handleSubmit,
+    handleDelete,
+    handleBackNavigation,
   };
+};
+
+export default function StaffEdit({ profileId }: StaffEditProps) {
+  const [formData, setFormData] = useState<FormData>({});
+
+  const {
+    targetUser,
+    isLoading,
+    isSubmitting,
+    hasChanges,
+    isCurrentUserAdmin,
+    effectiveProfile,
+    handleInputChange,
+    handleSubmit,
+    handleDelete,
+    handleBackNavigation,
+  } = useStaffEditBusinessLogic(profileId);
 
   // Initialize form data when user is loaded
   useEffect(() => {
@@ -127,10 +158,26 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
     }
   }, [targetUser]);
 
+  const handleFormSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      await handleSubmit(formData);
+    },
+    [handleSubmit, formData]
+  );
+
+  const handleFormInputChange = useCallback(
+    (field: string, value: string) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      handleInputChange(field, value);
+    },
+    [handleInputChange]
+  );
+
   return (
     <div className="space-y-6">
       <div className="grid gap-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleFormSubmit} className="space-y-4">
           {/* Single column with all fields */}
           <div className="space-y-4">
             <div className="space-y-2">
@@ -140,7 +187,7 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
                   id="firstName"
                   value={formData.firstName || ""}
                   onChange={(e) =>
-                    handleInputChange("firstName", e.target.value)
+                    handleFormInputChange("firstName", e.target.value)
                   }
                   placeholder="Jane"
                   required
@@ -157,7 +204,7 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
                   id="lastName"
                   value={formData.lastName || ""}
                   onChange={(e) =>
-                    handleInputChange("lastName", e.target.value)
+                    handleFormInputChange("lastName", e.target.value)
                   }
                   placeholder="Smith"
                   required
@@ -173,7 +220,9 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
                 <Input
                   id="alias"
                   value={formData.alias || ""}
-                  onChange={(e) => handleInputChange("alias", e.target.value)}
+                  onChange={(e) =>
+                    handleFormInputChange("alias", e.target.value)
+                  }
                   placeholder="jsmith"
                   required
                   disabled={isSubmitting}
@@ -188,7 +237,7 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
                 <Select
                   value={formData.role || ""}
                   onValueChange={(value: ProfileRole) =>
-                    handleInputChange("role", value)
+                    handleFormInputChange("role", value)
                   }
                   disabled={isSubmitting}
                 >
@@ -282,7 +331,7 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push("/management/staff")}
+              onClick={handleBackNavigation}
               disabled={isSubmitting}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />

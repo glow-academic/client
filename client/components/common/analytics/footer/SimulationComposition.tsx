@@ -30,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { calculateSimulationComposition } from "@/utils/analytics/footer";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
@@ -42,7 +43,6 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
-import { isAfter, isBefore } from "date-fns";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import SimulationCompositionPicker, {
@@ -59,38 +59,6 @@ export interface SimulationCompositionProps {
   };
   profileId: string | undefined;
   cohortIds: string[];
-}
-
-interface SimulationAttribute {
-  id: string;
-  name: string;
-  icon: string;
-  color: string;
-  highPerforming: number;
-  lowPerforming: number;
-  description: string;
-  difference: number;
-  significance: "high" | "medium" | "low" | "none";
-  parameterId: string;
-  parameterItemId: string;
-  value: string;
-  isNumerical: boolean;
-}
-
-interface SimulationDetail {
-  id: string;
-  title: string;
-  avgScore: number;
-  completionRate: number;
-  totalAttempts: number;
-  combinedScore: number;
-  timeLimit: number | undefined;
-  scenarioCount: number;
-  parameterBreakdown: Array<{
-    parameterName: string;
-    parameterValue: string;
-    isNumerical: boolean;
-  }>;
 }
 
 export default function SimulationComposition({
@@ -170,46 +138,7 @@ export default function SimulationComposition({
     enabled: !!chats && chats.length > 0,
   });
 
-  // Calculate cohort-based filters
-  const cohortFilters = useMemo(() => {
-    if (!cohorts || !cohortIds || cohortIds.length === 0) {
-      return {
-        allowedProfileIds: null,
-        allowedSimulationIds: null,
-        hasMatchingCohorts: true, // Show all data if no cohort filtering
-      };
-    }
-
-    // Filter cohorts based on provided cohortIds
-    const matchingCohorts = cohorts.filter((cohort) =>
-      cohortIds.includes(cohort.id)
-    );
-
-    if (matchingCohorts.length === 0) {
-      return {
-        allowedProfileIds: null,
-        allowedSimulationIds: null,
-        hasMatchingCohorts: false,
-      };
-    }
-
-    // Extract all profileIds and simulationIds from matching cohorts
-    const allProfileIds = new Set<string>();
-    const allSimulationIds = new Set<string>();
-
-    matchingCohorts.forEach((cohort) => {
-      cohort.profileIds?.forEach((id) => allProfileIds.add(id));
-      cohort.simulationIds?.forEach((id) => allSimulationIds.add(id));
-    });
-
-    return {
-      allowedProfileIds: Array.from(allProfileIds),
-      allowedSimulationIds: Array.from(allSimulationIds),
-      hasMatchingCohorts: true,
-    };
-  }, [cohorts, cohortIds]);
-
-  // Calculate simulation composition data
+  // Calculate simulation composition data using utility function
   const simulationComposition = useMemo(() => {
     if (
       !scenarios ||
@@ -226,454 +155,29 @@ export default function SimulationComposition({
       return {
         highPerforming: [],
         lowPerforming: [],
-        attributes: [],
+        highPerformingCount: 0,
+        lowPerformingCount: 0,
         highPerformingDetails: [],
         lowPerformingDetails: [],
       };
     }
 
-    // Filter data by date range, exclude practice simulations, and filter by TA role
-    const filteredGrades = grades.filter((grade) => {
-      const gradeDate = new Date(grade.createdAt);
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId
-      );
-      const profile = profiles?.find((p) => p.id === attempt?.profileId);
-
-      // Check date range
-      const inDateRange =
-        isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
-
-      // Exclude practice simulations
-      const notPractice = !simulation?.practiceSimulation;
-
-      // Filter by TA role (relaxed for better data availability)
-      const isTA = profile?.role === "ta" || true; // Temporarily allow all roles
-
-      // Filter by profile if provided
-      const profileMatch = profileId ? attempt?.profileId === profileId : true;
-
-      // Apply cohort-based profile filtering
-      const cohortProfileMatch = cohortFilters.allowedProfileIds
-        ? profile && cohortFilters.allowedProfileIds.includes(profile.id)
-        : true;
-
-      // Apply cohort-based simulation filtering
-      const cohortSimulationMatch = cohortFilters.allowedSimulationIds
-        ? simulation &&
-          cohortFilters.allowedSimulationIds.includes(simulation.id)
-        : true;
-
-      return (
-        inDateRange &&
-        notPractice &&
-        isTA &&
-        profileMatch &&
-        cohortProfileMatch &&
-        cohortSimulationMatch
-      );
-    });
-
-    if (filteredGrades.length === 0) {
-      return {
-        highPerforming: [],
-        lowPerforming: [],
-        attributes: [],
-        highPerformingDetails: [],
-        lowPerformingDetails: [],
-      };
-    }
-
-    // Group by simulation and calculate performance
-    const simulationPerformance = new Map<
-      string,
-      {
-        simulation: (typeof simulations)[0];
-        grades: typeof grades;
-        chats: typeof chats;
-        avgScore: number;
-        completionRate: number;
-        totalAttempts: number;
-        timeLimit: number | undefined;
-        scenarioCount: number;
-        parameterBreakdown: Array<{
-          parameterName: string;
-          parameterValue: string;
-          isNumerical: boolean;
-        }>;
-      }
-    >();
-
-    filteredGrades.forEach((grade) => {
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      if (!chat) return;
-
-      const attempt = attempts.find((a) => a.id === chat.attemptId);
-      if (!attempt) return;
-
-      const simulation = simulations.find((s) => s.id === attempt.simulationId);
-      if (!simulation) return;
-
-      if (!simulationPerformance.has(simulation.id)) {
-        simulationPerformance.set(simulation.id, {
-          simulation,
-          grades: [],
-          chats: [],
-          avgScore: 0,
-          completionRate: 0,
-          totalAttempts: 0,
-          timeLimit: simulation.timeLimit ?? undefined,
-          scenarioCount: simulation.scenarioIds?.length || 0,
-          parameterBreakdown: [],
-        });
-      }
-
-      const performance = simulationPerformance.get(simulation.id)!;
-      performance.grades.push(grade);
-      performance.chats.push(chat);
-    });
-
-    // Calculate performance metrics and parameter breakdown for each simulation
-    simulationPerformance.forEach((performance) => {
-      const completedChats = performance.chats.filter((chat) => chat.completed);
-      performance.avgScore =
-        performance.grades.reduce((sum, grade) => sum + grade.score, 0) /
-        performance.grades.length;
-      performance.completionRate =
-        (completedChats.length / performance.chats.length) * 100;
-      performance.totalAttempts = performance.chats.length;
-
-      // Calculate parameter breakdown for this simulation
-      const simScenarios = scenarios.filter((s) =>
-        performance.simulation.scenarioIds?.includes(s.id)
-      );
-
-      // Collect all parameter items used in this simulation's scenarios
-      const usedParameterItems = new Map<
-        string,
-        {
-          parameterName: string;
-          parameterValue: string;
-          isNumerical: boolean;
-          count: number;
-        }
-      >();
-
-      simScenarios.forEach((scenario) => {
-        scenario.parameterItemIds?.forEach((paramItemId) => {
-          const paramItem = parameterItems.find((pi) => pi.id === paramItemId);
-          if (paramItem) {
-            const parameter = parameters.find(
-              (p) => p.id === paramItem.parameterId
-            );
-            if (parameter) {
-              const key = `${paramItem.parameterId}-${paramItem.id}`;
-              if (usedParameterItems.has(key)) {
-                usedParameterItems.get(key)!.count++;
-              } else {
-                usedParameterItems.set(key, {
-                  parameterName: parameter.name,
-                  parameterValue: paramItem.value,
-                  isNumerical: parameter.numerical,
-                  count: 1,
-                });
-              }
-            }
-          }
-        });
-      });
-
-      // Convert to array and sort by frequency
-      performance.parameterBreakdown = Array.from(usedParameterItems.values())
-        .sort((a, b) => b.count - a.count)
-        .map(({ parameterName, parameterValue, isNumerical }) => ({
-          parameterName,
-          parameterValue,
-          isNumerical,
-        }));
-    });
-
-    // Calculate relative performance metrics
-    const allSimulations = Array.from(simulationPerformance.values());
-
-    if (allSimulations.length === 0) {
-      return {
-        highPerforming: [],
-        lowPerforming: [],
-        attributes: [],
-        highPerformingDetails: [],
-        lowPerformingDetails: [],
-      };
-    }
-
-    // Calculate combined performance score (weighted average of score and completion rate)
-    const simulationsWithScore = allSimulations.map((sim) => ({
-      ...sim,
-      combinedScore: sim.avgScore * 0.7 + sim.completionRate * 0.3, // Weight score more heavily
-    }));
-
-    // Sort by combined performance score
-    simulationsWithScore.sort((a, b) => b.combinedScore - a.combinedScore);
-
-    // Apply statistical method to determine high and low performers
-    let highPerformingSims: typeof simulationsWithScore = [];
-    let lowPerformingSims: typeof simulationsWithScore = [];
-
-    switch (config.method) {
-      case "percentile":
-        const topCount = Math.ceil(
-          (simulationsWithScore.length * config.topPercentage) / 100
-        );
-        const bottomCount = Math.ceil(
-          (simulationsWithScore.length * config.bottomPercentage) / 100
-        );
-        highPerformingSims = simulationsWithScore.slice(0, topCount);
-        lowPerformingSims = simulationsWithScore.slice(-bottomCount);
-        break;
-
-      case "quartile":
-        const q1Count = Math.ceil(simulationsWithScore.length * 0.25);
-        const q4Count = Math.ceil(simulationsWithScore.length * 0.25);
-        highPerformingSims = simulationsWithScore.slice(0, q1Count);
-        lowPerformingSims = simulationsWithScore.slice(-q4Count);
-        break;
-
-      case "standard_deviation":
-        const scores = simulationsWithScore.map((sim) => sim.combinedScore);
-        const mean =
-          scores.reduce((sum, score) => sum + score, 0) / scores.length;
-        const variance =
-          scores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) /
-          scores.length;
-        const stdDev = Math.sqrt(variance);
-
-        const upperThreshold = mean + stdDev;
-        const lowerThreshold = mean - stdDev;
-
-        highPerformingSims = simulationsWithScore.filter(
-          (sim) => sim.combinedScore >= upperThreshold
-        );
-        lowPerformingSims = simulationsWithScore.filter(
-          (sim) => sim.combinedScore <= lowerThreshold
-        );
-        break;
-
-      default:
-        const fallbackTopCount = Math.ceil(
-          (simulationsWithScore.length * 25) / 100
-        );
-        const fallbackBottomCount = Math.ceil(
-          (simulationsWithScore.length * 25) / 100
-        );
-        highPerformingSims = simulationsWithScore.slice(0, fallbackTopCount);
-        lowPerformingSims = simulationsWithScore.slice(-fallbackBottomCount);
-    }
-
-    // Create detailed simulation lists for dialog
-    const highPerformingDetails: SimulationDetail[] = highPerformingSims.map(
-      (sim) => ({
-        id: sim.simulation.id,
-        title: sim.simulation.title,
-        avgScore: Math.round(sim.avgScore),
-        completionRate: Math.round(sim.completionRate),
-        totalAttempts: sim.totalAttempts,
-        combinedScore: Math.round(sim.combinedScore),
-        timeLimit: sim.timeLimit,
-        scenarioCount: sim.scenarioCount,
-        parameterBreakdown: sim.parameterBreakdown,
-      })
+    return calculateSimulationComposition(
+      grades,
+      chats,
+      attempts,
+      simulations,
+      scenarios,
+      profiles,
+      parameters,
+      parameterItems,
+      dateStart,
+      dateEnd,
+      profileId,
+      cohorts || [],
+      cohortIds,
+      config
     );
-
-    const lowPerformingDetails: SimulationDetail[] = lowPerformingSims.map(
-      (sim) => ({
-        id: sim.simulation.id,
-        title: sim.simulation.title,
-        avgScore: Math.round(sim.avgScore),
-        completionRate: Math.round(sim.completionRate),
-        totalAttempts: sim.totalAttempts,
-        combinedScore: Math.round(sim.combinedScore),
-        timeLimit: sim.timeLimit,
-        scenarioCount: sim.scenarioCount,
-        parameterBreakdown: sim.parameterBreakdown,
-      })
-    );
-
-    // Generate colors for attributes
-    const colors = [
-      "#3b82f6",
-      "#ef4444",
-      "#10b981",
-      "#f59e0b",
-      "#8b5cf6",
-      "#06b6d4",
-      "#84cc16",
-      "#f97316",
-      "#ec4899",
-      "#6366f1",
-      "#14b8a6",
-      "#f43f5e",
-    ];
-
-    // Analyze parameter usage patterns
-    const parameterUsage = new Map<string, SimulationAttribute>();
-
-    // Helper function to get or create attribute
-    const getOrCreateAttribute = (
-      parameterId: string,
-      parameterItemId: string,
-      parameterName: string,
-      parameterValue: string,
-      isNumerical: boolean
-    ): SimulationAttribute => {
-      const key = `${parameterId}-${parameterItemId}`;
-      if (!parameterUsage.has(key)) {
-        const colorIndex = parameterUsage.size % colors.length;
-        parameterUsage.set(key, {
-          id: key,
-          name: `${parameterName}: ${parameterValue}`,
-          icon: isNumerical ? "📊" : "🏷️",
-          color: colors[colorIndex] || "#000000",
-          highPerforming: 0,
-          lowPerforming: 0,
-          description: `${parameterName} with value ${parameterValue}`,
-          difference: 0,
-          significance: "none",
-          parameterId,
-          parameterItemId,
-          value: parameterValue,
-          isNumerical,
-        });
-      }
-      return parameterUsage.get(key)!;
-    };
-
-    // Analyze high performing simulations
-    highPerformingSims.forEach((sim) => {
-      sim.parameterBreakdown.forEach((param) => {
-        // Find the parameter item for this value
-        const paramItem = parameterItems.find(
-          (pi) => pi.value === param.parameterValue
-        );
-
-        if (paramItem && paramItem.parameterId) {
-          const attribute = getOrCreateAttribute(
-            paramItem.parameterId,
-            paramItem.id,
-            param.parameterName,
-            param.parameterValue,
-            param.isNumerical
-          );
-          attribute.highPerforming += 1;
-        }
-      });
-    });
-
-    // Analyze low performing simulations
-    lowPerformingSims.forEach((sim) => {
-      sim.parameterBreakdown.forEach((param) => {
-        // Find the parameter item for this value
-        const paramItem = parameterItems.find(
-          (pi) => pi.value === param.parameterValue
-        );
-
-        if (paramItem && paramItem.parameterId) {
-          const attribute = getOrCreateAttribute(
-            paramItem.parameterId,
-            paramItem.id,
-            param.parameterName,
-            param.parameterValue,
-            param.isNumerical
-          );
-          attribute.lowPerforming += 1;
-        }
-      });
-    });
-
-    // Calculate differences and significance
-    parameterUsage.forEach((attr) => {
-      attr.difference = attr.highPerforming - attr.lowPerforming;
-      const totalHigh = highPerformingSims.length;
-      const totalLow = lowPerformingSims.length;
-
-      if (totalHigh > 0 && totalLow > 0) {
-        const highRate = attr.highPerforming / totalHigh;
-        const lowRate = attr.lowPerforming / totalLow;
-        const rateDiff = Math.abs(highRate - lowRate);
-
-        // Lowered thresholds for better data visibility
-        if (rateDiff > 0.2) {
-          attr.significance = "high";
-        } else if (rateDiff > 0.1) {
-          attr.significance = "medium";
-        } else if (rateDiff > 0.02) {
-          attr.significance = "low";
-        } else {
-          attr.significance = "none";
-        }
-      }
-    });
-
-    // Create separate attribute lists for high and low performing simulations
-    const highPerformingAttributes = Array.from(parameterUsage.values())
-      .filter((attr) => attr.highPerforming > 0)
-      .sort((a, b) => {
-        // Sort by significance first, then by high performing value
-        if (a.significance !== b.significance) {
-          const significanceOrder = { high: 3, medium: 2, low: 1, none: 0 };
-          return (
-            significanceOrder[b.significance] -
-            significanceOrder[a.significance]
-          );
-        }
-        return b.highPerforming - a.highPerforming;
-      })
-      .slice(0, 5); // Show top 5 for high performing
-
-    const lowPerformingAttributes = Array.from(parameterUsage.values())
-      .filter((attr) => attr.lowPerforming > 0)
-      .sort((a, b) => {
-        // Sort by significance first, then by low performing value
-        if (a.significance !== b.significance) {
-          const significanceOrder = { high: 3, medium: 2, low: 1, none: 0 };
-          return (
-            significanceOrder[b.significance] -
-            significanceOrder[a.significance]
-          );
-        }
-        return b.lowPerforming - a.lowPerforming;
-      })
-      .slice(0, 5); // Show top 5 for low performing
-
-    // Convert to chart data format using the separate attribute lists
-    const highPerformingData = highPerformingAttributes.map((attr) => ({
-      name: attr.name,
-      value: attr.highPerforming,
-      icon: attr.icon,
-      color: attr.color,
-      description: attr.description,
-      significance: attr.significance,
-    }));
-
-    const lowPerformingData = lowPerformingAttributes.map((attr) => ({
-      name: attr.name,
-      value: attr.lowPerforming,
-      icon: attr.icon,
-      color: attr.color,
-      description: attr.description,
-      significance: attr.significance,
-    }));
-
-    return {
-      highPerforming: highPerformingData,
-      lowPerforming: lowPerformingData,
-      attributes: [...highPerformingAttributes, ...lowPerformingAttributes],
-      highPerformingCount: highPerformingSims.length,
-      lowPerformingCount: lowPerformingSims.length,
-      highPerformingDetails,
-      lowPerformingDetails,
-    };
   }, [
     scenarios,
     simulations,
@@ -688,10 +192,9 @@ export default function SimulationComposition({
     dateStart,
     dateEnd,
     profileId,
-    config.method,
-    config.topPercentage,
-    config.bottomPercentage,
-    cohortFilters,
+    cohorts,
+    cohortIds,
+    config,
   ]);
 
   // Get method label for dialog titles
@@ -784,7 +287,11 @@ export default function SimulationComposition({
   const thresholdStatus = getThresholdStatus();
 
   // Show no data message if no matching cohorts found
-  if (!cohortFilters.hasMatchingCohorts) {
+  if (
+    !cohorts ||
+    cohortIds.length === 0 ||
+    !cohorts.some((cohort) => cohortIds.includes(cohort.id))
+  ) {
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader className="pb-3">
@@ -931,13 +438,15 @@ export default function SimulationComposition({
                   </div>
                 </div>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent
+                className="max-w-2xl"
+              >
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <TrendingUp className="h-5 w-5 text-green-600" />
                     {getMethodLabel(true)} Performing Simulations
                   </DialogTitle>
-                  <DialogDescription>
+                  <DialogDescription hidden>
                     Detailed breakdown of top performing simulations and their
                     characteristics
                   </DialogDescription>
@@ -1055,13 +564,15 @@ export default function SimulationComposition({
                   </div>
                 </div>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent
+                className="max-w-2xl"
+              >
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <TrendingDown className="h-5 w-5 text-red-600" />
                     {getMethodLabel(false)} Performing Simulations
                   </DialogTitle>
-                  <DialogDescription>
+                  <DialogDescription hidden>
                     Detailed breakdown of low performing simulations and their
                     characteristics
                   </DialogDescription>

@@ -22,6 +22,11 @@ const mockProps: CohortStaffDataTableProps = {
       header: "Last Name",
       accessorKey: "lastName",
     },
+    {
+      id: "role",
+      header: "Role",
+      accessorKey: "role",
+    },
   ],
   data: [
     {
@@ -128,7 +133,11 @@ describe("CohortStaffDataTable", () => {
 
     it("should handle missing or invalid props", () => {
       renderWithMocks(
-        <CohortStaffDataTable columns={[]} data={[]} roleOptions={[]} />,
+        <CohortStaffDataTable
+          columns={mockProps.columns}
+          data={[]}
+          roleOptions={[]}
+        />
       );
 
       // Component should handle missing props

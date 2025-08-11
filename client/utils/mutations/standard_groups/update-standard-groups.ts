@@ -4,8 +4,10 @@ import { db } from "@/utils/drizzle/db";
 import { standardGroups } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function updateStandardGroups(ids: string[], data: Partial<typeof standardGroups.$inferInsert>) {
+// Original logic is now a "private" function
+async function _updateStandardGroups(ids: string[], data: Partial<typeof standardGroups.$inferInsert>) {
   try {
     return await db.update(standardGroups).set(data).where(inArray(standardGroups.id, ids)).returning();
   } catch (error) {
@@ -13,3 +15,6 @@ export async function updateStandardGroups(ids: string[], data: Partial<typeof s
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const updateStandardGroups = createMockableAction('updateStandardGroups', _updateStandardGroups);

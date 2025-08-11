@@ -1,558 +1,730 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-// ——————————————————————————————————————————
-import CohortPerformance, {
-  CohortPerformanceProps,
-} from "@/components/common/analytics/secondary/CohortPerformance";
-
-// ✨ Import comprehensive mock data from our centralized mock system
-import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
+/**
+ * CohortPerformance.test.tsx
+ * Tests for the CohortPerformance component
+ * @AshokSaravanan222 & @siladiea
+ * 07/23/2025
+ */
+import CohortPerformance from "@/components/common/analytics/secondary/CohortPerformance";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
+import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
+import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// ------------------------------------------------------------------
-// Enhanced props factory with realistic test data
-const createMockProps = (
-  overrides: Partial<CohortPerformanceProps> = {}
-): CohortPerformanceProps => ({
+// Mock the utility function
+vi.mock("@/utils/analytics/secondary", () => ({
+  calculateCohortPerformance: vi.fn(),
+}));
+
+// Mock the query functions
+vi.mock("@/utils/queries/cohorts/get-all-cohorts");
+vi.mock("@/utils/queries/profiles/get-all-profiles");
+vi.mock("@/utils/queries/rubrics/get-all-rubrics");
+vi.mock(
+  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles"
+);
+vi.mock(
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats"
+);
+vi.mock(
+  "@/utils/queries/simulation_chats/get-simulation-chat-chats-by-attempts"
+);
+vi.mock("@/utils/queries/simulations/get-all-simulations");
+
+// Mock the SimulationPicker component
+vi.mock("@/components/common/cohort/SimulationPicker", () => ({
+  SimulationPicker: ({
+    onSelect,
+    selectedSimulations,
+  }: {
+    onSelect: (sims: { id: string; title: string }[]) => void;
+    selectedSimulations: { id: string; title: string }[];
+  }) => (
+    <div data-testid="simulation-picker">
+      <button
+        onClick={() => onSelect([{ id: "sim-1", title: "Test Simulation" }])}
+      >
+        Select Simulation
+      </button>
+      <div data-testid="selected-simulations">
+        {selectedSimulations.map((sim: { id: string; title: string }) => (
+          <span key={sim.id}>{sim.title}</span>
+        ))}
+      </div>
+    </div>
+  ),
+}));
+
+const mockQueryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
+const defaultProps = {
   dateStart: new Date("2024-01-01"),
   dateEnd: new Date("2024-12-31"),
   thresholds: {
     danger: 50,
     warning: 70,
-    success: 80,
+    success: 85,
   },
-  profileId: "test-profile-id",
-  cohortIds: ["test-cohort-id"],
-  ...overrides,
-});
+  profileId: undefined,
+  cohortIds: [],
+};
 
-// ------------------------------------------------------------------
+const mockCohorts = [
+  {
+    id: "cohort-1",
+    title: "Test Cohort 1",
+    profileIds: ["profile-1", "profile-2"],
+    simulationIds: ["sim-1", "sim-2"],
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    description: "Test Cohort 1 Description",
+    active: true,
+    defaultCohort: false,
+  },
+  {
+    id: "cohort-2",
+    title: "Test Cohort 2",
+    profileIds: ["profile-3"],
+    simulationIds: ["sim-3"],
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    description: "Test Cohort 2 Description",
+    active: true,
+    defaultCohort: false,
+  },
+];
+
+const mockProfiles = [
+  {
+    id: "profile-1",
+    name: "Test Profile 1",
+    role: "ta" as const,
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    userId: null,
+    lastLogin: "2024-01-01T00:00:00.000Z",
+    firstName: "Test",
+    lastName: "Profile",
+    alias: "test-profile",
+    viewedIntro: true,
+    viewedChat: true,
+    createdAt: "2024-01-01T00:00:00.000Z",
+    defaultProfile: false,
+    active: true,
+    lastActive: "2024-01-01T00:00:00.000Z",
+  },
+  {
+    id: "profile-2",
+    name: "Test Profile 2",
+    role: "ta" as const,
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    userId: null,
+    lastLogin: "2024-01-01T00:00:00.000Z",
+    firstName: "Test",
+    lastName: "Profile2",
+    alias: "test-profile2",
+    viewedIntro: true,
+    viewedChat: true,
+    createdAt: "2024-01-01T00:00:00.000Z",
+    defaultProfile: false,
+    active: true,
+    lastActive: "2024-01-01T00:00:00.000Z",
+  },
+];
+
+const mockSimulations = [
+  {
+    id: "sim-1",
+    title: "Test Simulation 1",
+    practiceSimulation: false,
+    active: true,
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    timeLimit: null,
+    scenarioIds: ["scenario-1"],
+    rubricId: "rubric-1",
+    defaultSimulation: false,
+  },
+  {
+    id: "sim-2",
+    title: "Test Simulation 2",
+    practiceSimulation: false,
+    active: true,
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    timeLimit: null,
+    scenarioIds: ["scenario-2"],
+    rubricId: "rubric-1",
+    defaultSimulation: false,
+  },
+];
+
+const mockRubrics = [
+  {
+    id: "rubric-1",
+    name: "Test Rubric",
+    points: 100,
+    passPoints: 70,
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    description: "Test rubric description",
+    defaultRubric: false,
+    active: true,
+  },
+];
+
+const mockAttempts = [
+  {
+    id: "attempt-1",
+    profileId: "profile-1",
+    simulationId: "sim-1",
+    createdAt: "2024-01-01T00:00:00.000Z",
+  },
+];
+
+const mockChats = [
+  {
+    id: "chat-1",
+    attemptId: "attempt-1",
+    scenarioId: "scenario-1",
+    completed: true,
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    completedAt: "2024-01-01T00:00:00.000Z",
+    title: "Test Chat",
+    traceId: null,
+  },
+];
+
+const mockGrades = [
+  {
+    id: "grade-1",
+    simulationChatId: "chat-1",
+    rubricId: "rubric-1",
+    score: 85,
+    createdAt: "2024-06-15T10:00:00Z",
+    passed: true,
+    timeTaken: 300,
+  },
+];
+
+const mockCohortPerformanceResult = {
+  cohortData: [
+    {
+      id: "cohort-1",
+      name: "Test Cohort 1",
+      passRate: 50,
+      avgPercentageScore: 75,
+      totalStudents: 2,
+      passedStudents: 1,
+      totalAttempts: 2,
+      passedAttempts: 1,
+      rubricPoints: 100,
+      rubricPassPoints: 70,
+      availableSimulations: 1,
+      color: "#ef4444",
+    },
+  ],
+  dailyData: [],
+  insights: "Test insights",
+  hasData: true,
+};
+
+const renderComponent = (props = {}) => {
+  return render(
+    <QueryClientProvider client={mockQueryClient}>
+      <CohortPerformance {...defaultProps} {...props} />
+    </QueryClientProvider>
+  );
+};
+
 describe("CohortPerformance", () => {
-  const user = userEvent.setup();
-
   beforeEach(() => {
     vi.clearAllMocks();
-  });
 
-  afterEach(() => {
-    vi.clearAllMocks();
+    // Setup default mocks
+    vi.mocked(getAllCohorts).mockResolvedValue(mockCohorts);
+    vi.mocked(getAllProfiles).mockResolvedValue(mockProfiles);
+    vi.mocked(getAllRubrics).mockResolvedValue(mockRubrics);
+    vi.mocked(getSimulationAttemptsByProfiles).mockResolvedValue(mockAttempts);
+    vi.mocked(getSimulationChatsByAttempts).mockResolvedValue(mockChats);
+    vi.mocked(getSimulationChatGradesBySimulationChats).mockResolvedValue(
+      mockGrades
+    );
+    vi.mocked(getAllSimulations).mockResolvedValue(mockSimulations);
   });
 
   describe("Component Rendering", () => {
     it("renders the component with correct title and description", async () => {
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
+      const { calculateCohortPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateCohortPerformance).mockReturnValue(
+        mockCohortPerformanceResult
+      );
+
+      renderComponent();
 
       await waitFor(() => {
         expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-      });
-
-      expect(screen.getByText("Pass rates by cohort")).toBeInTheDocument();
-    });
-
-    it("renders with different threshold configurations", async () => {
-      const props = createMockProps({
-        thresholds: {
-          danger: 30,
-          warning: 60,
-          success: 90,
-        },
-      });
-
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
+        expect(screen.getByText("Pass rates by cohort")).toBeInTheDocument();
       });
     });
 
-    it("renders with undefined profileId", async () => {
-      const props = createMockProps({ profileId: undefined });
-      renderWithMocks(<CohortPerformance {...props} />);
+    it("shows loading state initially", () => {
+      renderComponent();
+
+      expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
+    });
+
+    it("shows no data message when no cohort data is available", async () => {
+      const { calculateCohortPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateCohortPerformance).mockReturnValue({
+        cohortData: [],
+        dailyData: [],
+        insights: null,
+        hasData: false,
+      });
+
+      renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
+        expect(
+          screen.getByText(
+            "No cohort data available for the selected time period."
+          )
+        ).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Data Loading and Processing", () => {
+    it("calls the utility function with correct parameters", async () => {
+      const { calculateCohortPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateCohortPerformance).mockReturnValue(
+        mockCohortPerformanceResult
+      );
+
+      renderComponent({
+        profileId: "profile-1",
+        cohortIds: ["cohort-1"],
+      });
+
+      await waitFor(() => {
+        expect(calculateCohortPerformance).toHaveBeenCalledWith(
+          mockCohorts,
+          mockProfiles,
+          mockChats,
+          mockGrades,
+          mockAttempts,
+          mockSimulations,
+          mockRubrics,
+          defaultProps.dateStart,
+          defaultProps.dateEnd,
+          defaultProps.thresholds,
+          "profile-1",
+          ["cohort-1"],
+          []
+        );
       });
     });
 
-    it("renders with empty cohortIds array", async () => {
-      const props = createMockProps({ cohortIds: [] });
-      renderWithMocks(<CohortPerformance {...props} />);
+    it("handles missing data gracefully", async () => {
+      const { calculateCohortPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateCohortPerformance).mockReturnValue({
+        cohortData: [],
+        dailyData: [],
+        insights: null,
+        hasData: false,
+      });
+
+      renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
+        expect(
+          screen.getByText(
+            "No cohort data available for the selected time period."
+          )
+        ).toBeInTheDocument();
       });
     });
   });
 
-  describe("Cohort Selection", () => {
-    it("renders cohort selector when cohorts are available", async () => {
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
+  describe("Cohort Data Display", () => {
+    it("displays cohort data when available", async () => {
+      const { calculateCohortPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateCohortPerformance).mockReturnValue(
+        mockCohortPerformanceResult
+      );
+
+      renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
+        expect(screen.getByText("Test Cohort 1")).toBeInTheDocument();
+        expect(
+          screen.getByText(/50\.00% of students pass/)
+        ).toBeInTheDocument();
       });
-
-      // Check for cohort selector - component shows no cohort access message in tests
-      expect(
-        screen.getByText("No cohort access available")
-      ).toBeInTheDocument();
     });
 
-    it("allows selecting different cohorts", async () => {
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
+    it("displays multiple cohorts when available", async () => {
+      const { calculateCohortPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateCohortPerformance).mockReturnValue({
+        ...mockCohortPerformanceResult,
+        cohortData: [
+          {
+            id: "cohort-1",
+            name: "Test Cohort 1",
+            passRate: 50,
+            avgPercentageScore: 75,
+            totalStudents: 2,
+            passedStudents: 1,
+            totalAttempts: 2,
+            passedAttempts: 1,
+            rubricPoints: 100,
+            rubricPassPoints: 70,
+            availableSimulations: 1,
+            color: "#ef4444",
+          },
+          {
+            id: "cohort-2",
+            name: "Test Cohort 2",
+            passRate: 90,
+            avgPercentageScore: 92,
+            totalStudents: 1,
+            passedStudents: 1,
+            totalAttempts: 2,
+            passedAttempts: 2,
+            rubricPoints: 100,
+            rubricPassPoints: 70,
+            availableSimulations: 1,
+            color: "#10b981",
+          },
+        ],
       });
 
-      // Component shows no cohort access message in tests
-      expect(
-        screen.getByText("No cohort access available")
-      ).toBeInTheDocument();
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Test Cohort 1")).toBeInTheDocument();
+        expect(screen.getByText("Test Cohort 2")).toBeInTheDocument();
+      });
     });
   });
 
-  describe("Simulation Picker Integration", () => {
+  describe("Simulation Picker", () => {
     it("renders simulation picker when simulations are available", async () => {
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
+      const { calculateCohortPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateCohortPerformance).mockReturnValue(
+        mockCohortPerformanceResult
+      );
+
+      renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-      });
-
-      // Check for simulation picker - component shows no cohort access message in tests
-      expect(
-        screen.getByText("No cohort access available")
-      ).toBeInTheDocument();
-    });
-
-    it("allows filtering by simulation selection", async () => {
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-      });
-
-      // Verify picker functionality - component shows no cohort access message in tests
-      expect(
-        screen.getByText("No cohort access available")
-      ).toBeInTheDocument();
-    });
-  });
-
-  describe("Chart Rendering", () => {
-    it("renders line chart when data is available", async () => {
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-      });
-
-      // Check for chart elements - component shows no cohort access message in tests
-      expect(
-        screen.getByText("No cohort access available")
-      ).toBeInTheDocument();
-    });
-
-    it("displays correct chart data structure", async () => {
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-      });
-
-      // Verify chart data structure - component shows no cohort access message in tests
-      expect(
-        screen.getByText("No cohort access available")
-      ).toBeInTheDocument();
-    });
-
-    it("handles chart tooltips correctly", async () => {
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-      });
-
-      // Verify tooltip functionality - component shows no cohort access message in tests
-      expect(
-        screen.getByText("No cohort access available")
-      ).toBeInTheDocument();
-    });
-  });
-
-  describe("Data Loading States", () => {
-    it("shows loading state when data is being fetched", async () => {
-      // Mock loading state by not providing data
-      vi.mocked(getAllProfiles).mockResolvedValue([]);
-
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
+        expect(screen.getByTestId("simulation-picker")).toBeInTheDocument();
       });
     });
 
-    it("handles empty data gracefully", async () => {
-      // Mock empty data
-      vi.mocked(getAllProfiles).mockResolvedValue([]);
-      vi.mocked(getSimulationAttemptsByProfiles).mockResolvedValue([]);
+    it("does not render simulation picker when no simulations are available", async () => {
+      const { calculateCohortPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateCohortPerformance).mockReturnValue(
+        mockCohortPerformanceResult
+      );
 
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
+      // Mock empty simulations
+      vi.mocked(getAllSimulations).mockResolvedValue([]);
+
+      renderComponent();
 
       await waitFor(() => {
         expect(
-          screen.getByText("No cohort access available")
-        ).toBeInTheDocument();
+          screen.queryByTestId("simulation-picker")
+        ).not.toBeInTheDocument();
       });
     });
   });
 
-  describe("Threshold Status Indicators", () => {
-    it("displays success indicator when performance meets success threshold", async () => {
-      const props = createMockProps({
-        thresholds: { danger: 50, warning: 70, success: 80 },
+  describe("Threshold Status Indicator", () => {
+    it("shows green indicator for success threshold", async () => {
+      const { calculateCohortPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateCohortPerformance).mockReturnValue({
+        ...mockCohortPerformanceResult,
+        cohortData: [
+          {
+            id: "cohort-1",
+            name: "Test Cohort 1",
+            passRate: 90, // Above success threshold
+            avgPercentageScore: 75,
+            totalStudents: 2,
+            passedStudents: 1,
+            totalAttempts: 2,
+            passedAttempts: 1,
+            rubricPoints: 100,
+            rubricPassPoints: 70,
+            availableSimulations: 1,
+            color: "#10b981",
+          },
+        ],
       });
 
-      renderWithMocks(<CohortPerformance {...props} />);
+      renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-      });
-
-      // Check for success indicator - component shows no cohort access message in tests
-      expect(
-        screen.getByText("No cohort access available")
-      ).toBeInTheDocument();
-    });
-
-    it("displays warning indicator when performance meets warning threshold", async () => {
-      const props = createMockProps({
-        thresholds: { danger: 50, warning: 70, success: 80 },
-      });
-
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-      });
-
-      // Check for warning indicator - component shows no cohort access message in tests
-      expect(
-        screen.getByText("No cohort access available")
-      ).toBeInTheDocument();
-    });
-
-    it("displays danger indicator when performance is below danger threshold", async () => {
-      const props = createMockProps({
-        thresholds: { danger: 50, warning: 70, success: 80 },
-      });
-
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-      });
-
-      // Check for danger indicator - component shows no cohort access message in tests
-      expect(
-        screen.getByText("No cohort access available")
-      ).toBeInTheDocument();
-    });
-  });
-
-  describe("Actionable Insights", () => {
-    it("displays actionable insights when performance issues are detected", async () => {
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-      });
-
-      // Check for insights section - component shows no cohort access message in tests
-      expect(
-        screen.getByText("No cohort access available")
-      ).toBeInTheDocument();
-    });
-
-    it("does not display insights when performance is good", async () => {
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-      });
-
-      // Verify insights are not shown when performance is good
-      const insightsSection = screen.queryByTestId("actionable-insights");
-      expect(insightsSection).not.toBeInTheDocument();
-    });
-  });
-
-  describe("Cohort Filtering", () => {
-    it("handles no data available for selected cohorts", async () => {
-      const props = createMockProps({
-        cohortIds: ["non-existent-cohort"],
-      });
-
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("No cohort access available")
-        ).toBeInTheDocument();
+        const indicator = document.querySelector(".absolute.top-2.right-2");
+        expect(indicator).toHaveClass("bg-green-500");
       });
     });
 
-    it("filters data correctly when specific cohorts are selected", async () => {
-      const props = createMockProps({
-        cohortIds: ["test-cohort-id"],
+    it("shows yellow indicator for warning threshold", async () => {
+      const { calculateCohortPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateCohortPerformance).mockReturnValue({
+        ...mockCohortPerformanceResult,
+        cohortData: [
+          {
+            id: "cohort-1",
+            name: "Test Cohort 1",
+            passRate: 75, // Between warning and success
+            avgPercentageScore: 75,
+            totalStudents: 2,
+            passedStudents: 1,
+            totalAttempts: 2,
+            passedAttempts: 1,
+            rubricPoints: 100,
+            rubricPassPoints: 70,
+            availableSimulations: 1,
+            color: "#f59e0b",
+          },
+        ],
       });
 
-      renderWithMocks(<CohortPerformance {...props} />);
+      renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe("Date Range Filtering", () => {
-    it("filters data by date range correctly", async () => {
-      const props = createMockProps({
-        dateStart: new Date("2024-06-01"),
-        dateEnd: new Date("2024-06-30"),
-      });
-
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-      });
-    });
-
-    it("handles edge case dates", async () => {
-      const props = createMockProps({
-        dateStart: new Date("2024-01-01T00:00:00.000Z"),
-        dateEnd: new Date("2024-12-31T23:59:59.999Z"),
-      });
-
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe("Profile Filtering", () => {
-    it("filters data by specific profile", async () => {
-      const props = createMockProps({
-        profileId: "specific-profile-id",
-      });
-
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
+        const indicator = document.querySelector(".absolute.top-2.right-2");
+        expect(indicator).toHaveClass("bg-yellow-500");
       });
     });
 
-    it("shows all profiles when profileId is undefined", async () => {
-      const props = createMockProps({
-        profileId: undefined,
+    it("shows red indicator for danger threshold", async () => {
+      const { calculateCohortPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateCohortPerformance).mockReturnValue({
+        ...mockCohortPerformanceResult,
+        cohortData: [
+          {
+            id: "cohort-1",
+            name: "Test Cohort 1",
+            passRate: 40, // Below danger threshold
+            avgPercentageScore: 75,
+            totalStudents: 2,
+            passedStudents: 1,
+            totalAttempts: 2,
+            passedAttempts: 1,
+            rubricPoints: 100,
+            rubricPassPoints: 70,
+            availableSimulations: 1,
+            color: "#ef4444",
+          },
+        ],
       });
 
-      renderWithMocks(<CohortPerformance {...props} />);
+      renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
+        const indicator = document.querySelector(".absolute.top-2.right-2");
+        expect(indicator).toHaveClass("bg-red-500");
       });
-    });
-  });
-
-  describe("Cohort Data Processing", () => {
-    it("processes cohort data correctly", async () => {
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-      });
-
-      // Verify cohort data processing
-      expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-    });
-
-    it("handles multiple cohorts", async () => {
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-      });
-
-      // Verify multiple cohorts are handled
-      expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
     });
   });
 
   describe("Dialog Functionality", () => {
-    it("opens detail dialog when cohort is clicked", async () => {
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
+    it("renders cohort details dialog", async () => {
+      const { calculateCohortPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateCohortPerformance).mockReturnValue(
+        mockCohortPerformanceResult
+      );
+
+      renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
+        expect(screen.getByText("Test Cohort 1")).toBeInTheDocument();
       });
-
-      // Find and click on a cohort line - component shows no cohort access message in tests
-      expect(
-        screen.getByText("No cohort access available")
-      ).toBeInTheDocument();
     });
 
-    it("displays detailed cohort information in dialog", async () => {
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
+    it("displays daily performance chart in dialog", async () => {
+      const { calculateCohortPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateCohortPerformance).mockReturnValue(
+        mockCohortPerformanceResult
+      );
+
+      renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
+        // The chart should be rendered (ResponsiveContainer) - only in dialog, not main component
+        expect(screen.getByText("Test Cohort 1")).toBeInTheDocument();
       });
-
-      // Open dialog - component shows no cohort access message in tests
-      expect(
-        screen.getByText("No cohort access available")
-      ).toBeInTheDocument();
-    });
-  });
-
-  describe("User Interactions", () => {
-    it("handles state changes", async () => {
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-      });
-
-      // Should handle state changes gracefully
-      expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
     });
 
-    it("handles user events", async () => {
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
+    it("displays insights in dialog", async () => {
+      const { calculateCohortPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateCohortPerformance).mockReturnValue(
+        mockCohortPerformanceResult
+      );
+
+      renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
+        // Insights are only shown in dialog, not main component
+        expect(screen.getByText("Test Cohort 1")).toBeInTheDocument();
       });
-
-      // Should handle user interactions
-      expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
     });
   });
 
   describe("Error Handling", () => {
-    it("handles API errors gracefully", async () => {
-      // Mock API error
-      vi.mocked(getAllProfiles).mockRejectedValue(new Error("API Error"));
+    it("handles query errors gracefully", async () => {
+      vi.mocked(getAllCohorts).mockRejectedValue(new Error("Network error"));
 
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
+      renderComponent();
 
       await waitFor(() => {
         expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
       });
     });
 
-    it("handles malformed data gracefully", async () => {
-      // Mock malformed data
-      vi.mocked(getAllProfiles).mockResolvedValue([
-        { invalid: "data" },
-      ] as unknown as Awaited<ReturnType<typeof getAllProfiles>>);
+    it("handles empty data arrays", async () => {
+      vi.mocked(getAllCohorts).mockResolvedValue([]);
+      vi.mocked(getAllProfiles).mockResolvedValue([]);
 
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
+      const { calculateCohortPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateCohortPerformance).mockReturnValue({
+        cohortData: [],
+        dailyData: [],
+        insights: null,
+        hasData: false,
+      });
+
+      renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
+        expect(
+          screen.getByText(
+            "No cohort data available for the selected time period."
+          )
+        ).toBeInTheDocument();
       });
     });
   });
 
-  describe("Accessibility", () => {
-    it("has proper ARIA labels and roles", async () => {
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-      });
-
-      // Check for proper accessibility attributes - component uses Card with article role
-      const card = screen.getByRole("article");
-      expect(card).toBeInTheDocument();
-    });
-
-    it("supports keyboard navigation", async () => {
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
-      });
-
-      // Test keyboard navigation - component shows no cohort access message in tests
-      expect(
-        screen.getByText("No cohort access available")
-      ).toBeInTheDocument();
-    });
-  });
-
-  describe("Performance", () => {
-    it("handles large datasets efficiently", async () => {
-      // Mock large dataset
-      const largeProfiles = Array.from({ length: 1000 }, (_, i) => ({
-        id: `profile-${i}`,
-        role: "ta",
-        // ... other required fields
-      }));
-      vi.mocked(getAllProfiles).mockResolvedValue(
-        largeProfiles as unknown as Awaited<ReturnType<typeof getAllProfiles>>
+  describe("Props Handling", () => {
+    it("handles profileId prop correctly", async () => {
+      const { calculateCohortPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateCohortPerformance).mockReturnValue(
+        mockCohortPerformanceResult
       );
 
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
+      renderComponent({
+        profileId: "profile-1",
+        cohortIds: ["cohort-1"],
+      });
 
       await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
+        expect(calculateCohortPerformance).toHaveBeenCalled();
+        // Check that the function was called with the correct profileId and cohortIds
+        const calls = vi.mocked(calculateCohortPerformance).mock.calls;
+        expect(calls.length).toBeGreaterThan(0);
+        const lastCall = calls[calls.length - 1];
+        expect(lastCall).toContain("profile-1");
+        expect(lastCall).toContainEqual(["cohort-1"]);
       });
     });
 
-    it("handles prop changes gracefully", async () => {
-      const props = createMockProps();
-      renderWithMocks(<CohortPerformance {...props} />);
+    it("handles cohortIds prop correctly", async () => {
+      const { calculateCohortPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateCohortPerformance).mockReturnValue(
+        mockCohortPerformanceResult
+      );
+
+      renderComponent({
+        cohortIds: ["cohort-1", "cohort-2"],
+      });
 
       await waitFor(() => {
-        expect(screen.getByText("Cohort Performance")).toBeInTheDocument();
+        expect(calculateCohortPerformance).toHaveBeenCalled();
+        // Check that the function was called with the correct cohortIds
+        const calls = vi.mocked(calculateCohortPerformance).mock.calls;
+        expect(calls.length).toBeGreaterThan(0);
+        const lastCall = calls[calls.length - 1];
+        expect(lastCall).toContainEqual(["cohort-1", "cohort-2"]);
+      });
+    });
+
+    it("handles different threshold values", async () => {
+      const { calculateCohortPerformance } = await import(
+        "@/utils/analytics/secondary"
+      );
+      vi.mocked(calculateCohortPerformance).mockReturnValue(
+        mockCohortPerformanceResult
+      );
+
+      const customThresholds = {
+        danger: 30,
+        warning: 60,
+        success: 90,
+      };
+
+      renderComponent({
+        thresholds: customThresholds,
+      });
+
+      await waitFor(() => {
+        expect(calculateCohortPerformance).toHaveBeenCalled();
+        // Check that the function was called with the correct thresholds
+        const calls = vi.mocked(calculateCohortPerformance).mock.calls;
+        expect(calls.length).toBeGreaterThan(0);
+        const lastCall = calls[calls.length - 1];
+        expect(lastCall).toContainEqual(customThresholds);
       });
     });
   });

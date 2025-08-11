@@ -150,7 +150,7 @@ export default function AttemptInput() {
               exit={{ opacity: 0, scale: 0.5 }}
             >
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger asChild>
                   <Button
                     type="submit"
                     className="min-h-[40px] h-[40px] px-3"

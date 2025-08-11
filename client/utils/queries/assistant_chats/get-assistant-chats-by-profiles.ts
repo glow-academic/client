@@ -4,8 +4,10 @@ import { db } from "@/utils/drizzle/db";
 import { assistantChats } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function getAssistantChatsByProfiles(profileIds: string[]) {
+// Original logic is now a "private" function
+async function _getAssistantChatsByProfiles(profileIds: string[]) {
   try {
     return await db.select().from(assistantChats).where(inArray(assistantChats.profileId, profileIds));
   } catch (error) {
@@ -13,3 +15,6 @@ export async function getAssistantChatsByProfiles(profileIds: string[]) {
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const getAssistantChatsByProfiles = createMockableAction('getAssistantChatsByProfiles', _getAssistantChatsByProfiles);

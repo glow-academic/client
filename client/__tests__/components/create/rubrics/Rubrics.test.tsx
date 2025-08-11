@@ -1,17 +1,123 @@
 /**
  * Rubrics.test.tsx
- * Tests for the Rubrics component, focusing on duplication functionality
+ * Comprehensive tests for the Rubrics component
  */
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { renderWithMocks } from "@/test/renderWithMocks";
+import { screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// ——————————————————————————————————————————
-// ✨ Import comprehensive mock data from our centralized mock system
+import Rubrics from "@/components/create/rubrics/Rubrics";
+
+// Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
 import "@/mocks/mutations";
 import "@/mocks/queries";
+
+// Mock the profile context
+const mockProfileContext = {
+  effectiveProfile: {
+    id: "test-profile-id",
+    firstName: "Test",
+    lastName: "User",
+    role: "admin",
+  },
+  activeProfile: {
+    id: "test-profile-id",
+    firstName: "Test",
+    lastName: "User",
+    role: "admin",
+  },
+  isLoading: false,
+};
+
+vi.mock("@/contexts/profile-context", () => ({
+  useProfile: () => mockProfileContext,
+  ProfileProvider: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+}));
+
+// Mock next/navigation
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+}));
+
+// Mock sonner
+vi.mock("sonner", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+// Mock the TableRubric component
+vi.mock("@/components/common/rubric/TableRubric", () => ({
+  default: ({ rubricId }: { rubricId: string }) => (
+    <div data-testid={`table-rubric-${rubricId}`}>
+      Table for rubric {rubricId}
+    </div>
+  ),
+}));
+
+// Mock the RubricsDataTable component
+vi.mock("./RubricsDataTable", () => ({
+  RubricsDataTable: ({
+    data,
+    renderRubricCard,
+  }: {
+    data: Array<{
+      id: string;
+      name: string;
+      description: string | null;
+      points: number;
+      passPoints: number;
+      defaultRubric: boolean;
+      active: boolean;
+      createdAt: string;
+      updatedAt: string;
+    }>;
+    renderRubricCard: (rubric: {
+      id: string;
+      name: string;
+      description: string | null;
+      points: number;
+      passPoints: number;
+      defaultRubric: boolean;
+      active: boolean;
+      createdAt: string;
+      updatedAt: string;
+    }) => React.ReactNode;
+  }) => (
+    <div data-testid="rubrics-data-table">
+      {data.length > 0 ? (
+        data.map((rubric) => renderRubricCard(rubric))
+      ) : (
+        <div>No rubrics found</div>
+      )}
+    </div>
+  ),
+}));
+
+// Mock the duplicateRubric server action
+vi.mock("@/utils/rubric/duplicate-rubric", () => ({
+  duplicateRubric: vi.fn(),
+}));
+
+// Mock the deleteRubric mutation
+vi.mock("@/utils/mutations/rubrics/delete-rubric", () => ({
+  deleteRubric: vi.fn(),
+}));
+
 import { duplicateRubric } from "@/utils/rubric/duplicate-rubric";
 
-describe("Rubric Duplication Functionality", () => {
+describe("Rubrics Component", () => {
   /* ------------------------------------------------------------------ *
    * 💡 Mock Data Usage Guide:
    *
@@ -31,6 +137,249 @@ describe("Rubric Duplication Functionality", () => {
   // ✨ Reset mocks after each test
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  beforeEach(() => {
+    // Reset profile context
+    Object.assign(mockProfileContext, {
+      effectiveProfile: {
+        id: "test-profile-id",
+        firstName: "Test",
+        lastName: "User",
+        role: "admin",
+      },
+      activeProfile: {
+        id: "test-profile-id",
+        firstName: "Test",
+        lastName: "User",
+        role: "admin",
+      },
+      isLoading: false,
+    });
+  });
+
+  describe("Component Rendering", () => {
+    it("renders without crashing", async () => {
+      // Mock the API calls to return data
+      const { getAllRubrics } = await import(
+        "@/utils/queries/rubrics/get-all-rubrics"
+      );
+      const { getAllSimulations } = await import(
+        "@/utils/queries/simulations/get-all-simulations"
+      );
+      vi.mocked(getAllRubrics).mockResolvedValue([]);
+      vi.mocked(getAllSimulations).mockResolvedValue([]);
+
+      renderWithMocks(<Rubrics />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("rubrics-data-table")).toBeInTheDocument();
+      });
+    });
+
+    it("shows loading state when rubrics are loading", async () => {
+      // Mock loading state
+      const { getAllRubrics } = await import(
+        "@/utils/queries/rubrics/get-all-rubrics"
+      );
+      vi.mocked(getAllRubrics).mockImplementation(() => new Promise(() => {}));
+
+      renderWithMocks(<Rubrics />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Loading rubrics...")).toBeInTheDocument();
+      });
+    });
+
+    it("renders rubric cards with correct data", async () => {
+      const mockRubrics = [
+        {
+          id: "rubric-1",
+          name: "Math Problem Solving Rubric",
+          description: "A comprehensive rubric for math problem solving",
+          points: 100,
+          passPoints: 70,
+          defaultRubric: true,
+          active: true,
+          createdAt: "2024-01-01T00:00:00Z",
+          updatedAt: "2024-01-01T00:00:00Z",
+        },
+      ];
+
+      const { getAllRubrics } = await import(
+        "@/utils/queries/rubrics/get-all-rubrics"
+      );
+      const { getAllSimulations } = await import(
+        "@/utils/queries/simulations/get-all-simulations"
+      );
+      vi.mocked(getAllRubrics).mockResolvedValue(mockRubrics);
+      vi.mocked(getAllSimulations).mockResolvedValue([]);
+
+      renderWithMocks(<Rubrics />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("Math Problem Solving Rubric")
+        ).toBeInTheDocument();
+        expect(screen.getByText("100 total points")).toBeInTheDocument();
+        expect(screen.getByText("Pass: 70 pts (70%)")).toBeInTheDocument();
+        expect(screen.getByText("Active")).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Rubric Card Display", () => {
+    it("displays rubric information correctly", async () => {
+      const mockRubric = {
+        id: "rubric-1",
+        name: "Test Rubric",
+        description: "Test description",
+        points: 100,
+        passPoints: 70,
+        defaultRubric: true,
+        active: true,
+        createdAt: "2024-01-01T00:00:00Z",
+        updatedAt: "2024-01-01T00:00:00Z",
+      };
+
+      const { getAllRubrics } = await import(
+        "@/utils/queries/rubrics/get-all-rubrics"
+      );
+      const { getAllSimulations } = await import(
+        "@/utils/queries/simulations/get-all-simulations"
+      );
+      vi.mocked(getAllRubrics).mockResolvedValue([mockRubric]);
+      vi.mocked(getAllSimulations).mockResolvedValue([]);
+
+      renderWithMocks(<Rubrics />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Test Rubric")).toBeInTheDocument();
+        expect(screen.getByText("Test description")).toBeInTheDocument();
+        expect(screen.getByText("100 total points")).toBeInTheDocument();
+        expect(screen.getByText("Pass: 70 pts (70%)")).toBeInTheDocument();
+        expect(screen.getByText("Active")).toBeInTheDocument();
+      });
+    });
+
+    it("shows inactive status for inactive rubrics", async () => {
+      const mockRubric = {
+        id: "rubric-1",
+        name: "Test Rubric",
+        description: "Test description",
+        points: 100,
+        passPoints: 70,
+        defaultRubric: true,
+        active: false,
+        createdAt: "2024-01-01T00:00:00Z",
+        updatedAt: "2024-01-01T00:00:00Z",
+      };
+
+      const { getAllRubrics } = await import(
+        "@/utils/queries/rubrics/get-all-rubrics"
+      );
+      const { getAllSimulations } = await import(
+        "@/utils/queries/simulations/get-all-simulations"
+      );
+      vi.mocked(getAllRubrics).mockResolvedValue([mockRubric]);
+      vi.mocked(getAllSimulations).mockResolvedValue([]);
+
+      renderWithMocks(<Rubrics />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Inactive")).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Permission Logic", () => {
+    it("allows superadmin to edit any rubric", async () => {
+      mockProfileContext.effectiveProfile.role = "superadmin";
+
+      const mockRubric = {
+        id: "rubric-1",
+        name: "Test Rubric",
+        description: "Test description",
+        points: 100,
+        passPoints: 70,
+        defaultRubric: false,
+        active: true,
+        createdAt: "2024-01-01T00:00:00Z",
+        updatedAt: "2024-01-01T00:00:00Z",
+      };
+
+      const mockSimulation = {
+        id: "sim-1",
+        title: "Test Simulation",
+        rubricId: "rubric-1",
+        createdAt: "2024-01-01T00:00:00Z",
+        updatedAt: "2024-01-01T00:00:00Z",
+        timeLimit: null,
+        active: true,
+        scenarioIds: [],
+        defaultSimulation: false,
+        practiceSimulation: false,
+      };
+
+      const { getAllRubrics } = await import(
+        "@/utils/queries/rubrics/get-all-rubrics"
+      );
+      const { getAllSimulations } = await import(
+        "@/utils/queries/simulations/get-all-simulations"
+      );
+      vi.mocked(getAllRubrics).mockResolvedValue([mockRubric]);
+      vi.mocked(getAllSimulations).mockResolvedValue([mockSimulation]);
+
+      renderWithMocks(<Rubrics />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Edit")).toBeInTheDocument();
+      });
+    });
+
+    it("prevents non-superadmin from editing used rubrics", async () => {
+      mockProfileContext.effectiveProfile.role = "admin";
+
+      const mockRubric = {
+        id: "rubric-1",
+        name: "Test Rubric",
+        description: "Test description",
+        points: 100,
+        passPoints: 70,
+        defaultRubric: false,
+        active: true,
+        createdAt: "2024-01-01T00:00:00Z",
+        updatedAt: "2024-01-01T00:00:00Z",
+      };
+
+      const mockSimulation = {
+        id: "sim-1",
+        title: "Test Simulation",
+        rubricId: "rubric-1",
+        createdAt: "2024-01-01T00:00:00Z",
+        updatedAt: "2024-01-01T00:00:00Z",
+        timeLimit: null,
+        active: true,
+        scenarioIds: [],
+        defaultSimulation: false,
+        practiceSimulation: false,
+      };
+
+      const { getAllRubrics } = await import(
+        "@/utils/queries/rubrics/get-all-rubrics"
+      );
+      const { getAllSimulations } = await import(
+        "@/utils/queries/simulations/get-all-simulations"
+      );
+      vi.mocked(getAllRubrics).mockResolvedValue([mockRubric]);
+      vi.mocked(getAllSimulations).mockResolvedValue([mockSimulation]);
+
+      renderWithMocks(<Rubrics />);
+
+      await waitFor(() => {
+        expect(screen.queryByText("Edit")).not.toBeInTheDocument();
+      });
+    });
   });
 
   describe("duplicateRubric Function", () => {
@@ -81,84 +430,70 @@ describe("Rubric Duplication Functionality", () => {
       await expect(
         duplicateRubric("rubric-1", "Test Rubric Copy")
       ).rejects.toThrow("Duplication failed");
+    });
+  });
 
-      // Verify the function was called
-      expect(duplicateRubric).toHaveBeenCalledWith(
-        "rubric-1",
-        "Test Rubric Copy"
+  describe("Edge Cases", () => {
+    it("handles empty rubrics list", async () => {
+      const { getAllRubrics } = await import(
+        "@/utils/queries/rubrics/get-all-rubrics"
       );
+      const { getAllSimulations } = await import(
+        "@/utils/queries/simulations/get-all-simulations"
+      );
+      vi.mocked(getAllRubrics).mockResolvedValue([]);
+      vi.mocked(getAllSimulations).mockResolvedValue([]);
+
+      renderWithMocks(<Rubrics />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("No rubrics match the current filters.")
+        ).toBeInTheDocument();
+      });
     });
 
-    it("should create a new rubric with correct properties", async () => {
-      // Mock the duplicateRubric function to return success
-      vi.mocked(duplicateRubric).mockResolvedValue({
-        id: "new-rubric-id",
-        name: "Original Rubric Copy",
-        description: "A duplicated rubric",
+    it("handles missing rubric description", async () => {
+      const mockRubric = {
+        id: "rubric-1",
+        name: "Test Rubric",
+        description: "Test description",
         points: 100,
         passPoints: 70,
-        defaultRubric: false, // Duplicated rubrics should not be default
-        active: false, // Duplicated rubrics should start as inactive
+        defaultRubric: true,
+        active: true,
         createdAt: "2024-01-01T00:00:00Z",
         updatedAt: "2024-01-01T00:00:00Z",
-      });
+      };
 
-      // Call the duplicate function
-      const result = await duplicateRubric(
-        "original-rubric-id",
-        "Original Rubric Copy"
+      const { getAllRubrics } = await import(
+        "@/utils/queries/rubrics/get-all-rubrics"
       );
+      vi.mocked(getAllRubrics).mockResolvedValue([mockRubric]);
 
-      // Verify the duplicated rubric has correct properties
-      expect(result.defaultRubric).toBe(false); // Should not be default
-      expect(result.active).toBe(false); // Should start as inactive
-      expect(result.name).toBe("Original Rubric Copy"); // Should have the new name
-      expect(result.id).not.toBe("original-rubric-id"); // Should have a new ID
+      renderWithMocks(<Rubrics />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Test Rubric")).toBeInTheDocument();
+        expect(screen.getByText("Test description")).toBeInTheDocument();
+      });
     });
 
-    it("should handle different rubric types correctly", async () => {
-      // Test with different rubric configurations
-      const testCases = [
-        {
-          originalId: "rubric-1",
-          newName: "Math Rubric Copy",
-          expectedPoints: 100,
-          expectedPassPoints: 70,
-        },
-        {
-          originalId: "rubric-2",
-          newName: "Science Rubric Copy",
-          expectedPoints: 50,
-          expectedPassPoints: 35,
-        },
-      ];
+    it("handles API errors gracefully", async () => {
+      const { getAllRubrics } = await import(
+        "@/utils/queries/rubrics/get-all-rubrics"
+      );
+      const { getAllSimulations } = await import(
+        "@/utils/queries/simulations/get-all-simulations"
+      );
+      vi.mocked(getAllRubrics).mockRejectedValue(new Error("API Error"));
+      vi.mocked(getAllSimulations).mockResolvedValue([]);
 
-      for (const testCase of testCases) {
-        vi.mocked(duplicateRubric).mockResolvedValue({
-          id: `new-${testCase.originalId}`,
-          name: testCase.newName,
-          description: "A test rubric",
-          points: testCase.expectedPoints,
-          passPoints: testCase.expectedPassPoints,
-          defaultRubric: false,
-          active: false,
-          createdAt: "2024-01-01T00:00:00Z",
-          updatedAt: "2024-01-01T00:00:00Z",
-        });
+      renderWithMocks(<Rubrics />);
 
-        const result = await duplicateRubric(
-          testCase.originalId,
-          testCase.newName
-        );
-
-        expect(duplicateRubric).toHaveBeenCalledWith(
-          testCase.originalId,
-          testCase.newName
-        );
-        expect(result.name).toBe(testCase.newName);
-        expect(result.points).toBe(testCase.expectedPoints);
-        expect(result.passPoints).toBe(testCase.expectedPassPoints);
-      }
+      await waitFor(() => {
+        expect(screen.getByTestId("rubrics-data-table")).toBeInTheDocument();
+      });
     });
   });
 });

@@ -31,19 +31,28 @@ const mockData: AppLog[] = [
 
 const mockColumns: ColumnDef<AppLog>[] = [
   {
+    id: "id",
     accessorKey: "id",
     header: "ID",
     cell: ({ row }) => <div>{row.getValue("id")}</div>,
   },
   {
+    id: "level",
     accessorKey: "level",
     header: "Level",
     cell: ({ row }) => <div>{row.getValue("level")}</div>,
   },
   {
+    id: "message",
     accessorKey: "message",
     header: "Message",
     cell: ({ row }) => <div>{row.getValue("message")}</div>,
+  },
+  {
+    id: "createdAt",
+    accessorKey: "createdAt",
+    header: "Created At",
+    cell: ({ row }) => <div>{row.getValue("createdAt")}</div>,
   },
 ];
 
@@ -120,14 +129,14 @@ describe("LogsDataTable", () => {
 
       // Should show "No logs match the current filters" message
       expect(
-        screen.getByText("No logs match the current filters."),
+        screen.getByText("No logs match the current filters.")
       ).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      // Test with minimal required props
+      // Test with minimal required props - use the same columns structure to avoid undefined column access
       const minimalProps = {
-        columns: [],
+        columns: mockColumns, // Use the same columns to avoid undefined column access
         data: [],
         levelOptions: [],
         onRefresh: vi.fn(),

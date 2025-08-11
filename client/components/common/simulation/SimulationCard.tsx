@@ -14,6 +14,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -169,7 +170,12 @@ export default function SimulationCard({
                       <p>View Rubric</p>
                     </TooltipContent>
                   </Tooltip>
-                  <DialogContent className="max-w-4xl">
+                  <DialogContent
+                    className="max-w-4xl"
+                  >
+                    <DialogDescription hidden>
+                      This dialog shows the rubric for the simulation.
+                    </DialogDescription>
                     <DialogHeader>
                       <DialogTitle>
                         Grading Rubric: {simulation.title}

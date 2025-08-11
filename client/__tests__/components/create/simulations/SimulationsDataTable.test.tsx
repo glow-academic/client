@@ -50,6 +50,7 @@ const mockSimulations: Simulation[] = [
 // Mock columns for the table
 const mockColumns: ColumnDef<Simulation>[] = [
   {
+    id: "title",
     accessorKey: "title",
     header: "Title",
     cell: ({ row }) => row.getValue("title"),
@@ -74,6 +75,7 @@ const mockColumns: ColumnDef<Simulation>[] = [
     accessorFn: (simulation) => simulation.timeLimit || 0,
   },
   {
+    id: "updatedAt",
     accessorKey: "updatedAt",
     header: "Updated At",
     cell: ({ row }) => row.getValue("updatedAt"),
@@ -110,7 +112,7 @@ describe("SimulationsDataTable", () => {
 
       // Check that the component renders without crashing
       expect(
-        screen.getByPlaceholderText("Search simulations..."),
+        screen.getByPlaceholderText("Search simulations...")
       ).toBeInTheDocument();
     });
 
@@ -119,13 +121,13 @@ describe("SimulationsDataTable", () => {
 
       // Check that the toolbar renders with search input
       expect(
-        screen.getByPlaceholderText("Search simulations..."),
+        screen.getByPlaceholderText("Search simulations...")
       ).toBeInTheDocument();
 
       // Check that simulation cards are rendered
       mockSimulations.forEach((simulation) => {
         expect(
-          screen.getByTestId(`simulation-card-${simulation.id}`),
+          screen.getByTestId(`simulation-card-${simulation.id}`)
         ).toBeInTheDocument();
         expect(screen.getByText(simulation.title)).toBeInTheDocument();
       });
@@ -184,9 +186,9 @@ describe("SimulationsDataTable", () => {
     });
 
     it("should handle missing or invalid props", () => {
-      // Test with minimal required props
+      // Test with minimal required props - use the same columns structure as the main test
       const minimalProps = {
-        columns: [],
+        columns: mockColumns, // Use the same columns to avoid undefined column access
         data: [],
         scenarioOptions: [],
         rubricOptions: [],

@@ -10,12 +10,13 @@ import "@/mocks/queries";
 
 // ——————————————————————————————————————————
 import { Providers } from "@/app/providers";
+import { Session } from "next-auth";
 
 // Mock NextAuth session
-const mockSession = {
+const mockSession: Session | null = {
   user: { id: "123" },
   expires: new Date().toISOString(),
-};
+}
 
 // Mock useSession to return proper structure
 const mockUseSession = vi.fn(() => ({
@@ -112,7 +113,7 @@ describe("Providers", () => {
 
     it("should handle unauthenticated session", () => {
       mockUseSession.mockReturnValue({
-        data: null as any,
+        data: null as unknown as Session,
         status: "unauthenticated",
         update: vi.fn(),
       });
@@ -128,7 +129,10 @@ describe("Providers", () => {
 
     it("should handle loading session", () => {
       mockUseSession.mockReturnValue({
-        data: null as any,
+        data: {
+          user: { id: "123" },
+          expires: new Date().toISOString(),
+        },
         status: "loading",
         update: vi.fn(),
       });
@@ -152,7 +156,7 @@ describe("Providers", () => {
       });
 
       mockUseQuery.mockReturnValue({
-        data: null as any,
+        data: null as unknown as { id: string; name: string }[],
         isLoading: true,
         error: null,
       });
@@ -220,7 +224,10 @@ describe("Providers", () => {
   describe("Edge Cases", () => {
     it("should handle missing session data gracefully", () => {
       mockUseSession.mockReturnValue({
-        data: null as any,
+        data: {
+          user: { id: "123" },
+          expires: new Date().toISOString(),
+        },
         status: "unauthenticated",
         update: vi.fn(),
       });
@@ -236,7 +243,7 @@ describe("Providers", () => {
 
     it("should handle undefined session gracefully", () => {
       mockUseSession.mockReturnValue({
-        data: undefined as any,
+        data: undefined as unknown as Session,
         status: "loading",
         update: vi.fn(),
       });

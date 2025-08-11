@@ -3,8 +3,10 @@
 import { db } from "@/utils/drizzle/db";
 import { parameters } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function createParameter(data: typeof parameters.$inferInsert) {
+// Original logic is now a "private" function
+async function _createParameter(data: typeof parameters.$inferInsert) {
   try {
     const result = await db.insert(parameters).values(data).returning();
     return result[0];
@@ -13,3 +15,6 @@ export async function createParameter(data: typeof parameters.$inferInsert) {
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const createParameter = createMockableAction('createParameter', _createParameter);

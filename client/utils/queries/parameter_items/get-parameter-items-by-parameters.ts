@@ -4,8 +4,10 @@ import { db } from "@/utils/drizzle/db";
 import { parameterItems } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function getParameterItemsByParameters(parameterIds: string[]) {
+// Original logic is now a "private" function
+async function _getParameterItemsByParameters(parameterIds: string[]) {
   try {
     return await db.select().from(parameterItems).where(inArray(parameterItems.parameterId, parameterIds));
   } catch (error) {
@@ -13,3 +15,6 @@ export async function getParameterItemsByParameters(parameterIds: string[]) {
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const getParameterItemsByParameters = createMockableAction('getParameterItemsByParameters', _getParameterItemsByParameters);

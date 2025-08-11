@@ -43,7 +43,6 @@ const createMockTable = (): Table<unknown> =>
 const mockProps: DataTableToolbarProps<unknown> = {
   table: createMockTable(),
   profileOptions: [],
-  scoreRangeOptions: [],
 };
 // ------------------------------------------------------------------
 describe("DataTableToolbar", () => {
@@ -86,7 +85,6 @@ describe("DataTableToolbar", () => {
         <DataTableToolbar
           table={createMockTable()}
           profileOptions={[]}
-          scoreRangeOptions={[]}
         />,
       );
 

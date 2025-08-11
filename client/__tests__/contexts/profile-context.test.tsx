@@ -14,10 +14,17 @@ import '@/mocks/api';
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { ProfileProviderProps } from '@/contexts/profile-context';
-const mockProps: ProfileProviderProps = {
-  children: <div>test-children</div>,
-  activeProfile: 'superadmin',
+import { ProfileProvider, type ProfileContextType } from '@/contexts/profile-context';
+const mockProps: ProfileContextType = {
+  activeProfile: null,
+  simulatedProfile: null,
+  effectiveProfile: null,
+  isSimulating: false,
+  isLoading: false,
+  setSimulatedProfile: vi.fn(),
+  clearSimulation: vi.fn(),
+  navigateToDefault: vi.fn(),
+  isSectionAvailable: vi.fn(),
 };
 // ------------------------------------------------------------------
 describe('profile-context', () => {
@@ -46,7 +53,9 @@ describe('profile-context', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<profile-context {...mockProps} />);
+      renderWithMocks(<ProfileProvider {...mockProps}>
+        <div>test-children</div>
+      </ProfileProvider>);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
@@ -90,7 +99,9 @@ describe('profile-context', () => {
       // Arrange: Override the default success mock with an error for this test.
       // Example: vi.mocked(getProfile).mockRejectedValue(new Error('API Error'));
 
-      renderWithMocks(<profile-context {...mockProps} />);
+      renderWithMocks(<ProfileProvider {...mockProps}>
+        <div>test-children</div>
+      </ProfileProvider>);
       
       // Assert: Check that your component shows an error message.
       // TODO: Add specific error state assertions

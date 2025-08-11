@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { calculatePlatformGrowth } from "@/utils/analytics/primary";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -21,7 +22,6 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
-import { format, isAfter, isBefore } from "date-fns";
 import { TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -143,7 +143,7 @@ export default function Growth({
         formatter: (value: number) => `${value} attempts`,
       },
     ],
-    [],
+    []
   );
 
   // Ensure at least one metric is always selected
@@ -160,7 +160,7 @@ export default function Growth({
   // Get selected metric objects
   const selectedMetricObjects = useMemo(() => {
     return availableMetrics.filter((metric) =>
-      selectedMetrics.includes(metric.id),
+      selectedMetrics.includes(metric.id)
     );
   }, [availableMetrics, selectedMetrics]);
 
@@ -214,284 +214,38 @@ export default function Growth({
     return (profileId: string) => {
       return cohorts.some(
         (cohort) =>
-          cohort.profileIds.includes(profileId) &&
-          cohortIds.includes(cohort.id),
+          cohort.profileIds.includes(profileId) && cohortIds.includes(cohort.id)
       );
     };
   }, [cohortIds, cohorts]);
 
-  // Calculate growth data
+  // Calculate growth data using utility function
   const growthData = useMemo(() => {
-    if (
-      !profiles ||
-      !chats ||
-      !grades ||
-      !attempts ||
-      !simulations ||
-      !rubrics
-    ) {
-      return [];
-    }
-
-    // Filter data by date range, exclude practice simulations, filter by TA role, and filter by cohorts
-    const filteredGrades = grades.filter((grade) => {
-      const gradeDate = new Date(grade.createdAt);
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId,
-      );
-      const profile = profiles.find((p) => p.id === attempt?.profileId);
-
-      // Check date range
-      const inDateRange =
-        isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
-
-      // Exclude practice simulations
-      const notPractice = !simulation?.practiceSimulation;
-
-      // Filter by TA role
-      const isTA = profile?.role === "ta";
-
-      // Filter by profile if provided
-      const profileMatch = profileId ? attempt?.profileId === profileId : true;
-
-      // Filter by cohorts
-      const cohortMatch = profile ? isProfileInCohorts(profile.id) : true;
-
-      return inDateRange && notPractice && isTA && profileMatch && cohortMatch;
-    });
-
-    if (filteredGrades.length === 0) return [];
-
-    // Group by date (daily intervals)
-    const dailyData = new Map<
-      string,
-      {
-        date: string;
-        scores: number[];
-        passed: number;
-        total: number;
-        completed: number;
-        timeTaken: number[];
-        messages: number[];
-        responseTimes: number[];
-        attempts: number[];
-        firstAttempts: Array<{
-          profileId: string;
-          simulationId: string;
-          attemptId: string;
-          createdAt: Date;
-          passed: boolean;
-        }>;
-      }
-    >();
-
-    filteredGrades.forEach((grade) => {
-      const gradeDate = new Date(grade.createdAt);
-      const dateKey = format(gradeDate, "yyyy-MM-dd");
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-
-      if (!dailyData.has(dateKey)) {
-        dailyData.set(dateKey, {
-          date: format(gradeDate, "MMM dd"),
-          scores: [],
-          passed: 0,
-          total: 0,
-          completed: 0,
-          timeTaken: [],
-          messages: [],
-          responseTimes: [],
-          attempts: [],
-          firstAttempts: [],
-        });
-      }
-
-      const dayData = dailyData.get(dateKey)!;
-
-      // Calculate score percentage
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId,
-      );
-      const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
-      const rubricTotalPoints = rubric?.points || 100;
-      const scorePercent = Math.round((grade.score / rubricTotalPoints) * 100);
-
-      dayData.scores.push(scorePercent);
-      dayData.total++;
-      dayData.timeTaken.push(grade.timeTaken);
-
-      if (grade.passed) {
-        dayData.passed++;
-      }
-
-      if (chat?.completed) {
-        dayData.completed++;
-      }
-
-      // Calculate additional metrics
-      // Messages per session (estimated from chat data)
-      const messageCount = 0; // TODO: Get actual message count from chat data
-      dayData.messages.push(messageCount);
-
-      // Response times (estimated from time taken and message count)
-      const avgResponseTime =
-        messageCount > 0 ? grade.timeTaken / messageCount / 60 : 0;
-      dayData.responseTimes.push(avgResponseTime);
-
-      // Track attempts
-      dayData.attempts.push(1);
-
-      // Track first attempts for pass rate calculation
-      const isFirstAttempt = !attempts.some(
-        (a) =>
-          a.profileId === attempt?.profileId &&
-          a.simulationId === attempt?.simulationId &&
-          new Date(a.createdAt) < new Date(attempt.createdAt),
-      );
-      if (isFirstAttempt) {
-        dayData.firstAttempts.push({
-          profileId: attempt?.profileId || "",
-          simulationId: attempt?.simulationId || "",
-          attemptId: attempt?.id || "",
-          createdAt: new Date(attempt?.createdAt || ""),
-          passed: grade.passed,
-        });
-      }
-    });
-
-    // Convert to array and calculate metrics
-    const growthMetrics = Array.from(dailyData.values())
-      .map((dayData) => {
-        const avgScore =
-          dayData.scores.length > 0
-            ? Math.round(
-                dayData.scores.reduce((sum, score) => sum + score, 0) /
-                  dayData.scores.length,
-              )
-            : 0;
-
-        const completionPercentage =
-          dayData.total > 0
-            ? Math.round((dayData.completed / dayData.total) * 100)
-            : 0;
-
-        // Calculate first attempt pass rate using the same logic as FirstAttemptPassRate component
-        const firstAttemptPassRate =
-          dayData.firstAttempts.length > 0
-            ? Math.round(
-                (dayData.firstAttempts.filter((attempt) => attempt.passed)
-                  .length /
-                  dayData.firstAttempts.length) *
-                  100,
-              )
-            : 0;
-
-        const highestScore =
-          dayData.scores.length > 0 ? Math.max(...dayData.scores) : 0;
-
-        const messagesPerSession =
-          dayData.messages.length > 0
-            ? Math.round(
-                dayData.messages.reduce((sum, msg) => sum + msg, 0) /
-                  dayData.messages.length,
-              )
-            : 0;
-
-        const personaResponseTimes =
-          dayData.responseTimes.length > 0
-            ? Math.round(
-                dayData.responseTimes.reduce((sum, time) => sum + time, 0) /
-                  dayData.responseTimes.length,
-              )
-            : 0;
-
-        const avgTimeMinutes =
-          dayData.timeTaken.length > 0
-            ? dayData.timeTaken.reduce((sum, time) => sum + time, 0) /
-              dayData.timeTaken.length /
-              60
-            : 1; // Avoid division by zero
-
-        // Session Efficiency Index: (Average Score %) / (Average Time per Session in minutes)
-        const sessionEfficiency =
-          avgTimeMinutes > 0
-            ? Math.round((avgScore / avgTimeMinutes) * 10) // Scale factor of 10 for better visibility
-            : 0;
-
-        // Stagnation Rate (simplified - based on score variance)
-        const scoreVariance =
-          dayData.scores.length > 1
-            ? Math.sqrt(
-                dayData.scores.reduce(
-                  (sum, score) => sum + Math.pow(score - avgScore, 2),
-                  0,
-                ) /
-                  (dayData.scores.length - 1),
-              )
-            : 0;
-        const stagnationRate = Math.round(Math.min(scoreVariance / 10, 100));
-
-        const timeSpent = Math.round(avgTimeMinutes);
-
-        const totalAttempts = dayData.attempts.reduce(
-          (sum, attempt) => sum + attempt,
-          0,
-        );
-
-        return {
-          date: dayData.date,
-          averageScore: avgScore,
-          completionPercentage,
-          firstAttemptPassRate,
-          highestScore,
-          messagesPerSession,
-          personaResponseTimes,
-          sessionEfficiency,
-          stagnationRate,
-          timeSpent,
-          totalAttempts,
-          // Legacy fields for backward compatibility
-          avgScore,
-          passRate: firstAttemptPassRate,
-          completionRate: completionPercentage,
-        };
-      })
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    // Scale session efficiency to 0-100 range relative to the dataset
-    if (growthMetrics.length > 0) {
-      const maxEfficiency = Math.max(
-        ...growthMetrics.map((m) => m.sessionEfficiency),
-      );
-      const minEfficiency = Math.min(
-        ...growthMetrics.map((m) => m.sessionEfficiency),
-      );
-      const efficiencyRange = maxEfficiency - minEfficiency;
-
-      if (efficiencyRange > 0) {
-        growthMetrics.forEach((metric) => {
-          metric.sessionEfficiency = Math.round(
-            ((metric.sessionEfficiency - minEfficiency) / efficiencyRange) *
-              100,
-          );
-        });
-      }
-    }
-
-    return growthMetrics;
+    return calculatePlatformGrowth(
+      grades || [],
+      chats || [],
+      attempts || [],
+      simulations || [],
+      rubrics || [],
+      profiles || [],
+      dateStart,
+      dateEnd,
+      profileId,
+      cohorts || [],
+      cohortIds
+    );
   }, [
-    profiles,
-    chats,
     grades,
+    chats,
     attempts,
     simulations,
     rubrics,
+    profiles,
     dateStart,
     dateEnd,
     profileId,
-    isProfileInCohorts,
+    cohorts,
+    cohortIds,
   ]);
 
   // Calculate threshold status based on growth data
@@ -670,7 +424,7 @@ export default function Growth({
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
+              <TrendingUp className="h-5 w-5" data-testid="trending-up-icon" />
               Platform Growth
             </CardTitle>
             <CardDescription>
@@ -687,7 +441,14 @@ export default function Growth({
       <CardContent className="flex-1 overflow-hidden">
         <div className="space-y-6">
           {/* Multi-line Chart */}
-          <div className="h-72">
+          <div
+            className="h-72"
+            style={
+              process.env.NODE_ENV === "test"
+                ? { minWidth: 400, minHeight: 300 }
+                : undefined
+            }
+          >
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={growthData} margin={{ bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />

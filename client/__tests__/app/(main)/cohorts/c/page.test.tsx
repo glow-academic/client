@@ -1,27 +1,37 @@
-import { describe, it } from 'vitest';
+import { describe, it, vi, afterEach, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
 
 // ——————————————————————————————————————————
+import CohortEditPage from '@/app/(main)/cohorts/c/page';
 
-describe('page', () => {
+// Import centralized mocks
+import "@/mocks/navigation";
+
+describe('CohortEditPage', () => {
   
+
+  // ✨ Reset mocks after each test
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
 
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
+      renderWithMocks(<CohortEditPage />);
       
-      renderWithMocks(<page  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      // Should redirect to /create/cohorts
+      const { redirect } = await import("next/navigation");
+      expect(redirect).toHaveBeenCalledWith("/create/cohorts");
     });
 
     
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
+    it('should have correct accessibility attributes', async () => {
+      renderWithMocks(<CohortEditPage />);
       
-      // TODO add accessibility assertions
-
+      // Should redirect to /create/cohorts
+      const { redirect } = await import("next/navigation");
+      expect(redirect).toHaveBeenCalledWith("/create/cohorts");
     });
   });
 
@@ -32,14 +42,13 @@ describe('page', () => {
   
 
   describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
+    it('should handle edge cases gracefully', async () => {
+      renderWithMocks(<CohortEditPage />);
       
-      // TODO: edge-case assertions
-
+      // Should redirect to /create/cohorts
+      const { redirect } = await import("next/navigation");
+      expect(redirect).toHaveBeenCalledWith("/create/cohorts");
     });
-
-    
   });
 });
 

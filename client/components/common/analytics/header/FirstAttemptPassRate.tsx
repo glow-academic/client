@@ -10,9 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { calculateFirstAttemptPassRate } from "@/utils/analytics/header";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -20,7 +22,6 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
-import { eachDayOfInterval, format } from "date-fns";
 import { Award } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -120,216 +121,40 @@ export default function FirstAttemptPassRate({
     queryFn: () => getAllSimulations(),
   });
 
-  // Helper function to get allowed simulation IDs based on cohort filtering
-  const getAllowedSimulationIds = useMemo(() => {
-    if (!cohorts || !cohortIds || cohortIds.length === 0) {
-      return null; // No cohort filtering, allow all simulations
+  // Calculate first attempt pass rate using utility function
+  const firstAttemptPassRateResult = useMemo(() => {
+    if (!attempts || !chats || !grades || !simulations || !cohorts) {
+      return { currentValue: 0, trendData: [], hasData: false };
     }
 
-    // Filter cohorts to only those in cohortIds
-    const filteredCohorts = cohorts.filter((cohort) =>
-      cohortIds.includes(cohort.id),
-    );
-
-    if (filteredCohorts.length === 0) {
-      return []; // No matching cohorts, no data allowed
-    }
-
-    // If profileId is provided, check if profile belongs to any of the filtered cohorts
-    if (profileId) {
-      const profileInCohorts = filteredCohorts.some((cohort) =>
-        cohort.profileIds.includes(profileId),
-      );
-
-      if (!profileInCohorts) {
-        return []; // Profile not in any of the specified cohorts, no data allowed
-      }
-    }
-
-    // Get union of all simulation IDs from matching cohorts
-    const allowedSimulationIds = new Set<string>();
-    filteredCohorts.forEach((cohort) => {
-      cohort.simulationIds.forEach((simId) => {
-        if (simId !== "RAY") {
-          // Exclude placeholder
-          allowedSimulationIds.add(simId);
-        }
-      });
-    });
-
-    return Array.from(allowedSimulationIds);
-  }, [cohorts, cohortIds, profileId]);
-
-  // Calculate first attempt pass rate for the specified date range and profile
-  const firstAttemptPassRate = useMemo(() => {
-    if (!attempts || !chats || !grades || !simulations) return 0;
-
-    // Filter attempts by date range and exclude practice simulations
-    const filteredAttempts = attempts.filter((attempt) => {
-      const attemptDate = new Date(attempt.createdAt);
-      const simulation = simulations.find((s) => s.id === attempt.simulationId);
-      return (
-        attemptDate >= dateStart &&
-        attemptDate <= dateEnd &&
-        !simulation?.practiceSimulation
-      );
-    });
-
-    // Filter by profileId if provided
-    let profileFilteredAttempts = profileId
-      ? filteredAttempts.filter((attempt) => attempt.profileId === profileId)
-      : filteredAttempts;
-
-    // Apply cohort filtering if simulation IDs are restricted
-    if (getAllowedSimulationIds !== null) {
-      if (getAllowedSimulationIds.length === 0) {
-        return 0; // No data allowed due to cohort restrictions
-      }
-
-      profileFilteredAttempts = profileFilteredAttempts.filter((attempt) =>
-        getAllowedSimulationIds.includes(attempt.simulationId),
-      );
-    }
-
-    if (profileFilteredAttempts.length === 0) return 0;
-
-    // Group attempts by profileId + simulationId to find first attempts
-    const firstAttempts = profileFilteredAttempts.reduce(
-      (acc, attempt) => {
-        const key = `${attempt.profileId}-${attempt.simulationId}`;
-        if (
-          !acc[key] ||
-          new Date(attempt.createdAt) < new Date(acc[key].createdAt)
-        ) {
-          acc[key] = attempt;
-        }
-        return acc;
-      },
-      {} as Record<string, (typeof attempts)[0]>,
-    );
-
-    const firstAttemptsList = Object.values(firstAttempts);
-
-    // Count first attempts that passed (have at least one chat with passed grade)
-    const passedFirstAttempts = firstAttemptsList.filter((attempt) => {
-      const attemptChats = chats.filter(
-        (chat) => chat.attemptId === attempt.id,
-      );
-      return attemptChats.some((chat) => {
-        const chatGrade = grades.find(
-          (grade) => grade.simulationChatId === chat.id,
-        );
-        return chatGrade?.passed === true;
-      });
-    });
-
-    return Math.round(
-      (passedFirstAttempts.length / firstAttemptsList.length) * 100,
+    return calculateFirstAttemptPassRate(
+      attempts,
+      chats,
+      grades,
+      simulations,
+      dateStart,
+      dateEnd,
+      profileId,
+      cohorts,
+      cohortIds
     );
   }, [
     attempts,
     chats,
     grades,
     simulations,
+    cohorts,
     dateStart,
     dateEnd,
     profileId,
-    getAllowedSimulationIds,
+    cohortIds,
   ]);
 
-  // First attempt pass rate trend data for the specified date range
-  const passRateTrend = useMemo(() => {
-    if (!attempts || !chats || !grades || !simulations) return [];
-
-    // Get all days in the date range
-    const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
-
-    return days.map((date) => {
-      const dateStr = format(date, "yyyy-MM-dd");
-
-      // Filter attempts for this specific day and exclude practice simulations
-      const dayAttempts = attempts.filter((attempt) => {
-        const attemptDate = format(new Date(attempt.createdAt), "yyyy-MM-dd");
-        const simulation = simulations.find(
-          (s) => s.id === attempt.simulationId,
-        );
-        return attemptDate === dateStr && !simulation?.practiceSimulation;
-      });
-
-      // Filter by profileId if provided
-      let profileFilteredDayAttempts = profileId
-        ? dayAttempts.filter((attempt) => attempt.profileId === profileId)
-        : dayAttempts;
-
-      // Apply cohort filtering if simulation IDs are restricted
-      if (getAllowedSimulationIds !== null) {
-        if (getAllowedSimulationIds.length === 0) {
-          return {
-            date: format(date, "MM/dd"),
-            passRate: 0,
-            total: 0,
-          };
-        }
-
-        profileFilteredDayAttempts = profileFilteredDayAttempts.filter(
-          (attempt) => getAllowedSimulationIds.includes(attempt.simulationId),
-        );
-      }
-
-      // Group attempts by profileId + simulationId to find first attempts for this day
-      const dayFirstAttempts = profileFilteredDayAttempts.reduce(
-        (acc, attempt) => {
-          const key = `${attempt.profileId}-${attempt.simulationId}`;
-          if (
-            !acc[key] ||
-            new Date(attempt.createdAt) < new Date(acc[key].createdAt)
-          ) {
-            acc[key] = attempt;
-          }
-          return acc;
-        },
-        {} as Record<string, (typeof attempts)[0]>,
-      );
-
-      const dayFirstAttemptsList = Object.values(dayFirstAttempts);
-
-      // Calculate pass rate for the day
-      let passRate = 0;
-      if (dayFirstAttemptsList.length > 0) {
-        const passedDayFirstAttempts = dayFirstAttemptsList.filter(
-          (attempt) => {
-            const attemptChats = chats.filter(
-              (chat) => chat.attemptId === attempt.id,
-            );
-            return attemptChats.some((chat) => {
-              const chatGrade = grades.find(
-                (grade) => grade.simulationChatId === chat.id,
-              );
-              return chatGrade?.passed === true;
-            });
-          },
-        );
-        passRate = Math.round(
-          (passedDayFirstAttempts.length / dayFirstAttemptsList.length) * 100,
-        );
-      }
-
-      return {
-        date: format(date, "MM/dd"),
-        passRate,
-        total: dayFirstAttemptsList.length,
-      };
-    });
-  }, [
-    attempts,
-    chats,
-    grades,
-    simulations,
-    dateStart,
-    dateEnd,
-    profileId,
-    getAllowedSimulationIds,
-  ]);
+  const {
+    currentValue: firstAttemptPassRate,
+    trendData: passRateTrend,
+    hasData: hasDataAvailable,
+  } = firstAttemptPassRateResult;
 
   // Determine color based on pass rate and thresholds
   const getColorConfig = (rate: number) => {
@@ -344,12 +169,9 @@ export default function FirstAttemptPassRate({
     setIsDialogOpen(true);
   };
 
-  // Check if we have data to display
-  const hasData = passRateTrend.some((day) => day.total > 0);
-
   // Calculate actual trend from data
   const getTrendAnalysis = () => {
-    if (!hasData || passRateTrend.length < 2) return null;
+    if (!hasDataAvailable || passRateTrend.length < 2) return null;
 
     // Get recent data (last 3 days, 1 week, or 1 month depending on data availability)
     const recentData = passRateTrend.slice(-3);
@@ -358,11 +180,9 @@ export default function FirstAttemptPassRate({
     if (recentData.length === 0 || earlierData.length === 0) return null;
 
     const recentAvg =
-      recentData.reduce((sum, day) => sum + day.passRate, 0) /
-      recentData.length;
+      recentData.reduce((sum, day) => sum + day.value, 0) / recentData.length;
     const earlierAvg =
-      earlierData.reduce((sum, day) => sum + day.passRate, 0) /
-      earlierData.length;
+      earlierData.reduce((sum, day) => sum + day.value, 0) / earlierData.length;
     const change = recentAvg - earlierAvg;
     const changePercent =
       earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
@@ -382,6 +202,14 @@ export default function FirstAttemptPassRate({
 
   const trendAnalysis = getTrendAnalysis();
 
+  // Check if cohort filtering resulted in no data
+  const hasNoCohortData =
+    cohortIds &&
+    cohortIds.length > 0 &&
+    cohorts &&
+    cohorts.filter((cohort) => cohortIds.includes(cohort.id) && cohort.active)
+      .length === 0;
+
   return (
     <>
       <Card
@@ -396,18 +224,27 @@ export default function FirstAttemptPassRate({
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
           <div className={`text-2xl font-bold ${colorConfig.text}`}>
-            {hasData ? `${firstAttemptPassRate}%` : "No data"}
+            {hasNoCohortData
+              ? "No cohort data"
+              : hasDataAvailable
+                ? `${firstAttemptPassRate}%`
+                : "No data"}
           </div>
         </CardContent>
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent
+          className="max-w-2xl"
+        >
           <DialogHeader>
             <DialogTitle>First Attempt Pass Rate Trend</DialogTitle>
+            <DialogDescription hidden>
+              This chart shows the first attempt pass rate over time.
+            </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-            {hasData ? (
+            {hasDataAvailable ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={passRateTrend}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -415,24 +252,23 @@ export default function FirstAttemptPassRate({
                   <YAxis domain={[0, 100]} />
                   <Tooltip
                     formatter={(value: number, name: string) => [
-                      name === "passRate" ? `${value}%` : value,
-                      name === "passRate"
-                        ? "Pass Rate"
-                        : "Total First Attempts",
+                      name === "value" ? `${value}%` : value,
+                      name === "value" ? "Pass Rate" : "Total First Attempts",
                     ]}
                   />
                   <Bar
-                    dataKey="passRate"
+                    dataKey="value"
                     fill={colorConfig.primary}
-                    name="passRate"
+                    name="value"
                     radius={[4, 4, 0, 0]}
                   />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">
-                No data available for the selected date range
-                {profileId && " and profile"}
+                {hasNoCohortData
+                  ? "No data available for the selected cohorts"
+                  : `No data available for the selected date range${profileId ? " and profile" : ""}`}
               </div>
             )}
           </div>

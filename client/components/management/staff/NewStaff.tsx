@@ -64,6 +64,14 @@ interface NewProfile {
   cohortName?: string | undefined;
 }
 
+// Manual profile interface
+interface ManualProfile {
+  firstName: string;
+  lastName: string;
+  alias: string;
+  role: ProfileRole | "";
+}
+
 // Simple CSV parser functions
 const parseCSV = (csvText: string): Record<string, string>[] => {
   const lines = csvText.split("\n");
@@ -149,10 +157,10 @@ const getRoleBadgeVariant = (role: string) => {
   }
 };
 
-export default function NewStaff() {
+// Internal business logic functions for better testability
+const useNewStaffBusinessLogic = () => {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
-  const csvInputRef = useRef<HTMLInputElement>(null);
 
   // State for CSV upload
   const [csvPreview, setCsvPreview] = useState<NewProfile[]>([]);
@@ -160,11 +168,11 @@ export default function NewStaff() {
   const [isValidatingAlias, setIsValidatingAlias] = useState(false);
 
   // State for manual profile creation
-  const [manualProfile, setManualProfile] = useState({
+  const [manualProfile, setManualProfile] = useState<ManualProfile>({
     firstName: "",
     lastName: "",
     alias: "",
-    role: "" as ProfileRole | "",
+    role: "",
   });
 
   // Fetch all profiles and cohorts
@@ -396,24 +404,6 @@ export default function NewStaff() {
     [allProfiles, validateAlias, availableRoles]
   );
 
-  // Handle CSV file input change
-  const handleCsvInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files && e.target.files.length > 0) {
-        const file = e.target.files[0];
-        if (file) {
-          handleCsvUpload(file);
-        }
-      }
-    },
-    [handleCsvUpload]
-  );
-
-  // Handle CSV click
-  const handleCsvClick = useCallback(() => {
-    csvInputRef.current?.click();
-  }, []);
-
   // Add manual profile
   const addManualProfile = useCallback(async () => {
     if (
@@ -491,7 +481,7 @@ export default function NewStaff() {
   }, []);
 
   // Handle CSV submission
-  const handleCSVSubmit = async () => {
+  const handleCSVSubmit = useCallback(async () => {
     if (csvPreview.length === 0) return;
 
     setIsSubmitting(true);
@@ -541,7 +531,87 @@ export default function NewStaff() {
     } finally {
       setIsSubmitting(false);
     }
+  }, [csvPreview, allCohorts, router]);
+
+  // Clear CSV preview
+  const clearCsvPreview = useCallback(() => {
+    setCsvPreview([]);
+  }, []);
+
+  // Update manual profile field
+  const updateManualProfile = useCallback(
+    (field: keyof ManualProfile, value: string) => {
+      setManualProfile((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    },
+    []
+  );
+
+  return {
+    // State
+    csvPreview,
+    isSubmitting,
+    isValidatingAlias,
+    manualProfile,
+    allProfiles,
+    allCohorts,
+    isCurrentUserAdmin,
+    isCurrentUserSuperAdmin,
+    availableRoles,
+
+    // Functions
+    validateAlias,
+    downloadTemplate,
+    handleCsvUpload,
+    addManualProfile,
+    removeSelectedProfile,
+    handleCSVSubmit,
+    clearCsvPreview,
+    updateManualProfile,
   };
+};
+
+export default function NewStaff() {
+  const csvInputRef = useRef<HTMLInputElement>(null);
+
+  const {
+    // State
+    csvPreview,
+    isSubmitting,
+    isValidatingAlias,
+    manualProfile,
+    allCohorts,
+    availableRoles,
+
+    // Functions
+    downloadTemplate,
+    handleCsvUpload,
+    addManualProfile,
+    removeSelectedProfile,
+    handleCSVSubmit,
+    clearCsvPreview,
+    updateManualProfile,
+  } = useNewStaffBusinessLogic();
+
+  // Handle CSV file input change
+  const handleCsvInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files.length > 0) {
+        const file = e.target.files[0];
+        if (file) {
+          handleCsvUpload(file);
+        }
+      }
+    },
+    [handleCsvUpload]
+  );
+
+  // Handle CSV click
+  const handleCsvClick = useCallback(() => {
+    csvInputRef.current?.click();
+  }, []);
 
   return (
     <div className="space-y-6 py-4 px-4">
@@ -700,12 +770,7 @@ export default function NewStaff() {
                 )}
 
                 <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setCsvPreview([]);
-                    }}
-                  >
+                  <Button variant="outline" onClick={clearCsvPreview}>
                     Clear All
                   </Button>
                   <Button onClick={handleCSVSubmit} disabled={isSubmitting}>
@@ -728,10 +793,7 @@ export default function NewStaff() {
                   id="manualFirstName"
                   value={manualProfile.firstName}
                   onChange={(e) =>
-                    setManualProfile((prev) => ({
-                      ...prev,
-                      firstName: e.target.value,
-                    }))
+                    updateManualProfile("firstName", e.target.value)
                   }
                   placeholder="First name"
                 />
@@ -742,10 +804,7 @@ export default function NewStaff() {
                   id="manualLastName"
                   value={manualProfile.lastName}
                   onChange={(e) =>
-                    setManualProfile((prev) => ({
-                      ...prev,
-                      lastName: e.target.value,
-                    }))
+                    updateManualProfile("lastName", e.target.value)
                   }
                   placeholder="Last name"
                 />
@@ -758,12 +817,7 @@ export default function NewStaff() {
                 <Input
                   id="manualAlias"
                   value={manualProfile.alias}
-                  onChange={(e) =>
-                    setManualProfile((prev) => ({
-                      ...prev,
-                      alias: e.target.value,
-                    }))
-                  }
+                  onChange={(e) => updateManualProfile("alias", e.target.value)}
                   placeholder="Alias"
                 />
                 <p className="text-sm text-muted-foreground">
@@ -776,10 +830,7 @@ export default function NewStaff() {
                 <Select
                   value={manualProfile.role}
                   onValueChange={(value: ProfileRole) =>
-                    setManualProfile((prev) => ({
-                      ...prev,
-                      role: value,
-                    }))
+                    updateManualProfile("role", value)
                   }
                 >
                   <SelectTrigger>

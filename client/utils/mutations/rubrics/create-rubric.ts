@@ -3,8 +3,10 @@
 import { db } from "@/utils/drizzle/db";
 import { rubrics } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
+import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
-export async function createRubric(data: typeof rubrics.$inferInsert) {
+// Original logic is now a "private" function
+async function _createRubric(data: typeof rubrics.$inferInsert) {
   try {
     const result = await db.insert(rubrics).values(data).returning();
     return result[0];
@@ -13,3 +15,6 @@ export async function createRubric(data: typeof rubrics.$inferInsert) {
     throw error;
   }
 }
+
+// Export the wrapped, mockable version
+export const createRubric = createMockableAction('createRubric', _createRubric);

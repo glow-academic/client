@@ -1,5 +1,5 @@
-// Mock schema for the database, so we have mock data to work with
-// Generated automatically by generate-mocks.js
+// client/mocks/schema.ts
+// This file should now be manually maintained, NOT auto-generated.
 
 // ACCOUNTS MOCK DATA
 export const accounts = [

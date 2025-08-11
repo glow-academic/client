@@ -1,5 +1,6 @@
 import { RubricsDataTable } from "@/components/create/rubrics/RubricsDataTable";
 import { Rubric } from "@/types";
+import type { ColumnDef } from "@tanstack/react-table";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -17,14 +18,48 @@ vi.mock("@/components/common/history/DataTablePagination", () => ({
   ),
 }));
 
-const mockColumns = [
+const mockColumns: ColumnDef<Rubric>[] = [
   {
     id: "name",
     accessorKey: "name",
     header: "Name",
-    cell: ({ row }: { row: { getValue: (key: string) => string } }) => (
-      <div>{row.getValue("name")}</div>
-    ),
+    cell: ({ row }) => <div>{row.getValue("name")}</div>,
+  },
+  {
+    id: "points",
+    accessorKey: "points",
+    header: "Total Points",
+    cell: ({ row }) => <div>{row.getValue("points")}</div>,
+  },
+  {
+    id: "passPoints",
+    accessorKey: "passPoints",
+    header: "Pass Points",
+    cell: ({ row }) => <div>{row.getValue("passPoints")}</div>,
+  },
+  {
+    id: "passPercentage",
+    accessorKey: "passPercentage",
+    header: "Pass %",
+    cell: ({ row }) => <div>{row.getValue("passPercentage")}</div>,
+  },
+  {
+    id: "active",
+    accessorKey: "active",
+    header: "Status",
+    cell: ({ row }) => <div>{row.getValue("active")}</div>,
+  },
+  {
+    id: "defaultRubric",
+    accessorKey: "defaultRubric",
+    header: "Type",
+    cell: ({ row }) => <div>{row.getValue("defaultRubric")}</div>,
+  },
+  {
+    id: "updatedAt",
+    accessorKey: "updatedAt",
+    header: "Updated",
+    cell: ({ row }) => <div>{row.getValue("updatedAt")}</div>,
   },
 ];
 

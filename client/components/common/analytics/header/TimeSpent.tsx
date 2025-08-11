@@ -10,17 +10,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { calculateTimeSpent } from "@/utils/analytics/header";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
-import { eachDayOfInterval, format } from "date-fns";
 import { Timer } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -103,13 +103,6 @@ export default function TimeSpent({
     enabled: !!attempts && attempts.length > 0,
   });
 
-  const { data: grades } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0,
-  });
-
   const { data: simulations } = useQuery({
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
@@ -120,197 +113,38 @@ export default function TimeSpent({
     queryFn: () => getAllCohorts(),
   });
 
-  // Calculate total time spent for the specified date range and profile
-  const totalTimeSpent = useMemo(() => {
-    if (!grades || !attempts || !chats || !simulations || !cohorts) return 0;
-
-    // Get cohort filtering data
-    let cohortFiltering: {
-      allowedProfileIds: string[];
-      allowedSimulationIds: string[];
-    } | null = null;
-    if (cohortIds && cohortIds.length > 0) {
-      const matchingCohorts = cohorts.filter(
-        (cohort) => cohortIds.includes(cohort.id) && cohort.active,
-      );
-
-      if (matchingCohorts.length > 0) {
-        // Collect all profile IDs and simulation IDs from matching cohorts
-        const allowedProfileIds = new Set<string>();
-        const allowedSimulationIds = new Set<string>();
-
-        matchingCohorts.forEach((cohort) => {
-          cohort.profileIds.forEach((profileId: string) =>
-            allowedProfileIds.add(profileId),
-          );
-          cohort.simulationIds.forEach((simulationId: string) =>
-            allowedSimulationIds.add(simulationId),
-          );
-        });
-
-        cohortFiltering = {
-          allowedProfileIds: Array.from(allowedProfileIds),
-          allowedSimulationIds: Array.from(allowedSimulationIds),
-        };
-      }
+  // Calculate time spent using utility function
+  const timeSpentResult = useMemo(() => {
+    if (!chats || !attempts || !simulations || !cohorts) {
+      return { currentValue: 0, trendData: [], hasData: false };
     }
 
-    // Filter grades by date range and exclude practice simulations
-    const filteredGrades = grades.filter((grade) => {
-      const gradeDate = new Date(grade.createdAt);
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const simulation = simulations.find(
-        (s) => s.id === attempt?.simulationId,
-      );
-      return (
-        gradeDate >= dateStart &&
-        gradeDate <= dateEnd &&
-        !simulation?.practiceSimulation
-      );
-    });
-
-    // Apply cohort filtering if available
-    const cohortFilteredGrades = cohortFiltering
-      ? filteredGrades.filter((grade) => {
-          const chat = chats.find((c) => c.id === grade.simulationChatId);
-          const attempt = attempts.find((a) => a.id === chat?.attemptId);
-          return (
-            attempt?.profileId &&
-            cohortFiltering.allowedProfileIds.includes(attempt.profileId) &&
-            attempt.simulationId &&
-            cohortFiltering.allowedSimulationIds.includes(attempt.simulationId)
-          );
-        })
-      : filteredGrades;
-
-    // Filter by profileId if provided (tighter restriction)
-    const profileFilteredGrades = profileId
-      ? cohortFilteredGrades.filter((grade) => {
-          const chat = chats.find((c) => c.id === grade.simulationChatId);
-          const attempt = attempts.find((a) => a.id === chat?.attemptId);
-          return attempt?.profileId === profileId;
-        })
-      : cohortFilteredGrades;
-
-    // Sum up all timeTaken values (in seconds)
-    const totalSeconds = profileFilteredGrades.reduce(
-      (sum, grade) => sum + grade.timeTaken,
-      0,
+    return calculateTimeSpent(
+      chats,
+      attempts,
+      simulations,
+      dateStart,
+      dateEnd,
+      profileId,
+      cohorts,
+      cohortIds
     );
-    return totalSeconds;
   }, [
-    grades,
-    attempts,
     chats,
+    attempts,
     simulations,
+    cohorts,
     dateStart,
     dateEnd,
     profileId,
     cohortIds,
-    cohorts,
   ]);
 
-  // Time spent trend data for the specified date range
-  const timeSpentTrend = useMemo(() => {
-    if (!grades || !attempts || !chats || !simulations || !cohorts) return [];
-
-    // Get cohort filtering data
-    let cohortFiltering: {
-      allowedProfileIds: string[];
-      allowedSimulationIds: string[];
-    } | null = null;
-    if (cohortIds && cohortIds.length > 0) {
-      const matchingCohorts = cohorts.filter(
-        (cohort) => cohortIds.includes(cohort.id) && cohort.active,
-      );
-
-      if (matchingCohorts.length > 0) {
-        // Collect all profile IDs and simulation IDs from matching cohorts
-        const allowedProfileIds = new Set<string>();
-        const allowedSimulationIds = new Set<string>();
-
-        matchingCohorts.forEach((cohort) => {
-          cohort.profileIds.forEach((profileId: string) =>
-            allowedProfileIds.add(profileId),
-          );
-          cohort.simulationIds.forEach((simulationId: string) =>
-            allowedSimulationIds.add(simulationId),
-          );
-        });
-
-        cohortFiltering = {
-          allowedProfileIds: Array.from(allowedProfileIds),
-          allowedSimulationIds: Array.from(allowedSimulationIds),
-        };
-      }
-    }
-
-    // Get all days in the date range
-    const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
-
-    return days.map((date) => {
-      const dateStr = format(date, "yyyy-MM-dd");
-
-      // Filter grades for this specific day and exclude practice simulations
-      const dayGrades = grades.filter((grade) => {
-        const gradeDate = format(new Date(grade.createdAt), "yyyy-MM-dd");
-        const chat = chats.find((c) => c.id === grade.simulationChatId);
-        const attempt = attempts.find((a) => a.id === chat?.attemptId);
-        const simulation = simulations.find(
-          (s) => s.id === attempt?.simulationId,
-        );
-        return gradeDate === dateStr && !simulation?.practiceSimulation;
-      });
-
-      // Apply cohort filtering if available
-      const cohortFilteredDayGrades = cohortFiltering
-        ? dayGrades.filter((grade) => {
-            const chat = chats.find((c) => c.id === grade.simulationChatId);
-            const attempt = attempts.find((a) => a.id === chat?.attemptId);
-            return (
-              attempt?.profileId &&
-              cohortFiltering.allowedProfileIds.includes(attempt.profileId) &&
-              attempt.simulationId &&
-              cohortFiltering.allowedSimulationIds.includes(
-                attempt.simulationId,
-              )
-            );
-          })
-        : dayGrades;
-
-      // Filter by profileId if provided
-      const profileFilteredDayGrades = profileId
-        ? cohortFilteredDayGrades.filter((grade) => {
-            const chat = chats.find((c) => c.id === grade.simulationChatId);
-            const attempt = attempts.find((a) => a.id === chat?.attemptId);
-            return attempt?.profileId === profileId;
-          })
-        : cohortFilteredDayGrades;
-
-      // Sum up time for the day (in seconds)
-      const dayTimeSpent = profileFilteredDayGrades.reduce(
-        (sum, grade) => sum + grade.timeTaken,
-        0,
-      );
-
-      return {
-        date: format(date, "MM/dd"),
-        timeSpent: dayTimeSpent,
-        sessions: profileFilteredDayGrades.length,
-      };
-    });
-  }, [
-    grades,
-    attempts,
-    chats,
-    simulations,
-    dateStart,
-    dateEnd,
-    profileId,
-    cohortIds,
-    cohorts,
-  ]);
+  const {
+    currentValue: totalTimeSpent,
+    trendData: timeSpentTrend,
+    hasData: hasDataAvailable,
+  } = timeSpentResult;
 
   // Determine color based on time spent and thresholds (more time is better)
   const getColorConfig = (timeSpent: number) => {
@@ -325,20 +159,9 @@ export default function TimeSpent({
     setIsDialogOpen(true);
   };
 
-  // Check if we have data to display
-  const hasData = timeSpentTrend.some((day) => day.sessions > 0);
-
-  // Check if cohort filtering resulted in no data
-  const hasNoCohortData =
-    cohortIds &&
-    cohortIds.length > 0 &&
-    cohorts &&
-    cohorts.filter((cohort) => cohortIds.includes(cohort.id) && cohort.active)
-      .length === 0;
-
   // Calculate actual trend from data
   const getTrendAnalysis = () => {
-    if (!hasData || timeSpentTrend.length < 2) return null;
+    if (!hasDataAvailable || timeSpentTrend.length < 2) return null;
 
     // Get recent data (last 3 days, 1 week, or 1 month depending on data availability)
     const recentData = timeSpentTrend.slice(-3);
@@ -347,11 +170,9 @@ export default function TimeSpent({
     if (recentData.length === 0 || earlierData.length === 0) return null;
 
     const recentAvg =
-      recentData.reduce((sum, day) => sum + day.timeSpent, 0) /
-      recentData.length;
+      recentData.reduce((sum, day) => sum + day.value, 0) / recentData.length;
     const earlierAvg =
-      earlierData.reduce((sum, day) => sum + day.timeSpent, 0) /
-      earlierData.length;
+      earlierData.reduce((sum, day) => sum + day.value, 0) / earlierData.length;
     const change = recentAvg - earlierAvg;
     const changePercent =
       earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
@@ -370,6 +191,14 @@ export default function TimeSpent({
   };
 
   const trendAnalysis = getTrendAnalysis();
+
+  // Check if cohort filtering resulted in no data
+  const hasNoCohortData =
+    cohortIds &&
+    cohortIds.length > 0 &&
+    cohorts &&
+    cohorts.filter((cohort) => cohortIds.includes(cohort.id) && cohort.active)
+      .length === 0;
 
   // Format time for display
   const formatTime = (seconds: number) => {
@@ -403,7 +232,7 @@ export default function TimeSpent({
           <div className={`text-2xl font-bold ${colorConfig.text}`}>
             {hasNoCohortData
               ? "No cohort data"
-              : hasData
+              : hasDataAvailable
                 ? formatTime(totalTimeSpent)
                 : "No data"}
           </div>
@@ -411,12 +240,17 @@ export default function TimeSpent({
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent
+          className="max-w-2xl"
+        >
           <DialogHeader>
             <DialogTitle>Time Spent Trend</DialogTitle>
+            <DialogDescription hidden>
+              This chart shows the time spent over time.
+            </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-            {hasData ? (
+            {hasDataAvailable ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={timeSpentTrend}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -424,13 +258,13 @@ export default function TimeSpent({
                   <YAxis />
                   <Tooltip
                     formatter={(value: number, name: string) => [
-                      name === "timeSpent" ? formatTime(value) : value,
-                      name === "timeSpent" ? "Time Spent" : "Sessions",
+                      name === "value" ? formatTime(value) : value,
+                      name === "value" ? "Time Spent" : "Sessions",
                     ]}
                   />
                   <Line
                     type="monotone"
-                    dataKey="timeSpent"
+                    dataKey="value"
                     stroke={colorConfig.primary}
                     strokeWidth={2}
                     dot={{ r: 4 }}

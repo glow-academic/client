@@ -46,12 +46,76 @@ vi.mock("@/contexts/analytics-context", () => ({
 // Mock the useReportColumns hook
 vi.mock("@/hooks/use-report-columns", () => ({
   useReportColumns: vi.fn(() => ({
-    columns: [],
-    roleOptions: [],
-    cohortOptions: [],
-    personaOptions: [],
-    scenarioOptions: [],
-    simulationOptions: [],
+    columns: [
+      {
+        id: "firstName",
+        accessorKey: "firstName",
+        header: "Name",
+        cell: () => <div>Test Name</div>,
+        enableSorting: true,
+      },
+      {
+        id: "taCohorts",
+        accessorKey: "taCohorts",
+        header: "Cohorts",
+        cell: () => <div>Test Cohorts</div>,
+        enableSorting: true,
+      },
+      {
+        id: "role",
+        accessorKey: "role",
+        header: "Role",
+        cell: () => <div>Test Role</div>,
+        enableSorting: true,
+      },
+      {
+        id: "personasTested",
+        accessorKey: "personasTested",
+        header: "Personas Tested",
+        cell: () => null,
+        enableSorting: false,
+        enableHiding: false,
+        enableColumnFilter: true,
+      },
+      {
+        id: "scenarioIds",
+        accessorKey: "scenarioIds",
+        header: "Scenario IDs",
+        cell: () => null,
+        enableSorting: false,
+        enableHiding: false,
+        enableColumnFilter: true,
+      },
+      {
+        id: "simulationIds",
+        accessorKey: "simulationIds",
+        header: "Simulation IDs",
+        cell: () => null,
+        enableSorting: false,
+        enableHiding: false,
+        enableColumnFilter: true,
+      },
+    ],
+    roleOptions: [
+      { value: "ta", label: "Teaching Assistant" },
+      { value: "instructor", label: "Instructor" },
+    ],
+    cohortOptions: [
+      { value: "cohort1", label: "Cohort 1" },
+      { value: "cohort2", label: "Cohort 2" },
+    ],
+    personaOptions: [
+      { value: "persona1", label: "Persona 1" },
+      { value: "persona2", label: "Persona 2" },
+    ],
+    scenarioOptions: [
+      { value: "scenario1", label: "Scenario 1" },
+      { value: "scenario2", label: "Scenario 2" },
+    ],
+    simulationOptions: [
+      { value: "sim1", label: "Simulation 1" },
+      { value: "sim2", label: "Simulation 2" },
+    ],
   })),
 }));
 

@@ -26,6 +26,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { calculatePersonaPerformance } from "@/utils/analytics/primary";
 import { getPersonaConfig } from "@/utils/personas";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
@@ -37,7 +38,7 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
-import { format, isAfter, isBefore } from "date-fns";
+
 import { Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -73,7 +74,7 @@ export default function PersonaPerformance({
   thresholds,
 }: PersonaPerformanceProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
-    [],
+    []
   );
 
   // Fetch data
@@ -136,8 +137,7 @@ export default function PersonaPerformance({
     return (profileId: string) => {
       return cohorts.some(
         (cohort) =>
-          cohort.profileIds.includes(profileId) &&
-          cohortIds.includes(cohort.id),
+          cohort.profileIds.includes(profileId) && cohortIds.includes(cohort.id)
       );
     };
   }, [cohortIds, cohorts]);
@@ -151,27 +151,10 @@ export default function PersonaPerformance({
       return cohorts.some(
         (cohort) =>
           cohort.simulationIds.includes(simulationId) &&
-          cohortIds.includes(cohort.id),
+          cohortIds.includes(cohort.id)
       );
     };
   }, [cohortIds, cohorts]);
-
-  // Filter simulations based on selection and cohorts
-  const filteredSimulations = useMemo(() => {
-    if (!simulations) return [];
-    let filtered = simulations;
-
-    // Filter by cohorts first
-    if (cohortIds && cohortIds.length > 0) {
-      filtered = filtered.filter((s) => isSimulationInCohorts(s.id));
-    }
-
-    // Then filter by selection
-    if (selectedSimulations.length === 0) return filtered;
-    return filtered.filter((s) =>
-      selectedSimulations.some((ss) => ss.id === s.id),
-    );
-  }, [simulations, selectedSimulations, cohortIds, isSimulationInCohorts]);
 
   // Get simulations that have data (simplified logic)
   const simulationsWithData = useMemo(() => {
@@ -200,115 +183,22 @@ export default function PersonaPerformance({
       return [];
     }
 
-    // Filter data by date range, exclude practice simulations, filter by selected simulations, and filter by cohorts
-    const filteredGrades = grades.filter((grade) => {
-      const gradeDate = new Date(grade.createdAt);
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const simulation = filteredSimulations.find(
-        (s) => s.id === attempt?.simulationId,
-      );
-
-      // Check date range
-      const inDateRange =
-        isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
-
-      // Exclude practice simulations
-      const notPractice = !simulation?.practiceSimulation;
-
-      // Filter by profile if provided
-      const profileMatch = profileId ? attempt?.profileId === profileId : true;
-
-      // Filter by TA role
-      const profile = profiles?.find((p) => p.id === attempt?.profileId);
-      const isTA = profile?.role === "ta";
-
-      // Filter by selected simulations
-      const simulationMatch =
-        selectedSimulations.length === 0 ||
-        (simulation &&
-          selectedSimulations.some((ss) => ss.id === simulation.id));
-
-      // Filter by cohorts
-      const cohortMatch = profile ? isProfileInCohorts(profile.id) : true;
-
-      return (
-        inDateRange &&
-        notPractice &&
-        profileMatch &&
-        isTA &&
-        simulationMatch &&
-        cohortMatch
-      );
-    });
-
-    // Group by persona
-    const performanceByPersona = personas
-      .filter((persona) => persona.name)
-      .map((persona) => {
-        const personaScenarios = scenarios.filter(
-          (s) => s.personaId === persona.id,
-        );
-        const personaChats = chats.filter((chat) =>
-          personaScenarios.some((scenario) => scenario.id === chat.scenarioId),
-        );
-        const personaGrades = filteredGrades.filter((grade) =>
-          personaChats.some((chat) => chat.id === grade.simulationChatId),
-        );
-
-        // Calculate average score
-        let avgScore = 0;
-        if (personaGrades.length > 0) {
-          const scoreSum = personaGrades.reduce((sum, grade) => {
-            const chat = chats.find((c) => c.id === grade.simulationChatId);
-            const attempt = attempts.find((a) => a.id === chat?.attemptId);
-            const simulation = simulations.find(
-              (s) => s.id === attempt?.simulationId,
-            );
-            const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
-            const rubricTotalPoints = rubric?.points || 100;
-            const scorePercent = Math.round(
-              (grade.score / rubricTotalPoints) * 100,
-            );
-            return sum + scorePercent;
-          }, 0);
-          avgScore = Math.round(scoreSum / personaGrades.length);
-        }
-
-        // Calculate trend data for line chart
-        const trendData = personaGrades
-          .map((grade) => {
-            const chat = chats.find((c) => c.id === grade.simulationChatId);
-            const attempt = attempts.find((a) => a.id === chat?.attemptId);
-            const simulation = simulations.find(
-              (s) => s.id === attempt?.simulationId,
-            );
-            const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
-            const rubricTotalPoints = rubric?.points || 100;
-            const scorePercent = Math.round(
-              (grade.score / rubricTotalPoints) * 100,
-            );
-
-            return {
-              date: format(new Date(grade.createdAt), "MMM dd"),
-              score: scorePercent,
-              timestamp: new Date(grade.createdAt).getTime(),
-            };
-          })
-          .sort((a, b) => a.timestamp - b.timestamp);
-
-        return {
-          name: persona.name,
-          score: avgScore,
-          sessions: personaGrades.length,
-          color: getPersonaConfig(persona.name).colors.bgColor,
-          trendData,
-        };
-      })
-      .filter((persona) => persona.sessions > 0) // Only show personas with sessions
-      .sort((a, b) => b.score - a.score); // Sort by score descending
-
-    return performanceByPersona;
+    return calculatePersonaPerformance(
+      grades || [],
+      chats || [],
+      attempts || [],
+      simulations || [],
+      rubrics || [],
+      profiles || [],
+      personas || [],
+      scenarios || [],
+      dateStart,
+      dateEnd,
+      profileId,
+      cohorts || [],
+      cohortIds,
+      selectedSimulations.map((s) => s.id)
+    );
   }, [
     personas,
     scenarios,
@@ -322,8 +212,8 @@ export default function PersonaPerformance({
     dateEnd,
     profileId,
     selectedSimulations,
-    filteredSimulations,
-    isProfileInCohorts,
+    cohorts,
+    cohortIds,
   ]);
 
   // Calculate threshold status based on persona performance data
@@ -498,7 +388,14 @@ export default function PersonaPerformance({
       <CardContent className="flex-1 overflow-hidden">
         <div className="grid gap-6 md:grid-cols-2 h-full">
           {/* Horizontal Bar Chart */}
-          <div className="h-full">
+          <div
+            className="h-full"
+            style={
+              process.env.NODE_ENV === "test"
+                ? { minWidth: 400, minHeight: 300 }
+                : undefined
+            }
+          >
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={performanceData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -548,7 +445,7 @@ export default function PersonaPerformance({
                   <div
                     className={cn(
                       "flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors",
-                      getBackgroundColor(persona.score),
+                      getBackgroundColor(persona.score)
                     )}
                   >
                     <div className="flex items-center gap-3">
@@ -567,7 +464,9 @@ export default function PersonaPerformance({
                     </div>
                   </div>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+                <DialogContent
+                  className="max-w-2xl"
+                >
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                       <div
@@ -575,13 +474,20 @@ export default function PersonaPerformance({
                       />
                       {persona.name} Student Performance
                     </DialogTitle>
-                    <DialogDescription>
-                      Performance trend over the selected period
+                    <DialogDescription hidden>
+                      This chart shows the persona performance over time.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-6">
                     {/* Performance Trend Chart */}
-                    <div className="h-64">
+                    <div
+                      className="h-64"
+                      style={
+                        process.env.NODE_ENV === "test"
+                          ? { minWidth: 400, minHeight: 300 }
+                          : undefined
+                      }
+                    >
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={persona.trendData}>
                           <CartesianGrid

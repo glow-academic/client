@@ -27,22 +27,27 @@ const mockData: FeedbackData[] = [
 
 const mockColumns: ColumnDef<FeedbackData>[] = [
   {
+    id: "id",
     accessorKey: "id",
     header: "ID",
   },
   {
+    id: "type",
     accessorKey: "type",
     header: "Type",
   },
   {
+    id: "message",
     accessorKey: "message",
     header: "Message",
   },
   {
+    id: "authorName",
     accessorKey: "authorName",
     header: "Author",
   },
   {
+    id: "createdAt",
     accessorKey: "createdAt",
     header: "Created",
   },
@@ -122,7 +127,7 @@ describe("FeedbackDataTable", () => {
     it("should handle missing or invalid props", () => {
       const minimalProps = {
         data: [],
-        columns: [],
+        columns: mockColumns, // Use the same columns to avoid undefined column access
         typeOptions: [],
         profileOptions: [],
         onRefresh: vi.fn(),

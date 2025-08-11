@@ -14,14 +14,14 @@ describe("Resizable", () => {
     it("renders without crashing", async () => {
       renderWithMocks(
         <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel>Panel 1</ResizablePanel>
+          <ResizablePanel defaultSize={50}>Panel 1</ResizablePanel>
           <ResizableHandle />
-          <ResizablePanel>Panel 2</ResizablePanel>
-        </ResizablePanelGroup>,
+          <ResizablePanel defaultSize={50}>Panel 2</ResizablePanel>
+        </ResizablePanelGroup>
       );
 
       const panelGroup = document.querySelector(
-        '[data-slot="resizable-panel-group"]',
+        '[data-slot="resizable-panel-group"]'
       );
       expect(panelGroup).toBeInTheDocument();
     });
@@ -29,14 +29,14 @@ describe("Resizable", () => {
     it("should have correct accessibility attributes", () => {
       renderWithMocks(
         <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel>Accessible Panel</ResizablePanel>
+          <ResizablePanel defaultSize={50}>Accessible Panel</ResizablePanel>
           <ResizableHandle />
-          <ResizablePanel>Another Panel</ResizablePanel>
-        </ResizablePanelGroup>,
+          <ResizablePanel defaultSize={50}>Another Panel</ResizablePanel>
+        </ResizablePanelGroup>
       );
 
       const panelGroup = document.querySelector(
-        '[data-slot="resizable-panel-group"]',
+        '[data-slot="resizable-panel-group"]'
       );
       expect(panelGroup).toBeInTheDocument();
     });
@@ -46,10 +46,10 @@ describe("Resizable", () => {
     it("should render resizable panels with handle", () => {
       renderWithMocks(
         <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel>Left Panel</ResizablePanel>
+          <ResizablePanel defaultSize={50}>Left Panel</ResizablePanel>
           <ResizableHandle withHandle />
-          <ResizablePanel>Right Panel</ResizablePanel>
-        </ResizablePanelGroup>,
+          <ResizablePanel defaultSize={50}>Right Panel</ResizablePanel>
+        </ResizablePanelGroup>
       );
 
       expect(screen.getByText("Left Panel")).toBeInTheDocument();
@@ -59,12 +59,12 @@ describe("Resizable", () => {
     it("should render with custom className", () => {
       renderWithMocks(
         <ResizablePanelGroup direction="horizontal" className="custom-class">
-          <ResizablePanel>Panel</ResizablePanel>
-        </ResizablePanelGroup>,
+          <ResizablePanel defaultSize={100}>Panel</ResizablePanel>
+        </ResizablePanelGroup>
       );
 
       const panelGroup = document.querySelector(
-        '[data-slot="resizable-panel-group"]',
+        '[data-slot="resizable-panel-group"]'
       );
       expect(panelGroup).toHaveClass("custom-class");
     });
@@ -75,12 +75,12 @@ describe("Resizable", () => {
       // Test with minimal content
       renderWithMocks(
         <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel />
-        </ResizablePanelGroup>,
+          <ResizablePanel defaultSize={100} />
+        </ResizablePanelGroup>
       );
 
       const panelGroup = document.querySelector(
-        '[data-slot="resizable-panel-group"]',
+        '[data-slot="resizable-panel-group"]'
       );
       expect(panelGroup).toBeInTheDocument();
     });

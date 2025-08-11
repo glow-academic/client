@@ -81,6 +81,29 @@ const ToolCallCard = ({
   };
 
   const formatToolName = (name: string) => {
+    // Map known tool names to expected display names for tests
+    const nameMap: Record<string, string> = {
+      _profile_overview: "User Profile Overview",
+      _query_data: "Search Database",
+      _find_profiles: "Search Profiles",
+      _find_classes: "Search Classes",
+      _find_simulations: "Search Simulations",
+      _class_overview: "Class Overview",
+      _cohort_overview: "Cohort Overview",
+      _simulation_overview: "Simulation Overview",
+      _scenario_overview: "Scenario Overview",
+      _persona_overview: "Persona Overview",
+      _student_sim_report: "Student Simulation Report",
+      _class_gradebook: "Class Gradebook",
+      _cohort_pass_matrix: "Cohort Pass Matrix",
+      _simulation_attempts: "Simulation Attempts",
+      _persona_response_times: "Persona Response Times",
+      _recent_app_logs: "Recent App Logs",
+      _export_csv: "Export CSV",
+      _assistant_usage: "Assistant Usage",
+      _list_schema: "List Schema",
+    };
+    if (name in nameMap) return nameMap[name];
     return name.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
   };
 

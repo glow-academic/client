@@ -53,6 +53,7 @@ import AttemptInput from "./AttemptInput";
 import AttemptMessages from "./AttemptMessages";
 
 export default function AttemptChat() {
+  const router = useRouter();
   const simulationContext = useSimulation();
 
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -166,7 +167,7 @@ export default function AttemptChat() {
               The attempt you're looking for doesn't exist or has no chats
               available.
             </p>
-            <Button onClick={() => (window.location.href = "/home")}>
+            <Button onClick={() => router.push("/home")}>
               Return To Dashboard
             </Button>
           </CardContent>

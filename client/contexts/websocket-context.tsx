@@ -21,7 +21,7 @@ import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
-interface WebSocketContextType {
+export interface WebSocketContextType {
   // Connection state
   isConnected: boolean;
   socket: Socket | null;

@@ -13,7 +13,38 @@ import {
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
 const mockProps: ScenariosDataTableProps = {
-  columns: [],
+  columns: [
+    {
+      id: "name",
+      header: "Name",
+      accessorKey: "name",
+    } as ColumnDef<Scenario>,
+    {
+      id: "simulationIds",
+      header: "Simulations",
+      accessorKey: "simulationIds",
+    } as ColumnDef<Scenario>,
+    {
+      id: "cohortIds",
+      header: "Cohorts",
+      accessorKey: "cohortIds",
+    } as ColumnDef<Scenario>,
+    {
+      id: "personaId",
+      header: "Persona",
+      accessorKey: "personaId",
+    } as ColumnDef<Scenario>,
+    {
+      id: "scenarioType",
+      header: "Type",
+      accessorKey: "scenarioType",
+    } as ColumnDef<Scenario>,
+    {
+      id: "updatedAt",
+      header: "Updated",
+      accessorKey: "updatedAt",
+    } as ColumnDef<Scenario>,
+  ],
   data: [],
   simulationOptions: [],
   cohortOptions: [],
@@ -49,6 +80,31 @@ describe("ScenariosDataTable", () => {
             id: "name",
             header: "Name",
             accessorKey: "name",
+          } as ColumnDef<Scenario>,
+          {
+            id: "simulationIds",
+            header: "Simulations",
+            accessorKey: "simulationIds",
+          } as ColumnDef<Scenario>,
+          {
+            id: "cohortIds",
+            header: "Cohorts",
+            accessorKey: "cohortIds",
+          } as ColumnDef<Scenario>,
+          {
+            id: "personaId",
+            header: "Persona",
+            accessorKey: "personaId",
+          } as ColumnDef<Scenario>,
+          {
+            id: "scenarioType",
+            header: "Type",
+            accessorKey: "scenarioType",
+          } as ColumnDef<Scenario>,
+          {
+            id: "updatedAt",
+            header: "Updated",
+            accessorKey: "updatedAt",
           } as ColumnDef<Scenario>,
         ],
         data: [
@@ -113,9 +169,9 @@ describe("ScenariosDataTable", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      // Test with edge case props
+      // Test with edge case props - use the same columns structure to avoid undefined column access
       const edgeCaseProps: ScenariosDataTableProps = {
-        columns: [],
+        columns: mockProps.columns, // Use the same columns to avoid undefined column access
         data: [],
         simulationOptions: [],
         cohortOptions: [],
@@ -133,9 +189,9 @@ describe("ScenariosDataTable", () => {
     });
 
     it("should handle missing or invalid props", () => {
-      // Test with minimal props
+      // Test with minimal props - use the same columns structure to avoid undefined column access
       const minimalProps: ScenariosDataTableProps = {
-        columns: [],
+        columns: mockProps.columns, // Use the same columns to avoid undefined column access
         data: [],
         simulationOptions: [],
         cohortOptions: [],

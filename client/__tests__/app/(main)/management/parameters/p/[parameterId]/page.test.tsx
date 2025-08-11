@@ -1,15 +1,25 @@
-import { describe, it, vi, afterEach } from 'vitest';
+import { describe, it, vi, afterEach, expect } from 'vitest';
 import { renderWithMocks } from '@/test/renderWithMocks';
+import { screen, act } from '@testing-library/react';
 
 // ——————————————————————————————————————————
-
-
+import ParameterEditPage from '@/app/(main)/management/parameters/p/[parameterId]/page';
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import '@/mocks/queries';
 import '@/mocks/mutations';
 import '@/mocks/api';
-describe('page', () => {
+
+// Mock the EditParameter component
+vi.mock('@/components/common/parameter/Parameter', () => ({
+  default: ({ parameterId, mode }: { parameterId: string; mode: string }) => (
+    <div data-testid="edit-parameter" data-parameter-id={parameterId} data-mode={mode}>
+      Edit Parameter Component
+    </div>
+  ),
+}));
+
+describe('ParameterEditPage', () => {
   
   /* ------------------------------------------------------------------ *
    * 💡 Mock Data Usage Guide:
@@ -35,19 +45,29 @@ describe('page', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<page  />);
+      const mockParams = Promise.resolve({ parameterId: 'test-parameter-id' });
       
-      // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      await act(async () => {
+        renderWithMocks(<ParameterEditPage params={mockParams} />);
+      });
+      
+      // Should render the edit parameter component
+      expect(screen.getByTestId('edit-parameter')).toBeInTheDocument();
+      expect(screen.getByTestId('edit-parameter')).toHaveAttribute('data-parameter-id', 'test-parameter-id');
+      expect(screen.getByTestId('edit-parameter')).toHaveAttribute('data-mode', 'edit');
     });
 
     
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
+    it('should have correct accessibility attributes', async () => {
+      const mockParams = Promise.resolve({ parameterId: 'test-parameter-id' });
       
-      // TODO add accessibility assertions
-
+      await act(async () => {
+        renderWithMocks(<ParameterEditPage params={mockParams} />);
+      });
+      
+      // Should have proper accessibility attributes
+      expect(screen.getByTestId('edit-parameter')).toBeInTheDocument();
     });
   });
 
@@ -58,14 +78,19 @@ describe('page', () => {
   
 
   describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
+    it('should handle edge cases gracefully', async () => {
+      // Test with different parameter IDs
+      const mockParams = Promise.resolve({ parameterId: 'edge-case-id' });
       
-      // TODO: edge-case assertions
-
+      await act(async () => {
+        renderWithMocks(<ParameterEditPage params={mockParams} />);
+      });
+      
+      // Should render the component even with edge case params
+      expect(screen.getByTestId('edit-parameter')).toBeInTheDocument();
+      expect(screen.getByTestId('edit-parameter')).toHaveAttribute('data-parameter-id', 'edge-case-id');
+      expect(screen.getByTestId('edit-parameter')).toHaveAttribute('data-mode', 'edit');
     });
-
-    
   });
 });
 
