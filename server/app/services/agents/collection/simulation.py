@@ -167,7 +167,11 @@ async def _handle_simulation_chat(
     if not provider:
         raise ValueError(f"Provider with ID {model.provider_id} not found")
 
-    output_guards = get_output_guardrails(chat.id, conversation_history, session) # only need the conversation history for the guardrails
+    output_guards = (
+        get_output_guardrails(chat.id, conversation_history, session)
+        if persona.guardrail_active
+        else None
+    )
 
     agent_instance = GenericAgent(
         agent_name=persona.name,

@@ -20,7 +20,8 @@ CREATE TABLE personas (
   icon TEXT        NOT NULL, -- icon name, in Lucide Icons
   model_id UUID REFERENCES models(id),
   reasoning reasoning_effort DEFAULT NULL,
-  active BOOLEAN NOT NULL DEFAULT FALSE
+  active BOOLEAN NOT NULL DEFAULT FALSE,
+  guardrail_active BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE agents (

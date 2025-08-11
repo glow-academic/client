@@ -67,6 +67,7 @@ interface FormData {
   icon?: string;
   active?: boolean;
   defaultPersona?: boolean;
+  guardrailActive?: boolean;
 }
 
 export interface PersonaProps {
@@ -95,6 +96,7 @@ export default function Persona({
       icon: "Zap",
       active: true,
       defaultPersona: false,
+      guardrailActive: false,
     }),
     []
   );
@@ -165,6 +167,7 @@ export default function Persona({
         icon: persona.icon || "Zap",
         active: persona.active ?? true,
         defaultPersona: persona.defaultPersona ?? false,
+        guardrailActive: persona.guardrailActive ?? false,
       });
     } else if (!isEditMode) {
       setFormData(initialFormData);
@@ -210,6 +213,7 @@ export default function Persona({
           icon: formData.icon || "Zap",
           active: formData.active ?? true,
           defaultPersona: formData.defaultPersona ?? false,
+          guardrailActive: formData.guardrailActive ?? false,
           updatedAt: new Date().toISOString(),
         });
         queryClient.invalidateQueries({ queryKey: ["personas"] });
@@ -227,6 +231,7 @@ export default function Persona({
           icon: formData.icon || "Zap",
           active: formData.active ?? true,
           defaultPersona: formData.defaultPersona ?? false,
+          guardrailActive: formData.guardrailActive ?? false,
         });
         queryClient.invalidateQueries({ queryKey: ["personas"] });
         queryClient.invalidateQueries({
@@ -383,6 +388,30 @@ export default function Persona({
                       setFormData((prev) => ({
                         ...prev,
                         defaultPersona: checked,
+                      }))
+                    }
+                    disabled={isReadonly}
+                  />
+                ) : (
+                  <Skeleton className="h-6 w-11" />
+                )}
+              </div>
+            )}
+
+            {/* Guardrail Active Switch - Only for superadmin */}
+            {effectiveProfile?.role === "superadmin" && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="guardrailActive" className="text-sm">
+                  Guardrail Active
+                </Label>
+                {formData?.guardrailActive !== undefined && !isLoading ? (
+                  <Switch
+                    id="guardrailActive"
+                    checked={formData.guardrailActive ?? false}
+                    onCheckedChange={(checked) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        guardrailActive: checked,
                       }))
                     }
                     disabled={isReadonly}

@@ -1,0 +1,1 @@
+ALTER TABLE "personas" ADD COLUMN "guardrail_active" boolean DEFAULT false NOT NULL;
