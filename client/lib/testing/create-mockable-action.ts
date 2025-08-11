@@ -1,6 +1,6 @@
 /* eslint-disable */
 // @ts-nocheck
-"use server";
+// Note: This utility must NOT be a Server Action module. Do not add "use server" here.
 
 // The map now correctly stores functions that can accept any arguments.
 const vitestMocks = new Map<string, (...args: any[]) => any>();

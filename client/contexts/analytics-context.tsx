@@ -8,7 +8,7 @@
 "use client";
 
 import { Cohort } from "@/types";
-import { profileRole } from "@/utils/drizzle/schema";
+import { ProfileRole } from "@/types";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { useQuery } from "@tanstack/react-query";
 import { subDays } from "date-fns";

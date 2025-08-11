@@ -76,7 +76,7 @@ export class MockDb {
 
   // AGENTS Mutations
   createAgent(data: Partial<Agent>) {
-    const newItem = createMockAgent({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockAgent({ ...data, id: data.id ?? faker.string.uuid() });
     this.agents.push(newItem);
     return newItem;
   }
@@ -102,7 +102,7 @@ export class MockDb {
 
   // APPFEEDBACK Mutations
   createAppFeedback(data: Partial<AppFeedback>) {
-    const newItem = createMockAppFeedback({ ...data, id: data.id || faker.number.int({ min: 1, max: 1000 }) });
+    const newItem = createMockAppFeedback({ ...data, id: data.id ?? faker.number.int() });
     this.appFeedback.push(newItem);
     return newItem;
   }
@@ -125,7 +125,7 @@ export class MockDb {
 
   // APPLOGS Mutations
   createAppLog(data: Partial<AppLog>) {
-    const newItem = createMockAppLog({ ...data, id: data.id || faker.number.int({ min: 1, max: 1000 }) });
+    const newItem = createMockAppLog({ ...data, id: data.id ?? faker.number.int() });
     this.appLogs.push(newItem);
     return newItem;
   }
@@ -151,7 +151,7 @@ export class MockDb {
 
   // ASSISTANTCHATS Mutations
   createAssistantChat(data: Partial<AssistantChat>) {
-    const newItem = createMockAssistantChat({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockAssistantChat({ ...data, id: data.id ?? faker.string.uuid() });
     this.assistantChats.push(newItem);
     return newItem;
   }
@@ -177,7 +177,7 @@ export class MockDb {
 
   // ASSISTANTMESSAGES Mutations
   createAssistantMessage(data: Partial<AssistantMessage>) {
-    const newItem = createMockAssistantMessage({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockAssistantMessage({ ...data, id: data.id ?? faker.string.uuid() });
     this.assistantMessages.push(newItem);
     return newItem;
   }
@@ -203,7 +203,7 @@ export class MockDb {
 
   // ASSISTANTTOOLCALLS Mutations
   createAssistantToolCall(data: Partial<AssistantToolCall>) {
-    const newItem = createMockAssistantToolCall({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockAssistantToolCall({ ...data, id: data.id ?? faker.string.uuid() });
     this.assistantToolCalls.push(newItem);
     return newItem;
   }
@@ -226,7 +226,7 @@ export class MockDb {
 
   // COHORTS Mutations
   createCohort(data: Partial<Cohort>) {
-    const newItem = createMockCohort({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockCohort({ ...data, id: data.id ?? faker.string.uuid() });
     this.cohorts.push(newItem);
     return newItem;
   }
@@ -252,7 +252,7 @@ export class MockDb {
 
   // DEBUGINFO Mutations
   createDebugInfo(data: Partial<DebugInfo>) {
-    const newItem = createMockDebugInfo({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockDebugInfo({ ...data, id: data.id ?? faker.string.uuid() });
     this.debugInfo.push(newItem);
     return newItem;
   }
@@ -275,7 +275,7 @@ export class MockDb {
 
   // DOCUMENTS Mutations
   createDocument(data: Partial<Document>) {
-    const newItem = createMockDocument({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockDocument({ ...data, id: data.id ?? faker.string.uuid() });
     this.documents.push(newItem);
     return newItem;
   }
@@ -310,7 +310,7 @@ export class MockDb {
 
   // MODELRUNS Mutations
   createModelRun(data: Partial<ModelRun>) {
-    const newItem = createMockModelRun({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockModelRun({ ...data, id: data.id ?? faker.string.uuid() });
     this.modelRuns.push(newItem);
     return newItem;
   }
@@ -333,7 +333,7 @@ export class MockDb {
 
   // MODELS Mutations
   createModel(data: Partial<Model>) {
-    const newItem = createMockModel({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockModel({ ...data, id: data.id ?? faker.string.uuid() });
     this.models.push(newItem);
     return newItem;
   }
@@ -359,7 +359,7 @@ export class MockDb {
 
   // PARAMETERITEMS Mutations
   createParameterItem(data: Partial<ParameterItem>) {
-    const newItem = createMockParameterItem({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockParameterItem({ ...data, id: data.id ?? faker.string.uuid() });
     this.parameterItems.push(newItem);
     return newItem;
   }
@@ -382,7 +382,7 @@ export class MockDb {
 
   // PARAMETERS Mutations
   createParameter(data: Partial<Parameter>) {
-    const newItem = createMockParameter({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockParameter({ ...data, id: data.id ?? faker.string.uuid() });
     this.parameters.push(newItem);
     return newItem;
   }
@@ -408,7 +408,7 @@ export class MockDb {
 
   // PERSONAS Mutations
   createPersona(data: Partial<Persona>) {
-    const newItem = createMockPersona({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockPersona({ ...data, id: data.id ?? faker.string.uuid() });
     this.personas.push(newItem);
     return newItem;
   }
@@ -431,7 +431,7 @@ export class MockDb {
 
   // PROFILES Mutations
   createProfile(data: Partial<Profile>) {
-    const newItem = createMockProfile({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockProfile({ ...data, id: data.id ?? faker.string.uuid() });
     this.profiles.push(newItem);
     return newItem;
   }
@@ -454,7 +454,7 @@ export class MockDb {
 
   // PROVIDERS Mutations
   createProvider(data: Partial<Provider>) {
-    const newItem = createMockProvider({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockProvider({ ...data, id: data.id ?? faker.string.uuid() });
     this.providers.push(newItem);
     return newItem;
   }
@@ -477,7 +477,7 @@ export class MockDb {
 
   // RUBRICS Mutations
   createRubric(data: Partial<Rubric>) {
-    const newItem = createMockRubric({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockRubric({ ...data, id: data.id ?? faker.string.uuid() });
     this.rubrics.push(newItem);
     return newItem;
   }
@@ -503,7 +503,7 @@ export class MockDb {
 
   // SCENARIOS Mutations
   createScenario(data: Partial<Scenario>) {
-    const newItem = createMockScenario({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockScenario({ ...data, id: data.id ?? faker.string.uuid() });
     this.scenarios.push(newItem);
     return newItem;
   }
@@ -532,7 +532,7 @@ export class MockDb {
 
   // SIMULATIONATTEMPTS Mutations
   createSimulationAttempt(data: Partial<SimulationAttempt>) {
-    const newItem = createMockSimulationAttempt({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockSimulationAttempt({ ...data, id: data.id ?? faker.string.uuid() });
     this.simulationAttempts.push(newItem);
     return newItem;
   }
@@ -561,7 +561,7 @@ export class MockDb {
 
   // SIMULATIONCHATCROWDSOURCEDFEEDBACKS Mutations
   createSimulationChatCrowdsourcedFeedback(data: Partial<SimulationChatCrowdsourcedFeedback>) {
-    const newItem = createMockSimulationChatCrowdsourcedFeedback({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockSimulationChatCrowdsourcedFeedback({ ...data, id: data.id ?? faker.string.uuid() });
     this.simulationChatCrowdsourcedFeedbacks.push(newItem);
     return newItem;
   }
@@ -590,7 +590,7 @@ export class MockDb {
 
   // SIMULATIONCHATFEEDBACKS Mutations
   createSimulationChatFeedback(data: Partial<SimulationChatFeedback>) {
-    const newItem = createMockSimulationChatFeedback({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockSimulationChatFeedback({ ...data, id: data.id ?? faker.string.uuid() });
     this.simulationChatFeedbacks.push(newItem);
     return newItem;
   }
@@ -619,7 +619,7 @@ export class MockDb {
 
   // SIMULATIONCHATGRADES Mutations
   createSimulationChatGrade(data: Partial<SimulationChatGrade>) {
-    const newItem = createMockSimulationChatGrade({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockSimulationChatGrade({ ...data, id: data.id ?? faker.string.uuid() });
     this.simulationChatGrades.push(newItem);
     return newItem;
   }
@@ -648,7 +648,7 @@ export class MockDb {
 
   // SIMULATIONCHATS Mutations
   createSimulationChat(data: Partial<SimulationChat>) {
-    const newItem = createMockSimulationChat({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockSimulationChat({ ...data, id: data.id ?? faker.string.uuid() });
     this.simulationChats.push(newItem);
     return newItem;
   }
@@ -677,7 +677,7 @@ export class MockDb {
 
   // SIMULATIONCROWDSOURCEDMESSAGES Mutations
   createSimulationCrowdsourcedMessage(data: Partial<SimulationCrowdsourcedMessage>) {
-    const newItem = createMockSimulationCrowdsourcedMessage({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockSimulationCrowdsourcedMessage({ ...data, id: data.id ?? faker.string.uuid() });
     this.simulationCrowdsourcedMessages.push(newItem);
     return newItem;
   }
@@ -703,7 +703,7 @@ export class MockDb {
 
   // SIMULATIONMESSAGES Mutations
   createSimulationMessage(data: Partial<SimulationMessage>) {
-    const newItem = createMockSimulationMessage({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockSimulationMessage({ ...data, id: data.id ?? faker.string.uuid() });
     this.simulationMessages.push(newItem);
     return newItem;
   }
@@ -729,7 +729,7 @@ export class MockDb {
 
   // SIMULATIONS Mutations
   createSimulation(data: Partial<Simulation>) {
-    const newItem = createMockSimulation({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockSimulation({ ...data, id: data.id ?? faker.string.uuid() });
     this.simulations.push(newItem);
     return newItem;
   }
@@ -755,7 +755,7 @@ export class MockDb {
 
   // STANDARDGROUPS Mutations
   createStandardGroup(data: Partial<StandardGroup>) {
-    const newItem = createMockStandardGroup({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockStandardGroup({ ...data, id: data.id ?? faker.string.uuid() });
     this.standardGroups.push(newItem);
     return newItem;
   }
@@ -781,7 +781,7 @@ export class MockDb {
 
   // STANDARDS Mutations
   createStandard(data: Partial<Standard>) {
-    const newItem = createMockStandard({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMockStandard({ ...data, id: data.id ?? faker.string.uuid() });
     this.standards.push(newItem);
     return newItem;
   }

@@ -437,6 +437,7 @@ function createMockFactoryFile() {
 
   fs.mkdirSync(factoryDir, { recursive: true });
   const factoryContent = `"use server";
+// NOTE: This file must NOT be a Server Action module. Do not add "use server" here.
 
 // An in-memory store for mocks set by Vitest.
 const vitestMocks = new Map<string, () => unknown>();
@@ -875,11 +876,21 @@ function generateGetByForeignKeyQuery(
   const paramName = toCamelCase(tsPropertyName.replace(/Id$/, ""));
   const cleanParamName = toKebabCase(paramName);
 
-  // Determine the correct parameter type by looking up the foreign table
-  const foreignTable = tables.find(
-    (t) => t.tableName === foreignKey.foreignTable
+  // Determine the correct parameter type.
+  // Prefer the local column type to ensure it matches the column used in the comparison (eq).
+  const currentTable = tables.find((t) => t.tableName === tableName);
+  const localFkField = currentTable?.fields.find(
+    (f) => getTsPropertyName(f.name) === tsPropertyName
   );
-  const paramType = foreignTable ? foreignTable.primaryKeyType : "string";
+  let paramType = "string";
+  if (localFkField) {
+    paramType = localFkField.type === "number" ? "number" : "string";
+  } else {
+    const foreignTable = tables.find(
+      (t) => t.tableName === foreignKey.foreignTable
+    );
+    paramType = foreignTable ? foreignTable.primaryKeyType : "string";
+  }
 
   // Define the function name for reusability
   const functionName = `get${capitalize(exportName)}By${capitalize(paramName)}`;
@@ -924,11 +935,21 @@ function generateGetByForeignKeyPluralQuery(
   const pluralParamName = paramName.endsWith("s") ? paramName : paramName + "s";
   const cleanPluralParamName = toKebabCase(pluralParamName);
 
-  // Determine the correct parameter type by looking up the foreign table
-  const foreignTable = tables.find(
-    (t) => t.tableName === foreignKey.foreignTable
+  // Determine the correct parameter type.
+  // Prefer the local column type to ensure it matches the column used in the comparison (inArray).
+  const currentTable = tables.find((t) => t.tableName === tableName);
+  const localFkField = currentTable?.fields.find(
+    (f) => getTsPropertyName(f.name) === tsPropertyName
   );
-  const paramType = foreignTable ? foreignTable.primaryKeyType : "string";
+  let paramType = "string";
+  if (localFkField) {
+    paramType = localFkField.type === "number" ? "number" : "string";
+  } else {
+    const foreignTable = tables.find(
+      (t) => t.tableName === foreignKey.foreignTable
+    );
+    paramType = foreignTable ? foreignTable.primaryKeyType : "string";
+  }
 
   // Define the function name for reusability
   const functionName = `get${capitalize(exportName)}By${capitalize(
@@ -1275,13 +1296,30 @@ export function createMock${typeName}(overrides: Partial<${typeName}> = {}): ${t
         const enumTsName = dbEnumNameToTsName[field.dbType];
         fakerLine = `faker.helpers.arrayElement(${enumTsName}.enumValues)`;
       }
-      // 2. Check by field name for common patterns
+      // 2. Primary key heuristic
       else if (tsFieldName === "id" || field.isPrimaryKey) {
         fakerLine =
           field.type === "number"
             ? "faker.number.int()"
             : "faker.string.uuid()";
-      } else if (tsFieldName.toLowerCase().includes("email")) {
+      }
+      // 3. Prefer type-based generation to avoid name heuristics overriding numeric types
+      else if (field.type === "number") {
+        fakerLine = "faker.number.int({ min: 1, max: 1000 })";
+      } else if (field.type === "boolean") {
+        fakerLine = "faker.datatype.boolean()";
+      } else if (
+        field.type === "string" &&
+        (field.dbType.includes("timestamp") || field.dbType.includes("date"))
+      ) {
+        fakerLine = "faker.date.past().toISOString()";
+      } else if (field.type.includes("[]")) {
+        fakerLine = "[]";
+      } else if (field.dbType === "jsonb" || field.dbType === "json") {
+        fakerLine = "{}";
+      }
+      // 4. Name-based patterns (only for non-numeric fields)
+      else if (tsFieldName.toLowerCase().includes("email")) {
         fakerLine = "faker.internet.email()";
       } else if (tsFieldName.toLowerCase().includes("firstname")) {
         fakerLine = "faker.person.firstName()";
@@ -1306,24 +1344,11 @@ export function createMock${typeName}(overrides: Partial<${typeName}> = {}): ${t
       } else if (tsFieldName.toLowerCase().includes("url")) {
         fakerLine = "faker.internet.url()";
       }
-      // 3. Check by data type
+      // 5. Additional type-based defaults
       else if (field.dbType === "uuid") {
         fakerLine = "faker.string.uuid()";
-      } else if (field.type === "number") {
-        fakerLine = "faker.number.int({ min: 1, max: 1000 })";
-      } else if (field.type === "boolean") {
-        fakerLine = "faker.datatype.boolean()";
-      } else if (
-        field.type === "string" &&
-        (field.dbType.includes("timestamp") || field.dbType.includes("date"))
-      ) {
-        fakerLine = "faker.date.past().toISOString()";
-      } else if (field.type.includes("[]")) {
-        fakerLine = "[]";
-      } else if (field.dbType === "jsonb" || field.dbType === "json") {
-        fakerLine = "{}";
       }
-      // 4. Fallback to a generic string
+      // 6. Fallback to a generic string
       else {
         fakerLine = "faker.lorem.word()";
       }
@@ -1416,7 +1441,9 @@ export class MockDb {
     // --- MUTATIONS ---
     content += `\n  // ${exportName.toUpperCase()} Mutations\n`;
     content += `  create${typeName}(data: Partial<${typeName}>) {
-    const newItem = createMock${typeName}({ ...data, id: data.id || faker.string.uuid() });
+    const newItem = createMock${typeName}({ ...data, id: data.id ?? ${
+      pkType === "number" ? "faker.number.int()" : "faker.string.uuid()"
+    } });
     this.${exportName}.push(newItem);
     return newItem;
   }\n`;

@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Parameter, ParameterItem } from "@/types";
+import { logError } from "@/utils/logger";
 import { createParameterItem } from "@/utils/mutations/parameter_items/create-parameter-item";
 
 export interface ParameterItemPickerProps {
@@ -64,7 +65,6 @@ export function ParameterItemPicker({
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
-  const [newValue, setNewValue] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const queryClient = useQueryClient();
 
@@ -140,8 +140,9 @@ export function ParameterItemPicker({
       toast.success("Parameter item created");
       setShowCreateDialog(false);
       setOpen(false);
-      onSelect((created as any).id);
+      onSelect((created as unknown as ParameterItem).id);
     } catch (error) {
+      logError("Failed to create parameter item", error);
       toast.error("Failed to create parameter item");
     } finally {
       setIsCreating(false);
