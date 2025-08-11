@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // Mock Leaderboard component
@@ -16,7 +16,7 @@ import LeaderboardPage, {
 
 describe("LeaderboardPage", () => {
   it("renders without crashing", () => {
-    renderWithMocks(<LeaderboardPage />);
+    render(<LeaderboardPage />);
     expect(screen.getByTestId("leaderboard-component")).toBeInTheDocument();
     expect(screen.getByText("Leaderboard Component")).toBeInTheDocument();
   });
@@ -28,7 +28,7 @@ describe("LeaderboardPage", () => {
   });
 
   it("renders the Leaderboard component inside a wrapper", () => {
-    renderWithMocks(<LeaderboardPage />);
+    render(<LeaderboardPage />);
     const wrapper = screen.getByTestId("leaderboard-component").parentElement;
     expect(wrapper).toHaveClass("space-y-6");
   });

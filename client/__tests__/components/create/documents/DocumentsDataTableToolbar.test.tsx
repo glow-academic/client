@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -46,7 +46,7 @@ describe("DocumentsDataTableToolbar", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<DocumentsDataTableToolbar {...defaultProps} />);
+      render(<DocumentsDataTableToolbar {...defaultProps} />);
 
       // Check that the search input is rendered
       expect(
@@ -58,7 +58,7 @@ describe("DocumentsDataTableToolbar", () => {
     });
 
     it("should render with props", () => {
-      renderWithMocks(<DocumentsDataTableToolbar {...defaultProps} />);
+      render(<DocumentsDataTableToolbar {...defaultProps} />);
 
       // Check that the search input is rendered
       expect(
@@ -78,7 +78,7 @@ describe("DocumentsDataTableToolbar", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<DocumentsDataTableToolbar {...defaultProps} />);
+      render(<DocumentsDataTableToolbar {...defaultProps} />);
 
       // Check that the search input has proper accessibility attributes
       const searchInput = screen.getByPlaceholderText("Filter documents...");
@@ -102,7 +102,7 @@ describe("DocumentsDataTableToolbar", () => {
       const user = userEvent.setup();
       const onViewModeChange = vi.fn();
 
-      renderWithMocks(
+      render(
         <DocumentsDataTableToolbar
           {...defaultProps}
           onViewModeChange={onViewModeChange}
@@ -123,7 +123,7 @@ describe("DocumentsDataTableToolbar", () => {
     it("should handle search input changes", async () => {
       const user = userEvent.setup();
 
-      renderWithMocks(<DocumentsDataTableToolbar {...defaultProps} />);
+      render(<DocumentsDataTableToolbar {...defaultProps} />);
 
       const searchInput = screen.getByPlaceholderText("Filter documents...");
       await user.type(searchInput, "test document");
@@ -136,7 +136,7 @@ describe("DocumentsDataTableToolbar", () => {
       const user = userEvent.setup();
       const onBulkDelete = vi.fn();
 
-      renderWithMocks(
+      render(
         <DocumentsDataTableToolbar
           {...defaultProps}
           selectedCount={2}
@@ -159,7 +159,7 @@ describe("DocumentsDataTableToolbar", () => {
       const onBulkDelete = vi.fn();
       const canDeleteDocument = vi.fn(() => false);
 
-      renderWithMocks(
+      render(
         <DocumentsDataTableToolbar
           {...defaultProps}
           selectedCount={2}
@@ -189,7 +189,7 @@ describe("DocumentsDataTableToolbar", () => {
         extensionOptions: [],
       };
 
-      renderWithMocks(<DocumentsDataTableToolbar {...propsWithEmptyOptions} />);
+      render(<DocumentsDataTableToolbar {...propsWithEmptyOptions} />);
 
       // Component should still render without crashing
       expect(
@@ -212,7 +212,7 @@ describe("DocumentsDataTableToolbar", () => {
         selectedDocuments: [],
       };
 
-      renderWithMocks(<DocumentsDataTableToolbar {...minimalProps} />);
+      render(<DocumentsDataTableToolbar {...minimalProps} />);
 
       // Component should still render
       expect(
@@ -221,7 +221,7 @@ describe("DocumentsDataTableToolbar", () => {
     });
 
     it("should not show bulk delete button in grid view", () => {
-      renderWithMocks(
+      render(
         <DocumentsDataTableToolbar
           {...defaultProps}
           selectedCount={2}
@@ -237,7 +237,7 @@ describe("DocumentsDataTableToolbar", () => {
     });
 
     it("should not show bulk delete button when no documents are selected", () => {
-      renderWithMocks(
+      render(
         <DocumentsDataTableToolbar
           {...defaultProps}
           selectedCount={0}

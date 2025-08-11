@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -17,7 +17,7 @@ vi.mock("@/components/common/scenario/Scenario", () => ({
 describe("NewScenario", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<NewScenario />);
+      render(<NewScenario />);
 
       expect(screen.getByTestId("scenario-component")).toBeInTheDocument();
       expect(screen.getByTestId("scenario-component")).toHaveAttribute(
@@ -27,7 +27,7 @@ describe("NewScenario", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<NewScenario />);
+      render(<NewScenario />);
 
       const scenarioComponent = screen.getByTestId("scenario-component");
       expect(scenarioComponent).toBeInTheDocument();
@@ -40,7 +40,7 @@ describe("NewScenario", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test that the component renders without props (uses default mode="create")
-      renderWithMocks(<NewScenario />);
+      render(<NewScenario />);
 
       expect(screen.getByTestId("scenario-component")).toBeInTheDocument();
       expect(screen.getByTestId("scenario-component")).toHaveAttribute(

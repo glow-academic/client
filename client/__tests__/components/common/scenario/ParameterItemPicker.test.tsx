@@ -1,5 +1,5 @@
 import { describe, it, vi, afterEach } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { render } from '@/test/custom-render';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
@@ -8,8 +8,6 @@ import ParameterItemPicker, { ParameterItemPicker, ParameterItemPickerProps } fr
 
 
 // ✨ Import comprehensive mock data from our centralized mock system
-import '@/mocks/queries';
-import '@/mocks/mutations';
 import '@/mocks/api';
 
 
@@ -49,7 +47,7 @@ describe('ParameterItemPicker', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<ParameterItemPicker {...mockProps} />);
+      render(<ParameterItemPicker {...mockProps} />);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();

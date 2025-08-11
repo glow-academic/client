@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -44,21 +44,21 @@ const mockProps: DocumentSelectProps = {
 describe("DocumentSelect", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<DocumentSelect {...mockProps} />);
+      render(<DocumentSelect {...mockProps} />);
 
       // Basic render test - component should render without errors
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      renderWithMocks(<DocumentSelect {...mockProps} />);
+      render(<DocumentSelect {...mockProps} />);
 
       // Component should render with the provided props
       expect(document.body).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<DocumentSelect {...mockProps} />);
+      render(<DocumentSelect {...mockProps} />);
 
       // Check for basic accessibility elements - this component uses a button with role="combobox"
       const combobox = document.querySelector('[role="combobox"]');
@@ -72,7 +72,7 @@ describe("DocumentSelect", () => {
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<DocumentSelect {...mockProps} />);
+      render(<DocumentSelect {...mockProps} />);
 
       // Test button interactions
       const combobox = document.querySelector(
@@ -89,7 +89,7 @@ describe("DocumentSelect", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<DocumentSelect {...mockProps} />);
+      render(<DocumentSelect {...mockProps} />);
 
       // Test document selection
       const combobox = document.querySelector(
@@ -110,14 +110,14 @@ describe("DocumentSelect", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<DocumentSelect {...mockProps} />);
+      render(<DocumentSelect {...mockProps} />);
 
       // Component should handle edge cases
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(
+      render(
         <DocumentSelect
           documents={[]}
           selectedDocumentId={null}
@@ -137,7 +137,7 @@ describe("DocumentSelect", () => {
         selectedDocumentId: "doc-1",
       };
 
-      renderWithMocks(<DocumentSelect {...propsWithSelection} />);
+      render(<DocumentSelect {...propsWithSelection} />);
 
       // Should show the selected document name instead of placeholder
       const combobox = document.querySelector('[role="combobox"]');

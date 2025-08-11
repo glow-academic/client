@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -17,21 +17,21 @@ const mockProps: DataTableFacetedFilterProps<unknown, unknown> = {
 describe("DataTableFacetedFilter", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<DataTableFacetedFilter {...mockProps} />);
+      render(<DataTableFacetedFilter {...mockProps} />);
 
       // Basic render test - component should render without errors
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      renderWithMocks(<DataTableFacetedFilter {...mockProps} />);
+      render(<DataTableFacetedFilter {...mockProps} />);
 
       // Component should render with the provided props
       expect(document.body).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<DataTableFacetedFilter {...mockProps} />);
+      render(<DataTableFacetedFilter {...mockProps} />);
 
       // Check for basic accessibility elements
       const filter =
@@ -43,14 +43,14 @@ describe("DataTableFacetedFilter", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<DataTableFacetedFilter {...mockProps} />);
+      render(<DataTableFacetedFilter {...mockProps} />);
 
       // Component should handle edge cases
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(<DataTableFacetedFilter options={[]} />);
+      render(<DataTableFacetedFilter options={[]} />);
 
       // Component should handle missing props
       expect(document.body).toBeInTheDocument();

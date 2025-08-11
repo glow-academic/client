@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -7,8 +7,6 @@ import ProviderEditPage from "@/app/(main)/management/providers/p/[providerId]/p
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the ProviderEdit component
 vi.mock("@/components/management/providers/ProviderEdit", () => ({
@@ -60,7 +58,7 @@ describe("ProviderEditPage", () => {
       // ✨ All mocks are automatically set up via imports above
       const mockParams = Promise.resolve({ providerId: "test-provider-id" });
 
-      renderWithMocks(<ProviderEditPage params={mockParams} />);
+      render(<ProviderEditPage params={mockParams} />);
 
       // Should render the provider edit component
       expect(screen.getByTestId("provider-edit-page")).toBeInTheDocument();
@@ -74,7 +72,7 @@ describe("ProviderEditPage", () => {
     it("should have correct accessibility attributes", async () => {
       const mockParams = Promise.resolve({ providerId: "test-provider-id" });
 
-      renderWithMocks(<ProviderEditPage params={mockParams} />);
+      render(<ProviderEditPage params={mockParams} />);
 
       // Should have proper accessibility attributes
       expect(screen.getByTestId("provider-edit-page")).toBeInTheDocument();
@@ -87,7 +85,7 @@ describe("ProviderEditPage", () => {
       // Test with different provider IDs
       const mockParams = Promise.resolve({ providerId: "edge-case-provider" });
 
-      renderWithMocks(<ProviderEditPage params={mockParams} />);
+      render(<ProviderEditPage params={mockParams} />);
 
       // Should render the component even with edge case params
       expect(screen.getByTestId("provider-edit-page")).toBeInTheDocument();

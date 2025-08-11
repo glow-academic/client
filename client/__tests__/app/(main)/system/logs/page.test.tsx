@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // Mock Logs component
@@ -12,7 +12,7 @@ import LogsPage, { metadata } from "@/app/(main)/system/logs/page";
 
 describe("LogsPage", () => {
   it("renders without crashing", () => {
-    renderWithMocks(<LogsPage />);
+    render(<LogsPage />);
     expect(screen.getByTestId("logs-component")).toBeInTheDocument();
     expect(screen.getByText("Logs Component")).toBeInTheDocument();
   });
@@ -24,7 +24,7 @@ describe("LogsPage", () => {
   });
 
   it("renders the Logs component inside a wrapper", () => {
-    renderWithMocks(<LogsPage />);
+    render(<LogsPage />);
     const wrapper = screen.getByTestId("logs-component").parentElement;
     expect(wrapper).toHaveClass("space-y-6");
   });

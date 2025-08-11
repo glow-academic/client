@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from '@/test/custom-render';
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock React's use hook to avoid suspension

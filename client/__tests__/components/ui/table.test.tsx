@@ -7,8 +7,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -16,7 +16,7 @@ import { describe, expect, it } from "vitest";
 describe("Table", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(
+      render(
         <Table>
           <TableCaption>Test Table</TableCaption>
           <TableHeader>
@@ -38,7 +38,7 @@ describe("Table", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(
+      render(
         <Table>
           <TableHeader>
             <TableRow>
@@ -60,7 +60,7 @@ describe("Table", () => {
 
   describe("Component Structure", () => {
     it("should render table with headers and cells", () => {
-      renderWithMocks(
+      render(
         <Table>
           <TableHeader>
             <TableRow>
@@ -91,7 +91,7 @@ describe("Table", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal table
-      renderWithMocks(
+      render(
         <Table>
           <TableBody>
             <TableRow>

@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Import the hook to test
@@ -6,11 +6,9 @@ import { useHistoryColumns } from "@/hooks/use-history-columns";
 
 // Import mocks to ensure all API calls are stubbed
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Import the test helper
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 
 // Test component that uses the hook
 function TestComponent() {
@@ -39,7 +37,7 @@ describe("useHistoryColumns", () => {
   });
 
   it("can be called and returns columns", () => {
-    renderWithMocks(<TestComponent />);
+    render(<TestComponent />);
 
     // Check that the component rendered successfully
     expect(screen.getByTestId("hook-result")).toBeInTheDocument();

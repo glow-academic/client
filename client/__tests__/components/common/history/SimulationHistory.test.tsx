@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -16,21 +16,21 @@ const mockProps: SimulationHistoryProps = {
 describe("SimulationHistory", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<SimulationHistory {...mockProps} />);
+      render(<SimulationHistory {...mockProps} />);
 
       // Basic render test - component should render without errors
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      renderWithMocks(<SimulationHistory {...mockProps} />);
+      render(<SimulationHistory {...mockProps} />);
 
       // Component should render with the provided props
       expect(document.body).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<SimulationHistory {...mockProps} />);
+      render(<SimulationHistory {...mockProps} />);
 
       // Check for basic accessibility elements
       const history =
@@ -42,14 +42,14 @@ describe("SimulationHistory", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<SimulationHistory {...mockProps} />);
+      render(<SimulationHistory {...mockProps} />);
 
       // Component should handle edge cases
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(<SimulationHistory profileId={null} />);
+      render(<SimulationHistory profileId={null} />);
 
       // Component should handle missing props
       expect(document.body).toBeInTheDocument();

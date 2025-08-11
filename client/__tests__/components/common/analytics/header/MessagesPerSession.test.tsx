@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { fireEvent, screen, waitFor } from '@/test/custom-render';
 import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -55,7 +55,7 @@ describe("MessagesPerSession", () => {
     it("renders without crashing", async () => {
       (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
 
-      renderWithMocks(<MessagesPerSession {...mockProps} />);
+      render(<MessagesPerSession {...mockProps} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -69,7 +69,7 @@ describe("MessagesPerSession", () => {
     it("should render with props", async () => {
       (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
 
-      renderWithMocks(<MessagesPerSession {...mockProps} />);
+      render(<MessagesPerSession {...mockProps} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -83,7 +83,7 @@ describe("MessagesPerSession", () => {
     it("should have correct accessibility attributes", async () => {
       (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
 
-      renderWithMocks(<MessagesPerSession {...mockProps} />);
+      render(<MessagesPerSession {...mockProps} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -99,7 +99,7 @@ describe("MessagesPerSession", () => {
     it("should display average messages per session when data is available", async () => {
       (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
 
-      renderWithMocks(<MessagesPerSession {...mockProps} />);
+      render(<MessagesPerSession {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("12.5")).toBeInTheDocument();
@@ -109,7 +109,7 @@ describe("MessagesPerSession", () => {
     it("should display 'No data' when no data is available", async () => {
       (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockNoDataResult);
 
-      renderWithMocks(<MessagesPerSession {...mockProps} />);
+      render(<MessagesPerSession {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("No data")).toBeInTheDocument();
@@ -123,7 +123,7 @@ describe("MessagesPerSession", () => {
         hasData: false,
       });
 
-      renderWithMocks(<MessagesPerSession {...mockProps} />);
+      render(<MessagesPerSession {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("No data")).toBeInTheDocument();
@@ -138,7 +138,7 @@ describe("MessagesPerSession", () => {
         currentValue: 3, // Below danger threshold of 5
       });
 
-      renderWithMocks(<MessagesPerSession {...mockProps} />);
+      render(<MessagesPerSession {...mockProps} />);
 
       await waitFor(() => {
         const card = screen
@@ -154,7 +154,7 @@ describe("MessagesPerSession", () => {
         currentValue: 7, // Between danger (5) and warning (10)
       });
 
-      renderWithMocks(<MessagesPerSession {...mockProps} />);
+      render(<MessagesPerSession {...mockProps} />);
 
       await waitFor(() => {
         const card = screen
@@ -170,7 +170,7 @@ describe("MessagesPerSession", () => {
         currentValue: 18, // Above success threshold of 15
       });
 
-      renderWithMocks(<MessagesPerSession {...mockProps} />);
+      render(<MessagesPerSession {...mockProps} />);
 
       await waitFor(() => {
         const card = screen
@@ -185,7 +185,7 @@ describe("MessagesPerSession", () => {
     it("should open dialog when card is clicked", async () => {
       (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
 
-      renderWithMocks(<MessagesPerSession {...mockProps} />);
+      render(<MessagesPerSession {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -206,7 +206,7 @@ describe("MessagesPerSession", () => {
     it("should close dialog when close button is clicked", async () => {
       (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
 
-      renderWithMocks(<MessagesPerSession {...mockProps} />);
+      render(<MessagesPerSession {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -240,7 +240,7 @@ describe("MessagesPerSession", () => {
     it("should display chart when data is available", async () => {
       (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
 
-      renderWithMocks(<MessagesPerSession {...mockProps} />);
+      render(<MessagesPerSession {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -264,7 +264,7 @@ describe("MessagesPerSession", () => {
     it("should display no data message in dialog when no data is available", async () => {
       (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockNoDataResult);
 
-      renderWithMocks(<MessagesPerSession {...mockProps} />);
+      render(<MessagesPerSession {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -296,7 +296,7 @@ describe("MessagesPerSession", () => {
       };
       (calculateMessagesPerSession as unknown as Mock).mockReturnValue(resultWithTrend);
 
-      renderWithMocks(<MessagesPerSession {...mockProps} />);
+      render(<MessagesPerSession {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -328,7 +328,7 @@ describe("MessagesPerSession", () => {
 
       (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
 
-      renderWithMocks(<MessagesPerSession {...propsWithDifferentThresholds} />);
+      render(<MessagesPerSession {...propsWithDifferentThresholds} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -348,7 +348,7 @@ describe("MessagesPerSession", () => {
 
       (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
 
-      renderWithMocks(<MessagesPerSession {...propsWithoutProfile} />);
+      render(<MessagesPerSession {...propsWithoutProfile} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -367,7 +367,7 @@ describe("MessagesPerSession", () => {
 
       (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
 
-      renderWithMocks(<MessagesPerSession {...propsWithEmptyCohorts} />);
+      render(<MessagesPerSession {...propsWithEmptyCohorts} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -383,7 +383,7 @@ describe("MessagesPerSession", () => {
         hasData: true,
       });
 
-      renderWithMocks(<MessagesPerSession {...mockProps} />);
+      render(<MessagesPerSession {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("0")).toBeInTheDocument();
@@ -395,7 +395,7 @@ describe("MessagesPerSession", () => {
     it("should call calculateMessagesPerSession with correct parameters", async () => {
       (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
 
-      renderWithMocks(<MessagesPerSession {...mockProps} />);
+      render(<MessagesPerSession {...mockProps} />);
 
       await waitFor(() => {
         expect(calculateMessagesPerSession).toHaveBeenCalledWith(
@@ -417,7 +417,7 @@ describe("MessagesPerSession", () => {
         throw new Error("Utility function error");
       });
 
-      renderWithMocks(<MessagesPerSession {...mockProps} />);
+      render(<MessagesPerSession {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Messages Per Session")).toBeInTheDocument();
@@ -429,7 +429,7 @@ describe("MessagesPerSession", () => {
     it("should maintain layout on different screen sizes", async () => {
       (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
 
-      renderWithMocks(<MessagesPerSession {...mockProps} />);
+      render(<MessagesPerSession {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();

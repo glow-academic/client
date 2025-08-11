@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // Mock Health component
@@ -12,7 +12,7 @@ import HealthPage, { metadata } from "@/app/(main)/system/health/page";
 
 describe("HealthPage", () => {
   it("renders without crashing", () => {
-    renderWithMocks(<HealthPage />);
+    render(<HealthPage />);
     expect(screen.getByTestId("health-component")).toBeInTheDocument();
     expect(screen.getByText("Health Component")).toBeInTheDocument();
   });
@@ -24,7 +24,7 @@ describe("HealthPage", () => {
   });
 
   it("renders the Health component directly without wrapper", () => {
-    renderWithMocks(<HealthPage />);
+    render(<HealthPage />);
     const component = screen.getByTestId("health-component");
     // Health page doesn't use the space-y-6 wrapper like other pages
     expect(component.parentElement).not.toHaveClass("space-y-6");

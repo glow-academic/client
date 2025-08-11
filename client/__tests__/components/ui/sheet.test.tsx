@@ -5,8 +5,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -14,7 +14,7 @@ import { describe, expect, it } from "vitest";
 describe("Sheet", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(
+      render(
         <Sheet>
           <SheetTrigger>Open Sheet</SheetTrigger>
           <SheetContent>
@@ -30,7 +30,7 @@ describe("Sheet", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(
+      render(
         <Sheet>
           <SheetTrigger>Open Sheet</SheetTrigger>
           <SheetContent>
@@ -49,7 +49,7 @@ describe("Sheet", () => {
 
   describe("Component Structure", () => {
     it("should render sheet with trigger and content", () => {
-      renderWithMocks(
+      render(
         <Sheet>
           <SheetTrigger>Trigger</SheetTrigger>
           <SheetContent>
@@ -69,7 +69,7 @@ describe("Sheet", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal sheet
-      renderWithMocks(
+      render(
         <Sheet>
           <SheetTrigger>Minimal</SheetTrigger>
           <SheetContent>Content</SheetContent>

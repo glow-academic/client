@@ -3,8 +3,8 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -12,7 +12,7 @@ import { describe, expect, it } from "vitest";
 describe("HoverCard", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(
+      render(
         <HoverCard>
           <HoverCardTrigger>Hover Me</HoverCardTrigger>
           <HoverCardContent>Hover Content</HoverCardContent>
@@ -23,7 +23,7 @@ describe("HoverCard", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(
+      render(
         <HoverCard>
           <HoverCardTrigger>Hover Me</HoverCardTrigger>
           <HoverCardContent>Accessible Content</HoverCardContent>
@@ -37,7 +37,7 @@ describe("HoverCard", () => {
 
   describe("Component Structure", () => {
     it("should render hover card trigger correctly", () => {
-      renderWithMocks(
+      render(
         <HoverCard>
           <HoverCardTrigger>Trigger</HoverCardTrigger>
           <HoverCardContent>
@@ -55,7 +55,7 @@ describe("HoverCard", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal hover card
-      renderWithMocks(
+      render(
         <HoverCard>
           <HoverCardTrigger>Minimal</HoverCardTrigger>
           <HoverCardContent>Content</HoverCardContent>

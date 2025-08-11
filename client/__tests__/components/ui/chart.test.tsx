@@ -1,5 +1,5 @@
 import { ChartContainer } from "@/components/ui/chart";
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -14,7 +14,7 @@ describe("Chart", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(
+      render(
         <ChartContainer config={mockConfig}>
           <div>Chart Content</div>
         </ChartContainer>,
@@ -25,7 +25,7 @@ describe("Chart", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(
+      render(
         <ChartContainer config={mockConfig}>
           <div>Accessible Chart</div>
         </ChartContainer>,
@@ -38,7 +38,7 @@ describe("Chart", () => {
 
   describe("Component Props", () => {
     it("should render with config", () => {
-      renderWithMocks(
+      render(
         <ChartContainer config={mockConfig}>
           <div>Chart with Config</div>
         </ChartContainer>,
@@ -49,7 +49,7 @@ describe("Chart", () => {
     });
 
     it("should render with custom className", () => {
-      renderWithMocks(
+      render(
         <ChartContainer config={mockConfig} className="custom-class">
           <div>Chart</div>
         </ChartContainer>,
@@ -63,7 +63,7 @@ describe("Chart", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal config
-      renderWithMocks(
+      render(
         <ChartContainer config={{}}>
           <div>Minimal Chart</div>
         </ChartContainer>,

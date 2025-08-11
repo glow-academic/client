@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -17,7 +17,7 @@ const mockProps: EditSystemAgentProps = {
 describe("EditAgent", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<EditAgent {...mockProps} />);
+      render(<EditAgent {...mockProps} />);
 
       // Check that the component renders with form elements
       expect(screen.getByText("Agent Name *")).toBeInTheDocument();
@@ -25,7 +25,7 @@ describe("EditAgent", () => {
     });
 
     it("should render with props", () => {
-      renderWithMocks(<EditAgent {...mockProps} />);
+      render(<EditAgent {...mockProps} />);
 
       // Check that form elements are rendered
       expect(screen.getByText("Agent Name *")).toBeInTheDocument();
@@ -34,7 +34,7 @@ describe("EditAgent", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<EditAgent {...mockProps} />);
+      render(<EditAgent {...mockProps} />);
 
       // Check that the component is accessible
       expect(screen.getByText("Agent Name *")).toBeInTheDocument();
@@ -48,7 +48,7 @@ describe("EditAgent", () => {
         agentId: "invalid-id",
       };
 
-      renderWithMocks(<EditAgent {...edgeCaseProps} />);
+      render(<EditAgent {...edgeCaseProps} />);
 
       // Component should still render
       expect(screen.getByText("Agent Name *")).toBeInTheDocument();
@@ -59,7 +59,7 @@ describe("EditAgent", () => {
         agentId: "",
       };
 
-      renderWithMocks(<EditAgent {...minimalProps} />);
+      render(<EditAgent {...minimalProps} />);
 
       // Component should still render
       expect(screen.getByText("Agent Name *")).toBeInTheDocument();

@@ -1,13 +1,11 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Import centralized mocks
 import "@/mocks/auth";
-import "@/mocks/mutations";
 import "@/mocks/navigation";
-import "@/mocks/queries";
 import * as mockSchema from "@/mocks/schema";
 
 // ——————————————————————————————————————————
@@ -105,7 +103,7 @@ describe("Logs", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -115,7 +113,7 @@ describe("Logs", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -127,7 +125,7 @@ describe("Logs", () => {
 
   describe("Data Loading and Display", () => {
     it("should load and display logs data", async () => {
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(mockGetAppLogs).toHaveBeenCalledWith({ page: 1, limit: 1000 });
@@ -141,7 +139,7 @@ describe("Logs", () => {
     });
 
     it("should display log levels correctly", async () => {
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -151,7 +149,7 @@ describe("Logs", () => {
     });
 
     it("should display log timestamps correctly", async () => {
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -162,7 +160,7 @@ describe("Logs", () => {
 
     it("should handle empty logs data", async () => {
       mockGetAppLogs.mockResolvedValue(mockEmptyLogsData);
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(mockGetAppLogs).toHaveBeenCalledWith({ page: 1, limit: 1000 });
@@ -178,7 +176,7 @@ describe("Logs", () => {
 
     it("should handle null logs data", async () => {
       mockGetAppLogs.mockResolvedValue(mockEmptyLogsData);
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(mockGetAppLogs).toHaveBeenCalledWith({ page: 1, limit: 1000 });
@@ -198,7 +196,7 @@ describe("Logs", () => {
       const user = userEvent.setup();
       mockInvalidateQueries.mockResolvedValue(undefined);
 
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -230,7 +228,7 @@ describe("Logs", () => {
       const error = new Error("Refresh failed");
       mockInvalidateQueries.mockRejectedValue(error);
 
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -267,7 +265,7 @@ describe("Logs", () => {
 
     it("should handle view log button click", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -294,7 +292,7 @@ describe("Logs", () => {
 
     it("should handle dialog close", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -328,7 +326,7 @@ describe("Logs", () => {
     });
 
     it("should handle state changes", async () => {
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -343,7 +341,7 @@ describe("Logs", () => {
       const error = new Error("Failed to fetch logs");
       mockGetAppLogs.mockRejectedValue(error);
 
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(mockGetAppLogs).toHaveBeenCalledWith({ page: 1, limit: 1000 });
@@ -364,7 +362,7 @@ describe("Logs", () => {
           new Promise((resolve) => setTimeout(() => resolve(mockLogsData), 100))
       );
 
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       // Should show loading state initially
       await waitFor(() => {
@@ -383,7 +381,7 @@ describe("Logs", () => {
     });
 
     it("should refetch data at intervals", async () => {
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(mockGetAppLogs).toHaveBeenCalledWith({ page: 1, limit: 1000 });
@@ -402,7 +400,7 @@ describe("Logs", () => {
   describe("Dialog Functionality", () => {
     it("should display log context in dialog", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -428,7 +426,7 @@ describe("Logs", () => {
 
     it("should handle dialog onOpenChange callback", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -462,7 +460,7 @@ describe("Logs", () => {
 
     it("should display 'No context data' for logs without context", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -508,7 +506,7 @@ describe("Logs", () => {
       };
       mockGetAppLogs.mockResolvedValue(complexLogData);
 
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -536,7 +534,7 @@ describe("Logs", () => {
 
   describe("Navigation", () => {
     it("should handle navigation", async () => {
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -548,7 +546,7 @@ describe("Logs", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -558,7 +556,7 @@ describe("Logs", () => {
     });
 
     it("should handle logs with null message", async () => {
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -575,7 +573,7 @@ describe("Logs", () => {
     });
 
     it("should handle logs with null context", async () => {
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -592,7 +590,7 @@ describe("Logs", () => {
     });
 
     it("should handle logs with very long messages", async () => {
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -623,7 +621,7 @@ describe("Logs", () => {
       };
       mockGetAppLogs.mockResolvedValue(unknownLevelData);
 
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -648,7 +646,7 @@ describe("Logs", () => {
       };
       mockGetAppLogs.mockResolvedValue(malformedData);
 
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -676,7 +674,7 @@ describe("Logs", () => {
 
   describe("Filtering and Search", () => {
     it("should generate filter options correctly", async () => {
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -691,7 +689,7 @@ describe("Logs", () => {
 
   describe("Component Integration", () => {
     it("should integrate with LogsDataTable correctly", async () => {
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(
@@ -708,7 +706,7 @@ describe("Logs", () => {
     });
 
     it("should integrate with useLogColumns hook correctly", async () => {
-      renderWithMocks(<Logs />);
+      render(<Logs />);
 
       await waitFor(() => {
         expect(

@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { act, screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { act, screen } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -7,8 +7,6 @@ import PersonaEditPage from "@/app/(main)/create/personas/p/[personaId]/page";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the PersonaEdit component
 vi.mock("@/components/create/personas/PersonaEdit", () => ({
@@ -47,7 +45,7 @@ describe("PersonaEditPage", () => {
       const mockParams = Promise.resolve({ personaId: "test-persona-id" });
 
       await act(async () => {
-        renderWithMocks(<PersonaEditPage params={mockParams} />);
+        render(<PersonaEditPage params={mockParams} />);
       });
 
       // Should render the persona edit component
@@ -62,7 +60,7 @@ describe("PersonaEditPage", () => {
       const mockParams = Promise.resolve({ personaId: "test-persona-id" });
 
       await act(async () => {
-        renderWithMocks(<PersonaEditPage params={mockParams} />);
+        render(<PersonaEditPage params={mockParams} />);
       });
 
       // Should have proper accessibility attributes
@@ -76,7 +74,7 @@ describe("PersonaEditPage", () => {
       const mockParams = Promise.resolve({ personaId: "edge-case-id" });
 
       await act(async () => {
-        renderWithMocks(<PersonaEditPage params={mockParams} />);
+        render(<PersonaEditPage params={mockParams} />);
       });
 
       // Should render the component even with edge case params

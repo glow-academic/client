@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -27,7 +27,7 @@ describe("PersonaEdit", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<PersonaEdit {...defaultProps} />);
+      render(<PersonaEdit {...defaultProps} />);
 
       // Check that the Persona component is rendered with edit mode
       expect(screen.getByTestId("persona-component")).toBeInTheDocument();
@@ -42,7 +42,7 @@ describe("PersonaEdit", () => {
     });
 
     it("should render with props", () => {
-      renderWithMocks(<PersonaEdit {...defaultProps} />);
+      render(<PersonaEdit {...defaultProps} />);
 
       // Check that the Persona component is rendered with correct props
       expect(screen.getByTestId("persona-component")).toBeInTheDocument();
@@ -53,7 +53,7 @@ describe("PersonaEdit", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<PersonaEdit {...defaultProps} />);
+      render(<PersonaEdit {...defaultProps} />);
 
       // Check that the Persona component is accessible
       expect(screen.getByTestId("persona-component")).toBeInTheDocument();
@@ -67,7 +67,7 @@ describe("PersonaEdit", () => {
         personaId: "different-persona-id",
       };
 
-      renderWithMocks(<PersonaEdit {...propsWithDifferentId} />);
+      render(<PersonaEdit {...propsWithDifferentId} />);
 
       // Component should render with the new persona ID
       expect(screen.getByTestId("persona-component")).toHaveAttribute(
@@ -82,7 +82,7 @@ describe("PersonaEdit", () => {
         personaId: "",
       };
 
-      renderWithMocks(<PersonaEdit {...propsWithEmptyId} />);
+      render(<PersonaEdit {...propsWithEmptyId} />);
 
       // Component should still render
       expect(screen.getByTestId("persona-component")).toBeInTheDocument();

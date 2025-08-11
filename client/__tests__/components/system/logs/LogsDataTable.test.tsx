@@ -1,6 +1,6 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import type { ColumnDef } from "@tanstack/react-table";
-import { screen } from "@testing-library/react";
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -72,7 +72,7 @@ const mockProps: LogsDataTableProps = {
 describe("LogsDataTable", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<LogsDataTable {...mockProps} />);
+      render(<LogsDataTable {...mockProps} />);
 
       // Check that headers are rendered - use getAllByText to handle multiple "Level" elements
       expect(screen.getByText("ID")).toBeInTheDocument();
@@ -81,7 +81,7 @@ describe("LogsDataTable", () => {
     });
 
     it("should render with props", () => {
-      renderWithMocks(<LogsDataTable {...mockProps} />);
+      render(<LogsDataTable {...mockProps} />);
 
       // Check that data is displayed
       expect(screen.getByText("1")).toBeInTheDocument();
@@ -90,7 +90,7 @@ describe("LogsDataTable", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<LogsDataTable {...mockProps} />);
+      render(<LogsDataTable {...mockProps} />);
 
       // Check that the table has proper accessibility attributes
       const table = screen.getByRole("table");
@@ -103,14 +103,14 @@ describe("LogsDataTable", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      renderWithMocks(<LogsDataTable {...mockProps} />);
+      render(<LogsDataTable {...mockProps} />);
 
       // Check that the table renders with data
       expect(screen.getByText("Test log message")).toBeInTheDocument();
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<LogsDataTable {...mockProps} />);
+      render(<LogsDataTable {...mockProps} />);
 
       // Check that the refresh functionality is available
       expect(mockProps.onRefresh).toBeDefined();
@@ -125,7 +125,7 @@ describe("LogsDataTable", () => {
         data: [],
       };
 
-      renderWithMocks(<LogsDataTable {...propsWithEmptyData} />);
+      render(<LogsDataTable {...propsWithEmptyData} />);
 
       // Should show "No logs match the current filters" message
       expect(
@@ -143,7 +143,7 @@ describe("LogsDataTable", () => {
         isRefreshing: false,
       };
 
-      renderWithMocks(<LogsDataTable {...minimalProps} />);
+      render(<LogsDataTable {...minimalProps} />);
 
       // Component should still render
       expect(screen.getByRole("table")).toBeInTheDocument();

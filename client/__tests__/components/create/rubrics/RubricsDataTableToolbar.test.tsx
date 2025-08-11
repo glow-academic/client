@@ -1,6 +1,6 @@
 import { getMockColumn, getMockTable } from "@/mocks/navigation";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -144,7 +144,7 @@ const mockProps: RubricsDataTableToolbarProps = {
 describe("RubricsDataTableToolbar", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<RubricsDataTableToolbar {...mockProps} />);
+      render(<RubricsDataTableToolbar {...mockProps} />);
 
       // Check that the search input is rendered
       expect(
@@ -153,7 +153,7 @@ describe("RubricsDataTableToolbar", () => {
     });
 
     it("should render with props", () => {
-      renderWithMocks(<RubricsDataTableToolbar {...mockProps} />);
+      render(<RubricsDataTableToolbar {...mockProps} />);
 
       // Check that the search input is rendered with correct placeholder
       expect(
@@ -166,7 +166,7 @@ describe("RubricsDataTableToolbar", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<RubricsDataTableToolbar {...mockProps} />);
+      render(<RubricsDataTableToolbar {...mockProps} />);
 
       // Check that the search input has proper accessibility
       const searchInput = screen.getByPlaceholderText("Search rubrics...");
@@ -182,7 +182,7 @@ describe("RubricsDataTableToolbar", () => {
     it("should handle search input changes", async () => {
       const user = userEvent.setup();
 
-      renderWithMocks(<RubricsDataTableToolbar {...mockProps} />);
+      render(<RubricsDataTableToolbar {...mockProps} />);
 
       const searchInput = screen.getByPlaceholderText("Search rubrics...");
       await user.type(searchInput, "test search");
@@ -194,7 +194,7 @@ describe("RubricsDataTableToolbar", () => {
     it("should handle filter interactions", async () => {
       const user = userEvent.setup();
 
-      renderWithMocks(<RubricsDataTableToolbar {...mockProps} />);
+      render(<RubricsDataTableToolbar {...mockProps} />);
 
       // Find and click a filter button
       const buttons = screen.getAllByRole("button");
@@ -218,7 +218,7 @@ describe("RubricsDataTableToolbar", () => {
         passPercentageOptions: [],
       };
 
-      renderWithMocks(<RubricsDataTableToolbar {...propsWithEmptyOptions} />);
+      render(<RubricsDataTableToolbar {...propsWithEmptyOptions} />);
 
       // Should still render without crashing
       expect(
@@ -234,7 +234,7 @@ describe("RubricsDataTableToolbar", () => {
         passPercentageOptions: [],
       };
 
-      renderWithMocks(<RubricsDataTableToolbar {...minimalProps} />);
+      render(<RubricsDataTableToolbar {...minimalProps} />);
 
       // Should still render without crashing
       expect(

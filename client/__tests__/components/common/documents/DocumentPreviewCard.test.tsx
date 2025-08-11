@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { render } from '@/test/custom-render';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
@@ -21,7 +21,7 @@ describe('DocumentPreviewCard', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       
-      renderWithMocks(<DocumentPreviewCard {...mockProps} />);
+      render(<DocumentPreviewCard {...mockProps} />);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();

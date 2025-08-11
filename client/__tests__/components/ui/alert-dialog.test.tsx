@@ -9,8 +9,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -18,7 +18,7 @@ import { describe, expect, it } from "vitest";
 describe("AlertDialog", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(
+      render(
         <AlertDialog>
           <AlertDialogTrigger>Open Dialog</AlertDialogTrigger>
           <AlertDialogContent>
@@ -38,7 +38,7 @@ describe("AlertDialog", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(
+      render(
         <AlertDialog>
           <AlertDialogTrigger>Open Dialog</AlertDialogTrigger>
           <AlertDialogContent>
@@ -62,7 +62,7 @@ describe("AlertDialog", () => {
 
   describe("Component Structure", () => {
     it("should render trigger correctly", () => {
-      renderWithMocks(
+      render(
         <AlertDialog>
           <AlertDialogTrigger>Open Dialog</AlertDialogTrigger>
           <AlertDialogContent>
@@ -89,7 +89,7 @@ describe("AlertDialog", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal props
-      renderWithMocks(
+      render(
         <AlertDialog>
           <AlertDialogTrigger>Open</AlertDialogTrigger>
           <AlertDialogContent>

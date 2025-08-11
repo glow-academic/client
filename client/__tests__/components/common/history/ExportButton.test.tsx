@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import type { Table } from "@tanstack/react-table";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -38,15 +38,15 @@ const mockProps: ExportButtonProps<unknown> = {
 describe("ExportButton", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<ExportButton {...mockProps} />);
+      render(<ExportButton {...mockProps} />);
       expect(document.body).toBeInTheDocument();
     });
     it("should render with props", () => {
-      renderWithMocks(<ExportButton {...mockProps} />);
+      render(<ExportButton {...mockProps} />);
       expect(document.body).toBeInTheDocument();
     });
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<ExportButton {...mockProps} />);
+      render(<ExportButton {...mockProps} />);
       const button =
         document.querySelector("button") || document.querySelector("div");
       expect(button).toBeInTheDocument();
@@ -55,7 +55,7 @@ describe("ExportButton", () => {
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ExportButton {...mockProps} />);
+      render(<ExportButton {...mockProps} />);
       const buttons = document.querySelectorAll("button");
       if (buttons.length > 0 && buttons[0]) {
         await user.click(buttons[0]);
@@ -64,7 +64,7 @@ describe("ExportButton", () => {
     });
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ExportButton {...mockProps} />);
+      render(<ExportButton {...mockProps} />);
       const dropdowns = document.querySelectorAll('[role="combobox"]');
       if (dropdowns.length > 0 && dropdowns[0]) {
         await user.click(dropdowns[0]);
@@ -74,11 +74,11 @@ describe("ExportButton", () => {
   });
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<ExportButton {...mockProps} />);
+      render(<ExportButton {...mockProps} />);
       expect(document.body).toBeInTheDocument();
     });
     it("should handle missing or invalid props", () => {
-      renderWithMocks(
+      render(
         <ExportButton table={createMockTable()} profileOptions={[]} />,
       );
       expect(document.body).toBeInTheDocument();

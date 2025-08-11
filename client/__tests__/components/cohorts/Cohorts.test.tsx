@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -6,8 +6,6 @@ import Cohorts from "@/components/cohorts/Cohorts";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 
 describe("Cohorts", () => {
@@ -35,14 +33,14 @@ describe("Cohorts", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Cohorts />);
+      render(<Cohorts />);
 
       // Component should render without crashing
       expect(document.body).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<Cohorts />);
+      render(<Cohorts />);
 
       // Basic accessibility check - component should be in the document
       expect(document.body).toBeInTheDocument();
@@ -51,14 +49,14 @@ describe("Cohorts", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      renderWithMocks(<Cohorts />);
+      render(<Cohorts />);
 
       // Component should handle state changes without errors
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<Cohorts />);
+      render(<Cohorts />);
 
       // Component should handle user events without errors
       expect(document.body).toBeInTheDocument();
@@ -70,7 +68,7 @@ describe("Cohorts", () => {
       // Arrange: Override the default success mock with an error for this test.
       vi.mocked(getAllCohorts).mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<Cohorts />);
+      render(<Cohorts />);
 
       // Component should handle error state gracefully
       expect(document.body).toBeInTheDocument();
@@ -78,7 +76,7 @@ describe("Cohorts", () => {
 
     it("should handle loading states", () => {
       // Mock data is automatically loaded from @/mocks/schema
-      renderWithMocks(<Cohorts />);
+      render(<Cohorts />);
 
       // Component should handle loading states
       expect(document.body).toBeInTheDocument();
@@ -87,7 +85,7 @@ describe("Cohorts", () => {
 
   describe("Navigation", () => {
     it("should handle navigation", () => {
-      renderWithMocks(<Cohorts />);
+      render(<Cohorts />);
 
       // Component should handle navigation without errors
       expect(document.body).toBeInTheDocument();
@@ -96,7 +94,7 @@ describe("Cohorts", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<Cohorts />);
+      render(<Cohorts />);
 
       // Component should handle edge cases without errors
       expect(document.body).toBeInTheDocument();

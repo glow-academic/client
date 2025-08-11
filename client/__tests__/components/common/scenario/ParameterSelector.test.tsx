@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -8,8 +8,6 @@ import { ParameterSelector } from "@/components/common/scenario/ParameterSelecto
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock data for testing
 const mockParameters = [
@@ -129,7 +127,7 @@ describe("ParameterSelector", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", () => {
-      renderWithMocks(<ParameterSelector {...mockProps} />);
+      render(<ParameterSelector {...mockProps} />);
 
       // Check that the component renders with the expected parameters
       expect(screen.getByText("Location")).toBeInTheDocument();
@@ -137,7 +135,7 @@ describe("ParameterSelector", () => {
     });
 
     it("should display parameter counts correctly", () => {
-      renderWithMocks(<ParameterSelector {...mockProps} />);
+      render(<ParameterSelector {...mockProps} />);
 
       // Check that the component renders with the expected sections
       // The component shows individual parameters, not section headers
@@ -146,7 +144,7 @@ describe("ParameterSelector", () => {
     });
 
     it("should only show active parameters", () => {
-      renderWithMocks(<ParameterSelector {...mockProps} />);
+      render(<ParameterSelector {...mockProps} />);
 
       // Should show Location (active, non-numerical)
       expect(screen.getByText("Location")).toBeInTheDocument();
@@ -161,7 +159,7 @@ describe("ParameterSelector", () => {
 
   describe("Categorical Parameters", () => {
     it("should render categorical parameter dropdowns", () => {
-      renderWithMocks(<ParameterSelector {...mockProps} />);
+      render(<ParameterSelector {...mockProps} />);
 
       // Check that the Location parameter is rendered
       expect(screen.getByText("Location")).toBeInTheDocument();
@@ -172,7 +170,7 @@ describe("ParameterSelector", () => {
 
     it("should show parameter items in dropdown", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ParameterSelector {...mockProps} />);
+      render(<ParameterSelector {...mockProps} />);
 
       // Open the dropdown
       const dropdown = screen.getByRole("combobox");
@@ -187,7 +185,7 @@ describe("ParameterSelector", () => {
       const user = userEvent.setup();
       const onParameterItemIdsChange = vi.fn();
 
-      renderWithMocks(
+      render(
         <ParameterSelector
           {...mockProps}
           onParameterItemIdsChange={onParameterItemIdsChange}
@@ -208,7 +206,7 @@ describe("ParameterSelector", () => {
 
   describe("Numerical Parameters", () => {
     it("should render numerical parameter sliders", () => {
-      renderWithMocks(<ParameterSelector {...mockProps} />);
+      render(<ParameterSelector {...mockProps} />);
 
       // Check that the Intensity parameter is rendered
       expect(screen.getByText("Intensity")).toBeInTheDocument();
@@ -218,7 +216,7 @@ describe("ParameterSelector", () => {
     });
 
     it("should show current value for numerical parameters", () => {
-      renderWithMocks(<ParameterSelector {...mockProps} />);
+      render(<ParameterSelector {...mockProps} />);
 
       // Should show the current value (0 by default)
       expect(screen.getByText("0")).toBeInTheDocument();
@@ -228,7 +226,7 @@ describe("ParameterSelector", () => {
       const user = userEvent.setup();
       const onParameterItemIdsChange = vi.fn();
 
-      renderWithMocks(
+      render(
         <ParameterSelector
           {...mockProps}
           onParameterItemIdsChange={onParameterItemIdsChange}
@@ -253,7 +251,7 @@ describe("ParameterSelector", () => {
         selectedParameterItemIds: ["item-1", "item-4"],
       };
 
-      renderWithMocks(<ParameterSelector {...propsWithSelection} />);
+      render(<ParameterSelector {...propsWithSelection} />);
 
       // Should show the selected item descriptions
       expect(screen.getByText("University library")).toBeInTheDocument();
@@ -266,7 +264,7 @@ describe("ParameterSelector", () => {
         selectedParameterItemIds: ["item-1"],
       };
 
-      renderWithMocks(<ParameterSelector {...propsWithSelection} />);
+      render(<ParameterSelector {...propsWithSelection} />);
 
       // Should show reset buttons (X icons)
       const resetButtons = screen.getAllByRole("button");
@@ -282,7 +280,7 @@ describe("ParameterSelector", () => {
         onParameterItemIdsChange,
       };
 
-      renderWithMocks(<ParameterSelector {...propsWithSelection} />);
+      render(<ParameterSelector {...propsWithSelection} />);
 
       // Click the reset button (X icon) - it's the button with no text content
       const resetButtons = screen.getAllByRole("button");
@@ -306,7 +304,7 @@ describe("ParameterSelector", () => {
         parameters: mockParameters.filter((p) => p.numerical || !p.active),
       };
 
-      renderWithMocks(<ParameterSelector {...propsWithNoCategorical} />);
+      render(<ParameterSelector {...propsWithNoCategorical} />);
 
       expect(
         screen.getByText("No categorical parameters available")
@@ -319,7 +317,7 @@ describe("ParameterSelector", () => {
         parameters: mockParameters.filter((p) => !p.numerical || !p.active),
       };
 
-      renderWithMocks(<ParameterSelector {...propsWithNoNumerical} />);
+      render(<ParameterSelector {...propsWithNoNumerical} />);
 
       expect(
         screen.getByText("No numerical parameters available")

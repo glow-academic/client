@@ -1,12 +1,10 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Import centralized mocks to avoid hoisting issues
 import "@/mocks/auth";
-import "@/mocks/mutations";
 import "@/mocks/navigation";
-import "@/mocks/queries";
 
 // ——————————————————————————————————————————
 import { Providers } from "@/app/providers";
@@ -71,7 +69,7 @@ describe("Providers", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", () => {
-      renderWithMocks(
+      render(
         <Providers>
           <div data-testid="test-child">Test Content</div>
         </Providers>
@@ -82,7 +80,7 @@ describe("Providers", () => {
     });
 
     it("should have correct provider structure", () => {
-      renderWithMocks(
+      render(
         <Providers>
           <div data-testid="test-child">Test Content</div>
         </Providers>
@@ -102,7 +100,7 @@ describe("Providers", () => {
         update: vi.fn(),
       });
 
-      renderWithMocks(
+      render(
         <Providers>
           <div data-testid="test-child">Test Content</div>
         </Providers>
@@ -118,7 +116,7 @@ describe("Providers", () => {
         update: vi.fn(),
       });
 
-      renderWithMocks(
+      render(
         <Providers>
           <div data-testid="test-child">Test Content</div>
         </Providers>
@@ -137,7 +135,7 @@ describe("Providers", () => {
         update: vi.fn(),
       });
 
-      renderWithMocks(
+      render(
         <Providers>
           <div data-testid="test-child">Test Content</div>
         </Providers>
@@ -161,7 +159,7 @@ describe("Providers", () => {
         error: null,
       });
 
-      renderWithMocks(
+      render(
         <Providers>
           <div data-testid="test-child">Test Content</div>
         </Providers>
@@ -183,7 +181,7 @@ describe("Providers", () => {
         error: null,
       });
 
-      renderWithMocks(
+      render(
         <Providers>
           <div data-testid="test-child">Test Content</div>
         </Providers>
@@ -195,7 +193,7 @@ describe("Providers", () => {
 
   describe("Children Rendering", () => {
     it("should render children correctly", () => {
-      renderWithMocks(
+      render(
         <Providers>
           <div data-testid="child-1">Child 1</div>
           <div data-testid="child-2">Child 2</div>
@@ -207,7 +205,7 @@ describe("Providers", () => {
     });
 
     it("should render multiple children", () => {
-      renderWithMocks(
+      render(
         <Providers>
           <div data-testid="child-1">Child 1</div>
           <div data-testid="child-2">Child 2</div>
@@ -232,7 +230,7 @@ describe("Providers", () => {
         update: vi.fn(),
       });
 
-      renderWithMocks(
+      render(
         <Providers>
           <div data-testid="test-child">Test Content</div>
         </Providers>
@@ -248,7 +246,7 @@ describe("Providers", () => {
         update: vi.fn(),
       });
 
-      renderWithMocks(
+      render(
         <Providers>
           <div data-testid="test-child">Test Content</div>
         </Providers>
@@ -258,7 +256,7 @@ describe("Providers", () => {
     });
 
     it("should handle empty children gracefully", () => {
-      renderWithMocks(<Providers>{null}</Providers>);
+      render(<Providers>{null}</Providers>);
 
       expect(screen.getByTestId("session-provider")).toBeInTheDocument();
     });

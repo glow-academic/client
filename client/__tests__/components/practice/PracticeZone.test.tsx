@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -9,8 +9,6 @@ import type { Persona, Profile, Scenario, Simulation } from "@/types";
 
 // Import mocks
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
@@ -83,7 +81,7 @@ describe("PracticeZone", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<PracticeZone {...mockProps} />);
+      render(<PracticeZone {...mockProps} />);
 
       // Should render the practice zone
       await waitFor(() => {
@@ -92,7 +90,7 @@ describe("PracticeZone", () => {
     });
 
     it("should render with props", () => {
-      renderWithMocks(<PracticeZone {...mockProps} />);
+      render(<PracticeZone {...mockProps} />);
 
       // Should render simulation cards
       expect(screen.getByText("Math Practice")).toBeInTheDocument();
@@ -102,7 +100,7 @@ describe("PracticeZone", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<PracticeZone {...mockProps} />);
+      render(<PracticeZone {...mockProps} />);
 
       // Should have proper heading structure - the component uses h3, not h1
       expect(screen.getByRole("heading", { level: 3 })).toBeInTheDocument();
@@ -116,7 +114,7 @@ describe("PracticeZone", () => {
   describe("User Interactions", () => {
     it("should handle simulation start", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<PracticeZone {...mockProps} />);
+      render(<PracticeZone {...mockProps} />);
 
       // Find and click start simulation button
       const startButton = screen.getByText("Start Simulation");
@@ -132,7 +130,7 @@ describe("PracticeZone", () => {
         loadingSimulation: "sim-1",
       };
 
-      renderWithMocks(<PracticeZone {...loadingProps} />);
+      render(<PracticeZone {...loadingProps} />);
 
       // Should show loading state - the button text changes to "Starting..."
       expect(screen.getByText("Starting...")).toBeInTheDocument();
@@ -147,7 +145,7 @@ describe("PracticeZone", () => {
         simulations: [],
       };
 
-      renderWithMocks(<PracticeZone {...emptyProps} />);
+      render(<PracticeZone {...emptyProps} />);
 
       // Should show no simulations message - the component returns null when no simulations
       expect(
@@ -166,7 +164,7 @@ describe("PracticeZone", () => {
         personas: [],
       };
 
-      renderWithMocks(<PracticeZone {...minimalProps} />);
+      render(<PracticeZone {...minimalProps} />);
 
       // Should still render without crashing - component returns null when no simulations
       expect(screen.queryByText("Practice Zone")).not.toBeInTheDocument();
@@ -191,7 +189,7 @@ describe("PracticeZone", () => {
         ],
       };
 
-      renderWithMocks(<PracticeZone {...inactiveProps} />);
+      render(<PracticeZone {...inactiveProps} />);
 
       // The component doesn't filter by active status, so inactive simulations are still shown
       expect(screen.getByText("Math Practice")).toBeInTheDocument();

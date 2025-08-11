@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -8,8 +8,6 @@ import Rubric, { RubricProps } from "@/components/common/rubric/Rubric";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the toast
 vi.mock("sonner", () => ({
@@ -61,14 +59,14 @@ describe("Rubric", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Rubric {...mockProps} />);
+      render(<Rubric {...mockProps} />);
 
       // Check that the component renders with the expected sections
       expect(screen.getByText("Create Rubric")).toBeInTheDocument();
     });
 
     it("should render create form with empty fields", () => {
-      renderWithMocks(<Rubric />);
+      render(<Rubric />);
 
       // Check that form fields are present
       expect(screen.getByText("Create Rubric")).toBeInTheDocument();
@@ -76,7 +74,7 @@ describe("Rubric", () => {
     });
 
     it("should render edit form with existing data", async () => {
-      renderWithMocks(<Rubric rubricId="test-rubric-id" />);
+      render(<Rubric rubricId="test-rubric-id" />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -85,7 +83,7 @@ describe("Rubric", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<Rubric {...mockProps} />);
+      render(<Rubric {...mockProps} />);
 
       // Check for proper form structure
       expect(screen.getByText("Create Rubric")).toBeInTheDocument();
@@ -94,7 +92,7 @@ describe("Rubric", () => {
 
   describe("User Interactions", () => {
     it("should handle form submissions", async () => {
-      renderWithMocks(<Rubric />);
+      render(<Rubric />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -106,7 +104,7 @@ describe("Rubric", () => {
     });
 
     it("should handle state changes", async () => {
-      renderWithMocks(<Rubric />);
+      render(<Rubric />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -118,7 +116,7 @@ describe("Rubric", () => {
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<Rubric />);
+      render(<Rubric />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -133,10 +131,9 @@ describe("Rubric", () => {
   describe("API Integration", () => {
     it("should handle and display an API error state", async () => {
       // Arrange: Override the default success mock with an error for this test.
-      const { createRubricMock } = await import("@/mocks/mutations");
       createRubricMock.mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<Rubric {...mockProps} />);
+      render(<Rubric {...mockProps} />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -148,7 +145,7 @@ describe("Rubric", () => {
     });
 
     it("should handle loading states", () => {
-      renderWithMocks(<Rubric rubricId="test-rubric-id" />);
+      render(<Rubric rubricId="test-rubric-id" />);
 
       // Check that the component shows loading skeletons
       const skeletons = screen.getAllByTestId("skeleton");
@@ -158,7 +155,7 @@ describe("Rubric", () => {
 
   describe("Navigation", () => {
     it("should handle navigation", async () => {
-      renderWithMocks(<Rubric />);
+      render(<Rubric />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -172,21 +169,21 @@ describe("Rubric", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<Rubric {...mockProps} />);
+      render(<Rubric {...mockProps} />);
 
       // Test that the component renders without crashing even with minimal props
       expect(screen.getByText("Create Rubric")).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(<Rubric />);
+      render(<Rubric />);
 
       // Test that the component handles missing props gracefully
       expect(screen.getByText("Create Rubric")).toBeInTheDocument();
     });
 
     it("should validate form fields", async () => {
-      renderWithMocks(<Rubric />);
+      render(<Rubric />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -201,7 +198,7 @@ describe("Rubric", () => {
   describe("Form Validation", () => {
     it("should validate required fields", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Rubric />);
+      render(<Rubric />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -220,7 +217,7 @@ describe("Rubric", () => {
 
     it("should handle form submission", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Rubric />);
+      render(<Rubric />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -258,7 +255,7 @@ describe("Rubric", () => {
         updatedAt: new Date().toISOString(),
       });
 
-      renderWithMocks(<Rubric rubricId="test-rubric-id" />);
+      render(<Rubric rubricId="test-rubric-id" />);
 
       // Wait for the form to load with existing data
       await waitFor(() => {

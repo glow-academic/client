@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import type {} from "@tanstack/react-table";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -10,8 +10,6 @@ import {
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
@@ -108,21 +106,21 @@ describe("ProvidersDataTable", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<ProvidersDataTable {...mockProps} />);
+      render(<ProvidersDataTable {...mockProps} />);
 
       // Basic rendering test - component should render without crashing
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      renderWithMocks(<ProvidersDataTable {...mockProps} />);
+      render(<ProvidersDataTable {...mockProps} />);
 
       // Component should render with the provided props
       expect(document.body).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<ProvidersDataTable {...mockProps} />);
+      render(<ProvidersDataTable {...mockProps} />);
 
       // Basic accessibility test - component should be in the document
       expect(document.body).toBeInTheDocument();
@@ -131,14 +129,14 @@ describe("ProvidersDataTable", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      renderWithMocks(<ProvidersDataTable {...mockProps} />);
+      render(<ProvidersDataTable {...mockProps} />);
 
       // Component should handle state changes gracefully
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<ProvidersDataTable {...mockProps} />);
+      render(<ProvidersDataTable {...mockProps} />);
 
       // Component should handle user events
       expect(document.body).toBeInTheDocument();
@@ -147,7 +145,7 @@ describe("ProvidersDataTable", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<ProvidersDataTable {...mockProps} />);
+      render(<ProvidersDataTable {...mockProps} />);
 
       // Component should handle edge cases gracefully
       expect(document.body).toBeInTheDocument();
@@ -155,7 +153,7 @@ describe("ProvidersDataTable", () => {
 
     it("should handle missing or invalid props", () => {
       // Test with missing/invalid props - use the same columns structure to avoid undefined column access
-      renderWithMocks(
+      render(
         <ProvidersDataTable
           columns={mockProps.columns}
           data={[]}

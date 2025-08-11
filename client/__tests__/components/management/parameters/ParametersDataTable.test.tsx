@@ -1,5 +1,5 @@
 import { ParametersDataTable } from "@/components/management/parameters/ParametersDataTable";
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import { Parameter } from "@/types";
 import type { ColumnDef } from "@tanstack/react-table";
 import { describe, expect, it, vi } from "vitest";
@@ -108,7 +108,7 @@ const mockRenderParameterCard = (parameter: Parameter) => (
 
 describe("ParametersDataTable", () => {
   it("renders without crashing", () => {
-    renderWithMocks(
+    render(
       <ParametersDataTable
         columns={mockColumns}
         data={mockParameters}
@@ -122,7 +122,7 @@ describe("ParametersDataTable", () => {
   });
 
   it("renders toolbar and pagination components", () => {
-    const { getByTestId } = renderWithMocks(
+    const { getByTestId } = render(
       <ParametersDataTable
         columns={mockColumns}
         data={mockParameters}
@@ -139,7 +139,7 @@ describe("ParametersDataTable", () => {
   });
 
   it("renders parameter cards for each parameter", () => {
-    const { getByTestId } = renderWithMocks(
+    const { getByTestId } = render(
       <ParametersDataTable
         columns={mockColumns}
         data={mockParameters}
@@ -156,7 +156,7 @@ describe("ParametersDataTable", () => {
   });
 
   it("shows empty state when no parameters match filters", () => {
-    const { getByText } = renderWithMocks(
+    const { getByText } = render(
       <ParametersDataTable
         columns={mockColumns}
         data={[]}

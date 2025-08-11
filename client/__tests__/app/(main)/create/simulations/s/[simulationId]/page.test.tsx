@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { act, screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { act, screen } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -7,8 +7,6 @@ import EditSimulationPage from "@/app/(main)/create/simulations/s/[simulationId]
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the SimulationEdit component
 vi.mock("@/components/create/simulations/SimulationEdit", () => ({
@@ -49,7 +47,7 @@ describe("EditSimulationPage", () => {
       });
 
       await act(async () => {
-        renderWithMocks(<EditSimulationPage params={mockParams} />);
+        render(<EditSimulationPage params={mockParams} />);
       });
 
       // Should render the simulation edit component
@@ -66,7 +64,7 @@ describe("EditSimulationPage", () => {
       });
 
       await act(async () => {
-        renderWithMocks(<EditSimulationPage params={mockParams} />);
+        render(<EditSimulationPage params={mockParams} />);
       });
 
       // Should have proper accessibility attributes
@@ -80,7 +78,7 @@ describe("EditSimulationPage", () => {
       const mockParams = Promise.resolve({ simulationId: "edge-case-id" });
 
       await act(async () => {
-        renderWithMocks(<EditSimulationPage params={mockParams} />);
+        render(<EditSimulationPage params={mockParams} />);
       });
 
       // Should render the component even with edge case params

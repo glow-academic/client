@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -8,8 +8,6 @@ import Documents from "@/components/create/documents/Documents";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 describe("Documents", () => {
   /* ------------------------------------------------------------------ *
@@ -30,7 +28,7 @@ describe("Documents", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Documents />);
+      render(<Documents />);
 
       // Wait for the component to load - use a more flexible approach
       await waitFor(() => {
@@ -79,7 +77,7 @@ describe("Documents", () => {
       );
       vi.mocked(getAllDocuments).mockResolvedValue(mockDocuments);
 
-      renderWithMocks(<Documents />);
+      render(<Documents />);
 
       // Wait for documents to load
       await waitFor(() => {
@@ -89,7 +87,7 @@ describe("Documents", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<Documents />);
+      render(<Documents />);
 
       // Check for upload cloud icon (empty state) or document content
       await waitFor(() => {
@@ -135,7 +133,7 @@ describe("Documents", () => {
       );
       vi.mocked(getAllDocuments).mockResolvedValue(mockDocuments);
 
-      renderWithMocks(<Documents />);
+      render(<Documents />);
 
       await waitFor(() => {
         expect(screen.getByText("Test Document")).toBeInTheDocument();
@@ -176,7 +174,7 @@ describe("Documents", () => {
       );
       vi.mocked(getAllDocuments).mockResolvedValue(mockDocuments);
 
-      renderWithMocks(<Documents />);
+      render(<Documents />);
 
       await waitFor(() => {
         expect(screen.getByText("Test Document")).toBeInTheDocument();
@@ -222,7 +220,7 @@ describe("Documents", () => {
       );
       vi.mocked(getAllDocuments).mockResolvedValue(mockDocuments);
 
-      renderWithMocks(<Documents />);
+      render(<Documents />);
 
       await waitFor(() => {
         expect(screen.getByText("Test Document")).toBeInTheDocument();
@@ -245,7 +243,7 @@ describe("Documents", () => {
       );
       vi.mocked(getAllDocuments).mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<Documents />);
+      render(<Documents />);
 
       // The component should handle the error gracefully
       await waitFor(() => {
@@ -267,7 +265,7 @@ describe("Documents", () => {
       );
       vi.mocked(getAllDocuments).mockReturnValue(loadingPromise);
 
-      renderWithMocks(<Documents />);
+      render(<Documents />);
 
       // Should show loading state (skeleton)
       const skeletons = document.querySelectorAll('[data-testid="skeleton"]');
@@ -279,7 +277,7 @@ describe("Documents", () => {
     it("should handle navigation", async () => {
       // This component doesn't have direct navigation, but we can test
       // that it renders without navigation-related errors
-      renderWithMocks(<Documents />);
+      render(<Documents />);
 
       await waitFor(() => {
         // Use a more flexible approach to check for content
@@ -301,7 +299,7 @@ describe("Documents", () => {
       );
       vi.mocked(getAllDocuments).mockResolvedValue([]);
 
-      renderWithMocks(<Documents />);
+      render(<Documents />);
 
       await waitFor(() => {
         expect(screen.getByText("No documents yet")).toBeInTheDocument();
@@ -329,7 +327,7 @@ describe("Documents", () => {
       );
       vi.mocked(getAllDocuments).mockResolvedValue(mockDocuments);
 
-      renderWithMocks(<Documents />);
+      render(<Documents />);
 
       // Component should handle empty name gracefully
       await waitFor(() => {

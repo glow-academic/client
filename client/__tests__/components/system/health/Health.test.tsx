@@ -5,15 +5,13 @@
  * 07/20/2025
  */
 
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { fireEvent, screen, waitFor } from '@/test/custom-render';
 import { afterEach, beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
 // Import centralized mocks
 import "@/mocks/auth";
-import "@/mocks/mutations";
 import "@/mocks/navigation";
-import "@/mocks/queries";
 
 // ——————————————————————————————————————————
 import Health from "@/components/system/health/Health";
@@ -77,7 +75,7 @@ describe("Health", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       // Wait for initial health checks to complete to avoid act() warnings
       await waitFor(() => {
@@ -86,7 +84,7 @@ describe("Health", () => {
     });
 
     it("should display all health check cards", async () => {
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       await waitFor(() => {
         expect(screen.getByText("WebSocket Connection")).toBeInTheDocument();
@@ -102,7 +100,7 @@ describe("Health", () => {
     });
 
     it("should display overall health status", async () => {
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       await waitFor(() => {
         expect(screen.getByText("Overall System Health")).toBeInTheDocument();
@@ -113,7 +111,7 @@ describe("Health", () => {
 
   describe("User Interactions", () => {
     it("should handle run health checks button click", async () => {
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       // Wait for initial health checks to complete
       await waitFor(() => {
@@ -129,7 +127,7 @@ describe("Health", () => {
     });
 
     it("should handle run stress tests button click", async () => {
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       // Wait for initial health checks to complete
       await waitFor(() => {
@@ -145,7 +143,7 @@ describe("Health", () => {
     });
 
     it("should have buttons available after health checks complete", async () => {
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       // Wait for initial health checks to complete
       await waitFor(() => {
@@ -157,7 +155,7 @@ describe("Health", () => {
 
   describe("API Integration", () => {
     it("should handle successful health checks", async () => {
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith("/api/health");
@@ -174,7 +172,7 @@ describe("Health", () => {
         statusText: "Internal Server Error",
       });
 
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       await waitFor(() => {
         expect(screen.getByText(/System Health Monitor/i)).toBeInTheDocument();
@@ -184,7 +182,7 @@ describe("Health", () => {
     it("should handle network errors", async () => {
       (global.fetch as unknown as Mock).mockRejectedValueOnce(new Error("Network error"));
 
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       await waitFor(() => {
         expect(screen.getByText(/System Health Monitor/i)).toBeInTheDocument();
@@ -192,7 +190,7 @@ describe("Health", () => {
     });
 
     it("should handle loading states", async () => {
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       // Should eventually show completed state
       await waitFor(() => {
@@ -203,7 +201,7 @@ describe("Health", () => {
 
   describe("Health Check Status Display", () => {
     it("should display healthy status correctly", async () => {
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       await waitFor(() => {
         const healthyBadges = screen.getAllByText("Healthy");
@@ -217,7 +215,7 @@ describe("Health", () => {
         status: 500,
       });
 
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       await waitFor(() => {
         const unhealthyBadges = screen.getAllByText("Unhealthy");
@@ -226,7 +224,7 @@ describe("Health", () => {
     });
 
     it("should display response times", async () => {
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       await waitFor(() => {
         const responseTimeElements = screen.getAllByText(/Response Time:/i);
@@ -237,7 +235,7 @@ describe("Health", () => {
 
   describe("Stress Tests", () => {
     it("should run stress tests successfully", async () => {
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       const runStressTestsButton = screen.getByText("Run Stress Tests");
       fireEvent.click(runStressTestsButton);
@@ -250,7 +248,7 @@ describe("Health", () => {
     });
 
     it("should display stress test results", async () => {
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       const runStressTestsButton = screen.getByText("Run Stress Tests");
       fireEvent.click(runStressTestsButton);
@@ -263,7 +261,7 @@ describe("Health", () => {
 
   describe("System Information", () => {
     it("should display system information", async () => {
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       await waitFor(() => {
         expect(screen.getByText("System Information")).toBeInTheDocument();
@@ -276,7 +274,7 @@ describe("Health", () => {
     });
 
     it("should display correct environment information", async () => {
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       await waitFor(() => {
         expect(screen.getByText("System Information")).toBeInTheDocument();
@@ -291,7 +289,7 @@ describe("Health", () => {
 
   describe("Edge Cases", () => {
     it("should handle unknown health check status", async () => {
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       await waitFor(() => {
         // Should not crash with unknown status
@@ -302,7 +300,7 @@ describe("Health", () => {
 
   describe("Toast Notifications", () => {
     it("should show success toast when all health checks pass", async () => {
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       await waitFor(() => {
         expect(screen.getByText(/System Health Monitor/i)).toBeInTheDocument();
@@ -315,7 +313,7 @@ describe("Health", () => {
         status: 500,
       });
 
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       await waitFor(() => {
         expect(screen.getByText(/System Health Monitor/i)).toBeInTheDocument();
@@ -325,7 +323,7 @@ describe("Health", () => {
 
   describe("Progress Indicators", () => {
     it("should display health score progress bar", async () => {
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       await waitFor(() => {
         const progressBar = screen.getByRole("progressbar");
@@ -334,7 +332,7 @@ describe("Health", () => {
     });
 
     it("should display health statistics", async () => {
-      renderWithMocks(<Health />);
+      render(<Health />);
 
       await waitFor(() => {
         expect(screen.getAllByText("Healthy").length).toBeGreaterThan(0);

@@ -1,6 +1,6 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import type { Table } from "@tanstack/react-table";
-import { screen } from "@testing-library/react";
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -12,8 +12,6 @@ import {
 
 // Import mocks
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
@@ -60,7 +58,7 @@ const mockProps: ParametersDataTableToolbarProps = {
 describe("ParametersDataTableToolbar", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<ParametersDataTableToolbar {...mockProps} />);
+      render(<ParametersDataTableToolbar {...mockProps} />);
 
       // Should render the search input
       expect(
@@ -75,7 +73,7 @@ describe("ParametersDataTableToolbar", () => {
     });
 
     it("should render with props", () => {
-      renderWithMocks(<ParametersDataTableToolbar {...mockProps} />);
+      render(<ParametersDataTableToolbar {...mockProps} />);
 
       // Should render filter buttons
       expect(screen.getByText("Type")).toBeInTheDocument();
@@ -85,7 +83,7 @@ describe("ParametersDataTableToolbar", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<ParametersDataTableToolbar {...mockProps} />);
+      render(<ParametersDataTableToolbar {...mockProps} />);
 
       // Search input should be accessible
       const searchInput = screen.getByPlaceholderText("Search parameters...");
@@ -100,7 +98,7 @@ describe("ParametersDataTableToolbar", () => {
   describe("User Interactions", () => {
     it("should handle search input changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ParametersDataTableToolbar {...mockProps} />);
+      render(<ParametersDataTableToolbar {...mockProps} />);
 
       const searchInput = screen.getByPlaceholderText("Search parameters...");
       await user.type(searchInput, "test parameter");
@@ -111,7 +109,7 @@ describe("ParametersDataTableToolbar", () => {
 
     it("should handle filter interactions", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ParametersDataTableToolbar {...mockProps} />);
+      render(<ParametersDataTableToolbar {...mockProps} />);
 
       // Click on filter buttons
       const filterButtons = screen.getAllByRole("button");
@@ -133,7 +131,7 @@ describe("ParametersDataTableToolbar", () => {
         scenarioOptions: [],
       };
 
-      renderWithMocks(<ParametersDataTableToolbar {...emptyProps} />);
+      render(<ParametersDataTableToolbar {...emptyProps} />);
 
       // Should still render the search input
       expect(
@@ -154,7 +152,7 @@ describe("ParametersDataTableToolbar", () => {
         scenarioOptions: [],
       };
 
-      renderWithMocks(<ParametersDataTableToolbar {...minimalProps} />);
+      render(<ParametersDataTableToolbar {...minimalProps} />);
 
       // Should still render without crashing
       expect(

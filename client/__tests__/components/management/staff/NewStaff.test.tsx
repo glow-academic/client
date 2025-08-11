@@ -3,8 +3,8 @@
  * Tests for the NewStaff component
  */
 
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -12,8 +12,6 @@ import NewStaff from "@/components/management/staff/NewStaff";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the toast notifications
 vi.mock("sonner", () => ({
@@ -79,19 +77,19 @@ describe("NewStaff", () => {
 
   describe("Rendering and Loading States", () => {
     it("renders without crashing", () => {
-      renderWithMocks(<NewStaff />);
+      render(<NewStaff />);
       expect(document.body).toBeInTheDocument();
     });
 
     it("shows both tabs by default", () => {
-      renderWithMocks(<NewStaff />);
+      render(<NewStaff />);
 
       expect(screen.getByText("CSV Import")).toBeInTheDocument();
       expect(screen.getByText("Manual Add")).toBeInTheDocument();
     });
 
     it("shows CSV import content by default", () => {
-      renderWithMocks(<NewStaff />);
+      render(<NewStaff />);
 
       expect(screen.getByText(/choose csv file/i)).toBeInTheDocument();
       expect(screen.getByText(/download template/i)).toBeInTheDocument();
@@ -102,7 +100,7 @@ describe("NewStaff", () => {
 
     it("shows manual add content when tab is clicked", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<NewStaff />);
+      render(<NewStaff />);
 
       const manualTab = screen.getByText("Manual Add");
       await user.click(manualTab);
@@ -118,7 +116,7 @@ describe("NewStaff", () => {
     beforeEach(async () => {
       // Switch to manual tab
       const user = userEvent.setup();
-      renderWithMocks(<NewStaff />);
+      render(<NewStaff />);
 
       const manualTab = screen.getByText("Manual Add");
       await user.click(manualTab);
@@ -254,7 +252,7 @@ describe("NewStaff", () => {
 
   describe("CSV Import Functionality", () => {
     it("shows file upload area", () => {
-      renderWithMocks(<NewStaff />);
+      render(<NewStaff />);
 
       expect(screen.getByText(/supports .csv files/i)).toBeInTheDocument();
       expect(

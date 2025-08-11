@@ -1,5 +1,5 @@
 import { describe, it, vi } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { render } from '@/test/custom-render';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
@@ -36,7 +36,7 @@ describe('websocket-context', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       
-      renderWithMocks(<WebSocketProvider {...mockProps} profileId={null}>
+      render(<WebSocketProvider {...mockProps} profileId={null}>
         <div>test-children</div>
       </WebSocketProvider>);
       

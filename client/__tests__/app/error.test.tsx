@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -36,7 +36,7 @@ describe("Error", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<Error error={mockError} reset={mockReset} />);
+      render(<Error error={mockError} reset={mockReset} />);
 
       expect(screen.getByText("Error")).toBeInTheDocument();
       expect(screen.getByText("An error occurred")).toBeInTheDocument();
@@ -44,7 +44,7 @@ describe("Error", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<Error error={mockError} reset={mockReset} />);
+      render(<Error error={mockError} reset={mockReset} />);
 
       // Check for proper heading structure
       expect(
@@ -67,7 +67,7 @@ describe("Error", () => {
   describe("User Interactions", () => {
     it("should handle Try Again button click", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Error error={mockError} reset={mockReset} />);
+      render(<Error error={mockError} reset={mockReset} />);
 
       const tryAgainButton = screen.getByRole("button", { name: "Try Again" });
       await user.click(tryAgainButton);
@@ -81,7 +81,7 @@ describe("Error", () => {
         effectiveProfile: { role: "admin" },
       });
 
-      renderWithMocks(<Error error={mockError} reset={mockReset} />);
+      render(<Error error={mockError} reset={mockReset} />);
 
       const backButton = screen.getByRole("button", { name: "Back to Glow" });
       await user.click(backButton);
@@ -95,7 +95,7 @@ describe("Error", () => {
         effectiveProfile: { role: "ta" },
       });
 
-      renderWithMocks(<Error error={mockError} reset={mockReset} />);
+      render(<Error error={mockError} reset={mockReset} />);
 
       const backButton = screen.getByRole("button", { name: "Back to Glow" });
       await user.click(backButton);
@@ -109,7 +109,7 @@ describe("Error", () => {
         effectiveProfile: { role: "guest" },
       });
 
-      renderWithMocks(<Error error={mockError} reset={mockReset} />);
+      render(<Error error={mockError} reset={mockReset} />);
 
       const backButton = screen.getByRole("button", { name: "Back to Glow" });
       await user.click(backButton);
@@ -125,7 +125,7 @@ describe("Error", () => {
         effectiveProfile: { role: "instructional" },
       });
 
-      renderWithMocks(<Error error={mockError} reset={mockReset} />);
+      render(<Error error={mockError} reset={mockReset} />);
 
       const backButton = screen.getByRole("button", { name: "Back to Glow" });
       await user.click(backButton);
@@ -141,7 +141,7 @@ describe("Error", () => {
         effectiveProfile: null,
       });
 
-      renderWithMocks(<Error error={mockError} reset={mockReset} />);
+      render(<Error error={mockError} reset={mockReset} />);
 
       const backButton = screen.getByRole("button", { name: "Back to Glow" });
       await user.click(backButton);
@@ -156,7 +156,7 @@ describe("Error", () => {
         effectiveProfile: { role: undefined },
       });
 
-      renderWithMocks(<Error error={mockError} reset={mockReset} />);
+      render(<Error error={mockError} reset={mockReset} />);
 
       const backButton = screen.getByRole("button", { name: "Back to Glow" });
       await user.click(backButton);
@@ -169,7 +169,7 @@ describe("Error", () => {
       const customError = {
         message: "Custom error message with special characters: !@#$%",
       } as Error;
-      renderWithMocks(<Error error={customError} reset={mockReset} />);
+      render(<Error error={customError} reset={mockReset} />);
 
       expect(
         screen.getByText("Custom error message with special characters: !@#$%")
@@ -178,7 +178,7 @@ describe("Error", () => {
 
     it("should handle empty error message", () => {
       const emptyError = { message: "" } as Error;
-      renderWithMocks(<Error error={emptyError} reset={mockReset} />);
+      render(<Error error={emptyError} reset={mockReset} />);
 
       expect(screen.getByText("An error occurred")).toBeInTheDocument();
       // Check that the error message paragraph exists (even if empty)

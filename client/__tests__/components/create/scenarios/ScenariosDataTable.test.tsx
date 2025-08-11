@@ -1,7 +1,7 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import { Scenario } from "@/types";
 import type { ColumnDef } from "@tanstack/react-table";
-import { screen } from "@testing-library/react";
+import { screen } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -63,7 +63,7 @@ describe("ScenariosDataTable", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<ScenariosDataTable {...mockProps} />);
+      render(<ScenariosDataTable {...mockProps} />);
 
       // Should render the component with no data message
       expect(
@@ -131,14 +131,14 @@ describe("ScenariosDataTable", () => {
         renderGroupedScenarios: vi.fn(() => <div>Test Scenario Card</div>),
       };
 
-      renderWithMocks(<ScenariosDataTable {...propsWithData} />);
+      render(<ScenariosDataTable {...propsWithData} />);
 
       // Should render the component with scenario card
       expect(screen.getByText("Test Scenario Card")).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<ScenariosDataTable {...mockProps} />);
+      render(<ScenariosDataTable {...mockProps} />);
 
       // Should have proper accessibility attributes
       expect(
@@ -149,7 +149,7 @@ describe("ScenariosDataTable", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      renderWithMocks(<ScenariosDataTable {...mockProps} />);
+      render(<ScenariosDataTable {...mockProps} />);
 
       // Should handle state changes properly
       expect(
@@ -158,7 +158,7 @@ describe("ScenariosDataTable", () => {
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<ScenariosDataTable {...mockProps} />);
+      render(<ScenariosDataTable {...mockProps} />);
 
       // Should handle user events properly
       expect(
@@ -180,7 +180,7 @@ describe("ScenariosDataTable", () => {
         renderGroupedScenarios: vi.fn(() => null),
       };
 
-      renderWithMocks(<ScenariosDataTable {...edgeCaseProps} />);
+      render(<ScenariosDataTable {...edgeCaseProps} />);
 
       // Should render the component even with edge case props
       expect(
@@ -200,7 +200,7 @@ describe("ScenariosDataTable", () => {
         renderGroupedScenarios: vi.fn(),
       };
 
-      renderWithMocks(<ScenariosDataTable {...minimalProps} />);
+      render(<ScenariosDataTable {...minimalProps} />);
 
       // Should render with minimal props
       expect(

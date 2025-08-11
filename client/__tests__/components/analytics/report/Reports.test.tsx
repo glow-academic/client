@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -7,8 +7,6 @@ import Reports from "@/components/analytics/report/Reports";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the missing exports
 vi.mock("@/utils/queries/standards/get-standards-by-standardgroups", () => ({
@@ -151,14 +149,14 @@ describe("Reports", () => {
 
   describe("Loading States", () => {
     it("shows loading state when queries are loading", () => {
-      renderWithMocks(<Reports />);
+      render(<Reports />);
 
       expect(screen.getByText("Loading reports...")).toBeInTheDocument();
       expect(screen.getByText("Loading reports...")).toBeInTheDocument();
     });
 
     it("shows loading spinner with proper accessibility", () => {
-      renderWithMocks(<Reports />);
+      render(<Reports />);
 
       const loadingText = screen.getByText("Loading reports...");
       expect(loadingText).toBeInTheDocument();
@@ -239,7 +237,7 @@ describe("Reports", () => {
       ).mockResolvedValue([]);
       vi.mocked(getAllScenarios).mockResolvedValue([]);
 
-      renderWithMocks(<Reports />);
+      render(<Reports />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -341,7 +339,7 @@ describe("Reports", () => {
       ).mockResolvedValue([]);
       vi.mocked(getAllScenarios).mockResolvedValue([]);
 
-      renderWithMocks(<Reports />);
+      render(<Reports />);
 
       await waitFor(() => {
         expect(
@@ -364,7 +362,7 @@ describe("Reports", () => {
       );
       vi.mocked(getAllProfiles).mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<Reports />);
+      render(<Reports />);
 
       // Should show loading state initially
       expect(screen.getByText("Loading reports...")).toBeInTheDocument();
@@ -425,7 +423,7 @@ describe("Reports", () => {
       ).mockResolvedValue([]);
       vi.mocked(getAllScenarios).mockResolvedValue([]);
 
-      renderWithMocks(<Reports />);
+      render(<Reports />);
 
       await waitFor(() => {
         expect(
@@ -513,7 +511,7 @@ describe("Reports", () => {
       ).mockResolvedValue([]);
       vi.mocked(getAllScenarios).mockResolvedValue([]);
 
-      renderWithMocks(<Reports />);
+      render(<Reports />);
 
       await waitFor(() => {
         expect(
@@ -581,7 +579,7 @@ describe("Reports", () => {
       ).mockResolvedValue([]);
       vi.mocked(getAllScenarios).mockResolvedValue([]);
 
-      renderWithMocks(<Reports />);
+      render(<Reports />);
 
       await waitFor(() => {
         expect(
@@ -665,7 +663,7 @@ describe("Reports", () => {
       ).mockResolvedValue([]);
       vi.mocked(getAllScenarios).mockResolvedValue([]);
 
-      renderWithMocks(<Reports />);
+      render(<Reports />);
 
       await waitFor(() => {
         expect(
@@ -683,7 +681,7 @@ describe("Reports", () => {
 
   describe("Accessibility", () => {
     it("has proper loading state accessibility", () => {
-      renderWithMocks(<Reports />);
+      render(<Reports />);
 
       const loadingText = screen.getByText("Loading reports...");
       expect(loadingText).toBeInTheDocument();
@@ -693,7 +691,7 @@ describe("Reports", () => {
     });
 
     it("provides loading text for screen readers", () => {
-      renderWithMocks(<Reports />);
+      render(<Reports />);
 
       expect(screen.getByText("Loading reports...")).toBeInTheDocument();
     });
@@ -770,7 +768,7 @@ describe("Reports", () => {
       ).mockResolvedValue([]);
       vi.mocked(getAllScenarios).mockResolvedValue([]);
 
-      renderWithMocks(<Reports />);
+      render(<Reports />);
 
       await waitFor(() => {
         expect(

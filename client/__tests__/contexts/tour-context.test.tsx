@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { render } from '@/test/custom-render';
 
 // ——————————————————————————————————————————
 
@@ -25,7 +25,7 @@ describe('tour-context', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       
-      renderWithMocks(<TourProvider {...mockProps} >
+      render(<TourProvider {...mockProps} >
         <div>test-children</div>
       </TourProvider>);
       

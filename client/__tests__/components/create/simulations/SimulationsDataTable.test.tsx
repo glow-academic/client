@@ -1,7 +1,7 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import type {} from "@tanstack/react-table";
 import { ColumnDef } from "@tanstack/react-table";
-import { screen } from "@testing-library/react";
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -108,7 +108,7 @@ const mockProps: SimulationsDataTableProps = {
 describe("SimulationsDataTable", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<SimulationsDataTable {...mockProps} />);
+      render(<SimulationsDataTable {...mockProps} />);
 
       // Check that the component renders without crashing
       expect(
@@ -117,7 +117,7 @@ describe("SimulationsDataTable", () => {
     });
 
     it("should render with props", () => {
-      renderWithMocks(<SimulationsDataTable {...mockProps} />);
+      render(<SimulationsDataTable {...mockProps} />);
 
       // Check that the toolbar renders with search input
       expect(
@@ -134,7 +134,7 @@ describe("SimulationsDataTable", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<SimulationsDataTable {...mockProps} />);
+      render(<SimulationsDataTable {...mockProps} />);
 
       // Check that search input has proper accessibility attributes
       const searchInput = screen.getByPlaceholderText("Search simulations...");
@@ -148,7 +148,7 @@ describe("SimulationsDataTable", () => {
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<SimulationsDataTable {...mockProps} />);
+      render(<SimulationsDataTable {...mockProps} />);
 
       // Test search functionality
       const searchInput = screen.getByPlaceholderText("Search simulations...");
@@ -160,7 +160,7 @@ describe("SimulationsDataTable", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<SimulationsDataTable {...mockProps} />);
+      render(<SimulationsDataTable {...mockProps} />);
 
       // Test search input interaction
       const searchInput = screen.getByPlaceholderText("Search simulations...");
@@ -179,7 +179,7 @@ describe("SimulationsDataTable", () => {
         data: [],
       };
 
-      renderWithMocks(<SimulationsDataTable {...emptyProps} />);
+      render(<SimulationsDataTable {...emptyProps} />);
 
       // Should show "No simulations found" message
       expect(screen.getByText("No simulations found.")).toBeInTheDocument();
@@ -196,7 +196,7 @@ describe("SimulationsDataTable", () => {
         renderSimulationCard: vi.fn(),
       };
 
-      renderWithMocks(<SimulationsDataTable {...minimalProps} />);
+      render(<SimulationsDataTable {...minimalProps} />);
 
       // Should still render without crashing
       expect(screen.getByText("No simulations found.")).toBeInTheDocument();

@@ -5,8 +5,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -14,7 +14,7 @@ import { describe, expect, it } from "vitest";
 describe("Select", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(
+      render(
         <Select>
           <SelectTrigger>
             <SelectValue placeholder="Select an option" />
@@ -30,7 +30,7 @@ describe("Select", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(
+      render(
         <Select>
           <SelectTrigger aria-label="Test Select">
             <SelectValue placeholder="Select an option" />
@@ -48,7 +48,7 @@ describe("Select", () => {
 
   describe("Component Structure", () => {
     it("should render select with trigger and options", () => {
-      renderWithMocks(
+      render(
         <Select>
           <SelectTrigger>
             <SelectValue placeholder="Choose..." />
@@ -67,7 +67,7 @@ describe("Select", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal select
-      renderWithMocks(
+      render(
         <Select>
           <SelectTrigger>
             <SelectValue />

@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -16,7 +16,7 @@ const mockProps: SimulationEditProps = {
 describe("SimulationEdit", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<SimulationEdit {...mockProps} />);
+      render(<SimulationEdit {...mockProps} />);
 
       // Check that the component renders without crashing
       await waitFor(() => {
@@ -25,7 +25,7 @@ describe("SimulationEdit", () => {
     });
 
     it("should render with props", async () => {
-      renderWithMocks(<SimulationEdit {...mockProps} />);
+      render(<SimulationEdit {...mockProps} />);
 
       // Check that the component renders with the provided simulationId
       await waitFor(() => {
@@ -37,7 +37,7 @@ describe("SimulationEdit", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<SimulationEdit {...mockProps} />);
+      render(<SimulationEdit {...mockProps} />);
 
       // Check that the component renders with proper accessibility
       await waitFor(() => {
@@ -56,7 +56,7 @@ describe("SimulationEdit", () => {
         simulationId: "edge-case-id",
       };
 
-      renderWithMocks(<SimulationEdit {...edgeCaseProps} />);
+      render(<SimulationEdit {...edgeCaseProps} />);
 
       // Should handle edge case gracefully
       await waitFor(() => {
@@ -70,7 +70,7 @@ describe("SimulationEdit", () => {
         simulationId: "",
       };
 
-      renderWithMocks(<SimulationEdit {...minimalProps} />);
+      render(<SimulationEdit {...minimalProps} />);
 
       // Should still render without crashing
       await waitFor(() => {

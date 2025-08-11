@@ -1,6 +1,6 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import { Row } from "@tanstack/react-table";
-import { screen } from "@testing-library/react";
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -13,8 +13,6 @@ import { StaffData, useStaffColumns } from "@/hooks/use-staff-columns";
 
 // Import mocks
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the useStaffColumns hook
 vi.mock("@/hooks/use-staff-columns", () => ({
@@ -141,14 +139,14 @@ mockUseStaffColumns.mockReturnValue({
 describe("StaffDataTable", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<StaffDataTable {...mockProps} />);
+      render(<StaffDataTable {...mockProps} />);
 
       // Should render the staff data table
       expect(screen.getByRole("table")).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      renderWithMocks(<StaffDataTable {...mockProps} />);
+      render(<StaffDataTable {...mockProps} />);
 
       // Should render with the provided options - check for role display names instead of option labels
       expect(screen.getByText("Administrator")).toBeInTheDocument();
@@ -156,7 +154,7 @@ describe("StaffDataTable", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<StaffDataTable {...mockProps} />);
+      render(<StaffDataTable {...mockProps} />);
 
       // Table should be accessible
       const table = screen.getByRole("table");
@@ -171,7 +169,7 @@ describe("StaffDataTable", () => {
   describe("User Interactions", () => {
     it("should handle search input changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<StaffDataTable {...mockProps} />);
+      render(<StaffDataTable {...mockProps} />);
 
       // Look for search input
       const searchInput = screen.getByPlaceholderText(
@@ -185,7 +183,7 @@ describe("StaffDataTable", () => {
 
     it("should handle filter interactions", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<StaffDataTable {...mockProps} />);
+      render(<StaffDataTable {...mockProps} />);
 
       // Click on one of the filter buttons (Role, Status, etc.)
       const roleButton = screen.getByRole("button", { name: "Role" });
@@ -208,7 +206,7 @@ describe("StaffDataTable", () => {
         onRefresh: vi.fn(),
       };
 
-      renderWithMocks(<StaffDataTable {...emptyProps} />);
+      render(<StaffDataTable {...emptyProps} />);
 
       // Should still render the table
       expect(screen.getByRole("table")).toBeInTheDocument();
@@ -227,7 +225,7 @@ describe("StaffDataTable", () => {
         onRefresh: vi.fn(),
       };
 
-      renderWithMocks(<StaffDataTable {...minimalProps} />);
+      render(<StaffDataTable {...minimalProps} />);
 
       // Should still render without crashing
       expect(screen.getByRole("table")).toBeInTheDocument();

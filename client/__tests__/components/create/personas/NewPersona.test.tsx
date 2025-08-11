@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -17,7 +17,7 @@ vi.mock("@/components/common/agent/Persona", () => ({
 describe("NewPersona", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<NewPersona />);
+      render(<NewPersona />);
 
       // Check that the Persona component is rendered with create mode
       expect(screen.getByTestId("persona-component")).toBeInTheDocument();
@@ -28,7 +28,7 @@ describe("NewPersona", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<NewPersona />);
+      render(<NewPersona />);
 
       // Check that the Persona component is accessible
       expect(screen.getByTestId("persona-component")).toBeInTheDocument();
@@ -39,7 +39,7 @@ describe("NewPersona", () => {
     it("should handle edge cases gracefully", () => {
       // This component is very simple, just rendering the Persona component
       // with create mode, so there aren't many edge cases to test
-      renderWithMocks(<NewPersona />);
+      render(<NewPersona />);
 
       // Component should render without crashing
       expect(screen.getByTestId("persona-component")).toBeInTheDocument();

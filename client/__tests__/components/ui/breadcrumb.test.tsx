@@ -6,8 +6,8 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -15,7 +15,7 @@ import { describe, expect, it } from "vitest";
 describe("Breadcrumb", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(
+      render(
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -34,7 +34,7 @@ describe("Breadcrumb", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(
+      render(
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -56,7 +56,7 @@ describe("Breadcrumb", () => {
 
   describe("Component Structure", () => {
     it("should render breadcrumb navigation correctly", () => {
-      renderWithMocks(
+      render(
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -83,7 +83,7 @@ describe("Breadcrumb", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal breadcrumb
-      renderWithMocks(
+      render(
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>

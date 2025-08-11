@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // Mock NewSimulation component
@@ -16,7 +16,7 @@ import NewSimulationPage, {
 
 describe("NewSimulationPage", () => {
   it("renders without crashing", () => {
-    renderWithMocks(<NewSimulationPage />);
+    render(<NewSimulationPage />);
     expect(screen.getByTestId("new-simulation-component")).toBeInTheDocument();
     expect(screen.getByText("New Simulation Component")).toBeInTheDocument();
   });
@@ -28,7 +28,7 @@ describe("NewSimulationPage", () => {
   });
 
   it("renders the NewSimulation component inside a wrapper", () => {
-    renderWithMocks(<NewSimulationPage />);
+    render(<NewSimulationPage />);
     const wrapper = screen.getByTestId(
       "new-simulation-component"
     ).parentElement;

@@ -6,9 +6,9 @@
  */
 
 import SimulationComposition from "@/components/common/analytics/footer/SimulationComposition";
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import { calculateSimulationComposition } from "@/utils/analytics/footer";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from '@/test/custom-render';
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the utility function
@@ -304,7 +304,7 @@ describe("SimulationComposition", () => {
   };
 
   const renderComponent = (props = {}) => {
-    return renderWithMocks(
+    return render(
       <SimulationComposition {...defaultProps} {...props} />
     );
   };

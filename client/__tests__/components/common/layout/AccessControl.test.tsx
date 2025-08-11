@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -7,8 +7,6 @@ import { AccessControl } from "@/components/common/layout/AccessControl";
 
 // Import mocks
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
@@ -24,7 +22,7 @@ const mockProps: AccessControlProps = {
 describe("AccessControl", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<AccessControl {...mockProps} />);
+      render(<AccessControl {...mockProps} />);
 
       // Should render children when access is granted
       await waitFor(() => {
@@ -39,7 +37,7 @@ describe("AccessControl", () => {
         pathname: "/analytics",
       };
 
-      renderWithMocks(<AccessControl {...propsWithDifferentPath} />);
+      render(<AccessControl {...propsWithDifferentPath} />);
 
       await waitFor(() => {
         expect(screen.getByText("different-children")).toBeInTheDocument();
@@ -47,7 +45,7 @@ describe("AccessControl", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<AccessControl {...mockProps} />);
+      render(<AccessControl {...mockProps} />);
 
       await waitFor(() => {
         // Check that children are rendered
@@ -58,7 +56,7 @@ describe("AccessControl", () => {
 
   describe("User Interactions", () => {
     it("should handle user events", async () => {
-      renderWithMocks(<AccessControl {...mockProps} />);
+      render(<AccessControl {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("test-children")).toBeInTheDocument();
@@ -72,7 +70,7 @@ describe("AccessControl", () => {
 
   describe("Navigation", () => {
     it("should handle navigation", async () => {
-      renderWithMocks(<AccessControl {...mockProps} />);
+      render(<AccessControl {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("test-children")).toBeInTheDocument();
@@ -85,7 +83,7 @@ describe("AccessControl", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      renderWithMocks(<AccessControl {...mockProps} />);
+      render(<AccessControl {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("test-children")).toBeInTheDocument();
@@ -97,7 +95,7 @@ describe("AccessControl", () => {
 
     it("should handle missing or invalid props", async () => {
       // Test with missing children
-      renderWithMocks(
+      render(
         <AccessControl pathname="test-pathname">
           <div>fallback</div>
         </AccessControl>
@@ -110,7 +108,7 @@ describe("AccessControl", () => {
 
     it("should handle loading state", async () => {
       // Test that component renders even during loading
-      renderWithMocks(<AccessControl {...mockProps} />);
+      render(<AccessControl {...mockProps} />);
 
       // Should render children when access is granted
       await waitFor(() => {
@@ -134,7 +132,7 @@ describe("AccessControl", () => {
       }));
 
       // Test with a pathname that guests don't have access to
-      renderWithMocks(
+      render(
         <AccessControl pathname="/admin">
           <div>admin-content</div>
         </AccessControl>

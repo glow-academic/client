@@ -1,6 +1,6 @@
 import { getMockColumn, getMockTable } from "@/mocks/navigation";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -93,7 +93,7 @@ const mockProps: ScenariosDataTableToolbarProps = {
 describe("ScenariosDataTableToolbar", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<ScenariosDataTableToolbar {...mockProps} />);
+      render(<ScenariosDataTableToolbar {...mockProps} />);
 
       // Check that the search input is rendered
       expect(
@@ -102,7 +102,7 @@ describe("ScenariosDataTableToolbar", () => {
     });
 
     it("should render with props", () => {
-      renderWithMocks(<ScenariosDataTableToolbar {...mockProps} />);
+      render(<ScenariosDataTableToolbar {...mockProps} />);
 
       // Check that the search input is rendered with correct placeholder
       expect(
@@ -115,7 +115,7 @@ describe("ScenariosDataTableToolbar", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<ScenariosDataTableToolbar {...mockProps} />);
+      render(<ScenariosDataTableToolbar {...mockProps} />);
 
       // Check that the search input has proper accessibility
       const searchInput = screen.getByPlaceholderText("Search scenarios...");
@@ -131,7 +131,7 @@ describe("ScenariosDataTableToolbar", () => {
     it("should handle search input changes", async () => {
       const user = userEvent.setup();
 
-      renderWithMocks(<ScenariosDataTableToolbar {...mockProps} />);
+      render(<ScenariosDataTableToolbar {...mockProps} />);
 
       const searchInput = screen.getByPlaceholderText("Search scenarios...");
       await user.type(searchInput, "test search");
@@ -143,7 +143,7 @@ describe("ScenariosDataTableToolbar", () => {
     it("should handle filter interactions", async () => {
       const user = userEvent.setup();
 
-      renderWithMocks(<ScenariosDataTableToolbar {...mockProps} />);
+      render(<ScenariosDataTableToolbar {...mockProps} />);
 
       // Find and click a filter button
       const buttons = screen.getAllByRole("button");
@@ -168,7 +168,7 @@ describe("ScenariosDataTableToolbar", () => {
         scenarioTypeOptions: [],
       };
 
-      renderWithMocks(<ScenariosDataTableToolbar {...propsWithEmptyOptions} />);
+      render(<ScenariosDataTableToolbar {...propsWithEmptyOptions} />);
 
       // Should still render without crashing
       expect(
@@ -185,7 +185,7 @@ describe("ScenariosDataTableToolbar", () => {
         scenarioTypeOptions: [],
       };
 
-      renderWithMocks(<ScenariosDataTableToolbar {...minimalProps} />);
+      render(<ScenariosDataTableToolbar {...minimalProps} />);
 
       // Should still render without crashing
       expect(

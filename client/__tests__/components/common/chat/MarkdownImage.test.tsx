@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -8,14 +8,14 @@ import MarkdownImage from "@/components/common/chat/MarkdownImage";
 describe("MarkdownImage", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", () => {
-      renderWithMocks(
+      render(
         <MarkdownImage src="https://example.com/image.png" alt="Test image" />
       );
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with src and alt props", () => {
-      renderWithMocks(
+      render(
         <MarkdownImage src="https://example.com/image.png" alt="Test image" />
       );
 
@@ -25,14 +25,14 @@ describe("MarkdownImage", () => {
     });
 
     it("should not render when src is empty", () => {
-      renderWithMocks(<MarkdownImage src="" alt="Test image" />);
+      render(<MarkdownImage src="" alt="Test image" />);
 
       const image = screen.queryByAltText("Test image");
       expect(image).not.toBeInTheDocument();
     });
 
     it("should not render when src is undefined", () => {
-      renderWithMocks(<MarkdownImage alt="Test image" />);
+      render(<MarkdownImage alt="Test image" />);
 
       const image = screen.queryByAltText("Test image");
       expect(image).not.toBeInTheDocument();
@@ -41,7 +41,7 @@ describe("MarkdownImage", () => {
 
   describe("Image Properties", () => {
     it("should render with correct Next.js Image props", () => {
-      renderWithMocks(
+      render(
         <MarkdownImage src="https://example.com/image.png" alt="Test image" />
       );
 
@@ -52,7 +52,7 @@ describe("MarkdownImage", () => {
     });
 
     it("should render with custom style properties", () => {
-      renderWithMocks(
+      render(
         <MarkdownImage src="https://example.com/image.png" alt="Test image" />
       );
 
@@ -65,7 +65,7 @@ describe("MarkdownImage", () => {
     });
 
     it("should render with unoptimized prop", () => {
-      renderWithMocks(
+      render(
         <MarkdownImage src="https://example.com/image.png" alt="Test image" />
       );
 
@@ -77,7 +77,7 @@ describe("MarkdownImage", () => {
 
   describe("Different Image Sources", () => {
     it("should render local images", () => {
-      renderWithMocks(
+      render(
         <MarkdownImage src="/images/local-image.png" alt="Local image" />
       );
 
@@ -87,7 +87,7 @@ describe("MarkdownImage", () => {
     });
 
     it("should render remote CDN images", () => {
-      renderWithMocks(
+      render(
         <MarkdownImage
           src="https://cdn.example.com/image.jpg"
           alt="CDN image"
@@ -100,7 +100,7 @@ describe("MarkdownImage", () => {
     });
 
     it("should render Supabase storage images", () => {
-      renderWithMocks(
+      render(
         <MarkdownImage
           src="https://supabase.co/storage/v1/object/public/bucket/image.png"
           alt="Supabase image"
@@ -118,7 +118,7 @@ describe("MarkdownImage", () => {
     it("should render data URLs", () => {
       const dataUrl =
         "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
-      renderWithMocks(<MarkdownImage src={dataUrl} alt="Data URL image" />);
+      render(<MarkdownImage src={dataUrl} alt="Data URL image" />);
 
       const image = screen.getByAltText("Data URL image");
       expect(image).toBeInTheDocument();
@@ -128,7 +128,7 @@ describe("MarkdownImage", () => {
 
   describe("Alt Text Handling", () => {
     it("should render with empty alt text", () => {
-      renderWithMocks(
+      render(
         <MarkdownImage src="https://example.com/image.png" alt="" />
       );
 
@@ -137,7 +137,7 @@ describe("MarkdownImage", () => {
     });
 
     it("should render with descriptive alt text", () => {
-      renderWithMocks(
+      render(
         <MarkdownImage
           src="https://example.com/image.png"
           alt="A beautiful sunset over the mountains"
@@ -151,7 +151,7 @@ describe("MarkdownImage", () => {
     });
 
     it("should render with undefined alt text", () => {
-      renderWithMocks(<MarkdownImage src="https://example.com/image.png" />);
+      render(<MarkdownImage src="https://example.com/image.png" />);
 
       const image = screen.getByAltText("");
       expect(image).toBeInTheDocument();
@@ -161,7 +161,7 @@ describe("MarkdownImage", () => {
 
   describe("Additional Props", () => {
     it("should pass through additional props", () => {
-      renderWithMocks(
+      render(
         <MarkdownImage
           src="https://example.com/image.png"
           alt="Test image"
@@ -177,7 +177,7 @@ describe("MarkdownImage", () => {
 
     it("should handle onClick prop", () => {
       const handleClick = vi.fn();
-      renderWithMocks(
+      render(
         <MarkdownImage
           src="https://example.com/image.png"
           alt="Test image"
@@ -191,7 +191,7 @@ describe("MarkdownImage", () => {
 
     it("should handle onLoad prop", () => {
       const handleLoad = vi.fn();
-      renderWithMocks(
+      render(
         <MarkdownImage
           src="https://example.com/image.png"
           alt="Test image"
@@ -205,7 +205,7 @@ describe("MarkdownImage", () => {
 
     it("should handle onError prop", () => {
       const handleError = vi.fn();
-      renderWithMocks(
+      render(
         <MarkdownImage
           src="https://example.com/image.png"
           alt="Test image"
@@ -221,7 +221,7 @@ describe("MarkdownImage", () => {
   describe("Edge Cases", () => {
     it("should handle very long URLs", () => {
       const longUrl = "https://example.com/" + "a".repeat(1000) + ".png";
-      renderWithMocks(<MarkdownImage src={longUrl} alt="Long URL image" />);
+      render(<MarkdownImage src={longUrl} alt="Long URL image" />);
 
       const image = screen.getByAltText("Long URL image");
       expect(image).toBeInTheDocument();
@@ -231,7 +231,7 @@ describe("MarkdownImage", () => {
     it("should handle special characters in URLs", () => {
       const specialUrl =
         "https://example.com/image with spaces & special chars.png";
-      renderWithMocks(
+      render(
         <MarkdownImage src={specialUrl} alt="Special chars image" />
       );
 
@@ -241,7 +241,7 @@ describe("MarkdownImage", () => {
     });
 
     it("should handle relative URLs", () => {
-      renderWithMocks(
+      render(
         <MarkdownImage src="./relative/path/image.png" alt="Relative image" />
       );
 
@@ -251,7 +251,7 @@ describe("MarkdownImage", () => {
     });
 
     it("should handle protocol-relative URLs", () => {
-      renderWithMocks(
+      render(
         <MarkdownImage
           src="//example.com/image.png"
           alt="Protocol relative image"
@@ -264,7 +264,7 @@ describe("MarkdownImage", () => {
     });
 
     it("should handle malformed URLs gracefully", () => {
-      renderWithMocks(
+      render(
         <MarkdownImage src="not-a-valid-url" alt="Malformed URL image" />
       );
 
@@ -276,7 +276,7 @@ describe("MarkdownImage", () => {
 
   describe("Responsive Design", () => {
     it("should have responsive sizing attributes", () => {
-      renderWithMocks(
+      render(
         <MarkdownImage
           src="https://example.com/image.png"
           alt="Responsive image"
@@ -288,7 +288,7 @@ describe("MarkdownImage", () => {
     });
 
     it("should have correct width and height attributes for responsive design", () => {
-      renderWithMocks(
+      render(
         <MarkdownImage
           src="https://example.com/image.png"
           alt="Responsive image"
@@ -303,7 +303,7 @@ describe("MarkdownImage", () => {
 
   describe("Accessibility", () => {
     it("should have proper alt text for accessibility", () => {
-      renderWithMocks(
+      render(
         <MarkdownImage
           src="https://example.com/image.png"
           alt="Accessible image"
@@ -315,7 +315,7 @@ describe("MarkdownImage", () => {
     });
 
     it("should be focusable when needed", () => {
-      renderWithMocks(
+      render(
         <MarkdownImage
           src="https://example.com/image.png"
           alt="Focusable image"

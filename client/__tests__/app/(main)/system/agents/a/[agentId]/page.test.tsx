@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { act, screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { act, screen } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -7,8 +7,6 @@ import AgentEditPage from "@/app/(main)/system/agents/a/[agentId]/page";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the EditSystemAgent component
 vi.mock("@/components/system/agents/EditAgent", () => ({
@@ -47,7 +45,7 @@ describe("AgentEditPage", () => {
       const mockParams = Promise.resolve({ agentId: "test-agent-id" });
 
       await act(async () => {
-        renderWithMocks(<AgentEditPage params={mockParams} />);
+        render(<AgentEditPage params={mockParams} />);
       });
 
       // Should render the edit system agent component
@@ -62,7 +60,7 @@ describe("AgentEditPage", () => {
       const mockParams = Promise.resolve({ agentId: "test-agent-id" });
 
       await act(async () => {
-        renderWithMocks(<AgentEditPage params={mockParams} />);
+        render(<AgentEditPage params={mockParams} />);
       });
 
       // Should have proper accessibility attributes
@@ -76,7 +74,7 @@ describe("AgentEditPage", () => {
       const mockParams = Promise.resolve({ agentId: "edge-case-id" });
 
       await act(async () => {
-        renderWithMocks(<AgentEditPage params={mockParams} />);
+        render(<AgentEditPage params={mockParams} />);
       });
 
       // Should render the component even with edge case params

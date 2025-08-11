@@ -7,8 +7,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -16,7 +16,7 @@ import { describe, expect, it } from "vitest";
 describe("Dialog", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(
+      render(
         <Dialog>
           <DialogTrigger>Open Dialog</DialogTrigger>
           <DialogContent>
@@ -33,7 +33,7 @@ describe("Dialog", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(
+      render(
         <Dialog>
           <DialogTrigger>Open Dialog</DialogTrigger>
           <DialogContent>
@@ -51,7 +51,7 @@ describe("Dialog", () => {
 
   describe("Component Structure", () => {
     it("should render dialog trigger correctly", () => {
-      renderWithMocks(
+      render(
         <Dialog>
           <DialogTrigger>Open</DialogTrigger>
           <DialogContent>
@@ -73,7 +73,7 @@ describe("Dialog", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal dialog
-      renderWithMocks(
+      render(
         <Dialog>
           <DialogTrigger>Open</DialogTrigger>
           <DialogContent>

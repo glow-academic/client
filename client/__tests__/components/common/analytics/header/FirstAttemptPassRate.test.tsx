@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { fireEvent, screen, waitFor } from '@/test/custom-render';
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -116,7 +116,7 @@ describe("FirstAttemptPassRate", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<FirstAttemptPassRate {...mockProps} />);
+      render(<FirstAttemptPassRate {...mockProps} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -129,7 +129,7 @@ describe("FirstAttemptPassRate", () => {
 
     it("should render with props", async () => {
       // Test component with various props
-      renderWithMocks(<FirstAttemptPassRate {...mockProps} />);
+      render(<FirstAttemptPassRate {...mockProps} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -142,7 +142,7 @@ describe("FirstAttemptPassRate", () => {
 
     it("should have correct accessibility attributes", async () => {
       // Test accessibility features
-      renderWithMocks(<FirstAttemptPassRate {...mockProps} />);
+      render(<FirstAttemptPassRate {...mockProps} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -156,7 +156,7 @@ describe("FirstAttemptPassRate", () => {
 
   describe("Data Loading and Utility Function Integration", () => {
     it("should call calculateFirstAttemptPassRate with correct parameters", async () => {
-      renderWithMocks(<FirstAttemptPassRate {...mockProps} />);
+      render(<FirstAttemptPassRate {...mockProps} />);
 
       await waitFor(() => {
         expect(calculateFirstAttemptPassRate).toHaveBeenCalledWith(
@@ -180,7 +180,7 @@ describe("FirstAttemptPassRate", () => {
         hasData: true,
       });
 
-      renderWithMocks(<FirstAttemptPassRate {...mockProps} />);
+      render(<FirstAttemptPassRate {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("No cohort data")).toBeInTheDocument();
@@ -194,7 +194,7 @@ describe("FirstAttemptPassRate", () => {
         hasData: false,
       });
 
-      renderWithMocks(<FirstAttemptPassRate {...mockProps} />);
+      render(<FirstAttemptPassRate {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("No data")).toBeInTheDocument();
@@ -210,7 +210,7 @@ describe("FirstAttemptPassRate", () => {
         hasData: true,
       });
 
-      renderWithMocks(<FirstAttemptPassRate {...mockProps} />);
+      render(<FirstAttemptPassRate {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("No cohort data")).toBeInTheDocument();
@@ -230,7 +230,7 @@ describe("FirstAttemptPassRate", () => {
         hasData: true,
       });
 
-      renderWithMocks(<FirstAttemptPassRate {...mockProps} />);
+      render(<FirstAttemptPassRate {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("No cohort data")).toBeInTheDocument();
@@ -247,7 +247,7 @@ describe("FirstAttemptPassRate", () => {
         hasData: true,
       });
 
-      renderWithMocks(<FirstAttemptPassRate {...mockProps} />);
+      render(<FirstAttemptPassRate {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("No cohort data")).toBeInTheDocument();
@@ -260,7 +260,7 @@ describe("FirstAttemptPassRate", () => {
 
   describe("Dialog Functionality", () => {
     it("should open dialog when card is clicked", async () => {
-      renderWithMocks(<FirstAttemptPassRate {...mockProps} />);
+      render(<FirstAttemptPassRate {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -288,7 +288,7 @@ describe("FirstAttemptPassRate", () => {
         hasData: false,
       });
 
-      renderWithMocks(<FirstAttemptPassRate {...mockProps} />);
+      render(<FirstAttemptPassRate {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -327,7 +327,7 @@ describe("FirstAttemptPassRate", () => {
         },
       };
 
-      renderWithMocks(
+      render(
         <FirstAttemptPassRate {...propsWithDifferentThresholds} />
       );
 
@@ -347,7 +347,7 @@ describe("FirstAttemptPassRate", () => {
         profileId: undefined,
       };
 
-      renderWithMocks(<FirstAttemptPassRate {...propsWithoutProfile} />);
+      render(<FirstAttemptPassRate {...propsWithoutProfile} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -364,7 +364,7 @@ describe("FirstAttemptPassRate", () => {
         cohortIds: [],
       };
 
-      renderWithMocks(<FirstAttemptPassRate {...propsWithEmptyCohorts} />);
+      render(<FirstAttemptPassRate {...propsWithEmptyCohorts} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -376,7 +376,7 @@ describe("FirstAttemptPassRate", () => {
 
   describe("User Interactions", () => {
     it("should handle user interactions", async () => {
-      renderWithMocks(<FirstAttemptPassRate {...mockProps} />);
+      render(<FirstAttemptPassRate {...mockProps} />);
 
       // Wait for loading to complete
       await waitFor(() => {

@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // Mock NewCohort component
@@ -14,7 +14,7 @@ import NewCohortPage, { metadata } from "@/app/(main)/cohorts/new/page";
 
 describe("NewCohortPage", () => {
   it("renders without crashing", () => {
-    renderWithMocks(<NewCohortPage />);
+    render(<NewCohortPage />);
     expect(screen.getByTestId("new-cohort-component")).toBeInTheDocument();
     expect(screen.getByText("New Cohort Component")).toBeInTheDocument();
   });
@@ -26,7 +26,7 @@ describe("NewCohortPage", () => {
   });
 
   it("renders the NewCohort component inside a wrapper", () => {
-    renderWithMocks(<NewCohortPage />);
+    render(<NewCohortPage />);
     const wrapper = screen.getByTestId("new-cohort-component").parentElement;
     expect(wrapper).toHaveClass("space-y-6");
   });

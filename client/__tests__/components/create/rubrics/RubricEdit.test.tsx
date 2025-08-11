@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -16,7 +16,7 @@ const mockProps: RubricEditProps = {
 describe("RubricEdit", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<RubricEdit {...mockProps} />);
+      render(<RubricEdit {...mockProps} />);
 
       // Check that the component renders without crashing
       await waitFor(() => {
@@ -27,7 +27,7 @@ describe("RubricEdit", () => {
     });
 
     it("should render with props", async () => {
-      renderWithMocks(<RubricEdit {...mockProps} />);
+      render(<RubricEdit {...mockProps} />);
 
       // Check that the component renders with the provided rubricId
       await waitFor(() => {
@@ -41,7 +41,7 @@ describe("RubricEdit", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<RubricEdit {...mockProps} />);
+      render(<RubricEdit {...mockProps} />);
 
       // Check that the component renders with proper accessibility
       await waitFor(() => {
@@ -62,7 +62,7 @@ describe("RubricEdit", () => {
         rubricId: "edge-case-id",
       };
 
-      renderWithMocks(<RubricEdit {...edgeCaseProps} />);
+      render(<RubricEdit {...edgeCaseProps} />);
 
       // Should handle edge case gracefully
       await waitFor(() => {
@@ -78,7 +78,7 @@ describe("RubricEdit", () => {
         rubricId: "",
       };
 
-      renderWithMocks(<RubricEdit {...minimalProps} />);
+      render(<RubricEdit {...minimalProps} />);
 
       // Should still render without crashing
       await waitFor(() => {

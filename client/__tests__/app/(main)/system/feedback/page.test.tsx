@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // Mock Feedback component
@@ -12,7 +12,7 @@ import FeedbackPage, { metadata } from "@/app/(main)/system/feedback/page";
 
 describe("FeedbackPage", () => {
   it("renders without crashing", () => {
-    renderWithMocks(<FeedbackPage />);
+    render(<FeedbackPage />);
     expect(screen.getByTestId("feedback-component")).toBeInTheDocument();
     expect(screen.getByText("Feedback Component")).toBeInTheDocument();
   });
@@ -24,7 +24,7 @@ describe("FeedbackPage", () => {
   });
 
   it("renders the Feedback component inside a wrapper", () => {
-    renderWithMocks(<FeedbackPage />);
+    render(<FeedbackPage />);
     const wrapper = screen.getByTestId("feedback-component").parentElement;
     expect(wrapper).toHaveClass("space-y-6");
   });

@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -15,7 +15,7 @@ describe("CohortEditPage", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // This component redirects, so we test that it calls redirect
-      renderWithMocks(<CohortEditPage />);
+      render(<CohortEditPage />);
 
       // The component should have called redirect
       const { redirect } = await import("next/navigation");
@@ -24,7 +24,7 @@ describe("CohortEditPage", () => {
 
     it("should redirect to cohorts page", async () => {
       // Test that the component redirects to the correct path
-      renderWithMocks(<CohortEditPage />);
+      render(<CohortEditPage />);
 
       // The component should have called redirect with the correct path
       const { redirect } = await import("next/navigation");
@@ -35,7 +35,7 @@ describe("CohortEditPage", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
       // Test that the component always redirects regardless of context
-      renderWithMocks(<CohortEditPage />);
+      render(<CohortEditPage />);
 
       // The component should have called redirect
       const { redirect } = await import("next/navigation");

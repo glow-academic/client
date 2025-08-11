@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -9,8 +9,6 @@ import { Profile, ProfileRole } from "@/types";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the toast
 vi.mock("sonner", () => ({
@@ -79,7 +77,7 @@ describe("ProfileSelector", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<ProfileSelector {...mockProps} />);
+      render(<ProfileSelector {...mockProps} />);
 
       // Check that the component renders with the expected sections
       expect(screen.getByText("Test Title")).toBeInTheDocument();
@@ -90,7 +88,7 @@ describe("ProfileSelector", () => {
     });
 
     it("should render with props", () => {
-      renderWithMocks(<ProfileSelector {...mockProps} />);
+      render(<ProfileSelector {...mockProps} />);
 
       // Check that props are properly displayed
       expect(screen.getByText("Test Title")).toBeInTheDocument();
@@ -99,7 +97,7 @@ describe("ProfileSelector", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<ProfileSelector {...mockProps} />);
+      render(<ProfileSelector {...mockProps} />);
 
       // Check for proper form structure
       expect(screen.getByRole("tablist")).toBeInTheDocument();
@@ -116,7 +114,7 @@ describe("ProfileSelector", () => {
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ProfileSelector {...mockProps} />);
+      render(<ProfileSelector {...mockProps} />);
 
       // Test tab switching
       const csvTab = screen.getByRole("tab", { name: "CSV Import" });
@@ -130,7 +128,7 @@ describe("ProfileSelector", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ProfileSelector {...mockProps} />);
+      render(<ProfileSelector {...mockProps} />);
 
       // Test search functionality
       const searchInput = screen.getByPlaceholderText(
@@ -144,7 +142,7 @@ describe("ProfileSelector", () => {
 
     it("should handle search functionality", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ProfileSelector {...mockProps} />);
+      render(<ProfileSelector {...mockProps} />);
 
       // Test search input
       const searchInput = screen.getByPlaceholderText(
@@ -193,7 +191,7 @@ describe("ProfileSelector", () => {
         writable: true,
       });
 
-      renderWithMocks(<ProfileSelector {...mockProps} />);
+      render(<ProfileSelector {...mockProps} />);
 
       const downloadButton = screen.getByText("Download Template");
       await user.click(downloadButton);
@@ -216,7 +214,7 @@ describe("ProfileSelector", () => {
     it("should handle and display an API error state", async () => {
       // Arrange: Override the default success mock with an error for this test.
       // The getAllProfiles query is automatically mocked via imports above
-      renderWithMocks(<ProfileSelector {...mockProps} />);
+      render(<ProfileSelector {...mockProps} />);
 
       // Check that the component handles API errors gracefully
       await waitFor(() => {
@@ -225,7 +223,7 @@ describe("ProfileSelector", () => {
     });
 
     it("should handle loading states", () => {
-      renderWithMocks(<ProfileSelector {...mockProps} />);
+      render(<ProfileSelector {...mockProps} />);
 
       // Check that loading state is handled
       expect(screen.getByText("Test Title")).toBeInTheDocument();
@@ -236,7 +234,7 @@ describe("ProfileSelector", () => {
     it("should handle profile selection", async () => {
       const onProfilesChange = vi.fn();
 
-      renderWithMocks(
+      render(
         <ProfileSelector {...mockProps} onProfilesChange={onProfilesChange} />
       );
 
@@ -256,7 +254,7 @@ describe("ProfileSelector", () => {
         },
       ];
 
-      renderWithMocks(
+      render(
         <ProfileSelector {...mockProps} selectedProfiles={selectedProfiles} />
       );
 
@@ -268,7 +266,7 @@ describe("ProfileSelector", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<ProfileSelector {...mockProps} />);
+      render(<ProfileSelector {...mockProps} />);
 
       // Test that component renders with minimal props
       expect(screen.getByText("Test Title")).toBeInTheDocument();
@@ -281,7 +279,7 @@ describe("ProfileSelector", () => {
         allowedRoles: ["instructional"] as ProfileRole[],
       };
 
-      renderWithMocks(<ProfileSelector {...minimalProps} />);
+      render(<ProfileSelector {...minimalProps} />);
 
       // Test that component handles missing optional props
       expect(screen.getByText("Profiles")).toBeInTheDocument(); // Default title
@@ -293,7 +291,7 @@ describe("ProfileSelector", () => {
         allowedRoles: [] as ProfileRole[],
       };
 
-      renderWithMocks(<ProfileSelector {...propsWithNoRoles} />);
+      render(<ProfileSelector {...propsWithNoRoles} />);
 
       // Test that component handles empty allowed roles
       expect(screen.getByText("Test Title")).toBeInTheDocument();

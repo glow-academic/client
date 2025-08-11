@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { fireEvent, screen, waitFor } from '@/test/custom-render';
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -126,7 +126,7 @@ describe("HighestScore", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<HighestScore {...mockProps} />);
+      render(<HighestScore {...mockProps} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -139,7 +139,7 @@ describe("HighestScore", () => {
 
     it("should render with props", async () => {
       // Test component with various props
-      renderWithMocks(<HighestScore {...mockProps} />);
+      render(<HighestScore {...mockProps} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -152,7 +152,7 @@ describe("HighestScore", () => {
 
     it("should have correct accessibility attributes", async () => {
       // Test accessibility features
-      renderWithMocks(<HighestScore {...mockProps} />);
+      render(<HighestScore {...mockProps} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -166,7 +166,7 @@ describe("HighestScore", () => {
 
   describe("Data Loading and Utility Function Integration", () => {
     it("should call calculateHighestScore with correct parameters", async () => {
-      renderWithMocks(<HighestScore {...mockProps} />);
+      render(<HighestScore {...mockProps} />);
 
       await waitFor(() => {
         expect(calculateHighestScore).toHaveBeenCalledWith(
@@ -191,7 +191,7 @@ describe("HighestScore", () => {
         hasData: true,
       });
 
-      renderWithMocks(<HighestScore {...mockProps} />);
+      render(<HighestScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("No cohort data")).toBeInTheDocument();
@@ -205,7 +205,7 @@ describe("HighestScore", () => {
         hasData: false,
       });
 
-      renderWithMocks(<HighestScore {...mockProps} />);
+      render(<HighestScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("No data")).toBeInTheDocument();
@@ -221,7 +221,7 @@ describe("HighestScore", () => {
         hasData: true,
       });
 
-      renderWithMocks(<HighestScore {...mockProps} />);
+      render(<HighestScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("No cohort data")).toBeInTheDocument();
@@ -241,7 +241,7 @@ describe("HighestScore", () => {
         hasData: true,
       });
 
-      renderWithMocks(<HighestScore {...mockProps} />);
+      render(<HighestScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("No cohort data")).toBeInTheDocument();
@@ -258,7 +258,7 @@ describe("HighestScore", () => {
         hasData: true,
       });
 
-      renderWithMocks(<HighestScore {...mockProps} />);
+      render(<HighestScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("No cohort data")).toBeInTheDocument();
@@ -271,7 +271,7 @@ describe("HighestScore", () => {
 
   describe("Dialog Functionality", () => {
     it("should open dialog when card is clicked", async () => {
-      renderWithMocks(<HighestScore {...mockProps} />);
+      render(<HighestScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -295,7 +295,7 @@ describe("HighestScore", () => {
         hasData: false,
       });
 
-      renderWithMocks(<HighestScore {...mockProps} />);
+      render(<HighestScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -330,7 +330,7 @@ describe("HighestScore", () => {
         },
       };
 
-      renderWithMocks(<HighestScore {...propsWithDifferentThresholds} />);
+      render(<HighestScore {...propsWithDifferentThresholds} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -348,7 +348,7 @@ describe("HighestScore", () => {
         profileId: undefined,
       };
 
-      renderWithMocks(<HighestScore {...propsWithoutProfile} />);
+      render(<HighestScore {...propsWithoutProfile} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -365,7 +365,7 @@ describe("HighestScore", () => {
         cohortIds: [],
       };
 
-      renderWithMocks(<HighestScore {...propsWithEmptyCohorts} />);
+      render(<HighestScore {...propsWithEmptyCohorts} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -377,7 +377,7 @@ describe("HighestScore", () => {
 
   describe("User Interactions", () => {
     it("should handle user interactions", async () => {
-      renderWithMocks(<HighestScore {...mockProps} />);
+      render(<HighestScore {...mockProps} />);
 
       // Wait for loading to complete
       await waitFor(() => {

@@ -1,7 +1,7 @@
 import { RubricsDataTable } from "@/components/create/rubrics/RubricsDataTable";
 import { Rubric } from "@/types";
 import type { ColumnDef } from "@tanstack/react-table";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // Mock the RubricsDataTableToolbar component

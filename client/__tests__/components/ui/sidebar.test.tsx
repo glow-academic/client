@@ -5,8 +5,8 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -14,7 +14,7 @@ import { describe, expect, it } from "vitest";
 describe("Sidebar", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(
+      render(
         <SidebarProvider>
           <Sidebar>
             <SidebarHeader>Sidebar Header</SidebarHeader>
@@ -28,7 +28,7 @@ describe("Sidebar", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(
+      render(
         <SidebarProvider>
           <Sidebar>
             <SidebarHeader>Accessible Header</SidebarHeader>
@@ -44,7 +44,7 @@ describe("Sidebar", () => {
 
   describe("Component Props", () => {
     it("should render with custom className", () => {
-      renderWithMocks(
+      render(
         <SidebarProvider>
           <Sidebar className="custom-class">
             <SidebarContent>Content</SidebarContent>
@@ -57,7 +57,7 @@ describe("Sidebar", () => {
     });
 
     it("should render with trigger", () => {
-      renderWithMocks(
+      render(
         <SidebarProvider>
           <Sidebar>
             <SidebarContent>Content</SidebarContent>
@@ -74,7 +74,7 @@ describe("Sidebar", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal content
-      renderWithMocks(
+      render(
         <SidebarProvider>
           <Sidebar>
             <SidebarContent />

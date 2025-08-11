@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -45,14 +45,14 @@ const mockProps: LogsDataTableToolbarProps = {
 describe("LogsDataTableToolbar", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<LogsDataTableToolbar {...mockProps} />);
+      render(<LogsDataTableToolbar {...mockProps} />);
 
       // Basic render check - find refresh button by its icon
       expect(screen.getAllByRole("button")).toHaveLength(3); // Level, Refresh, View
     });
 
     it("should render with props", () => {
-      renderWithMocks(<LogsDataTableToolbar {...mockProps} />);
+      render(<LogsDataTableToolbar {...mockProps} />);
 
       // Check that buttons are rendered
       const buttons = screen.getAllByRole("button");
@@ -65,7 +65,7 @@ describe("LogsDataTableToolbar", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<LogsDataTableToolbar {...mockProps} />);
+      render(<LogsDataTableToolbar {...mockProps} />);
 
       // Check that buttons have proper accessibility
       const buttons = screen.getAllByRole("button");
@@ -81,7 +81,7 @@ describe("LogsDataTableToolbar", () => {
     it("should handle refresh button click", async () => {
       const user = userEvent.setup();
 
-      renderWithMocks(<LogsDataTableToolbar {...mockProps} />);
+      render(<LogsDataTableToolbar {...mockProps} />);
 
       // Find the refresh button by looking for the button with refresh icon
       const buttons = screen.getAllByRole("button");
@@ -95,7 +95,7 @@ describe("LogsDataTableToolbar", () => {
     });
 
     it("should disable refresh button when refreshing", () => {
-      renderWithMocks(
+      render(
         <LogsDataTableToolbar {...mockProps} isRefreshing={true} />,
       );
 
@@ -111,7 +111,7 @@ describe("LogsDataTableToolbar", () => {
     it("should handle search input changes", async () => {
       const user = userEvent.setup();
 
-      renderWithMocks(<LogsDataTableToolbar {...mockProps} />);
+      render(<LogsDataTableToolbar {...mockProps} />);
 
       const searchInput = screen.getByPlaceholderText("Search messages...");
       await user.type(searchInput, "test search");
@@ -128,7 +128,7 @@ describe("LogsDataTableToolbar", () => {
         levelOptions: [],
       };
 
-      renderWithMocks(<LogsDataTableToolbar {...propsWithEmptyOptions} />);
+      render(<LogsDataTableToolbar {...propsWithEmptyOptions} />);
 
       // Should still render without crashing - fewer buttons when no level options
       const buttons = screen.getAllByRole("button");
@@ -143,7 +143,7 @@ describe("LogsDataTableToolbar", () => {
         isRefreshing: false,
       };
 
-      renderWithMocks(<LogsDataTableToolbar {...minimalProps} />);
+      render(<LogsDataTableToolbar {...minimalProps} />);
 
       // Should still render without crashing
       const buttons = screen.getAllByRole("button");

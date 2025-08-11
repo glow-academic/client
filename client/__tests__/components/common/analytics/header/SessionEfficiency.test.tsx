@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { fireEvent, screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -159,7 +159,7 @@ describe("SessionEfficiency", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -169,7 +169,7 @@ describe("SessionEfficiency", () => {
     });
 
     it("should render with props", async () => {
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -179,7 +179,7 @@ describe("SessionEfficiency", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -191,7 +191,7 @@ describe("SessionEfficiency", () => {
 
   describe("Data Loading and Utility Function Integration", () => {
     it("should call calculateSessionEfficiency with correct parameters", async () => {
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -208,7 +208,7 @@ describe("SessionEfficiency", () => {
         hasData: true,
       });
 
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("85")).toBeInTheDocument();
@@ -222,7 +222,7 @@ describe("SessionEfficiency", () => {
         hasData: false,
       });
 
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("No data")).toBeInTheDocument();
@@ -238,7 +238,7 @@ describe("SessionEfficiency", () => {
         hasData: true,
       });
 
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("30")).toBeInTheDocument();
@@ -255,7 +255,7 @@ describe("SessionEfficiency", () => {
         hasData: true,
       });
 
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("60")).toBeInTheDocument();
@@ -272,7 +272,7 @@ describe("SessionEfficiency", () => {
         hasData: true,
       });
 
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("95")).toBeInTheDocument();
@@ -285,7 +285,7 @@ describe("SessionEfficiency", () => {
 
   describe("Dialog Functionality", () => {
     it("should open dialog when card is clicked", async () => {
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -311,7 +311,7 @@ describe("SessionEfficiency", () => {
         hasData: false,
       });
 
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -348,7 +348,7 @@ describe("SessionEfficiency", () => {
         },
       };
 
-      renderWithMocks(<SessionEfficiency {...propsWithDifferentThresholds} />);
+      render(<SessionEfficiency {...propsWithDifferentThresholds} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -366,7 +366,7 @@ describe("SessionEfficiency", () => {
         profileId: undefined,
       };
 
-      renderWithMocks(<SessionEfficiency {...propsWithoutProfile} />);
+      render(<SessionEfficiency {...propsWithoutProfile} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -383,7 +383,7 @@ describe("SessionEfficiency", () => {
         cohortIds: [],
       };
 
-      renderWithMocks(<SessionEfficiency {...propsWithEmptyCohorts} />);
+      render(<SessionEfficiency {...propsWithEmptyCohorts} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -395,7 +395,7 @@ describe("SessionEfficiency", () => {
 
   describe("User Interactions", () => {
     it("should handle user interactions", async () => {
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -416,7 +416,7 @@ describe("SessionEfficiency", () => {
         hasData: true,
       });
 
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("95")).toBeInTheDocument();
@@ -425,7 +425,7 @@ describe("SessionEfficiency", () => {
 
     it("should handle dialog onOpenChange callback", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -464,7 +464,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -498,7 +498,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -527,7 +527,7 @@ describe("SessionEfficiency", () => {
         dateEnd: new Date("2024-02-29"),
       };
 
-      renderWithMocks(<SessionEfficiency {...propsWithDifferentDates} />);
+      render(<SessionEfficiency {...propsWithDifferentDates} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -542,7 +542,7 @@ describe("SessionEfficiency", () => {
         cohortIds: [],
       };
 
-      renderWithMocks(<SessionEfficiency {...propsWithEmptyCohorts} />);
+      render(<SessionEfficiency {...propsWithEmptyCohorts} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -557,7 +557,7 @@ describe("SessionEfficiency", () => {
         profileId: undefined,
       };
 
-      renderWithMocks(<SessionEfficiency {...propsWithoutProfile} />);
+      render(<SessionEfficiency {...propsWithoutProfile} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -578,7 +578,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -612,7 +612,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -646,7 +646,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -680,7 +680,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -714,7 +714,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -748,7 +748,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -781,7 +781,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -814,7 +814,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -844,7 +844,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -877,7 +877,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -911,7 +911,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -945,7 +945,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -978,7 +978,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -1011,7 +1011,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -1045,7 +1045,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -1079,7 +1079,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -1113,7 +1113,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -1147,7 +1147,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -1180,7 +1180,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -1214,7 +1214,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -1247,7 +1247,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -1280,7 +1280,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -1314,7 +1314,7 @@ describe("SessionEfficiency", () => {
       });
 
       const user = userEvent.setup();
-      renderWithMocks(<SessionEfficiency {...mockProps} />);
+      render(<SessionEfficiency {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();

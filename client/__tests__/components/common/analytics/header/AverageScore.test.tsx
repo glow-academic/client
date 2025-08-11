@@ -1,7 +1,7 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -19,8 +19,6 @@ import AverageScore, {
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
@@ -61,7 +59,7 @@ describe("AverageScore", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -71,7 +69,7 @@ describe("AverageScore", () => {
 
     it("should render with props", async () => {
       // Test component with various props
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -84,7 +82,7 @@ describe("AverageScore", () => {
 
     it("should have correct accessibility attributes", async () => {
       // Test accessibility features
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -99,7 +97,7 @@ describe("AverageScore", () => {
   describe("User Interactions", () => {
     it("should handle card click to open dialog", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -124,7 +122,7 @@ describe("AverageScore", () => {
       // Arrange: Override the default success mock with an error for this test.
       // Example: vi.mocked(getAllProfiles).mockRejectedValue(new Error('API Error'));
 
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -137,7 +135,7 @@ describe("AverageScore", () => {
 
     it("should handle loading states", async () => {
       // Test loading states
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -161,7 +159,7 @@ describe("AverageScore", () => {
         },
       };
 
-      renderWithMocks(<AverageScore {...propsWithDifferentThresholds} />);
+      render(<AverageScore {...propsWithDifferentThresholds} />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -179,7 +177,7 @@ describe("AverageScore", () => {
         profileId: undefined,
       };
 
-      renderWithMocks(<AverageScore {...propsWithoutProfile} />);
+      render(<AverageScore {...propsWithoutProfile} />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -196,7 +194,7 @@ describe("AverageScore", () => {
         cohortIds: [],
       };
 
-      renderWithMocks(<AverageScore {...propsWithEmptyCohorts} />);
+      render(<AverageScore {...propsWithEmptyCohorts} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -212,7 +210,7 @@ describe("AverageScore", () => {
         dateEnd: new Date("2024-06-30"),
       };
 
-      renderWithMocks(<AverageScore {...propsWithDifferentDates} />);
+      render(<AverageScore {...propsWithDifferentDates} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -233,7 +231,7 @@ describe("AverageScore", () => {
         },
       };
 
-      renderWithMocks(<AverageScore {...propsWithLowThresholds} />);
+      render(<AverageScore {...propsWithLowThresholds} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -253,7 +251,7 @@ describe("AverageScore", () => {
         },
       };
 
-      renderWithMocks(<AverageScore {...propsWithMediumThresholds} />);
+      render(<AverageScore {...propsWithMediumThresholds} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -272,7 +270,7 @@ describe("AverageScore", () => {
         },
       };
 
-      renderWithMocks(<AverageScore {...propsWithHighThresholds} />);
+      render(<AverageScore {...propsWithHighThresholds} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -285,7 +283,7 @@ describe("AverageScore", () => {
   describe("Dialog Functionality", () => {
     it("should close dialog when clicking outside", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -313,7 +311,7 @@ describe("AverageScore", () => {
 
     it("should display trend analysis when available", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -335,7 +333,7 @@ describe("AverageScore", () => {
 
     it("should handle chart rendering", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -362,7 +360,7 @@ describe("AverageScore", () => {
       vi.mocked(getAllProfiles).mockResolvedValue([]);
       vi.mocked(getAllCohorts).mockResolvedValue([]);
 
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -376,7 +374,7 @@ describe("AverageScore", () => {
       // Mock loading state
       vi.mocked(getAllProfiles).mockImplementation(() => new Promise(() => {}));
 
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       // Should display the component even during loading
       expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -386,7 +384,7 @@ describe("AverageScore", () => {
       // Mock error state
       vi.mocked(getAllProfiles).mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -402,7 +400,7 @@ describe("AverageScore", () => {
       vi.mocked(getAllProfiles).mockResolvedValue([]);
       vi.mocked(getAllCohorts).mockResolvedValue([]);
 
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -432,7 +430,7 @@ describe("AverageScore", () => {
       vi.mocked(getAllProfiles).mockResolvedValue([]);
       vi.mocked(getAllCohorts).mockResolvedValue([]);
 
-      renderWithMocks(<AverageScore {...propsWithoutProfile} />);
+      render(<AverageScore {...propsWithoutProfile} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -463,7 +461,7 @@ describe("AverageScore", () => {
         trendData: [{ date: "01/15", value: 95, count: 1 }],
         hasData: true,
       });
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -489,7 +487,7 @@ describe("AverageScore", () => {
         hasData: true,
       });
 
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -533,7 +531,7 @@ describe("AverageScore", () => {
         hasData: true,
       });
 
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -590,7 +588,7 @@ describe("AverageScore", () => {
         hasData: true,
       });
 
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -641,7 +639,7 @@ describe("AverageScore", () => {
         hasData: true,
       });
 
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -689,7 +687,7 @@ describe("AverageScore", () => {
         hasData: true,
       });
 
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -737,7 +735,7 @@ describe("AverageScore", () => {
         hasData: true,
       });
 
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -781,7 +779,7 @@ describe("AverageScore", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -807,7 +805,7 @@ describe("AverageScore", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -833,7 +831,7 @@ describe("AverageScore", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -859,7 +857,7 @@ describe("AverageScore", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -894,7 +892,7 @@ describe("AverageScore", () => {
         hasData: true,
       });
 
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -947,7 +945,7 @@ describe("AverageScore", () => {
         hasData: true,
       });
 
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Average Score")).toBeInTheDocument();
@@ -992,7 +990,7 @@ describe("AverageScore", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -1018,7 +1016,7 @@ describe("AverageScore", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<AverageScore {...mockProps} />);
+      render(<AverageScore {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });

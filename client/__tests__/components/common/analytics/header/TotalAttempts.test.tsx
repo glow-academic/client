@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { fireEvent, screen, waitFor } from '@/test/custom-render';
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -95,7 +95,7 @@ describe("TotalAttempts", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<TotalAttempts {...mockProps} />);
+      render(<TotalAttempts {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -103,7 +103,7 @@ describe("TotalAttempts", () => {
     });
 
     it("should render with props", async () => {
-      renderWithMocks(<TotalAttempts {...mockProps} />);
+      render(<TotalAttempts {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -115,7 +115,7 @@ describe("TotalAttempts", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<TotalAttempts {...mockProps} />);
+      render(<TotalAttempts {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -125,7 +125,7 @@ describe("TotalAttempts", () => {
 
   describe("Data fetching and utility function integration", () => {
     it("should call calculateTotalAttempts with correct parameters", async () => {
-      renderWithMocks(<TotalAttempts {...mockProps} />);
+      render(<TotalAttempts {...mockProps} />);
 
       await waitFor(() => {
         expect(calculateTotalAttempts).toHaveBeenCalledWith(
@@ -147,7 +147,7 @@ describe("TotalAttempts", () => {
         hasData: true,
       });
 
-      renderWithMocks(<TotalAttempts {...mockProps} />);
+      render(<TotalAttempts {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("5")).toBeInTheDocument();
@@ -161,7 +161,7 @@ describe("TotalAttempts", () => {
         hasData: false,
       });
 
-      renderWithMocks(<TotalAttempts {...mockProps} />);
+      render(<TotalAttempts {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("No data")).toBeInTheDocument();
@@ -177,7 +177,7 @@ describe("TotalAttempts", () => {
         hasData: true,
       });
 
-      renderWithMocks(<TotalAttempts {...mockProps} />);
+      render(<TotalAttempts {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("30")).toBeInTheDocument();
@@ -197,7 +197,7 @@ describe("TotalAttempts", () => {
         hasData: true,
       });
 
-      renderWithMocks(<TotalAttempts {...mockProps} />);
+      render(<TotalAttempts {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("60")).toBeInTheDocument();
@@ -217,7 +217,7 @@ describe("TotalAttempts", () => {
         hasData: true,
       });
 
-      renderWithMocks(<TotalAttempts {...mockProps} />);
+      render(<TotalAttempts {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("100")).toBeInTheDocument();
@@ -233,7 +233,7 @@ describe("TotalAttempts", () => {
 
   describe("User Interactions", () => {
     it("should open dialog when card is clicked", async () => {
-      renderWithMocks(<TotalAttempts {...mockProps} />);
+      render(<TotalAttempts {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -250,7 +250,7 @@ describe("TotalAttempts", () => {
     });
 
     it("should close dialog when close button is clicked", async () => {
-      renderWithMocks(<TotalAttempts {...mockProps} />);
+      render(<TotalAttempts {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -289,7 +289,7 @@ describe("TotalAttempts", () => {
         },
       };
 
-      renderWithMocks(<TotalAttempts {...propsWithDifferentThresholds} />);
+      render(<TotalAttempts {...propsWithDifferentThresholds} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -305,7 +305,7 @@ describe("TotalAttempts", () => {
         profileId: undefined,
       };
 
-      renderWithMocks(<TotalAttempts {...propsWithoutProfile} />);
+      render(<TotalAttempts {...propsWithoutProfile} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -320,7 +320,7 @@ describe("TotalAttempts", () => {
         cohortIds: [],
       };
 
-      renderWithMocks(<TotalAttempts {...propsWithEmptyCohorts} />);
+      render(<TotalAttempts {...propsWithEmptyCohorts} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();

@@ -9,7 +9,7 @@ import {
   Simulation,
   SimulationPicker,
 } from "@/components/common/cohort/SimulationPicker";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from '@/test/custom-render';
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the mutation observer hook

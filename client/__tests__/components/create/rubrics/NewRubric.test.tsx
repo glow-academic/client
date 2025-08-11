@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -15,13 +15,13 @@ vi.mock("@/components/common/rubric/Rubric", () => ({
 describe("NewRubric", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<NewRubric />);
+      render(<NewRubric />);
 
       expect(screen.getByTestId("rubric-component")).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<NewRubric />);
+      render(<NewRubric />);
 
       const rubricComponent = screen.getByTestId("rubric-component");
       expect(rubricComponent).toBeInTheDocument();
@@ -34,7 +34,7 @@ describe("NewRubric", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test that the component renders without props
-      renderWithMocks(<NewRubric />);
+      render(<NewRubric />);
 
       expect(screen.getByTestId("rubric-component")).toBeInTheDocument();
 

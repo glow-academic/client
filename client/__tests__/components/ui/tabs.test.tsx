@@ -1,6 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 describe("Tabs", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(
+      render(
         <Tabs defaultValue="tab1">
           <TabsList>
             <TabsTrigger value="tab1">Tab 1</TabsTrigger>
@@ -24,7 +24,7 @@ describe("Tabs", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(
+      render(
         <Tabs defaultValue="tab1">
           <TabsList>
             <TabsTrigger value="tab1">Accessible Tab</TabsTrigger>
@@ -40,7 +40,7 @@ describe("Tabs", () => {
 
   describe("Component Structure", () => {
     it("should render tabs with triggers and content", () => {
-      renderWithMocks(
+      render(
         <Tabs defaultValue="tab1">
           <TabsList>
             <TabsTrigger value="tab1">First Tab</TabsTrigger>
@@ -60,7 +60,7 @@ describe("Tabs", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal tabs
-      renderWithMocks(
+      render(
         <Tabs>
           <TabsList>
             <TabsTrigger value="tab1">Minimal</TabsTrigger>

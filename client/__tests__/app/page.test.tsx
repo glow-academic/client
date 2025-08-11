@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -13,14 +13,14 @@ vi.mock("@/components/common/login/Login", () => ({
 describe("LoginPage", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<LoginPage />);
+      render(<LoginPage />);
 
       expect(screen.getByTestId("login-component")).toBeInTheDocument();
       expect(screen.getByText("Login Component")).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<LoginPage />);
+      render(<LoginPage />);
 
       // Check that the login component is rendered
       expect(screen.getByTestId("login-component")).toBeInTheDocument();
@@ -43,7 +43,7 @@ describe("LoginPage", () => {
 
   describe("Component Structure", () => {
     it("should render Login component", () => {
-      renderWithMocks(<LoginPage />);
+      render(<LoginPage />);
 
       // Verify the Login component is rendered
       expect(screen.getByTestId("login-component")).toBeInTheDocument();
@@ -52,7 +52,7 @@ describe("LoginPage", () => {
 
   describe("Edge Cases", () => {
     it("should handle component rendering gracefully", () => {
-      renderWithMocks(<LoginPage />);
+      render(<LoginPage />);
 
       // Should render without errors
       expect(screen.getByTestId("login-component")).toBeInTheDocument();

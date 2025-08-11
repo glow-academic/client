@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -35,7 +35,7 @@ const mockProps: ChatFabProps = {
 describe("ChatFab", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<ChatFab {...mockProps} />);
+      render(<ChatFab {...mockProps} />);
 
       // The FAB should render as a button
       await waitFor(() => {
@@ -45,7 +45,7 @@ describe("ChatFab", () => {
 
     it("should render with props", async () => {
       // Test with different up prop values
-      const { rerender } = renderWithMocks(<ChatFab up={false} />);
+      const { rerender } = render(<ChatFab up={false} />);
 
       await waitFor(() => {
         expect(screen.getByRole("button")).toBeInTheDocument();
@@ -59,7 +59,7 @@ describe("ChatFab", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<ChatFab {...mockProps} />);
+      render(<ChatFab {...mockProps} />);
 
       await waitFor(() => {
         const button = screen.getByRole("button");
@@ -74,7 +74,7 @@ describe("ChatFab", () => {
   describe("User Interactions", () => {
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ChatFab {...mockProps} />);
+      render(<ChatFab {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByRole("button")).toBeInTheDocument();
@@ -91,7 +91,7 @@ describe("ChatFab", () => {
   describe("Navigation", () => {
     it("should handle navigation", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ChatFab {...mockProps} />);
+      render(<ChatFab {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByRole("button")).toBeInTheDocument();
@@ -107,7 +107,7 @@ describe("ChatFab", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      renderWithMocks(<ChatFab {...mockProps} />);
+      render(<ChatFab {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByRole("button")).toBeInTheDocument();
@@ -120,7 +120,7 @@ describe("ChatFab", () => {
 
     it("should handle missing or invalid props", async () => {
       // Test with missing props (should use defaults)
-      renderWithMocks(<ChatFab up={false} />);
+      render(<ChatFab up={false} />);
 
       await waitFor(() => {
         expect(screen.getByRole("button")).toBeInTheDocument();

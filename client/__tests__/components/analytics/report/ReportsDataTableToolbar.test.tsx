@@ -1,8 +1,8 @@
 import type { TAPerformanceData } from "@/hooks/use-report-columns";
 import { getMockTable } from "@/mocks/navigation";
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import type { Column } from "@tanstack/react-table";
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -27,7 +27,7 @@ const mockProps: ReportsDataTableToolbarProps = {
 describe("ReportsDataTableToolbar", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<ReportsDataTableToolbar {...mockProps} />);
+      render(<ReportsDataTableToolbar {...mockProps} />);
 
       // Should render the search input
       expect(
@@ -46,7 +46,7 @@ describe("ReportsDataTableToolbar", () => {
         simulationOptions: [{ value: "simulation-1", label: "Math Practice" }],
       };
 
-      renderWithMocks(<ReportsDataTableToolbar {...propsWithOptions} />);
+      render(<ReportsDataTableToolbar {...propsWithOptions} />);
 
       // Should render search input
       expect(
@@ -55,7 +55,7 @@ describe("ReportsDataTableToolbar", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<ReportsDataTableToolbar {...mockProps} />);
+      render(<ReportsDataTableToolbar {...mockProps} />);
 
       // Should have search input with proper accessibility
       const searchInput = screen.getByPlaceholderText(
@@ -92,7 +92,7 @@ describe("ReportsDataTableToolbar", () => {
         table: mockTable,
       };
 
-      renderWithMocks(<ReportsDataTableToolbar {...testProps} />);
+      render(<ReportsDataTableToolbar {...testProps} />);
       const searchInput = screen.getByPlaceholderText(
         "Search TAs by name or alias..."
       );
@@ -115,7 +115,7 @@ describe("ReportsDataTableToolbar", () => {
         cohortOptions: [{ value: "cohort-1", label: "Cohort A" }],
       };
 
-      renderWithMocks(<ReportsDataTableToolbar {...propsWithOptions} />);
+      render(<ReportsDataTableToolbar {...propsWithOptions} />);
 
       // Should render search input
       expect(
@@ -137,7 +137,7 @@ describe("ReportsDataTableToolbar", () => {
         simulationOptions: [],
       };
 
-      renderWithMocks(<ReportsDataTableToolbar {...propsWithEmptyOptions} />);
+      render(<ReportsDataTableToolbar {...propsWithEmptyOptions} />);
 
       // Should still render search input
       expect(
@@ -157,7 +157,7 @@ describe("ReportsDataTableToolbar", () => {
         simulations: [],
       };
 
-      renderWithMocks(<ReportsDataTableToolbar {...minimalProps} />);
+      render(<ReportsDataTableToolbar {...minimalProps} />);
 
       // Should still render without crashing
       expect(

@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -9,8 +9,6 @@ import CohortAddStaff, {
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
@@ -45,21 +43,21 @@ describe("CohortAddStaff", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<CohortAddStaff {...mockProps} />);
+      render(<CohortAddStaff {...mockProps} />);
 
       // Basic render test - component should render without errors
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      renderWithMocks(<CohortAddStaff {...mockProps} />);
+      render(<CohortAddStaff {...mockProps} />);
 
       // Component should render with the provided props
       expect(document.body).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<CohortAddStaff {...mockProps} />);
+      render(<CohortAddStaff {...mockProps} />);
 
       // Check for basic accessibility elements
       const form =
@@ -71,7 +69,7 @@ describe("CohortAddStaff", () => {
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<CohortAddStaff {...mockProps} />);
+      render(<CohortAddStaff {...mockProps} />);
 
       // Test input interactions if inputs exist
       const inputs = document.querySelectorAll("input");
@@ -83,7 +81,7 @@ describe("CohortAddStaff", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<CohortAddStaff {...mockProps} />);
+      render(<CohortAddStaff {...mockProps} />);
 
       // Test button interactions if buttons exist
       const buttons = document.querySelectorAll("button");
@@ -100,14 +98,14 @@ describe("CohortAddStaff", () => {
       // Arrange: Override the default success mock with an error for this test.
       // Example: vi.mocked(getAllProfiles).mockRejectedValue(new Error('API Error'));
 
-      renderWithMocks(<CohortAddStaff {...mockProps} />);
+      render(<CohortAddStaff {...mockProps} />);
 
       // Component should handle errors gracefully
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle loading states", () => {
-      renderWithMocks(<CohortAddStaff {...mockProps} />);
+      render(<CohortAddStaff {...mockProps} />);
 
       // Component should show loading state initially
       expect(document.body).toBeInTheDocument();
@@ -116,14 +114,14 @@ describe("CohortAddStaff", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<CohortAddStaff {...mockProps} />);
+      render(<CohortAddStaff {...mockProps} />);
 
       // Component should handle edge cases
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(
+      render(
         <CohortAddStaff onAddProfiles={vi.fn()} existingProfileIds={[]} />,
       );
 

@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -8,8 +8,6 @@ import { Scenarios } from "@/components/create/scenarios/Scenarios";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 
 describe("Scenarios", () => {
@@ -37,7 +35,7 @@ describe("Scenarios", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Scenarios />);
+      render(<Scenarios />);
 
       // Check that the component renders without crashing
       await waitFor(() => {
@@ -48,7 +46,7 @@ describe("Scenarios", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<Scenarios />);
+      render(<Scenarios />);
 
       // Check that search input has proper accessibility attributes
       await waitFor(() => {
@@ -65,7 +63,7 @@ describe("Scenarios", () => {
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Scenarios />);
+      render(<Scenarios />);
 
       // Test search functionality
       await waitFor(() => {
@@ -83,7 +81,7 @@ describe("Scenarios", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Scenarios />);
+      render(<Scenarios />);
 
       // Test search input interaction
       await waitFor(() => {
@@ -105,7 +103,7 @@ describe("Scenarios", () => {
       // Arrange: Override the default success mock with an error for this test.
       vi.mocked(getAllScenarios).mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<Scenarios />);
+      render(<Scenarios />);
 
       // The component should handle the error gracefully
       await waitFor(() => {
@@ -117,7 +115,7 @@ describe("Scenarios", () => {
 
     it("should handle loading states", async () => {
       // Mock data is automatically loaded from @/mocks/schema
-      renderWithMocks(<Scenarios />);
+      render(<Scenarios />);
 
       // Component should show loading state initially
       await waitFor(() => {
@@ -130,7 +128,7 @@ describe("Scenarios", () => {
 
   describe("Navigation", () => {
     it("should handle navigation", async () => {
-      renderWithMocks(<Scenarios />);
+      render(<Scenarios />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -149,7 +147,7 @@ describe("Scenarios", () => {
       // Test with empty data
       vi.mocked(getAllScenarios).mockResolvedValue([]);
 
-      renderWithMocks(<Scenarios />);
+      render(<Scenarios />);
 
       // Should handle empty data gracefully
       await waitFor(() => {

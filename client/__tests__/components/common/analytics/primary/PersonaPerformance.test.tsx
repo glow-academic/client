@@ -2,7 +2,7 @@ import PersonaPerformance, {
   PersonaPerformanceProps,
 } from "@/components/common/analytics/primary/PersonaPerformance";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from '@/test/custom-render';
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock SimulationPicker component

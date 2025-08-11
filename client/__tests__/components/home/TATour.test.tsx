@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -9,9 +9,7 @@ import TATour from "@/components/home/TATour";
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
 import "@/mocks/auth";
-import "@/mocks/mutations";
 import "@/mocks/navigation";
-import "@/mocks/queries";
 
 // Mock the tour context
 const mockTourContext = {
@@ -141,14 +139,14 @@ describe("TATour", () => {
 
   describe("Component Rendering", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<TATour {...mockProps} />);
+      render(<TATour {...mockProps} />);
       await waitFor(() => {
         expect(screen.getByText("Start Tour")).toBeInTheDocument();
       });
     });
 
     it("shows guide button for TA users", async () => {
-      renderWithMocks(<TATour {...mockProps} />);
+      render(<TATour {...mockProps} />);
       await waitFor(() => {
         expect(screen.getByText("Start Tour")).toBeInTheDocument();
       });
@@ -187,7 +185,7 @@ describe("TATour", () => {
         isSectionAvailable: vi.fn(() => true),
       });
 
-      renderWithMocks(<TATour {...mockProps} />);
+      render(<TATour {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Start Tour")).not.toBeInTheDocument();
       });
@@ -208,7 +206,7 @@ describe("TATour", () => {
         isSectionAvailable: vi.fn(() => true),
       });
 
-      renderWithMocks(<TATour {...mockProps} />);
+      render(<TATour {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Start Tour")).not.toBeInTheDocument();
       });
@@ -229,7 +227,7 @@ describe("TATour", () => {
         isSectionAvailable: vi.fn(() => true),
       });
 
-      renderWithMocks(<TATour {...mockProps} />);
+      render(<TATour {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Start Tour")).not.toBeInTheDocument();
       });
@@ -239,7 +237,7 @@ describe("TATour", () => {
   describe("Guide Button States", () => {
     it("shows start state when tour not started", async () => {
       mockTourContext.getGuideButtonState.mockReturnValue("start");
-      renderWithMocks(<TATour {...mockProps} />);
+      render(<TATour {...mockProps} />);
       await waitFor(() => {
         expect(screen.getByText("Start Tour")).toBeInTheDocument();
       });
@@ -247,7 +245,7 @@ describe("TATour", () => {
 
     it("shows resume state when tour in progress", async () => {
       mockTourContext.getGuideButtonState.mockReturnValue("resume");
-      renderWithMocks(<TATour {...mockProps} />);
+      render(<TATour {...mockProps} />);
       await waitFor(() => {
         expect(screen.getByText("Resume Tour")).toBeInTheDocument();
       });
@@ -255,7 +253,7 @@ describe("TATour", () => {
 
     it("shows complete state when tour finished", async () => {
       mockTourContext.getGuideButtonState.mockReturnValue("complete");
-      renderWithMocks(<TATour {...mockProps} />);
+      render(<TATour {...mockProps} />);
       await waitFor(() => {
         expect(screen.getByText("Tour Complete")).toBeInTheDocument();
       });
@@ -263,7 +261,7 @@ describe("TATour", () => {
 
     it("hides button when state is hidden", async () => {
       mockTourContext.getGuideButtonState.mockReturnValue("hidden");
-      renderWithMocks(<TATour {...mockProps} />);
+      render(<TATour {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Start Tour")).not.toBeInTheDocument();
       });
@@ -301,7 +299,7 @@ describe("TATour", () => {
         isSectionAvailable: vi.fn(() => true),
       });
 
-      renderWithMocks(<TATour {...mockProps} />);
+      render(<TATour {...mockProps} />);
 
       await waitFor(() => {
         expect(mockTourContext.openTour).toHaveBeenCalled();
@@ -338,7 +336,7 @@ describe("TATour", () => {
         isSectionAvailable: vi.fn(() => true),
       });
 
-      renderWithMocks(<TATour {...mockProps} />);
+      render(<TATour {...mockProps} />);
 
       await waitFor(() => {
         expect(mockTourContext.openTour).not.toHaveBeenCalled();
@@ -375,7 +373,7 @@ describe("TATour", () => {
         isSectionAvailable: vi.fn(() => true),
       });
 
-      renderWithMocks(<TATour {...mockProps} />);
+      render(<TATour {...mockProps} />);
 
       await waitFor(() => {
         expect(mockTourContext.openTour).toHaveBeenCalledTimes(1);
@@ -386,7 +384,7 @@ describe("TATour", () => {
   describe("User Interactions", () => {
     it("calls openGuide when guide button is clicked", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<TATour {...mockProps} />);
+      render(<TATour {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Start Tour")).toBeInTheDocument();
@@ -404,7 +402,7 @@ describe("TATour", () => {
 
       for (const state of states) {
         mockTourContext.getGuideButtonState.mockReturnValue(state);
-        renderWithMocks(<TATour {...mockProps} />);
+        render(<TATour {...mockProps} />);
 
         await waitFor(() => {
           if (state === "start") {
@@ -449,7 +447,7 @@ describe("TATour", () => {
         isSectionAvailable: vi.fn(() => true),
       });
 
-      renderWithMocks(<TATour {...mockProps} />);
+      render(<TATour {...mockProps} />);
       await waitFor(() => {
         expect(screen.getByText("Start Tour")).toBeInTheDocument();
       });
@@ -487,7 +485,7 @@ describe("TATour", () => {
         isSectionAvailable: vi.fn(() => true),
       });
 
-      renderWithMocks(<TATour {...mockProps} />);
+      render(<TATour {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Start Tour")).not.toBeInTheDocument();
       });

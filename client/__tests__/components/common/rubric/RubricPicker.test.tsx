@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -29,7 +29,7 @@ describe("RubricPicker", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<RubricPicker {...mockProps} />);
+      render(<RubricPicker {...mockProps} />);
 
       // Should render the button with placeholder text
       expect(screen.getByRole("combobox")).toBeInTheDocument();
@@ -53,7 +53,7 @@ describe("RubricPicker", () => {
         multiSelect: true,
       };
 
-      renderWithMocks(<RubricPicker {...propsWithRubrics} />);
+      render(<RubricPicker {...propsWithRubrics} />);
 
       // Should render the button with custom placeholder
       expect(screen.getByRole("combobox")).toBeInTheDocument();
@@ -61,7 +61,7 @@ describe("RubricPicker", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<RubricPicker {...mockProps} />);
+      render(<RubricPicker {...mockProps} />);
 
       // Should have proper accessibility attributes
       const button = screen.getByRole("combobox");
@@ -73,7 +73,7 @@ describe("RubricPicker", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      renderWithMocks(<RubricPicker {...mockProps} />);
+      render(<RubricPicker {...mockProps} />);
 
       // Should handle state changes properly
       const button = screen.getByRole("combobox");
@@ -81,7 +81,7 @@ describe("RubricPicker", () => {
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<RubricPicker {...mockProps} />);
+      render(<RubricPicker {...mockProps} />);
 
       // Should handle user events properly
       const button = screen.getByRole("combobox");
@@ -97,7 +97,7 @@ describe("RubricPicker", () => {
         placeholder: "No rubrics available",
       };
 
-      renderWithMocks(<RubricPicker {...propsWithEmptyRubrics} />);
+      render(<RubricPicker {...propsWithEmptyRubrics} />);
 
       // Should render with empty state
       expect(screen.getByRole("combobox")).toBeInTheDocument();
@@ -110,7 +110,7 @@ describe("RubricPicker", () => {
         rubrics: [],
       };
 
-      renderWithMocks(<RubricPicker {...minimalProps} />);
+      render(<RubricPicker {...minimalProps} />);
 
       // Should render with default props
       expect(screen.getByRole("combobox")).toBeInTheDocument();

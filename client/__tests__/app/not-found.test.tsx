@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -36,7 +36,7 @@ describe("NotFound", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<NotFound />);
+      render(<NotFound />);
 
       expect(screen.getByText("404")).toBeInTheDocument();
       expect(screen.getByText("Page Not Found")).toBeInTheDocument();
@@ -48,7 +48,7 @@ describe("NotFound", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<NotFound />);
+      render(<NotFound />);
 
       // Check for proper heading structure
       expect(screen.getByRole("heading", { name: "404" })).toBeInTheDocument();
@@ -70,7 +70,7 @@ describe("NotFound", () => {
         effectiveProfile: { role: "admin" },
       });
 
-      renderWithMocks(<NotFound />);
+      render(<NotFound />);
 
       const backButton = screen.getByRole("button", { name: "Back to Glow" });
       await user.click(backButton);
@@ -84,7 +84,7 @@ describe("NotFound", () => {
         effectiveProfile: { role: "ta" },
       });
 
-      renderWithMocks(<NotFound />);
+      render(<NotFound />);
 
       const backButton = screen.getByRole("button", { name: "Back to Glow" });
       await user.click(backButton);
@@ -98,7 +98,7 @@ describe("NotFound", () => {
         effectiveProfile: { role: "guest" },
       });
 
-      renderWithMocks(<NotFound />);
+      render(<NotFound />);
 
       const backButton = screen.getByRole("button", { name: "Back to Glow" });
       await user.click(backButton);
@@ -114,7 +114,7 @@ describe("NotFound", () => {
         effectiveProfile: { role: "admin" },
       });
 
-      renderWithMocks(<NotFound />);
+      render(<NotFound />);
 
       const backButton = screen.getByRole("button", { name: "Back to Glow" });
       await user.click(backButton);
@@ -129,7 +129,7 @@ describe("NotFound", () => {
         effectiveProfile: null,
       });
 
-      renderWithMocks(<NotFound />);
+      render(<NotFound />);
 
       // Should still render the basic 404 content
       expect(screen.getByText("404")).toBeInTheDocument();
@@ -141,7 +141,7 @@ describe("NotFound", () => {
         effectiveProfile: { role: undefined },
       });
 
-      renderWithMocks(<NotFound />);
+      render(<NotFound />);
 
       // Should still render the basic 404 content
       expect(screen.getByText("404")).toBeInTheDocument();
@@ -149,7 +149,7 @@ describe("NotFound", () => {
     });
 
     it("should display help text correctly", () => {
-      renderWithMocks(<NotFound />);
+      render(<NotFound />);
 
       expect(
         screen.getByText(

@@ -6,7 +6,7 @@
  */
 
 import SimulationProgress from "@/components/common/cohort/SimulationProgress";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 describe("SimulationProgress", () => {

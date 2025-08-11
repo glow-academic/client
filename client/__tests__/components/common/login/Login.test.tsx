@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -8,8 +8,6 @@ import Login from "@/components/common/login/Login";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock next-auth
 vi.mock("next-auth/react", () => ({
@@ -88,7 +86,7 @@ describe("Login", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Login />);
+      render(<Login />);
 
       // Should render the login component
       await waitFor(() => {
@@ -97,7 +95,7 @@ describe("Login", () => {
     });
 
     it("should render login buttons", async () => {
-      renderWithMocks(<Login />);
+      render(<Login />);
 
       await waitFor(() => {
         expect(screen.getByText("Glow")).toBeInTheDocument();
@@ -109,7 +107,7 @@ describe("Login", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<Login />);
+      render(<Login />);
 
       await waitFor(() => {
         // Check for login buttons
@@ -129,7 +127,7 @@ describe("Login", () => {
   describe("User Interactions", () => {
     it("should handle Microsoft login button click", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Login />);
+      render(<Login />);
 
       await waitFor(() => {
         expect(
@@ -147,7 +145,7 @@ describe("Login", () => {
 
     it("should handle guest access button click", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Login />);
+      render(<Login />);
 
       await waitFor(() => {
         expect(screen.getByTestId("guest-login-button")).toBeInTheDocument();
@@ -163,7 +161,7 @@ describe("Login", () => {
 
     it("should handle button state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Login />);
+      render(<Login />);
 
       await waitFor(() => {
         expect(
@@ -188,7 +186,7 @@ describe("Login", () => {
       );
       vi.mocked(getProfilesByUser).mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<Login />);
+      render(<Login />);
 
       await waitFor(() => {
         expect(screen.getByText("Glow")).toBeInTheDocument();
@@ -200,7 +198,7 @@ describe("Login", () => {
     });
 
     it("should handle loading states", async () => {
-      renderWithMocks(<Login />);
+      render(<Login />);
 
       await waitFor(() => {
         expect(screen.getByText("Glow")).toBeInTheDocument();
@@ -214,7 +212,7 @@ describe("Login", () => {
 
   describe("Navigation", () => {
     it("should handle navigation", async () => {
-      renderWithMocks(<Login />);
+      render(<Login />);
 
       await waitFor(() => {
         expect(screen.getByText("Glow")).toBeInTheDocument();
@@ -228,7 +226,7 @@ describe("Login", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      renderWithMocks(<Login />);
+      render(<Login />);
 
       await waitFor(() => {
         expect(screen.getByText("Glow")).toBeInTheDocument();

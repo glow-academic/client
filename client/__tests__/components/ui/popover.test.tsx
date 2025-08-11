@@ -3,8 +3,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -12,7 +12,7 @@ import { describe, expect, it } from "vitest";
 describe("Popover", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(
+      render(
         <Popover>
           <PopoverTrigger>Open Popover</PopoverTrigger>
           <PopoverContent>Popover Content</PopoverContent>
@@ -23,7 +23,7 @@ describe("Popover", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(
+      render(
         <Popover>
           <PopoverTrigger>Open Popover</PopoverTrigger>
           <PopoverContent>Accessible Content</PopoverContent>
@@ -37,7 +37,7 @@ describe("Popover", () => {
 
   describe("Component Structure", () => {
     it("should render popover trigger correctly", () => {
-      renderWithMocks(
+      render(
         <Popover>
           <PopoverTrigger>Trigger</PopoverTrigger>
           <PopoverContent>
@@ -55,7 +55,7 @@ describe("Popover", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal popover
-      renderWithMocks(
+      render(
         <Popover>
           <PopoverTrigger>Minimal</PopoverTrigger>
           <PopoverContent>Content</PopoverContent>

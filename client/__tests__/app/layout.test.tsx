@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { render } from '@/test/custom-render';
 import Layout from '@/app/(main)/layout';
 
 // ——————————————————————————————————————————
@@ -10,7 +10,7 @@ describe('layout', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       
-      renderWithMocks(<Layout  >
+      render(<Layout  >
         <div>Hello</div>
       </Layout>);
       

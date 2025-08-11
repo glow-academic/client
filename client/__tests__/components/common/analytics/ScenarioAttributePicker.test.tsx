@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -18,7 +18,7 @@ const mockProps: ScenarioAttributePickerProps = {
 describe("ScenarioAttributePicker", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<ScenarioAttributePicker {...mockProps} />);
+      render(<ScenarioAttributePicker {...mockProps} />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -27,7 +27,7 @@ describe("ScenarioAttributePicker", () => {
     });
 
     it("should render with props", async () => {
-      renderWithMocks(<ScenarioAttributePicker {...mockProps} />);
+      render(<ScenarioAttributePicker {...mockProps} />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -36,7 +36,7 @@ describe("ScenarioAttributePicker", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<ScenarioAttributePicker {...mockProps} />);
+      render(<ScenarioAttributePicker {...mockProps} />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -52,7 +52,7 @@ describe("ScenarioAttributePicker", () => {
         selectedAttribute: "locations" as const,
       };
 
-      renderWithMocks(
+      render(
         <ScenarioAttributePicker {...propsWithDifferentAttribute} />,
       );
 
@@ -68,7 +68,7 @@ describe("ScenarioAttributePicker", () => {
         selectedAttribute: "deadlines" as const,
       };
 
-      renderWithMocks(
+      render(
         <ScenarioAttributePicker {...propsWithDifferentAttribute} />,
       );
 

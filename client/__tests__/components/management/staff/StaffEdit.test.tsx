@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -10,8 +10,6 @@ import StaffEdit, {
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the toast notifications
 vi.mock("sonner", () => ({
@@ -93,12 +91,12 @@ describe("StaffEdit", () => {
 
   describe("Rendering and Loading States", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
       expect(document.body).toBeInTheDocument();
     });
 
     it("shows loading skeletons when data is loading", () => {
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       // Should show skeletons for form fields
       expect(screen.getByText("First Name")).toBeInTheDocument();
@@ -114,7 +112,7 @@ describe("StaffEdit", () => {
       );
       vi.mocked(getProfile).mockResolvedValue(mockProfile);
 
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -129,7 +127,7 @@ describe("StaffEdit", () => {
       );
       vi.mocked(getProfile).mockResolvedValue(mockProfile);
 
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -149,7 +147,7 @@ describe("StaffEdit", () => {
 
     it("updates form data when user types in input fields", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -164,7 +162,7 @@ describe("StaffEdit", () => {
 
     it("enables update button when form data changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -191,7 +189,7 @@ describe("StaffEdit", () => {
         () => new Promise((resolve) => setTimeout(resolve, 100))
       );
 
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -234,7 +232,7 @@ describe("StaffEdit", () => {
         isSectionAvailable: vi.fn(),
       });
 
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -268,7 +266,7 @@ describe("StaffEdit", () => {
         isSectionAvailable: vi.fn(),
       });
 
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -290,7 +288,7 @@ describe("StaffEdit", () => {
       );
       vi.mocked(getProfile).mockResolvedValue(guestProfile);
 
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -323,7 +321,7 @@ describe("StaffEdit", () => {
 
       vi.mocked(updateProfile).mockResolvedValue(mockProfile);
 
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -358,7 +356,7 @@ describe("StaffEdit", () => {
       const error = new Error("Update failed");
       vi.mocked(updateProfile).mockRejectedValue(error);
 
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -387,7 +385,7 @@ describe("StaffEdit", () => {
 
     it("shows delete confirmation dialog", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -413,7 +411,7 @@ describe("StaffEdit", () => {
 
       vi.mocked(deleteProfile).mockResolvedValue(undefined);
 
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -444,7 +442,7 @@ describe("StaffEdit", () => {
       const error = new Error("Delete failed");
       vi.mocked(deleteProfile).mockRejectedValue(error);
 
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -465,7 +463,7 @@ describe("StaffEdit", () => {
 
     it("cancels delete when cancel button is clicked", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -493,7 +491,7 @@ describe("StaffEdit", () => {
 
     it("navigates back to staff management page", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -508,7 +506,7 @@ describe("StaffEdit", () => {
 
   describe("Edge Cases", () => {
     it("handles empty profileId gracefully", () => {
-      renderWithMocks(<StaffEdit profileId="" />);
+      render(<StaffEdit profileId="" />);
       expect(document.body).toBeInTheDocument();
     });
 
@@ -519,7 +517,7 @@ describe("StaffEdit", () => {
       const error = new Error("Profile not found");
       vi.mocked(getProfile).mockRejectedValue(error);
 
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       // Component should still render without crashing
       expect(document.body).toBeInTheDocument();
@@ -531,7 +529,7 @@ describe("StaffEdit", () => {
       );
       vi.mocked(getProfile).mockResolvedValue(null);
 
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       // Component should still render without crashing
       expect(document.body).toBeInTheDocument();
@@ -549,7 +547,7 @@ describe("StaffEdit", () => {
       vi.mocked(getProfile).mockResolvedValue(mockProfile);
       vi.mocked(updateProfile).mockResolvedValue(mockProfile);
 
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -582,7 +580,7 @@ describe("StaffEdit", () => {
     });
 
     it("has proper form labels and IDs", async () => {
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -596,7 +594,7 @@ describe("StaffEdit", () => {
     });
 
     it("has proper button labels", async () => {
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -621,7 +619,7 @@ describe("StaffEdit", () => {
         () => new Promise((resolve) => setTimeout(resolve, 100))
       );
 
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -656,7 +654,7 @@ describe("StaffEdit", () => {
 
     it("handles input change function calls", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -689,7 +687,7 @@ describe("StaffEdit", () => {
 
       vi.mocked(updateProfile).mockResolvedValue(mockProfile);
 
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -725,7 +723,7 @@ describe("StaffEdit", () => {
 
     it("handles back navigation function", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -746,7 +744,7 @@ describe("StaffEdit", () => {
 
       vi.mocked(deleteProfile).mockResolvedValue(undefined);
 
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("John")).toBeInTheDocument();
@@ -781,7 +779,7 @@ describe("StaffEdit", () => {
       );
       vi.mocked(getProfile).mockResolvedValue(customProfile);
 
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("Custom")).toBeInTheDocument();
@@ -804,7 +802,7 @@ describe("StaffEdit", () => {
       );
       vi.mocked(getProfile).mockResolvedValue(customProfile);
 
-      renderWithMocks(<StaffEdit {...mockProps} />);
+      render(<StaffEdit {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("Different")).toBeInTheDocument();

@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -7,8 +7,6 @@ import Report, { ReportProps } from "@/components/analytics/report/Report";
 
 // Import mocks
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
@@ -23,21 +21,21 @@ describe("Report", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<Report {...mockProps} />);
+      render(<Report {...mockProps} />);
 
       // Should show loading state initially
       expect(screen.getByText("Loading report...")).toBeInTheDocument();
     });
 
     it("should render with props", async () => {
-      renderWithMocks(<Report {...mockProps} />);
+      render(<Report {...mockProps} />);
 
       // Should render with the provided profileId
       expect(screen.getByText("Loading report...")).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<Report {...mockProps} />);
+      render(<Report {...mockProps} />);
 
       // Should show loading state initially
       expect(screen.getByText("Loading report...")).toBeInTheDocument();
@@ -52,7 +50,7 @@ describe("Report", () => {
       );
       vi.mocked(getProfile).mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<Report {...mockProps} />);
+      render(<Report {...mockProps} />);
 
       // Should show loading state initially
       expect(screen.getByText("Loading report...")).toBeInTheDocument();
@@ -65,7 +63,7 @@ describe("Report", () => {
 
     it("should handle loading states", () => {
       // Test loading states
-      renderWithMocks(<Report {...mockProps} />);
+      render(<Report {...mockProps} />);
 
       // Should show loading spinner and text
       expect(screen.getByText("Loading report...")).toBeInTheDocument();
@@ -94,7 +92,7 @@ describe("Report", () => {
         defaultProfile: false,
       });
 
-      renderWithMocks(<Report {...mockProps} />);
+      render(<Report {...mockProps} />);
 
       // Should show loading initially
       expect(screen.getByText("Loading report...")).toBeInTheDocument();
@@ -114,7 +112,7 @@ describe("Report", () => {
       );
       vi.mocked(getProfile).mockResolvedValue(null);
 
-      renderWithMocks(<Report {...mockProps} />);
+      render(<Report {...mockProps} />);
 
       // Should show loading state
       expect(screen.getByText("Loading report...")).toBeInTheDocument();
@@ -122,7 +120,7 @@ describe("Report", () => {
 
     it("should handle missing or invalid props", () => {
       // Test with missing profileId
-      renderWithMocks(<Report profileId="" />);
+      render(<Report profileId="" />);
 
       // Should still render loading state
       expect(screen.getByText("Loading report...")).toBeInTheDocument();
@@ -137,7 +135,7 @@ describe("Report", () => {
         () => new Promise((resolve) => setTimeout(() => resolve(null), 1000)),
       );
 
-      renderWithMocks(<Report {...mockProps} />);
+      render(<Report {...mockProps} />);
 
       // Should show loading state during timeout
       expect(screen.getByText("Loading report...")).toBeInTheDocument();

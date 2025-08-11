@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import type { Table } from "@tanstack/react-table";
 import { describe, expect, it, vi } from "vitest";
 
@@ -48,21 +48,21 @@ const mockProps: DataTableToolbarProps<unknown> = {
 describe("DataTableToolbar", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<DataTableToolbar {...mockProps} />);
+      render(<DataTableToolbar {...mockProps} />);
 
       // Basic render test - component should render without errors
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      renderWithMocks(<DataTableToolbar {...mockProps} />);
+      render(<DataTableToolbar {...mockProps} />);
 
       // Component should render with the provided props
       expect(document.body).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<DataTableToolbar {...mockProps} />);
+      render(<DataTableToolbar {...mockProps} />);
 
       // Check for basic accessibility elements
       const toolbar =
@@ -74,14 +74,14 @@ describe("DataTableToolbar", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<DataTableToolbar {...mockProps} />);
+      render(<DataTableToolbar {...mockProps} />);
 
       // Component should handle edge cases
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(
+      render(
         <DataTableToolbar
           table={createMockTable()}
           profileOptions={[]}

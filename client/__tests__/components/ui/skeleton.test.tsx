@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -8,13 +8,13 @@ import { describe, expect, it } from "vitest";
 describe("Skeleton", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<Skeleton />);
+      render(<Skeleton />);
 
       expect(screen.getByTestId("skeleton")).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<Skeleton className="custom-class" />);
+      render(<Skeleton className="custom-class" />);
 
       const skeleton = screen.getByTestId("skeleton");
       expect(skeleton).toBeInTheDocument();
@@ -24,14 +24,14 @@ describe("Skeleton", () => {
 
   describe("Component Props", () => {
     it("should render with custom className", () => {
-      renderWithMocks(<Skeleton className="test-class" />);
+      render(<Skeleton className="test-class" />);
 
       const skeleton = screen.getByTestId("skeleton");
       expect(skeleton).toHaveClass("test-class");
     });
 
     it("should render with children", () => {
-      renderWithMocks(<Skeleton>Content</Skeleton>);
+      render(<Skeleton>Content</Skeleton>);
 
       const skeleton = screen.getByTestId("skeleton");
       expect(skeleton).toBeInTheDocument();
@@ -42,7 +42,7 @@ describe("Skeleton", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal props
-      renderWithMocks(<Skeleton />);
+      render(<Skeleton />);
 
       const skeleton = screen.getByTestId("skeleton");
       expect(skeleton).toBeInTheDocument();

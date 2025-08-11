@@ -1,5 +1,5 @@
 import { Separator } from "@/components/ui/separator";
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -7,14 +7,14 @@ import { describe, expect, it } from "vitest";
 describe("Separator", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<Separator />);
+      render(<Separator />);
 
       const separator = document.querySelector('[data-slot="separator-root"]');
       expect(separator).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<Separator aria-label="Test Separator" />);
+      render(<Separator aria-label="Test Separator" />);
 
       const separator = document.querySelector('[data-slot="separator-root"]');
       expect(separator).toBeInTheDocument();
@@ -23,21 +23,21 @@ describe("Separator", () => {
 
   describe("Component Props", () => {
     it("should render with horizontal orientation", () => {
-      renderWithMocks(<Separator orientation="horizontal" />);
+      render(<Separator orientation="horizontal" />);
 
       const separator = document.querySelector('[data-slot="separator-root"]');
       expect(separator).toBeInTheDocument();
     });
 
     it("should render with vertical orientation", () => {
-      renderWithMocks(<Separator orientation="vertical" />);
+      render(<Separator orientation="vertical" />);
 
       const separator = document.querySelector('[data-slot="separator-root"]');
       expect(separator).toBeInTheDocument();
     });
 
     it("should render with custom className", () => {
-      renderWithMocks(<Separator className="custom-class" />);
+      render(<Separator className="custom-class" />);
 
       const separator = document.querySelector('[data-slot="separator-root"]');
       expect(separator).toHaveClass("custom-class");
@@ -47,7 +47,7 @@ describe("Separator", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal props
-      renderWithMocks(<Separator />);
+      render(<Separator />);
 
       const separator = document.querySelector('[data-slot="separator-root"]');
       expect(separator).toBeInTheDocument();

@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -8,8 +8,6 @@ import Scenario, { ScenarioProps } from "@/components/common/scenario/Scenario";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the toast
 vi.mock("sonner", () => ({
@@ -62,14 +60,14 @@ describe("Scenario", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Scenario {...mockProps} />);
+      render(<Scenario {...mockProps} />);
 
       // Check that the component renders with the expected sections
       expect(screen.getByText("Select Persona Type")).toBeInTheDocument();
     });
 
     it("should render create form with empty fields", () => {
-      renderWithMocks(<Scenario mode="create" />);
+      render(<Scenario mode="create" />);
 
       // Check that form fields are present
       expect(screen.getByText("Select Persona Type")).toBeInTheDocument();
@@ -77,7 +75,7 @@ describe("Scenario", () => {
     });
 
     it("should render edit form with existing data", async () => {
-      renderWithMocks(<Scenario scenarioId="test-scenario-id" mode="edit" />);
+      render(<Scenario scenarioId="test-scenario-id" mode="edit" />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -86,7 +84,7 @@ describe("Scenario", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<Scenario {...mockProps} />);
+      render(<Scenario {...mockProps} />);
 
       // Check for proper form structure
       expect(screen.getByText("Select Persona Type")).toBeInTheDocument();
@@ -95,7 +93,7 @@ describe("Scenario", () => {
 
   describe("User Interactions", () => {
     it("should handle form submissions", async () => {
-      renderWithMocks(<Scenario mode="create" />);
+      render(<Scenario mode="create" />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -107,7 +105,7 @@ describe("Scenario", () => {
     });
 
     it("should handle state changes", async () => {
-      renderWithMocks(<Scenario mode="create" />);
+      render(<Scenario mode="create" />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -119,7 +117,7 @@ describe("Scenario", () => {
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<Scenario mode="create" />);
+      render(<Scenario mode="create" />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -134,10 +132,9 @@ describe("Scenario", () => {
   describe("API Integration", () => {
     it("should handle and display an API error state", async () => {
       // Arrange: Override the default success mock with an error for this test.
-      const { createScenarioMock } = await import("@/mocks/mutations");
       createScenarioMock.mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<Scenario {...mockProps} />);
+      render(<Scenario {...mockProps} />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -149,7 +146,7 @@ describe("Scenario", () => {
     });
 
     it("should handle loading states", () => {
-      renderWithMocks(<Scenario scenarioId="test-scenario-id" mode="edit" />);
+      render(<Scenario scenarioId="test-scenario-id" mode="edit" />);
 
       // Check that the component shows loading state
       expect(screen.getByText("Loading Scenario...")).toBeInTheDocument();
@@ -159,7 +156,7 @@ describe("Scenario", () => {
   describe("Navigation", () => {
     it("should handle navigation", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Scenario mode="create" />);
+      render(<Scenario mode="create" />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -175,21 +172,21 @@ describe("Scenario", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<Scenario {...mockProps} />);
+      render(<Scenario {...mockProps} />);
 
       // Test that the component renders without crashing even with minimal props
       expect(screen.getByText("Select Persona Type")).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(<Scenario />);
+      render(<Scenario />);
 
       // Test that the component handles missing props gracefully
       expect(screen.getByText("Select Persona Type")).toBeInTheDocument();
     });
 
     it("should validate form fields", async () => {
-      renderWithMocks(<Scenario mode="create" />);
+      render(<Scenario mode="create" />);
 
       // Wait for the form to load
       await waitFor(() => {

@@ -1,5 +1,5 @@
 import { describe, it, vi, afterEach } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { render } from '@/test/custom-render';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
@@ -7,8 +7,6 @@ import userEvent from '@testing-library/user-event';
 
 
 // ✨ Import comprehensive mock data from our centralized mock system
-import '@/mocks/queries';
-import '@/mocks/mutations';
 import '@/mocks/api';
 
 
@@ -73,7 +71,7 @@ describe('simulation-context', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<SimulationProvider {...mockProps} onSimulationFinished={vi.fn()}>
+      render(<SimulationProvider {...mockProps} onSimulationFinished={vi.fn()}>
         <div>test-children</div>
       </SimulationProvider>);
       
@@ -119,7 +117,7 @@ describe('simulation-context', () => {
       // Arrange: Override the default success mock with an error for this test.
       // Example: vi.mocked(getAllDocuments).mockRejectedValue(new Error('API Error'));
 
-      renderWithMocks(<SimulationProvider {...mockProps} onSimulationFinished={vi.fn()}>
+      render(<SimulationProvider {...mockProps} onSimulationFinished={vi.fn()}>
         <div>test-children</div>
       </SimulationProvider>);
       

@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -32,21 +32,21 @@ const mockProps: AccoladeCardProps = {
 describe("AccoladeCard", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<AccoladeCard {...mockProps} />);
+      render(<AccoladeCard {...mockProps} />);
 
       // Basic render test - component should render without errors
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      renderWithMocks(<AccoladeCard {...mockProps} />);
+      render(<AccoladeCard {...mockProps} />);
 
       // Component should render with the provided props
       expect(document.body).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<AccoladeCard {...mockProps} />);
+      render(<AccoladeCard {...mockProps} />);
 
       // Check for basic accessibility elements
       const card =
@@ -58,14 +58,14 @@ describe("AccoladeCard", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<AccoladeCard {...mockProps} />);
+      render(<AccoladeCard {...mockProps} />);
 
       // Component should handle edge cases
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(
+      render(
         <AccoladeCard
           icon={<div>icon</div>}
           title="title"

@@ -1,5 +1,5 @@
 import { describe, it, vi, afterEach, expect } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { render } from '@/test/custom-render';
 
 // ——————————————————————————————————————————
 import CohortEditPage from '@/app/(main)/cohorts/c/page';
@@ -17,7 +17,7 @@ describe('CohortEditPage', () => {
 
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
-      renderWithMocks(<CohortEditPage />);
+      render(<CohortEditPage />);
       
       // Should redirect to /create/cohorts
       const { redirect } = await import("next/navigation");
@@ -27,7 +27,7 @@ describe('CohortEditPage', () => {
     
 
     it('should have correct accessibility attributes', async () => {
-      renderWithMocks(<CohortEditPage />);
+      render(<CohortEditPage />);
       
       // Should redirect to /create/cohorts
       const { redirect } = await import("next/navigation");
@@ -43,7 +43,7 @@ describe('CohortEditPage', () => {
 
   describe('Edge Cases', () => {
     it('should handle edge cases gracefully', async () => {
-      renderWithMocks(<CohortEditPage />);
+      render(<CohortEditPage />);
       
       // Should redirect to /create/cohorts
       const { redirect } = await import("next/navigation");

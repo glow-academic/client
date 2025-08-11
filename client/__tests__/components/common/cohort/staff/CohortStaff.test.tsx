@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -20,21 +20,21 @@ const mockProps: CohortStaffProps = {
 describe("CohortStaff", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<CohortStaff {...mockProps} />);
+      render(<CohortStaff {...mockProps} />);
 
       // Basic render test - component should render without errors
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      renderWithMocks(<CohortStaff {...mockProps} />);
+      render(<CohortStaff {...mockProps} />);
 
       // Component should render with the provided props
       expect(document.body).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<CohortStaff {...mockProps} />);
+      render(<CohortStaff {...mockProps} />);
 
       // Check for basic accessibility elements
       const container =
@@ -47,7 +47,7 @@ describe("CohortStaff", () => {
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<CohortStaff {...mockProps} />);
+      render(<CohortStaff {...mockProps} />);
 
       // Test button interactions if buttons exist
       const buttons = document.querySelectorAll("button");
@@ -60,7 +60,7 @@ describe("CohortStaff", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<CohortStaff {...mockProps} />);
+      render(<CohortStaff {...mockProps} />);
 
       // Test link interactions if links exist
       const links = document.querySelectorAll("a");
@@ -74,7 +74,7 @@ describe("CohortStaff", () => {
 
   describe("Navigation", () => {
     it("should handle navigation", () => {
-      renderWithMocks(<CohortStaff {...mockProps} />);
+      render(<CohortStaff {...mockProps} />);
 
       // Component should handle navigation properly
       expect(document.body).toBeInTheDocument();
@@ -83,14 +83,14 @@ describe("CohortStaff", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<CohortStaff {...mockProps} />);
+      render(<CohortStaff {...mockProps} />);
 
       // Component should handle edge cases
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(
+      render(
         <CohortStaff
           profiles={[]}
           setProfiles={vi.fn()}

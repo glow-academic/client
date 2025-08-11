@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -34,7 +34,7 @@ const mockProps: AgentsDataTableToolbarProps = {
 describe("AgentsDataTableToolbar", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<AgentsDataTableToolbar {...mockProps} />);
+      render(<AgentsDataTableToolbar {...mockProps} />);
 
       // Basic render check - find search input
       expect(
@@ -43,7 +43,7 @@ describe("AgentsDataTableToolbar", () => {
     });
 
     it("should render with props", () => {
-      renderWithMocks(<AgentsDataTableToolbar {...mockProps} />);
+      render(<AgentsDataTableToolbar {...mockProps} />);
 
       // Check that the search input is rendered with correct placeholder
       expect(
@@ -52,7 +52,7 @@ describe("AgentsDataTableToolbar", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<AgentsDataTableToolbar {...mockProps} />);
+      render(<AgentsDataTableToolbar {...mockProps} />);
 
       // Check that the search input has proper accessibility
       const searchInput = screen.getByPlaceholderText(
@@ -66,7 +66,7 @@ describe("AgentsDataTableToolbar", () => {
     it("should handle search input changes", async () => {
       const user = userEvent.setup();
 
-      renderWithMocks(<AgentsDataTableToolbar {...mockProps} />);
+      render(<AgentsDataTableToolbar {...mockProps} />);
 
       const searchInput = screen.getByPlaceholderText(
         "Search system agents...",
@@ -87,7 +87,7 @@ describe("AgentsDataTableToolbar", () => {
         temperatureOptions: [],
       };
 
-      renderWithMocks(<AgentsDataTableToolbar {...propsWithEmptyOptions} />);
+      render(<AgentsDataTableToolbar {...propsWithEmptyOptions} />);
 
       // Should still render without crashing
       expect(
@@ -103,7 +103,7 @@ describe("AgentsDataTableToolbar", () => {
         temperatureOptions: [],
       };
 
-      renderWithMocks(<AgentsDataTableToolbar {...minimalProps} />);
+      render(<AgentsDataTableToolbar {...minimalProps} />);
 
       // Should still render without crashing
       expect(

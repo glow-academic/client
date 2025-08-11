@@ -6,8 +6,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -15,7 +15,7 @@ import { describe, expect, it } from "vitest";
 describe("Card", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(
+      render(
         <Card>
           <CardHeader>
             <CardTitle>Test Card</CardTitle>
@@ -33,7 +33,7 @@ describe("Card", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(
+      render(
         <Card>
           <CardHeader>
             <CardTitle>Accessible Card</CardTitle>
@@ -49,7 +49,7 @@ describe("Card", () => {
 
   describe("Component Structure", () => {
     it("should render card with all sections", () => {
-      renderWithMocks(
+      render(
         <Card>
           <CardHeader>
             <CardTitle>Full Card</CardTitle>
@@ -67,7 +67,7 @@ describe("Card", () => {
     });
 
     it("should render minimal card", () => {
-      renderWithMocks(
+      render(
         <Card>
           <CardContent>Minimal Content</CardContent>
         </Card>,
@@ -80,7 +80,7 @@ describe("Card", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with empty card
-      renderWithMocks(<Card></Card>);
+      render(<Card></Card>);
 
       const card = document.querySelector('[data-slot="card"]');
       expect(card).toBeInTheDocument();

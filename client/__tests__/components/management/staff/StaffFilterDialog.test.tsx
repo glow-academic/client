@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -51,21 +51,21 @@ const mockProps: StaffFilterDialogProps = {
 describe("StaffFilterDialog", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<StaffFilterDialog {...mockProps} />);
+      render(<StaffFilterDialog {...mockProps} />);
 
       // Basic render test - component should render without errors
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      renderWithMocks(<StaffFilterDialog {...mockProps} />);
+      render(<StaffFilterDialog {...mockProps} />);
 
       // Component should render with the provided props
       expect(document.body).toBeInTheDocument();
     });
 
     it("should display staff members in table", () => {
-      renderWithMocks(<StaffFilterDialog {...mockProps} />);
+      render(<StaffFilterDialog {...mockProps} />);
 
       // Should display staff member names
       expect(document.body).toBeInTheDocument();
@@ -80,7 +80,7 @@ describe("StaffFilterDialog", () => {
         title: "No Staff Members",
       };
 
-      renderWithMocks(<StaffFilterDialog {...emptyProps} />);
+      render(<StaffFilterDialog {...emptyProps} />);
 
       // Component should handle empty list gracefully
       expect(document.body).toBeInTheDocument();
@@ -92,7 +92,7 @@ describe("StaffFilterDialog", () => {
         open: false,
       };
 
-      renderWithMocks(<StaffFilterDialog {...closedProps} />);
+      render(<StaffFilterDialog {...closedProps} />);
 
       // Component should handle closed state
       expect(document.body).toBeInTheDocument();

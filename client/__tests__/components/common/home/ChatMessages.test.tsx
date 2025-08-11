@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -133,7 +133,7 @@ describe("ChatMessages", () => {
   describe("Component Rendering", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       // Should render the component with messages when currentChatId is set
       await waitFor(() => {
@@ -148,7 +148,7 @@ describe("ChatMessages", () => {
       // Set currentChatId to null
       mockAssistantContext.currentChatId = null;
 
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
@@ -166,7 +166,7 @@ describe("ChatMessages", () => {
         variant: "expanded",
       };
 
-      renderWithMocks(<ChatMessages {...propsWithCallbacks} />);
+      render(<ChatMessages {...propsWithCallbacks} />);
 
       await waitFor(() => {
         expect(screen.getByText("Hello")).toBeInTheDocument();
@@ -177,7 +177,7 @@ describe("ChatMessages", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         // Check for the main container
@@ -195,7 +195,7 @@ describe("ChatMessages", () => {
         onPromptClick: vi.fn(),
       };
 
-      renderWithMocks(<ChatMessages {...propsWithPrompts} />);
+      render(<ChatMessages {...propsWithPrompts} />);
 
       await waitFor(() => {
         expect(screen.getByTestId("chat-starter-prompts")).toBeInTheDocument();
@@ -211,7 +211,7 @@ describe("ChatMessages", () => {
         onPromptClick: vi.fn(),
       };
 
-      renderWithMocks(<ChatMessages {...propsWithoutPrompts} />);
+      render(<ChatMessages {...propsWithoutPrompts} />);
 
       await waitFor(() => {
         expect(
@@ -241,7 +241,7 @@ describe("ChatMessages", () => {
       vi.mocked(getAssistantMessagesByChat).mockResolvedValueOnce(mockMessages);
       vi.mocked(getAssistantToolCallsByChat).mockResolvedValueOnce([]);
 
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Hello, how are you?")).toBeInTheDocument();
@@ -267,7 +267,7 @@ describe("ChatMessages", () => {
       vi.mocked(getAssistantMessagesByChat).mockResolvedValueOnce(mockMessages);
       vi.mocked(getAssistantToolCallsByChat).mockResolvedValueOnce([]);
 
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -295,7 +295,7 @@ describe("ChatMessages", () => {
       vi.mocked(getAssistantMessagesByChat).mockResolvedValueOnce(mockMessages);
       vi.mocked(getAssistantToolCallsByChat).mockResolvedValueOnce([]);
 
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Thinking")).toBeInTheDocument();
@@ -321,7 +321,7 @@ describe("ChatMessages", () => {
       vi.mocked(getAssistantMessagesByChat).mockResolvedValueOnce(mockMessages);
       vi.mocked(getAssistantToolCallsByChat).mockResolvedValueOnce([]);
 
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByTestId("markdown")).toBeInTheDocument();
@@ -356,7 +356,7 @@ describe("ChatMessages", () => {
         mockToolCalls
       );
 
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         // The formatToolName function converts "search_database" to "Search Database"
@@ -388,7 +388,7 @@ describe("ChatMessages", () => {
         mockToolCalls
       );
 
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Search Database")).toBeInTheDocument();
@@ -419,7 +419,7 @@ describe("ChatMessages", () => {
         mockToolCalls
       );
 
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         // The formatToolName function converts "user_profile_overview" to "User Profile Overview"
@@ -465,7 +465,7 @@ describe("ChatMessages", () => {
         mockToolCalls
       );
 
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Hello")).toBeInTheDocument();
@@ -482,7 +482,7 @@ describe("ChatMessages", () => {
       );
       vi.mocked(getAssistantToolCallsByChat).mockResolvedValueOnce([]);
 
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getAllByTestId("skeleton")[0]).toBeInTheDocument();
@@ -496,7 +496,7 @@ describe("ChatMessages", () => {
         () => new Promise(() => {}) // Never resolves
       );
 
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getAllByTestId("skeleton")[0]).toBeInTheDocument();
@@ -513,7 +513,7 @@ describe("ChatMessages", () => {
         variant: "expanded",
       };
 
-      renderWithMocks(<ChatMessages {...propsExpanded} />);
+      render(<ChatMessages {...propsExpanded} />);
 
       await waitFor(() => {
         expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
@@ -528,7 +528,7 @@ describe("ChatMessages", () => {
         variant: "minimized",
       };
 
-      renderWithMocks(<ChatMessages {...propsMinimized} />);
+      render(<ChatMessages {...propsMinimized} />);
 
       await waitFor(() => {
         expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
@@ -549,7 +549,7 @@ describe("ChatMessages", () => {
         onPromptClick: mockOnPromptClick,
       };
 
-      renderWithMocks(<ChatMessages {...propsWithCallback} />);
+      render(<ChatMessages {...propsWithCallback} />);
 
       await waitFor(() => {
         expect(screen.getByTestId("chat-starter-prompts")).toBeInTheDocument();
@@ -581,7 +581,7 @@ describe("ChatMessages", () => {
       ]);
       vi.mocked(getAssistantToolCallsByChat).mockResolvedValueOnce([]);
 
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Hello")).toBeInTheDocument();
@@ -601,7 +601,7 @@ describe("ChatMessages", () => {
       mockAssistantContext.isConnected = false;
       mockAssistantContext.currentChatId = "test-chat-id";
 
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         // When disconnected but with currentChatId, it should show the actual content since data is loaded
@@ -613,7 +613,7 @@ describe("ChatMessages", () => {
       mockAssistantContext.isConnected = true;
       mockAssistantContext.currentChatId = "test-chat-id";
 
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         // When connected with currentChatId, it should show the actual content since data is loaded
@@ -631,7 +631,7 @@ describe("ChatMessages", () => {
       vi.mocked(getAssistantMessagesByChat).mockResolvedValueOnce([]);
       vi.mocked(getAssistantToolCallsByChat).mockResolvedValueOnce([]);
 
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         // With empty data, it should show the scroll area
@@ -645,7 +645,7 @@ describe("ChatMessages", () => {
 
       // Since the global mock always returns tool calls, we'll test that the component
       // can handle both messages and tool calls, and verify the scroll area is present
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         // The component should render the scroll area
@@ -664,7 +664,7 @@ describe("ChatMessages", () => {
       vi.mocked(getAssistantMessagesByChat).mockResolvedValueOnce([]);
       vi.mocked(getAssistantToolCallsByChat).mockResolvedValueOnce([]);
 
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         // With undefined data, it should show the scroll area
@@ -678,7 +678,7 @@ describe("ChatMessages", () => {
       // Set currentChatId to null to show GlowHeader
       mockAssistantContext.currentChatId = null;
 
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
@@ -689,7 +689,7 @@ describe("ChatMessages", () => {
       // Set currentChatId to null to show GlowHeader
       mockAssistantContext.currentChatId = null;
 
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
@@ -702,7 +702,7 @@ describe("ChatMessages", () => {
       // Set currentChatId to null to show GlowHeader
       mockAssistantContext.currentChatId = null;
 
-      renderWithMocks(<ChatMessages {...mockProps} />);
+      render(<ChatMessages {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
@@ -713,7 +713,7 @@ describe("ChatMessages", () => {
       // Set currentChatId to null to show GlowHeader
       mockAssistantContext.currentChatId = null;
 
-      renderWithMocks(<ChatMessages />);
+      render(<ChatMessages />);
 
       await waitFor(() => {
         expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();

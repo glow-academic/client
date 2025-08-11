@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock AttemptChat component
@@ -34,13 +34,13 @@ describe("PracticeAttemptPage", () => {
   });
 
   it("renders without crashing", async () => {
-    renderWithMocks(<PracticeAttemptPage params={mockParams} />);
+    render(<PracticeAttemptPage params={mockParams} />);
     expect(screen.getByTestId("attempt-chat-component")).toBeInTheDocument();
     expect(screen.getByText("Attempt Chat Component")).toBeInTheDocument();
   });
 
   it("renders the AttemptChat component inside a wrapper", async () => {
-    renderWithMocks(<PracticeAttemptPage params={mockParams} />);
+    render(<PracticeAttemptPage params={mockParams} />);
     const wrapper = screen.getByTestId("attempt-chat-component").parentElement;
     expect(wrapper).toHaveClass("space-y-6");
   });

@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -10,8 +10,6 @@ import {
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
@@ -47,7 +45,7 @@ describe("UnifiedSidebar", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<UnifiedSidebar {...mockProps} />);
+      render(<UnifiedSidebar {...mockProps} />);
 
       // Should render the sidebar component with profile information
       await waitFor(() => {
@@ -64,7 +62,7 @@ describe("UnifiedSidebar", () => {
         collapsible: "offcanvas",
       };
 
-      renderWithMocks(<UnifiedSidebar {...propsWithVariants} />);
+      render(<UnifiedSidebar {...propsWithVariants} />);
 
       await waitFor(() => {
         expect(screen.getAllByText("Test User").length).toBeGreaterThan(0);
@@ -72,7 +70,7 @@ describe("UnifiedSidebar", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<UnifiedSidebar {...mockProps} />);
+      render(<UnifiedSidebar {...mockProps} />);
 
       await waitFor(() => {
         // Check for profile information
@@ -86,7 +84,7 @@ describe("UnifiedSidebar", () => {
 
   describe("User Interactions", () => {
     it("should handle navigation clicks", async () => {
-      renderWithMocks(<UnifiedSidebar {...mockProps} />);
+      render(<UnifiedSidebar {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getAllByText("Test User").length).toBeGreaterThan(0);
@@ -100,7 +98,7 @@ describe("UnifiedSidebar", () => {
     });
 
     it("should handle state changes", async () => {
-      renderWithMocks(<UnifiedSidebar {...mockProps} />);
+      render(<UnifiedSidebar {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getAllByText("Test User").length).toBeGreaterThan(0);
@@ -111,7 +109,7 @@ describe("UnifiedSidebar", () => {
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<UnifiedSidebar {...mockProps} />);
+      render(<UnifiedSidebar {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getAllByText("Test User").length).toBeGreaterThan(0);
@@ -130,7 +128,7 @@ describe("UnifiedSidebar", () => {
       );
       vi.mocked(getAllCohorts).mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<UnifiedSidebar {...mockProps} />);
+      render(<UnifiedSidebar {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getAllByText("Test User").length).toBeGreaterThan(0);
@@ -141,7 +139,7 @@ describe("UnifiedSidebar", () => {
     });
 
     it("should handle loading states", async () => {
-      renderWithMocks(<UnifiedSidebar {...mockProps} />);
+      render(<UnifiedSidebar {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getAllByText("Test User").length).toBeGreaterThan(0);
@@ -154,7 +152,7 @@ describe("UnifiedSidebar", () => {
 
   describe("Navigation", () => {
     it("should handle navigation", async () => {
-      renderWithMocks(<UnifiedSidebar {...mockProps} />);
+      render(<UnifiedSidebar {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getAllByText("Test User").length).toBeGreaterThan(0);
@@ -167,7 +165,7 @@ describe("UnifiedSidebar", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      renderWithMocks(<UnifiedSidebar {...mockProps} />);
+      render(<UnifiedSidebar {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getAllByText("Test User").length).toBeGreaterThan(0);
@@ -179,7 +177,7 @@ describe("UnifiedSidebar", () => {
 
     it("should handle missing or invalid props", async () => {
       // Test with no props
-      renderWithMocks(<UnifiedSidebar activeSection="" />);
+      render(<UnifiedSidebar activeSection="" />);
 
       await waitFor(() => {
         expect(screen.getAllByText("Test User").length).toBeGreaterThan(0);

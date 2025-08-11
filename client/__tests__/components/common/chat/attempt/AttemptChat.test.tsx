@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -22,14 +22,14 @@ vi.mock("next/navigation", () => ({
 describe("AttemptChat", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<AttemptChat />);
+      render(<AttemptChat />);
 
       // Component should render the "Attempt Not Found" state when no data is available
       expect(screen.getByText("Attempt Not Found")).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<AttemptChat />);
+      render(<AttemptChat />);
 
       // Test for proper heading structure
       const heading = screen.getByRole("heading", {
@@ -58,7 +58,7 @@ describe("AttemptChat", () => {
 
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<AttemptChat />);
+      render(<AttemptChat />);
 
       // Test clicking the return button
       const returnButton = screen.getByRole("button", {
@@ -73,7 +73,7 @@ describe("AttemptChat", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<AttemptChat />);
+      render(<AttemptChat />);
 
       // Test clicking on return button
       const returnButton = screen.getByRole("button", {
@@ -89,7 +89,7 @@ describe("AttemptChat", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with no simulation context data
-      renderWithMocks(<AttemptChat />);
+      render(<AttemptChat />);
 
       // Should handle missing data gracefully by showing "Attempt Not Found"
       const heading = screen.getByText("Attempt Not Found");

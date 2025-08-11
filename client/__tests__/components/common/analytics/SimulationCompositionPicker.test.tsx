@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -10,8 +10,6 @@ import SimulationCompositionPicker, {
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
@@ -33,7 +31,7 @@ describe("SimulationCompositionPicker", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<SimulationCompositionPicker {...mockProps} />);
+      render(<SimulationCompositionPicker {...mockProps} />);
 
       // Should render the dropdown button with config label
       await waitFor(() => {
@@ -43,7 +41,7 @@ describe("SimulationCompositionPicker", () => {
 
     it("should render with props", async () => {
       // Test component with various props
-      renderWithMocks(<SimulationCompositionPicker {...mockProps} />);
+      render(<SimulationCompositionPicker {...mockProps} />);
 
       // Should display the current config
       await waitFor(() => {
@@ -53,7 +51,7 @@ describe("SimulationCompositionPicker", () => {
 
     it("should have correct accessibility attributes", async () => {
       // Test accessibility features
-      renderWithMocks(<SimulationCompositionPicker {...mockProps} />);
+      render(<SimulationCompositionPicker {...mockProps} />);
 
       // Should have a button role
       await waitFor(() => {
@@ -66,7 +64,7 @@ describe("SimulationCompositionPicker", () => {
     it("should handle config changes", async () => {
       const user = userEvent.setup();
       const mockOnConfigChange = vi.fn();
-      renderWithMocks(
+      render(
         <SimulationCompositionPicker
           {...mockProps}
           onConfigChange={mockOnConfigChange}
@@ -102,7 +100,7 @@ describe("SimulationCompositionPicker", () => {
         } as SimulationCompositionConfig,
       };
 
-      renderWithMocks(<SimulationCompositionPicker {...propsWithQuartile} />);
+      render(<SimulationCompositionPicker {...propsWithQuartile} />);
 
       // Should render with quartile config
       await waitFor(() => {
@@ -121,7 +119,7 @@ describe("SimulationCompositionPicker", () => {
         } as SimulationCompositionConfig,
       };
 
-      renderWithMocks(<SimulationCompositionPicker {...propsWithStdDev} />);
+      render(<SimulationCompositionPicker {...propsWithStdDev} />);
 
       // Should render with standard deviation config
       await waitFor(() => {

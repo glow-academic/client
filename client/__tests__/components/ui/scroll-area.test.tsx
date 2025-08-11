@@ -1,6 +1,6 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 describe("ScrollArea", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(
+      render(
         <ScrollArea>
           <div>Content</div>
         </ScrollArea>,
@@ -19,7 +19,7 @@ describe("ScrollArea", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(
+      render(
         <ScrollArea>
           <div>Accessible Content</div>
         </ScrollArea>,
@@ -32,7 +32,7 @@ describe("ScrollArea", () => {
 
   describe("Component Structure", () => {
     it("should render scroll area with content", () => {
-      renderWithMocks(
+      render(
         <ScrollArea>
           <div>Item 1</div>
           <div>Item 2</div>
@@ -46,7 +46,7 @@ describe("ScrollArea", () => {
     });
 
     it("should render with custom className", () => {
-      renderWithMocks(
+      render(
         <ScrollArea className="custom-class">
           <div>Content</div>
         </ScrollArea>,
@@ -60,7 +60,7 @@ describe("ScrollArea", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal content
-      renderWithMocks(<ScrollArea />);
+      render(<ScrollArea />);
 
       const scrollArea = document.querySelector('[data-slot="scroll-area"]');
       expect(scrollArea).toBeInTheDocument();

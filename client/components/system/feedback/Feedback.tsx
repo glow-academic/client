@@ -12,9 +12,15 @@ import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { FeedbackData, useFeedbackColumns } from "@/hooks/use-feedback-columns";
+import { useCrowdsourcedMessageColumns, CrowdsourcedMessageData } from "@/hooks/use-crowdsourced-message-columns";
+import { useCrowdsourcedRubricFeedbackColumns, CrowdsourcedRubricFeedbackData } from "@/hooks/use-crowdsourced-rubric-feedback-columns";
 import { getAllAppFeedback } from "@/utils/queries/app_feedback/get-all-app-feedback";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllSimulationCrowdsourcedMessages } from "@/utils/queries/simulation_crowdsourced_messages/get-all-simulation-crowdsourced-messages";
+import { getAllSimulationChatCrowdsourcedFeedbacks } from "@/utils/queries/simulation_chat_crowdsourced_feedbacks/get-all-simulation-chat-crowdsourced-feedbacks";
 import { FeedbackDataTable } from "./FeedbackDataTable";
+import { CrowdsourcedMessagesDataTable } from "./CrowdsourcedMessagesDataTable";
+import { CrowdsourcedRubricFeedbackDataTable } from "./CrowdsourcedRubricFeedbackDataTable";
 
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription } from "@/components/ui/dialog";
@@ -24,6 +30,23 @@ interface Profile {
   firstName: string;
   lastName: string;
   alias: string;
+}
+
+interface SimulationCrowdsourcedMessageRow {
+  id: string;
+  createdAt: string | null;
+  profileId: string;
+  simulationMessageId: string;
+  response: boolean;
+}
+
+interface SimulationChatCrowdsourcedFeedbackRow {
+  id: string;
+  createdAt: string | null;
+  profileId: string;
+  simulationChatFeedbackId: string;
+  total: number;
+  feedback: string | null;
 }
 
 export default function Feedback() {
@@ -39,11 +62,28 @@ export default function Feedback() {
     refetchInterval: 60000, // Refetch every minute
   });
 
-  // Get unique profile IDs from feedback data
+  // Fetch crowdsourced messages
+  const { data: crowdsourcedMessages } = useQuery<SimulationCrowdsourcedMessageRow[]>({
+    queryKey: ["simulation_crowdsourced_messages"],
+    queryFn: () => getAllSimulationCrowdsourcedMessages(),
+    refetchInterval: 60000,
+  });
+
+  // Fetch crowdsourced rubric feedback
+  const { data: crowdsourcedRubricFeedbacks } = useQuery<SimulationChatCrowdsourcedFeedbackRow[]>({
+    queryKey: ["simulation_chat_crowdsourced_feedbacks"],
+    queryFn: () => getAllSimulationChatCrowdsourcedFeedbacks(),
+    refetchInterval: 60000,
+  });
+
+  // Get unique profile IDs from all datasets
   const profileIds = useMemo(() => {
-    if (!feedbackData) return [];
-    return [...new Set(feedbackData.map((f) => f.profileId).filter(Boolean))];
-  }, [feedbackData]);
+    const ids = new Set<string>();
+    (feedbackData ?? []).forEach((f) => f.profileId && ids.add(f.profileId));
+    (crowdsourcedMessages ?? []).forEach((m) => m.profileId && ids.add(m.profileId));
+    (crowdsourcedRubricFeedbacks ?? []).forEach((r) => r.profileId && ids.add(r.profileId));
+    return Array.from(ids);
+  }, [feedbackData, crowdsourcedMessages, crowdsourcedRubricFeedbacks]);
 
   // Fetch profiles for feedback authors
   const { data: profiles = [] } = useQuery({
@@ -139,6 +179,40 @@ export default function Feedback() {
     }));
   }, [feedbackData, getAuthorName, getAuthorAlias, formatTimestamp]);
 
+  // Transform crowdsourced messages
+  const crowdsourcedMessagesTableData = useMemo((): CrowdsourcedMessageData[] => {
+    if (!crowdsourcedMessages) return [];
+    return crowdsourcedMessages.map((m) => ({
+      id: m.id,
+      createdAt: m.createdAt,
+      profileId: m.profileId,
+      simulationMessageId: m.simulationMessageId,
+      response: Boolean(m.response),
+      authorName: getAuthorName(m.profileId),
+      authorAlias: getAuthorAlias(m.profileId),
+      formattedDate: formatTimestamp(m.createdAt),
+    }));
+  }, [crowdsourcedMessages, getAuthorName, getAuthorAlias, formatTimestamp]);
+
+  // Transform crowdsourced rubric feedback
+  const crowdsourcedRubricTableData = useMemo(
+    (): CrowdsourcedRubricFeedbackData[] => {
+      if (!crowdsourcedRubricFeedbacks) return [];
+      return crowdsourcedRubricFeedbacks.map((r) => ({
+        id: r.id,
+        createdAt: r.createdAt,
+        profileId: r.profileId,
+        simulationChatFeedbackId: r.simulationChatFeedbackId,
+        total: r.total,
+        feedback: r.feedback ?? null,
+        authorName: getAuthorName(r.profileId),
+        authorAlias: getAuthorAlias(r.profileId),
+        formattedDate: formatTimestamp(r.createdAt),
+      }));
+    },
+    [crowdsourcedRubricFeedbacks, getAuthorName, getAuthorAlias, formatTimestamp],
+  );
+
   // Generate profile options for filtering
   const profileOptions = useMemo(() => {
     const uniqueProfiles = new Set<string>();
@@ -157,7 +231,12 @@ export default function Feedback() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await queryClient.invalidateQueries({ queryKey: ["app_feedback"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app_feedback"] }),
+        queryClient.invalidateQueries({ queryKey: ["simulation_crowdsourced_messages"] }),
+        queryClient.invalidateQueries({ queryKey: ["simulation_chat_crowdsourced_feedbacks"] }),
+        queryClient.invalidateQueries({ queryKey: ["profiles", profileIds] }),
+      ]);
       logInfo("Feedback data refreshed successfully");
       toast.success("Feedback data refreshed");
     } catch (error) {
@@ -174,6 +253,8 @@ export default function Feedback() {
 
   // Get table columns and filter options
   const { columns, typeOptions } = useFeedbackColumns(handleViewDetails);
+  const { columns: crowdsourcedMessageColumns } = useCrowdsourcedMessageColumns();
+  const { columns: crowdsourcedRubricColumns } = useCrowdsourcedRubricFeedbackColumns();
 
   return (
     <div className="space-y-6">
@@ -185,6 +266,28 @@ export default function Feedback() {
         isRefreshing={isRefreshing}
         onRefresh={handleRefresh}
       />
+
+      {/* Crowdsourced Messages */}
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold">Crowdsourced Messages</h3>
+        <CrowdsourcedMessagesDataTable
+          columns={crowdsourcedMessageColumns}
+          data={crowdsourcedMessagesTableData}
+          isRefreshing={isRefreshing}
+          onRefresh={handleRefresh}
+        />
+      </div>
+
+      {/* Crowdsourced Rubric Feedback */}
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold">Crowdsourced Rubric Feedback</h3>
+        <CrowdsourcedRubricFeedbackDataTable
+          columns={crowdsourcedRubricColumns}
+          data={crowdsourcedRubricTableData}
+          isRefreshing={isRefreshing}
+          onRefresh={handleRefresh}
+        />
+      </div>
 
       {/* Detail Dialog */}
       <Dialog

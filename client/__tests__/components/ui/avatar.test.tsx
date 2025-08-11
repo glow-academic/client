@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 describe("Avatar", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(
+      render(
         <Avatar>
           <AvatarImage src="/test-image.jpg" alt="Test Avatar" />
           <AvatarFallback>TA</AvatarFallback>
@@ -19,7 +19,7 @@ describe("Avatar", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(
+      render(
         <Avatar>
           <AvatarImage src="/test-image.jpg" alt="Test Avatar" />
           <AvatarFallback>TA</AvatarFallback>
@@ -34,7 +34,7 @@ describe("Avatar", () => {
 
   describe("Component Structure", () => {
     it("should render with fallback when image is provided", () => {
-      renderWithMocks(
+      render(
         <Avatar>
           <AvatarImage src="/test-image.jpg" alt="Test Avatar" />
           <AvatarFallback>TA</AvatarFallback>
@@ -46,7 +46,7 @@ describe("Avatar", () => {
     });
 
     it("should render with fallback only", () => {
-      renderWithMocks(
+      render(
         <Avatar>
           <AvatarFallback>FB</AvatarFallback>
         </Avatar>,
@@ -59,7 +59,7 @@ describe("Avatar", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal props
-      renderWithMocks(
+      render(
         <Avatar>
           <AvatarFallback>M</AvatarFallback>
         </Avatar>,

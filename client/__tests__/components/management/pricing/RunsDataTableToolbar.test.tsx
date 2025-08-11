@@ -1,5 +1,5 @@
 import { describe, it, vi } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { render } from '@/test/custom-render';
 
 // ——————————————————————————————————————————
 import { RunsDataTableToolbar, RunsDataTableToolbarProps } from '@/components/management/pricing/RunsDataTableToolbar';
@@ -28,7 +28,7 @@ describe('RunsDataTableToolbar', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       
-      renderWithMocks(<RunsDataTableToolbar {...mockProps} />);
+      render(<RunsDataTableToolbar {...mockProps} />);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();

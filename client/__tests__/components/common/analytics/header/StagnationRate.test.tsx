@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { fireEvent, screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -47,7 +47,7 @@ describe("StagnationRate", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -55,7 +55,7 @@ describe("StagnationRate", () => {
     });
 
     it("should render with props", async () => {
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -63,7 +63,7 @@ describe("StagnationRate", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -73,7 +73,7 @@ describe("StagnationRate", () => {
 
   describe("Data Loading and Utility Function Integration", () => {
     it("should call calculateStagnationRate with correct parameters", async () => {
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -87,7 +87,7 @@ describe("StagnationRate", () => {
         trendData: [{ date: "01/15", value: 25, count: 1 }],
         hasData: true,
       });
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.getByText("No data")).toBeInTheDocument();
       });
@@ -99,7 +99,7 @@ describe("StagnationRate", () => {
         trendData: [],
         hasData: false,
       });
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.getByText("No data")).toBeInTheDocument();
       });
@@ -113,7 +113,7 @@ describe("StagnationRate", () => {
         trendData: [{ date: "01/15", value: 80, count: 1 }],
         hasData: true,
       });
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.getByText("No data")).toBeInTheDocument();
       });
@@ -126,7 +126,7 @@ describe("StagnationRate", () => {
         trendData: [{ date: "01/15", value: 60, count: 1 }],
         hasData: true,
       });
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.getByText("No data")).toBeInTheDocument();
       });
@@ -139,7 +139,7 @@ describe("StagnationRate", () => {
         trendData: [{ date: "01/15", value: 15, count: 1 }],
         hasData: true,
       });
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.getByText("No data")).toBeInTheDocument();
       });
@@ -149,7 +149,7 @@ describe("StagnationRate", () => {
 
   describe("Dialog Functionality", () => {
     it("should open dialog when card is clicked", async () => {
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -168,7 +168,7 @@ describe("StagnationRate", () => {
         trendData: [],
         hasData: false,
       });
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -197,7 +197,7 @@ describe("StagnationRate", () => {
           success: 80,
         },
       };
-      renderWithMocks(<StagnationRate {...propsWithDifferentThresholds} />);
+      render(<StagnationRate {...propsWithDifferentThresholds} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -209,7 +209,7 @@ describe("StagnationRate", () => {
         ...mockProps,
         profileId: undefined,
       };
-      renderWithMocks(<StagnationRate {...propsWithoutProfile} />);
+      render(<StagnationRate {...propsWithoutProfile} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -221,7 +221,7 @@ describe("StagnationRate", () => {
         ...mockProps,
         cohortIds: [],
       };
-      renderWithMocks(<StagnationRate {...propsWithEmptyCohorts} />);
+      render(<StagnationRate {...propsWithEmptyCohorts} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -231,7 +231,7 @@ describe("StagnationRate", () => {
 
   describe("User Interactions", () => {
     it("should handle user interactions", async () => {
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -242,7 +242,7 @@ describe("StagnationRate", () => {
   describe("Additional Coverage Tests", () => {
     it("should handle dialog onOpenChange callback", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -271,7 +271,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -297,7 +297,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -318,7 +318,7 @@ describe("StagnationRate", () => {
         dateStart: new Date("2024-02-01"),
         dateEnd: new Date("2024-02-29"),
       };
-      renderWithMocks(<StagnationRate {...propsWithDifferentDates} />);
+      render(<StagnationRate {...propsWithDifferentDates} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -330,7 +330,7 @@ describe("StagnationRate", () => {
         ...mockProps,
         profileId: undefined,
       };
-      renderWithMocks(<StagnationRate {...propsWithoutProfile} />);
+      render(<StagnationRate {...propsWithoutProfile} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -348,7 +348,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -374,7 +374,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -400,7 +400,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -426,7 +426,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -452,7 +452,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -478,7 +478,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -503,7 +503,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -528,7 +528,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -550,7 +550,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -575,7 +575,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -601,7 +601,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -627,7 +627,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -653,7 +653,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -678,7 +678,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -703,7 +703,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -729,7 +729,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -756,7 +756,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -781,7 +781,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -806,7 +806,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -832,7 +832,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -857,7 +857,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -883,7 +883,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -908,7 +908,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -933,7 +933,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -967,7 +967,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
 
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -1014,7 +1014,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
 
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -1060,7 +1060,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
 
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -1103,7 +1103,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
 
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -1146,7 +1146,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
 
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -1198,7 +1198,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
 
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -1255,7 +1255,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
 
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -1306,7 +1306,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
 
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -1354,7 +1354,7 @@ describe("StagnationRate", () => {
         hasData: true,
       });
 
-      renderWithMocks(<StagnationRate {...mockProps} />);
+      render(<StagnationRate {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();

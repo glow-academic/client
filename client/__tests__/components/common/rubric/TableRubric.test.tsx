@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -9,8 +9,6 @@ import TableRubric, {
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
@@ -44,7 +42,7 @@ describe("TableRubric", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<TableRubric {...mockProps} />);
+      render(<TableRubric {...mockProps} />);
 
       // Should render the component with loading state initially
       await waitFor(() => {
@@ -59,14 +57,14 @@ describe("TableRubric", () => {
         simulationChatId: "test-simulation-chat-id",
       };
 
-      renderWithMocks(<TableRubric {...propsWithSimulationChat} />);
+      render(<TableRubric {...propsWithSimulationChat} />);
 
       // Should render the component with loading state
       expect(screen.getByText("Loading rubric...")).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<TableRubric {...mockProps} />);
+      render(<TableRubric {...mockProps} />);
 
       // Should have proper accessibility attributes
       expect(screen.getByText("Loading rubric...")).toBeInTheDocument();
@@ -83,7 +81,7 @@ describe("TableRubric", () => {
       const { getRubric } = await import("@/utils/queries/rubrics/get-rubric");
       vi.mocked(getRubric).mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<TableRubric {...mockProps} />);
+      render(<TableRubric {...mockProps} />);
 
       // Should still render the component even with API errors
       await waitFor(() => {
@@ -93,7 +91,7 @@ describe("TableRubric", () => {
 
     it("should handle loading states", () => {
       // Component should handle loading states appropriately
-      renderWithMocks(<TableRubric {...mockProps} />);
+      render(<TableRubric {...mockProps} />);
 
       // Should show loading state
       expect(screen.getByText("Loading rubric...")).toBeInTheDocument();
@@ -108,7 +106,7 @@ describe("TableRubric", () => {
         simulationChatId: "test-chat-id",
       };
 
-      renderWithMocks(<TableRubric {...edgeCaseProps} />);
+      render(<TableRubric {...edgeCaseProps} />);
 
       // Should render the component even with edge case props
       expect(screen.getByText("Loading rubric...")).toBeInTheDocument();
@@ -120,7 +118,7 @@ describe("TableRubric", () => {
         rubricId: "test-rubricId",
       };
 
-      renderWithMocks(<TableRubric {...minimalProps} />);
+      render(<TableRubric {...minimalProps} />);
 
       // Should render with minimal props
       expect(screen.getByText("Loading rubric...")).toBeInTheDocument();

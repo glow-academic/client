@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -8,8 +8,6 @@ import ChatDialog from "@/components/common/home/ChatDialog";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the assistant context
 vi.mock("@/contexts/assistant-context", () => ({
@@ -141,7 +139,7 @@ describe("ChatDialog", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<ChatDialog />);
+      render(<ChatDialog />);
 
       // Should render the chat dialog component
       await waitFor(() => {
@@ -150,7 +148,7 @@ describe("ChatDialog", () => {
     });
 
     it("should render dialog content when in expanded state", async () => {
-      renderWithMocks(<ChatDialog />);
+      render(<ChatDialog />);
 
       await waitFor(() => {
         expect(screen.getByText("New Chat")).toBeInTheDocument();
@@ -158,7 +156,7 @@ describe("ChatDialog", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<ChatDialog />);
+      render(<ChatDialog />);
 
       await waitFor(() => {
         // Check for dialog container
@@ -175,7 +173,7 @@ describe("ChatDialog", () => {
   describe("User Interactions", () => {
     it("should handle chat selection", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ChatDialog />);
+      render(<ChatDialog />);
 
       await waitFor(() => {
         expect(screen.getByText("New Chat")).toBeInTheDocument();
@@ -195,7 +193,7 @@ describe("ChatDialog", () => {
 
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ChatDialog />);
+      render(<ChatDialog />);
 
       await waitFor(() => {
         expect(screen.getByText("New Chat")).toBeInTheDocument();
@@ -216,7 +214,7 @@ describe("ChatDialog", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ChatDialog />);
+      render(<ChatDialog />);
 
       await waitFor(() => {
         expect(screen.getByText("New Chat")).toBeInTheDocument();
@@ -244,7 +242,7 @@ describe("ChatDialog", () => {
         new Error("API Error"),
       );
 
-      renderWithMocks(<ChatDialog />);
+      render(<ChatDialog />);
 
       await waitFor(() => {
         expect(screen.getByText("New Chat")).toBeInTheDocument();
@@ -255,7 +253,7 @@ describe("ChatDialog", () => {
     });
 
     it("should handle loading states", async () => {
-      renderWithMocks(<ChatDialog />);
+      render(<ChatDialog />);
 
       await waitFor(() => {
         expect(screen.getByText("New Chat")).toBeInTheDocument();
@@ -268,7 +266,7 @@ describe("ChatDialog", () => {
 
   describe("Navigation", () => {
     it("should handle navigation", async () => {
-      renderWithMocks(<ChatDialog />);
+      render(<ChatDialog />);
 
       await waitFor(() => {
         expect(screen.getByText("New Chat")).toBeInTheDocument();
@@ -281,7 +279,7 @@ describe("ChatDialog", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      renderWithMocks(<ChatDialog />);
+      render(<ChatDialog />);
 
       await waitFor(() => {
         expect(screen.getByText("New Chat")).toBeInTheDocument();
@@ -293,7 +291,7 @@ describe("ChatDialog", () => {
 
     it("should handle missing or invalid props", async () => {
       // Test with no props
-      renderWithMocks(<ChatDialog />);
+      render(<ChatDialog />);
 
       await waitFor(() => {
         expect(screen.getByText("New Chat")).toBeInTheDocument();

@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -85,17 +85,17 @@ describe("AttemptMessages", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with chatId prop", async () => {
-      renderWithMocks(<AttemptMessages chatId="custom-chat-id" />);
+      render(<AttemptMessages chatId="custom-chat-id" />);
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render without chatId prop", async () => {
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
       expect(document.body).toBeInTheDocument();
     });
   });
@@ -109,7 +109,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(document.body).toBeInTheDocument();
@@ -124,7 +124,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(document.body).toBeInTheDocument();
@@ -141,7 +141,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(
@@ -158,7 +158,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(screen.getByText("Hi, how are you?")).toBeInTheDocument();
@@ -180,7 +180,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(screen.getByText("Hi, how are you?")).toBeInTheDocument();
@@ -202,7 +202,7 @@ describe("AttemptMessages", () => {
 
       mockSimulationContext.currentChat.completed = true;
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         const promptButton = screen.getByRole("button", {
@@ -222,7 +222,7 @@ describe("AttemptMessages", () => {
 
       mockSimulationContext.isSendingMessage = true;
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         const promptButton = screen.getByRole("button", {
@@ -243,7 +243,7 @@ describe("AttemptMessages", () => {
       mockSimulationContext.simulation.timeLimit = 300;
       mockSimulationContext.isActive = false;
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         const promptButton = screen.getByRole("button", {
@@ -263,7 +263,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(
@@ -280,7 +280,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(
@@ -297,7 +297,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(screen.getByText("Analyzing")).toBeInTheDocument();
@@ -316,7 +316,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(screen.getByText("No response")).toBeInTheDocument();
@@ -347,7 +347,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(screen.getByText("First message")).toBeInTheDocument();
@@ -370,7 +370,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(document.body).toBeInTheDocument();
@@ -390,7 +390,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(document.body).toBeInTheDocument();
@@ -420,7 +420,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(document.body).toBeInTheDocument();
@@ -442,7 +442,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(document.body).toBeInTheDocument();
@@ -464,7 +464,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(document.body).toBeInTheDocument();
@@ -481,7 +481,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages chatId="" />);
+      render(<AttemptMessages chatId="" />);
 
       await waitFor(() => {
         expect(document.body).toBeInTheDocument();
@@ -496,7 +496,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages chatId={null as unknown as string} />);
+      render(<AttemptMessages chatId={null as unknown as string} />);
 
       await waitFor(() => {
         expect(document.body).toBeInTheDocument();
@@ -511,7 +511,7 @@ describe("AttemptMessages", () => {
         error: new Error("Query failed"),
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(document.body).toBeInTheDocument();
@@ -532,7 +532,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(document.body).toBeInTheDocument();
@@ -554,7 +554,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(document.body).toBeInTheDocument();
@@ -577,7 +577,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(document.body).toBeInTheDocument();
@@ -594,7 +594,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages />);
+      render(<AttemptMessages />);
 
       await waitFor(() => {
         expect(document.body).toBeInTheDocument();
@@ -616,7 +616,7 @@ describe("AttemptMessages", () => {
         error: null,
       } as unknown as UseQueryResult<SimulationMessage[], Error>);
 
-      renderWithMocks(<AttemptMessages chatId="custom-chat-id" />);
+      render(<AttemptMessages chatId="custom-chat-id" />);
 
       await waitFor(() => {
         expect(document.body).toBeInTheDocument();

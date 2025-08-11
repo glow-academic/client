@@ -2,6 +2,7 @@ import type {
   Cohort,
   Persona,
   Profile,
+  ProfileRole,
   Rubric,
   Scenario,
   Simulation,
@@ -78,7 +79,9 @@ export const calculateAttemptImprovement = (
   profileId?: string,
   cohorts: Cohort[] = [],
   cohortIds: string[] = [],
-  selectedSimulations: string[] = []
+  selectedSimulations: string[] = [],
+  rolesAllowed?: ProfileRole[],
+  showPractice: boolean = false
 ): AttemptImprovementDataPoint[] => {
   if (!profiles || !chats || !grades || !attempts || !simulations || !rubrics) {
     return [];
@@ -124,7 +127,7 @@ export const calculateAttemptImprovement = (
     );
   }
 
-  // Filter data by date range, exclude practice simulations, filter by TA role, filter by selected simulations, and filter by cohorts
+  // Filter data by date range, include/exclude practice, filter by roles, selected simulations, and cohorts
   const filteredGrades = grades.filter((grade) => {
     const gradeDate = new Date(grade.createdAt);
     const chat = chats.find((c) => c.id === grade.simulationChatId);
@@ -138,11 +141,13 @@ export const calculateAttemptImprovement = (
     const inDateRange =
       isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
 
-    // Exclude practice simulations
-    const notPractice = !simulation?.practiceSimulation;
+    // Practice filter
+    const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
 
-    // Filter by TA role
-    const isTA = profile?.role === "ta";
+    // Role filter
+    const roleOk = rolesAllowed
+      ? (profile?.role ? rolesAllowed.includes(profile.role) : false)
+      : true;
 
     // Filter by profile if provided
     const profileMatch = profileId ? attempt?.profileId === profileId : true;
@@ -150,7 +155,7 @@ export const calculateAttemptImprovement = (
     // Filter by cohorts
     const cohortMatch = profile ? isProfileInCohorts(profile.id) : true;
 
-    return inDateRange && notPractice && isTA && profileMatch && cohortMatch;
+    return inDateRange && practiceOk && roleOk && profileMatch && cohortMatch;
   });
 
   if (filteredGrades.length === 0) return [];
@@ -319,7 +324,9 @@ export const calculatePlatformGrowth = (
   dateEnd: Date,
   profileId?: string,
   cohorts: Cohort[] = [],
-  cohortIds: string[] = []
+  cohortIds: string[] = [],
+  rolesAllowed?: ProfileRole[],
+  showPractice: boolean = false
 ): GrowthDataPoint[] => {
   if (!profiles || !chats || !grades || !attempts || !simulations || !rubrics) {
     return [];
@@ -336,7 +343,7 @@ export const calculatePlatformGrowth = (
     );
   };
 
-  // Filter data by date range, exclude practice simulations, filter by TA role, and filter by cohorts
+  // Filter data by date range, optionally include practice simulations, filter by roles, and filter by cohorts
   const filteredGrades = grades.filter((grade) => {
     const gradeDate = new Date(grade.createdAt);
     const chat = chats.find((c) => c.id === grade.simulationChatId);
@@ -348,11 +355,13 @@ export const calculatePlatformGrowth = (
     const inDateRange =
       isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
 
-    // Exclude practice simulations
-    const notPractice = !simulation?.practiceSimulation;
+    // Practice filter
+    const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
 
-    // Filter by TA role
-    const isTA = profile?.role === "ta";
+    // Role filter
+    const roleOk = rolesAllowed
+      ? (profile?.role ? rolesAllowed.includes(profile.role) : false)
+      : true;
 
     // Filter by profile if provided
     const profileMatch = profileId ? attempt?.profileId === profileId : true;
@@ -360,7 +369,7 @@ export const calculatePlatformGrowth = (
     // Filter by cohorts
     const cohortMatch = profile ? isProfileInCohorts(profile.id) : true;
 
-    return inDateRange && notPractice && isTA && profileMatch && cohortMatch;
+    return inDateRange && practiceOk && roleOk && profileMatch && cohortMatch;
   });
 
   if (filteredGrades.length === 0) return [];
@@ -613,7 +622,9 @@ export const calculatePersonaPerformance = (
   profileId?: string,
   cohorts: Cohort[] = [],
   cohortIds: string[] = [],
-  selectedSimulations: string[] = []
+  selectedSimulations: string[] = [],
+  rolesAllowed?: ProfileRole[],
+  showPractice: boolean = false
 ): PersonaPerformanceDataPoint[] => {
   if (
     !personas ||
@@ -668,7 +679,7 @@ export const calculatePersonaPerformance = (
     );
   }
 
-  // Filter data by date range, exclude practice simulations, filter by selected simulations, and filter by cohorts
+  // Filter data by date range, include/exclude practice, filter by roles, selected simulations, and cohorts
   const filteredGrades = grades.filter((grade) => {
     const gradeDate = new Date(grade.createdAt);
     const chat = chats.find((c) => c.id === grade.simulationChatId);
@@ -681,15 +692,17 @@ export const calculatePersonaPerformance = (
     const inDateRange =
       isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
 
-    // Exclude practice simulations
-    const notPractice = !simulation?.practiceSimulation;
+    // Practice filter
+    const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
 
     // Filter by profile if provided
     const profileMatch = profileId ? attempt?.profileId === profileId : true;
 
-    // Filter by TA role
+    // Role filter
     const profile = profiles?.find((p) => p.id === attempt?.profileId);
-    const isTA = profile?.role === "ta";
+    const roleOk = rolesAllowed
+      ? (profile?.role ? rolesAllowed.includes(profile.role) : false)
+      : true;
 
     // Filter by selected simulations
     const simulationMatch =
@@ -699,14 +712,7 @@ export const calculatePersonaPerformance = (
     // Filter by cohorts
     const cohortMatch = profile ? isProfileInCohorts(profile.id) : true;
 
-    return (
-      inDateRange &&
-      notPractice &&
-      profileMatch &&
-      isTA &&
-      simulationMatch &&
-      cohortMatch
-    );
+    return inDateRange && practiceOk && profileMatch && roleOk && simulationMatch && cohortMatch;
   });
 
   // Group by persona

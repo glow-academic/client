@@ -1,5 +1,5 @@
 import { describe, it, vi, afterEach, expect } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { render } from '@/test/custom-render';
 
 // ——————————————————————————————————————————
 import AttemptPage from '@/app/(main)/home/a/page';
@@ -17,7 +17,7 @@ describe('AttemptPage', () => {
 
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
-      renderWithMocks(<AttemptPage />);
+      render(<AttemptPage />);
       
       // Should redirect to /home
       const { redirect } = await import("next/navigation");
@@ -27,7 +27,7 @@ describe('AttemptPage', () => {
     
 
     it('should have correct accessibility attributes', async () => {
-      renderWithMocks(<AttemptPage />);
+      render(<AttemptPage />);
       
       // Should redirect to /home
       const { redirect } = await import("next/navigation");
@@ -43,7 +43,7 @@ describe('AttemptPage', () => {
 
   describe('Edge Cases', () => {
     it('should handle edge cases gracefully', async () => {
-      renderWithMocks(<AttemptPage />);
+      render(<AttemptPage />);
       
       // Should redirect to /home
       const { redirect } = await import("next/navigation");

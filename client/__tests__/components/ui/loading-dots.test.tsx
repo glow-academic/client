@@ -1,5 +1,5 @@
 import { LoadingDots } from "@/components/ui/loading-dots";
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 describe("LoadingDots", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<LoadingDots />);
+      render(<LoadingDots />);
 
       // LoadingDots should render three dots
       const dots = document.querySelectorAll(
@@ -17,7 +17,7 @@ describe("LoadingDots", () => {
     });
 
     it("should have correct structure", () => {
-      renderWithMocks(<LoadingDots />);
+      render(<LoadingDots />);
 
       const container = document.querySelector(".flex.space-x-1");
       expect(container).toBeInTheDocument();
@@ -31,7 +31,7 @@ describe("LoadingDots", () => {
 
   describe("Component Structure", () => {
     it("should render three animated dots", () => {
-      renderWithMocks(<LoadingDots />);
+      render(<LoadingDots />);
 
       const dots = document.querySelectorAll(
         ".w-2.h-2.bg-current.rounded-full.animate-pulse",
@@ -48,7 +48,7 @@ describe("LoadingDots", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal props (no props)
-      renderWithMocks(<LoadingDots />);
+      render(<LoadingDots />);
 
       const container = document.querySelector(".flex.space-x-1");
       expect(container).toBeInTheDocument();

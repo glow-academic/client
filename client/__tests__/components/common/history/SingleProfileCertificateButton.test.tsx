@@ -1,5 +1,5 @@
 import { describe, it, vi, afterEach } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { render } from '@/test/custom-render';
 import userEvent from '@testing-library/user-event';
 import type { Table } from '@tanstack/react-table';
 
@@ -9,8 +9,6 @@ import { SingleProfileCertificateButton, SingleProfileCertificateButtonProps } f
 global.fetch = vi.fn();
 
 // ✨ Import comprehensive mock data from our centralized mock system
-import '@/mocks/queries';
-import '@/mocks/mutations';
 import '@/mocks/api';
 
 
@@ -47,7 +45,7 @@ describe('SingleProfileCertificateButton', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<SingleProfileCertificateButton {...mockProps} />);
+      render(<SingleProfileCertificateButton {...mockProps} />);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
@@ -91,7 +89,7 @@ describe('SingleProfileCertificateButton', () => {
       // Arrange: Override the default success mock with an error for this test.
       // Example: vi.mocked(getAllCohorts).mockRejectedValue(new Error('API Error'));
 
-      renderWithMocks(<SingleProfileCertificateButton {...mockProps} />);
+      render(<SingleProfileCertificateButton {...mockProps} />);
       
       // Assert: Check that your component shows an error message.
       // TODO: Add specific error state assertions

@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -71,21 +71,21 @@ const mockProps: CohortStaffDataTableProps = {
 describe("CohortStaffDataTable", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<CohortStaffDataTable {...mockProps} />);
+      render(<CohortStaffDataTable {...mockProps} />);
 
       // Basic render test - component should render without errors
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      renderWithMocks(<CohortStaffDataTable {...mockProps} />);
+      render(<CohortStaffDataTable {...mockProps} />);
 
       // Component should render with the provided props
       expect(document.body).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<CohortStaffDataTable {...mockProps} />);
+      render(<CohortStaffDataTable {...mockProps} />);
 
       // Check for basic accessibility elements
       const table =
@@ -97,7 +97,7 @@ describe("CohortStaffDataTable", () => {
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<CohortStaffDataTable {...mockProps} />);
+      render(<CohortStaffDataTable {...mockProps} />);
 
       // Test button interactions if buttons exist
       const buttons = document.querySelectorAll("button");
@@ -110,7 +110,7 @@ describe("CohortStaffDataTable", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<CohortStaffDataTable {...mockProps} />);
+      render(<CohortStaffDataTable {...mockProps} />);
 
       // Test input interactions if inputs exist
       const inputs = document.querySelectorAll("input");
@@ -125,14 +125,14 @@ describe("CohortStaffDataTable", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<CohortStaffDataTable {...mockProps} />);
+      render(<CohortStaffDataTable {...mockProps} />);
 
       // Component should handle edge cases
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(
+      render(
         <CohortStaffDataTable
           columns={mockProps.columns}
           data={[]}

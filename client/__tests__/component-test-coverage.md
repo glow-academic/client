@@ -1,8 +1,8 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 292
-- **Tests Created**: 0
+- **Total Components**: 296
+- **Tests Created**: 4
 - **Tests Updated**: 0
 - **Tests Skipped** (already implemented): 292
 
@@ -173,6 +173,8 @@
 | AgentsDataTable | components/system/agents/AgentsDataTable.tsx | AgentsDataTable.test.tsx | ✅ Implemented |
 | AgentsDataTableToolbar | components/system/agents/AgentsDataTableToolbar.tsx | AgentsDataTableToolbar.test.tsx | ✅ Implemented |
 | EditAgent | components/system/agents/EditAgent.tsx | EditAgent.test.tsx | ✅ Implemented |
+| CrowdsourcedMessagesDataTable | components/system/feedback/CrowdsourcedMessagesDataTable.tsx | CrowdsourcedMessagesDataTable.test.tsx | ✅ Implemented |
+| CrowdsourcedRubricFeedbackDataTable | components/system/feedback/CrowdsourcedRubricFeedbackDataTable.tsx | CrowdsourcedRubricFeedbackDataTable.test.tsx | ✅ Implemented |
 | Feedback | components/system/feedback/Feedback.tsx | Feedback.test.tsx | ✅ Implemented |
 | FeedbackDataTable | components/system/feedback/FeedbackDataTable.tsx | FeedbackDataTable.test.tsx | ✅ Implemented |
 | FeedbackDataTableToolbar | components/system/feedback/FeedbackDataTableToolbar.tsx | FeedbackDataTableToolbar.test.tsx | ✅ Implemented |
@@ -284,6 +286,8 @@
 | use-agent-columns | hooks/use-agent-columns.tsx | use-agent-columns.test.tsx | ✅ Implemented |
 | use-cohort-columns | hooks/use-cohort-columns.tsx | use-cohort-columns.test.tsx | ✅ Implemented |
 | use-cohort-staff-columns | hooks/use-cohort-staff-columns.tsx | use-cohort-staff-columns.test.tsx | ✅ Implemented |
+| use-crowdsourced-message-columns | hooks/use-crowdsourced-message-columns.tsx | use-crowdsourced-message-columns.test.tsx | ✅ Implemented |
+| use-crowdsourced-rubric-feedback-columns | hooks/use-crowdsourced-rubric-feedback-columns.tsx | use-crowdsourced-rubric-feedback-columns.test.tsx | ✅ Implemented |
 | use-document-columns | hooks/use-document-columns.tsx | use-document-columns.test.tsx | ✅ Implemented |
 | use-feedback-columns | hooks/use-feedback-columns.tsx | use-feedback-columns.test.tsx | ✅ Implemented |
 | use-history-columns | hooks/use-history-columns.tsx | use-history-columns.test.tsx | ✅ Implemented |
@@ -516,6 +520,8 @@ __tests__/
 │   │   │   ├── AgentsDataTableToolbar.test.tsx
 │   │   │   ├── EditAgent.test.tsx
 │   │   ├── feedback/
+│   │   │   ├── CrowdsourcedMessagesDataTable.test.tsx
+│   │   │   ├── CrowdsourcedRubricFeedbackDataTable.test.tsx
 │   │   │   ├── Feedback.test.tsx
 │   │   │   ├── FeedbackDataTable.test.tsx
 │   │   │   ├── FeedbackDataTableToolbar.test.tsx
@@ -694,6 +700,8 @@ __tests__/
 │   ├── use-agent-columns.test.tsx
 │   ├── use-cohort-columns.test.tsx
 │   ├── use-cohort-staff-columns.test.tsx
+│   ├── use-crowdsourced-message-columns.test.tsx
+│   ├── use-crowdsourced-rubric-feedback-columns.test.tsx
 │   ├── use-document-columns.test.tsx
 │   ├── use-feedback-columns.test.tsx
 │   ├── use-history-columns.test.tsx

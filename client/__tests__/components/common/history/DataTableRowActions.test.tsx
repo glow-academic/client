@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -19,21 +19,21 @@ const mockProps: DataTableRowActionsProps = {
 describe("DataTableRowActions", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<DataTableRowActions {...mockProps} />);
+      render(<DataTableRowActions {...mockProps} />);
 
       // Basic render test - component should render without errors
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      renderWithMocks(<DataTableRowActions {...mockProps} />);
+      render(<DataTableRowActions {...mockProps} />);
 
       // Component should render with the provided props
       expect(document.body).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<DataTableRowActions {...mockProps} />);
+      render(<DataTableRowActions {...mockProps} />);
 
       // Check for basic accessibility elements
       const actions =
@@ -45,7 +45,7 @@ describe("DataTableRowActions", () => {
 
   describe("Button text logic", () => {
     it("should show 'View' when isIncomplete is true", () => {
-      renderWithMocks(
+      render(
         <DataTableRowActions {...mockProps} isIncomplete={true} />
       );
 
@@ -54,7 +54,7 @@ describe("DataTableRowActions", () => {
     });
 
     it("should show 'View' when isIncomplete is false and not current user", () => {
-      renderWithMocks(
+      render(
         <DataTableRowActions {...mockProps} isIncomplete={false} />
       );
 
@@ -68,7 +68,7 @@ describe("DataTableRowActions", () => {
         effectiveProfile: { id: "test-profile-id" },
       };
 
-      renderWithMocks(
+      render(
         <DataTableRowActions
           {...mockProps}
           isIncomplete={false}
@@ -85,14 +85,14 @@ describe("DataTableRowActions", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<DataTableRowActions {...mockProps} />);
+      render(<DataTableRowActions {...mockProps} />);
 
       // Component should handle edge cases
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(<DataTableRowActions id="test" profileId="test-profile-id" scenarios={[]} interactionIds={[]} />);
+      render(<DataTableRowActions id="test" profileId="test-profile-id" scenarios={[]} interactionIds={[]} />);
 
       // Component should handle missing props
       expect(document.body).toBeInTheDocument();

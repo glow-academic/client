@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -7,8 +7,6 @@ import Dashboard from "@/components/analytics/Dashboard";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 describe("Dashboard", () => {
   /* ------------------------------------------------------------------ *
@@ -35,21 +33,21 @@ describe("Dashboard", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Dashboard />);
+      render(<Dashboard />);
 
       // Should render the dashboard container (shows loading initially)
       expect(screen.getByText("Loading dashboard...")).toBeInTheDocument();
     });
 
     it("should render with profileId prop", () => {
-      renderWithMocks(<Dashboard profileId="test-profile" />);
+      render(<Dashboard profileId="test-profile" />);
 
       // Should render the dashboard with profile context (shows loading initially)
       expect(screen.getByText("Loading dashboard...")).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<Dashboard />);
+      render(<Dashboard />);
 
       // Should have proper content structure (shows loading initially)
       expect(screen.getByText("Loading dashboard...")).toBeInTheDocument();
@@ -58,14 +56,14 @@ describe("Dashboard", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      renderWithMocks(<Dashboard />);
+      render(<Dashboard />);
 
       // Should render loading state initially
       expect(screen.getByText("Loading dashboard...")).toBeInTheDocument();
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<Dashboard />);
+      render(<Dashboard />);
 
       // Should show loading state initially
       expect(screen.getByText("Loading dashboard...")).toBeInTheDocument();
@@ -80,7 +78,7 @@ describe("Dashboard", () => {
       );
       vi.mocked(getAllProfiles).mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<Dashboard />);
+      render(<Dashboard />);
 
       // Should still render the dashboard structure
       expect(screen.getByText("Loading dashboard...")).toBeInTheDocument();
@@ -95,7 +93,7 @@ describe("Dashboard", () => {
         () => new Promise((resolve) => setTimeout(() => resolve([]), 100))
       );
 
-      renderWithMocks(<Dashboard />);
+      render(<Dashboard />);
 
       // Should show loading state initially
       await waitFor(() => {
@@ -107,7 +105,7 @@ describe("Dashboard", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with empty data
-      renderWithMocks(<Dashboard />);
+      render(<Dashboard />);
 
       // Should still render the dashboard structure
       expect(screen.getByText("Loading dashboard...")).toBeInTheDocument();

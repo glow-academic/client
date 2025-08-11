@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { fireEvent, screen, waitFor } from '@/test/custom-render';
 import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -57,7 +57,7 @@ describe("PersonaResponseTimes", () => {
         mockAnalyticsResult
       );
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -73,7 +73,7 @@ describe("PersonaResponseTimes", () => {
         mockAnalyticsResult
       );
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -89,7 +89,7 @@ describe("PersonaResponseTimes", () => {
         mockAnalyticsResult
       );
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -107,7 +107,7 @@ describe("PersonaResponseTimes", () => {
         mockAnalyticsResult
       );
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("45s")).toBeInTheDocument();
@@ -120,7 +120,7 @@ describe("PersonaResponseTimes", () => {
         currentValue: 90, // 1 minute 30 seconds
       });
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("1m 30s")).toBeInTheDocument();
@@ -130,7 +130,7 @@ describe("PersonaResponseTimes", () => {
     it("should display 'No data' when no data is available", async () => {
       (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(mockNoDataResult);
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("No data")).toBeInTheDocument();
@@ -144,7 +144,7 @@ describe("PersonaResponseTimes", () => {
         hasData: false,
       });
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("No data")).toBeInTheDocument();
@@ -159,7 +159,7 @@ describe("PersonaResponseTimes", () => {
         currentValue: 150, // Above danger threshold of 120 seconds
       });
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         const card = screen
@@ -175,7 +175,7 @@ describe("PersonaResponseTimes", () => {
         currentValue: 90, // Between warning (60) and danger (120)
       });
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         const card = screen
@@ -191,7 +191,7 @@ describe("PersonaResponseTimes", () => {
         currentValue: 20, // Below success threshold of 30 seconds
       });
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         const card = screen
@@ -208,7 +208,7 @@ describe("PersonaResponseTimes", () => {
         mockAnalyticsResult
       );
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -231,7 +231,7 @@ describe("PersonaResponseTimes", () => {
         mockAnalyticsResult
       );
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -267,7 +267,7 @@ describe("PersonaResponseTimes", () => {
         mockAnalyticsResult
       );
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -297,7 +297,7 @@ describe("PersonaResponseTimes", () => {
     it("should display no data message in dialog when no data is available", async () => {
       (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(mockNoDataResult);
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -329,7 +329,7 @@ describe("PersonaResponseTimes", () => {
       };
       (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(resultWithTrend);
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -369,7 +369,7 @@ describe("PersonaResponseTimes", () => {
         mockAnalyticsResult
       );
 
-      renderWithMocks(
+      render(
         <PersonaResponseTimes {...propsWithDifferentThresholds} />
       );
 
@@ -393,7 +393,7 @@ describe("PersonaResponseTimes", () => {
         mockAnalyticsResult
       );
 
-      renderWithMocks(<PersonaResponseTimes {...propsWithoutProfile} />);
+      render(<PersonaResponseTimes {...propsWithoutProfile} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -414,7 +414,7 @@ describe("PersonaResponseTimes", () => {
         mockAnalyticsResult
       );
 
-      renderWithMocks(<PersonaResponseTimes {...propsWithEmptyCohorts} />);
+      render(<PersonaResponseTimes {...propsWithEmptyCohorts} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -430,7 +430,7 @@ describe("PersonaResponseTimes", () => {
         hasData: true,
       });
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("0s")).toBeInTheDocument();
@@ -443,7 +443,7 @@ describe("PersonaResponseTimes", () => {
         currentValue: 3661, // 1 hour 1 minute 1 second
       });
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("61m 1s")).toBeInTheDocument();
@@ -457,7 +457,7 @@ describe("PersonaResponseTimes", () => {
         mockAnalyticsResult
       );
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         expect(calculatePersonaResponseTimes).toHaveBeenCalledWith(
@@ -479,7 +479,7 @@ describe("PersonaResponseTimes", () => {
         throw new Error("Utility function error");
       });
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Persona Response Times")).toBeInTheDocument();
@@ -494,7 +494,7 @@ describe("PersonaResponseTimes", () => {
         currentValue: 45,
       });
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("45s")).toBeInTheDocument();
@@ -507,7 +507,7 @@ describe("PersonaResponseTimes", () => {
         currentValue: 125, // 2 minutes 5 seconds
       });
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("2m 5s")).toBeInTheDocument();
@@ -520,7 +520,7 @@ describe("PersonaResponseTimes", () => {
         currentValue: 60,
       });
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("1m 0s")).toBeInTheDocument();
@@ -534,7 +534,7 @@ describe("PersonaResponseTimes", () => {
         mockAnalyticsResult
       );
 
-      renderWithMocks(<PersonaResponseTimes {...mockProps} />);
+      render(<PersonaResponseTimes {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();

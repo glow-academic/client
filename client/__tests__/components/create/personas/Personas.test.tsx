@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -8,8 +8,6 @@ import Personas from "@/components/create/personas/Personas";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 describe("Personas", () => {
   /* ------------------------------------------------------------------ *
@@ -36,7 +34,7 @@ describe("Personas", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Personas />);
+      render(<Personas />);
 
       // Wait for the component to load
       await waitFor(() => {
@@ -87,7 +85,7 @@ describe("Personas", () => {
       );
       vi.mocked(getAllPersonas).mockResolvedValue(mockPersonas);
 
-      renderWithMocks(<Personas />);
+      render(<Personas />);
 
       // Wait for personas to load
       await waitFor(() => {
@@ -97,7 +95,7 @@ describe("Personas", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<Personas />);
+      render(<Personas />);
 
       // Check for empty state message
       await waitFor(() => {
@@ -135,7 +133,7 @@ describe("Personas", () => {
       );
       vi.mocked(getAllPersonas).mockResolvedValue(mockPersonas);
 
-      renderWithMocks(<Personas />);
+      render(<Personas />);
 
       await waitFor(() => {
         expect(screen.getByText("Test Persona")).toBeInTheDocument();
@@ -185,7 +183,7 @@ describe("Personas", () => {
       );
       vi.mocked(getAllScenarios).mockResolvedValue([]);
 
-      renderWithMocks(<Personas />);
+      render(<Personas />);
 
       await waitFor(() => {
         expect(screen.getByText("Test Persona")).toBeInTheDocument();
@@ -229,7 +227,7 @@ describe("Personas", () => {
       );
       vi.mocked(getAllPersonas).mockResolvedValue(mockPersonas);
 
-      renderWithMocks(<Personas />);
+      render(<Personas />);
 
       await waitFor(() => {
         expect(screen.getByText("Test Persona")).toBeInTheDocument();
@@ -273,7 +271,7 @@ describe("Personas", () => {
       );
       vi.mocked(getAllPersonas).mockResolvedValue(mockPersonas);
 
-      renderWithMocks(<Personas />);
+      render(<Personas />);
 
       await waitFor(() => {
         expect(screen.getByText("Test Persona")).toBeInTheDocument();
@@ -296,7 +294,7 @@ describe("Personas", () => {
       );
       vi.mocked(getAllPersonas).mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<Personas />);
+      render(<Personas />);
 
       // The component should handle the error gracefully
       await waitFor(() => {
@@ -315,7 +313,7 @@ describe("Personas", () => {
       );
       vi.mocked(getAllPersonas).mockReturnValue(loadingPromise);
 
-      renderWithMocks(<Personas />);
+      render(<Personas />);
 
       // The component should render without crashing during loading
       // React Query will handle the loading state internally
@@ -329,7 +327,7 @@ describe("Personas", () => {
     it("should handle navigation", async () => {
       // This component doesn't have direct navigation, but we can test
       // that it renders without navigation-related errors
-      renderWithMocks(<Personas />);
+      render(<Personas />);
 
       await waitFor(() => {
         expect(
@@ -347,7 +345,7 @@ describe("Personas", () => {
       );
       vi.mocked(getAllPersonas).mockResolvedValue([]);
 
-      renderWithMocks(<Personas />);
+      render(<Personas />);
 
       await waitFor(() => {
         expect(
@@ -380,7 +378,7 @@ describe("Personas", () => {
       );
       vi.mocked(getAllPersonas).mockResolvedValue(mockPersonas);
 
-      renderWithMocks(<Personas />);
+      render(<Personas />);
 
       // Component should handle empty properties gracefully
       await waitFor(() => {

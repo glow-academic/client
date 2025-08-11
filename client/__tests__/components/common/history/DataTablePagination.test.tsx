@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import type { Table } from "@tanstack/react-table";
 import { describe, expect, it, vi } from "vitest";
 
@@ -42,21 +42,21 @@ const mockProps: DataTablePaginationProps<unknown> = {
 describe("DataTablePagination", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<DataTablePagination {...mockProps} />);
+      render(<DataTablePagination {...mockProps} />);
 
       // Basic render test - component should render without errors
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      renderWithMocks(<DataTablePagination {...mockProps} />);
+      render(<DataTablePagination {...mockProps} />);
 
       // Component should render with the provided props
       expect(document.body).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<DataTablePagination {...mockProps} />);
+      render(<DataTablePagination {...mockProps} />);
 
       // Check for basic accessibility elements
       const pagination =
@@ -68,14 +68,14 @@ describe("DataTablePagination", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<DataTablePagination {...mockProps} />);
+      render(<DataTablePagination {...mockProps} />);
 
       // Component should handle edge cases
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(<DataTablePagination table={createMockTable()} />);
+      render(<DataTablePagination table={createMockTable()} />);
 
       // Component should handle missing props
       expect(document.body).toBeInTheDocument();

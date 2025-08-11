@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -8,7 +8,7 @@ import { AnalyticsFilters } from "@/components/common/analytics/AnalyticsFilters
 describe("AnalyticsFilters", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<AnalyticsFilters />);
+      render(<AnalyticsFilters />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -17,7 +17,7 @@ describe("AnalyticsFilters", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<AnalyticsFilters />);
+      render(<AnalyticsFilters />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -28,7 +28,7 @@ describe("AnalyticsFilters", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      renderWithMocks(<AnalyticsFilters />);
+      render(<AnalyticsFilters />);
 
       // Wait for component to load
       await waitFor(() => {

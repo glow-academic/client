@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // Mock NewProvider component
@@ -16,7 +16,7 @@ import NewProviderPage, {
 
 describe("NewProviderPage", () => {
   it("renders without crashing", () => {
-    renderWithMocks(<NewProviderPage />);
+    render(<NewProviderPage />);
     expect(screen.getByTestId("new-provider-component")).toBeInTheDocument();
     expect(screen.getByText("New Provider Component")).toBeInTheDocument();
   });
@@ -28,7 +28,7 @@ describe("NewProviderPage", () => {
   });
 
   it("renders the NewProvider component inside a wrapper", () => {
-    renderWithMocks(<NewProviderPage />);
+    render(<NewProviderPage />);
     const wrapper = screen.getByTestId("new-provider-component").parentElement;
     expect(wrapper).toHaveClass("space-y-6");
   });

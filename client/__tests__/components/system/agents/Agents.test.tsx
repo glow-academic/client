@@ -1,13 +1,11 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Import centralized mocks
 import "@/mocks/auth";
-import "@/mocks/mutations";
 import "@/mocks/navigation";
-import "@/mocks/queries";
 
 // ——————————————————————————————————————————
 import Agents from "@/components/system/agents/Agents";
@@ -38,7 +36,7 @@ describe("Agents", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<Agents />);
+      render(<Agents />);
 
       await waitFor(() => {
         expect(screen.getByText(/Agents/i)).toBeInTheDocument();
@@ -46,7 +44,7 @@ describe("Agents", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<Agents />);
+      render(<Agents />);
 
       await waitFor(() => {
         expect(screen.getByText(/Agents/i)).toBeInTheDocument();
@@ -56,7 +54,7 @@ describe("Agents", () => {
 
   describe("Data Loading and Display", () => {
     it("should load and display agents data", async () => {
-      renderWithMocks(<Agents />);
+      render(<Agents />);
 
       await waitFor(() => {
         expect(screen.getByText(/Agents/i)).toBeInTheDocument();
@@ -69,7 +67,7 @@ describe("Agents", () => {
     });
 
     it("should display agent names correctly", async () => {
-      renderWithMocks(<Agents />);
+      render(<Agents />);
 
       await waitFor(() => {
         expect(screen.getByText(/Agents/i)).toBeInTheDocument();
@@ -77,7 +75,7 @@ describe("Agents", () => {
     });
 
     it("should display agent descriptions correctly", async () => {
-      renderWithMocks(<Agents />);
+      render(<Agents />);
 
       await waitFor(() => {
         expect(screen.getByText(/Agents/i)).toBeInTheDocument();
@@ -85,7 +83,7 @@ describe("Agents", () => {
     });
 
     it("should format timestamps correctly", async () => {
-      renderWithMocks(<Agents />);
+      render(<Agents />);
 
       await waitFor(() => {
         expect(screen.getByText(/Agents/i)).toBeInTheDocument();
@@ -96,7 +94,7 @@ describe("Agents", () => {
   describe("User Interactions", () => {
     it("should handle edit button click", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Agents />);
+      render(<Agents />);
 
       await waitFor(() => {
         expect(screen.getByText(/Agents/i)).toBeInTheDocument();
@@ -128,7 +126,7 @@ describe("Agents", () => {
     });
 
     it("should handle state changes", async () => {
-      renderWithMocks(<Agents />);
+      render(<Agents />);
 
       await waitFor(() => {
         expect(screen.getByText(/Agents/i)).toBeInTheDocument();
@@ -136,7 +134,7 @@ describe("Agents", () => {
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<Agents />);
+      render(<Agents />);
 
       await waitFor(() => {
         expect(screen.getByText(/Agents/i)).toBeInTheDocument();
@@ -146,7 +144,7 @@ describe("Agents", () => {
 
   describe("API Integration", () => {
     it("should handle and display an API error state", async () => {
-      renderWithMocks(<Agents />);
+      render(<Agents />);
 
       await waitFor(() => {
         expect(screen.getByText(/Agents/i)).toBeInTheDocument();
@@ -154,7 +152,7 @@ describe("Agents", () => {
     });
 
     it("should handle loading states", async () => {
-      renderWithMocks(<Agents />);
+      render(<Agents />);
 
       await waitFor(() => {
         expect(screen.getByText(/Agents/i)).toBeInTheDocument();
@@ -164,7 +162,7 @@ describe("Agents", () => {
 
   describe("Navigation", () => {
     it("should handle navigation", async () => {
-      renderWithMocks(<Agents />);
+      render(<Agents />);
 
       await waitFor(() => {
         expect(screen.getByText(/Agents/i)).toBeInTheDocument();
@@ -174,7 +172,7 @@ describe("Agents", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      renderWithMocks(<Agents />);
+      render(<Agents />);
 
       await waitFor(() => {
         expect(screen.getByText(/Agents/i)).toBeInTheDocument();
@@ -182,7 +180,7 @@ describe("Agents", () => {
     });
 
     it("should handle empty agents data", async () => {
-      renderWithMocks(<Agents />);
+      render(<Agents />);
 
       await waitFor(() => {
         expect(screen.getByText(/Agents/i)).toBeInTheDocument();
@@ -190,7 +188,7 @@ describe("Agents", () => {
     });
 
     it("should handle null agent data", async () => {
-      renderWithMocks(<Agents />);
+      render(<Agents />);
 
       await waitFor(() => {
         expect(screen.getByText(/Agents/i)).toBeInTheDocument();
@@ -198,7 +196,7 @@ describe("Agents", () => {
     });
 
     it("should handle agents with missing data", async () => {
-      renderWithMocks(<Agents />);
+      render(<Agents />);
 
       await waitFor(() => {
         expect(screen.getByText(/Agents/i)).toBeInTheDocument();
@@ -206,7 +204,7 @@ describe("Agents", () => {
     });
 
     it("should handle agents with null timestamp", async () => {
-      renderWithMocks(<Agents />);
+      render(<Agents />);
 
       await waitFor(() => {
         expect(screen.getByText(/Agents/i)).toBeInTheDocument();
@@ -214,7 +212,7 @@ describe("Agents", () => {
     });
 
     it("should handle unknown agent types", async () => {
-      renderWithMocks(<Agents />);
+      render(<Agents />);
 
       await waitFor(() => {
         expect(screen.getByText(/Agents/i)).toBeInTheDocument();
@@ -224,7 +222,7 @@ describe("Agents", () => {
 
   describe("Filtering and Search", () => {
     it("should generate filter options correctly", async () => {
-      renderWithMocks(<Agents />);
+      render(<Agents />);
 
       await waitFor(() => {
         expect(screen.getByText(/Agents/i)).toBeInTheDocument();

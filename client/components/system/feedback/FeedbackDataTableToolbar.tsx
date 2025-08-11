@@ -35,17 +35,23 @@ export function FeedbackDataTableToolbar({
 
   // Generate ID options for filtering
   const idOptions = useMemo(() => {
-    const uniqueIds = new Set<number>();
+    if (!idColumn) return [] as { value: string; label: string }[];
+    const uniqueIds = new Set<string>();
     table.getFilteredRowModel().rows.forEach((row) => {
-      uniqueIds.add(row.original.id);
+      uniqueIds.add(String((row as any).original.id));
     });
     return Array.from(uniqueIds)
-      .sort((a, b) => a - b)
+      .sort((a, b) => {
+        const na = Number(a);
+        const nb = Number(b);
+        if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+        return a.localeCompare(b);
+      })
       .map((id) => ({
-        value: id.toString(),
+        value: id,
         label: `ID: ${id}`,
       }));
-  }, [table]);
+  }, [table, idColumn]);
 
   return (
     <div className="flex items-center justify-between">

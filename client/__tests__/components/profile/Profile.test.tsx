@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -7,8 +7,6 @@ import { Profile } from "@/components/profile/Profile";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 describe("Profile", () => {
   /* ------------------------------------------------------------------ *
@@ -39,7 +37,7 @@ describe("Profile", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Profile {...mockProps} />);
+      render(<Profile {...mockProps} />);
 
       // Wait for component to render and check for profile content
       await waitFor(() => {
@@ -48,7 +46,7 @@ describe("Profile", () => {
     });
 
     it("should render with props", () => {
-      renderWithMocks(<Profile {...mockProps} />);
+      render(<Profile {...mockProps} />);
 
       // Check that the component renders with the provided className
       // Look for the element with the test-profile-class
@@ -57,7 +55,7 @@ describe("Profile", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<Profile {...mockProps} />);
+      render(<Profile {...mockProps} />);
 
       // Check for main landmark
       await waitFor(() => {
@@ -72,7 +70,7 @@ describe("Profile", () => {
   describe("API Integration", () => {
     it("should handle and display an API error state", async () => {
       // Test with null activeProfile to simulate error state
-      const { rerender } = renderWithMocks(<Profile {...mockProps} />);
+      const { rerender } = render(<Profile {...mockProps} />);
 
       // Mock the ProfileProvider to return null activeProfile
       const ProfileWithNullProfile = () => <Profile {...mockProps} />;
@@ -111,7 +109,7 @@ describe("Profile", () => {
     });
 
     it("should handle loading states", async () => {
-      renderWithMocks(<Profile {...mockProps} />);
+      render(<Profile {...mockProps} />);
 
       // Check that profile content is displayed (loading is handled by the context)
       await waitFor(() => {
@@ -172,7 +170,7 @@ describe("Profile", () => {
 
     it("should handle missing or invalid props", async () => {
       // Test with empty props
-      renderWithMocks(<Profile />);
+      render(<Profile />);
 
       // Should still render with default className
       await waitFor(() => {
@@ -183,7 +181,7 @@ describe("Profile", () => {
 
   describe("Profile Display", () => {
     it("should display user information correctly", async () => {
-      renderWithMocks(<Profile {...mockProps} />);
+      render(<Profile {...mockProps} />);
 
       await waitFor(() => {
         // Check for user name
@@ -202,7 +200,7 @@ describe("Profile", () => {
     });
 
     it("should display correct role information", async () => {
-      renderWithMocks(<Profile {...mockProps} />);
+      render(<Profile {...mockProps} />);
 
       await waitFor(() => {
         // Check that the role badge is displayed with correct styling
@@ -213,7 +211,7 @@ describe("Profile", () => {
     });
 
     it("should display avatar with initials", async () => {
-      renderWithMocks(<Profile {...mockProps} />);
+      render(<Profile {...mockProps} />);
 
       await waitFor(() => {
         // Check that avatar is displayed with user initials
@@ -232,4 +230,4 @@ import { ProfileProvider } from "@/contexts/profile-context";
 import { TourProvider } from "@/contexts/tour-context";
 import { WebSocketProvider } from "@/contexts/websocket-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render } from "@testing-library/react";
+import { render } from '@/test/custom-render';

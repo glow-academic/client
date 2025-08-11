@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -9,24 +9,24 @@ import Markdown from "@/components/common/chat/Markdown";
 describe("Markdown", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", () => {
-      renderWithMocks(<Markdown># Test Heading</Markdown>);
+      render(<Markdown># Test Heading</Markdown>);
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with basic markdown content", () => {
-      renderWithMocks(<Markdown>**Bold text** and *italic text*</Markdown>);
+      render(<Markdown>**Bold text** and *italic text*</Markdown>);
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with empty content", () => {
-      renderWithMocks(<Markdown>{""}</Markdown>);
+      render(<Markdown>{""}</Markdown>);
       expect(document.body).toBeInTheDocument();
     });
   });
 
   describe("Markdown Elements", () => {
     it("should render headings correctly", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           {`# Heading 1
 ## Heading 2
@@ -39,7 +39,7 @@ describe("Markdown", () => {
     });
 
     it("should render paragraphs correctly", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           This is a paragraph with some text. This is another paragraph.
         </Markdown>
@@ -49,7 +49,7 @@ describe("Markdown", () => {
     });
 
     it("should render bold and italic text", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           **Bold text** and *italic text* and ***bold italic text***
         </Markdown>
@@ -59,7 +59,7 @@ describe("Markdown", () => {
     });
 
     it("should render lists correctly", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           {`- Unordered item 1
 - Unordered item 2
@@ -75,7 +75,7 @@ describe("Markdown", () => {
     });
 
     it("should render blockquotes correctly", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           {`> This is a blockquote
 > 
@@ -87,7 +87,7 @@ describe("Markdown", () => {
     });
 
     it("should render code blocks correctly", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           {`\`\`\`javascript
 function hello() {
@@ -101,7 +101,7 @@ function hello() {
     });
 
     it("should render inline code correctly", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           Use the `console.log()` function to print to the console.
         </Markdown>
@@ -111,7 +111,7 @@ function hello() {
     });
 
     it("should render tables correctly", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           {`| Header 1 | Header 2 | Header 3 |
 |----------|----------|----------|
@@ -126,7 +126,7 @@ function hello() {
 
   describe("Link Handling", () => {
     it("should render external links with target blank", () => {
-      renderWithMocks(
+      render(
         <Markdown>[External Link](https://example.com)</Markdown>
       );
 
@@ -138,7 +138,7 @@ function hello() {
     });
 
     it("should render internal links correctly", () => {
-      renderWithMocks(<Markdown>[Internal Link](/dashboard)</Markdown>);
+      render(<Markdown>[Internal Link](/dashboard)</Markdown>);
 
       const link = screen.getByText("Internal Link");
       expect(link).toBeInTheDocument();
@@ -146,7 +146,7 @@ function hello() {
     });
 
     it("should render hash links correctly", () => {
-      renderWithMocks(<Markdown>[Hash Link](#/profile)</Markdown>);
+      render(<Markdown>[Hash Link](#/profile)</Markdown>);
 
       const link = screen.getByText("Hash Link");
       expect(link).toBeInTheDocument();
@@ -154,7 +154,7 @@ function hello() {
     });
 
     it("should render CSV download links correctly", () => {
-      renderWithMocks(<Markdown>[Download Data](csv://token123)</Markdown>);
+      render(<Markdown>[Download Data](csv://token123)</Markdown>);
 
       const link = screen.getByText("Download Download Data");
       expect(link).toBeInTheDocument();
@@ -167,7 +167,7 @@ function hello() {
 
   describe("Math Rendering", () => {
     it("should render inline math", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           {`The quadratic formula is $x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$`}
         </Markdown>
@@ -177,7 +177,7 @@ function hello() {
     });
 
     it("should render block math", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           {`$$
 \\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
@@ -191,7 +191,7 @@ $$`}
 
   describe("Image Handling", () => {
     it("should render images correctly", () => {
-      renderWithMocks(
+      render(
         <Markdown>![Alt text](https://example.com/image.png)</Markdown>
       );
 
@@ -199,7 +199,7 @@ $$`}
     });
 
     it("should render images with titles", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           ![Alt text](https://example.com/image.png "Image title")
         </Markdown>
@@ -211,13 +211,13 @@ $$`}
 
   describe("GitHub Flavored Markdown", () => {
     it("should render strikethrough text", () => {
-      renderWithMocks(<Markdown>~~Strikethrough text~~</Markdown>);
+      render(<Markdown>~~Strikethrough text~~</Markdown>);
 
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render task lists", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           {`- [x] Completed task
 - [ ] Incomplete task
@@ -229,7 +229,7 @@ $$`}
     });
 
     it("should render autolinks", () => {
-      renderWithMocks(
+      render(
         <Markdown>Visit https://example.com for more information.</Markdown>
       );
 
@@ -239,7 +239,7 @@ $$`}
 
   describe("Code Highlighting", () => {
     it("should render JavaScript code with syntax highlighting", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           {`\`\`\`javascript
 const greeting = "Hello, World!";
@@ -252,7 +252,7 @@ console.log(greeting);
     });
 
     it("should render Python code with syntax highlighting", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           {`\`\`\`python
 def hello_world():
@@ -265,7 +265,7 @@ def hello_world():
     });
 
     it("should render JSON code with syntax highlighting", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           {`\`\`\`json
 {
@@ -284,12 +284,12 @@ def hello_world():
   describe("Edge Cases", () => {
     it("should handle very long content", () => {
       const longContent = "# ".repeat(1000) + "Very long heading";
-      renderWithMocks(<Markdown>{longContent}</Markdown>);
+      render(<Markdown>{longContent}</Markdown>);
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle special characters", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           {`Special characters: & < > " ' \` ~ ! @ # $ % ^ & * ( ) _ + - = [ ] { } | \\ ; : ' " , . / ?`}
         </Markdown>
@@ -298,7 +298,7 @@ def hello_world():
     });
 
     it("should handle mixed content types", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           {`# Mixed Content
 
@@ -329,7 +329,7 @@ Math: $E = mc^2$`}
     });
 
     it("should handle malformed markdown gracefully", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           {`# Unclosed heading
 **Unclosed bold
@@ -346,7 +346,7 @@ Math: $E = mc^2$`}
     });
 
     it("should handle empty markdown elements", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           {`#
 **
@@ -366,7 +366,7 @@ Math: $E = mc^2$`}
 
   describe("CSV Link Processing", () => {
     it("should process multiple CSV links in the same content", () => {
-      renderWithMocks(
+      render(
         <Markdown>
           {`Download [Data 1](csv://token1) and [Data 2](csv://token2)`}
         </Markdown>
@@ -376,7 +376,7 @@ Math: $E = mc^2$`}
     });
 
     it("should handle CSV links with special characters in token", () => {
-      renderWithMocks(
+      render(
         <Markdown>[Download](csv://token-with-special-chars_123)</Markdown>
       );
 
@@ -384,7 +384,7 @@ Math: $E = mc^2$`}
     });
 
     it("should handle CSV links with spaces in link text", () => {
-      renderWithMocks(<Markdown>[Download My Data](csv://token123)</Markdown>);
+      render(<Markdown>[Download My Data](csv://token123)</Markdown>);
 
       expect(document.body).toBeInTheDocument();
     });
@@ -392,14 +392,14 @@ Math: $E = mc^2$`}
 
   describe("Newline Processing", () => {
     it("should normalize different newline formats", () => {
-      renderWithMocks(
+      render(
         <Markdown>{"Line 1\r\nLine 2\nLine 3\rLine 4"}</Markdown>
       );
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle consecutive newlines", () => {
-      renderWithMocks(<Markdown>{"Paragraph 1\n\n\n\nParagraph 2"}</Markdown>);
+      render(<Markdown>{"Paragraph 1\n\n\n\nParagraph 2"}</Markdown>);
       expect(document.body).toBeInTheDocument();
     });
   });

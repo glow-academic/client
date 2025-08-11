@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -15,7 +15,7 @@ describe("ProviderEditPage", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<ProviderEditPage />);
+      render(<ProviderEditPage />);
 
       // Should redirect to /management/providers
       const { redirect } = await import("next/navigation");
@@ -23,7 +23,7 @@ describe("ProviderEditPage", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<ProviderEditPage />);
+      render(<ProviderEditPage />);
 
       // Should redirect to /management/providers
       const { redirect } = await import("next/navigation");
@@ -33,7 +33,7 @@ describe("ProviderEditPage", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      renderWithMocks(<ProviderEditPage />);
+      render(<ProviderEditPage />);
 
       // Should redirect to /management/providers
       const { redirect } = await import("next/navigation");

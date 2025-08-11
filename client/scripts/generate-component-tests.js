@@ -368,9 +368,7 @@ ${analysis.hasDirectFetch ? "global.fetch = vi.fn();" : ""}`;
   if (hasMocks) {
     template += `
 
-// ✨ Import comprehensive mock data from our centralized mock system
-import '@/mocks/queries';
-import '@/mocks/mutations';
+// ✨ Import testing mocks
 import '@/mocks/api';
 `;
   }

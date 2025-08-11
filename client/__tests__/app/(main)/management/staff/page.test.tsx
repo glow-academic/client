@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // Mock Staff component
@@ -12,7 +12,7 @@ import StaffPage, { metadata } from "@/app/(main)/management/staff/page";
 
 describe("StaffPage", () => {
   it("renders without crashing", () => {
-    renderWithMocks(<StaffPage />);
+    render(<StaffPage />);
     expect(screen.getByTestId("staff-component")).toBeInTheDocument();
     expect(screen.getByText("Staff Component")).toBeInTheDocument();
   });
@@ -24,7 +24,7 @@ describe("StaffPage", () => {
   });
 
   it("renders the Staff component inside a wrapper", () => {
-    renderWithMocks(<StaffPage />);
+    render(<StaffPage />);
     const wrapper = screen.getByTestId("staff-component").parentElement;
     expect(wrapper).toHaveClass("space-y-6");
   });

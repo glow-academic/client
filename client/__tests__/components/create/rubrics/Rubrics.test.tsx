@@ -2,16 +2,14 @@
  * Rubrics.test.tsx
  * Comprehensive tests for the Rubrics component
  */
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import Rubrics from "@/components/create/rubrics/Rubrics";
 
 // Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the profile context
 const mockProfileContext = {
@@ -170,7 +168,7 @@ describe("Rubrics Component", () => {
       vi.mocked(getAllRubrics).mockResolvedValue([]);
       vi.mocked(getAllSimulations).mockResolvedValue([]);
 
-      renderWithMocks(<Rubrics />);
+      render(<Rubrics />);
 
       await waitFor(() => {
         expect(screen.getByTestId("rubrics-data-table")).toBeInTheDocument();
@@ -184,7 +182,7 @@ describe("Rubrics Component", () => {
       );
       vi.mocked(getAllRubrics).mockImplementation(() => new Promise(() => {}));
 
-      renderWithMocks(<Rubrics />);
+      render(<Rubrics />);
 
       await waitFor(() => {
         expect(screen.getByText("Loading rubrics...")).toBeInTheDocument();
@@ -215,7 +213,7 @@ describe("Rubrics Component", () => {
       vi.mocked(getAllRubrics).mockResolvedValue(mockRubrics);
       vi.mocked(getAllSimulations).mockResolvedValue([]);
 
-      renderWithMocks(<Rubrics />);
+      render(<Rubrics />);
 
       await waitFor(() => {
         expect(
@@ -251,7 +249,7 @@ describe("Rubrics Component", () => {
       vi.mocked(getAllRubrics).mockResolvedValue([mockRubric]);
       vi.mocked(getAllSimulations).mockResolvedValue([]);
 
-      renderWithMocks(<Rubrics />);
+      render(<Rubrics />);
 
       await waitFor(() => {
         expect(screen.getByText("Test Rubric")).toBeInTheDocument();
@@ -284,7 +282,7 @@ describe("Rubrics Component", () => {
       vi.mocked(getAllRubrics).mockResolvedValue([mockRubric]);
       vi.mocked(getAllSimulations).mockResolvedValue([]);
 
-      renderWithMocks(<Rubrics />);
+      render(<Rubrics />);
 
       await waitFor(() => {
         expect(screen.getByText("Inactive")).toBeInTheDocument();
@@ -330,7 +328,7 @@ describe("Rubrics Component", () => {
       vi.mocked(getAllRubrics).mockResolvedValue([mockRubric]);
       vi.mocked(getAllSimulations).mockResolvedValue([mockSimulation]);
 
-      renderWithMocks(<Rubrics />);
+      render(<Rubrics />);
 
       await waitFor(() => {
         expect(screen.getByText("Edit")).toBeInTheDocument();
@@ -374,7 +372,7 @@ describe("Rubrics Component", () => {
       vi.mocked(getAllRubrics).mockResolvedValue([mockRubric]);
       vi.mocked(getAllSimulations).mockResolvedValue([mockSimulation]);
 
-      renderWithMocks(<Rubrics />);
+      render(<Rubrics />);
 
       await waitFor(() => {
         expect(screen.queryByText("Edit")).not.toBeInTheDocument();
@@ -444,7 +442,7 @@ describe("Rubrics Component", () => {
       vi.mocked(getAllRubrics).mockResolvedValue([]);
       vi.mocked(getAllSimulations).mockResolvedValue([]);
 
-      renderWithMocks(<Rubrics />);
+      render(<Rubrics />);
 
       await waitFor(() => {
         expect(
@@ -471,7 +469,7 @@ describe("Rubrics Component", () => {
       );
       vi.mocked(getAllRubrics).mockResolvedValue([mockRubric]);
 
-      renderWithMocks(<Rubrics />);
+      render(<Rubrics />);
 
       await waitFor(() => {
         expect(screen.getByText("Test Rubric")).toBeInTheDocument();
@@ -489,7 +487,7 @@ describe("Rubrics Component", () => {
       vi.mocked(getAllRubrics).mockRejectedValue(new Error("API Error"));
       vi.mocked(getAllSimulations).mockResolvedValue([]);
 
-      renderWithMocks(<Rubrics />);
+      render(<Rubrics />);
 
       await waitFor(() => {
         expect(screen.getByTestId("rubrics-data-table")).toBeInTheDocument();

@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -7,8 +7,6 @@ import RubricStandardGroup from "@/components/common/rubric/RubricStandardGroup"
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
@@ -57,7 +55,7 @@ describe("RubricStandardGroup", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<RubricStandardGroup {...mockProps} />);
+      render(<RubricStandardGroup {...mockProps} />);
 
       // Should render the component with group name
       expect(screen.getByText("Test Group")).toBeInTheDocument();
@@ -88,7 +86,7 @@ describe("RubricStandardGroup", () => {
         mode: "create",
       };
 
-      renderWithMocks(<RubricStandardGroup {...propsWithStandards} />);
+      render(<RubricStandardGroup {...propsWithStandards} />);
 
       // Should render the component in create mode with form fields
       expect(screen.getByText("Max Points")).toBeInTheDocument();
@@ -96,7 +94,7 @@ describe("RubricStandardGroup", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<RubricStandardGroup {...mockProps} />);
+      render(<RubricStandardGroup {...mockProps} />);
 
       // Should have proper accessibility attributes
       expect(screen.getByText("Test Group")).toBeInTheDocument();
@@ -109,21 +107,21 @@ describe("RubricStandardGroup", () => {
 
   describe("User Interactions", () => {
     it("should handle form submissions", async () => {
-      renderWithMocks(<RubricStandardGroup {...mockProps} />);
+      render(<RubricStandardGroup {...mockProps} />);
 
       // Should handle form submissions properly
       expect(screen.getByText("Test Group")).toBeInTheDocument();
     });
 
     it("should handle state changes", async () => {
-      renderWithMocks(<RubricStandardGroup {...mockProps} />);
+      render(<RubricStandardGroup {...mockProps} />);
 
       // Should handle state changes properly
       expect(screen.getByText("Test Group")).toBeInTheDocument();
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<RubricStandardGroup {...mockProps} />);
+      render(<RubricStandardGroup {...mockProps} />);
 
       // Should handle user events properly
       expect(screen.getByText("Test Group")).toBeInTheDocument();
@@ -152,7 +150,7 @@ describe("RubricStandardGroup", () => {
         mode: "edit",
       };
 
-      renderWithMocks(<RubricStandardGroup {...edgeCaseProps} />);
+      render(<RubricStandardGroup {...edgeCaseProps} />);
 
       // Should render the component even with edge case props
       const buttons = screen.getAllByRole("button");
@@ -169,7 +167,7 @@ describe("RubricStandardGroup", () => {
         mode: "create", // Set mode to create to avoid undefined group access
       };
 
-      renderWithMocks(<RubricStandardGroup {...minimalProps} />);
+      render(<RubricStandardGroup {...minimalProps} />);
 
       // Should render with minimal props - check for form fields instead of buttons
       expect(screen.getByText("Max Points")).toBeInTheDocument();

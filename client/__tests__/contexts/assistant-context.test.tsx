@@ -1,5 +1,5 @@
 import { describe, it, vi, afterEach } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { render } from '@/test/custom-render';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
@@ -7,8 +7,6 @@ import userEvent from '@testing-library/user-event';
 
 
 // ✨ Import comprehensive mock data from our centralized mock system
-import '@/mocks/queries';
-import '@/mocks/mutations';
 import '@/mocks/api';
 
 
@@ -62,7 +60,7 @@ describe('assistant-context', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<AssistantProvider {...mockProps}>
+      render(<AssistantProvider {...mockProps}>
         <div>test-children</div>
       </AssistantProvider>);
       
@@ -108,7 +106,7 @@ describe('assistant-context', () => {
       // Arrange: Override the default success mock with an error for this test.
       // Example: vi.mocked(getAssistantChatsByProfile).mockRejectedValue(new Error('API Error'));
 
-      renderWithMocks(<AssistantProvider {...mockProps}>
+      render(<AssistantProvider {...mockProps}>
         <div>test-children</div>
       </AssistantProvider>);
       

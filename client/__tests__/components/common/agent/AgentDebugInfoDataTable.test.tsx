@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { render } from '@/test/custom-render';
 import userEvent from '@testing-library/user-event';
 import type {  } from '@tanstack/react-table';
 
@@ -21,7 +21,7 @@ describe('AgentDebugInfoDataTable', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       
-      renderWithMocks(<AgentDebugInfoDataTable {...mockProps} />);
+      render(<AgentDebugInfoDataTable {...mockProps} />);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();

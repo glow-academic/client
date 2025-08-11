@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -8,8 +8,6 @@ import RubricDetails from "@/components/common/rubric/RubricDetails";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the toast
 vi.mock("sonner", () => ({
@@ -73,7 +71,7 @@ describe("RubricDetails", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<RubricDetails {...mockProps} />);
+      render(<RubricDetails {...mockProps} />);
 
       // Check that the component renders with the expected sections
       expect(screen.getByText("Test Rubric")).toBeInTheDocument();
@@ -81,7 +79,7 @@ describe("RubricDetails", () => {
     });
 
     it("should render with props", () => {
-      renderWithMocks(<RubricDetails {...mockProps} />);
+      render(<RubricDetails {...mockProps} />);
 
       // Check that props are properly displayed
       expect(screen.getByText("Test Rubric")).toBeInTheDocument();
@@ -91,7 +89,7 @@ describe("RubricDetails", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<RubricDetails {...mockProps} />);
+      render(<RubricDetails {...mockProps} />);
 
       // Check for proper form structure
       expect(screen.getByText("Test Rubric")).toBeInTheDocument();
@@ -101,7 +99,7 @@ describe("RubricDetails", () => {
 
   describe("User Interactions", () => {
     it("should handle form submissions", async () => {
-      renderWithMocks(<RubricDetails {...mockProps} />);
+      render(<RubricDetails {...mockProps} />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -114,7 +112,7 @@ describe("RubricDetails", () => {
 
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<RubricDetails {...mockProps} />);
+      render(<RubricDetails {...mockProps} />);
 
       // Click edit button to enter edit mode
       const editButton = screen.getByRole("button", { name: /edit/i });
@@ -129,7 +127,7 @@ describe("RubricDetails", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<RubricDetails {...mockProps} />);
+      render(<RubricDetails {...mockProps} />);
 
       // Test edit button click
       const editButton = screen.getByRole("button", { name: /edit/i });
@@ -143,7 +141,7 @@ describe("RubricDetails", () => {
 
     it("should handle cancel button", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<RubricDetails {...mockProps} />);
+      render(<RubricDetails {...mockProps} />);
 
       // Click edit button to enter edit mode
       const editButton = screen.getByRole("button", { name: /edit/i });
@@ -161,11 +159,10 @@ describe("RubricDetails", () => {
   describe("API Integration", () => {
     it("should handle and display an API error state", async () => {
       // Arrange: Override the default success mock with an error for this test.
-      const { updateRubricMock } = await import("@/mocks/mutations");
       updateRubricMock.mockRejectedValue(new Error("API Error"));
 
       const user = userEvent.setup();
-      renderWithMocks(<RubricDetails {...mockProps} />);
+      render(<RubricDetails {...mockProps} />);
 
       // Enter edit mode and submit to trigger error
       const editButton = screen.getByRole("button", { name: /edit/i });
@@ -181,7 +178,7 @@ describe("RubricDetails", () => {
     });
 
     it("should handle loading states", () => {
-      renderWithMocks(<RubricDetails {...mockProps} />);
+      render(<RubricDetails {...mockProps} />);
 
       // Check that the component renders without loading issues
       expect(screen.getByText("Test Rubric")).toBeInTheDocument();
@@ -205,7 +202,7 @@ describe("RubricDetails", () => {
         rubricId: "test-rubricId",
       };
 
-      renderWithMocks(<RubricDetails {...minimalProps} />);
+      render(<RubricDetails {...minimalProps} />);
 
       // Test that the component renders with minimal data
       expect(screen.getByRole("button", { name: /edit/i })).toBeInTheDocument();
@@ -227,7 +224,7 @@ describe("RubricDetails", () => {
         rubricId: "test-rubricId",
       };
 
-      renderWithMocks(<RubricDetails {...invalidProps} />);
+      render(<RubricDetails {...invalidProps} />);
 
       // Test that the component handles missing data gracefully
       expect(screen.getByRole("button", { name: /edit/i })).toBeInTheDocument();
@@ -239,7 +236,7 @@ describe("RubricDetails", () => {
         isCreateMode: true,
       };
 
-      renderWithMocks(<RubricDetails {...createModeProps} />);
+      render(<RubricDetails {...createModeProps} />);
 
       // Check that create mode is properly handled
       expect(screen.getByText("Create Rubric")).toBeInTheDocument();

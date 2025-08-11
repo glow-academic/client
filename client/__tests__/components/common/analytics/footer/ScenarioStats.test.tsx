@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -344,7 +344,7 @@ describe("ScenarioStats", () => {
 
   describe("Component Rendering", () => {
     it("renders the component title and description", async () => {
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -360,7 +360,7 @@ describe("ScenarioStats", () => {
     });
 
     it("renders the metric picker", async () => {
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -382,7 +382,7 @@ describe("ScenarioStats", () => {
     });
 
     it("renders the bar chart", async () => {
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -402,7 +402,7 @@ describe("ScenarioStats", () => {
     });
 
     it("renders the correlation display", async () => {
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -428,13 +428,13 @@ describe("ScenarioStats", () => {
       // Delay the mock responses to simulate loading
       mockGetAllProfiles.mockImplementation(() => new Promise(() => {}));
 
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       expect(screen.getByText("Loading scenario data...")).toBeInTheDocument();
     });
 
     it("calls the utility function with correct parameters when data is loaded", async () => {
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -471,7 +471,7 @@ describe("ScenarioStats", () => {
       mockGetAllProfiles.mockResolvedValue([]);
       mockGetAllScenarios.mockResolvedValue([]);
 
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -487,7 +487,7 @@ describe("ScenarioStats", () => {
     it("allows selecting different parameters", async () => {
       const user = userEvent.setup();
 
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -514,7 +514,7 @@ describe("ScenarioStats", () => {
     it("updates the chart when parameter is changed", async () => {
       const user = userEvent.setup();
 
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -559,7 +559,7 @@ describe("ScenarioStats", () => {
         correlationData: { correlation: 0.8, pValue: 0.01 },
       });
 
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -592,7 +592,7 @@ describe("ScenarioStats", () => {
         correlationData: { correlation: 0.2, pValue: 0.1 },
       });
 
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -625,7 +625,7 @@ describe("ScenarioStats", () => {
         correlationData: { correlation: 0.1, pValue: 0.5 },
       });
 
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -661,7 +661,7 @@ describe("ScenarioStats", () => {
         },
       ]);
 
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -671,7 +671,7 @@ describe("ScenarioStats", () => {
     });
 
     it("filters data based on cohort restrictions", async () => {
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -714,7 +714,7 @@ describe("ScenarioStats", () => {
         },
       ]);
 
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -731,7 +731,7 @@ describe("ScenarioStats", () => {
         correlationData: { correlation: 0.75, pValue: 0.05 },
       });
 
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -753,7 +753,7 @@ describe("ScenarioStats", () => {
         correlationData: { correlation: -0.6, pValue: 0.1 },
       });
 
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -775,7 +775,7 @@ describe("ScenarioStats", () => {
         correlationData: { correlation: 0, pValue: 1 },
       });
 
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -794,7 +794,7 @@ describe("ScenarioStats", () => {
 
   describe("Chart Data", () => {
     it("passes correct data to the bar chart", async () => {
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -818,7 +818,7 @@ describe("ScenarioStats", () => {
     });
 
     it("renders chart components correctly", async () => {
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -843,7 +843,7 @@ describe("ScenarioStats", () => {
     it("handles API errors gracefully", async () => {
       mockGetAllProfiles.mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       // Should still render the component structure
       expect(
@@ -857,7 +857,7 @@ describe("ScenarioStats", () => {
         profileId: undefined,
       };
 
-      renderWithMocks(<ScenarioStats {...propsWithoutProfile} />);
+      render(<ScenarioStats {...propsWithoutProfile} />);
 
       await waitFor(() => {
         expect(
@@ -880,7 +880,7 @@ describe("ScenarioStats", () => {
         dateEnd: new Date("2024-01-20"),
       };
 
-      renderWithMocks(<ScenarioStats {...customDateProps} />);
+      render(<ScenarioStats {...customDateProps} />);
 
       await waitFor(() => {
         expect(
@@ -916,7 +916,7 @@ describe("ScenarioStats", () => {
         correlationData: { correlation: 0, pValue: 1 },
       });
 
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -936,7 +936,7 @@ describe("ScenarioStats", () => {
         correlationData: { correlation: 0, pValue: 1 },
       });
 
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -956,7 +956,7 @@ describe("ScenarioStats", () => {
         correlationData: { correlation: 0, pValue: 0.5 },
       });
 
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -978,7 +978,7 @@ describe("ScenarioStats", () => {
         correlationData: { correlation: 0.99, pValue: 0.001 },
       });
 
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -1000,7 +1000,7 @@ describe("ScenarioStats", () => {
         correlationData: { correlation: -0.99, pValue: 0.001 },
       });
 
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -1019,7 +1019,7 @@ describe("ScenarioStats", () => {
 
   describe("Component Integration", () => {
     it("renders all major UI elements together", async () => {
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(
@@ -1046,7 +1046,7 @@ describe("ScenarioStats", () => {
     });
 
     it("maintains component state correctly", async () => {
-      renderWithMocks(<ScenarioStats {...mockProps} />);
+      render(<ScenarioStats {...mockProps} />);
 
       await waitFor(() => {
         expect(

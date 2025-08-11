@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // Mock Dashboard component
@@ -14,7 +14,7 @@ import DashboardPage, { metadata } from "@/app/(main)/analytics/dashboard/page";
 
 describe("DashboardPage", () => {
   it("renders without crashing", () => {
-    renderWithMocks(<DashboardPage />);
+    render(<DashboardPage />);
     expect(screen.getByTestId("dashboard-component")).toBeInTheDocument();
     expect(screen.getByText("Dashboard Component")).toBeInTheDocument();
   });
@@ -26,7 +26,7 @@ describe("DashboardPage", () => {
   });
 
   it("renders the Dashboard component inside a wrapper", () => {
-    renderWithMocks(<DashboardPage />);
+    render(<DashboardPage />);
     const wrapper = screen.getByTestId("dashboard-component").parentElement;
     expect(wrapper).toHaveClass("space-y-6");
   });

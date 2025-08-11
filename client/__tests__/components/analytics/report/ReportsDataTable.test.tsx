@@ -1,6 +1,6 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import type { ColumnDef } from "@tanstack/react-table";
-import { screen } from "@testing-library/react";
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -13,8 +13,6 @@ import { TAPerformanceData } from "@/hooks/use-report-columns";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock data for testing
 const mockTAPerformanceData: TAPerformanceData[] = [
@@ -180,7 +178,7 @@ describe("ReportsDataTable", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<ReportsDataTable {...mockProps} />);
+      render(<ReportsDataTable {...mockProps} />);
 
       // Should render the table container
       expect(screen.getByRole("table")).toBeInTheDocument();
@@ -193,7 +191,7 @@ describe("ReportsDataTable", () => {
         data: mockTAPerformanceData,
       };
 
-      renderWithMocks(<ReportsDataTable {...propsWithData} />);
+      render(<ReportsDataTable {...propsWithData} />);
 
       // Should display the TA name
       expect(screen.getByText("John Doe")).toBeInTheDocument();
@@ -201,7 +199,7 @@ describe("ReportsDataTable", () => {
     });
 
     it('should display "No results" when no data is provided', () => {
-      renderWithMocks(<ReportsDataTable {...mockProps} />);
+      render(<ReportsDataTable {...mockProps} />);
 
       expect(screen.getByText("No results.")).toBeInTheDocument();
     });
@@ -213,7 +211,7 @@ describe("ReportsDataTable", () => {
         data: mockTAPerformanceData,
       };
 
-      renderWithMocks(<ReportsDataTable {...propsWithData} />);
+      render(<ReportsDataTable {...propsWithData} />);
 
       // Should have proper table structure
       expect(screen.getByRole("table")).toBeInTheDocument();
@@ -234,7 +232,7 @@ describe("ReportsDataTable", () => {
         onViewReport,
       };
 
-      renderWithMocks(<ReportsDataTable {...propsWithData} />);
+      render(<ReportsDataTable {...propsWithData} />);
 
       // Click on the table row
       const tableRow = screen.getByRole("row", { name: /John Doe/i });
@@ -250,7 +248,7 @@ describe("ReportsDataTable", () => {
         data: mockTAPerformanceData,
       };
 
-      renderWithMocks(<ReportsDataTable {...propsWithData} />);
+      render(<ReportsDataTable {...propsWithData} />);
 
       // The component should handle state changes internally
       // This is tested through the table functionality
@@ -264,7 +262,7 @@ describe("ReportsDataTable", () => {
         data: mockTAPerformanceData,
       };
 
-      renderWithMocks(<ReportsDataTable {...propsWithData} />);
+      render(<ReportsDataTable {...propsWithData} />);
 
       // Test that the table is interactive
       const tableRow = screen.getByRole("row", { name: /John Doe/i });
@@ -281,7 +279,7 @@ describe("ReportsDataTable", () => {
         data: [],
       };
 
-      renderWithMocks(<ReportsDataTable {...propsWithEmptyData} />);
+      render(<ReportsDataTable {...propsWithEmptyData} />);
 
       expect(screen.getByText("No results.")).toBeInTheDocument();
     });
@@ -300,7 +298,7 @@ describe("ReportsDataTable", () => {
         onViewReport: vi.fn(),
       };
 
-      renderWithMocks(<ReportsDataTable {...minimalProps} />);
+      render(<ReportsDataTable {...minimalProps} />);
 
       // Should still render without crashing
       expect(screen.getByRole("table")).toBeInTheDocument();

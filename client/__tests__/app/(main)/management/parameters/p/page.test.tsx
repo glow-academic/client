@@ -1,5 +1,5 @@
 import { describe, it, vi, afterEach, expect } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { render } from '@/test/custom-render';
 
 // ——————————————————————————————————————————
 import ParameterPage from '@/app/(main)/management/parameters/p/page';
@@ -17,7 +17,7 @@ describe('ParameterPage', () => {
 
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
-      renderWithMocks(<ParameterPage />);
+      render(<ParameterPage />);
       
       // Should redirect to /management/parameters/new
       const { redirect } = await import("next/navigation");
@@ -27,7 +27,7 @@ describe('ParameterPage', () => {
     
 
     it('should have correct accessibility attributes', async () => {
-      renderWithMocks(<ParameterPage />);
+      render(<ParameterPage />);
       
       // Should redirect to /management/parameters/new
       const { redirect } = await import("next/navigation");
@@ -43,7 +43,7 @@ describe('ParameterPage', () => {
 
   describe('Edge Cases', () => {
     it('should handle edge cases gracefully', async () => {
-      renderWithMocks(<ParameterPage />);
+      render(<ParameterPage />);
       
       // Should redirect to /management/parameters/new
       const { redirect } = await import("next/navigation");

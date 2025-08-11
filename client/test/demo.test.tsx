@@ -54,11 +54,11 @@ This test demonstrates the key benefits of the unified test harness:
 To use this in your own tests:
 
 1. Replace imports:
-   - OLD: import { renderWithMocks } from '@/test/renderWithMocks'
+   - OLD: import { render } from '@/test/custom-render'
    - NEW: import { render } from '@/test/custom-render'
 
 2. Replace render calls:
-   - OLD: renderWithMocks(<Component />)
+   - OLD: render(<Component />)
    - NEW: render(<Component />)
 
 3. Write tests normally - everything else is handled automatically!

@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -7,8 +7,6 @@ import EditParameter from "@/components/management/parameters/EditParameter";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 describe("EditParameter", () => {
   // ✨ Reset mocks after each test
@@ -19,21 +17,21 @@ describe("EditParameter", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<EditParameter />);
+      render(<EditParameter />);
 
       // Basic rendering test - component should render without crashing
       expect(screen.getByText("EditParameter")).toBeInTheDocument();
     });
 
     it("should render with correct content", () => {
-      renderWithMocks(<EditParameter />);
+      render(<EditParameter />);
 
       // Check that the component renders its expected content
       expect(screen.getByText("EditParameter")).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<EditParameter />);
+      render(<EditParameter />);
 
       // Basic accessibility test - component should be in the document
       const component = screen.getByText("EditParameter");
@@ -43,7 +41,7 @@ describe("EditParameter", () => {
 
   describe("User Interactions", () => {
     it("should handle user interactions", async () => {
-      renderWithMocks(<EditParameter />);
+      render(<EditParameter />);
 
       // Since this is a simple component, we just verify it's interactive
       const component = screen.getByText("EditParameter");
@@ -53,7 +51,7 @@ describe("EditParameter", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<EditParameter />);
+      render(<EditParameter />);
 
       // Component should render even with no props
       expect(screen.getByText("EditParameter")).toBeInTheDocument();

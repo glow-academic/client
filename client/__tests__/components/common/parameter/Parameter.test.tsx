@@ -5,8 +5,8 @@
  * 07/26/2025
  */
 
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -17,15 +17,12 @@ import Parameter, {
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
 import "@/mocks/navigation";
-import "@/mocks/queries";
 
 // Import the router mock for testing
 import { routerMock } from "@/mocks/navigation";
 
 // Import mocks for direct access
-import { createParameterMock, updateParameterMock } from "@/mocks/mutations";
 
 // Mock the toast
 vi.mock("sonner", () => ({
@@ -67,7 +64,7 @@ describe("Parameter", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Parameter {...mockProps} />);
+      render(<Parameter {...mockProps} />);
 
       // Check that the component renders with the expected sections
       expect(screen.getByText("Parameter Information")).toBeInTheDocument();
@@ -75,7 +72,7 @@ describe("Parameter", () => {
     });
 
     it("should render create form with empty fields", async () => {
-      renderWithMocks(<Parameter mode="create" />);
+      render(<Parameter mode="create" />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -91,7 +88,7 @@ describe("Parameter", () => {
     });
 
     it("should render edit form with existing data", async () => {
-      renderWithMocks(
+      render(
         <Parameter parameterId="test-parameter-id" mode="edit" />,
       );
 
@@ -108,7 +105,7 @@ describe("Parameter", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<Parameter {...mockProps} />);
+      render(<Parameter {...mockProps} />);
 
       // Check for proper form structure
       expect(screen.getByText("Parameter Information")).toBeInTheDocument();
@@ -121,7 +118,7 @@ describe("Parameter", () => {
   describe("User Interactions", () => {
     it("should handle adding parameter items", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Parameter mode="create" />);
+      render(<Parameter mode="create" />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -142,7 +139,7 @@ describe("Parameter", () => {
 
     it("should handle form submissions", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Parameter mode="create" />);
+      render(<Parameter mode="create" />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -168,7 +165,7 @@ describe("Parameter", () => {
 
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Parameter mode="create" />);
+      render(<Parameter mode="create" />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -187,7 +184,7 @@ describe("Parameter", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Parameter mode="create" />);
+      render(<Parameter mode="create" />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -202,7 +199,7 @@ describe("Parameter", () => {
 
     it("should handle deleting parameter items", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Parameter mode="create" />);
+      render(<Parameter mode="create" />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -236,7 +233,7 @@ describe("Parameter", () => {
       // Arrange: Override the default success mock with an error for this test.
       createParameterMock.mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<Parameter mode="create" />);
+      render(<Parameter mode="create" />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -261,7 +258,7 @@ describe("Parameter", () => {
     });
 
     it("should handle loading states", async () => {
-      renderWithMocks(
+      render(
         <Parameter parameterId="test-parameter-id" mode="edit" />,
       );
 
@@ -278,7 +275,7 @@ describe("Parameter", () => {
     it("should successfully create a parameter", async () => {
       createParameterMock.mockResolvedValue({ success: true });
 
-      renderWithMocks(<Parameter mode="create" />);
+      render(<Parameter mode="create" />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -308,7 +305,7 @@ describe("Parameter", () => {
     it("should successfully update a parameter", async () => {
       updateParameterMock.mockResolvedValue({ success: true });
 
-      renderWithMocks(
+      render(
         <Parameter parameterId="test-parameter-id" mode="edit" />,
       );
 
@@ -334,7 +331,7 @@ describe("Parameter", () => {
   describe("Navigation", () => {
     it("should handle navigation", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Parameter mode="create" />);
+      render(<Parameter mode="create" />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -350,14 +347,14 @@ describe("Parameter", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<Parameter {...mockProps} />);
+      render(<Parameter {...mockProps} />);
 
       // Test that the component renders without crashing even with minimal props
       expect(screen.getByText("Parameter Information")).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(<Parameter />);
+      render(<Parameter />);
 
       // Test that the component handles missing props gracefully
       expect(screen.getByText("Parameter Information")).toBeInTheDocument();
@@ -365,7 +362,7 @@ describe("Parameter", () => {
 
     it("should validate form fields", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Parameter mode="create" />);
+      render(<Parameter mode="create" />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -384,7 +381,7 @@ describe("Parameter", () => {
 
     it("should handle numerical parameter validation", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Parameter mode="create" />);
+      render(<Parameter mode="create" />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -431,7 +428,7 @@ describe("Parameter", () => {
     });
 
     it("should handle empty parameter items gracefully", async () => {
-      renderWithMocks(<Parameter mode="create" />);
+      render(<Parameter mode="create" />);
 
       // Wait for the form to load
       await waitFor(() => {

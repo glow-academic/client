@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -8,8 +8,6 @@ import ReportProblem from "@/components/common/layout/ReportProblem";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the toast
 vi.mock("sonner", () => ({
@@ -84,7 +82,7 @@ describe("ReportProblem", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<ReportProblem {...mockProps} />);
+      render(<ReportProblem {...mockProps} />);
 
       // Should render the feedback button
       await waitFor(() => {
@@ -93,7 +91,7 @@ describe("ReportProblem", () => {
     });
 
     it("should render feedback dialog trigger", async () => {
-      renderWithMocks(<ReportProblem {...mockProps} />);
+      render(<ReportProblem {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Open Feedback")).toBeInTheDocument();
@@ -101,7 +99,7 @@ describe("ReportProblem", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<ReportProblem {...mockProps} />);
+      render(<ReportProblem {...mockProps} />);
 
       await waitFor(() => {
         // Check for dialog trigger button
@@ -114,7 +112,7 @@ describe("ReportProblem", () => {
   describe("User Interactions", () => {
     it("should open dialog when trigger is clicked", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ReportProblem {...mockProps} />);
+      render(<ReportProblem {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Open Feedback")).toBeInTheDocument();
@@ -134,7 +132,7 @@ describe("ReportProblem", () => {
 
     it("should handle form submissions", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ReportProblem {...mockProps} />);
+      render(<ReportProblem {...mockProps} />);
 
       // Open dialog
       const triggerButton = screen.getByText("Open Feedback");
@@ -166,7 +164,7 @@ describe("ReportProblem", () => {
 
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ReportProblem {...mockProps} />);
+      render(<ReportProblem {...mockProps} />);
 
       // Open dialog
       const triggerButton = screen.getByText("Open Feedback");
@@ -184,7 +182,7 @@ describe("ReportProblem", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ReportProblem {...mockProps} />);
+      render(<ReportProblem {...mockProps} />);
 
       // Open dialog
       const triggerButton = screen.getByText("Open Feedback");
@@ -208,11 +206,10 @@ describe("ReportProblem", () => {
   describe("API Integration", () => {
     it("should handle and display an API error state", async () => {
       // Arrange: Override the default success mock with an error for this test.
-      const { createAppFeedbackMock } = await import("@/mocks/mutations");
       createAppFeedbackMock.mockRejectedValue(new Error("API Error"));
 
       const user = userEvent.setup();
-      renderWithMocks(<ReportProblem {...mockProps} />);
+      render(<ReportProblem {...mockProps} />);
 
       // Open dialog
       const triggerButton = screen.getByText("Open Feedback");
@@ -241,7 +238,7 @@ describe("ReportProblem", () => {
 
     it("should handle loading states", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ReportProblem {...mockProps} />);
+      render(<ReportProblem {...mockProps} />);
 
       // Open dialog
       const triggerButton = screen.getByText("Open Feedback");
@@ -259,7 +256,7 @@ describe("ReportProblem", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      renderWithMocks(<ReportProblem />);
+      render(<ReportProblem />);
 
       await waitFor(() => {
         expect(screen.getByText("Feedback")).toBeInTheDocument();
@@ -271,7 +268,7 @@ describe("ReportProblem", () => {
 
     it("should handle missing or invalid props", async () => {
       // Test with no props
-      renderWithMocks(<ReportProblem />);
+      render(<ReportProblem />);
 
       await waitFor(() => {
         expect(screen.getByText("Feedback")).toBeInTheDocument();

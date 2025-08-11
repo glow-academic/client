@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -8,8 +8,6 @@ import Simulation from "@/components/common/simulation/Simulation";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the router
 const mockPush = vi.fn();
@@ -80,19 +78,19 @@ describe("Simulation", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", () => {
-      renderWithMocks(<Simulation />);
+      render(<Simulation />);
       // The component shows skeleton loading state initially
       expect(screen.getAllByTestId("skeleton")[0]).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      renderWithMocks(<Simulation simulationId="test-simulation-id" />);
+      render(<Simulation simulationId="test-simulation-id" />);
       // The component shows skeleton loading state initially
       expect(screen.getAllByTestId("skeleton")[0]).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<Simulation />);
+      render(<Simulation />);
       // Check for skeleton loading state
       expect(screen.getAllByTestId("skeleton")[0]).toBeInTheDocument();
     });
@@ -101,7 +99,7 @@ describe("Simulation", () => {
   describe("User Interactions", () => {
     it("should handle form submissions", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Simulation />);
+      render(<Simulation />);
 
       // Wait for skeleton to disappear and form to load
       await waitFor(() => {
@@ -120,7 +118,7 @@ describe("Simulation", () => {
 
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Simulation />);
+      render(<Simulation />);
 
       // Wait for skeleton to disappear and form to load
       await waitFor(() => {
@@ -136,7 +134,7 @@ describe("Simulation", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Simulation />);
+      render(<Simulation />);
 
       // Wait for skeleton to disappear and form to load
       await waitFor(() => {
@@ -154,7 +152,7 @@ describe("Simulation", () => {
 
   describe("API Integration", () => {
     it("should handle and display an API error state", async () => {
-      renderWithMocks(<Simulation />);
+      render(<Simulation />);
 
       // Wait for skeleton to disappear and form to load
       await waitFor(() => {
@@ -166,7 +164,7 @@ describe("Simulation", () => {
     });
 
     it("should handle loading states", async () => {
-      renderWithMocks(<Simulation />);
+      render(<Simulation />);
 
       // Initially shows skeleton
       expect(screen.getAllByTestId("skeleton")[0]).toBeInTheDocument();
@@ -183,7 +181,7 @@ describe("Simulation", () => {
 
   describe("Navigation", () => {
     it("should handle navigation", async () => {
-      renderWithMocks(<Simulation />);
+      render(<Simulation />);
 
       // Wait for skeleton to disappear and form to load
       await waitFor(() => {
@@ -197,7 +195,7 @@ describe("Simulation", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      renderWithMocks(<Simulation />);
+      render(<Simulation />);
 
       // Wait for skeleton to disappear and form to load
       await waitFor(() => {
@@ -209,7 +207,7 @@ describe("Simulation", () => {
     });
 
     it("should handle missing or invalid props", async () => {
-      renderWithMocks(<Simulation />);
+      render(<Simulation />);
 
       // Wait for skeleton to disappear and form to load
       await waitFor(() => {

@@ -1,13 +1,11 @@
 import { describe, it, vi, afterEach, expect } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
-import { screen, act } from '@testing-library/react';
+import { render } from '@/test/custom-render';
+import { screen, act } from '@/test/custom-render';
 
 // ——————————————————————————————————————————
 import ParameterEditPage from '@/app/(main)/management/parameters/p/[parameterId]/page';
 
 // ✨ Import comprehensive mock data from our centralized mock system
-import '@/mocks/queries';
-import '@/mocks/mutations';
 import '@/mocks/api';
 
 // Mock the EditParameter component
@@ -48,7 +46,7 @@ describe('ParameterEditPage', () => {
       const mockParams = Promise.resolve({ parameterId: 'test-parameter-id' });
       
       await act(async () => {
-        renderWithMocks(<ParameterEditPage params={mockParams} />);
+        render(<ParameterEditPage params={mockParams} />);
       });
       
       // Should render the edit parameter component
@@ -63,7 +61,7 @@ describe('ParameterEditPage', () => {
       const mockParams = Promise.resolve({ parameterId: 'test-parameter-id' });
       
       await act(async () => {
-        renderWithMocks(<ParameterEditPage params={mockParams} />);
+        render(<ParameterEditPage params={mockParams} />);
       });
       
       // Should have proper accessibility attributes
@@ -83,7 +81,7 @@ describe('ParameterEditPage', () => {
       const mockParams = Promise.resolve({ parameterId: 'edge-case-id' });
       
       await act(async () => {
-        renderWithMocks(<ParameterEditPage params={mockParams} />);
+        render(<ParameterEditPage params={mockParams} />);
       });
       
       // Should render the component even with edge case params

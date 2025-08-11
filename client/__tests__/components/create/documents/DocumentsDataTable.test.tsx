@@ -1,6 +1,6 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import type { ColumnDef } from "@tanstack/react-table";
-import { screen } from "@testing-library/react";
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -103,7 +103,7 @@ describe("DocumentsDataTable", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<DocumentsDataTable {...defaultProps} />);
+      render(<DocumentsDataTable {...defaultProps} />);
 
       // Check that the toolbar is rendered
       expect(
@@ -115,7 +115,7 @@ describe("DocumentsDataTable", () => {
     });
 
     it("should render with props", () => {
-      renderWithMocks(<DocumentsDataTable {...defaultProps} />);
+      render(<DocumentsDataTable {...defaultProps} />);
 
       // Check that the toolbar is rendered
       expect(
@@ -127,7 +127,7 @@ describe("DocumentsDataTable", () => {
     });
 
     it("should render documents in list view", () => {
-      renderWithMocks(<DocumentsDataTable {...defaultProps} viewMode="list" />);
+      render(<DocumentsDataTable {...defaultProps} viewMode="list" />);
 
       // In list view, documents should be rendered in a table
       expect(screen.getByText("Test Document 1")).toBeInTheDocument();
@@ -135,7 +135,7 @@ describe("DocumentsDataTable", () => {
     });
 
     it("should render documents in grid view", () => {
-      renderWithMocks(<DocumentsDataTable {...defaultProps} viewMode="grid" />);
+      render(<DocumentsDataTable {...defaultProps} viewMode="grid" />);
 
       // In grid view, documents should be rendered as cards
       expect(screen.getByTestId("document-card-doc-1")).toBeInTheDocument();
@@ -143,7 +143,7 @@ describe("DocumentsDataTable", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<DocumentsDataTable {...defaultProps} />);
+      render(<DocumentsDataTable {...defaultProps} />);
 
       // Check that the toolbar is accessible
       expect(
@@ -159,7 +159,7 @@ describe("DocumentsDataTable", () => {
     it("should handle state changes", async () => {
       const onViewModeChange = vi.fn();
 
-      renderWithMocks(
+      render(
         <DocumentsDataTable
           {...defaultProps}
           onViewModeChange={onViewModeChange}
@@ -175,7 +175,7 @@ describe("DocumentsDataTable", () => {
       const onEdit = vi.fn();
       const onDelete = vi.fn();
 
-      renderWithMocks(
+      render(
         <DocumentsDataTable
           {...defaultProps}
           onEdit={onEdit}
@@ -194,7 +194,7 @@ describe("DocumentsDataTable", () => {
       const onDocumentSelect = vi.fn();
       const onSelectAll = vi.fn();
 
-      renderWithMocks(
+      render(
         <DocumentsDataTable
           {...defaultProps}
           viewMode="list"
@@ -221,7 +221,7 @@ describe("DocumentsDataTable", () => {
         data: [],
       };
 
-      renderWithMocks(<DocumentsDataTable {...propsWithEmptyData} />);
+      render(<DocumentsDataTable {...propsWithEmptyData} />);
 
       // Should show no results message
       expect(screen.getByText("No results.")).toBeInTheDocument();
@@ -247,7 +247,7 @@ describe("DocumentsDataTable", () => {
         onBulkDelete: vi.fn(),
       };
 
-      renderWithMocks(<DocumentsDataTable {...minimalProps} />);
+      render(<DocumentsDataTable {...minimalProps} />);
 
       // Component should still render
       expect(
@@ -258,7 +258,7 @@ describe("DocumentsDataTable", () => {
     it("should handle documents that cannot be deleted", () => {
       const canDelete = vi.fn(() => false);
 
-      renderWithMocks(
+      render(
         <DocumentsDataTable
           {...defaultProps}
           canDelete={canDelete}

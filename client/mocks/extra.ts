@@ -178,6 +178,15 @@ vi.mock("@/utils/logger", () => ({
   logDebug: vi.fn(),
 }));
 
+// API base for sockets and fetch base URLs
+vi.mock("@/lib/api-base", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    getApiBase: vi.fn(() => "http://localhost:8000"),
+  };
+});
+
 // Database connection (to prevent connection errors during tests)
 vi.mock("@/utils/drizzle/db", () => ({
   db: {

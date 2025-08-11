@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { act, screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { act, screen } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -7,8 +7,6 @@ import EditRubricPage from "@/app/(main)/create/rubrics/r/[rubricId]/page";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the RubricEdit component
 vi.mock("@/components/create/rubrics/RubricEdit", () => ({
@@ -47,7 +45,7 @@ describe("EditRubricPage", () => {
       const mockParams = Promise.resolve({ rubricId: "test-rubric-id" });
 
       await act(async () => {
-        renderWithMocks(<EditRubricPage params={mockParams} />);
+        render(<EditRubricPage params={mockParams} />);
       });
 
       // Should render the rubric edit component
@@ -62,7 +60,7 @@ describe("EditRubricPage", () => {
       const mockParams = Promise.resolve({ rubricId: "test-rubric-id" });
 
       await act(async () => {
-        renderWithMocks(<EditRubricPage params={mockParams} />);
+        render(<EditRubricPage params={mockParams} />);
       });
 
       // Should have proper accessibility attributes
@@ -76,7 +74,7 @@ describe("EditRubricPage", () => {
       const mockParams = Promise.resolve({ rubricId: "edge-case-id" });
 
       await act(async () => {
-        renderWithMocks(<EditRubricPage params={mockParams} />);
+        render(<EditRubricPage params={mockParams} />);
       });
 
       // Should render the component even with edge case params

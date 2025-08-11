@@ -1,7 +1,7 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -34,7 +34,7 @@ const mockProps: CompletionPercentageProps = {
 describe("CompletionPercentage", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -47,7 +47,7 @@ describe("CompletionPercentage", () => {
 
     it("should render with props", async () => {
       // Test component with various props
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -60,7 +60,7 @@ describe("CompletionPercentage", () => {
 
     it("should have correct accessibility attributes", async () => {
       // Test accessibility features
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -74,7 +74,7 @@ describe("CompletionPercentage", () => {
 
   describe("User Interactions", () => {
     it("should handle user interactions", async () => {
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -98,7 +98,7 @@ describe("CompletionPercentage", () => {
         },
       };
 
-      renderWithMocks(
+      render(
         <CompletionPercentage {...propsWithDifferentThresholds} />
       );
 
@@ -118,7 +118,7 @@ describe("CompletionPercentage", () => {
         profileId: undefined,
       };
 
-      renderWithMocks(<CompletionPercentage {...propsWithoutProfile} />);
+      render(<CompletionPercentage {...propsWithoutProfile} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -135,7 +135,7 @@ describe("CompletionPercentage", () => {
         cohortIds: [],
       };
 
-      renderWithMocks(<CompletionPercentage {...propsWithEmptyCohorts} />);
+      render(<CompletionPercentage {...propsWithEmptyCohorts} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -151,7 +151,7 @@ describe("CompletionPercentage", () => {
         dateEnd: new Date("2024-06-30"),
       };
 
-      renderWithMocks(<CompletionPercentage {...propsWithDifferentDates} />);
+      render(<CompletionPercentage {...propsWithDifferentDates} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -172,7 +172,7 @@ describe("CompletionPercentage", () => {
         },
       };
 
-      renderWithMocks(<CompletionPercentage {...propsWithLowThresholds} />);
+      render(<CompletionPercentage {...propsWithLowThresholds} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -191,7 +191,7 @@ describe("CompletionPercentage", () => {
         },
       };
 
-      renderWithMocks(<CompletionPercentage {...propsWithMediumThresholds} />);
+      render(<CompletionPercentage {...propsWithMediumThresholds} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -210,7 +210,7 @@ describe("CompletionPercentage", () => {
         },
       };
 
-      renderWithMocks(<CompletionPercentage {...propsWithHighThresholds} />);
+      render(<CompletionPercentage {...propsWithHighThresholds} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -223,7 +223,7 @@ describe("CompletionPercentage", () => {
   describe("Dialog Functionality", () => {
     it("should open dialog when card is clicked", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -244,7 +244,7 @@ describe("CompletionPercentage", () => {
 
     it("should close dialog when clicking outside", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -274,7 +274,7 @@ describe("CompletionPercentage", () => {
 
     it("should display trend analysis when available", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -300,7 +300,7 @@ describe("CompletionPercentage", () => {
 
     it("should handle chart rendering", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -331,7 +331,7 @@ describe("CompletionPercentage", () => {
       vi.mocked(getAllProfiles).mockResolvedValue([]);
       vi.mocked(getAllCohorts).mockResolvedValue([]);
 
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -345,7 +345,7 @@ describe("CompletionPercentage", () => {
       // Mock loading state
       vi.mocked(getAllProfiles).mockImplementation(() => new Promise(() => {}));
 
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       // Should display the component even during loading
       expect(screen.getByText("Completion Percentage")).toBeInTheDocument();
@@ -355,7 +355,7 @@ describe("CompletionPercentage", () => {
       // Mock error state
       vi.mocked(getAllProfiles).mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -371,7 +371,7 @@ describe("CompletionPercentage", () => {
       vi.mocked(getAllProfiles).mockResolvedValue([]);
       vi.mocked(getAllCohorts).mockResolvedValue([]);
 
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -403,7 +403,7 @@ describe("CompletionPercentage", () => {
       vi.mocked(getAllProfiles).mockResolvedValue([]);
       vi.mocked(getAllCohorts).mockResolvedValue([]);
 
-      renderWithMocks(<CompletionPercentage {...propsWithoutProfile} />);
+      render(<CompletionPercentage {...propsWithoutProfile} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -432,7 +432,7 @@ describe("CompletionPercentage", () => {
   describe("User Interactions", () => {
     it("should handle card hover effects", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -451,7 +451,7 @@ describe("CompletionPercentage", () => {
 
     it("should handle multiple dialog opens and closes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -494,7 +494,7 @@ describe("CompletionPercentage", () => {
         trendData: [{ date: "01/15", value: 95, count: 1 }],
         hasData: true,
       });
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -520,7 +520,7 @@ describe("CompletionPercentage", () => {
         hasData: true,
       });
 
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Completion Percentage")).toBeInTheDocument();
@@ -568,7 +568,7 @@ describe("CompletionPercentage", () => {
         hasData: true,
       });
 
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Completion Percentage")).toBeInTheDocument();
@@ -629,7 +629,7 @@ describe("CompletionPercentage", () => {
         hasData: true,
       });
 
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Completion Percentage")).toBeInTheDocument();
@@ -684,7 +684,7 @@ describe("CompletionPercentage", () => {
         hasData: true,
       });
 
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Completion Percentage")).toBeInTheDocument();
@@ -736,7 +736,7 @@ describe("CompletionPercentage", () => {
         hasData: true,
       });
 
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Completion Percentage")).toBeInTheDocument();
@@ -788,7 +788,7 @@ describe("CompletionPercentage", () => {
         hasData: true,
       });
 
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Completion Percentage")).toBeInTheDocument();
@@ -836,7 +836,7 @@ describe("CompletionPercentage", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -866,7 +866,7 @@ describe("CompletionPercentage", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -896,7 +896,7 @@ describe("CompletionPercentage", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -926,7 +926,7 @@ describe("CompletionPercentage", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -965,7 +965,7 @@ describe("CompletionPercentage", () => {
         hasData: true,
       });
 
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Completion Percentage")).toBeInTheDocument();
@@ -1022,7 +1022,7 @@ describe("CompletionPercentage", () => {
         hasData: true,
       });
 
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("Completion Percentage")).toBeInTheDocument();
@@ -1071,7 +1071,7 @@ describe("CompletionPercentage", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -1101,7 +1101,7 @@ describe("CompletionPercentage", () => {
         hasData: true,
       });
       const user = userEvent.setup();
-      renderWithMocks(<CompletionPercentage {...mockProps} />);
+      render(<CompletionPercentage {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });

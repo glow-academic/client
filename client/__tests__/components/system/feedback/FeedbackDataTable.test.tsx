@@ -1,6 +1,6 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import type { ColumnDef } from "@tanstack/react-table";
-import { screen } from "@testing-library/react";
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -71,7 +71,7 @@ const mockProps: FeedbackDataTableProps = {
 describe("FeedbackDataTable", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<FeedbackDataTable {...mockProps} />);
+      render(<FeedbackDataTable {...mockProps} />);
 
       // Check that headers are rendered - be flexible with counts
       expect(screen.getAllByText("ID").length).toBeGreaterThan(0);
@@ -80,7 +80,7 @@ describe("FeedbackDataTable", () => {
     });
 
     it("should render with props", () => {
-      renderWithMocks(<FeedbackDataTable {...mockProps} />);
+      render(<FeedbackDataTable {...mockProps} />);
 
       // Check that the table renders with data
       expect(screen.getByText("Test feedback message")).toBeInTheDocument();
@@ -88,7 +88,7 @@ describe("FeedbackDataTable", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<FeedbackDataTable {...mockProps} />);
+      render(<FeedbackDataTable {...mockProps} />);
 
       // Check that table headers are accessible
       expect(screen.getAllByText("ID").length).toBeGreaterThan(0);
@@ -97,14 +97,14 @@ describe("FeedbackDataTable", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      renderWithMocks(<FeedbackDataTable {...mockProps} />);
+      render(<FeedbackDataTable {...mockProps} />);
 
       // Check that the table renders with data
       expect(screen.getByText("Test feedback message")).toBeInTheDocument();
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<FeedbackDataTable {...mockProps} />);
+      render(<FeedbackDataTable {...mockProps} />);
 
       // Check that the refresh functionality is available
       expect(mockProps.onRefresh).toBeDefined();
@@ -118,7 +118,7 @@ describe("FeedbackDataTable", () => {
         data: [],
       };
 
-      renderWithMocks(<FeedbackDataTable {...edgeCaseProps} />);
+      render(<FeedbackDataTable {...edgeCaseProps} />);
 
       // Should render without crashing even with empty data
       expect(screen.getAllByText("ID").length).toBeGreaterThan(0);
@@ -134,7 +134,7 @@ describe("FeedbackDataTable", () => {
         isRefreshing: false,
       };
 
-      renderWithMocks(<FeedbackDataTable {...minimalProps} />);
+      render(<FeedbackDataTable {...minimalProps} />);
 
       // Should still render without crashing
       expect(screen.getByRole("table")).toBeInTheDocument();

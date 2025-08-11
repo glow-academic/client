@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -9,8 +9,6 @@ import SimulationPerformance, {
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
@@ -51,7 +49,7 @@ describe("SimulationPerformance", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<SimulationPerformance {...mockProps} />);
+      render(<SimulationPerformance {...mockProps} />);
 
       // Should render the component with title
       await waitFor(() => {
@@ -73,14 +71,14 @@ describe("SimulationPerformance", () => {
         cohortIds: ["cohort-1", "cohort-2"],
       };
 
-      renderWithMocks(<SimulationPerformance {...propsWithDifferentDates} />);
+      render(<SimulationPerformance {...propsWithDifferentDates} />);
 
       // Should render the component with title
       expect(screen.getByText("Scenario Performance")).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<SimulationPerformance {...mockProps} />);
+      render(<SimulationPerformance {...mockProps} />);
 
       // Should have proper accessibility attributes
       expect(screen.getByText("Scenario Performance")).toBeInTheDocument();
@@ -98,7 +96,7 @@ describe("SimulationPerformance", () => {
       );
       vi.mocked(getAllProfiles).mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<SimulationPerformance {...mockProps} />);
+      render(<SimulationPerformance {...mockProps} />);
 
       // Should still render the component even with API errors
       await waitFor(() => {
@@ -108,7 +106,7 @@ describe("SimulationPerformance", () => {
 
     it("should handle loading states", () => {
       // Component should handle loading states appropriately
-      renderWithMocks(<SimulationPerformance {...mockProps} />);
+      render(<SimulationPerformance {...mockProps} />);
 
       // Should render the component
       expect(screen.getByText("Scenario Performance")).toBeInTheDocument();
@@ -130,7 +128,7 @@ describe("SimulationPerformance", () => {
         cohortIds: [], // Empty cohorts
       };
 
-      renderWithMocks(<SimulationPerformance {...edgeCaseProps} />);
+      render(<SimulationPerformance {...edgeCaseProps} />);
 
       // Should render the component even with edge case props
       expect(screen.getByText("Scenario Performance")).toBeInTheDocument();
@@ -150,7 +148,7 @@ describe("SimulationPerformance", () => {
         cohortIds: ["test-cohort"],
       };
 
-      renderWithMocks(<SimulationPerformance {...minimalProps} />);
+      render(<SimulationPerformance {...minimalProps} />);
 
       // Should render with minimal props
       expect(screen.getByText("Scenario Performance")).toBeInTheDocument();

@@ -1,6 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { ToasterProps } from "sonner";
 import { describe, expect, it, vi } from "vitest";
 
@@ -16,7 +16,7 @@ vi.mock("sonner", () => ({
 describe("Toaster", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<Toaster />);
+      render(<Toaster />);
 
       // Toaster renders a div with the "toaster" class
       const toaster = screen.getByTestId("toaster");
@@ -24,7 +24,7 @@ describe("Toaster", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<Toaster />);
+      render(<Toaster />);
 
       const toaster = screen.getByTestId("toaster");
       expect(toaster).toBeInTheDocument();
@@ -33,14 +33,14 @@ describe("Toaster", () => {
 
   describe("Component Props", () => {
     it("should render with custom position", () => {
-      renderWithMocks(<Toaster position="top-right" />);
+      render(<Toaster position="top-right" />);
 
       const toaster = screen.getByTestId("toaster");
       expect(toaster).toBeInTheDocument();
     });
 
     it("should render with custom theme", () => {
-      renderWithMocks(<Toaster theme="dark" />);
+      render(<Toaster theme="dark" />);
 
       const toaster = screen.getByTestId("toaster");
       expect(toaster).toBeInTheDocument();
@@ -50,7 +50,7 @@ describe("Toaster", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal props
-      renderWithMocks(<Toaster />);
+      render(<Toaster />);
 
       const toaster = screen.getByTestId("toaster");
       expect(toaster).toBeInTheDocument();

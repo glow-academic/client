@@ -1,6 +1,6 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import type { ColumnDef } from "@tanstack/react-table";
-import { screen } from "@testing-library/react";
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -151,7 +151,7 @@ describe("PersonasDataTable", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<PersonasDataTable {...defaultProps} />);
+      render(<PersonasDataTable {...defaultProps} />);
 
       // Check that the toolbar is rendered
       expect(
@@ -163,7 +163,7 @@ describe("PersonasDataTable", () => {
     });
 
     it("should render with props", () => {
-      renderWithMocks(<PersonasDataTable {...defaultProps} />);
+      render(<PersonasDataTable {...defaultProps} />);
 
       // Check that the toolbar is rendered
       expect(
@@ -175,7 +175,7 @@ describe("PersonasDataTable", () => {
     });
 
     it("should render persona cards", () => {
-      renderWithMocks(<PersonasDataTable {...defaultProps} />);
+      render(<PersonasDataTable {...defaultProps} />);
 
       // Check that persona cards are rendered
       expect(screen.getByTestId("persona-card-persona-1")).toBeInTheDocument();
@@ -183,7 +183,7 @@ describe("PersonasDataTable", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<PersonasDataTable {...defaultProps} />);
+      render(<PersonasDataTable {...defaultProps} />);
 
       // Check that the toolbar is accessible
       expect(
@@ -197,7 +197,7 @@ describe("PersonasDataTable", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      renderWithMocks(<PersonasDataTable {...defaultProps} />);
+      render(<PersonasDataTable {...defaultProps} />);
 
       // The component uses internal state for table management
       // We can verify that the component renders correctly
@@ -207,7 +207,7 @@ describe("PersonasDataTable", () => {
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<PersonasDataTable {...defaultProps} />);
+      render(<PersonasDataTable {...defaultProps} />);
 
       // The component handles user interactions through the toolbar
       // which is mocked, so we just verify the component renders
@@ -225,7 +225,7 @@ describe("PersonasDataTable", () => {
         data: [],
       };
 
-      renderWithMocks(<PersonasDataTable {...propsWithEmptyData} />);
+      render(<PersonasDataTable {...propsWithEmptyData} />);
 
       // Should show no results message
       expect(
@@ -246,7 +246,7 @@ describe("PersonasDataTable", () => {
         renderPersonaCard: vi.fn(),
       };
 
-      renderWithMocks(<PersonasDataTable {...minimalProps} />);
+      render(<PersonasDataTable {...minimalProps} />);
 
       // Component should still render
       expect(
@@ -278,7 +278,7 @@ describe("PersonasDataTable", () => {
         data: personasWithMissingProps,
       };
 
-      renderWithMocks(<PersonasDataTable {...propsWithMissingData} />);
+      render(<PersonasDataTable {...propsWithMissingData} />);
 
       // Component should handle missing properties gracefully
       expect(screen.getByTestId("persona-card-persona-1")).toBeInTheDocument();

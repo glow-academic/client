@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -38,7 +38,7 @@ describe("AttemptInput", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<AttemptInput />);
+      render(<AttemptInput />);
 
       expect(
         screen.getByPlaceholderText("Type your message...")
@@ -50,7 +50,7 @@ describe("AttemptInput", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<AttemptInput />);
+      render(<AttemptInput />);
 
       const textarea = screen.getByPlaceholderText("Type your message...");
 
@@ -66,7 +66,7 @@ describe("AttemptInput", () => {
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<AttemptInput />);
+      render(<AttemptInput />);
 
       const textarea = screen.getByPlaceholderText("Type your message...");
       const sendButton = document.querySelector(
@@ -85,7 +85,7 @@ describe("AttemptInput", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<AttemptInput />);
+      render(<AttemptInput />);
 
       const textarea = screen.getByPlaceholderText("Type your message...");
       const sendButton = document.querySelector(
@@ -107,7 +107,7 @@ describe("AttemptInput", () => {
 
     it("should handle Enter key submission", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<AttemptInput />);
+      render(<AttemptInput />);
 
       const textarea = screen.getByPlaceholderText("Type your message...");
 
@@ -123,7 +123,7 @@ describe("AttemptInput", () => {
 
     it("should not submit on Shift+Enter", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<AttemptInput />);
+      render(<AttemptInput />);
 
       const textarea = screen.getByPlaceholderText("Type your message...");
 
@@ -146,7 +146,7 @@ describe("AttemptInput", () => {
       const user = userEvent.setup();
 
       // Test with empty message (button should be disabled)
-      renderWithMocks(<AttemptInput />);
+      render(<AttemptInput />);
 
       const sendButton = document.querySelector(
         'button[type="submit"]'
@@ -167,7 +167,7 @@ describe("AttemptInput", () => {
 
     it("should handle empty message submission", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<AttemptInput />);
+      render(<AttemptInput />);
 
       const sendButton = document.querySelector(
         'button[type="submit"]'
@@ -182,7 +182,7 @@ describe("AttemptInput", () => {
 
     it("should handle whitespace-only message", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<AttemptInput />);
+      render(<AttemptInput />);
 
       const textarea = screen.getByPlaceholderText("Type your message...");
       const sendButton = document.querySelector(

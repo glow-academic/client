@@ -3,8 +3,8 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -12,7 +12,7 @@ import { describe, expect, it } from "vitest";
 describe("Resizable", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(
+      render(
         <ResizablePanelGroup direction="horizontal">
           <ResizablePanel defaultSize={50}>Panel 1</ResizablePanel>
           <ResizableHandle />
@@ -27,7 +27,7 @@ describe("Resizable", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(
+      render(
         <ResizablePanelGroup direction="horizontal">
           <ResizablePanel defaultSize={50}>Accessible Panel</ResizablePanel>
           <ResizableHandle />
@@ -44,7 +44,7 @@ describe("Resizable", () => {
 
   describe("Component Structure", () => {
     it("should render resizable panels with handle", () => {
-      renderWithMocks(
+      render(
         <ResizablePanelGroup direction="horizontal">
           <ResizablePanel defaultSize={50}>Left Panel</ResizablePanel>
           <ResizableHandle withHandle />
@@ -57,7 +57,7 @@ describe("Resizable", () => {
     });
 
     it("should render with custom className", () => {
-      renderWithMocks(
+      render(
         <ResizablePanelGroup direction="horizontal" className="custom-class">
           <ResizablePanel defaultSize={100}>Panel</ResizablePanel>
         </ResizablePanelGroup>
@@ -73,7 +73,7 @@ describe("Resizable", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal content
-      renderWithMocks(
+      render(
         <ResizablePanelGroup direction="horizontal">
           <ResizablePanel defaultSize={100} />
         </ResizablePanelGroup>

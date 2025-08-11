@@ -1,7 +1,7 @@
 import { AnalyticsProvider, useAnalytics } from "@/contexts/analytics-context";
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { screen } from "@testing-library/react";
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -9,8 +9,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
@@ -60,7 +58,7 @@ describe("analytics-context", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<AnalyticsProvider {...mockProps} />);
+      render(<AnalyticsProvider {...mockProps} />);
 
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
@@ -106,7 +104,7 @@ describe("analytics-context", () => {
 
       vi.mocked(getAllCohorts).mockResolvedValue(mockCohorts);
 
-      renderWithMocks(
+      render(
         <AnalyticsProvider>
           <TestComponent />
         </AnalyticsProvider>
@@ -132,7 +130,7 @@ describe("analytics-context", () => {
       // Mock empty cohorts array
       vi.mocked(getAllCohorts).mockResolvedValue([]);
 
-      renderWithMocks(
+      render(
         <AnalyticsProvider>
           <TestComponent />
         </AnalyticsProvider>
@@ -187,7 +185,7 @@ describe("analytics-context", () => {
       // Arrange: Override the default success mock with an error for this test.
       // Example: vi.mocked(getAllCohorts).mockRejectedValue(new Error('API Error'));
 
-      renderWithMocks(<AnalyticsProvider {...mockProps} />);
+      render(<AnalyticsProvider {...mockProps} />);
 
       // Assert: Check that your component shows an error message.
       // TODO: Add specific error state assertions

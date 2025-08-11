@@ -1,5 +1,5 @@
 import { describe, it, vi, afterEach } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { render } from '@/test/custom-render';
 
 // ——————————————————————————————————————————
 import PersonaDebugInfo, { PersonaDebugInfo, PersonaDebugInfoProps } from '@/components/common/agent/PersonaDebugInfo';
@@ -7,8 +7,6 @@ import PersonaDebugInfo, { PersonaDebugInfo, PersonaDebugInfoProps } from '@/com
 
 
 // ✨ Import comprehensive mock data from our centralized mock system
-import '@/mocks/queries';
-import '@/mocks/mutations';
 import '@/mocks/api';
 
 
@@ -44,7 +42,7 @@ describe('PersonaDebugInfo', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<PersonaDebugInfo {...mockProps} />);
+      render(<PersonaDebugInfo {...mockProps} />);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
@@ -72,7 +70,7 @@ describe('PersonaDebugInfo', () => {
       // Arrange: Override the default success mock with an error for this test.
       // Example: vi.mocked(getDebugInfoByModelRuns).mockRejectedValue(new Error('API Error'));
 
-      renderWithMocks(<PersonaDebugInfo {...mockProps} />);
+      render(<PersonaDebugInfo {...mockProps} />);
       
       // Assert: Check that your component shows an error message.
       // TODO: Add specific error state assertions

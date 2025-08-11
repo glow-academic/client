@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -8,7 +8,7 @@ import GlowHeader from "@/components/common/home/GlowHeader";
 describe("GlowHeader", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<GlowHeader />);
+      render(<GlowHeader />);
 
       // Should render the GLOW header
       await waitFor(() => {
@@ -17,7 +17,7 @@ describe("GlowHeader", () => {
     });
 
     it("should render header content", async () => {
-      renderWithMocks(<GlowHeader />);
+      render(<GlowHeader />);
 
       await waitFor(() => {
         expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();
@@ -26,7 +26,7 @@ describe("GlowHeader", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<GlowHeader />);
+      render(<GlowHeader />);
 
       await waitFor(() => {
         // Check for header element
@@ -41,7 +41,7 @@ describe("GlowHeader", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      renderWithMocks(<GlowHeader />);
+      render(<GlowHeader />);
 
       await waitFor(() => {
         expect(screen.getByText("GLOW Assistant")).toBeInTheDocument();

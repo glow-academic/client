@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -49,7 +49,7 @@ const mockProps: SimulationCardProps = {
 describe("SimulationCard", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<SimulationCard {...mockProps} />);
+      render(<SimulationCard {...mockProps} />);
 
       // Verify the component renders with the simulation title
       expect(screen.getByTestId("simulation-title")).toBeInTheDocument();
@@ -60,7 +60,7 @@ describe("SimulationCard", () => {
       // Test component with various props
       // Props interface: SimulationCardProps
 
-      renderWithMocks(<SimulationCard {...mockProps} />);
+      render(<SimulationCard {...mockProps} />);
 
       // Verify simulation title is displayed
       expect(screen.getByText("Test Simulation")).toBeInTheDocument();
@@ -75,7 +75,7 @@ describe("SimulationCard", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<SimulationCard {...mockProps} />);
+      render(<SimulationCard {...mockProps} />);
 
       // Verify the card has proper test IDs for accessibility
       expect(
@@ -96,7 +96,7 @@ describe("SimulationCard", () => {
       const user = userEvent.setup();
       const mockOnStartSimulation = vi.fn();
 
-      renderWithMocks(
+      render(
         <SimulationCard
           {...mockProps}
           onStartSimulation={mockOnStartSimulation}
@@ -110,7 +110,7 @@ describe("SimulationCard", () => {
     });
 
     it("should show loading state when simulation is starting", () => {
-      renderWithMocks(<SimulationCard {...mockProps} loadingSimulation="1" />);
+      render(<SimulationCard {...mockProps} loadingSimulation="1" />);
 
       const startButton = screen.getByTestId("start-simulation-1");
       expect(startButton).toBeDisabled();
@@ -120,7 +120,7 @@ describe("SimulationCard", () => {
 
   describe("Different Card Types", () => {
     it("should render default simulation type correctly", () => {
-      renderWithMocks(<SimulationCard {...mockProps} type="default" />);
+      render(<SimulationCard {...mockProps} type="default" />);
 
       expect(
         screen.getByTestId("permanent-simulation-card")
@@ -138,7 +138,7 @@ describe("SimulationCard", () => {
         },
       };
 
-      renderWithMocks(<SimulationCard {...cohortProps} />);
+      render(<SimulationCard {...cohortProps} />);
 
       expect(screen.getByTestId("simulation-card")).toBeInTheDocument();
       expect(screen.getByText("Start Simulations")).toBeInTheDocument();
@@ -154,7 +154,7 @@ describe("SimulationCard", () => {
         },
       };
 
-      renderWithMocks(<SimulationCard {...passedProps} />);
+      render(<SimulationCard {...passedProps} />);
 
       expect(screen.getByText("Completed Simulations")).toBeInTheDocument();
     });
@@ -162,7 +162,7 @@ describe("SimulationCard", () => {
 
   describe("Profile Role Handling", () => {
     it("should show rubric dialog for non-guest users", async () => {
-      renderWithMocks(<SimulationCard {...mockProps} />);
+      render(<SimulationCard {...mockProps} />);
 
       // Look for the rubric button by finding the button with aria-haspopup="dialog"
       const buttons = screen.getAllByRole("button");
@@ -181,7 +181,7 @@ describe("SimulationCard", () => {
         },
       };
 
-      renderWithMocks(<SimulationCard {...guestProps} />);
+      render(<SimulationCard {...guestProps} />);
 
       expect(screen.getByTestId("simulation-type")).toBeInTheDocument();
       expect(screen.getByText("Default")).toBeInTheDocument();
@@ -199,7 +199,7 @@ describe("SimulationCard", () => {
         },
       };
 
-      renderWithMocks(<SimulationCard {...edgeCaseProps} />);
+      render(<SimulationCard {...edgeCaseProps} />);
 
       // Should still render without crashing
       expect(screen.getByTestId("simulation-title")).toBeInTheDocument();
@@ -242,7 +242,7 @@ describe("SimulationCard", () => {
         rubricData: { attempts: [], highestScore: 0 },
       };
 
-      renderWithMocks(<SimulationCard {...minimalProps} />);
+      render(<SimulationCard {...minimalProps} />);
 
       // Should render with minimal props
       expect(screen.getByTestId("simulation-title")).toBeInTheDocument();

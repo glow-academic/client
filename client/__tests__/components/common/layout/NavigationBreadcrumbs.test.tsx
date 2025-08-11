@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -18,7 +18,7 @@ const mockProps: NavigationBreadcrumbsProps = {
 describe("NavigationBreadcrumbs", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<NavigationBreadcrumbs {...mockProps} />);
+      render(<NavigationBreadcrumbs {...mockProps} />);
 
       // Should render the breadcrumbs component
       await waitFor(() => {
@@ -32,7 +32,7 @@ describe("NavigationBreadcrumbs", () => {
         breadcrumbs: [{ title: "Home" }, { title: "Analytics" }],
       };
 
-      renderWithMocks(<NavigationBreadcrumbs {...propsWithBreadcrumbs} />);
+      render(<NavigationBreadcrumbs {...propsWithBreadcrumbs} />);
 
       await waitFor(() => {
         expect(screen.getByText("Home")).toBeInTheDocument();
@@ -41,7 +41,7 @@ describe("NavigationBreadcrumbs", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<NavigationBreadcrumbs {...mockProps} />);
+      render(<NavigationBreadcrumbs {...mockProps} />);
 
       await waitFor(() => {
         // Check for navigation element
@@ -61,7 +61,7 @@ describe("NavigationBreadcrumbs", () => {
         breadcrumbs: [{ title: "Home" }, { title: "Analytics" }],
       };
 
-      renderWithMocks(<NavigationBreadcrumbs {...propsWithBreadcrumbs} />);
+      render(<NavigationBreadcrumbs {...propsWithBreadcrumbs} />);
 
       await waitFor(() => {
         expect(screen.getByText("Home")).toBeInTheDocument();
@@ -82,7 +82,7 @@ describe("NavigationBreadcrumbs", () => {
         breadcrumbs: [{ title: "Home" }, { title: "Analytics" }],
       };
 
-      renderWithMocks(<NavigationBreadcrumbs {...propsWithBreadcrumbs} />);
+      render(<NavigationBreadcrumbs {...propsWithBreadcrumbs} />);
 
       await waitFor(() => {
         expect(screen.getByText("Home")).toBeInTheDocument();
@@ -99,7 +99,7 @@ describe("NavigationBreadcrumbs", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      renderWithMocks(<NavigationBreadcrumbs {...mockProps} />);
+      render(<NavigationBreadcrumbs {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByRole("navigation")).toBeInTheDocument();
@@ -111,7 +111,7 @@ describe("NavigationBreadcrumbs", () => {
 
     it("should handle missing or invalid props", async () => {
       // Test with no props
-      renderWithMocks(<NavigationBreadcrumbs breadcrumbs={[]} />);
+      render(<NavigationBreadcrumbs breadcrumbs={[]} />);
 
       await waitFor(() => {
         expect(screen.getByRole("navigation")).toBeInTheDocument();

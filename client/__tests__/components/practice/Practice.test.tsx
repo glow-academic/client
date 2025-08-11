@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -8,9 +8,7 @@ import Practice from "@/components/practice/Practice";
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
 import "@/mocks/auth";
-import "@/mocks/mutations";
 import "@/mocks/navigation";
-import "@/mocks/queries";
 
 describe("Practice", () => {
   /* ------------------------------------------------------------------ *
@@ -37,7 +35,7 @@ describe("Practice", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Practice />);
+      render(<Practice />);
 
       // Wait for the component to load and check for key elements
       await waitFor(() => {
@@ -48,7 +46,7 @@ describe("Practice", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<Practice />);
+      render(<Practice />);
 
       // Check for main landmark
       await waitFor(() => {
@@ -61,7 +59,7 @@ describe("Practice", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      renderWithMocks(<Practice />);
+      render(<Practice />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -72,7 +70,7 @@ describe("Practice", () => {
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<Practice />);
+      render(<Practice />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -91,7 +89,7 @@ describe("Practice", () => {
       );
       vi.mocked(getAllPersonas).mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<Practice />);
+      render(<Practice />);
 
       // Wait for error state to be displayed
       await waitFor(() => {
@@ -110,7 +108,7 @@ describe("Practice", () => {
         () => new Promise((resolve) => setTimeout(() => resolve([]), 100))
       );
 
-      renderWithMocks(<Practice />);
+      render(<Practice />);
 
       // Check that loading state is handled gracefully
       await waitFor(() => {
@@ -122,7 +120,7 @@ describe("Practice", () => {
 
   describe("Navigation", () => {
     it("should handle navigation", async () => {
-      renderWithMocks(<Practice />);
+      render(<Practice />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -141,7 +139,7 @@ describe("Practice", () => {
       );
       vi.mocked(getAllSimulations).mockResolvedValue([]);
 
-      renderWithMocks(<Practice />);
+      render(<Practice />);
 
       // Wait for component to handle empty state
       await waitFor(() => {
@@ -158,7 +156,7 @@ describe("Practice", () => {
       );
       vi.mocked(getAllProfiles).mockResolvedValue([]);
 
-      renderWithMocks(<Practice />);
+      render(<Practice />);
 
       // Wait for component to handle missing data
       await waitFor(() => {
@@ -231,7 +229,7 @@ describe("Practice", () => {
         () => new Promise(() => {}) // Never resolves
       );
 
-      renderWithMocks(<Practice />);
+      render(<Practice />);
 
       // Check for skeleton elements
       await waitFor(() => {
@@ -262,7 +260,7 @@ describe("Practice", () => {
         },
       ]);
 
-      renderWithMocks(<Practice />);
+      render(<Practice />);
 
       await waitFor(() => {
         // Should show loading skeleton while data loads
@@ -281,4 +279,4 @@ import { ProfileProvider } from "@/contexts/profile-context";
 import { TourProvider } from "@/contexts/tour-context";
 import { WebSocketProvider } from "@/contexts/websocket-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render } from "@testing-library/react";
+import { render } from '@/test/custom-render';

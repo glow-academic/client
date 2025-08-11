@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import type { Table } from "@tanstack/react-table";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
@@ -34,21 +34,21 @@ const mockProps: BrightspaceExportButtonProps<unknown> = {
 describe("BrightspaceExportButton", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<BrightspaceExportButton {...mockProps} />);
+      render(<BrightspaceExportButton {...mockProps} />);
 
       // Basic render test - component should render without errors
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      renderWithMocks(<BrightspaceExportButton {...mockProps} />);
+      render(<BrightspaceExportButton {...mockProps} />);
 
       // Component should render with the provided props
       expect(document.body).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<BrightspaceExportButton {...mockProps} />);
+      render(<BrightspaceExportButton {...mockProps} />);
 
       // Check for basic accessibility elements
       const button =
@@ -60,7 +60,7 @@ describe("BrightspaceExportButton", () => {
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<BrightspaceExportButton {...mockProps} />);
+      render(<BrightspaceExportButton {...mockProps} />);
 
       // Test button interactions if buttons exist
       const buttons = document.querySelectorAll("button");
@@ -73,7 +73,7 @@ describe("BrightspaceExportButton", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<BrightspaceExportButton {...mockProps} />);
+      render(<BrightspaceExportButton {...mockProps} />);
 
       // Test dropdown interactions if dropdowns exist
       const dropdowns = document.querySelectorAll('[role="combobox"]');
@@ -87,14 +87,14 @@ describe("BrightspaceExportButton", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<BrightspaceExportButton {...mockProps} />);
+      render(<BrightspaceExportButton {...mockProps} />);
 
       // Component should handle edge cases
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(
+      render(
         <BrightspaceExportButton table={createMockTable()} simulations={[]} />,
       );
 

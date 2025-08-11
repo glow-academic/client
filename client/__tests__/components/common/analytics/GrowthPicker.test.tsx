@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -62,7 +62,7 @@ describe("GrowthPicker", () => {
   describe("Component Rendering", () => {
     it("renders the component with correct button text", async () => {
       const props = createMockProps();
-      renderWithMocks(<GrowthPicker {...props} />);
+      render(<GrowthPicker {...props} />);
 
       expect(screen.getByRole("combobox")).toBeInTheDocument();
     });
@@ -71,7 +71,7 @@ describe("GrowthPicker", () => {
       const props = createMockProps({
         selectedMetrics: ["averageScore", "passRate"],
       });
-      renderWithMocks(<GrowthPicker {...props} />);
+      render(<GrowthPicker {...props} />);
 
       expect(screen.getByRole("combobox")).toBeInTheDocument();
     });
@@ -80,7 +80,7 @@ describe("GrowthPicker", () => {
       const props = createMockProps({
         selectedMetrics: ["averageScore", "passRate", "completionRate"],
       });
-      renderWithMocks(<GrowthPicker {...props} />);
+      render(<GrowthPicker {...props} />);
 
       expect(screen.getByRole("combobox")).toBeInTheDocument();
     });
@@ -89,7 +89,7 @@ describe("GrowthPicker", () => {
       const props = createMockProps({
         selectedMetrics: [],
       });
-      renderWithMocks(<GrowthPicker {...props} />);
+      render(<GrowthPicker {...props} />);
 
       expect(screen.getByRole("combobox")).toBeInTheDocument();
     });
@@ -98,7 +98,7 @@ describe("GrowthPicker", () => {
   describe("Dropdown Functionality", () => {
     it("opens dropdown when button is clicked", async () => {
       const props = createMockProps();
-      renderWithMocks(<GrowthPicker {...props} />);
+      render(<GrowthPicker {...props} />);
 
       const button = screen.getByRole("combobox");
       await user.click(button);
@@ -109,7 +109,7 @@ describe("GrowthPicker", () => {
 
     it("displays all available metrics in dropdown", async () => {
       const props = createMockProps();
-      renderWithMocks(<GrowthPicker {...props} />);
+      render(<GrowthPicker {...props} />);
 
       const button = screen.getByRole("combobox");
       await user.click(button);
@@ -125,7 +125,7 @@ describe("GrowthPicker", () => {
       const props = createMockProps({
         selectedMetrics: ["averageScore", "passRate"],
       });
-      renderWithMocks(<GrowthPicker {...props} />);
+      render(<GrowthPicker {...props} />);
 
       const button = screen.getByRole("combobox");
       await user.click(button);
@@ -143,7 +143,7 @@ describe("GrowthPicker", () => {
         selectedMetrics: ["averageScore"],
         onMetricsChange,
       });
-      renderWithMocks(<GrowthPicker {...props} />);
+      render(<GrowthPicker {...props} />);
 
       const button = screen.getByRole("combobox");
       await user.click(button);
@@ -164,7 +164,7 @@ describe("GrowthPicker", () => {
         selectedMetrics: ["averageScore", "passRate"],
         onMetricsChange,
       });
-      renderWithMocks(<GrowthPicker {...props} />);
+      render(<GrowthPicker {...props} />);
 
       const button = screen.getByRole("combobox");
       await user.click(button);
@@ -182,7 +182,7 @@ describe("GrowthPicker", () => {
         selectedMetrics: ["averageScore"],
         onMetricsChange,
       });
-      renderWithMocks(<GrowthPicker {...props} />);
+      render(<GrowthPicker {...props} />);
 
       const button = screen.getByRole("combobox");
       await user.click(button);
@@ -199,7 +199,7 @@ describe("GrowthPicker", () => {
   describe("Keyboard Navigation", () => {
     it("supports keyboard navigation in dropdown", async () => {
       const props = createMockProps();
-      renderWithMocks(<GrowthPicker {...props} />);
+      render(<GrowthPicker {...props} />);
 
       const button = screen.getByRole("combobox");
       button.focus();
@@ -211,7 +211,7 @@ describe("GrowthPicker", () => {
 
     it("closes dropdown when Escape is pressed", async () => {
       const props = createMockProps();
-      renderWithMocks(<GrowthPicker {...props} />);
+      render(<GrowthPicker {...props} />);
 
       const button = screen.getByRole("combobox");
       await user.click(button);
@@ -230,7 +230,7 @@ describe("GrowthPicker", () => {
   describe("Accessibility", () => {
     it("has proper ARIA labels and roles", async () => {
       const props = createMockProps();
-      renderWithMocks(<GrowthPicker {...props} />);
+      render(<GrowthPicker {...props} />);
 
       const button = screen.getByRole("combobox");
       expect(button).toHaveAttribute("aria-expanded", "false");
@@ -238,7 +238,7 @@ describe("GrowthPicker", () => {
 
     it("updates ARIA attributes when dropdown is open", async () => {
       const props = createMockProps();
-      renderWithMocks(<GrowthPicker {...props} />);
+      render(<GrowthPicker {...props} />);
 
       const button = screen.getByRole("combobox");
       await user.click(button);
@@ -248,7 +248,7 @@ describe("GrowthPicker", () => {
 
     it("has proper focus management", async () => {
       const props = createMockProps();
-      renderWithMocks(<GrowthPicker {...props} />);
+      render(<GrowthPicker {...props} />);
 
       const button = screen.getByRole("combobox");
       button.focus();
@@ -262,7 +262,7 @@ describe("GrowthPicker", () => {
         availableMetrics: [],
         selectedMetrics: [],
       });
-      renderWithMocks(<GrowthPicker {...props} />);
+      render(<GrowthPicker {...props} />);
 
       expect(screen.getByRole("combobox")).toBeInTheDocument();
     });
@@ -274,7 +274,7 @@ describe("GrowthPicker", () => {
         availableMetrics: [singleMetric],
         selectedMetrics: ["averageScore"],
       });
-      renderWithMocks(<GrowthPicker {...props} />);
+      render(<GrowthPicker {...props} />);
 
       expect(screen.getByRole("combobox")).toBeInTheDocument();
     });
@@ -284,7 +284,7 @@ describe("GrowthPicker", () => {
       // Remove onMetricsChange to test optional behavior
       const { onMetricsChange: _onMetricsChange, ...propsWithoutCallback } =
         props;
-      renderWithMocks(
+      render(
         <GrowthPicker {...propsWithoutCallback} onMetricsChange={vi.fn()} />
       );
 
@@ -315,7 +315,7 @@ describe("GrowthPicker", () => {
         availableMetrics: largeMetrics,
         selectedMetrics: ["metric-0", "metric-1"],
       });
-      renderWithMocks(<GrowthPicker {...props} />);
+      render(<GrowthPicker {...props} />);
 
       const button = screen.getByRole("combobox");
       await user.click(button);
@@ -329,7 +329,7 @@ describe("GrowthPicker", () => {
       const props = createMockProps({
         onMetricsChange,
       });
-      renderWithMocks(<GrowthPicker {...props} />);
+      render(<GrowthPicker {...props} />);
 
       const button = screen.getByRole("combobox");
       await user.click(button);

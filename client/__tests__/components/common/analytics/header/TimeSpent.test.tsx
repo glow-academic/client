@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { fireEvent, screen, waitFor } from '@/test/custom-render';
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -107,7 +107,7 @@ describe("TimeSpent", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<TimeSpent {...mockProps} />);
+      render(<TimeSpent {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -115,7 +115,7 @@ describe("TimeSpent", () => {
     });
 
     it("should render with props", async () => {
-      renderWithMocks(<TimeSpent {...mockProps} />);
+      render(<TimeSpent {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -127,7 +127,7 @@ describe("TimeSpent", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<TimeSpent {...mockProps} />);
+      render(<TimeSpent {...mockProps} />);
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       });
@@ -137,7 +137,7 @@ describe("TimeSpent", () => {
 
   describe("Data fetching and utility function integration", () => {
     it("should call calculateTimeSpent with correct parameters", async () => {
-      renderWithMocks(<TimeSpent {...mockProps} />);
+      render(<TimeSpent {...mockProps} />);
 
       await waitFor(() => {
         expect(calculateTimeSpent).toHaveBeenCalledWith(
@@ -160,7 +160,7 @@ describe("TimeSpent", () => {
         hasData: true,
       });
 
-      renderWithMocks(<TimeSpent {...mockProps} />);
+      render(<TimeSpent {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("2m 0s")).toBeInTheDocument();
@@ -174,7 +174,7 @@ describe("TimeSpent", () => {
         hasData: false,
       });
 
-      renderWithMocks(<TimeSpent {...mockProps} />);
+      render(<TimeSpent {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("No data")).toBeInTheDocument();
@@ -190,7 +190,7 @@ describe("TimeSpent", () => {
         hasData: true,
       });
 
-      renderWithMocks(<TimeSpent {...mockProps} />);
+      render(<TimeSpent {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("30s")).toBeInTheDocument();
@@ -210,7 +210,7 @@ describe("TimeSpent", () => {
         hasData: true,
       });
 
-      renderWithMocks(<TimeSpent {...mockProps} />);
+      render(<TimeSpent {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("1m 0s")).toBeInTheDocument();
@@ -230,7 +230,7 @@ describe("TimeSpent", () => {
         hasData: true,
       });
 
-      renderWithMocks(<TimeSpent {...mockProps} />);
+      render(<TimeSpent {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("1m 40s")).toBeInTheDocument();
@@ -246,7 +246,7 @@ describe("TimeSpent", () => {
 
   describe("User Interactions", () => {
     it("should open dialog when card is clicked", async () => {
-      renderWithMocks(<TimeSpent {...mockProps} />);
+      render(<TimeSpent {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -263,7 +263,7 @@ describe("TimeSpent", () => {
     });
 
     it("should close dialog when close button is clicked", async () => {
-      renderWithMocks(<TimeSpent {...mockProps} />);
+      render(<TimeSpent {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -296,7 +296,7 @@ describe("TimeSpent", () => {
         hasData: true,
       });
 
-      renderWithMocks(<TimeSpent {...mockProps} />);
+      render(<TimeSpent {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("45s")).toBeInTheDocument();
@@ -310,7 +310,7 @@ describe("TimeSpent", () => {
         hasData: true,
       });
 
-      renderWithMocks(<TimeSpent {...mockProps} />);
+      render(<TimeSpent {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("2m 5s")).toBeInTheDocument();
@@ -324,7 +324,7 @@ describe("TimeSpent", () => {
         hasData: true,
       });
 
-      renderWithMocks(<TimeSpent {...mockProps} />);
+      render(<TimeSpent {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("2h 2m")).toBeInTheDocument();
@@ -338,7 +338,7 @@ describe("TimeSpent", () => {
         hasData: true,
       });
 
-      renderWithMocks(<TimeSpent {...mockProps} />);
+      render(<TimeSpent {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByText("1d 1h 0m")).toBeInTheDocument();
@@ -358,7 +358,7 @@ describe("TimeSpent", () => {
         },
       };
 
-      renderWithMocks(<TimeSpent {...propsWithDifferentThresholds} />);
+      render(<TimeSpent {...propsWithDifferentThresholds} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -374,7 +374,7 @@ describe("TimeSpent", () => {
         profileId: undefined,
       };
 
-      renderWithMocks(<TimeSpent {...propsWithoutProfile} />);
+      render(<TimeSpent {...propsWithoutProfile} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -389,7 +389,7 @@ describe("TimeSpent", () => {
         cohortIds: [],
       };
 
-      renderWithMocks(<TimeSpent {...propsWithEmptyCohorts} />);
+      render(<TimeSpent {...propsWithEmptyCohorts} />);
 
       await waitFor(() => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();

@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -29,7 +29,7 @@ const mockProps: ScenarioSliderProps = {
 describe("ScenarioSlider", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<ScenarioSlider {...mockProps} />);
+      render(<ScenarioSlider {...mockProps} />);
 
       // Component should render with default label
       expect(screen.getByText("Temperature")).toBeInTheDocument();
@@ -46,7 +46,7 @@ describe("ScenarioSlider", () => {
         inlineTitle: true,
       };
 
-      renderWithMocks(<ScenarioSlider {...props} />);
+      render(<ScenarioSlider {...props} />);
 
       // Should render with custom label
       expect(screen.getByText("Custom Label")).toBeInTheDocument();
@@ -61,7 +61,7 @@ describe("ScenarioSlider", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<ScenarioSlider {...mockProps} />);
+      render(<ScenarioSlider {...mockProps} />);
 
       // Test for proper slider accessibility
       const slider = screen.getByRole("slider");
@@ -81,7 +81,7 @@ describe("ScenarioSlider", () => {
     it("should handle state changes", async () => {
       const onValueChange = vi.fn();
 
-      renderWithMocks(
+      render(
         <ScenarioSlider
           {...mockProps}
           onValueChange={onValueChange}
@@ -102,7 +102,7 @@ describe("ScenarioSlider", () => {
       const onValueChange = vi.fn();
       const onReset = vi.fn();
 
-      renderWithMocks(
+      render(
         <ScenarioSlider
           {...mockProps}
           onValueChange={onValueChange}
@@ -130,7 +130,7 @@ describe("ScenarioSlider", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with disabled state
-      renderWithMocks(<ScenarioSlider {...mockProps} disabled={true} />);
+      render(<ScenarioSlider {...mockProps} disabled={true} />);
 
       // Should show disabled state
       expect(screen.getByText("N/A")).toBeInTheDocument();
@@ -146,7 +146,7 @@ describe("ScenarioSlider", () => {
         defaultValue: [0.5], // Need a valid value for slider to render
       };
 
-      renderWithMocks(<ScenarioSlider {...minimalProps} />);
+      render(<ScenarioSlider {...minimalProps} />);
 
       // Should render with default values
       expect(screen.getByText("Temperature")).toBeInTheDocument();
@@ -158,7 +158,7 @@ describe("ScenarioSlider", () => {
         value: [0.5], // Provide a value to ensure slider renders
       };
 
-      renderWithMocks(<ScenarioSlider {...emptyValueProps} />);
+      render(<ScenarioSlider {...emptyValueProps} />);
       expect(screen.getAllByRole("slider").length).toBeGreaterThan(0);
     });
   });

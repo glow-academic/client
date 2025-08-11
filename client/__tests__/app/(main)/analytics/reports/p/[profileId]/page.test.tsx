@@ -1,11 +1,10 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Import centralized mocks to avoid hoisting issues
 import "@/mocks/auth";
 import "@/mocks/navigation";
-import "@/mocks/queries";
 
 // Mock the Report component
 vi.mock("@/components/analytics/report/Report", () => ({
@@ -49,7 +48,7 @@ describe("ReportsPage", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<ReportsPage params={mockParams} />);
+      render(<ReportsPage params={mockParams} />);
 
       await waitFor(() => {
         expect(screen.getByTestId("report-component")).toBeInTheDocument();
@@ -57,7 +56,7 @@ describe("ReportsPage", () => {
     });
 
     it("should render with props", async () => {
-      renderWithMocks(<ReportsPage params={mockParams} />);
+      render(<ReportsPage params={mockParams} />);
 
       await waitFor(() => {
         expect(screen.getByTestId("report-component")).toBeInTheDocument();
@@ -69,7 +68,7 @@ describe("ReportsPage", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<ReportsPage params={mockParams} />);
+      render(<ReportsPage params={mockParams} />);
 
       await waitFor(() => {
         expect(screen.getByTestId("report-component")).toBeInTheDocument();
@@ -79,7 +78,7 @@ describe("ReportsPage", () => {
 
   describe("Component Integration", () => {
     it("should pass profileId to Report component", async () => {
-      renderWithMocks(<ReportsPage params={mockParams} />);
+      render(<ReportsPage params={mockParams} />);
 
       await waitFor(() => {
         expect(screen.getByTestId("report-component")).toHaveAttribute(
@@ -90,7 +89,7 @@ describe("ReportsPage", () => {
     });
 
     it("should render the Report component inside a wrapper", async () => {
-      renderWithMocks(<ReportsPage params={mockParams} />);
+      render(<ReportsPage params={mockParams} />);
 
       await waitFor(() => {
         expect(screen.getByTestId("report-component")).toBeInTheDocument();
@@ -148,7 +147,7 @@ describe("ReportsPage", () => {
     it("should handle edge cases gracefully", async () => {
       const differentParams = Promise.resolve({ profileId: "different-id" });
 
-      renderWithMocks(<ReportsPage params={differentParams} />);
+      render(<ReportsPage params={differentParams} />);
 
       await waitFor(() => {
         expect(screen.getByTestId("report-component")).toHaveAttribute(
@@ -161,7 +160,7 @@ describe("ReportsPage", () => {
     it("should handle missing or invalid props", async () => {
       const emptyParams = Promise.resolve({ profileId: "" });
 
-      renderWithMocks(<ReportsPage params={emptyParams} />);
+      render(<ReportsPage params={emptyParams} />);
 
       await waitFor(() => {
         expect(screen.getByTestId("report-component")).toHaveAttribute(

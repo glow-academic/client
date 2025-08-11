@@ -1,6 +1,6 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import type { Table } from "@tanstack/react-table";
-import { screen } from "@testing-library/react";
+import { screen } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -35,7 +35,7 @@ describe("StaffDataTableToolbar", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<StaffDataTableToolbar {...mockProps} />);
+      render(<StaffDataTableToolbar {...mockProps} />);
 
       // Should render the search input
       expect(
@@ -53,7 +53,7 @@ describe("StaffDataTableToolbar", () => {
         lastActiveOptions: [{ value: "today", label: "Today" }],
       };
 
-      renderWithMocks(<StaffDataTableToolbar {...propsWithOptions} />);
+      render(<StaffDataTableToolbar {...propsWithOptions} />);
 
       // Should render the search input
       expect(
@@ -62,7 +62,7 @@ describe("StaffDataTableToolbar", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<StaffDataTableToolbar {...mockProps} />);
+      render(<StaffDataTableToolbar {...mockProps} />);
 
       // Should have search input with proper accessibility
       const searchInput = screen.getByPlaceholderText(
@@ -83,7 +83,7 @@ describe("StaffDataTableToolbar", () => {
         lastActiveOptions: [],
       };
 
-      renderWithMocks(<StaffDataTableToolbar {...propsWithEmptyOptions} />);
+      render(<StaffDataTableToolbar {...propsWithEmptyOptions} />);
 
       // Should still render the search input
       expect(
@@ -108,7 +108,7 @@ describe("StaffDataTableToolbar", () => {
         onRefresh: vi.fn(),
       };
 
-      renderWithMocks(<StaffDataTableToolbar {...minimalProps} />);
+      render(<StaffDataTableToolbar {...minimalProps} />);
 
       // Should render with minimal props
       expect(

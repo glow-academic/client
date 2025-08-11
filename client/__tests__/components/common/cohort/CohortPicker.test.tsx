@@ -6,7 +6,7 @@
  */
 
 import { Cohort, CohortPicker } from "@/components/common/cohort/CohortPicker";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 const mockCohorts: Cohort[] = [

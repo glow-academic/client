@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -8,8 +8,6 @@ import Model from "@/components/common/model/Model";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the router
 const mockPush = vi.fn();
@@ -88,7 +86,7 @@ describe("Model", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Model {...mockProps} />);
+      render(<Model {...mockProps} />);
 
       // Should render the model component
       await waitFor(() => {
@@ -103,7 +101,7 @@ describe("Model", () => {
         modelId: "different-model",
       };
 
-      renderWithMocks(<Model {...propsWithData} />);
+      render(<Model {...propsWithData} />);
 
       await waitFor(() => {
         expect(screen.getByText("Name")).toBeInTheDocument();
@@ -111,7 +109,7 @@ describe("Model", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<Model {...mockProps} />);
+      render(<Model {...mockProps} />);
 
       await waitFor(() => {
         // Check for form elements
@@ -128,7 +126,7 @@ describe("Model", () => {
   describe("User Interactions", () => {
     it("should handle form submissions", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Model {...mockProps} />);
+      render(<Model {...mockProps} />);
 
       // Wait for form to load (either skeleton disappears or form appears)
       await waitFor(() => {
@@ -155,7 +153,7 @@ describe("Model", () => {
 
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Model {...mockProps} />);
+      render(<Model {...mockProps} />);
 
       // Wait for form to load
       await waitFor(() => {
@@ -171,7 +169,7 @@ describe("Model", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Model {...mockProps} />);
+      render(<Model {...mockProps} />);
 
       // Wait for form to load
       await waitFor(() => {
@@ -196,7 +194,7 @@ describe("Model", () => {
   describe("API Integration", () => {
     it("should handle and display an API error state", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Model {...mockProps} />);
+      render(<Model {...mockProps} />);
 
       // Wait for form to load
       await waitFor(() => {
@@ -220,7 +218,7 @@ describe("Model", () => {
     });
 
     it("should handle loading states", () => {
-      renderWithMocks(<Model {...mockProps} />);
+      render(<Model {...mockProps} />);
 
       // Check that loading states are handled - either skeleton or form
       const skeletons = screen.queryAllByTestId("skeleton");
@@ -233,7 +231,7 @@ describe("Model", () => {
   describe("Navigation", () => {
     it("should handle navigation", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Model {...mockProps} />);
+      render(<Model {...mockProps} />);
 
       // Wait for form to load
       await waitFor(() => {
@@ -250,7 +248,7 @@ describe("Model", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<Model {...mockProps} />);
+      render(<Model {...mockProps} />);
 
       // Test that the component renders without crashing even with minimal props
       expect(screen.getByText("Name")).toBeInTheDocument();
@@ -258,7 +256,7 @@ describe("Model", () => {
 
     it("should handle missing or invalid props", () => {
       // Test with no props
-      renderWithMocks(<Model providerId="test-provider" />);
+      render(<Model providerId="test-provider" />);
 
       // Test that the component handles missing props gracefully
       expect(screen.getByText("Name")).toBeInTheDocument();

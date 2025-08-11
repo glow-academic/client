@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -6,8 +6,6 @@ import Staff from "@/components/management/staff/Staff";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 describe("Staff", () => {
   /* ------------------------------------------------------------------ *
@@ -34,7 +32,7 @@ describe("Staff", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Staff />);
+      render(<Staff />);
 
       // Basic rendering test - component should render without crashing
       // The component should show staff members or a loading state
@@ -42,7 +40,7 @@ describe("Staff", () => {
     });
 
     it("should render with correct content", () => {
-      renderWithMocks(<Staff />);
+      render(<Staff />);
 
       // Check that the component renders its expected content
       // Since this component shows staff, it should render something
@@ -50,7 +48,7 @@ describe("Staff", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<Staff />);
+      render(<Staff />);
 
       // Basic accessibility test - component should be in the document
       expect(document.body).toBeInTheDocument();
@@ -59,14 +57,14 @@ describe("Staff", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      renderWithMocks(<Staff />);
+      render(<Staff />);
 
       // Component should handle state changes gracefully
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<Staff />);
+      render(<Staff />);
 
       // Component should handle user events
       expect(document.body).toBeInTheDocument();
@@ -78,7 +76,7 @@ describe("Staff", () => {
       // Arrange: Override the default success mock with an error for this test.
       // Example: vi.mocked(getAllProfiles).mockRejectedValue(new Error('API Error'));
 
-      renderWithMocks(<Staff />);
+      render(<Staff />);
 
       // Assert: Check that your component shows an error message.
       // Component should handle API errors gracefully
@@ -89,14 +87,14 @@ describe("Staff", () => {
       // Test loading states
       // Mock data is automatically loaded from @/mocks/schema
 
-      renderWithMocks(<Staff />);
+      render(<Staff />);
       expect(document.body).toBeInTheDocument();
     });
   });
 
   describe("Navigation", () => {
     it("should handle navigation", () => {
-      renderWithMocks(<Staff />);
+      render(<Staff />);
 
       // Component should handle navigation
       expect(document.body).toBeInTheDocument();
@@ -105,7 +103,7 @@ describe("Staff", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<Staff />);
+      render(<Staff />);
 
       // Component should handle edge cases gracefully
       expect(document.body).toBeInTheDocument();

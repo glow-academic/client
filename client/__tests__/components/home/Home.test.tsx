@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -8,9 +8,7 @@ import Home from "@/components/home/Home";
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
 import "@/mocks/auth";
-import "@/mocks/mutations";
 import "@/mocks/navigation";
-import "@/mocks/queries";
 
 describe("Home", () => {
   /* ------------------------------------------------------------------ *
@@ -37,7 +35,7 @@ describe("Home", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Home />);
+      render(<Home />);
 
       // Wait for the component to load and check for key elements
       await waitFor(() => {
@@ -46,7 +44,7 @@ describe("Home", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<Home />);
+      render(<Home />);
 
       // Check for main landmark
       await waitFor(() => {
@@ -61,7 +59,7 @@ describe("Home", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      renderWithMocks(<Home />);
+      render(<Home />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -73,7 +71,7 @@ describe("Home", () => {
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<Home />);
+      render(<Home />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -93,7 +91,7 @@ describe("Home", () => {
       );
       vi.mocked(getAllCohorts).mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<Home />);
+      render(<Home />);
 
       // Wait for error state to be displayed
       await waitFor(() => {
@@ -110,7 +108,7 @@ describe("Home", () => {
         () => new Promise((resolve) => setTimeout(() => resolve([]), 100))
       );
 
-      renderWithMocks(<Home />);
+      render(<Home />);
 
       // Check that loading state is handled gracefully
       await waitFor(() => {
@@ -121,7 +119,7 @@ describe("Home", () => {
 
   describe("Navigation", () => {
     it("should handle navigation", async () => {
-      renderWithMocks(<Home />);
+      render(<Home />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -141,7 +139,7 @@ describe("Home", () => {
       );
       vi.mocked(getAllCohorts).mockResolvedValue([]);
 
-      renderWithMocks(<Home />);
+      render(<Home />);
 
       // Wait for component to handle empty state
       await waitFor(() => {
@@ -156,7 +154,7 @@ describe("Home", () => {
       );
       vi.mocked(getAllProfiles).mockResolvedValue([]);
 
-      renderWithMocks(<Home />);
+      render(<Home />);
 
       // Wait for component to handle missing data
       await waitFor(() => {
@@ -223,7 +221,7 @@ describe("Home", () => {
       );
       vi.mocked(getAllCohorts).mockResolvedValue([]);
 
-      renderWithMocks(<Home />);
+      render(<Home />);
 
       await waitFor(() => {
         expect(screen.getByText("No Cohorts Available")).toBeInTheDocument();
@@ -246,7 +244,7 @@ describe("Home", () => {
         () => new Promise(() => {}) // Never resolves
       );
 
-      renderWithMocks(<Home />);
+      render(<Home />);
 
       // Check for skeleton elements
       await waitFor(() => {
@@ -265,4 +263,4 @@ import { ProfileProvider } from "@/contexts/profile-context";
 import { TourProvider } from "@/contexts/tour-context";
 import { WebSocketProvider } from "@/contexts/websocket-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render } from "@testing-library/react";
+import { render } from '@/test/custom-render';

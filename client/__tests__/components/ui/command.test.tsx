@@ -5,8 +5,8 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -14,7 +14,7 @@ import { describe, expect, it } from "vitest";
 describe("Command", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(
+      render(
         <Command>
           <CommandInput placeholder="Search..." />
           <CommandList>
@@ -28,7 +28,7 @@ describe("Command", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(
+      render(
         <Command>
           <CommandInput placeholder="Search..." />
           <CommandList>
@@ -44,7 +44,7 @@ describe("Command", () => {
 
   describe("Component Structure", () => {
     it("should render command with input and items", () => {
-      renderWithMocks(
+      render(
         <Command>
           <CommandInput placeholder="Search..." />
           <CommandList>
@@ -65,7 +65,7 @@ describe("Command", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal command
-      renderWithMocks(
+      render(
         <Command>
           <CommandInput />
           <CommandList />

@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // Mock Parameter component
@@ -18,13 +18,13 @@ import NewParameterPage, {
 
 describe("NewParameterPage", () => {
   it("renders without crashing", () => {
-    renderWithMocks(<NewParameterPage />);
+    render(<NewParameterPage />);
     expect(screen.getByTestId("parameter-component")).toBeInTheDocument();
     expect(screen.getByText("Parameter Component")).toBeInTheDocument();
   });
 
   it("passes create mode to Parameter component", () => {
-    renderWithMocks(<NewParameterPage />);
+    render(<NewParameterPage />);
     const parameter = screen.getByTestId("parameter-component");
     expect(parameter).toHaveAttribute("data-mode", "create");
   });
@@ -36,7 +36,7 @@ describe("NewParameterPage", () => {
   });
 
   it("renders the Parameter component inside a wrapper", () => {
-    renderWithMocks(<NewParameterPage />);
+    render(<NewParameterPage />);
     const wrapper = screen.getByTestId("parameter-component").parentElement;
     expect(wrapper).toHaveClass("space-y-6");
   });

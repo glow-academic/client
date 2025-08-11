@@ -1,13 +1,12 @@
 import { useProfile } from "@/contexts/profile-context";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { act, screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { act, screen } from '@/test/custom-render';
 import { usePathname } from "next/navigation";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Import centralized mocks to avoid hoisting issues
 import "@/mocks/auth";
 import "@/mocks/navigation";
-import "@/mocks/queries";
 
 // Mock simulation context
 vi.mock("@/contexts/simulation-context", () => ({
@@ -240,7 +239,7 @@ describe("MainLayout", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       await act(async () => {
-        renderWithMocks(
+        render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
           </MainLayout>
@@ -252,7 +251,7 @@ describe("MainLayout", () => {
 
     it("should have correct layout structure", async () => {
       await act(async () => {
-        renderWithMocks(
+        render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
           </MainLayout>
@@ -268,7 +267,7 @@ describe("MainLayout", () => {
   describe("Header Components", () => {
     it("should render header with sidebar trigger and breadcrumbs", async () => {
       await act(async () => {
-        renderWithMocks(
+        render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
           </MainLayout>
@@ -284,7 +283,7 @@ describe("MainLayout", () => {
       vi.mocked(usePathname).mockReturnValue("/analytics/overview");
 
       await act(async () => {
-        renderWithMocks(
+        render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
           </MainLayout>
@@ -300,7 +299,7 @@ describe("MainLayout", () => {
       vi.mocked(usePathname).mockReturnValue("/cohorts");
 
       await act(async () => {
-        renderWithMocks(
+        render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
           </MainLayout>
@@ -315,7 +314,7 @@ describe("MainLayout", () => {
   describe("Chat Components", () => {
     it("should show chat components for main screens with admin role", async () => {
       await act(async () => {
-        renderWithMocks(
+        render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
           </MainLayout>
@@ -372,7 +371,7 @@ describe("MainLayout", () => {
       });
 
       await act(async () => {
-        renderWithMocks(
+        render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
           </MainLayout>
@@ -432,7 +431,7 @@ describe("MainLayout", () => {
       });
 
       await act(async () => {
-        renderWithMocks(
+        render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
           </MainLayout>
@@ -487,7 +486,7 @@ describe("MainLayout", () => {
       });
 
       await act(async () => {
-        renderWithMocks(
+        render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
           </MainLayout>
@@ -501,7 +500,7 @@ describe("MainLayout", () => {
   describe("Simulation Provider", () => {
     it("should wrap content in SimulationProvider when attemptId is present", async () => {
       await act(async () => {
-        renderWithMocks(
+        render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
           </MainLayout>
@@ -513,7 +512,7 @@ describe("MainLayout", () => {
 
     it("should not wrap content in SimulationProvider when no attemptId", async () => {
       await act(async () => {
-        renderWithMocks(
+        render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
           </MainLayout>
@@ -527,7 +526,7 @@ describe("MainLayout", () => {
   describe("Children Rendering", () => {
     it("should render children correctly", async () => {
       await act(async () => {
-        renderWithMocks(
+        render(
           <MainLayout>
             <div data-testid="child-1">Child 1</div>
             <div data-testid="child-2">Child 2</div>
@@ -541,7 +540,7 @@ describe("MainLayout", () => {
 
     it("should render multiple children", async () => {
       await act(async () => {
-        renderWithMocks(
+        render(
           <MainLayout>
             <div data-testid="child-1">Child 1</div>
             <div data-testid="child-2">Child 2</div>
@@ -559,7 +558,7 @@ describe("MainLayout", () => {
   describe("Edge Cases", () => {
     it("should handle missing profile gracefully", async () => {
       await act(async () => {
-        renderWithMocks(
+        render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
           </MainLayout>
@@ -571,7 +570,7 @@ describe("MainLayout", () => {
 
     it("should handle loading profile gracefully", async () => {
       await act(async () => {
-        renderWithMocks(
+        render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
           </MainLayout>
@@ -583,7 +582,7 @@ describe("MainLayout", () => {
 
     it("should handle empty children gracefully", async () => {
       await act(async () => {
-        renderWithMocks(<MainLayout>{null}</MainLayout>);
+        render(<MainLayout>{null}</MainLayout>);
       });
 
       expect(screen.getAllByTestId("sidebar-provider")).toHaveLength(2);

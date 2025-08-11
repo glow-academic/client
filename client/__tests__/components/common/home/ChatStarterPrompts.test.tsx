@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -18,7 +18,7 @@ const mockProps: ChatStarterPromptsProps = {
 describe("ChatStarterPrompts", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<ChatStarterPrompts {...mockProps} />);
+      render(<ChatStarterPrompts {...mockProps} />);
 
       // Should render starter prompts (expanded variant shows 4 prompts by default)
       await waitFor(() => {
@@ -34,7 +34,7 @@ describe("ChatStarterPrompts", () => {
         variant: "minimized",
       };
 
-      renderWithMocks(<ChatStarterPrompts {...propsWithVariant} />);
+      render(<ChatStarterPrompts {...propsWithVariant} />);
 
       await waitFor(() => {
         // Minimized variant shows 2 prompts
@@ -44,7 +44,7 @@ describe("ChatStarterPrompts", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<ChatStarterPrompts {...mockProps} />);
+      render(<ChatStarterPrompts {...mockProps} />);
 
       await waitFor(() => {
         // Check for clickable prompt cards
@@ -65,7 +65,7 @@ describe("ChatStarterPrompts", () => {
       const user = userEvent.setup();
       const onPromptClick = vi.fn();
 
-      renderWithMocks(
+      render(
         <ChatStarterPrompts {...mockProps} onPromptClick={onPromptClick} />,
       );
 
@@ -86,7 +86,7 @@ describe("ChatStarterPrompts", () => {
 
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ChatStarterPrompts {...mockProps} />);
+      render(<ChatStarterPrompts {...mockProps} />);
 
       await waitFor(() => {
         const promptCards = screen.getAllByRole("article");
@@ -108,7 +108,7 @@ describe("ChatStarterPrompts", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ChatStarterPrompts {...mockProps} />);
+      render(<ChatStarterPrompts {...mockProps} />);
 
       await waitFor(() => {
         const promptCards = screen.getAllByRole("article");
@@ -132,7 +132,7 @@ describe("ChatStarterPrompts", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      renderWithMocks(<ChatStarterPrompts {...mockProps} />);
+      render(<ChatStarterPrompts {...mockProps} />);
 
       await waitFor(() => {
         const promptCards = screen.getAllByRole("article");
@@ -146,7 +146,7 @@ describe("ChatStarterPrompts", () => {
 
     it("should handle missing or invalid props", async () => {
       // Test with no onPromptClick
-      renderWithMocks(<ChatStarterPrompts onPromptClick={vi.fn()} />);
+      render(<ChatStarterPrompts onPromptClick={vi.fn()} />);
 
       await waitFor(() => {
         const promptCards = screen.getAllByRole("article");

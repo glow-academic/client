@@ -1,6 +1,6 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import type { ColumnDef } from "@tanstack/react-table";
-import { screen } from "@testing-library/react";
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -103,7 +103,7 @@ const mockProps: AgentsDataTableProps = {
 describe("AgentsDataTable", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<AgentsDataTable {...mockProps} />);
+      render(<AgentsDataTable {...mockProps} />);
 
       // Check that the agent cards are rendered
       expect(screen.getByTestId("agent-card-agent-1")).toBeInTheDocument();
@@ -111,7 +111,7 @@ describe("AgentsDataTable", () => {
     });
 
     it("should render with props", () => {
-      renderWithMocks(<AgentsDataTable {...mockProps} />);
+      render(<AgentsDataTable {...mockProps} />);
 
       // Check that agent names are displayed
       expect(screen.getByText("Math Tutor Agent")).toBeInTheDocument();
@@ -119,7 +119,7 @@ describe("AgentsDataTable", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<AgentsDataTable {...mockProps} />);
+      render(<AgentsDataTable {...mockProps} />);
 
       // Check that agent cards are accessible
       expect(screen.getByTestId("agent-card-agent-1")).toBeInTheDocument();
@@ -128,14 +128,14 @@ describe("AgentsDataTable", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      renderWithMocks(<AgentsDataTable {...mockProps} />);
+      render(<AgentsDataTable {...mockProps} />);
 
       // Check that the table renders with data
       expect(screen.getByText("Math Tutor Agent")).toBeInTheDocument();
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<AgentsDataTable {...mockProps} />);
+      render(<AgentsDataTable {...mockProps} />);
 
       // Check that the renderAgentCard function is called
       expect(screen.getByTestId("agent-card-agent-1")).toBeInTheDocument();
@@ -150,7 +150,7 @@ describe("AgentsDataTable", () => {
         data: [],
       };
 
-      renderWithMocks(<AgentsDataTable {...propsWithEmptyData} />);
+      render(<AgentsDataTable {...propsWithEmptyData} />);
 
       // Should show "No system agents match the current filters." message
       expect(
@@ -169,7 +169,7 @@ describe("AgentsDataTable", () => {
         renderAgentCard: vi.fn(),
       };
 
-      renderWithMocks(<AgentsDataTable {...minimalProps} />);
+      render(<AgentsDataTable {...minimalProps} />);
 
       // Component should still render
       expect(

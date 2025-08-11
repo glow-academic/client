@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -9,8 +9,6 @@ import SystemAgent, {
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
@@ -43,21 +41,21 @@ describe("SystemAgent", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<SystemAgent {...mockProps} />);
+      render(<SystemAgent {...mockProps} />);
 
       // Basic render test - component should render without errors
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      renderWithMocks(<SystemAgent {...mockProps} />);
+      render(<SystemAgent {...mockProps} />);
 
       // Component should render with the provided props
       expect(document.body).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<SystemAgent {...mockProps} />);
+      render(<SystemAgent {...mockProps} />);
 
       // Check for basic accessibility elements
       const form = document.querySelector("form");
@@ -68,7 +66,7 @@ describe("SystemAgent", () => {
   describe("User Interactions", () => {
     it("should handle form submissions", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<SystemAgent {...mockProps} />);
+      render(<SystemAgent {...mockProps} />);
 
       // Test form submission if form exists
       const form = document.querySelector("form");
@@ -81,7 +79,7 @@ describe("SystemAgent", () => {
 
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<SystemAgent {...mockProps} />);
+      render(<SystemAgent {...mockProps} />);
 
       // Test input interactions if inputs exist
       const inputs = document.querySelectorAll("input");
@@ -93,7 +91,7 @@ describe("SystemAgent", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<SystemAgent {...mockProps} />);
+      render(<SystemAgent {...mockProps} />);
 
       // Test button interactions if buttons exist
       const buttons = document.querySelectorAll("button");
@@ -110,14 +108,14 @@ describe("SystemAgent", () => {
       // Arrange: Override the default success mock with an error for this test.
       // Example: vi.mocked(getAllModels).mockRejectedValue(new Error('API Error'));
 
-      renderWithMocks(<SystemAgent {...mockProps} />);
+      render(<SystemAgent {...mockProps} />);
 
       // Component should handle errors gracefully
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle loading states", () => {
-      renderWithMocks(<SystemAgent {...mockProps} />);
+      render(<SystemAgent {...mockProps} />);
 
       // Component should show loading state initially
       expect(document.body).toBeInTheDocument();
@@ -126,7 +124,7 @@ describe("SystemAgent", () => {
 
   describe("Navigation", () => {
     it("should handle navigation", () => {
-      renderWithMocks(<SystemAgent {...mockProps} />);
+      render(<SystemAgent {...mockProps} />);
 
       // Component should handle navigation properly
       expect(document.body).toBeInTheDocument();
@@ -135,14 +133,14 @@ describe("SystemAgent", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<SystemAgent {...mockProps} />);
+      render(<SystemAgent {...mockProps} />);
 
       // Component should handle edge cases
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(<SystemAgent agentId="" />);
+      render(<SystemAgent agentId="" />);
 
       // Component should handle missing props
       expect(document.body).toBeInTheDocument();

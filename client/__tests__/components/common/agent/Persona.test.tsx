@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -8,8 +8,6 @@ import Persona, { PersonaProps } from "@/components/common/agent/Persona";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
@@ -43,21 +41,21 @@ describe("Persona", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Persona {...mockProps} />);
+      render(<Persona {...mockProps} />);
 
       // Basic render test - component should render without errors
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      renderWithMocks(<Persona personaId="test-id" mode="edit" />);
+      render(<Persona personaId="test-id" mode="edit" />);
 
       // Component should render with the provided props
       expect(document.body).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<Persona {...mockProps} />);
+      render(<Persona {...mockProps} />);
 
       // Check for basic accessibility elements
       const form = document.querySelector("form");
@@ -68,7 +66,7 @@ describe("Persona", () => {
   describe("User Interactions", () => {
     it("should handle form submissions", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Persona {...mockProps} />);
+      render(<Persona {...mockProps} />);
 
       // Test form submission if form exists
       const form = document.querySelector("form");
@@ -81,7 +79,7 @@ describe("Persona", () => {
 
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Persona {...mockProps} />);
+      render(<Persona {...mockProps} />);
 
       // Test input interactions if inputs exist
       const inputs = document.querySelectorAll("input");
@@ -93,7 +91,7 @@ describe("Persona", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Persona {...mockProps} />);
+      render(<Persona {...mockProps} />);
 
       // Test button interactions if buttons exist
       const buttons = document.querySelectorAll("button");
@@ -110,14 +108,14 @@ describe("Persona", () => {
       // Arrange: Override the default success mock with an error for this test.
       // Example: vi.mocked(getPersona).mockRejectedValue(new Error('API Error'));
 
-      renderWithMocks(<Persona {...mockProps} />);
+      render(<Persona {...mockProps} />);
 
       // Component should handle errors gracefully
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle loading states", () => {
-      renderWithMocks(<Persona {...mockProps} />);
+      render(<Persona {...mockProps} />);
 
       // Component should show loading state initially
       expect(document.body).toBeInTheDocument();
@@ -126,7 +124,7 @@ describe("Persona", () => {
 
   describe("Navigation", () => {
     it("should handle navigation", () => {
-      renderWithMocks(<Persona {...mockProps} />);
+      render(<Persona {...mockProps} />);
 
       // Component should handle navigation properly
       expect(document.body).toBeInTheDocument();
@@ -135,14 +133,14 @@ describe("Persona", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<Persona {...mockProps} />);
+      render(<Persona {...mockProps} />);
 
       // Component should handle edge cases
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(<Persona />);
+      render(<Persona />);
 
       // Component should handle missing props
       expect(document.body).toBeInTheDocument();
@@ -150,7 +148,7 @@ describe("Persona", () => {
   });
 
   it("should handle color and icon selection", async () => {
-    renderWithMocks(<Persona personaId="test-id" mode="edit" />);
+    render(<Persona personaId="test-id" mode="edit" />);
 
     // Wait for the form to load with the persona data
     await waitFor(() => {

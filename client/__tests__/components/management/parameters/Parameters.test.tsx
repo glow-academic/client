@@ -1,13 +1,11 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Import centralized mocks
 import "@/mocks/auth";
-import "@/mocks/mutations";
 import "@/mocks/navigation";
-import "@/mocks/queries";
 
 // ——————————————————————————————————————————
 import Parameters from "@/components/management/parameters/Parameters";
@@ -38,7 +36,7 @@ describe("Parameters", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<Parameters />);
+      render(<Parameters />);
 
       await waitFor(() => {
         expect(screen.getByText(/Parameters/i)).toBeInTheDocument();
@@ -46,7 +44,7 @@ describe("Parameters", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<Parameters />);
+      render(<Parameters />);
 
       await waitFor(() => {
         expect(screen.getByText(/Parameters/i)).toBeInTheDocument();
@@ -56,7 +54,7 @@ describe("Parameters", () => {
 
   describe("Data Loading and Display", () => {
     it("should load and display parameters data", async () => {
-      renderWithMocks(<Parameters />);
+      render(<Parameters />);
 
       await waitFor(() => {
         expect(screen.getByText(/Parameters/i)).toBeInTheDocument();
@@ -69,7 +67,7 @@ describe("Parameters", () => {
     });
 
     it("should display parameter names correctly", async () => {
-      renderWithMocks(<Parameters />);
+      render(<Parameters />);
 
       await waitFor(() => {
         expect(screen.getByText(/Parameters/i)).toBeInTheDocument();
@@ -77,7 +75,7 @@ describe("Parameters", () => {
     });
 
     it("should display parameter descriptions correctly", async () => {
-      renderWithMocks(<Parameters />);
+      render(<Parameters />);
 
       await waitFor(() => {
         expect(screen.getByText(/Parameters/i)).toBeInTheDocument();
@@ -85,7 +83,7 @@ describe("Parameters", () => {
     });
 
     it("should format timestamps correctly", async () => {
-      renderWithMocks(<Parameters />);
+      render(<Parameters />);
 
       await waitFor(() => {
         expect(screen.getByText(/Parameters/i)).toBeInTheDocument();
@@ -96,7 +94,7 @@ describe("Parameters", () => {
   describe("User Interactions", () => {
     it("should handle edit button click", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Parameters />);
+      render(<Parameters />);
 
       await waitFor(() => {
         expect(screen.getByText(/Parameters/i)).toBeInTheDocument();
@@ -118,7 +116,7 @@ describe("Parameters", () => {
     });
 
     it("should handle state changes", async () => {
-      renderWithMocks(<Parameters />);
+      render(<Parameters />);
 
       await waitFor(() => {
         expect(screen.getByText(/Parameters/i)).toBeInTheDocument();
@@ -126,7 +124,7 @@ describe("Parameters", () => {
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<Parameters />);
+      render(<Parameters />);
 
       await waitFor(() => {
         expect(screen.getByText(/Parameters/i)).toBeInTheDocument();
@@ -136,7 +134,7 @@ describe("Parameters", () => {
 
   describe("API Integration", () => {
     it("should handle and display an API error state", async () => {
-      renderWithMocks(<Parameters />);
+      render(<Parameters />);
 
       await waitFor(() => {
         expect(screen.getByText(/Parameters/i)).toBeInTheDocument();
@@ -144,7 +142,7 @@ describe("Parameters", () => {
     });
 
     it("should handle loading states", async () => {
-      renderWithMocks(<Parameters />);
+      render(<Parameters />);
 
       await waitFor(() => {
         expect(screen.getByText(/Parameters/i)).toBeInTheDocument();
@@ -154,7 +152,7 @@ describe("Parameters", () => {
 
   describe("Navigation", () => {
     it("should handle navigation", async () => {
-      renderWithMocks(<Parameters />);
+      render(<Parameters />);
 
       await waitFor(() => {
         expect(screen.getByText(/Parameters/i)).toBeInTheDocument();
@@ -164,7 +162,7 @@ describe("Parameters", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      renderWithMocks(<Parameters />);
+      render(<Parameters />);
 
       await waitFor(() => {
         expect(screen.getByText(/Parameters/i)).toBeInTheDocument();
@@ -172,7 +170,7 @@ describe("Parameters", () => {
     });
 
     it("should handle empty parameters data", async () => {
-      renderWithMocks(<Parameters />);
+      render(<Parameters />);
 
       await waitFor(() => {
         expect(screen.getByText(/Parameters/i)).toBeInTheDocument();
@@ -180,7 +178,7 @@ describe("Parameters", () => {
     });
 
     it("should handle null parameter data", async () => {
-      renderWithMocks(<Parameters />);
+      render(<Parameters />);
 
       await waitFor(() => {
         expect(screen.getByText(/Parameters/i)).toBeInTheDocument();
@@ -188,7 +186,7 @@ describe("Parameters", () => {
     });
 
     it("should handle parameters with missing data", async () => {
-      renderWithMocks(<Parameters />);
+      render(<Parameters />);
 
       await waitFor(() => {
         expect(screen.getByText(/Parameters/i)).toBeInTheDocument();
@@ -196,7 +194,7 @@ describe("Parameters", () => {
     });
 
     it("should handle parameters with null timestamp", async () => {
-      renderWithMocks(<Parameters />);
+      render(<Parameters />);
 
       await waitFor(() => {
         expect(screen.getByText(/Parameters/i)).toBeInTheDocument();
@@ -204,7 +202,7 @@ describe("Parameters", () => {
     });
 
     it("should handle unknown parameter types", async () => {
-      renderWithMocks(<Parameters />);
+      render(<Parameters />);
 
       await waitFor(() => {
         expect(screen.getByText(/Parameters/i)).toBeInTheDocument();
@@ -214,7 +212,7 @@ describe("Parameters", () => {
 
   describe("Filtering and Search", () => {
     it("should generate filter options correctly", async () => {
-      renderWithMocks(<Parameters />);
+      render(<Parameters />);
 
       await waitFor(() => {
         expect(screen.getByText(/Parameters/i)).toBeInTheDocument();

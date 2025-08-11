@@ -1,4 +1,4 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
+import { render } from '@/test/custom-render';
 import type { Table } from "@tanstack/react-table";
 import { describe, expect, it } from "vitest";
 
@@ -67,21 +67,21 @@ const mockProps: CohortsDataTableToolbarProps = {
 describe("CohortsDataTableToolbar", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<CohortsDataTableToolbar {...mockProps} />);
+      render(<CohortsDataTableToolbar {...mockProps} />);
 
       // Component should render without crashing
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      renderWithMocks(<CohortsDataTableToolbar {...mockProps} />);
+      render(<CohortsDataTableToolbar {...mockProps} />);
 
       // Component should render with the provided props
       expect(document.body).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<CohortsDataTableToolbar {...mockProps} />);
+      render(<CohortsDataTableToolbar {...mockProps} />);
 
       // Basic accessibility check - component should be in the document
       expect(document.body).toBeInTheDocument();
@@ -90,7 +90,7 @@ describe("CohortsDataTableToolbar", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      renderWithMocks(<CohortsDataTableToolbar {...mockProps} />);
+      render(<CohortsDataTableToolbar {...mockProps} />);
 
       // Component should render without throwing errors
       expect(document.body).toBeInTheDocument();
@@ -98,7 +98,7 @@ describe("CohortsDataTableToolbar", () => {
 
     it("should handle empty options", () => {
       // Test with empty options
-      renderWithMocks(
+      render(
         <CohortsDataTableToolbar
           table={createMockTable()}
           profileOptions={[]}

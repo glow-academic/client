@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -7,8 +7,6 @@ import ModelEditPage from "@/app/(main)/management/providers/p/[providerId]/m/[m
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the ModelEdit component
 vi.mock("@/components/management/providers/ModelEdit", () => ({
@@ -89,7 +87,7 @@ describe("ModelEditPage", () => {
         modelId: "test-model-id",
       });
 
-      renderWithMocks(<ModelEditPage params={mockParams} />);
+      render(<ModelEditPage params={mockParams} />);
 
       // Should render the model edit component
       expect(screen.getByTestId("model-edit-page")).toBeInTheDocument();
@@ -110,7 +108,7 @@ describe("ModelEditPage", () => {
         modelId: "test-model-id",
       });
 
-      renderWithMocks(<ModelEditPage params={mockParams} />);
+      render(<ModelEditPage params={mockParams} />);
 
       // Should have proper accessibility attributes
       expect(screen.getByTestId("model-edit-page")).toBeInTheDocument();
@@ -126,7 +124,7 @@ describe("ModelEditPage", () => {
         modelId: "edge-case-model",
       });
 
-      renderWithMocks(<ModelEditPage params={mockParams} />);
+      render(<ModelEditPage params={mockParams} />);
 
       // Should render the component even with edge case params
       expect(screen.getByTestId("model-edit-page")).toBeInTheDocument();

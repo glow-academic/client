@@ -4,8 +4,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
 describe("Tooltip", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(
+      render(
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>Hover Me</TooltipTrigger>
@@ -26,7 +26,7 @@ describe("Tooltip", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(
+      render(
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>Accessible Trigger</TooltipTrigger>
@@ -42,7 +42,7 @@ describe("Tooltip", () => {
 
   describe("Component Structure", () => {
     it("should render tooltip with trigger and content", () => {
-      renderWithMocks(
+      render(
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>Trigger</TooltipTrigger>
@@ -61,7 +61,7 @@ describe("Tooltip", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal tooltip
-      renderWithMocks(
+      render(
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>Minimal</TooltipTrigger>

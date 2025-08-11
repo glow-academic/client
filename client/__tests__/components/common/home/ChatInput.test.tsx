@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -35,7 +35,7 @@ const mockProps: ChatInputProps = {
 describe("ChatInput", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<ChatInput {...mockProps} />);
+      render(<ChatInput {...mockProps} />);
 
       // Should render a form with textarea and send button
       await waitFor(() => {
@@ -52,7 +52,7 @@ describe("ChatInput", () => {
         togglePrompt: vi.fn(),
       };
 
-      renderWithMocks(<ChatInput {...propsWithPrompt} />);
+      render(<ChatInput {...propsWithPrompt} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("test prompt")).toBeInTheDocument();
@@ -60,7 +60,7 @@ describe("ChatInput", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<ChatInput {...mockProps} />);
+      render(<ChatInput {...mockProps} />);
 
       await waitFor(() => {
         const textarea = screen.getByRole("textbox");
@@ -79,7 +79,7 @@ describe("ChatInput", () => {
   describe("User Interactions", () => {
     it("should handle text input", async () => {
       const _user = userEvent.setup();
-      renderWithMocks(<ChatInput {...mockProps} />);
+      render(<ChatInput {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByRole("textbox")).toBeInTheDocument();
@@ -93,7 +93,7 @@ describe("ChatInput", () => {
 
     it("should handle form submission", async () => {
       const _user = userEvent.setup();
-      renderWithMocks(<ChatInput {...mockProps} />);
+      render(<ChatInput {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByRole("textbox")).toBeInTheDocument();
@@ -111,7 +111,7 @@ describe("ChatInput", () => {
 
     it("should handle Enter key submission", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ChatInput {...mockProps} />);
+      render(<ChatInput {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByRole("textbox")).toBeInTheDocument();
@@ -125,7 +125,7 @@ describe("ChatInput", () => {
     });
 
     it("should not submit empty messages", async () => {
-      renderWithMocks(<ChatInput {...mockProps} />);
+      render(<ChatInput {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByRole("textbox")).toBeInTheDocument();
@@ -137,7 +137,7 @@ describe("ChatInput", () => {
 
     it("should handle Shift+Enter for new lines", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<ChatInput {...mockProps} />);
+      render(<ChatInput {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByRole("textbox")).toBeInTheDocument();
@@ -156,7 +156,7 @@ describe("ChatInput", () => {
   describe("Props and State", () => {
     it("should handle promptToSet prop", async () => {
       const onPromptSet = vi.fn();
-      renderWithMocks(
+      render(
         <ChatInput
           {...mockProps}
           promptToSet="Set prompt"
@@ -173,7 +173,7 @@ describe("ChatInput", () => {
 
     it("should handle togglePrompt callback", async () => {
       const togglePrompt = vi.fn();
-      renderWithMocks(<ChatInput {...mockProps} togglePrompt={togglePrompt} />);
+      render(<ChatInput {...mockProps} togglePrompt={togglePrompt} />);
 
       await waitFor(() => {
         expect(screen.getByRole("textbox")).toBeInTheDocument();
@@ -207,7 +207,7 @@ describe("ChatInput", () => {
         createNewChat: vi.fn(),
       });
 
-      renderWithMocks(<ChatInput {...mockProps} />);
+      render(<ChatInput {...mockProps} />);
 
       await waitFor(() => {
         const textarea = screen.getByRole("textbox");
@@ -218,7 +218,7 @@ describe("ChatInput", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      renderWithMocks(<ChatInput {...mockProps} />);
+      render(<ChatInput {...mockProps} />);
 
       await waitFor(() => {
         expect(screen.getByRole("textbox")).toBeInTheDocument();
@@ -230,7 +230,7 @@ describe("ChatInput", () => {
 
     it("should handle missing or invalid props", async () => {
       // Test with no props
-      renderWithMocks(<ChatInput />);
+      render(<ChatInput />);
 
       await waitFor(() => {
         expect(screen.getByRole("textbox")).toBeInTheDocument();
@@ -264,7 +264,7 @@ describe("ChatInput", () => {
         createNewChat: vi.fn(),
       });
 
-      renderWithMocks(<ChatInput {...mockProps} />);
+      render(<ChatInput {...mockProps} />);
 
       await waitFor(() => {
         // Should show stop button instead of send button

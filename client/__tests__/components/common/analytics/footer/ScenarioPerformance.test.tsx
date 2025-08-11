@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { fireEvent, screen, waitFor } from '@/test/custom-render';
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Import the component
@@ -307,7 +307,7 @@ describe("ScenarioPerformance", () => {
   });
 
   const renderComponent = (props = {}) => {
-    return renderWithMocks(
+    return render(
       <ScenarioPerformance {...defaultProps} {...props} />
     );
   };

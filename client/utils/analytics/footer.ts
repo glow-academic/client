@@ -3,6 +3,7 @@ import type {
   Parameter,
   ParameterItem,
   Profile,
+  ProfileRole,
   Rubric,
   Scenario,
   Simulation,
@@ -122,7 +123,9 @@ export const calculateScenarioAttributeBreakdown = (
   dateEnd: Date,
   profileId?: string,
   cohorts: Cohort[] = [],
-  cohortIds: string[] = []
+  cohortIds: string[] = [],
+  rolesAllowed?: ProfileRole[],
+  showPractice: boolean = false
 ): ScenarioAttributeElement[] => {
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
@@ -139,7 +142,7 @@ export const calculateScenarioAttributeBreakdown = (
     return [];
   }
 
-  // Filter grades by date range, exclude practice simulations, and filter by TA role
+  // Filter grades by date range, optionally include practice simulations, and filter by roles if provided
   let filteredGrades = grades.filter((grade) => {
     const gradeDate = new Date(grade.createdAt);
     const chat = chats.find((c) => c.id === grade.simulationChatId);
@@ -151,16 +154,20 @@ export const calculateScenarioAttributeBreakdown = (
     const inDateRange =
       isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
 
-    // Exclude practice simulations
-    const notPractice = !simulation?.practiceSimulation;
+    // Practice filter
+    const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
 
-    // Filter by TA role (temporarily relaxed for debugging)
-    const isTA = profile?.role === "ta" || true; // Temporarily allow all roles for debugging
+    // Role filter (default to allow all when not provided)
+    const roleOk = rolesAllowed
+      ? profile?.role
+        ? rolesAllowed.includes(profile.role)
+        : false
+      : true;
 
     // Filter by profile if provided
     const profileMatch = profileId ? attempt?.profileId === profileId : true;
 
-    return inDateRange && notPractice && isTA && profileMatch;
+    return inDateRange && practiceOk && roleOk && profileMatch;
   });
 
   // Apply cohort filtering if simulation IDs are restricted
@@ -406,7 +413,9 @@ export const calculateScenarioPerformance = (
   dateEnd: Date,
   profileId?: string,
   cohorts: Cohort[] = [],
-  cohortIds: string[] = []
+  cohortIds: string[] = [],
+  rolesAllowed?: ProfileRole[],
+  showPractice: boolean = false
 ): {
   performanceData: ScenarioPerformanceData[];
   correlationData: CorrelationData;
@@ -429,7 +438,7 @@ export const calculateScenarioPerformance = (
     };
   }
 
-  // Filter data by date range, exclude practice simulations, and filter by TA role
+  // Filter data by date range, optionally include practice simulations, and filter by roles if provided
   const filteredGrades = grades.filter((grade) => {
     const gradeDate = new Date(grade.createdAt);
     const chat = chats.find((c) => c.id === grade.simulationChatId);
@@ -441,11 +450,15 @@ export const calculateScenarioPerformance = (
     const inDateRange =
       isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
 
-    // Exclude practice simulations
-    const notPractice = !simulation?.practiceSimulation;
+    // Practice filter
+    const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
 
-    // Filter by TA role (temporarily relaxed for debugging)
-    const isTA = profile?.role === "ta" || true; // Temporarily allow all roles for debugging
+    // Role filter
+    const roleOk = rolesAllowed
+      ? profile?.role
+        ? rolesAllowed.includes(profile.role)
+        : false
+      : true;
 
     // Filter by profile if provided
     const profileMatch = profileId ? attempt?.profileId === profileId : true;
@@ -457,8 +470,8 @@ export const calculateScenarioPerformance = (
 
     return (
       inDateRange &&
-      notPractice &&
-      isTA &&
+      practiceOk &&
+      roleOk &&
       profileMatch &&
       cohortSimulationMatch
     );
@@ -635,7 +648,9 @@ export const calculateSimulationComposition = (
     method: "percentile",
     topPercentage: 25,
     bottomPercentage: 25,
-  }
+  },
+  rolesAllowed?: ProfileRole[],
+  showPractice: boolean = false
 ): {
   highPerforming: Array<{
     name: string;
@@ -692,7 +707,7 @@ export const calculateSimulationComposition = (
     profileId
   );
 
-  // Filter grades by date range, exclude practice simulations, and filter by TA role
+  // Filter grades by date range, optionally include practice simulations, and filter by roles if provided
   const filteredGrades = grades.filter((grade) => {
     const gradeDate = new Date(grade.createdAt);
     const chat = chats.find((c) => c.id === grade.simulationChatId);
@@ -704,11 +719,15 @@ export const calculateSimulationComposition = (
     const inDateRange =
       isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
 
-    // Exclude practice simulations
-    const notPractice = !simulation?.practiceSimulation;
+    // Practice filter
+    const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
 
-    // Filter by TA role (relaxed for better data availability)
-    const isTA = profile?.role === "ta" || true; // Temporarily allow all roles
+    // Role filter
+    const roleOk = rolesAllowed
+      ? profile?.role
+        ? rolesAllowed.includes(profile.role)
+        : false
+      : true;
 
     // Filter by profile if provided
     const profileMatch = profileId ? attempt?.profileId === profileId : true;
@@ -720,8 +739,8 @@ export const calculateSimulationComposition = (
 
     return (
       inDateRange &&
-      notPractice &&
-      isTA &&
+      practiceOk &&
+      roleOk &&
       profileMatch &&
       cohortSimulationMatch
     );
@@ -1174,7 +1193,9 @@ export const calculateScenarioPerformanceWithinSimulation = (
   },
   profileId?: string,
   cohorts: Cohort[] = [],
-  cohortIds: string[] = []
+  cohortIds: string[] = [],
+  rolesAllowed?: ProfileRole[],
+  _showPractice: boolean = false
 ): Array<{
   scenarioId: string;
   scenarioName: string;
@@ -1197,7 +1218,7 @@ export const calculateScenarioPerformanceWithinSimulation = (
   const rubric = rubrics.find((r) => r.id === selectedSimulation.rubricId);
   const rubricTotalPoints = rubric?.points || 100;
 
-  // Filter data by date range, selected simulation, and filter by TA role
+  // Filter data by date range, selected simulation, and filter by roles if provided
   const filteredGrades = grades.filter((grade) => {
     const gradeDate = new Date(grade.createdAt);
     const chat = chats.find((c) => c.id === grade.simulationChatId);
@@ -1212,8 +1233,12 @@ export const calculateScenarioPerformanceWithinSimulation = (
     const isSelectedSimulation =
       attempt?.simulationId === selectedSimulation.id;
 
-    // Filter by TA role (relaxed for better data visibility)
-    const isTA = profile?.role === "ta" || true; // Temporarily allow all roles
+    // Role filter
+    const roleOk = rolesAllowed
+      ? profile?.role
+        ? rolesAllowed.includes(profile.role)
+        : false
+      : true;
 
     // Filter by profile if provided
     const profileMatch = profileId ? attempt?.profileId === profileId : true;
@@ -1227,7 +1252,7 @@ export const calculateScenarioPerformanceWithinSimulation = (
     return (
       inDateRange &&
       isSelectedSimulation &&
-      isTA &&
+      roleOk &&
       profileMatch &&
       cohortSimulationMatch
     );
@@ -1336,7 +1361,9 @@ export const getAvailableSimulations = (
   dateEnd: Date,
   profileId?: string,
   cohorts: Cohort[] = [],
-  cohortIds: string[] = []
+  cohortIds: string[] = [],
+  rolesAllowed?: ProfileRole[],
+  showPractice: boolean = false
 ): Simulation[] => {
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
@@ -1344,9 +1371,11 @@ export const getAvailableSimulations = (
     profileId
   );
 
-  // First, get all non-practice, active simulations
+  // First, get all active simulations, optionally including practice
   const activeSimulations = simulations
-    .filter((sim) => !sim.practiceSimulation && sim.active)
+    .filter(
+      (sim) => sim.active && (showPractice ? true : !sim.practiceSimulation)
+    )
     .map((sim) => ({
       ...sim,
       id: sim.id,
@@ -1383,7 +1412,7 @@ export const getAvailableSimulations = (
       return false;
     }
 
-    // Check if any of these chats have grades in the date range
+    // Check if any of these chats have grades in the date range and match role filters
     const simulationGrades = grades.filter((grade) => {
       const gradeDate = new Date(grade.createdAt);
       const chat = simulationChats.find((c) => c.id === grade.simulationChatId);
@@ -1396,8 +1425,12 @@ export const getAvailableSimulations = (
       const inDateRange =
         isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
 
-      // Filter by TA role (relaxed for better data visibility)
-      const isTA = profile?.role === "ta" || true; // Temporarily allow all roles
+      // Role filter
+      const roleOk = rolesAllowed
+        ? profile?.role
+          ? rolesAllowed.includes(profile.role)
+          : false
+        : true;
 
       // Filter by profile if provided
       const profileMatch = profileId ? attempt?.profileId === profileId : true;
@@ -1405,7 +1438,7 @@ export const getAvailableSimulations = (
       // Apply cohort-based profile filtering (simplified)
       const cohortProfileMatch = true; // Temporarily allow all profiles
 
-      return inDateRange && isTA && profileMatch && cohortProfileMatch;
+      return inDateRange && roleOk && profileMatch && cohortProfileMatch;
     });
 
     // Only include simulations that have at least 1 grade

@@ -1,13 +1,11 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Import centralized mocks
 import "@/mocks/auth";
-import "@/mocks/mutations";
 import "@/mocks/navigation";
-import "@/mocks/queries";
 
 // ——————————————————————————————————————————
 import Feedback from "@/components/system/feedback/Feedback";
@@ -38,7 +36,7 @@ describe("Feedback", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -46,7 +44,7 @@ describe("Feedback", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -56,7 +54,7 @@ describe("Feedback", () => {
 
   describe("Data Loading and Display", () => {
     it("should load and display feedback data", async () => {
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -69,7 +67,7 @@ describe("Feedback", () => {
     });
 
     it("should display author names correctly", async () => {
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -77,7 +75,7 @@ describe("Feedback", () => {
     });
 
     it("should display feedback types with correct icons", async () => {
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -85,7 +83,7 @@ describe("Feedback", () => {
     });
 
     it("should format timestamps correctly", async () => {
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -96,7 +94,7 @@ describe("Feedback", () => {
   describe("User Interactions", () => {
     it("should handle refresh button click", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -119,7 +117,7 @@ describe("Feedback", () => {
 
     it("should handle view details click", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -147,7 +145,7 @@ describe("Feedback", () => {
 
     it("should close detail dialog when pressing Escape", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -178,7 +176,7 @@ describe("Feedback", () => {
     });
 
     it("should handle state changes", async () => {
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -186,7 +184,7 @@ describe("Feedback", () => {
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -196,7 +194,7 @@ describe("Feedback", () => {
 
   describe("API Integration", () => {
     it("should handle and display an API error state", async () => {
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -204,7 +202,7 @@ describe("Feedback", () => {
     });
 
     it("should handle loading states", async () => {
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -215,7 +213,7 @@ describe("Feedback", () => {
       const user = userEvent.setup();
       mockInvalidateQueries.mockRejectedValue(new Error("Refresh failed"));
 
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -236,7 +234,7 @@ describe("Feedback", () => {
 
   describe("Navigation", () => {
     it("should handle navigation", async () => {
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -246,7 +244,7 @@ describe("Feedback", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", async () => {
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -254,7 +252,7 @@ describe("Feedback", () => {
     });
 
     it("should handle empty feedback data", async () => {
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -262,7 +260,7 @@ describe("Feedback", () => {
     });
 
     it("should handle null profile data", async () => {
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -270,7 +268,7 @@ describe("Feedback", () => {
     });
 
     it("should handle feedback with missing profile", async () => {
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -278,7 +276,7 @@ describe("Feedback", () => {
     });
 
     it("should handle feedback with null timestamp", async () => {
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -286,7 +284,7 @@ describe("Feedback", () => {
     });
 
     it("should handle unknown feedback types", async () => {
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -297,7 +295,7 @@ describe("Feedback", () => {
   describe("Detail Dialog", () => {
     it("should display feedback details correctly", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -320,7 +318,7 @@ describe("Feedback", () => {
 
     it("should handle feedback with no message", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
@@ -343,7 +341,7 @@ describe("Feedback", () => {
 
   describe("Filtering and Search", () => {
     it("should generate profile options for filtering", async () => {
-      renderWithMocks(<Feedback />);
+      render(<Feedback />);
 
       await waitFor(() => {
         expect(screen.getByText(/Feedback/i)).toBeInTheDocument();

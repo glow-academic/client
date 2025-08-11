@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -42,7 +42,7 @@ describe("PersonasDataTableToolbar", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<PersonasDataTableToolbar {...defaultProps} />);
+      render(<PersonasDataTableToolbar {...defaultProps} />);
 
       // Check that the search input is rendered
       expect(
@@ -51,7 +51,7 @@ describe("PersonasDataTableToolbar", () => {
     });
 
     it("should render with props", () => {
-      renderWithMocks(<PersonasDataTableToolbar {...defaultProps} />);
+      render(<PersonasDataTableToolbar {...defaultProps} />);
 
       // Check that the search input is rendered
       expect(
@@ -65,7 +65,7 @@ describe("PersonasDataTableToolbar", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<PersonasDataTableToolbar {...defaultProps} />);
+      render(<PersonasDataTableToolbar {...defaultProps} />);
 
       // Check that the search input has proper accessibility attributes
       const searchInput = screen.getByPlaceholderText("Search personas...");
@@ -80,7 +80,7 @@ describe("PersonasDataTableToolbar", () => {
     it("should handle search input changes", async () => {
       const user = userEvent.setup();
 
-      renderWithMocks(<PersonasDataTableToolbar {...defaultProps} />);
+      render(<PersonasDataTableToolbar {...defaultProps} />);
 
       const searchInput = screen.getByPlaceholderText("Search personas...");
       await user.type(searchInput, "test persona");
@@ -90,7 +90,7 @@ describe("PersonasDataTableToolbar", () => {
     });
 
     it("should handle filter interactions", async () => {
-      renderWithMocks(<PersonasDataTableToolbar {...defaultProps} />);
+      render(<PersonasDataTableToolbar {...defaultProps} />);
 
       // The filters may not be rendered if columns don't exist, but we can verify the component renders
       const searchInput = screen.getByPlaceholderText("Search personas...");
@@ -109,7 +109,7 @@ describe("PersonasDataTableToolbar", () => {
         temperatureOptions: [],
       };
 
-      renderWithMocks(<PersonasDataTableToolbar {...propsWithEmptyOptions} />);
+      render(<PersonasDataTableToolbar {...propsWithEmptyOptions} />);
 
       // Component should still render without crashing
       expect(
@@ -127,7 +127,7 @@ describe("PersonasDataTableToolbar", () => {
         temperatureOptions: [],
       };
 
-      renderWithMocks(<PersonasDataTableToolbar {...minimalProps} />);
+      render(<PersonasDataTableToolbar {...minimalProps} />);
 
       // Component should still render
       expect(
@@ -144,7 +144,7 @@ describe("PersonasDataTableToolbar", () => {
         temperatureOptions: [],
       };
 
-      renderWithMocks(
+      render(
         <PersonasDataTableToolbar {...propsWithNoFilterOptions} />,
       );
 

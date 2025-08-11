@@ -3,8 +3,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -12,7 +12,7 @@ import { describe, expect, it } from "vitest";
 describe("Collapsible", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(
+      render(
         <Collapsible>
           <CollapsibleTrigger>Toggle</CollapsibleTrigger>
           <CollapsibleContent>Content</CollapsibleContent>
@@ -23,7 +23,7 @@ describe("Collapsible", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(
+      render(
         <Collapsible>
           <CollapsibleTrigger>Accessible Trigger</CollapsibleTrigger>
           <CollapsibleContent>Accessible Content</CollapsibleContent>
@@ -37,7 +37,7 @@ describe("Collapsible", () => {
 
   describe("Component Structure", () => {
     it("should render collapsible with trigger and content", () => {
-      renderWithMocks(
+      render(
         <Collapsible>
           <CollapsibleTrigger>Trigger</CollapsibleTrigger>
           <CollapsibleContent>
@@ -54,7 +54,7 @@ describe("Collapsible", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal collapsible
-      renderWithMocks(
+      render(
         <Collapsible>
           <CollapsibleTrigger>Minimal</CollapsibleTrigger>
           <CollapsibleContent>Content</CollapsibleContent>

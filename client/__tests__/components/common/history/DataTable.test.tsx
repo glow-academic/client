@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -10,9 +10,7 @@ import {
 } from "@/components/common/history/DataTable";
 
 import "@/mocks/api";
-import "@/mocks/mutations";
 import "@/mocks/navigation";
-import "@/mocks/queries";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
@@ -73,7 +71,7 @@ const mockProps: DataTableProps<unknown, unknown> = {
 describe("DataTable", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<DataTable {...mockProps} />);
+      render(<DataTable {...mockProps} />);
 
       // Should render the table
       await waitFor(() => {
@@ -82,7 +80,7 @@ describe("DataTable", () => {
     });
 
     it("should render with props", () => {
-      renderWithMocks(<DataTable {...mockProps} />);
+      render(<DataTable {...mockProps} />);
 
       // Should render table headers - use getAllByText to handle multiple instances
       expect(screen.getByText("Created At")).toBeInTheDocument();
@@ -103,7 +101,7 @@ describe("DataTable", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<DataTable {...mockProps} />);
+      render(<DataTable {...mockProps} />);
 
       // Check for table accessibility
       const table = screen.getByRole("table");
@@ -118,7 +116,7 @@ describe("DataTable", () => {
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<DataTable {...mockProps} />);
+      render(<DataTable {...mockProps} />);
 
       // Test input interactions if inputs exist
       const inputs = screen.queryAllByRole("textbox");
@@ -131,7 +129,7 @@ describe("DataTable", () => {
 
     it("should handle user events", async () => {
       const user = userEvent.setup();
-      renderWithMocks(<DataTable {...mockProps} />);
+      render(<DataTable {...mockProps} />);
 
       // Test button interactions if buttons exist
       const buttons = screen.queryAllByRole("button");
@@ -154,14 +152,14 @@ describe("DataTable", () => {
         scenarioOptions: [],
       };
 
-      renderWithMocks(<DataTable {...emptyProps} />);
+      render(<DataTable {...emptyProps} />);
 
       // Should still render without crashing
       expect(document.body).toBeInTheDocument();
     });
 
     it("should handle missing or invalid props", () => {
-      renderWithMocks(
+      render(
         <DataTable
           columns={mockProps.columns} // Use the same columns to avoid undefined column access
           data={[]}
@@ -189,7 +187,7 @@ describe("DataTable", () => {
         data: largeData,
       };
 
-      renderWithMocks(<DataTable {...largeProps} />);
+      render(<DataTable {...largeProps} />);
 
       // Should render without performance issues
       expect(screen.getByRole("table")).toBeInTheDocument();

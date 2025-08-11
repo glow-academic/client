@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen, waitFor } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen, waitFor } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -7,8 +7,6 @@ import Leaderboard from "@/components/analytics/Leaderboard";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 describe("Leaderboard", () => {
   /* ------------------------------------------------------------------ *
@@ -35,7 +33,7 @@ describe("Leaderboard", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      renderWithMocks(<Leaderboard />);
+      render(<Leaderboard />);
 
       // Wait for loading to complete and check for leaderboard content
       await waitFor(() => {
@@ -52,7 +50,7 @@ describe("Leaderboard", () => {
     });
 
     it("should render with cohortId prop", async () => {
-      renderWithMocks(<Leaderboard cohortId="test-cohort" />);
+      render(<Leaderboard cohortId="test-cohort" />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -69,7 +67,7 @@ describe("Leaderboard", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      renderWithMocks(<Leaderboard />);
+      render(<Leaderboard />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -88,7 +86,7 @@ describe("Leaderboard", () => {
 
   describe("User Interactions", () => {
     it("should handle state changes", async () => {
-      renderWithMocks(<Leaderboard />);
+      render(<Leaderboard />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -105,7 +103,7 @@ describe("Leaderboard", () => {
     });
 
     it("should handle user events", async () => {
-      renderWithMocks(<Leaderboard />);
+      render(<Leaderboard />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -130,7 +128,7 @@ describe("Leaderboard", () => {
       );
       vi.mocked(getAllProfiles).mockRejectedValue(new Error("API Error"));
 
-      renderWithMocks(<Leaderboard />);
+      render(<Leaderboard />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -155,7 +153,7 @@ describe("Leaderboard", () => {
         () => new Promise((resolve) => setTimeout(() => resolve([]), 100))
       );
 
-      renderWithMocks(<Leaderboard />);
+      render(<Leaderboard />);
 
       // Should show loading state initially
       expect(screen.getByText("Loading leaderboard...")).toBeInTheDocument();
@@ -183,7 +181,7 @@ describe("Leaderboard", () => {
       );
       vi.mocked(getAllProfiles).mockResolvedValue([]);
 
-      renderWithMocks(<Leaderboard />);
+      render(<Leaderboard />);
 
       // Wait for loading to complete
       await waitFor(() => {

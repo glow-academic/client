@@ -1,6 +1,6 @@
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from "vitest";
 describe("DatePickerWithRange", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<DatePickerWithRange />);
+      render(<DatePickerWithRange />);
 
       // The component shows default date range, not "Filter by date"
       const button = screen.getByRole("button");
@@ -16,7 +16,7 @@ describe("DatePickerWithRange", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<DatePickerWithRange />);
+      render(<DatePickerWithRange />);
 
       const button = screen.getByRole("button");
       expect(button).toBeInTheDocument();
@@ -25,7 +25,7 @@ describe("DatePickerWithRange", () => {
 
   describe("Component Props", () => {
     it("should render with custom className", () => {
-      renderWithMocks(<DatePickerWithRange className="custom-class" />);
+      render(<DatePickerWithRange className="custom-class" />);
 
       const button = screen.getByRole("button");
       expect(button).toBeInTheDocument();
@@ -36,7 +36,7 @@ describe("DatePickerWithRange", () => {
         from: new Date("2024-01-01"),
         to: new Date("2024-01-31"),
       };
-      renderWithMocks(<DatePickerWithRange dateRange={dateRange} />);
+      render(<DatePickerWithRange dateRange={dateRange} />);
 
       // Should display a date range (the component may use default if not properly controlled)
       const button = screen.getByRole("button");
@@ -49,7 +49,7 @@ describe("DatePickerWithRange", () => {
         to: new Date("2024-01-31"),
       };
       const setDateRange = vi.fn();
-      renderWithMocks(
+      render(
         <DatePickerWithRange
           dateRange={dateRange}
           setDateRange={setDateRange}
@@ -62,7 +62,7 @@ describe("DatePickerWithRange", () => {
     });
 
     it("should render with default date range when no dateRange provided", () => {
-      renderWithMocks(<DatePickerWithRange />);
+      render(<DatePickerWithRange />);
 
       // Should display some date range (default is past month)
       const button = screen.getByRole("button");
@@ -73,7 +73,7 @@ describe("DatePickerWithRange", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with minimal props
-      renderWithMocks(<DatePickerWithRange />);
+      render(<DatePickerWithRange />);
 
       const button = screen.getByRole("button");
       expect(button).toBeInTheDocument();

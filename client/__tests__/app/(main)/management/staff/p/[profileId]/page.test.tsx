@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { act, screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { act, screen } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -7,8 +7,6 @@ import StaffEditPage from "@/app/(main)/management/staff/p/[profileId]/page";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the StaffEdit component
 vi.mock("@/components/management/staff/StaffEdit", () => ({
@@ -47,7 +45,7 @@ describe("StaffEditPage", () => {
       const mockParams = Promise.resolve({ profileId: "test-profile-id" });
 
       await act(async () => {
-        renderWithMocks(<StaffEditPage params={mockParams} />);
+        render(<StaffEditPage params={mockParams} />);
       });
 
       // Should render the staff edit component
@@ -62,7 +60,7 @@ describe("StaffEditPage", () => {
       const mockParams = Promise.resolve({ profileId: "test-profile-id" });
 
       await act(async () => {
-        renderWithMocks(<StaffEditPage params={mockParams} />);
+        render(<StaffEditPage params={mockParams} />);
       });
 
       // Should have proper accessibility attributes
@@ -76,7 +74,7 @@ describe("StaffEditPage", () => {
       const mockParams = Promise.resolve({ profileId: "edge-case-id" });
 
       await act(async () => {
-        renderWithMocks(<StaffEditPage params={mockParams} />);
+        render(<StaffEditPage params={mockParams} />);
       });
 
       // Should render the component even with edge case params

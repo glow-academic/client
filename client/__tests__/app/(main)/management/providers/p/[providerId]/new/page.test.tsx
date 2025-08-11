@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { act, screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { act, screen } from '@/test/custom-render';
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -7,8 +7,6 @@ import NewModelPage from "@/app/(main)/management/providers/p/[providerId]/new/p
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
-import "@/mocks/mutations";
-import "@/mocks/queries";
 
 // Mock the NewModel component
 vi.mock("@/components/management/providers/NewModel", () => ({
@@ -47,7 +45,7 @@ describe("NewModelPage", () => {
       const mockParams = Promise.resolve({ providerId: "test-provider-id" });
 
       await act(async () => {
-        renderWithMocks(<NewModelPage params={mockParams} />);
+        render(<NewModelPage params={mockParams} />);
       });
 
       // Should render the new model component
@@ -62,7 +60,7 @@ describe("NewModelPage", () => {
       const mockParams = Promise.resolve({ providerId: "test-provider-id" });
 
       await act(async () => {
-        renderWithMocks(<NewModelPage params={mockParams} />);
+        render(<NewModelPage params={mockParams} />);
       });
 
       // Should have proper accessibility attributes
@@ -76,7 +74,7 @@ describe("NewModelPage", () => {
       const mockParams = Promise.resolve({ providerId: "edge-case-id" });
 
       await act(async () => {
-        renderWithMocks(<NewModelPage params={mockParams} />);
+        render(<NewModelPage params={mockParams} />);
       });
 
       // Should render the component even with edge case params

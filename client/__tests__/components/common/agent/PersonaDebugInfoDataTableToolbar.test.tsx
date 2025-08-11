@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';
+import { render } from '@/test/custom-render';
 import type { Table } from '@tanstack/react-table';
 
 // ——————————————————————————————————————————
@@ -20,7 +20,7 @@ describe('PersonaDebugInfoDataTableToolbar', () => {
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       
-      renderWithMocks(<PersonaDebugInfoDataTableToolbar {...mockProps} />);
+      render(<PersonaDebugInfoDataTableToolbar {...mockProps} />);
       
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();

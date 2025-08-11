@@ -1,5 +1,5 @@
-import { renderWithMocks } from "@/test/renderWithMocks";
-import { screen } from "@testing-library/react";
+import { render } from '@/test/custom-render';
+import { screen } from '@/test/custom-render';
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -42,7 +42,7 @@ const mockProps: ScenarioPickerProps = {
 describe("ScenarioPicker", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      renderWithMocks(<ScenarioPicker {...mockProps} />);
+      render(<ScenarioPicker {...mockProps} />);
 
       // Component should render with default label
       expect(screen.getByText("Model")).toBeInTheDocument();
@@ -57,7 +57,7 @@ describe("ScenarioPicker", () => {
         multiSelect: true,
       };
 
-      renderWithMocks(<ScenarioPicker {...props} />);
+      render(<ScenarioPicker {...props} />);
 
       // Should render with custom label
       expect(screen.getByText("Custom Label")).toBeInTheDocument();
@@ -69,7 +69,7 @@ describe("ScenarioPicker", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithMocks(<ScenarioPicker {...mockProps} />);
+      render(<ScenarioPicker {...mockProps} />);
 
       // Test for proper combobox accessibility
       const combobox = screen.getByRole("combobox");
@@ -88,7 +88,7 @@ describe("ScenarioPicker", () => {
       const user = userEvent.setup();
       const onSelect = vi.fn();
 
-      renderWithMocks(<ScenarioPicker {...mockProps} onSelect={onSelect} />);
+      render(<ScenarioPicker {...mockProps} onSelect={onSelect} />);
 
       // Component should render with initial state
       const button = screen.getByRole("combobox");
@@ -103,7 +103,7 @@ describe("ScenarioPicker", () => {
       const user = userEvent.setup();
       const onSelect = vi.fn();
 
-      renderWithMocks(<ScenarioPicker {...mockProps} onSelect={onSelect} />);
+      render(<ScenarioPicker {...mockProps} onSelect={onSelect} />);
 
       // Open the picker
       const button = screen.getByRole("combobox");
@@ -130,7 +130,7 @@ describe("ScenarioPicker", () => {
         models: [],
       };
 
-      renderWithMocks(<ScenarioPicker {...emptyProps} />);
+      render(<ScenarioPicker {...emptyProps} />);
 
       // Should still render with default label
       expect(screen.getByText("Model")).toBeInTheDocument();
@@ -147,7 +147,7 @@ describe("ScenarioPicker", () => {
         models: [],
       };
 
-      renderWithMocks(<ScenarioPicker {...minimalProps} />);
+      render(<ScenarioPicker {...minimalProps} />);
 
       // Should render with default values
       expect(screen.getByText("Model")).toBeInTheDocument();
@@ -160,7 +160,7 @@ describe("ScenarioPicker", () => {
         selectedModels: [mockProps.models[0]!],
       };
 
-      renderWithMocks(<ScenarioPicker {...multiSelectProps} />);
+      render(<ScenarioPicker {...multiSelectProps} />);
 
       // Should show selected model name
       const buttons = screen.getAllByRole("combobox");
