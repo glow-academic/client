@@ -1,17 +1,15 @@
 import logging
 import uuid
-from typing import Any, Callable, List, Union
+from typing import Any, List
 
-import agents as agents_sdk  # type: ignore
 from agents import (Agent, GuardrailFunctionOutput, OutputGuardrail, Runner,
-                    TContext)
+                    TContext, trace)
 from agents.items import TResponseInputItem
 from app.db import get_session
 from app.models import (Agents, DebugInfo, ModelRuns, Models, Providers,
                         SimulationAttempts, SimulationChats,
                         SimulationMessages)
 from app.services.agents.generic import GenericAgent
-from app.utils.chat import get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from fastapi import Depends
 from pydantic import BaseModel
@@ -54,6 +52,8 @@ def _build_guardrail_agent(session: Session) -> tuple[GenericAgent, uuid.UUID, u
 
 
 def get_output_guardrails(
+    chat_id: uuid.UUID,
+    input_items: List[TResponseInputItem],
     session: Session = Depends(get_session),
 ) -> List[OutputGuardrail[TContext]]:
     """Return a list of output guardrails suitable for attaching to an Agent."""
@@ -62,7 +62,16 @@ def get_output_guardrails(
     async def _output_guard(ctx: Any, agent: Agent, output: str) -> GuardrailFunctionOutput:
         db_session = next(get_session())
         try:
-            input_items: List[TResponseInputItem] = []
+
+            chat = db_session.exec(
+                select(SimulationChats).where(SimulationChats.id == chat_id)
+            ).one()
+
+            attempt = db_session.exec(
+                select(SimulationAttempts).where(SimulationAttempts.id == chat.attempt_id)
+            ).one()
+
+            profile_id = attempt.profile_id
 
             # Intro message before the history
             intro_message: TResponseInputItem = {
@@ -73,43 +82,6 @@ def get_output_guardrails(
                 ),
             }
             input_items.append(intro_message)
-
-            # Attempt to derive chat via trace_id from context
-            trace_id = getattr(getattr(ctx, "context", None), "trace_id", None)
-
-            if trace_id:
-                chat = db_session.exec(
-                    select(SimulationChats).where(SimulationChats.trace_id == str(trace_id))
-                ).one_or_none()
-            else:
-                chat = None
-
-            if chat is not None:
-                messages = db_session.exec(
-                    select(SimulationMessages).where(SimulationMessages.chat_id == chat.id)
-                ).all()
-                conversation_history = get_simulation_conversation_history(list(messages))
-                input_items.extend(conversation_history)
-
-                # Append the new assistant output if it doesn't match last assistant content
-                last_content = None
-                if conversation_history:
-                    last_content = conversation_history[-1].get("content")
-                if last_content != output:
-                    input_items.append({"role": "assistant", "content": output})
-            else:
-                # Fallback: no chat context; include only the final output
-                input_items.append({"role": "assistant", "content": output})
-
-            # Safely resolve attempt for profile attribution
-            attempt = None
-            if chat:
-                attempt = db_session.exec(
-                    select(SimulationAttempts).where(SimulationAttempts.id == chat.attempt_id)
-                ).one_or_none()
-
-            # create model run
-            profile_id = attempt.profile_id if attempt is not None else None
             model_run = ModelRuns(
                 model_id=model_id,
                 input_tokens=0,
@@ -120,9 +92,10 @@ def get_output_guardrails(
             session.add(model_run)
             session.commit()
 
-            result = await Runner.run(
-                guardrail_agent.agent(), input_items, context=DebugContext(session=session, model_run_id=model_run.id)
-            )
+            with trace(chat.title, trace_id=chat.trace_id, group_id=str(attempt.id)):
+                result = await Runner.run(
+                    guardrail_agent.agent(), input_items, context=DebugContext(session=session, model_run_id=model_run.id)
+                )
 
             usage = result.context_wrapper.usage
             model_run.input_tokens = usage.input_tokens

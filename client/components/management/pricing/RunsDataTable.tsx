@@ -84,7 +84,7 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
         cell: ({ row }) => (
           <div className="text-sm">{row.getValue("modelName")}</div>
         ),
-        filterFn: (row, id, value) => {
+        filterFn: (row, _id, value) => {
           return (value as string[]).includes(row.original.modelId || "");
         },
       },
@@ -101,7 +101,8 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
         },
       },
       {
-        id: "actor",
+        id: "actorId",
+        accessorFn: (r) => r.agentId || r.personaId || "",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Agent/Persona" />
         ),
@@ -111,7 +112,7 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
           return <div className="text-sm">{label}</div>;
         },
         filterFn: (row, _id, value) => {
-          const selected = value as string[];
+          const selected = (value as string[] | undefined) ?? [];
           const { agentId, personaId } = row.original;
           if (!selected?.length) return true;
           if (agentId && selected.includes(agentId)) return true;
@@ -122,7 +123,7 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
       {
         accessorKey: "inputTokens",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Input tokens" />
+          <DataTableColumnHeader column={column} title="Input Tokens" />
         ),
         cell: ({ row }) => (
           <div className="text-sm tabular-nums">
@@ -134,7 +135,7 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
       {
         accessorKey: "outputTokens",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Output tokens" />
+          <DataTableColumnHeader column={column} title="Output Tokens" />
         ),
         cell: ({ row }) => (
           <div className="text-sm tabular-nums">
@@ -154,7 +155,7 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
         cell: ({ row }) => {
           const d = row.original.debugInfo || [];
           const has = d.length > 0;
-          const content = has ? d[0].content : null; // display first entry content
+          const content = d[0]?.content ?? null; // display first entry content
           return (
             <HoverCard>
               <HoverCardTrigger asChild>
@@ -250,21 +251,36 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 flex-wrap">
-          <DataTableFacetedFilter
-            column={table.getColumn("modelName")}
-            title="Model"
-            options={modelOptions}
-          />
-          <DataTableFacetedFilter
-            column={table.getColumn("actor")}
-            title="Agent/Persona"
-            options={actorOptions}
-          />
-          <DataTableFacetedFilter
-            column={table.getColumn("profileName")}
-            title="Person"
-            options={profileOptions}
-          />
+          {(() => {
+            const col = table.getColumn("modelName");
+            return col ? (
+              <DataTableFacetedFilter
+                column={col}
+                title="Model"
+                options={modelOptions}
+              />
+            ) : null;
+          })()}
+          {(() => {
+            const col = table.getColumn("actorId");
+            return col ? (
+              <DataTableFacetedFilter
+                column={col}
+                title="Agent/Persona"
+                options={actorOptions}
+              />
+            ) : null;
+          })()}
+          {(() => {
+            const col = table.getColumn("profileName");
+            return col ? (
+              <DataTableFacetedFilter
+                column={col}
+                title="Person"
+                options={profileOptions}
+              />
+            ) : null;
+          })()}
           {table.getState().columnFilters.length > 0 && (
             <Button
               variant="ghost"

@@ -58,7 +58,7 @@ const columnMap = {
   actions: "Actions",
   modelId: "Model",
   modelName: "Model",
-  actor: "Agent/Persona",
+  actorId: "Agent/Persona",
   inputTokens: "Input Tokens",
   outputTokens: "Output Tokens",
   profileName: "Person",
