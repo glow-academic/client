@@ -55,11 +55,11 @@ export default function SimulationCard({
   scenarios,
   personas,
 }: SimulationCardProps) {
-  const { actualProfile } = useProfile();
+  const { activeProfile } = useProfile();
   const isEmulatingAnother = Boolean(
     effectiveProfile?.id &&
-      actualProfile?.id &&
-      effectiveProfile.id !== actualProfile.id
+      activeProfile?.id &&
+      effectiveProfile.id !== activeProfile.id
   );
   const validScenarioIds =
     simulation.scenarioIds?.filter((id: string) => id !== "RAY") || [];
@@ -269,51 +269,79 @@ export default function SimulationCard({
         </CardContent>
 
         <CardFooter className="pt-0 relative z-10">
-          <button
-            onClick={() => {
-              // Dispatch custom event for tour progression when simulation button is pressed
-              window.dispatchEvent(
-                new CustomEvent("simulationButtonPressed", {
-                  detail: { simulationId: simulation.id },
-                })
-              );
-              onStartSimulation(simulation.id);
-            }}
-            disabled={loadingSimulation === simulation.id || isEmulatingAnother}
-            data-testid={`start-simulation-${simulation.id}`}
-            className={`w-full text-center py-2 rounded-lg text-white font-medium text-sm hover:shadow-lg transition-all duration-300 ${
-              loadingSimulation === simulation.id
-                ? "animate-pulse cursor-not-allowed"
-                : isEmulatingAnother
-                  ? "cursor-not-allowed opacity-70"
+          {isEmulatingAnother ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="w-full">
+                  <button
+                    onClick={() => {
+                      window.dispatchEvent(
+                        new CustomEvent("simulationButtonPressed", {
+                          detail: { simulationId: simulation.id },
+                        })
+                      );
+                      onStartSimulation(simulation.id);
+                    }}
+                    disabled
+                    data-testid={`start-simulation-${simulation.id}`}
+                    className={`w-full text-center py-2 rounded-lg text-white font-medium text-sm hover:shadow-lg transition-all duration-300 cursor-not-allowed opacity-70 ${
+                      typeof gradientClass === "string" &&
+                      !gradientClass.startsWith("linear-gradient")
+                        ? `bg-gradient-to-r ${gradientClass}`
+                        : ""
+                    }`}
+                    style={{
+                      ...(typeof gradientClass === "string" &&
+                        gradientClass.startsWith("linear-gradient") && {
+                          background: gradientClass,
+                        }),
+                    }}
+                  >
+                    Unavailable
+                  </button>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>You cannot start simulations on behalf of another user.</p>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <button
+              onClick={() => {
+                window.dispatchEvent(
+                  new CustomEvent("simulationButtonPressed", {
+                    detail: { simulationId: simulation.id },
+                  })
+                );
+                onStartSimulation(simulation.id);
+              }}
+              disabled={loadingSimulation === simulation.id}
+              data-testid={`start-simulation-${simulation.id}`}
+              className={`w-full text-center py-2 rounded-lg text-white font-medium text-sm hover:shadow-lg transition-all duration-300 ${
+                loadingSimulation === simulation.id
+                  ? "animate-pulse cursor-not-allowed"
                   : "hover:scale-105 cursor-pointer"
-            } disabled:opacity-70 ${
-              typeof gradientClass === "string" &&
-              !gradientClass.startsWith("linear-gradient")
-                ? `bg-gradient-to-r ${gradientClass}`
-                : ""
-            }`}
-            style={{
-              ...(typeof gradientClass === "string" &&
-                gradientClass.startsWith("linear-gradient") && {
-                  background: gradientClass,
-                }),
-            }}
-          >
-            {loadingSimulation === simulation.id
-              ? "Starting..."
-              : isEmulatingAnother
-                ? "Unavailable"
+              } disabled:opacity-70 ${
+                typeof gradientClass === "string" &&
+                !gradientClass.startsWith("linear-gradient")
+                  ? `bg-gradient-to-r ${gradientClass}`
+                  : ""
+              }`}
+              style={{
+                ...(typeof gradientClass === "string" &&
+                  gradientClass.startsWith("linear-gradient") && {
+                    background: gradientClass,
+                  }),
+              }}
+            >
+              {loadingSimulation === simulation.id
+                ? "Starting..."
                 : type === "default"
                   ? "Start Simulation"
                   : simulation.hasPassed
                     ? "Completed Simulations"
                     : "Start Simulations"}
-          </button>
-          {isEmulatingAnother && (
-            <div className="mt-2 text-xs text-red-500">
-              You cannot start simulations on behalf of another user.
-            </div>
+            </button>
           )}
         </CardFooter>
       </Card>

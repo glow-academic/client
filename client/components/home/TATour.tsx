@@ -22,13 +22,19 @@ import { createTATourSteps } from "@/utils/tour-steps";
 
 // Guide Button Component
 function GuideButton() {
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, activeProfile } = useProfile();
   const { openGuide, getGuideButtonState } = useTour();
 
   const buttonState = getGuideButtonState();
 
   // Don't render if hidden or no profile
-  if (buttonState === "hidden" || !effectiveProfile) {
+  const isEmulatingAnother = Boolean(
+    effectiveProfile?.id &&
+      activeProfile?.id &&
+      effectiveProfile.id !== activeProfile.id
+  );
+
+  if (buttonState === "hidden" || !effectiveProfile || isEmulatingAnother) {
     return null;
   }
 
@@ -77,7 +83,7 @@ function GuideButton() {
 export default function TATour() {
   const router = useRouter();
   const pathname = usePathname();
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, activeProfile } = useProfile();
   const { isConnected, emitStartSimulation } = useWebSocket();
   const queryClient = useQueryClient();
 
@@ -420,6 +426,20 @@ export default function TATour() {
       },
     });
 
+    const isEmulatingAnother = Boolean(
+      effectiveProfile?.id &&
+        activeProfile?.id &&
+        effectiveProfile.id !== activeProfile.id
+    );
+
+    // If emulating another user, ensure the tour is closed and guide hidden
+    if (isEmulatingAnother) {
+      setShowGuideButton(false);
+      closeTour();
+      setAttemptId(null);
+      return;
+    }
+
     if (!effectiveProfile || effectiveProfile.role !== "ta") {
       logInfo("TATour: Skipping initialization", {
         hasProfile: !!effectiveProfile,
@@ -534,6 +554,7 @@ export default function TATour() {
     }
   }, [
     effectiveProfile,
+    activeProfile,
     tourState.steps.length, // Add this to prevent re-initialization
     tourState.profile?.id, // Add this to check if we already have the right profile
     tourState.isOpen, // Add this to check if we need to close the tour
@@ -541,6 +562,8 @@ export default function TATour() {
     tourState.attemptId, // Add missing dependency
     openTour,
     closeTour,
+    setShowGuideButton,
+    setAttemptId,
     handleStartPracticeSimulation,
     router, // Add router back as it's needed
     taCohorts, // Add taCohorts dependency

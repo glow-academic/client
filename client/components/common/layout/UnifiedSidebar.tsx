@@ -263,7 +263,7 @@ export function UnifiedSidebar({
 
     const options = [];
 
-    // 1. Start with the user's own profile (actualProfile)
+    // 1. Start with the user's own profile (activeProfile)
     options.push(activeProfile);
 
     // 2. Add profiles with defaultProfile = true
