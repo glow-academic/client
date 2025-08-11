@@ -1,8 +1,8 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 290
-- **Tests Created**: 0
+- **Total Components**: 291
+- **Tests Created**: 1
 - **Tests Updated**: 0
 - **Tests Skipped** (already implemented): 290
 
@@ -105,6 +105,7 @@
 | RubricStandardGroup | components/common/rubric/RubricStandardGroup.tsx | RubricStandardGroup.test.tsx | ✅ Implemented |
 | TableRubric | components/common/rubric/TableRubric.tsx | TableRubric.test.tsx | ✅ Implemented |
 | DocumentPicker | components/common/scenario/DocumentPicker.tsx | DocumentPicker.test.tsx | ✅ Implemented |
+| ParameterItemPicker | components/common/scenario/ParameterItemPicker.tsx | ParameterItemPicker.test.tsx | ✅ Implemented |
 | ParameterSelector | components/common/scenario/ParameterSelector.tsx | ParameterSelector.test.tsx | ✅ Implemented |
 | PersonaPicker | components/common/scenario/PersonaPicker.tsx | PersonaPicker.test.tsx | ✅ Implemented |
 | Scenario | components/common/scenario/Scenario.tsx | Scenario.test.tsx | ✅ Implemented |
@@ -426,6 +427,7 @@ __tests__/
 │   │   │   ├── TableRubric.test.tsx
 │   │   ├── scenario/
 │   │   │   ├── DocumentPicker.test.tsx
+│   │   │   ├── ParameterItemPicker.test.tsx
 │   │   │   ├── ParameterSelector.test.tsx
 │   │   │   ├── PersonaPicker.test.tsx
 │   │   │   ├── Scenario.test.tsx

@@ -37,8 +37,11 @@ import { deleteParameterItem } from "@/utils/mutations/parameter_items/delete-pa
 import { updateParameterItem } from "@/utils/mutations/parameter_items/update-parameter-item";
 import { createParameter } from "@/utils/mutations/parameters/create-parameter";
 import { updateParameter } from "@/utils/mutations/parameters/update-parameter";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getParameterItemsByParameter } from "@/utils/queries/parameter_items/get-parameter-items-by-parameter";
 import { getParameter } from "@/utils/queries/parameters/get-parameter";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { Plus, Trash2 } from "lucide-react";
 
 interface FormData {
@@ -104,6 +107,50 @@ export default function Parameter({
     }
   );
 
+  // Fetch cohorts, sims, scenarios to compute active usage of parameter items
+  const { data: cohorts = [] } = useQuery<
+    { id: string; active: boolean; simulationIds: string[] }[]
+  >({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
+  });
+  const { data: sims = [] } = useQuery<
+    { id: string; active: boolean; scenarioIds: string[] }[]
+  >({
+    queryKey: ["simulations"],
+    queryFn: () => getAllSimulations(),
+  });
+  const { data: allScenarios = [] } = useQuery<
+    { id: string; parameterItemIds: string[] | null }[]
+  >({
+    queryKey: ["scenarios"],
+    queryFn: () => getAllScenarios(),
+  });
+
+  const inUseParameterItemIds = useMemo(() => {
+    // Active cohorts
+    const activeCohorts = cohorts.filter((c) => c.active);
+    const activeSimulationIds = new Set<string>();
+    activeCohorts.forEach((c) => {
+      (c.simulationIds || []).forEach((id) => activeSimulationIds.add(id));
+    });
+    const activeSimulations = sims.filter(
+      (s) => s.active && activeSimulationIds.has(s.id)
+    );
+    const scenarioIds = new Set<string>();
+    activeSimulations.forEach((s) => {
+      (s.scenarioIds || []).forEach((id) => scenarioIds.add(id));
+    });
+    const relevantScenarios = (allScenarios || []).filter((sc) =>
+      scenarioIds.has(sc.id)
+    );
+    const ids = new Set<string>();
+    relevantScenarios.forEach((sc: { parameterItemIds: string[] | null }) => {
+      (sc.parameterItemIds || []).forEach((pid: string) => ids.add(pid));
+    });
+    return ids;
+  }, [cohorts, sims, allScenarios]);
+
   const isLoading = isLoadingParameter || isLoadingParameterItems;
 
   const [initiallySorted, setInitiallySorted] = useState(false);
@@ -149,15 +196,17 @@ export default function Parameter({
     if (!parameterItems) return;
     if (!initiallySorted) return; // wait until initial sort hook runs
 
-    const mapped = parameterItems.sort((a, b) => a.name.localeCompare(b.name)).map((item) => ({
-      id: item.id,
-      name: item.name,
-      description: item.description,
-      value: item.value,
-      defaultItem: item.defaultItem ?? false,
-      isNew: false,
-      isDeleted: false,
-    }));
+    const mapped = parameterItems
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((item) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        value: item.value,
+        defaultItem: item.defaultItem ?? false,
+        isNew: false,
+        isDeleted: false,
+      }));
     setParameterItemsFormData(mapped);
   }, [parameterItems, mode, initiallySorted]);
 
@@ -363,8 +412,6 @@ export default function Parameter({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Parameter Basic Information */}
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Parameter Information</h2>
-
             <div className="space-y-2">
               <Label htmlFor="name">Parameter Name *</Label>
               {formData?.name !== undefined && !isLoading ? (
@@ -462,13 +509,12 @@ export default function Parameter({
 
           {/* Parameter Items Section */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Parameter Items</h2>
+            <div className="flex items-center justify-end">
               <Button
                 type="button"
                 onClick={handleAddParameterItem}
                 size="sm"
-                variant="outline"
+                variant="default"
               >
                 <Plus className="h-3 w-3 mr-1" />
                 Add Item
@@ -538,7 +584,7 @@ export default function Parameter({
                           </TableCell>
                         )}
                         <TableCell className="w-20">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             {effectiveProfile?.role === "superadmin" && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -561,7 +607,9 @@ export default function Parameter({
                                 </TooltipContent>
                               </Tooltip>
                             )}
-                            <Tooltip>
+                            {!inUseParameterItemIds.has(
+                                    item.id || ""
+                                  ) && <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
                                   type="button"
@@ -571,6 +619,7 @@ export default function Parameter({
                                     handleDeleteParameterItem(itemIndex)
                                   }
                                   aria-label="Delete parameter item"
+                                  className="pb-1"
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
@@ -578,7 +627,7 @@ export default function Parameter({
                               <TooltipContent>
                                 Delete parameter item
                               </TooltipContent>
-                            </Tooltip>
+                            </Tooltip>}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -606,7 +655,32 @@ export default function Parameter({
             >
               Back
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting ||
+                (JSON.stringify(formData) ===
+                  JSON.stringify({
+                    name: parameter?.name,
+                    description: parameter?.description,
+                    numerical: parameter?.numerical,
+                    active: parameter?.active,
+                    defaultParameter: parameter?.defaultParameter ?? false,
+                  }) &&
+                  JSON.stringify(parameterItemsFormData) ===
+                    JSON.stringify(
+                      (parameterItems || []).map((item) => ({
+                        id: item.id,
+                        name: item.name,
+                        description: item.description,
+                        value: item.value,
+                        defaultItem: item.defaultItem ?? false,
+                        isNew: false,
+                        isDeleted: false,
+                      }))
+                    ))
+              }
+            >
               {isSubmitting
                 ? isEditMode
                   ? "Updating..."
