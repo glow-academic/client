@@ -28,6 +28,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { Standard, StandardGroup } from "@/types";
 import {
@@ -42,6 +47,7 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getStandardGroupsByRubric } from "@/utils/queries/standard_groups/get-standard-groups-by-rubric";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 type SimulationChatFeedback = typeof simulationChatFeedbacks.$inferSelect;
 type SimulationChatCrowdsourcedFeedback =
@@ -156,6 +162,19 @@ export default function TableRubric({
     });
     return outer;
   }, [crowdFeedbacks]);
+
+  // Detect if the current user already voted for a given (row anchor, level points)
+  const hasUserVoted = (
+    anchorFeedbackId: string | undefined,
+    levelPoints: number
+  ): boolean => {
+    if (!anchorFeedbackId) return false;
+    // Without per-profile attribution in schema, approximate by counting presence.
+    // We prevent duplicate submissions on the client by blocking the button if a vote exists for this level.
+    const levelCounts = countsByAnchorAndTotal.get(anchorFeedbackId);
+    const count = levelCounts?.get(levelPoints) || 0;
+    return count > 0;
+  };
 
   const { mutateAsync: submitCrowdFeedback, isPending: isSubmitting } =
     useMutation({
@@ -399,11 +418,16 @@ export default function TableRubric({
                       ? standardIdToFeedback.get(achievedStandardForRow.id)?.id
                       : undefined;
 
+                    const alreadyVoted = hasUserVoted(
+                      rowAnchorFeedbackId,
+                      standard.points
+                    );
                     const isClickable =
                       canCrowdsource &&
                       !!simulationChatId &&
                       !!rowAnchorFeedbackId &&
-                      !isAchieved;
+                      !isAchieved &&
+                      !alreadyVoted;
 
                     return (
                       <TableCell
@@ -421,6 +445,14 @@ export default function TableRubric({
                         tabIndex={isClickable ? 0 : -1}
                         onKeyDown={(e) => {
                           if (!isClickable) return;
+                          const target = e.target as HTMLElement;
+                          if (
+                            target.closest(
+                              "textarea, input, button, select, [contenteditable='true']"
+                            )
+                          ) {
+                            return; // do not hijack keys while typing or interacting with controls
+                          }
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
                             setActiveStandardId(standard.id);
@@ -431,17 +463,43 @@ export default function TableRubric({
                           setActiveStandardId(standard.id);
                         }}
                       >
-                        <div className="space-y-1">
-                          {isAchieved && feedback ? (
-                            <div className="text-xs leading-tight">
-                              {feedback.feedback}
-                            </div>
-                          ) : (
-                            <div className="text-xs leading-tight">
-                              {standard.description}
-                            </div>
-                          )}
-                        </div>
+                        {isClickable ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="space-y-1">
+                                {isAchieved && feedback ? (
+                                  <div className="text-xs leading-tight">
+                                    {feedback.feedback}
+                                  </div>
+                                ) : (
+                                  <div className="text-xs leading-tight">
+                                    {standard.description}
+                                  </div>
+                                )}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              Click to propose this level.
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <div className="space-y-1">
+                            {isAchieved && feedback ? (
+                              <div className="text-xs leading-tight">
+                                {feedback.feedback}
+                              </div>
+                            ) : (
+                              <div className="text-xs leading-tight">
+                                {standard.description}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {!isClickable && alreadyVoted && (
+                          <div className="mt-1 text-[10px] text-muted-foreground">
+                            You have already proposed a vote for this level.
+                          </div>
+                        )}
 
                         {isClickable && activeStandardId === standard.id && (
                           <Popover
@@ -456,6 +514,7 @@ export default function TableRubric({
                             {/* Anchor to this cell so the popover positions correctly */}
                             <PopoverAnchor />
                             <PopoverContent
+                              onClick={(e) => e.stopPropagation()}
                               align="center"
                               side="top"
                               className="w-80"
@@ -479,7 +538,8 @@ export default function TableRubric({
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                      e.stopPropagation();
                                       setActiveStandardId(null);
                                       setCrowdFeedbackText("");
                                     }}
@@ -489,7 +549,8 @@ export default function TableRubric({
                                   <Button
                                     size="sm"
                                     disabled={isSubmitting}
-                                    onClick={async () => {
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
                                       if (!rowAnchorFeedbackId) return;
                                       await submitCrowdFeedback({
                                         simulationChatFeedbackId:
@@ -500,6 +561,9 @@ export default function TableRubric({
                                       });
                                       setActiveStandardId(null);
                                       setCrowdFeedbackText("");
+                                      toast.success(
+                                        "Thanks for your feedback!"
+                                      );
                                     }}
                                   >
                                     {isSubmitting ? "Submitting..." : "Submit"}
