@@ -27,3 +27,7 @@ pydantic==2.11.7
 requests==2.32.4
 
 reportlab==4.0.4
+
+# Lightweight text similarity / fuzzy matching
+rapidfuzz==3.9.1
+textdistance==4.6.2
