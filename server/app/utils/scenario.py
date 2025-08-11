@@ -108,7 +108,6 @@ async def randomly_fill_scenario_attributes(
             scenario_text = f"{scenario.name or ''} {scenario.description or ''}"
             scenario_tokens = set(_tokens(scenario_text))
 
-            # Known class/type hints to boost when present in scenario text
             known_types = [
                 "homework",
                 "project",
@@ -122,48 +121,54 @@ async def randomly_fill_scenario_attributes(
 
             def _score(doc: Documents) -> float:
                 score = 0.0
-                # Tag overlap
                 tag_tokens: set[str] = set()
                 for tag in (doc.tags or []):
                     tag_tokens.update(_tokens(tag))
                 overlap = scenario_tokens.intersection(tag_tokens)
                 score += 5.0 * len(overlap)
-
-                # Document name token overlap
                 name_tokens = set(_tokens(doc.name or ""))
                 score += 2.0 * len(scenario_tokens.intersection(name_tokens))
-
-                # Type boost if scenario hints at this kind of doc
                 doc_type = (doc.type or "").lower()
                 if doc_type and (scenario_has_type.get(doc_type, False)):
                     score += 10.0
-
-                # Soft contains of type keyword in scenario text
                 if doc_type and doc_type in _norm(scenario_text):
                     score += 3.0
-
+                # add jitter to reduce determinism
+                score += random.random() * 0.25
                 return score
 
-            # Rank docs by score (stable sort with random jitter to avoid ties looking identical)
-            scored = [
-                (doc, _score(doc) + random.random() * 0.01)  # tiny jitter
-                for doc in active_documents
-            ]
-            scored.sort(key=lambda x: x[1], reverse=True)
+            # Build clusters per tag and choose one tag to ensure all selected share the same tag
+            tag_to_docs: dict[str, list[Documents]] = {}
+            for d in active_documents:
+                tags = d.tags or ["__untagged__"]
+                if len(tags) == 0:
+                    tags = ["__untagged__"]
+                for t in tags:
+                    tag_to_docs.setdefault(t, []).append(d)
 
-            # Choose up to 3 with positive scores; if none positive, fall back to up to 3 random
-            top_positive = [doc for doc, s in scored if s > 0][:3]
-            if top_positive:
-                selected_docs = top_positive
-                logger.info(
-                    f"Selected documents by similarity (count={len(selected_docs)}): {[d.id for d in selected_docs]}"
-                )
-            else:
-                num_docs = random.randint(0, min(3, len(active_documents)))
-                selected_docs = random.sample(active_documents, num_docs) if num_docs > 0 else []
-                logger.info(
-                    f"Fallback random selection (count={len(selected_docs)}): {[d.id for d in selected_docs]}"
-                )
+            # Score each tag by the best document score in that cluster
+            tag_scores: list[tuple[str, float]] = []
+            for t, docs in tag_to_docs.items():
+                best = 0.0
+                for d in docs:
+                    s = _score(d)
+                    if s > best:
+                        best = s
+                # jitter per tag to avoid ties
+                tag_scores.append((t, best + random.random() * 0.1))
+
+            tag_scores.sort(key=lambda x: x[1], reverse=True)
+            chosen_tag = tag_scores[0][0] if tag_scores else "__untagged__"
+            candidates = tag_to_docs.get(chosen_tag, [])
+            # Sort candidates by score and take up to 3, but sample randomly among top N
+            cand_scored = [(d, _score(d)) for d in candidates]
+            cand_scored.sort(key=lambda x: x[1], reverse=True)
+            top_n = cand_scored[: min(6, len(cand_scored))]
+            k = min(3, len(top_n))
+            selected_docs = [d for d, _ in random.sample(top_n, k)] if k > 0 else []
+            logger.info(
+                f"Selected documents with shared tag '{chosen_tag}' (count={len(selected_docs)}): {[d.id for d in selected_docs]}"
+            )
 
             scenario_documents = [doc.id for doc in selected_docs]
         else:
@@ -317,24 +322,26 @@ def suggest_randomized_sections(
     # Suggest persona -----------------------------------------------------
     suggested_persona_id = persona_id
     if "persona" in targets_set:
+        # Make persona selection fully random among active personas to reduce determinism
         active_personas = session.exec(select(Personas).where(Personas.active)).all()
-
-        def score_persona(p: Personas) -> float:
-            score = 0.0
-            ptok = set(_tokens(p.name)) | set(_tokens(p.description))
-            score += 3.0 * len(ptok & context_tokens)
-            # Boost default_persona slightly
-            if p.default_persona:
-                score += 0.5
-            return score
-
         if active_personas:
-            ranked = sorted(active_personas, key=score_persona, reverse=True)
-            suggested_persona_id = ranked[0].id if ranked else None
+            suggested_persona_id = random.choice(active_personas).id
 
     # Suggest documents ---------------------------------------------------
-    suggested_document_ids = list(document_ids or [])
+    # If documents explicitly provided as empty list, respect "no documents"
+    if document_ids is not None and len(document_ids) == 0:
+        suggested_document_ids = []
+    else:
+        suggested_document_ids = list(document_ids or [])
     if "documents" in targets_set:
+        # Respect explicit no-documents signal
+        if document_ids is not None and len(document_ids) == 0:
+            suggested_document_ids = []
+            return {
+                "persona_id": persona_id,
+                "document_ids": suggested_document_ids,
+                "parameter_item_ids": list(parameter_item_ids or []),
+            }
         active_documents = session.exec(select(Documents).where(Documents.active)).all()
         known_types = [
             "homework",
@@ -365,14 +372,33 @@ def suggest_randomized_sections(
             return score
 
         if active_documents:
-            scored = [(doc, score_doc(doc) + random.random() * 0.01) for doc in active_documents]
-            scored.sort(key=lambda x: x[1], reverse=True)
-            top = [doc for doc, s in scored if s > 0][:3]
-            if not top:
-                # fallback: keep up to 3 random
-                k = min(3, len(active_documents))
-                top = random.sample(active_documents, k) if k > 0 else []
-            suggested_document_ids = [d.id for d in top]
+            # Ensure all selected share the same tag
+            tag_to_docs: dict[str, list[Documents]] = {}
+            for d in active_documents:
+                tags = d.tags or ["__untagged__"]
+                if len(tags) == 0:
+                    tags = ["__untagged__"]
+                for t in tags:
+                    tag_to_docs.setdefault(t, []).append(d)
+
+            # Rank tags by best doc score with jitter
+            tag_scores: list[tuple[str, float]] = []
+            for t, docs in tag_to_docs.items():
+                best = 0.0
+                for d in docs:
+                    s = score_doc(d)
+                    if s > best:
+                        best = s
+                tag_scores.append((t, best + random.random() * 0.1))
+            tag_scores.sort(key=lambda x: x[1], reverse=True)
+            chosen_tag = tag_scores[0][0] if tag_scores else "__untagged__"
+            candidates = tag_to_docs.get(chosen_tag, [])
+            cand_scored = [(d, score_doc(d)) for d in candidates]
+            cand_scored.sort(key=lambda x: x[1], reverse=True)
+            top_n = cand_scored[: min(6, len(cand_scored))]
+            k = min(3, len(top_n))
+            selected = [d for d, _ in random.sample(top_n, k)] if k > 0 else []
+            suggested_document_ids = [d.id for d in selected]
 
     # Suggest parameters --------------------------------------------------
     suggested_parameter_item_ids = list(parameter_item_ids or [])
@@ -384,26 +410,28 @@ def suggest_randomized_sections(
                 items = session.exec(select(ParameterItems).where(ParameterItems.parameter_id == param.id)).all()
                 if not items:
                     continue
-
-                def score_item(it: ParameterItems) -> float:
-                    score = 0.0
-                    it_tokens = set(_tokens(it.name)) | set(_tokens(it.description)) | set(_tokens(it.value))
-                    score += 4.0 * len(it_tokens & context_tokens)
-                    # slight boost for default item
-                    if it.default_item:
-                        score += 0.5
-                    # slight boost if parameter name/desc matches context
-                    p_tokens = set(_tokens(param.name)) | set(_tokens(param.description))
-                    score += 1.0 * len(p_tokens & context_tokens)
-                    return score
-
-                ranked_items = sorted(items, key=score_item, reverse=True)
-                top_item = ranked_items[0] if ranked_items else None
-                if top_item and score_item(top_item) > 0:
-                    chosen.append(top_item.id)
-                else:
-                    # fallback random
+                # If parameter.default_parameter is True => completely random item
+                param_is_default = getattr(param, "default_parameter", False)
+                if param_is_default:
                     chosen.append(random.choice(items).id)
+                else:
+                    # non-default: similarity-based with randomness
+                    def score_item(it: ParameterItems) -> float:
+                        score = 0.0
+                        it_tokens = set(_tokens(it.name)) | set(_tokens(it.description)) | set(_tokens(it.value))
+                        score += 4.0 * len(it_tokens & context_tokens)
+                        # boost if parameter name/desc matches context
+                        p_tokens = set(_tokens(param.name)) | set(_tokens(param.description))
+                        score += 1.0 * len(p_tokens & context_tokens)
+                        # add jitter
+                        score += random.random() * 0.5
+                        return score
+
+                    ranked_items = sorted(items, key=score_item, reverse=True)
+                    top_pool = ranked_items[: min(3, len(ranked_items))]
+                    if top_pool:
+                        chosen_item = random.choice(top_pool)
+                        chosen.append(chosen_item.id)
             suggested_parameter_item_ids = chosen
 
     return {

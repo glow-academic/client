@@ -117,6 +117,7 @@ export default function Scenario({
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [originalFormData, setOriginalFormData] =
     useState<Partial<ScenarioType>>(initialFormData);
+  const [noDocuments, setNoDocuments] = useState(false);
   const [draggedCheckpointIndex, setDraggedCheckpointIndex] = useState<
     number | null
   >(null);
@@ -405,6 +406,10 @@ export default function Scenario({
   const handleRandomizeDocuments = async () => {
     try {
       setIsRandomizingDocuments(true);
+      if (noDocuments) {
+        toast("No documents selected by choice");
+        return;
+      }
       const resp = await randomizeScenario({
         name: formData.name || "",
         description: formData.description || "",
@@ -774,14 +779,29 @@ export default function Scenario({
                 <CardDescription>{steps[1]?.description || ""}</CardDescription>
               </div>
             </div>
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex items-center gap-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={noDocuments}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setNoDocuments(checked);
+                    if (checked) {
+                      handleInputChange("documentIds", []);
+                    }
+                  }}
+                  disabled={isReadonly}
+                />
+                No documents
+              </label>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={handleRandomizeDocuments}
-                    disabled={isReadonly || isRandomizingDocuments}
+                    disabled={isReadonly || isRandomizingDocuments || noDocuments}
                   >
                     {isRandomizingDocuments ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -821,7 +841,7 @@ export default function Scenario({
                   selectedDocs.map((doc) => doc.id)
                 )
               }
-              disabled={isReadonly}
+              disabled={isReadonly || noDocuments}
             />
           </CardContent>
         </Card>
