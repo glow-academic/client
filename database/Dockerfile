@@ -28,6 +28,7 @@ VOLUME ["/var/lib/postgresql/data"]
 #   /docker-entrypoint-initdb.d is executed *once* on first-time
 #   container start (not on restart). No extra entrypoint needed.
 COPY app/                           /docker-entrypoint-initdb.d/app/
+COPY seed/                          /docker-entrypoint-initdb.d/seed/
 COPY scripts/sql-helpers.sh         /docker-entrypoint-initdb.d/
 COPY scripts/custom-entrypoint.sh   /usr/local/bin/custom-entrypoint.sh
 
@@ -35,6 +36,7 @@ COPY scripts/custom-entrypoint.sh   /usr/local/bin/custom-entrypoint.sh
 RUN chmod +x /usr/local/bin/custom-entrypoint.sh && \
     chmod +x /docker-entrypoint-initdb.d/sql-helpers.sh && \
     find /docker-entrypoint-initdb.d/app -name "*.sh" -exec chmod +x {} \; && \
+    find /docker-entrypoint-initdb.d/seed -name "*.sh" -exec chmod +x {} \; && \
     chown -R postgres:postgres /docker-entrypoint-initdb.d/ && \
     chown -R postgres:postgres /database/
 
