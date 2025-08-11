@@ -109,6 +109,16 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const [endAllRemainingSessions, setEndAllRemainingSessions] = useState(0);
   const [confirmEndChatOpen, setConfirmEndChatOpen] = useState(false);
 
+  // Track which action is ending, so only that button shows "Ending..."
+  const [endingAction, setEndingAction] = useState<"endAll" | "endChat" | null>(
+    null
+  );
+  React.useEffect(() => {
+    if (!simulationContext?.endChatLoading) {
+      setEndingAction(null);
+    }
+  }, [simulationContext?.endChatLoading]);
+
   // Upload functions
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -466,7 +476,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                 className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
                 data-tour-end-all
               >
-                {endChatLoading
+                {endChatLoading && endingAction === "endAll"
                   ? "Ending..."
                   : `End All (${remainingSessions})`}
               </Button>
@@ -489,6 +499,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                     },
                   })
                 );
+                setEndingAction("endChat");
                 endChat();
               }}
               disabled={
@@ -497,7 +508,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
               className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
               data-tour-end-chat
             >
-              {endChatLoading ? "Ending..." : buttonLabel}
+              {endChatLoading && endingAction === "endChat"
+                ? "Ending..."
+                : buttonLabel}
             </Button>
           </div>
         )
@@ -701,6 +714,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                       })
                     );
                     setConfirmEndAllOpen(false);
+                    setEndingAction("endAll");
                     simulationContext?.endAllChats();
                   }}
                 >
@@ -737,6 +751,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                       })
                     );
                     setConfirmEndChatOpen(false);
+                    setEndingAction("endChat");
                     simulationContext?.endChat();
                   }}
                 >
