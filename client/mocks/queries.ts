@@ -274,6 +274,12 @@ vi.mock('@/utils/queries/simulation_chat_crowdsourced_feedbacks/get-all-simulati
 vi.mock('@/utils/queries/simulation_chat_crowdsourced_feedbacks/get-simulation-chat-crowdsourced-feedback', () => ({
   getSimulationChatCrowdsourcedFeedback: vi.fn(() => mockSchema.simulationChatCrowdsourcedFeedbacks?.[0] || null),
 }));
+vi.mock('@/utils/queries/simulation_chat_crowdsourced_feedbacks/get-simulation-chat-crowdsourced-feedbacks-by-profile', () => ({
+  getSimulationChatCrowdsourcedFeedbacksByProfile: vi.fn(() => mockSchema.simulationChatCrowdsourcedFeedbacks || []),
+}));
+vi.mock('@/utils/queries/simulation_chat_crowdsourced_feedbacks/get-simulation-chat-crowdsourced-feedbacks-by-profiles', () => ({
+  getSimulationChatCrowdsourcedFeedbacksByProfiles: vi.fn(() => mockSchema.simulationChatCrowdsourcedFeedbacks || []),
+}));
 vi.mock('@/utils/queries/simulation_chat_crowdsourced_feedbacks/get-simulation-chat-crowdsourced-feedbacks-by-simulationchatfeedback', () => ({
   getSimulationChatCrowdsourcedFeedbacksBySimulationchatfeedback: vi.fn(() => mockSchema.simulationChatCrowdsourcedFeedbacks || []),
 }));

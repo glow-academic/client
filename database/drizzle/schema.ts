@@ -476,10 +476,16 @@ export const simulationChatFeedbacks = pgTable("simulation_chat_feedbacks", {
 export const simulationChatCrowdsourcedFeedbacks = pgTable("simulation_chat_crowdsourced_feedbacks", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	profileId: uuid("profile_id").notNull(),
 	simulationChatFeedbackId: uuid("simulation_chat_feedback_id").notNull(),
 	total: integer().notNull(),
 	feedback: text(),
 }, (table) => [
+	foreignKey({
+			columns: [table.profileId],
+			foreignColumns: [profiles.id],
+			name: "simulation_chat_crowdsourced_feedbacks_profile_id_fkey"
+		}).onDelete("cascade"),
 	foreignKey({
 			columns: [table.simulationChatFeedbackId],
 			foreignColumns: [simulationChatFeedbacks.id],

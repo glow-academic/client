@@ -348,18 +348,18 @@ export default function AttemptChat() {
                                   {simulationContext?.aggregatedResults
                                     .overallPassed
                                     ? "Passed"
-                                    : "Failed"}
+                                    : "Failed"}{" "}
                                   (
-                                  {
+                                  {Math.round(
                                     simulationContext?.aggregatedResults
-                                      .passedChats
-                                  }
+                                      .averageScore
+                                  )}
                                   /
-                                  {
-                                    simulationContext?.aggregatedResults
-                                      .totalChats
-                                  }{" "}
-                                  chats passed)
+                                  {Math.round(
+                                    (simulationContext?.allDynamicRubrics?.[0]
+                                      ?.totalPossiblePoints || 100) * 0.7
+                                  )}{" "}
+                                  points)
                                 </p>
                               </TooltipContent>
                             ) : null}

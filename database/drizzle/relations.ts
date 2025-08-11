@@ -10,6 +10,7 @@ export const profilesRelations = relations(profiles, ({one, many}) => ({
 	assistantChats: many(assistantChats),
 	modelRuns: many(modelRuns),
 	simulationAttempts: many(simulationAttempts),
+	simulationChatCrowdsourcedFeedbacks: many(simulationChatCrowdsourcedFeedbacks),
 	simulationCrowdsourcedMessages: many(simulationCrowdsourcedMessages),
 }));
 
@@ -204,6 +205,10 @@ export const simulationChatFeedbacksRelations = relations(simulationChatFeedback
 }));
 
 export const simulationChatCrowdsourcedFeedbacksRelations = relations(simulationChatCrowdsourcedFeedbacks, ({one}) => ({
+	profile: one(profiles, {
+		fields: [simulationChatCrowdsourcedFeedbacks.profileId],
+		references: [profiles.id]
+	}),
 	simulationChatFeedback: one(simulationChatFeedbacks, {
 		fields: [simulationChatCrowdsourcedFeedbacks.simulationChatFeedbackId],
 		references: [simulationChatFeedbacks.id]

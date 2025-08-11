@@ -47,6 +47,7 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getStandardGroupsByRubric } from "@/utils/queries/standard_groups/get-standard-groups-by-rubric";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// import { RotateCw } from "lucide-react";
 import { toast } from "sonner";
 
 type SimulationChatFeedback = typeof simulationChatFeedbacks.$inferSelect;
@@ -74,6 +75,37 @@ export default function TableRubric({
     null
   );
   const [crowdFeedbackText, setCrowdFeedbackText] = React.useState<string>("");
+  const [votedAnchors, setVotedAnchors] = React.useState<Set<string>>(
+    () => new Set<string>()
+  );
+  const [flippedCells, setFlippedCells] = React.useState<Set<string>>(
+    () => new Set<string>()
+  );
+
+  // Persist voted anchors per profile to localStorage (stopgap until DB has profileId)
+  React.useEffect(() => {
+    if (!effectiveProfile?.id) return;
+    const key = `rubricVotes:${effectiveProfile.id}`;
+    try {
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        const arr: string[] = JSON.parse(stored);
+        setVotedAnchors(new Set(arr));
+      }
+    } catch {
+      // ignore
+    }
+  }, [effectiveProfile?.id]);
+
+  React.useEffect(() => {
+    if (!effectiveProfile?.id) return;
+    const key = `rubricVotes:${effectiveProfile.id}`;
+    try {
+      localStorage.setItem(key, JSON.stringify(Array.from(votedAnchors)));
+    } catch {
+      // ignore
+    }
+  }, [votedAnchors, effectiveProfile?.id]);
 
   const { isLoading: loadingRubric } = useQuery({
     queryKey: ["rubric", rubricId],
@@ -163,18 +195,7 @@ export default function TableRubric({
     return outer;
   }, [crowdFeedbacks]);
 
-  // Detect if the current user already voted for a given (row anchor, level points)
-  const hasUserVoted = (
-    anchorFeedbackId: string | undefined,
-    levelPoints: number
-  ): boolean => {
-    if (!anchorFeedbackId) return false;
-    // Without per-profile attribution in schema, approximate by counting presence.
-    // We prevent duplicate submissions on the client by blocking the button if a vote exists for this level.
-    const levelCounts = countsByAnchorAndTotal.get(anchorFeedbackId);
-    const count = levelCounts?.get(levelPoints) || 0;
-    return count > 0;
-  };
+  // (Note) We rely on a local set to block further votes within a row after first submit.
 
   const { mutateAsync: submitCrowdFeedback, isPending: isSubmitting } =
     useMutation({
@@ -189,6 +210,7 @@ export default function TableRubric({
       }) => {
         const payload: typeof simulationChatCrowdsourcedFeedbacks.$inferInsert =
           {
+            profileId: effectiveProfile?.id as string,
             simulationChatFeedbackId,
             total,
             feedback,
@@ -329,7 +351,7 @@ export default function TableRubric({
                   >
                     <HoverCard openDelay={200} closeDelay={150}>
                       <HoverCardTrigger asChild>
-                        <div className="break-words whitespace-normal overflow-hidden cursor-help">
+                        <div className="break-words whitespace-normal overflow-hidden cursor-pointer px-2 py-1 rounded-sm hover:bg-accent/40">
                           {group.name}
                         </div>
                       </HoverCardTrigger>
@@ -418,33 +440,39 @@ export default function TableRubric({
                       ? standardIdToFeedback.get(achievedStandardForRow.id)?.id
                       : undefined;
 
-                    const alreadyVoted = hasUserVoted(
-                      rowAnchorFeedbackId,
-                      standard.points
-                    );
+                    const alreadyVotedInRow =
+                      !!rowAnchorFeedbackId &&
+                      (crowdFeedbacks || []).some(
+                        (cf: SimulationChatCrowdsourcedFeedback) =>
+                          cf.simulationChatFeedbackId === rowAnchorFeedbackId &&
+                          cf.profileId === effectiveProfile?.id
+                      );
                     const isClickable =
                       canCrowdsource &&
                       !!simulationChatId &&
                       !!rowAnchorFeedbackId &&
                       !isAchieved &&
-                      !alreadyVoted;
+                      !alreadyVotedInRow;
 
                     return (
                       <TableCell
                         key={standard.id}
                         className={`whitespace-normal text-xs relative align-top p-2 ${
-                          shouldHighlightCell
-                            ? isPassed
-                              ? "bg-green-200 dark:bg-green-900/40"
-                              : "bg-red-200 dark:bg-red-900/40"
-                            : ""
+                          // If flipped on an achieved cell, force white background to show the standard cleanly
+                          isAchieved && flippedCells.has(standard.id)
+                            ? "bg-white dark:bg-white/10"
+                            : shouldHighlightCell
+                              ? isPassed
+                                ? "bg-green-200 dark:bg-green-900/40"
+                                : "bg-red-200 dark:bg-red-900/40"
+                              : ""
                         } ${
                           isClickable ? "cursor-pointer hover:bg-accent/40" : ""
                         }`}
                         role={isClickable ? "button" : undefined}
                         tabIndex={isClickable ? 0 : -1}
                         onKeyDown={(e) => {
-                          if (!isClickable) return;
+                          // Keyboard toggle: on achieved cells, flip; else open propose popover
                           const target = e.target as HTMLElement;
                           if (
                             target.closest(
@@ -455,51 +483,99 @@ export default function TableRubric({
                           }
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            setActiveStandardId(standard.id);
+                            if (isAchieved) {
+                              setFlippedCells((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(standard.id))
+                                  next.delete(standard.id);
+                                else next.add(standard.id);
+                                return next;
+                              });
+                            } else if (isClickable) {
+                              setActiveStandardId(standard.id);
+                            }
                           }
                         }}
                         onClick={() => {
+                          if (isAchieved) {
+                            setFlippedCells((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(standard.id))
+                                next.delete(standard.id);
+                              else next.add(standard.id);
+                              return next;
+                            });
+                            return;
+                          }
                           if (!isClickable) return;
                           setActiveStandardId(standard.id);
                         }}
                       >
-                        {isClickable ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="space-y-1">
-                                {isAchieved && feedback ? (
-                                  <div className="text-xs leading-tight">
-                                    {feedback.feedback}
-                                  </div>
-                                ) : (
-                                  <div className="text-xs leading-tight">
-                                    {standard.description}
-                                  </div>
-                                )}
+                        {(() => {
+                          const tooltipText = isClickable
+                            ? "Click to propose this level."
+                            : alreadyVotedInRow
+                              ? "You have already proposed a vote for this row."
+                              : undefined;
+                          const isFlippable = isAchieved; // flip only on achieved cell
+                          const isFlipped = flippedCells.has(standard.id);
+
+                          const frontContent = (
+                            <div className="text-xs leading-tight">
+                              {feedback?.feedback || standard.description}
+                            </div>
+                          );
+                          const backContent = (
+                            <div className="text-xs leading-tight">
+                              {standard.description}
+                            </div>
+                          );
+
+                          const card = isFlippable ? (
+                            <div
+                              className="relative"
+                              style={{ perspective: "1000px" }}
+                            >
+                              <div
+                                style={{
+                                  transformStyle: "preserve-3d",
+                                  transition: "transform 300ms",
+                                  transform: isFlipped
+                                    ? "rotateY(180deg)"
+                                    : "rotateY(0deg)",
+                                }}
+                              >
+                                <div style={{ backfaceVisibility: "hidden" }}>
+                                  {frontContent}
+                                </div>
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    top: 0,
+                                    left: 0,
+                                    width: "100%",
+                                    height: "100%",
+                                    backfaceVisibility: "hidden",
+                                    transform: "rotateY(180deg)",
+                                  }}
+                                >
+                                  {backContent}
+                                </div>
                               </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              Click to propose this level.
-                            </TooltipContent>
-                          </Tooltip>
-                        ) : (
-                          <div className="space-y-1">
-                            {isAchieved && feedback ? (
-                              <div className="text-xs leading-tight">
-                                {feedback.feedback}
-                              </div>
-                            ) : (
-                              <div className="text-xs leading-tight">
-                                {standard.description}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        {!isClickable && alreadyVoted && (
-                          <div className="mt-1 text-[10px] text-muted-foreground">
-                            You have already proposed a vote for this level.
-                          </div>
-                        )}
+                            </div>
+                          ) : (
+                            <div className="space-y-1">{frontContent}</div>
+                          );
+
+                          return tooltipText ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>{card}</TooltipTrigger>
+                              <TooltipContent>{tooltipText}</TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            card
+                          );
+                        })()}
 
                         {isClickable && activeStandardId === standard.id && (
                           <Popover
@@ -558,6 +634,11 @@ export default function TableRubric({
                                         total: standard.points,
                                         feedback:
                                           crowdFeedbackText.trim() || null,
+                                      });
+                                      setVotedAnchors((prev) => {
+                                        const next = new Set(prev);
+                                        next.add(rowAnchorFeedbackId);
+                                        return next;
                                       });
                                       setActiveStandardId(null);
                                       setCrowdFeedbackText("");

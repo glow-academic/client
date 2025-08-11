@@ -73,6 +73,7 @@ CREATE TABLE simulation_chat_grades (
   CREATE TABLE simulation_chat_crowdsourced_feedbacks (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    profile_id   UUID        NOT NULL REFERENCES profiles(id)  ON DELETE CASCADE,
     simulation_chat_feedback_id   UUID        NOT NULL REFERENCES simulation_chat_feedbacks(id)  ON DELETE CASCADE,
     total INTEGER     NOT NULL,
     feedback TEXT

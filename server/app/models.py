@@ -275,6 +275,7 @@ class Profiles(_Base, table=True):
     model_runs: List['ModelRuns'] = Relationship(back_populates='profile')
     simulation_attempts: List['SimulationAttempts'] = Relationship(back_populates='profile')
     simulation_crowdsourced_messages: List['SimulationCrowdsourcedMessages'] = Relationship(back_populates='profile')
+    simulation_chat_crowdsourced_feedbacks: List['SimulationChatCrowdsourcedFeedbacks'] = Relationship(back_populates='profile')
 
 
 class Simulations(_Base, table=True):
@@ -602,14 +603,17 @@ class SimulationCrowdsourcedMessages(_Base, table=True):
 class SimulationChatCrowdsourcedFeedbacks(_Base, table=True):
     __tablename__ = 'simulation_chat_crowdsourced_feedbacks'
     __table_args__ = (
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='simulation_chat_crowdsourced_feedbacks_profile_id_fkey'),
         ForeignKeyConstraint(['simulation_chat_feedback_id'], ['simulation_chat_feedbacks.id'], ondelete='CASCADE', name='simulation_chat_crowdsourced_f_simulation_chat_feedback_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_chat_crowdsourced_feedbacks_pkey')
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    profile_id: Mapped[uuid.UUID] = Field(sa_column=Column('profile_id', Uuid(as_uuid=True)))
     simulation_chat_feedback_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_chat_feedback_id', Uuid(as_uuid=True)))
     total: int = Field(sa_column=Column('total', Integer))
     feedback: Optional[str] = Field(default=None, sa_column=Column('feedback', Text))
 
+    profile: Optional['Profiles'] = Relationship(back_populates='simulation_chat_crowdsourced_feedbacks')
     simulation_chat_feedback: Optional['SimulationChatFeedbacks'] = Relationship(back_populates='simulation_chat_crowdsourced_feedbacks')

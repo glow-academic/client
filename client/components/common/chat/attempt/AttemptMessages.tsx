@@ -44,6 +44,7 @@ import { deleteSimulationCrowdsourcedMessage } from "@/utils/mutations/simulatio
 import { updateSimulationCrowdsourcedMessage } from "@/utils/mutations/simulation_crowdsourced_messages/update-simulation-crowdsourced-message";
 import { getSimulationCrowdsourcedMessagesBySimulationMessages } from "@/utils/queries/simulation_crowdsourced_messages/get-simulation-crowdsourced-messages-by-simulationmessages";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 export interface AttemptMessagesProps {
   chatId?: string;
@@ -479,7 +480,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                 currentResponse.content === "" ? (
                                   <div className="bg-muted rounded-lg p-3">
                                     <div className="flex items-center">
-                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                      <LoadingDots />
                                     </div>
                                   </div>
                                 ) : currentResponse.completed &&
