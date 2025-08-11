@@ -130,7 +130,7 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   // Cohort filtering - empty array means all cohorts
   const [selectedCohortIds, setSelectedCohortIds] = useState<string[]>([]);
   // Role filtering - empty array means all roles
-  const [selectedRoles, setSelectedRoles] = useState<ProfileRole[]>([]);
+  const [selectedRoles, setSelectedRoles] = useState<ProfileRole[]>(["ta"]);
   // Include practice data in analytics
   const [includePractice, setIncludePractice] = useState<boolean>(false);
 
@@ -155,7 +155,7 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     setStartDate(earliestCohortDate);
     setEndDate(new Date());
     setSelectedCohortIds([]);
-    setSelectedRoles([]);
+    setSelectedRoles(["ta"]);
     setIncludePractice(false);
     setHasUserSetDateRange(false); // Reset user-set date range
   };

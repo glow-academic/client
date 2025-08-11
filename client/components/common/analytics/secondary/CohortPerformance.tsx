@@ -67,7 +67,7 @@ export default function CohortPerformance({
 }: CohortPerformanceProps) {
   const [selectedCohort, setSelectedCohort] = useState<string | null>(null);
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
-    [],
+    []
   );
 
   // Fetch data
@@ -85,16 +85,19 @@ export default function CohortPerformance({
     // If profileId is provided, filter to cohorts that contain this profile
     if (profileId) {
       availableCohorts = availableCohorts.filter((cohort) =>
-        cohort.profileIds.includes(profileId),
+        cohort.profileIds.includes(profileId)
       );
     }
 
     // If cohortIds are provided, filter to only those cohorts
     if (cohortIds && cohortIds.length > 0) {
       availableCohorts = availableCohorts.filter((cohort) =>
-        cohortIds.includes(cohort.id),
+        cohortIds.includes(cohort.id)
       );
     }
+
+    // Only include active cohorts
+    availableCohorts = availableCohorts.filter((cohort) => cohort.active);
 
     return availableCohorts;
   }, [allCohorts, profileId, cohortIds]);
@@ -145,7 +148,7 @@ export default function CohortPerformance({
     if (!simulations) return [];
     if (selectedSimulations.length === 0) return simulations;
     return simulations.filter((s) =>
-      selectedSimulations.some((ss) => ss.id === s.id),
+      selectedSimulations.some((ss) => ss.id === s.id)
     );
   }, [simulations, selectedSimulations]);
 
@@ -195,7 +198,7 @@ export default function CohortPerformance({
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = filteredSimulations.find(
-        (s) => s.id === attempt?.simulationId,
+        (s) => s.id === attempt?.simulationId
       );
       const profile = profiles?.find((p) => p.id === attempt?.profileId);
 
@@ -223,7 +226,23 @@ export default function CohortPerformance({
       );
     });
 
-    if (filteredGrades.length === 0) return [];
+    // If no grades matched the filters, still surface all active filtered cohorts with zeroed stats
+    if (filteredGrades.length === 0) {
+      return filteredCohorts.map((cohort) => ({
+        id: cohort.id,
+        name: cohort.title || "Unknown Cohort",
+        passRate: 0,
+        avgPercentageScore: 0,
+        totalStudents: cohort.profileIds.length,
+        passedStudents: 0,
+        totalAttempts: 0,
+        passedAttempts: 0,
+        rubricPoints: 100,
+        rubricPassPoints: 0,
+        availableSimulations: 0,
+        color: "#ef4444",
+      }));
+    }
 
     // Calculate pass rates per cohort
     const cohortStats = new Map<
@@ -265,14 +284,14 @@ export default function CohortPerformance({
       const profile = profiles?.find((p) => p.id === attempt?.profileId);
       const rubric = rubrics?.find((r) => r.id === grade.rubricId);
       const simulation = filteredSimulations.find(
-        (s) => s.id === attempt?.simulationId,
+        (s) => s.id === attempt?.simulationId
       );
 
       if (!profile || !rubric || !simulation) return;
 
       // Find which cohort this profile belongs to
       const cohort = filteredCohorts.find((c) =>
-        c.profileIds.includes(profile.id),
+        c.profileIds.includes(profile.id)
       );
 
       if (cohort) {
@@ -320,7 +339,7 @@ export default function CohortPerformance({
 
         // Check if student has passed all relevant simulations
         const hasPassedAll = simulationsToCheck.every((simId) =>
-          studentPassedSimulations.has(simId),
+          studentPassedSimulations.has(simId)
         );
 
         if (hasPassedAll) {
@@ -330,13 +349,14 @@ export default function CohortPerformance({
     });
 
     // Calculate pass rates and create chart data
-    const chartData = Array.from(cohortStats.entries())
+    // Build chart data for cohorts that have any data
+    const dataBackedCohorts = Array.from(cohortStats.entries())
       .map(([cohortId, data]) => {
         const cohort = filteredCohorts.find((c) => c.id === cohortId);
         const passRate =
           data.totalStudents.size > 0
             ? Math.round(
-                (data.passedStudents.size / data.totalStudents.size) * 100,
+                (data.passedStudents.size / data.totalStudents.size) * 100
               )
             : 0;
 
@@ -347,7 +367,7 @@ export default function CohortPerformance({
                 (data.totalScores.reduce((sum, score) => sum + score, 0) /
                   data.totalScores.length /
                   data.rubricPoints) *
-                  100,
+                  100
               )
             : 0;
 
@@ -383,10 +403,30 @@ export default function CohortPerformance({
           return cohort.availableSimulations > 0;
         }
         return true;
-      })
-      .sort((a, b) => b.passRate - a.passRate);
+      });
 
-    return chartData;
+    // Add zeroed entries for any active filtered cohorts missing from dataBackedCohorts
+    const dataBackedIds = new Set(dataBackedCohorts.map((c) => c.id));
+    const zeroedCohorts = filteredCohorts
+      .filter((c) => !dataBackedIds.has(c.id))
+      .map((cohort) => ({
+        id: cohort.id,
+        name: cohort.title || "Unknown Cohort",
+        passRate: 0,
+        avgPercentageScore: 0,
+        totalStudents: cohort.profileIds.length,
+        passedStudents: 0,
+        totalAttempts: 0,
+        passedAttempts: 0,
+        rubricPoints: 100,
+        rubricPassPoints: 0,
+        availableSimulations: 0,
+        color: "#ef4444",
+      }));
+
+    return [...dataBackedCohorts, ...zeroedCohorts].sort(
+      (a, b) => b.passRate - a.passRate
+    );
   }, [
     filteredCohorts,
     profiles,
@@ -422,7 +462,7 @@ export default function CohortPerformance({
 
     // Get profiles in this cohort
     const cohortProfiles = profiles.filter(
-      (p) => cohort.profileIds.includes(p.id) && p.role === "ta",
+      (p) => cohort.profileIds.includes(p.id) && p.role === "ta"
     );
 
     // Filter grades for this cohort in date range
@@ -431,7 +471,7 @@ export default function CohortPerformance({
       const chat = chats.find((c) => c.id === grade.simulationChatId);
       const attempt = attempts.find((a) => a.id === chat?.attemptId);
       const simulation = filteredSimulations.find(
-        (s) => s.id === attempt?.simulationId,
+        (s) => s.id === attempt?.simulationId
       );
       const profile = profiles?.find((p) => p.id === attempt?.profileId);
 
@@ -521,14 +561,14 @@ export default function CohortPerformance({
                 (data.scores.reduce((sum, score) => sum + score, 0) /
                   data.scores.length /
                   data.rubricPoints) *
-                  100,
+                  100
               )
             : 0;
 
         const passRate =
           data.totalStudents.size > 0
             ? Math.round(
-                (data.passedStudents.size / data.totalStudents.size) * 100,
+                (data.passedStudents.size / data.totalStudents.size) * 100
               )
             : 0;
 
@@ -729,122 +769,127 @@ export default function CohortPerformance({
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden p-3">
-        <div className="space-y-4">
-          {/* Cohort Details Dialog */}
-          {cohortData.map((cohort) => {
-            // Calculate pass rate percentage
-            const passRatePercentage =
-              (cohort.passedStudents / cohort.totalStudents) * 100;
+        <div className="h-full min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-2">
+            {/* Cohort Details Dialog */}
+            {cohortData.map((cohort) => {
+              // Calculate pass rate percentage
+              const passRatePercentage =
+                (cohort.passedStudents / cohort.totalStudents) * 100;
 
-            // Determine background color based on pass rate
-            let bgColor: string;
-            if (passRatePercentage === 0) {
-              bgColor = "#ef4444"; // Red for 0%
-            } else if (passRatePercentage >= thresholds.success) {
-              bgColor = "#22c55e"; // Green for success
-            } else if (passRatePercentage >= thresholds.warning) {
-              bgColor = "#eab308"; // Yellow for warning
-            } else {
-              bgColor = "#ef4444"; // Red for danger
-            }
+              // Determine background color based on pass rate
+              let bgColor: string;
+              if (passRatePercentage === 0) {
+                bgColor = "#ef4444"; // Red for 0%
+              } else if (passRatePercentage >= thresholds.success) {
+                bgColor = "#22c55e"; // Green for success
+              } else if (passRatePercentage >= thresholds.warning) {
+                bgColor = "#eab308"; // Yellow for warning
+              } else {
+                bgColor = "#ef4444"; // Red for danger
+              }
 
-            return (
-              <Dialog key={cohort.id}>
-                <DialogTrigger asChild>
-                  <div
-                    className="p-2 border rounded-md cursor-pointer hover:bg-muted transition-colors relative overflow-hidden"
-                    onClick={() => setSelectedCohort(cohort.id)}
-                  >
-                    {/* Progress bar background */}
+              return (
+                <Dialog key={cohort.id}>
+                  <DialogTrigger asChild>
                     <div
-                      className="absolute inset-0 opacity-10"
-                      style={{ backgroundColor: bgColor }}
-                    />
+                      className="p-2 border rounded-md cursor-pointer hover:bg-muted transition-colors relative overflow-hidden"
+                      onClick={() => setSelectedCohort(cohort.id)}
+                    >
+                      {/* Progress bar background */}
+                      <div
+                        className="absolute inset-0 opacity-10"
+                        style={{ backgroundColor: bgColor }}
+                      />
 
-                    {/* Progress bar fill */}
-                    <div
-                      className="absolute inset-y-0 left-0 opacity-20 transition-all duration-300"
-                      style={{
-                        backgroundColor: bgColor,
-                        width: `${Math.max(passRatePercentage, 1)}%`, // Minimum 1% width for visibility
-                      }}
-                    />
+                      {/* Progress bar fill */}
+                      <div
+                        className="absolute inset-y-0 left-0 opacity-20 transition-all duration-300"
+                        style={{
+                          backgroundColor: bgColor,
+                          width: `${Math.max(passRatePercentage, 1)}%`, // Minimum 1% width for visibility
+                        }}
+                      />
 
-                    <div className="flex items-center justify-between relative z-10">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm truncate">
-                          {cohort.name}
-                        </h4>
-                        <p className="text-xs text-muted-foreground">
-                          {passRatePercentage.toFixed(2)}% of students pass{" "}
-                          {selectedSimulations.length} quiz
-                          {selectedSimulations.length !== 1 ? "zes" : ""} with a{" "}
-                          {Math.round(
-                            (cohort.rubricPassPoints / cohort.rubricPoints) *
-                              100,
-                          )}
-                          % or better
-                        </p>
+                      <div className="flex items-center justify-between relative z-10">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm truncate">
+                            {cohort.name}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            {passRatePercentage.toFixed(2)}% of students pass{" "}
+                            {selectedSimulations.length} quiz
+                            {selectedSimulations.length !== 1 ? "zes" : ""} with
+                            a{" "}
+                            {Math.round(
+                              (cohort.rubricPassPoints / cohort.rubricPoints) *
+                                100
+                            )}
+                            % or better
+                          </p>
+                        </div>
+                        <TrendingUp className="h-3 w-3 text-muted-foreground ml-2 flex-shrink-0" />
                       </div>
-                      <TrendingUp className="h-3 w-3 text-muted-foreground ml-2 flex-shrink-0" />
                     </div>
-                  </div>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>{cohort.name} Performance Details</DialogTitle>
-                    <DialogDescription>
-                      Daily pass rate trends and insights
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-6">
-                    {/* Daily Performance Line Chart */}
-                    {dailyData.length > 0 && (
-                      <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={dailyData}>
-                            <CartesianGrid
-                              strokeDasharray="3 3"
-                              className="stroke-muted"
-                            />
-                            <XAxis dataKey="date" className="text-xs" />
-                            <YAxis domain={[0, 100]} className="text-xs" />
-                            <Tooltip
-                              contentStyle={{
-                                backgroundColor: "hsl(var(--background))",
-                                border: "1px solid hsl(var(--border))",
-                                borderRadius: "6px",
-                              }}
-                              formatter={(value: number) => [
-                                `${value}%`,
-                                "Average Score",
-                              ]}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey="avgScore"
-                              stroke="#3b82f6"
-                              strokeWidth={2}
-                              dot={{ r: 4 }}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )}
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>
+                        {cohort.name} Performance Details
+                      </DialogTitle>
+                      <DialogDescription>
+                        Daily pass rate trends and insights
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-6">
+                      {/* Daily Performance Line Chart */}
+                      {dailyData.length > 0 && (
+                        <div className="h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={dailyData}>
+                              <CartesianGrid
+                                strokeDasharray="3 3"
+                                className="stroke-muted"
+                              />
+                              <XAxis dataKey="date" className="text-xs" />
+                              <YAxis domain={[0, 100]} className="text-xs" />
+                              <Tooltip
+                                contentStyle={{
+                                  backgroundColor: "hsl(var(--background))",
+                                  border: "1px solid hsl(var(--border))",
+                                  borderRadius: "6px",
+                                }}
+                                formatter={(value: number) => [
+                                  `${value}%`,
+                                  "Average Score",
+                                ]}
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey="avgScore"
+                                stroke="#3b82f6"
+                                strokeWidth={2}
+                                dot={{ r: 4 }}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      )}
 
-                    {/* Actionable Insights */}
-                    {getCohortInsights() && (
-                      <div className="p-4 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground">
-                          {getCohortInsights()}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
-            );
-          })}
+                      {/* Actionable Insights */}
+                      {getCohortInsights() && (
+                        <div className="p-4 bg-muted rounded-lg">
+                          <p className="text-sm text-muted-foreground">
+                            {getCohortInsights()}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              );
+            })}
+          </div>
         </div>
       </CardContent>
     </Card>

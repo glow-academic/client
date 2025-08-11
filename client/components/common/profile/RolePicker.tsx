@@ -42,7 +42,7 @@ const ROLE_LABEL: Record<ProfileRole, string> = {
   superadmin: "Superadmin",
   admin: "Admin",
   instructional: "Instructional",
-  ta: "TA",
+  ta: "Teaching Assistant",
   guest: "Guest",
 };
 
@@ -107,14 +107,14 @@ export function RolePicker({
             role="combobox"
             aria-expanded={open}
             aria-label="Select roles"
-            className="w-full justify-between"
+            className={cn("justify-between min-w-[140px]", className)}
             size="sm"
           >
             {getButtonText()}
             <ChevronsUpDown className="opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-[260px] p-0">
+        <PopoverContent align="end" className="w-[220px] p-0">
           <Command loop>
             <CommandList className="h-[var(--cmdk-list-height)] max-h-[250px]">
               <CommandInput placeholder="Search roles..." />

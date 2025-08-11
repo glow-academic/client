@@ -123,11 +123,12 @@ export function AnalyticsFilters() {
         <Label htmlFor="include-practice">Include practice</Label>
       </div>
 
-      {/* Date Range Picker */}
-      <DatePickerWithRange
-        dateRange={dateRange}
-        setDateRange={handleDateRangeChange}
-        className="w-auto"
+      {/* Role Picker */}
+      <RolePicker
+        roles={["superadmin", "admin", "instructional", "ta", "guest"]}
+        selectedRoles={selectedRoles}
+        onChange={handleRoleSelect}
+        placeholder="All roles"
       />
 
       {/* Cohort Picker */}
@@ -139,13 +140,11 @@ export function AnalyticsFilters() {
         hideSelectedChips={true}
       />
 
-      {/* Role Picker */}
-      <RolePicker
-        roles={["superadmin", "admin", "instructional", "ta", "guest"]}
-        selectedRoles={selectedRoles}
-        onChange={handleRoleSelect}
-        placeholder="All roles"
-        className="min-w-[220px]"
+      {/* Date Range Picker */}
+      <DatePickerWithRange
+        dateRange={dateRange}
+        setDateRange={handleDateRangeChange}
+        className="w-auto"
       />
     </div>
   );
