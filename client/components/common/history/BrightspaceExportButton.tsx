@@ -234,7 +234,6 @@ export function BrightspaceExportButton<TData>({
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium">Select Metric</label>
               <Select value={selectedMetric} onValueChange={setSelectedMetric}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Choose a metric to export" />
@@ -250,11 +249,7 @@ export function BrightspaceExportButton<TData>({
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Exports CSV with usernames as first column and simulation names
-              with "Points Grade" suffix as headers. Only includes simulations
-              from selected cohorts. Empty cells indicate no attempts for that
-              simulation. Includes an "End Of Line Indicator" column with "#"
-              for each row.
+              We will populate each entry with the selected metric.
             </p>
 
             <div className="pt-2 flex justify-end">
