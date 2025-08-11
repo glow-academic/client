@@ -570,13 +570,23 @@ export function UnifiedSidebar({
   );
 
   const handleProfileSelect = (profileId: string) => {
-    // If the user selects their own profile, clear the simulation
+    const emulateEnabled =
+      typeof window !== "undefined" &&
+      localStorage.getItem("emulate") === "true";
+
+    // If the user selects their own profile
     if (profileId === activeProfile?.id) {
-      setSimulatedProfile(null, true); // `null` resets to activeProfile
+      // In emulate mode, do nothing
+      if (emulateEnabled) {
+        return;
+      }
+      // Otherwise, clear the simulation (resets to activeProfile)
+      setSimulatedProfile(null, true);
     } else {
       // Otherwise, simulate the selected profile
       setSimulatedProfile(profileId, true);
     }
+
     // Clear guest flags (simulatedProfileId is managed by setSimulatedProfile)
     localStorage.removeItem("guestMode");
     localStorage.removeItem("simulatedRole");
@@ -1002,8 +1012,8 @@ export function UnifiedSidebar({
           <div className="space-y-2 text-sm">
             <p>
               You are about to enable emulation. You will be embodied as{" "}
-              {effectiveProfile?.firstName} {effectiveProfile?.lastName} and
-              may take simulations on their behalf.
+              {effectiveProfile?.firstName} {effectiveProfile?.lastName} and may
+              take simulations on their behalf.
             </p>
             <p className="font-medium">
               The only way to exit emulation is to log out.
