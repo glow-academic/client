@@ -25,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { useProfile } from "@/contexts/profile-context";
 import { createParameterItem } from "@/utils/mutations/parameter_items/create-parameter-item";
 import { deleteParameterItem } from "@/utils/mutations/parameter_items/delete-parameter-item";
 import { updateParameterItem } from "@/utils/mutations/parameter_items/update-parameter-item";
@@ -39,6 +40,7 @@ interface FormData {
   description?: string;
   numerical?: boolean;
   active?: boolean;
+  defaultParameter?: boolean;
 }
 
 interface ParameterItemFormData {
@@ -48,6 +50,7 @@ interface ParameterItemFormData {
   value: string;
   isNew?: boolean;
   isDeleted?: boolean;
+  defaultItem?: boolean;
 }
 
 export interface ParameterProps {
@@ -62,6 +65,7 @@ export default function Parameter({
   const router = useRouter();
   const isEditMode = mode === "edit" && !!parameterId;
   const queryClient = useQueryClient();
+  const { effectiveProfile } = useProfile();
 
   const initialFormData: FormData = useMemo(
     () => ({
@@ -69,8 +73,9 @@ export default function Parameter({
       description: "",
       numerical: false,
       active: false,
+      defaultParameter: false,
     }),
-    [],
+    []
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -90,10 +95,25 @@ export default function Parameter({
       queryKey: ["parameterItems", parameterId],
       queryFn: () => getParameterItemsByParameter(parameterId!),
       enabled: isEditMode,
-    },
+    }
   );
 
   const isLoading = isLoadingParameter || isLoadingParameterItems;
+
+  const sortedVisibleItems = useMemo(
+    () =>
+      parameterItemsFormData
+        .map((item, idx) => ({ item, idx }))
+        .filter(({ item }) => !item.isDeleted)
+        // Sort by defaultItem first (default/approved first), then by name
+        .sort((a, b) => {
+          if ((a.item.defaultItem ?? false) !== (b.item.defaultItem ?? false)) {
+            return (b.item.defaultItem ? 1 : 0) - (a.item.defaultItem ? 1 : 0);
+          }
+          return a.item.name.localeCompare(b.item.name);
+        }),
+    [parameterItemsFormData]
+  );
 
   useEffect(() => {
     if (parameter && isEditMode) {
@@ -102,6 +122,7 @@ export default function Parameter({
         description: parameter.description,
         numerical: parameter.numerical,
         active: parameter.active,
+        defaultParameter: (parameter as any).defaultParameter ?? false,
       });
     } else if (!isEditMode) {
       setFormData(initialFormData);
@@ -121,6 +142,7 @@ export default function Parameter({
         name: item.name,
         description: item.description,
         value: item.value,
+        defaultItem: (item as any).defaultItem ?? false,
         isNew: false,
         isDeleted: false,
       }));
@@ -152,6 +174,7 @@ export default function Parameter({
           description: formData.description!,
           numerical: formData.numerical,
           active: formData.active,
+          defaultParameter: formData.defaultParameter || false,
           updatedAt: new Date().toISOString(),
         });
 
@@ -168,9 +191,9 @@ export default function Parameter({
               createParameterItem({
                 name: item.name,
                 description: item.description,
-                value: item.value,
+                value: formData.numerical ? item.value : item.name,
                 parameterId: parameterId!,
-              }),
+              })
             );
           } else if (!item.isNew && !item.isDeleted && item.id) {
             // Update existing items
@@ -178,9 +201,9 @@ export default function Parameter({
               updateParameterItem(item.id, {
                 name: item.name,
                 description: item.description,
-                value: item.value,
+                value: formData.numerical ? item.value : item.name,
                 updatedAt: new Date().toISOString(),
-              }),
+              })
             );
           }
         });
@@ -199,6 +222,7 @@ export default function Parameter({
           description: formData.description!,
           numerical: formData.numerical || false,
           active: formData.active || false,
+          defaultParameter: formData.defaultParameter || false,
         });
 
         // Create parameter items for the new parameter
@@ -210,9 +234,9 @@ export default function Parameter({
                 createParameterItem({
                   name: item.name,
                   description: item.description,
-                  value: item.value,
+                  value: formData.numerical || false ? item.value : item.name,
                   parameterId: newParameter.id,
-                }),
+                })
               );
             }
           });
@@ -230,7 +254,7 @@ export default function Parameter({
       router.push("/management/parameters");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`,
+        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`
       );
     } finally {
       setIsSubmitting(false);
@@ -240,7 +264,7 @@ export default function Parameter({
   const handleParameterItemInputChange = (
     itemIndex: number,
     field: keyof ParameterItemFormData,
-    value: string,
+    value: string
   ) => {
     setParameterItemsFormData((prev) => {
       const updated = [...prev];
@@ -256,6 +280,7 @@ export default function Parameter({
       value: "",
       isNew: true,
       isDeleted: false,
+      defaultItem: false,
     };
     setParameterItemsFormData((prev) => [...prev, newItem]);
   };
@@ -289,7 +314,7 @@ export default function Parameter({
 
     // Validate parameter items
     const activeItems = parameterItemsFormData.filter(
-      (item) => !item.isDeleted,
+      (item) => !item.isDeleted
     );
 
     activeItems.forEach((item, index) => {
@@ -299,16 +324,15 @@ export default function Parameter({
       if (!item.description.trim()) {
         errors.push(`Parameter item ${index + 1}: Description is required`);
       }
-      if (!item.value.trim()) {
-        errors.push(`Parameter item ${index + 1}: Value is required`);
-      }
-
-      // Validate numerical values if parameter is numerical
+      // For numerical parameters, require numeric value
       if (formData?.numerical) {
-        const numValue = parseInt(item.value);
+        if (!item.value.trim()) {
+          errors.push(`Parameter item ${index + 1}: Value is required`);
+        }
+        const numValue = parseFloat(item.value);
         if (isNaN(numValue)) {
           errors.push(
-            `Parameter item ${index + 1}: Value must be a valid number`,
+            `Parameter item ${index + 1}: Value must be a valid number`
           );
         }
       }
@@ -319,7 +343,7 @@ export default function Parameter({
 
   // Get visible parameter items (not deleted)
   const visibleParameterItems = parameterItemsFormData.filter(
-    (item) => !item.isDeleted,
+    (item) => !item.isDeleted
   );
 
   return (
@@ -401,6 +425,28 @@ export default function Parameter({
                 <Skeleton className="h-6 w-32" />
               )}
             </div>
+
+            {effectiveProfile?.role === "superadmin" && (
+              <div className="flex items-center space-x-2">
+                {formData?.defaultParameter !== undefined && !isLoading ? (
+                  <>
+                    <Switch
+                      id="default-parameter"
+                      checked={formData.defaultParameter}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          defaultParameter: checked,
+                        }))
+                      }
+                    />
+                    <Label htmlFor="default-parameter">Default Parameter</Label>
+                  </>
+                ) : (
+                  <Skeleton className="h-6 w-40" />
+                )}
+              </div>
+            )}
           </div>
 
           {/* Parameter Items Section */}
@@ -424,14 +470,14 @@ export default function Parameter({
                   <TableRow>
                     <TableHead className="w-48">Name</TableHead>
                     <TableHead className="w-80">Description</TableHead>
-                    <TableHead className="w-32">
-                      Value {formData?.numerical && "(Number)"}
-                    </TableHead>
+                    {formData?.numerical && (
+                      <TableHead className="w-32">Value (Number)</TableHead>
+                    )}
                     <TableHead className="w-20">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {visibleParameterItems.map((item, itemIndex) => (
+                  {sortedVisibleItems.map(({ item, idx: itemIndex }) => (
                     <TableRow key={item.id || `new-${itemIndex}`}>
                       <TableCell className="w-48">
                         <Input
@@ -440,7 +486,7 @@ export default function Parameter({
                             handleParameterItemInputChange(
                               itemIndex,
                               "name",
-                              e.target.value,
+                              e.target.value
                             )
                           }
                           className="text-sm"
@@ -454,37 +500,57 @@ export default function Parameter({
                             handleParameterItemInputChange(
                               itemIndex,
                               "description",
-                              e.target.value,
+                              e.target.value
                             )
                           }
-                          className="text-sm min-h-[60px]"
+                          className="text-sm min-h-[96px]"
+                          rows={4}
                           placeholder="Item description"
                         />
                       </TableCell>
-                      <TableCell className="w-32">
-                        <Input
-                          type={formData?.numerical ? "number" : "text"}
-                          value={item.value}
-                          onChange={(e) =>
-                            handleParameterItemInputChange(
-                              itemIndex,
-                              "value",
-                              e.target.value,
-                            )
-                          }
-                          className="text-sm"
-                          placeholder={formData?.numerical ? "0" : "Value"}
-                        />
-                      </TableCell>
+                      {formData?.numerical && (
+                        <TableCell className="w-32">
+                          <Input
+                            type="number"
+                            value={item.value}
+                            onChange={(e) =>
+                              handleParameterItemInputChange(
+                                itemIndex,
+                                "value",
+                                e.target.value
+                              )
+                            }
+                            className="text-sm"
+                            placeholder="0"
+                          />
+                        </TableCell>
+                      )}
                       <TableCell className="w-20">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteParameterItem(itemIndex)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          {effectiveProfile?.role === "superadmin" && (
+                            <Switch
+                              checked={!!item.defaultItem}
+                              onCheckedChange={(checked) =>
+                                handleParameterItemInputChange(
+                                  itemIndex,
+                                  "defaultItem",
+                                  checked
+                                    ? ("true" as unknown as string)
+                                    : ("false" as unknown as string)
+                                )
+                              }
+                              aria-label="Approved"
+                            />
+                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteParameterItem(itemIndex)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

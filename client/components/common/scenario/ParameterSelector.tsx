@@ -8,19 +8,12 @@
 import { X } from "lucide-react";
 import { useMemo } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 
 import { Parameter, ParameterItem } from "@/types";
+import { ParameterItemPicker } from "./ParameterItemPicker";
 
 interface ParameterSelectorProps {
   parameters: Parameter[];
@@ -216,44 +209,22 @@ export function ParameterSelector({
                       )}
                     </div>
 
-                    <Select
-                      value={selectedItem?.id || "none"}
-                      onValueChange={(value) =>
+                    <ParameterItemPicker
+                      parameter={parameter}
+                      items={items}
+                      {...(selectedItem ? { selectedItem } : {})}
+                      onSelect={(parameterItemId) =>
                         handleNonNumericalParameterChange(
                           parameter.id,
-                          value === "none" ? null : value
+                          parameterItemId
                         )
                       }
                       disabled={disabled}
-                    >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={`Select ${parameter.name.toLowerCase()}`}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No preference</SelectItem>
-                        {items.map((item) => (
-                          <SelectItem key={item.id} value={item.id}>
-                            <div className="flex items-center justify-between w-full">
-                              <span>{item.name}</span>
-                              {!item.defaultItem && (
-                                <Badge
-                                  variant="secondary"
-                                  className="text-xs ml-2"
-                                >
-                                  Custom
-                                </Badge>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
 
                     {selectedItem && (
                       <p className="text-xs text-muted-foreground">
-                        {!parameters.find((p) => selectedItem.parameterId === p.id)?.defaultParameter && `${selectedItem.value}: `} {selectedItem.description}
+                        {selectedItem.description}
                       </p>
                     )}
                   </div>

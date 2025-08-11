@@ -48,10 +48,9 @@ def get_parameter_item_info(
     # Format each parameter item using the template, including .value
     formatted_items = []
     for param_item, param in parameter_items_with_params:
-        value_str = f"Value: {param_item.value}" if getattr(param_item, "value", None) is not None else "Value: None"
         formatted_item = (
             f"This is the {param.name} ({param.description}) for this chat: {param_item.name}. "
-            f"{value_str}. Description: {param_item.description}"
+            f"Description: {param_item.description}."
         )
         formatted_items.append(formatted_item)
 
