@@ -174,7 +174,8 @@ else
   if [ -f "/docker-entrypoint-initdb.d/app/init.sql" ]; then
     # Create a Docker-specific version with correct paths
     log_info "🔄 Generating Docker-specific init.sql with container paths..."
-    sed 's|\\i app/|\\i /docker-entrypoint-initdb.d/app/|g' \
+    sed -e 's|\\i app/|\\i /docker-entrypoint-initdb.d/app/|g' \
+        -e 's|\\i seed/|\\i /docker-entrypoint-initdb.d/seed/|g' \
       /docker-entrypoint-initdb.d/app/init.sql > /docker-entrypoint-initdb.d/10-main-init.sql
     log_success "✅ Docker-specific initialization script prepared"
   else
