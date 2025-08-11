@@ -5,6 +5,16 @@
  * 06/08/2025
  */
 "use client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -13,7 +23,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { logError } from "@/utils/logger";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Upload } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useMemo, useRef, useState } from "react";
@@ -47,6 +57,7 @@ import {
   createSectionChangeHandler,
   isMainScreen,
 } from "@/utils/navigation-utils";
+import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
 import * as tus from "tus-js-client";
 
 // Inner component that uses the role context
@@ -70,6 +81,12 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     Array<{ title: string; section?: string }>
   >([]);
   const simulationContext = useSimulation();
+  const currentChatId = simulationContext?.currentChat?.id;
+  const { data: currentChatMessages = [] } = useQuery({
+    queryKey: ["simulationMessages", currentChatId],
+    queryFn: () => getSimulationMessagesByChat(currentChatId!),
+    enabled: !!currentChatId,
+  });
 
   // Upload state - track multiple uploads
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -86,6 +103,11 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       }
     >
   >(new Map());
+
+  // Confirmation dialogs state
+  const [confirmEndAllOpen, setConfirmEndAllOpen] = useState(false);
+  const [endAllRemainingSessions, setEndAllRemainingSessions] = useState(0);
+  const [confirmEndChatOpen, setConfirmEndChatOpen] = useState(false);
 
   // Upload functions
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,7 +213,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
               fileId,
               isZipFile, // zip parameter
               shouldAutoClassify, // autoClassify parameter
-              effectiveProfile?.id,
+              effectiveProfile?.id
             );
 
             if (result.success) {
@@ -402,7 +424,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     if (simulationContext) {
       const {
         endChat,
-        endAllChats,
         endChatLoading,
         isSingleChatAttempt,
         isLastAttempt,
@@ -438,16 +459,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                 type="button"
                 variant="destructive"
                 onClick={() => {
-                  // Dispatch endAllChatsButtonPressed event for tour progression
-                  window.dispatchEvent(
-                    new CustomEvent("endAllChatsButtonPressed", {
-                      detail: {
-                        attemptId: simulationContext.attemptId,
-                        remainingSessions,
-                      },
-                    })
-                  );
-                  endAllChats();
+                  setEndAllRemainingSessions(remainingSessions);
+                  setConfirmEndAllOpen(true);
                 }}
                 disabled={endChatLoading}
                 className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
@@ -462,6 +475,11 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
               type="button"
               variant="outline"
               onClick={() => {
+                const totalMessages = currentChatMessages.length;
+                if (totalMessages < 2) {
+                  setConfirmEndChatOpen(true);
+                  return;
+                }
                 // Dispatch endChatButtonPressed event for tour progression and navigating state management
                 window.dispatchEvent(
                   new CustomEvent("endChatButtonPressed", {
@@ -655,6 +673,78 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
             {actionButton && <div className="px-4">{actionButton}</div>}
           </header>
+          {/* Confirm End All Dialog */}
+          <AlertDialog
+            open={confirmEndAllOpen}
+            onOpenChange={setConfirmEndAllOpen}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>End all remaining sessions?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will mark {endAllRemainingSessions} remaining session
+                  {endAllRemainingSessions === 1 ? "" : "s"} as incomplete, and
+                  their scores will not count.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    // Dispatch endAllChatsButtonPressed event for tour progression
+                    window.dispatchEvent(
+                      new CustomEvent("endAllChatsButtonPressed", {
+                        detail: {
+                          attemptId: simulationContext?.attemptId,
+                          remainingSessions: endAllRemainingSessions,
+                        },
+                      })
+                    );
+                    setConfirmEndAllOpen(false);
+                    simulationContext?.endAllChats();
+                  }}
+                >
+                  End All
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* Confirm End Chat (no messages) Dialog */}
+          <AlertDialog
+            open={confirmEndChatOpen}
+            onOpenChange={setConfirmEndChatOpen}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>End chat now?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  You have not sent any messages in this chat. Ending now will
+                  mark this chat as incomplete and the score will not count.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Continue Chat</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    // Dispatch endChatButtonPressed event for tour progression and navigating state management
+                    window.dispatchEvent(
+                      new CustomEvent("endChatButtonPressed", {
+                        detail: {
+                          chatId: simulationContext?.currentChat?.id,
+                          attemptId: simulationContext?.attemptId,
+                        },
+                      })
+                    );
+                    setConfirmEndChatOpen(false);
+                    simulationContext?.endChat();
+                  }}
+                >
+                  End Chat
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           {/* Upload classification dialog */}
           <UploadClassificationDialog
             open={showUploadDialog}

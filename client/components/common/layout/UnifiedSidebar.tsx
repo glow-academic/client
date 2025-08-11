@@ -946,7 +946,7 @@ export function UnifiedSidebar({
                     <DropdownMenuSeparator />
                   </>
                 )}
-                {activeProfile && effectiveProfile.role === "superadmin" && (
+                {activeProfile && activeProfile.role === "superadmin" && effectiveProfile.id !== activeProfile.id && (
                   <>
                     <DropdownMenuItem
                       onClick={() => {}}
