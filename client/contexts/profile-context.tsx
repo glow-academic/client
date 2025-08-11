@@ -45,6 +45,7 @@ const GUEST_PROFILE: Profile = {
 
 interface ProfileContextType {
   activeProfile: Profile | null;
+  actualProfile: Profile | null;
   simulatedProfile: Profile | null;
   effectiveProfile: Profile | null;
   isSimulating: boolean;
@@ -275,6 +276,7 @@ export function ProfileProvider({
 
   const value: ProfileContextType = {
     activeProfile: resolvedActiveProfile,
+    actualProfile: activeProfile,
     simulatedProfile,
     effectiveProfile,
     isSimulating: !!simulatedProfile,

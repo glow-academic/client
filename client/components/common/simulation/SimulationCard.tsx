@@ -23,6 +23,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useProfile } from "@/contexts/profile-context";
 import { Persona, Profile, Scenario, Simulation } from "@/types";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { generateGradientFromHex, getPersonaConfig } from "@/utils/personas";
@@ -54,6 +55,12 @@ export default function SimulationCard({
   scenarios,
   personas,
 }: SimulationCardProps) {
+  const { actualProfile } = useProfile();
+  const isEmulatingAnother = Boolean(
+    effectiveProfile?.id &&
+      actualProfile?.id &&
+      effectiveProfile.id !== actualProfile.id
+  );
   const validScenarioIds =
     simulation.scenarioIds?.filter((id: string) => id !== "RAY") || [];
 
@@ -272,12 +279,14 @@ export default function SimulationCard({
               );
               onStartSimulation(simulation.id);
             }}
-            disabled={loadingSimulation === simulation.id}
+            disabled={loadingSimulation === simulation.id || isEmulatingAnother}
             data-testid={`start-simulation-${simulation.id}`}
             className={`w-full text-center py-2 rounded-lg text-white font-medium text-sm hover:shadow-lg transition-all duration-300 ${
               loadingSimulation === simulation.id
                 ? "animate-pulse cursor-not-allowed"
-                : "hover:scale-105 cursor-pointer"
+                : isEmulatingAnother
+                  ? "cursor-not-allowed opacity-70"
+                  : "hover:scale-105 cursor-pointer"
             } disabled:opacity-70 ${
               typeof gradientClass === "string" &&
               !gradientClass.startsWith("linear-gradient")
@@ -293,12 +302,19 @@ export default function SimulationCard({
           >
             {loadingSimulation === simulation.id
               ? "Starting..."
-              : type === "default"
-                ? "Start Simulation"
-                : simulation.hasPassed
-                  ? "Completed Simulations"
-                  : "Start Simulations"}
+              : isEmulatingAnother
+                ? "Unavailable"
+                : type === "default"
+                  ? "Start Simulation"
+                  : simulation.hasPassed
+                    ? "Completed Simulations"
+                    : "Start Simulations"}
           </button>
+          {isEmulatingAnother && (
+            <div className="mt-2 text-xs text-red-500">
+              You cannot start simulations on behalf of another user.
+            </div>
+          )}
         </CardFooter>
       </Card>
     </div>

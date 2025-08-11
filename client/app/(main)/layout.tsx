@@ -72,7 +72,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("upload:remove-file", handler);
   }, []);
   const router = useRouter();
-  const { effectiveProfile, isLoading } = useProfile();
+  const { effectiveProfile, actualProfile, isLoading } = useProfile();
   const queryClient = useQueryClient();
 
   // Role context is available for child components
@@ -810,8 +810,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         </>
       )}
 
-      {/* Tour Component - Available globally for TA users */}
-      {effectiveProfile?.role === "ta" && <TATour />}
+      {/* Tour Component - Available globally for TA users; hide when acting on behalf of another */}
+      {effectiveProfile?.role === "ta" &&
+        effectiveProfile?.id ===
+          (actualProfile?.id || effectiveProfile?.id) && <TATour />}
     </AssistantProvider>
   );
 }
