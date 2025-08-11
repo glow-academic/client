@@ -106,20 +106,26 @@ export default function Parameter({
 
   const isLoading = isLoadingParameter || isLoadingParameterItems;
 
-  const sortedVisibleItems = useMemo(
-    () =>
-      parameterItemsFormData
-        .map((item, idx) => ({ item, idx }))
-        .filter(({ item }) => !item.isDeleted)
-        // Sort by defaultItem first (default/approved first), then by name
-        .sort((a, b) => {
-          if ((a.item.defaultItem ?? false) !== (b.item.defaultItem ?? false)) {
-            return (b.item.defaultItem ? 1 : 0) - (a.item.defaultItem ? 1 : 0);
-          }
-          return a.item.name.localeCompare(b.item.name);
-        }),
-    [parameterItemsFormData]
-  );
+  const [initiallySorted, setInitiallySorted] = useState(false);
+
+  useEffect(() => {
+    if (!initiallySorted && parameterItems && parameterItems.length > 0) {
+      const sorted = parameterItems
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name));
+      const formData = sorted.map((item) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        value: item.value,
+        defaultItem: item.defaultItem ?? false,
+        isNew: false,
+        isDeleted: false,
+      }));
+      setParameterItemsFormData(formData);
+      setInitiallySorted(true);
+    }
+  }, [initiallySorted, parameterItems]);
 
   useEffect(() => {
     if (parameter && isEditMode) {
@@ -135,26 +141,25 @@ export default function Parameter({
     }
   }, [parameter, isEditMode, initialFormData]);
 
-  // Initialize parameter items form data when component mounts or parameter items change
+  // After initial sort is applied (or for create mode), update on changes without re-sorting
   useEffect(() => {
     if (mode === "create") {
-      // Don't reset parameterItemsFormData in create mode to preserve user input
       return;
     }
+    if (!parameterItems) return;
+    if (!initiallySorted) return; // wait until initial sort hook runs
 
-    if (parameterItems) {
-      const formData = parameterItems.map((item) => ({
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        value: item.value,
-        defaultItem: item.defaultItem ?? false,
-        isNew: false,
-        isDeleted: false,
-      }));
-      setParameterItemsFormData(formData);
-    }
-  }, [parameterItems, mode]);
+    const mapped = parameterItems.sort((a, b) => a.name.localeCompare(b.name)).map((item) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      value: item.value,
+      defaultItem: item.defaultItem ?? false,
+      isNew: false,
+      isDeleted: false,
+    }));
+    setParameterItemsFormData(mapped);
+  }, [parameterItems, mode, initiallySorted]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,6 +204,7 @@ export default function Parameter({
                 description: item.description,
                 value: formData.numerical ? item.value : item.name,
                 parameterId: parameterId!,
+                defaultItem: !!item.defaultItem,
               })
             );
           } else if (!item.isNew && !item.isDeleted && item.id) {
@@ -208,6 +214,7 @@ export default function Parameter({
                 name: item.name,
                 description: item.description,
                 value: formData.numerical ? item.value : item.name,
+                defaultItem: !!item.defaultItem,
                 updatedAt: new Date().toISOString(),
               })
             );
@@ -242,6 +249,7 @@ export default function Parameter({
                   description: item.description,
                   value: formData.numerical || false ? item.value : item.name,
                   parameterId: newParameter.id,
+                  defaultItem: !!item.defaultItem,
                 })
               );
             }
@@ -347,10 +355,7 @@ export default function Parameter({
     return errors;
   };
 
-  // Get visible parameter items (not deleted)
-  const visibleParameterItems = parameterItemsFormData.filter(
-    (item) => !item.isDeleted
-  );
+  // (deprecated) visible items helper removed; we filter inline in the render
 
   return (
     <div className="space-y-6 py-4 px-4">
@@ -470,7 +475,7 @@ export default function Parameter({
               </Button>
             </div>
 
-            {visibleParameterItems.length > 0 ? (
+            {parameterItemsFormData.some((i) => !i.isDeleted) ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -483,100 +488,102 @@ export default function Parameter({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedVisibleItems.map(({ item, idx: itemIndex }) => (
-                    <TableRow key={item.id || `new-${itemIndex}`}>
-                      <TableCell className="w-48">
-                        <Input
-                          value={item.name}
-                          onChange={(e) =>
-                            handleParameterItemInputChange(
-                              itemIndex,
-                              "name",
-                              e.target.value
-                            )
-                          }
-                          className="text-sm"
-                          placeholder="Item name"
-                        />
-                      </TableCell>
-                      <TableCell className="w-80">
-                        <Textarea
-                          value={item.description}
-                          onChange={(e) =>
-                            handleParameterItemInputChange(
-                              itemIndex,
-                              "description",
-                              e.target.value
-                            )
-                          }
-                          className="text-sm min-h-[96px]"
-                          rows={4}
-                          placeholder="Item description"
-                        />
-                      </TableCell>
-                      {formData?.numerical && (
-                        <TableCell className="w-32">
+                  {parameterItemsFormData.map((item, itemIndex) =>
+                    item.isDeleted ? null : (
+                      <TableRow key={item.id || `new-${itemIndex}`}>
+                        <TableCell className="w-48">
                           <Input
-                            type="number"
-                            value={item.value}
+                            value={item.name}
                             onChange={(e) =>
                               handleParameterItemInputChange(
                                 itemIndex,
-                                "value",
+                                "name",
                                 e.target.value
                               )
                             }
                             className="text-sm"
-                            placeholder="0"
+                            placeholder="Item name"
                           />
                         </TableCell>
-                      )}
-                      <TableCell className="w-20">
-                        <div className="flex items-center gap-2">
-                          {effectiveProfile?.role === "superadmin" && (
+                        <TableCell className="w-80">
+                          <Textarea
+                            value={item.description}
+                            onChange={(e) =>
+                              handleParameterItemInputChange(
+                                itemIndex,
+                                "description",
+                                e.target.value
+                              )
+                            }
+                            className="text-sm min-h-[96px]"
+                            rows={4}
+                            placeholder="Item description"
+                          />
+                        </TableCell>
+                        {formData?.numerical && (
+                          <TableCell className="w-32">
+                            <Input
+                              type="number"
+                              value={item.value}
+                              onChange={(e) =>
+                                handleParameterItemInputChange(
+                                  itemIndex,
+                                  "value",
+                                  e.target.value
+                                )
+                              }
+                              className="text-sm"
+                              placeholder="0"
+                            />
+                          </TableCell>
+                        )}
+                        <TableCell className="w-20">
+                          <div className="flex items-center gap-2">
+                            {effectiveProfile?.role === "superadmin" && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div>
+                                    <Checkbox
+                                      checked={!!item.defaultItem}
+                                      onCheckedChange={(checked) =>
+                                        handleParameterItemInputChange(
+                                          itemIndex,
+                                          "defaultItem",
+                                          Boolean(checked)
+                                        )
+                                      }
+                                      aria-label="Save as system item"
+                                    />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  Save as system item
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div>
-                                  <Checkbox
-                                    checked={!!item.defaultItem}
-                                    onCheckedChange={(checked) =>
-                                      handleParameterItemInputChange(
-                                        itemIndex,
-                                        "defaultItem",
-                                        Boolean(checked)
-                                      )
-                                    }
-                                    aria-label="Save as system item"
-                                  />
-                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleDeleteParameterItem(itemIndex)
+                                  }
+                                  aria-label="Delete parameter item"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                Save as system item
+                                Delete parameter item
                               </TooltipContent>
                             </Tooltip>
-                          )}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  handleDeleteParameterItem(itemIndex)
-                                }
-                                aria-label="Delete parameter item"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              Delete parameter item
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  )}
                 </TableBody>
               </Table>
             ) : (
