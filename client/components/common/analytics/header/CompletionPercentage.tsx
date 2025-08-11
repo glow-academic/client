@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useAnalytics } from "@/contexts/analytics-context";
 import { calculateCompletionPercentage } from "@/utils/analytics/header";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
@@ -83,6 +84,7 @@ export default function CompletionPercentage({
   cohortIds,
 }: CompletionPercentageProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { selectedRoles, includePractice } = useAnalytics();
 
   // Fetch data
   const { data: profiles } = useQuery({
@@ -136,7 +138,10 @@ export default function CompletionPercentage({
       dateEnd,
       profileId,
       cohorts,
-      cohortIds
+      cohortIds,
+      selectedRoles,
+      includePractice,
+      profiles?.map((p) => ({ id: p.id, role: p.role }))
     );
   }, [
     chats,
@@ -148,6 +153,9 @@ export default function CompletionPercentage({
     dateEnd,
     profileId,
     cohortIds,
+    selectedRoles,
+    includePractice,
+    profiles,
   ]);
 
   const {
@@ -234,9 +242,7 @@ export default function CompletionPercentage({
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent
-          className="max-w-2xl"
-        >
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Completion Percentage Trend</DialogTitle>
             <DialogDescription hidden>

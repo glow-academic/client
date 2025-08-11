@@ -335,7 +335,8 @@ export const simulationAttempts = pgTable("simulation_attempts", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	profileId: uuid("profile_id"),
 	simulationId: uuid("simulation_id").notNull(),
-	infiniteMode: boolean("infinite_mode").default(false).notNull()}, (table) => [
+	infiniteMode: boolean("infinite_mode").default(false).notNull(),
+	infiniteModeTimeLimit: integer("infinite_mode_time_limit")}, (table) => [
 	foreignKey({
 			columns: [table.profileId],
 			foreignColumns: [profiles.id],

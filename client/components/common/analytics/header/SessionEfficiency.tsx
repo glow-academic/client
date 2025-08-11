@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useAnalytics } from "@/contexts/analytics-context";
 import { calculateSessionEfficiency } from "@/utils/analytics/header";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
@@ -84,6 +85,7 @@ export default function SessionEfficiency({
   cohortIds,
 }: SessionEfficiencyProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { selectedRoles, includePractice } = useAnalytics();
 
   // Fetch data
   const { data: profiles } = useQuery({
@@ -129,7 +131,14 @@ export default function SessionEfficiency({
 
   // Calculate session efficiency using utility function
   const sessionEfficiencyResult = useMemo(() => {
-    if (!grades || !attempts || !chats || !simulations || !rubrics || !cohorts) {
+    if (
+      !grades ||
+      !attempts ||
+      !chats ||
+      !simulations ||
+      !rubrics ||
+      !cohorts
+    ) {
       return { currentValue: 0, trendData: [], hasData: false };
     }
 
@@ -143,7 +152,10 @@ export default function SessionEfficiency({
       dateEnd,
       profileId,
       cohorts,
-      cohortIds
+      cohortIds,
+      selectedRoles,
+      includePractice,
+      profiles?.map((p) => ({ id: p.id, role: p.role }))
     );
   }, [
     grades,
@@ -156,6 +168,9 @@ export default function SessionEfficiency({
     dateEnd,
     profileId,
     cohortIds,
+    selectedRoles,
+    includePractice,
+    profiles,
   ]);
 
   const {
@@ -196,11 +211,9 @@ export default function SessionEfficiency({
     if (recentData.length === 0 || earlierData.length === 0) return null;
 
     const recentAvg =
-      recentData.reduce((sum, day) => sum + day.value, 0) /
-      recentData.length;
+      recentData.reduce((sum, day) => sum + day.value, 0) / recentData.length;
     const earlierAvg =
-      earlierData.reduce((sum, day) => sum + day.value, 0) /
-      earlierData.length;
+      earlierData.reduce((sum, day) => sum + day.value, 0) / earlierData.length;
     const change = recentAvg - earlierAvg;
     const changePercent =
       earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
@@ -244,9 +257,7 @@ export default function SessionEfficiency({
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent
-          className="max-w-2xl"
-        >
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Session Efficiency Trend</DialogTitle>
             <DialogDescription hidden>

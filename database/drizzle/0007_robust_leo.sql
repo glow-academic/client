@@ -1,0 +1,1 @@
+ALTER TABLE "simulation_attempts" ADD COLUMN "infinite_mode_time_limit" integer;

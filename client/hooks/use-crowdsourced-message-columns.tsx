@@ -63,7 +63,9 @@ export function useCrowdsourcedMessageColumns() {
       ),
       cell: ({ row }) => (
         <div className="flex flex-col">
-          <span className="font-medium text-sm">{row.getValue("authorName")}</span>
+          <span className="font-medium text-sm">
+            {row.getValue("authorName")}
+          </span>
           {row.original.authorAlias && (
             <span className="text-xs text-muted-foreground">
               {row.original.authorAlias}
@@ -107,6 +109,3 @@ export function useCrowdsourcedMessageColumns() {
     responseOptions,
   };
 }
-
-
-

@@ -10,10 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
+import { useAnalytics } from "@/contexts/analytics-context";
 import { calculateStagnationRate } from "@/utils/analytics/header";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
@@ -84,6 +85,7 @@ export default function StagnationRate({
   cohortIds,
 }: StagnationRateProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { selectedRoles, includePractice } = useAnalytics();
 
   // Fetch data
   const { data: profiles } = useQuery({
@@ -150,7 +152,10 @@ export default function StagnationRate({
       dateEnd,
       profileId,
       cohorts,
-      cohortIds
+      cohortIds,
+      selectedRoles,
+      includePractice,
+      profiles?.map((p) => ({ id: p.id, role: p.role }))
     );
   }, [
     attempts,
@@ -163,6 +168,9 @@ export default function StagnationRate({
     dateEnd,
     profileId,
     cohortIds,
+    selectedRoles,
+    includePractice,
+    profiles,
   ]);
 
   const {
@@ -247,9 +255,7 @@ export default function StagnationRate({
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent
-          className="max-w-2xl"
-        >
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Stagnation Rate Trend</DialogTitle>
             <DialogDescription hidden>

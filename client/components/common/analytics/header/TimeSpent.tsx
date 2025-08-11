@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useAnalytics } from "@/contexts/analytics-context";
 import { calculateTimeSpent } from "@/utils/analytics/header";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
@@ -82,6 +83,7 @@ export default function TimeSpent({
   cohortIds,
 }: TimeSpentProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { selectedRoles, includePractice } = useAnalytics();
 
   // Fetch data
   const { data: profiles } = useQuery({
@@ -127,7 +129,10 @@ export default function TimeSpent({
       dateEnd,
       profileId,
       cohorts,
-      cohortIds
+      cohortIds,
+      selectedRoles,
+      includePractice,
+      profiles?.map((p) => ({ id: p.id, role: p.role }))
     );
   }, [
     chats,
@@ -138,6 +143,9 @@ export default function TimeSpent({
     dateEnd,
     profileId,
     cohortIds,
+    selectedRoles,
+    includePractice,
+    profiles,
   ]);
 
   const {
@@ -240,9 +248,7 @@ export default function TimeSpent({
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent
-          className="max-w-2xl"
-        >
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Time Spent Trend</DialogTitle>
             <DialogDescription hidden>

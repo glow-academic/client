@@ -25,7 +25,8 @@ CREATE TABLE simulation_attempts (
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   profile_id    UUID         NULL REFERENCES profiles(id)  ON DELETE CASCADE,
   simulation_id    UUID        NOT NULL REFERENCES simulations(id)  ON DELETE CASCADE,
-  infinite_mode BOOLEAN     NOT NULL           DEFAULT FALSE -- we will rotate through all the scenarios in simulation, creating new ones every time 
+  infinite_mode BOOLEAN     NOT NULL           DEFAULT FALSE,
+  infinite_mode_time_limit INTEGER     NULL -- in minutes, or no time limit
 );
 
 CREATE TABLE simulation_chats (
