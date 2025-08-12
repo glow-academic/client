@@ -125,7 +125,8 @@ export const calculateScenarioAttributeBreakdown = (
   cohorts: Cohort[] = [],
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
-  showPractice: boolean = false
+  showPractice: boolean = false,
+  showNormal: boolean = true
 ): ScenarioAttributeElement[] => {
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
@@ -142,7 +143,7 @@ export const calculateScenarioAttributeBreakdown = (
     return [];
   }
 
-  // Filter grades by date range, optionally include practice simulations, and filter by roles if provided
+  // Filter grades by date range, include/exclude practice and normal simulations, and filter by roles if provided
   let filteredGrades = grades.filter((grade) => {
     const gradeDate = new Date(grade.createdAt);
     const chat = chats.find((c) => c.id === grade.simulationChatId);
@@ -154,8 +155,10 @@ export const calculateScenarioAttributeBreakdown = (
     const inDateRange =
       isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
 
-    // Practice filter
-    const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
+    // Practice/Normal filter
+    const isPractice = Boolean(simulation?.practiceSimulation);
+    const practiceOk =
+      (showPractice && isPractice) || (showNormal && !isPractice);
 
     // Role filter (default to allow all when not provided)
     const roleOk = rolesAllowed
@@ -415,7 +418,8 @@ export const calculateScenarioPerformance = (
   cohorts: Cohort[] = [],
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
-  showPractice: boolean = false
+  showPractice: boolean = false,
+  showNormal: boolean = true
 ): {
   performanceData: ScenarioPerformanceData[];
   correlationData: CorrelationData;
@@ -438,7 +442,7 @@ export const calculateScenarioPerformance = (
     };
   }
 
-  // Filter data by date range, optionally include practice simulations, and filter by roles if provided
+  // Filter data by date range, include/exclude practice and normal simulations, and filter by roles if provided
   const filteredGrades = grades.filter((grade) => {
     const gradeDate = new Date(grade.createdAt);
     const chat = chats.find((c) => c.id === grade.simulationChatId);
@@ -450,8 +454,10 @@ export const calculateScenarioPerformance = (
     const inDateRange =
       isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
 
-    // Practice filter
-    const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
+    // Practice/Normal filter
+    const isPractice = Boolean(simulation?.practiceSimulation);
+    const practiceOk =
+      (showPractice && isPractice) || (showNormal && !isPractice);
 
     // Role filter
     const roleOk = rolesAllowed

@@ -127,7 +127,7 @@ export const calculateAttemptImprovement = (
     );
   }
 
-  // Filter data by date range, include/exclude practice, filter by roles, selected simulations, and cohorts
+  // Filter data by date range, include/exclude practice/normal, filter by roles, selected simulations, and cohorts
   const filteredGrades = grades.filter((grade) => {
     const gradeDate = new Date(grade.createdAt);
     const chat = chats.find((c) => c.id === grade.simulationChatId);
@@ -141,10 +141,10 @@ export const calculateAttemptImprovement = (
     const inDateRange =
       isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
 
-    // Practice/Assigned filter
+    // Practice/Normal filter
     const isPractice = Boolean(simulation?.practiceSimulation);
-    const practiceOk = showPractice ? isPractice : true;
-    const normalOk = showNormal ? !isPractice : true;
+    const practiceOk =
+      (showPractice && isPractice) || (showNormal && !isPractice);
 
     // Role filter
     const roleOk = rolesAllowed
@@ -159,14 +159,7 @@ export const calculateAttemptImprovement = (
     // Filter by cohorts
     const cohortMatch = profile ? isProfileInCohorts(profile.id) : true;
 
-    return (
-      inDateRange &&
-      practiceOk &&
-      normalOk &&
-      roleOk &&
-      profileMatch &&
-      cohortMatch
-    );
+    return inDateRange && practiceOk && roleOk && profileMatch && cohortMatch;
   });
 
   if (filteredGrades.length === 0) return [];
@@ -355,7 +348,7 @@ export const calculatePlatformGrowth = (
     );
   };
 
-  // Filter data by date range, optionally include practice simulations, filter by roles, and filter by cohorts
+  // Filter data by date range, include/exclude practice and normal simulations, filter by roles, and filter by cohorts
   const filteredGrades = grades.filter((grade) => {
     const gradeDate = new Date(grade.createdAt);
     const chat = chats.find((c) => c.id === grade.simulationChatId);
@@ -367,10 +360,10 @@ export const calculatePlatformGrowth = (
     const inDateRange =
       isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
 
-    // Practice/Assigned filter
+    // Practice/Normal filter
     const isPractice = Boolean(simulation?.practiceSimulation);
-    const practiceOk = showPractice ? isPractice : true;
-    const normalOk = showNormal ? !isPractice : true;
+    const practiceOk =
+      (showPractice && isPractice) || (showNormal && !isPractice);
 
     // Role filter
     const roleOk = rolesAllowed
@@ -385,14 +378,7 @@ export const calculatePlatformGrowth = (
     // Filter by cohorts
     const cohortMatch = profile ? isProfileInCohorts(profile.id) : true;
 
-    return (
-      inDateRange &&
-      practiceOk &&
-      normalOk &&
-      roleOk &&
-      profileMatch &&
-      cohortMatch
-    );
+    return inDateRange && practiceOk && roleOk && profileMatch && cohortMatch;
   });
 
   if (filteredGrades.length === 0) return [];

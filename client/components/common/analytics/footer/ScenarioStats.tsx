@@ -87,6 +87,9 @@ export default function ScenarioStats({
   profileId,
   cohortIds,
   thresholds,
+  selectedRoles,
+  showPractice,
+  showNormal,
 }: ScenarioStatsProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -274,7 +277,10 @@ export default function ScenarioStats({
         dateEnd,
         profileId,
         cohorts || [],
-        cohortIds
+        cohortIds,
+        selectedRoles,
+        showPractice,
+        showNormal
       );
     }, [
       scenarios,
@@ -293,6 +299,9 @@ export default function ScenarioStats({
       profileId,
       cohorts,
       cohortIds,
+      selectedRoles,
+      showPractice,
+      showNormal,
     ]);
 
   const { correlation, pValue } = correlationData;

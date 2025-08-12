@@ -93,6 +93,7 @@ export default function ScenarioPerformance({
   cohortIds,
   selectedRoles,
   showPractice,
+  showNormal,
 }: ScenarioPerformanceProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -212,7 +213,8 @@ export default function ScenarioPerformance({
       cohorts || [],
       cohortIds,
       selectedRoles,
-      showPractice
+      showPractice,
+      showNormal
     );
   }, [
     scenarios,
@@ -231,6 +233,7 @@ export default function ScenarioPerformance({
     cohortIds,
     selectedRoles,
     showPractice,
+    showNormal,
   ]);
 
   // Calculate threshold status based on attribute performance

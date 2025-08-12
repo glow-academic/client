@@ -31,6 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { calculateSimulationComposition } from "@/utils/analytics/footer";
+import { profileRole } from "@/utils/drizzle/schema";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
@@ -48,7 +49,6 @@ import { useMemo, useState } from "react";
 import SimulationCompositionPicker, {
   SimulationCompositionConfig,
 } from "../SimulationCompositionPicker";
-import { profileRole } from "@/utils/drizzle/schema";
 
 export interface SimulationCompositionProps {
   dateStart: Date;
