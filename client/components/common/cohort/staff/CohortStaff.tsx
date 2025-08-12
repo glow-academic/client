@@ -53,6 +53,7 @@ export interface CohortStaffProps {
   isLoading?: boolean;
   isSubmitting?: boolean;
   effectiveProfile?: Profile | null; // Current user's effective profile
+  isReadonly?: boolean;
 }
 
 export default function CohortStaff({
@@ -62,6 +63,7 @@ export default function CohortStaff({
   setProfilesToDelete,
   isLoading = false,
   effectiveProfile,
+  isReadonly = false,
 }: CohortStaffProps) {
   // View mode state
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -253,10 +255,12 @@ export default function CohortStaff({
           </div>
 
           {/* Add Staff Button */}
-          <CohortAddStaff
-            onAddProfiles={handleAddProfiles}
-            existingProfileIds={profiles.map((p) => p.id)}
-          />
+          {!isReadonly && (
+            <CohortAddStaff
+              onAddProfiles={handleAddProfiles}
+              existingProfileIds={profiles.map((p) => p.id)}
+            />
+          )}
         </div>
       </div>
 
@@ -318,7 +322,7 @@ export default function CohortStaff({
                               <Eye className="h-3 w-3" />
                             </Button>
                           )}
-                          {canDeleteProfile(profile) && (
+                          {canDeleteProfile(profile) && !isReadonly && (
                             <Button
                               type="button"
                               variant="outline"
@@ -409,7 +413,7 @@ export default function CohortStaff({
                               <Eye className="h-4 w-4" />
                             </Button>
                           )}
-                          {canDeleteProfile(profile) && (
+                          {canDeleteProfile(profile) && !isReadonly && (
                             <Button
                               type="button"
                               variant="outline"

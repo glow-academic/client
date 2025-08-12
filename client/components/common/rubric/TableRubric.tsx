@@ -47,6 +47,7 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getStandardGroupsByRubric } from "@/utils/queries/standard_groups/get-standard-groups-by-rubric";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import CheckpointsReached from "./CheckpointsReached";
 // import { RotateCw } from "lucide-react";
 import { toast } from "sonner";
 
@@ -57,11 +58,13 @@ type SimulationChatCrowdsourcedFeedback =
 export interface TableRubricProps {
   rubricId: string;
   simulationChatId?: string;
+  checkpointLabels?: string[];
 }
 
 export default function TableRubric({
   rubricId,
   simulationChatId,
+  checkpointLabels,
 }: TableRubricProps) {
   const queryClient = useQueryClient();
   const { effectiveProfile } = useProfile();
@@ -157,6 +160,11 @@ export default function TableRubric({
   const grades = simulationGrades;
   const feedbacks = simulationFeedbacks;
   const chatGrade = grades?.[0]; // Assuming one grade per chat
+  const checkpointsReached: boolean[] =
+    (chatGrade?.checkpointsReached as boolean[]) || [];
+
+  // Optionally fetch scenario to show checkpoint labels when available
+  // Labels for checkpoints are supplied by parent via `checkpointLabels`.
 
   // Map standards to their simulation feedback rows for quick lookup
   const standardIdToFeedback = React.useMemo(() => {
@@ -315,7 +323,7 @@ export default function TableRubric({
   );
 
   return (
-    <div className="space-y-4 w-full">
+    <div className="space-y-6 w-full">
       <div className="overflow-auto max-h-[70vh]">
         <Table className="min-w-[600px] text-sm table-fixed">
           <TableHeader className="sticky top-0 z-10">
@@ -663,6 +671,18 @@ export default function TableRubric({
           </TableBody>
         </Table>
       </div>
+
+      {/* Checkpoints Reached (displayed only when we have a grade and checkpoints) */}
+      {simulationChatId && chatGrade && checkpointsReached.length > 0 && (
+        <div className="border rounded-md p-4 bg-card">
+          <div className="text-sm font-semibold mb-3">Checkpoints reached</div>
+          <CheckpointsReached
+            simulationChatId={simulationChatId}
+            checkpointsReached={checkpointsReached}
+            labels={checkpointLabels || []}
+          />
+        </div>
+      )}
     </div>
   );
 }

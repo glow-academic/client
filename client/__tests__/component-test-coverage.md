@@ -1,8 +1,8 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 296
-- **Tests Created**: 0
+- **Total Components**: 298
+- **Tests Created**: 2
 - **Tests Updated**: 0
 - **Tests Skipped** (already implemented): 296
 
@@ -31,6 +31,7 @@
 | SystemAgent | components/common/agent/SystemAgent.tsx | SystemAgent.test.tsx | ✅ Implemented |
 | AnalyticsFilters | components/common/analytics/AnalyticsFilters.tsx | AnalyticsFilters.test.tsx | ✅ Implemented |
 | GrowthPicker | components/common/analytics/GrowthPicker.tsx | GrowthPicker.test.tsx | ✅ Implemented |
+| PracticePicker | components/common/analytics/PracticePicker.tsx | PracticePicker.test.tsx | ✅ Implemented |
 | ScenarioAttributePicker | components/common/analytics/ScenarioAttributePicker.tsx | ScenarioAttributePicker.test.tsx | ✅ Implemented |
 | SimulationCompositionPicker | components/common/analytics/SimulationCompositionPicker.tsx | SimulationCompositionPicker.test.tsx | ✅ Implemented |
 | ScenarioPerformance | components/common/analytics/footer/ScenarioPerformance.tsx | ScenarioPerformance.test.tsx | ✅ Implemented |
@@ -100,6 +101,7 @@
 | ProfileSelector | components/common/profile/ProfileSelector.tsx | ProfileSelector.test.tsx | ✅ Implemented |
 | RolePicker | components/common/profile/RolePicker.tsx | RolePicker.test.tsx | ✅ Implemented |
 | Provider | components/common/provider/Provider.tsx | Provider.test.tsx | ✅ Implemented |
+| CheckpointsReached | components/common/rubric/CheckpointsReached.tsx | CheckpointsReached.test.tsx | ✅ Implemented |
 | Rubric | components/common/rubric/Rubric.tsx | Rubric.test.tsx | ✅ Implemented |
 | RubricDetails | components/common/rubric/RubricDetails.tsx | RubricDetails.test.tsx | ✅ Implemented |
 | RubricPicker | components/common/rubric/RubricPicker.tsx | RubricPicker.test.tsx | ✅ Implemented |
@@ -339,6 +341,7 @@ __tests__/
 │   │   ├── analytics/
 │   │   │   ├── AnalyticsFilters.test.tsx
 │   │   │   ├── GrowthPicker.test.tsx
+│   │   │   ├── PracticePicker.test.tsx
 │   │   │   ├── ScenarioAttributePicker.test.tsx
 │   │   │   ├── SimulationCompositionPicker.test.tsx
 │   │   │   ├── footer/
@@ -426,6 +429,7 @@ __tests__/
 │   │   ├── provider/
 │   │   │   ├── Provider.test.tsx
 │   │   ├── rubric/
+│   │   │   ├── CheckpointsReached.test.tsx
 │   │   │   ├── Rubric.test.tsx
 │   │   │   ├── RubricDetails.test.tsx
 │   │   │   ├── RubricPicker.test.tsx

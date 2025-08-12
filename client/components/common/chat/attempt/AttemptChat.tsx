@@ -48,10 +48,10 @@ import { formatTime } from "@/utils/time";
 import { Progress } from "@/components/ui/progress";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import TableRubric from "../../rubric/TableRubric";
 import AttemptInput from "./AttemptInput";
 import AttemptMessages from "./AttemptMessages";
-import { useRouter } from "next/navigation";
 
 export default function AttemptChat() {
   const router = useRouter();
@@ -439,6 +439,9 @@ export default function AttemptChat() {
                           <TableRubric
                             rubricId={simulationContext?.simulation?.rubricId}
                             simulationChatId={selectedChatId || ""}
+                            checkpointLabels={
+                              selectedScenario?.checkpoints || []
+                            }
                           />
                         </div>
                       ) : selectedChat ? (

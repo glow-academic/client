@@ -10,6 +10,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Copy,
   Edit,
+  Eye,
   LogOut,
   Plus,
   Sparkles,
@@ -40,10 +41,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useProfile } from "@/contexts/profile-context";
 import { Cohort } from "@/types";
 import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { useProfile } from "@/contexts/profile-context";
 
 export default function Cohorts() {
   const router = useRouter();
@@ -147,10 +148,10 @@ export default function Cohorts() {
 
     // For active cohorts, check if there are any TA members
     const cohortProfiles = profiles.filter((profile) =>
-      cohort.profileIds?.includes(profile.id),
+      cohort.profileIds?.includes(profile.id)
     );
     const hasTAMembers = cohortProfiles.some(
-      (profile) => profile.role === "ta",
+      (profile) => profile.role === "ta"
     );
 
     // Cannot delete active cohorts that have TA members
@@ -188,16 +189,16 @@ export default function Cohorts() {
 
     // Check if user is in the cohort
     const isUserInCohort = cohort.profileIds?.includes(
-      effectiveProfile?.id || "",
+      effectiveProfile?.id || ""
     );
     if (!isUserInCohort) return false;
 
     // Check if there are other instructional users in the cohort
     const cohortProfiles = profiles.filter((profile) =>
-      cohort.profileIds?.includes(profile.id),
+      cohort.profileIds?.includes(profile.id)
     );
     const instructionalProfiles = cohortProfiles.filter(
-      (profile) => profile.role === "instructional",
+      (profile) => profile.role === "instructional"
     );
 
     // Can leave if there are other instructional users (not the only one)
@@ -210,14 +211,19 @@ export default function Cohorts() {
       effectiveProfile?.role === "admin" ||
       effectiveProfile?.role === "superadmin";
 
-    if (isAdmin) return true;
-
     const cohort = cohorts.find((c) => c.id === cohortId);
     if (!cohort) return false;
 
+    // Only superadmins can edit default cohorts
+    if (cohort.defaultCohort && effectiveProfile?.role !== "superadmin") {
+      return false;
+    }
+
+    if (isAdmin) return true;
+
     // Check if user's profile is in the cohort's profileIds
     const isUserInCohort = cohort.profileIds?.includes(
-      effectiveProfile?.id || "",
+      effectiveProfile?.id || ""
     );
 
     return isUserInCohort || !isCohortInUse(cohortId);
@@ -353,6 +359,10 @@ export default function Cohorts() {
     router.push(`/cohorts/e/${id}`);
   };
 
+  const handleView = (id: string) => {
+    router.push(`/cohorts/e/${id}`);
+  };
+
   const handleCreateNew = () => {
     router.push("/cohorts/new");
   };
@@ -378,13 +388,12 @@ export default function Cohorts() {
                 <Users className="h-3 w-3 mr-1" />
                 {cohort.profileIds?.length || 0} members
               </Badge>
-              <Badge variant={cohort.active ? "default" : "secondary"}>
-                {cohort.active ? "Active" : "Inactive"}
-              </Badge>
+              {cohort.defaultCohort && <Badge variant="default">Default</Badge>}
+              {!cohort.active && <Badge variant="secondary">Inactive</Badge>}
             </div>
           </div>
           <div className="flex items-center gap-1">
-            {canEditCohort(cohort.id) && (
+            {canEditCohort(cohort.id) ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -393,6 +402,16 @@ export default function Cohorts() {
                 aria-label={`Edit ${cohort.title}`}
               >
                 <Edit className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid={`view-${cohort.id}`}
+                onClick={() => handleView(cohort.id)}
+                aria-label={`View ${cohort.title}`}
+              >
+                <Eye className="h-4 w-4" />
               </Button>
             )}
             {canDuplicate(cohort) && (

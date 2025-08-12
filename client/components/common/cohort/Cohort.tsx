@@ -150,6 +150,55 @@ export default function Cohort({ cohortId }: CohortProps) {
     isLoadingParameters ||
     isLoadingParameterItems;
 
+  // Readonly logic similar to scenarios
+  const currentCohort = useMemo(() => {
+    const targetCohortId = cohortId || editingCohortId;
+    if (!targetCohortId) return null;
+    return cohorts.find((c: CohortType) => c.id === targetCohortId) || null;
+  }, [cohortId, editingCohortId, cohorts]);
+
+  const isCohortInUse = useCallback(
+    (c?: CohortType | null) => {
+      const target = c ?? currentCohort;
+      if (!target) return false;
+      return !!(target.profileIds && target.profileIds.length > 0);
+    },
+    [currentCohort]
+  );
+
+  const canEditThisCohort = useMemo(() => {
+    if (!isEditMode) return true; // creating new is editable
+    if (!currentCohort) return false;
+
+    const isAdmin =
+      effectiveProfile?.role === "admin" ||
+      effectiveProfile?.role === "superadmin";
+
+    // Only superadmins can edit default cohorts
+    if (
+      currentCohort.defaultCohort &&
+      effectiveProfile?.role !== "superadmin"
+    ) {
+      return false;
+    }
+
+    if (isAdmin) return true;
+
+    const isUserInCohort = currentCohort.profileIds?.includes(
+      effectiveProfile?.id || ""
+    );
+
+    return isUserInCohort || !isCohortInUse(currentCohort);
+  }, [
+    isEditMode,
+    currentCohort,
+    effectiveProfile?.role,
+    effectiveProfile?.id,
+    isCohortInUse,
+  ]);
+
+  const isReadonly = isEditMode ? !canEditThisCohort : false;
+
   // Transform simulations to match SimulationPicker interface
   const transformedSimulations: SimulationPickerType[] = useMemo(() => {
     return simulations.map((sim) => ({
@@ -453,6 +502,47 @@ export default function Cohort({ cohortId }: CohortProps) {
 
   return (
     <div className="space-y-6">
+      {isReadonly && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg
+                className="h-5 w-5 text-yellow-400"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">
+                {currentCohort?.defaultCohort &&
+                effectiveProfile?.role !== "superadmin"
+                  ? "Default cohort cannot be edited"
+                  : "You don't have permission to edit this cohort"}
+              </h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                {currentCohort?.defaultCohort &&
+                effectiveProfile?.role !== "superadmin" ? (
+                  <p>
+                    This is a default cohort template restricted to superadmins.
+                    You can view details but cannot make changes.
+                  </p>
+                ) : (
+                  <p>
+                    You can view the details but cannot make changes due to your
+                    current permissions.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <form onSubmit={handleFormSubmit} className="space-y-6">
         {/* Basic Cohort Information */}
         <div className="space-y-2">
@@ -464,6 +554,7 @@ export default function Cohort({ cohortId }: CohortProps) {
               onChange={(e) => handleInputChange("title", e.target.value)}
               placeholder="Enter cohort title"
               className={errors.title ? "border-destructive" : ""}
+              disabled={isReadonly}
             />
           ) : (
             <Skeleton className="h-10 w-full" />
@@ -482,6 +573,7 @@ export default function Cohort({ cohortId }: CohortProps) {
               onChange={(e) => handleInputChange("description", e.target.value)}
               placeholder="Enter cohort description (optional)"
               rows={3}
+              disabled={isReadonly}
             />
           ) : (
             <Skeleton className="h-20 w-full" />
@@ -500,6 +592,7 @@ export default function Cohort({ cohortId }: CohortProps) {
               onCheckedChange={(checked) =>
                 handleInputChange("active", checked)
               }
+              disabled={isReadonly}
             />
           ) : (
             <Skeleton className="h-6 w-11" />
@@ -517,23 +610,25 @@ export default function Cohort({ cohortId }: CohortProps) {
                 </p>
               )}
             </div>
-            <div className="flex gap-2">
-              {formData.simulationIds !== undefined && !isLoading ? (
-                <SimulationPicker
-                  simulations={transformedSimulations}
-                  scenarios={scenarios}
-                  parameters={parameters}
-                  parameterItems={parameterItems}
-                  selectedSimulations={selectedSimulations}
-                  onSelect={handleSimulationSelection}
-                  placeholder="Add simulation"
-                  showLabel={false}
-                  buttonClassName="w-48"
-                />
-              ) : (
-                <Skeleton className="h-10 w-48" />
-              )}
-            </div>
+            {!isReadonly && (
+              <div className="flex gap-2">
+                {formData.simulationIds !== undefined && !isLoading ? (
+                  <SimulationPicker
+                    simulations={transformedSimulations}
+                    scenarios={scenarios}
+                    parameters={parameters}
+                    parameterItems={parameterItems}
+                    selectedSimulations={selectedSimulations}
+                    onSelect={handleSimulationSelection}
+                    placeholder="Add simulation"
+                    showLabel={false}
+                    buttonClassName="w-48"
+                  />
+                ) : (
+                  <Skeleton className="h-10 w-48" />
+                )}
+              </div>
+            )}
           </div>
 
           {isLoading ? (
@@ -586,12 +681,12 @@ export default function Cohort({ cohortId }: CohortProps) {
                     className={`p-3 min-h-[180px] cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
                       draggedSimulation === simulationId ? "opacity-50" : ""
                     }`}
-                    draggable
+                    draggable={!isReadonly}
                     onDragStart={(e) =>
-                      handleDragStartSimulation(e, simulationId)
+                      !isReadonly && handleDragStartSimulation(e, simulationId)
                     }
                     onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, simulationId)}
+                    onDrop={(e) => !isReadonly && handleDrop(e, simulationId)}
                   >
                     <div className="space-y-3 h-full flex flex-col justify-between">
                       <div>
@@ -600,24 +695,28 @@ export default function Cohort({ cohortId }: CohortProps) {
                             {simulation.title || "Unnamed Simulation"}
                           </h4>
                           <div className="flex items-center gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => editSimulation(simulationId)}
-                              className="h-6 w-6 p-0"
-                            >
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => removeSimulation(simulationId)}
-                              className="h-6 w-6 p-0"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                            {!isReadonly && (
+                              <>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => editSimulation(simulationId)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => removeSimulation(simulationId)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </div>
 
@@ -680,6 +779,7 @@ export default function Cohort({ cohortId }: CohortProps) {
           isLoading={isLoading}
           isSubmitting={isSubmitting}
           effectiveProfile={effectiveProfile}
+          isReadonly={isReadonly}
         />
 
         {/* Submit Button */}
@@ -695,7 +795,9 @@ export default function Cohort({ cohortId }: CohortProps) {
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting || (isEditMode && !hasChanges)}
+                disabled={
+                  isSubmitting || isReadonly || (isEditMode && !hasChanges)
+                }
                 className="min-w-[120px]"
               >
                 {isSubmitting ? (
