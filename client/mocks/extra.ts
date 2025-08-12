@@ -182,7 +182,7 @@ vi.mock("@/utils/logger", () => ({
 vi.mock("@/lib/api-base", async (importOriginal) => {
   const actual = await importOriginal();
   return {
-    ...actual,
+    ...(actual as Record<string, unknown>),
     getApiBase: vi.fn(() => "http://localhost:8000"),
   };
 });

@@ -14,7 +14,6 @@ export interface FeedbackData {
 }
 
 export function useFeedbackColumns(
-  onViewDetails?: (feedback: FeedbackData) => void
 ) {
   const getFeedbackTypeVariant = (type: string) => {
     switch (type) {
