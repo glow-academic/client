@@ -46,7 +46,7 @@ export function CrowdsourcedRubricFeedbackDataTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "createdAt", desc: true },
@@ -83,11 +83,12 @@ export function CrowdsourcedRubricFeedbackDataTable({
     <div className="space-y-4">
       {/* Reuse toolbar for search/reset/view/refresh; no extra filters for now */}
       <FeedbackDataTableToolbar
-        table={table as any}
+        table={table}
         typeOptions={[]}
         profileOptions={[]}
         isRefreshing={isRefreshing}
         onRefresh={onRefresh}
+        searchColumnId="feedback"
       />
       <div className="rounded-md border overflow-x-auto">
         <Table>
@@ -107,7 +108,7 @@ export function CrowdsourcedRubricFeedbackDataTable({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext(),
+                            header.getContext()
                           )}
                     </TableHead>
                   );
@@ -132,7 +133,7 @@ export function CrowdsourcedRubricFeedbackDataTable({
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext(),
+                        cell.getContext()
                       )}
                     </TableCell>
                   ))}
@@ -140,7 +141,10 @@ export function CrowdsourcedRubricFeedbackDataTable({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center px-6">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center px-6"
+                >
                   No crowdsourced rubric feedback found.
                 </TableCell>
               </TableRow>
@@ -152,6 +156,3 @@ export function CrowdsourcedRubricFeedbackDataTable({
     </div>
   );
 }
-
-
-

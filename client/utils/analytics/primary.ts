@@ -81,7 +81,8 @@ export const calculateAttemptImprovement = (
   cohortIds: string[] = [],
   selectedSimulations: string[] = [],
   rolesAllowed?: ProfileRole[],
-  showPractice: boolean = false
+  showPractice: boolean = false,
+  showNormal: boolean = true
 ): AttemptImprovementDataPoint[] => {
   if (!profiles || !chats || !grades || !attempts || !simulations || !rubrics) {
     return [];
@@ -141,12 +142,16 @@ export const calculateAttemptImprovement = (
     const inDateRange =
       isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
 
-    // Practice filter
-    const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
+    // Practice/Assigned filter
+    const isPractice = Boolean(simulation?.practiceSimulation);
+    const practiceOk = showPractice ? isPractice : true;
+    const normalOk = showNormal ? !isPractice : true;
 
     // Role filter
     const roleOk = rolesAllowed
-      ? (profile?.role ? rolesAllowed.includes(profile.role) : false)
+      ? profile?.role
+        ? rolesAllowed.includes(profile.role)
+        : false
       : true;
 
     // Filter by profile if provided
@@ -155,7 +160,14 @@ export const calculateAttemptImprovement = (
     // Filter by cohorts
     const cohortMatch = profile ? isProfileInCohorts(profile.id) : true;
 
-    return inDateRange && practiceOk && roleOk && profileMatch && cohortMatch;
+    return (
+      inDateRange &&
+      practiceOk &&
+      normalOk &&
+      roleOk &&
+      profileMatch &&
+      cohortMatch
+    );
   });
 
   if (filteredGrades.length === 0) return [];
@@ -326,7 +338,8 @@ export const calculatePlatformGrowth = (
   cohorts: Cohort[] = [],
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
-  showPractice: boolean = false
+  showPractice: boolean = false,
+  showNormal: boolean = true
 ): GrowthDataPoint[] => {
   if (!profiles || !chats || !grades || !attempts || !simulations || !rubrics) {
     return [];
@@ -355,12 +368,16 @@ export const calculatePlatformGrowth = (
     const inDateRange =
       isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
 
-    // Practice filter
-    const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
+    // Practice/Assigned filter
+    const isPractice = Boolean(simulation?.practiceSimulation);
+    const practiceOk = showPractice ? isPractice : true;
+    const normalOk = showNormal ? !isPractice : true;
 
     // Role filter
     const roleOk = rolesAllowed
-      ? (profile?.role ? rolesAllowed.includes(profile.role) : false)
+      ? profile?.role
+        ? rolesAllowed.includes(profile.role)
+        : false
       : true;
 
     // Filter by profile if provided
@@ -369,7 +386,14 @@ export const calculatePlatformGrowth = (
     // Filter by cohorts
     const cohortMatch = profile ? isProfileInCohorts(profile.id) : true;
 
-    return inDateRange && practiceOk && roleOk && profileMatch && cohortMatch;
+    return (
+      inDateRange &&
+      practiceOk &&
+      normalOk &&
+      roleOk &&
+      profileMatch &&
+      cohortMatch
+    );
   });
 
   if (filteredGrades.length === 0) return [];
@@ -701,7 +725,9 @@ export const calculatePersonaPerformance = (
     // Role filter
     const profile = profiles?.find((p) => p.id === attempt?.profileId);
     const roleOk = rolesAllowed
-      ? (profile?.role ? rolesAllowed.includes(profile.role) : false)
+      ? profile?.role
+        ? rolesAllowed.includes(profile.role)
+        : false
       : true;
 
     // Filter by selected simulations
@@ -712,7 +738,14 @@ export const calculatePersonaPerformance = (
     // Filter by cohorts
     const cohortMatch = profile ? isProfileInCohorts(profile.id) : true;
 
-    return inDateRange && practiceOk && profileMatch && roleOk && simulationMatch && cohortMatch;
+    return (
+      inDateRange &&
+      practiceOk &&
+      profileMatch &&
+      roleOk &&
+      simulationMatch &&
+      cohortMatch
+    );
   });
 
   // Group by persona

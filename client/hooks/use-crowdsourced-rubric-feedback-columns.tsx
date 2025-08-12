@@ -2,7 +2,6 @@ import { DataTableColumnHeader } from "@/components/common/history/DataTableColu
 import { ColumnDef } from "@tanstack/react-table";
 
 export interface CrowdsourcedRubricFeedbackData {
-  id: string;
   createdAt: string | null;
   profileId: string;
   simulationChatFeedbackId: string;
@@ -11,6 +10,7 @@ export interface CrowdsourcedRubricFeedbackData {
   authorName: string;
   authorAlias: string;
   formattedDate: string;
+  actualTotal?: number; // pulled from simulation_chat_feedbacks
 }
 
 function truncateText(text: string | null, maxLength = 120) {
@@ -20,24 +20,7 @@ function truncateText(text: string | null, maxLength = 120) {
 
 export function useCrowdsourcedRubricFeedbackColumns() {
   const columns: ColumnDef<CrowdsourcedRubricFeedbackData>[] = [
-    {
-      accessorKey: "id",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="ID" />
-      ),
-      cell: ({ row }) => (
-        <div className="font-medium text-center text-xs break-all">
-          {row.getValue("id")}
-        </div>
-      ),
-      enableSorting: true,
-      enableHiding: false,
-      enableColumnFilter: true,
-      filterFn: (row, _, value) => {
-        if (!value || value.length === 0) return true;
-        return value.includes(row.getValue("id"));
-      },
-    },
+    // Remove ID column per requirements
     {
       accessorKey: "total",
       header: ({ column }) => (
@@ -55,6 +38,23 @@ export function useCrowdsourcedRubricFeedbackColumns() {
       },
     },
     {
+      accessorKey: "actualTotal",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Actual Total" />
+      ),
+      cell: ({ row }) => (
+        <div className="text-center">{row.getValue("actualTotal") ?? "-"}</div>
+      ),
+      enableSorting: true,
+      enableHiding: false,
+      enableColumnFilter: true,
+      filterFn: (row, _, value) => {
+        if (!value || value.length === 0) return true;
+        const v = row.getValue("actualTotal");
+        return value.includes(String(v));
+      },
+    },
+    {
       accessorKey: "feedback",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Feedback" />
@@ -64,7 +64,7 @@ export function useCrowdsourcedRubricFeedbackColumns() {
           {truncateText(row.getValue("feedback"))}
         </div>
       ),
-      enableSorting: false,
+      enableSorting: true,
       enableHiding: false,
       enableColumnFilter: true,
       filterFn: (row, _, value) => {
@@ -80,7 +80,9 @@ export function useCrowdsourcedRubricFeedbackColumns() {
       ),
       cell: ({ row }) => (
         <div className="flex flex-col">
-          <span className="font-medium text-sm">{row.getValue("authorName")}</span>
+          <span className="font-medium text-sm">
+            {row.getValue("authorName")}
+          </span>
           {row.original.authorAlias && (
             <span className="text-xs text-muted-foreground">
               {row.original.authorAlias}
@@ -116,6 +118,3 @@ export function useCrowdsourcedRubricFeedbackColumns() {
 
   return { columns };
 }
-
-
-

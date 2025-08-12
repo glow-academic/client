@@ -115,7 +115,8 @@ export const calculateCohortPerformance = (
   cohortIds: string[] = [],
   selectedSimulationIds: string[] = [],
   rolesAllowed?: ProfileRole[],
-  showPractice: boolean = false
+  showPractice: boolean = false,
+  showNormal: boolean = true
 ): CohortPerformanceResult => {
   // Filter cohorts based on cohortIds and profileId
   let filteredCohorts = cohorts;
@@ -147,7 +148,7 @@ export const calculateCohortPerformance = (
       ? simulations
       : simulations.filter((s) => selectedSimulationIds.includes(s.id));
 
-  // Filter grades by date range, optionally include practice simulations, filter by roles, and filter by selected simulations
+  // Filter grades by date range, optionally include practice/assigned simulations, filter by roles, and filter by selected simulations
   const filteredGrades = grades.filter((grade) => {
     const gradeDate = new Date(grade.createdAt);
     const chat = chats.find((c) => c.id === grade.simulationChatId);
@@ -161,8 +162,10 @@ export const calculateCohortPerformance = (
     const inDateRange =
       isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
 
-    // Practice filter
-    const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
+    // Practice/Assigned filter
+    const isPractice = Boolean(simulation?.practiceSimulation);
+    const practiceOk = showPractice ? isPractice : true;
+    const normalOk = showNormal ? !isPractice : true;
 
     // Role filter
     const roleOk = rolesAllowed
@@ -180,7 +183,12 @@ export const calculateCohortPerformance = (
       (simulation && selectedSimulationIds.includes(simulation.id));
 
     return (
-      inDateRange && practiceOk && roleOk && profileMatch && simulationMatch
+      inDateRange &&
+      practiceOk &&
+      normalOk &&
+      roleOk &&
+      profileMatch &&
+      simulationMatch
     );
   });
 

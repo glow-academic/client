@@ -89,6 +89,17 @@ function filterDataByDateAndProfile<T extends { createdAt: string }>(
   });
 }
 
+// Helper to include simulations based on practice vs normal flags
+function isIncludedByPractice(
+  simulation: { practiceSimulation?: boolean } | undefined,
+  showPractice: boolean,
+  showNormal: boolean
+): boolean {
+  if (!simulation) return false;
+  const isPractice = Boolean(simulation.practiceSimulation);
+  return (showPractice && isPractice) || (showNormal && !isPractice);
+}
+
 /**
  * Calculate average score across all simulation attempts
  * @param grades - All simulation chat grades
@@ -116,7 +127,8 @@ export const calculateAverageScore = (
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
   showPractice: boolean = false,
-  profiles?: { id: string; role: ProfileRole }[]
+  profiles?: { id: string; role: ProfileRole }[],
+  showNormal: boolean = true
 ): AnalyticsResult => {
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
@@ -137,7 +149,7 @@ export const calculateAverageScore = (
         );
         return (
           attempt?.profileId === profileId &&
-          (showPractice ? true : !simulation?.practiceSimulation)
+          isIncludedByPractice(simulation, showPractice, showNormal)
         );
       })
     : filteredGrades.filter((grade) => {
@@ -146,7 +158,7 @@ export const calculateAverageScore = (
         const simulation = simulations.find(
           (s) => s.id === attempt?.simulationId
         );
-        return showPractice ? true : !simulation?.practiceSimulation;
+        return isIncludedByPractice(simulation, showPractice, showNormal);
       });
 
   // Apply role filtering if provided and profiles are available
@@ -256,7 +268,8 @@ export const calculateCompletionPercentage = (
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
   showPractice: boolean = false,
-  profiles?: { id: string; role: ProfileRole }[]
+  profiles?: { id: string; role: ProfileRole }[],
+  showNormal: boolean = true
 ): AnalyticsResult => {
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
@@ -279,7 +292,7 @@ export const calculateCompletionPercentage = (
   let nonPracticeChats = profileFilteredChats.filter((chat) => {
     const attempt = attempts?.find((a) => a.id === chat.attemptId);
     const simulation = simulations?.find((s) => s.id === attempt?.simulationId);
-    return showPractice ? true : !simulation?.practiceSimulation;
+    return isIncludedByPractice(simulation, showPractice, showNormal);
   });
 
   // Role filtering
@@ -381,7 +394,8 @@ export const calculateFirstAttemptPassRate = (
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
   showPractice: boolean = false,
-  profiles?: { id: string; role: ProfileRole }[]
+  profiles?: { id: string; role: ProfileRole }[],
+  showNormal: boolean = true
 ): AnalyticsResult => {
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
@@ -394,8 +408,8 @@ export const calculateFirstAttemptPassRate = (
     const attemptDate = new Date(attempt.createdAt);
     const simulation = simulations.find((s) => s.id === attempt.simulationId);
     if (!(attemptDate >= dateStart && attemptDate <= dateEnd)) return false;
-    const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
-    if (!practiceOk) return false;
+    if (!isIncludedByPractice(simulation, showPractice, showNormal))
+      return false;
     if (rolesAllowed && rolesAllowed.length > 0 && profiles) {
       const prof = profiles.find((p) => p.id === attempt.profileId);
       if (!prof || !rolesAllowed.includes(prof.role)) return false;
@@ -541,7 +555,8 @@ export const calculateHighestScore = (
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
   showPractice: boolean = false,
-  profiles?: { id: string; role: ProfileRole }[]
+  profiles?: { id: string; role: ProfileRole }[],
+  showNormal: boolean = true
 ): AnalyticsResult => {
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
@@ -562,7 +577,7 @@ export const calculateHighestScore = (
         );
         return (
           attempt?.profileId === profileId &&
-          (showPractice ? true : !simulation?.practiceSimulation)
+          isIncludedByPractice(simulation, showPractice, showNormal)
         );
       })
     : filteredGrades.filter((grade) => {
@@ -571,7 +586,7 @@ export const calculateHighestScore = (
         const simulation = simulations.find(
           (s) => s.id === attempt?.simulationId
         );
-        return showPractice ? true : !simulation?.practiceSimulation;
+        return isIncludedByPractice(simulation, showPractice, showNormal);
       });
 
   // Apply role filtering if provided and profiles are available
@@ -680,7 +695,8 @@ export const calculateMessagesPerSession = (
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
   showPractice: boolean = false,
-  profiles?: { id: string; role: ProfileRole }[]
+  profiles?: { id: string; role: ProfileRole }[],
+  showNormal: boolean = true
 ): AnalyticsResult => {
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
@@ -703,8 +719,8 @@ export const calculateMessagesPerSession = (
   let nonPracticeChats = profileFilteredChats.filter((chat) => {
     const attempt = attempts?.find((a) => a.id === chat.attemptId);
     const simulation = simulations?.find((s) => s.id === attempt?.simulationId);
-    const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
-    if (!practiceOk) return false;
+    if (!isIncludedByPractice(simulation, showPractice, showNormal))
+      return false;
     if (rolesAllowed && rolesAllowed.length > 0 && profiles) {
       const prof = profiles.find((p) => p.id === attempt?.profileId);
       if (!prof || !rolesAllowed.includes(prof.role)) return false;
@@ -794,7 +810,8 @@ export const calculatePersonaResponseTimes = (
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
   showPractice: boolean = false,
-  profiles?: { id: string; role: ProfileRole }[]
+  profiles?: { id: string; role: ProfileRole }[],
+  showNormal: boolean = true
 ): AnalyticsResult => {
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
@@ -817,8 +834,8 @@ export const calculatePersonaResponseTimes = (
   let nonPracticeChats = profileFilteredChats.filter((chat) => {
     const attempt = attempts?.find((a) => a.id === chat.attemptId);
     const simulation = simulations?.find((s) => s.id === attempt?.simulationId);
-    const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
-    if (!practiceOk) return false;
+    if (!isIncludedByPractice(simulation, showPractice, showNormal))
+      return false;
     if (rolesAllowed && rolesAllowed.length > 0 && profiles) {
       const prof = profiles.find((p) => p.id === attempt?.profileId);
       if (!prof || !rolesAllowed.includes(prof.role)) return false;
@@ -966,7 +983,8 @@ export const calculateSessionEfficiency = (
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
   showPractice: boolean = false,
-  profiles?: { id: string; role: ProfileRole }[]
+  profiles?: { id: string; role: ProfileRole }[],
+  showNormal: boolean = true
 ): AnalyticsResult => {
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
@@ -987,7 +1005,7 @@ export const calculateSessionEfficiency = (
         );
         return (
           attempt?.profileId === profileId &&
-          (showPractice ? true : !simulation?.practiceSimulation)
+          isIncludedByPractice(simulation, showPractice, showNormal)
         );
       })
     : filteredGrades.filter((grade) => {
@@ -996,7 +1014,7 @@ export const calculateSessionEfficiency = (
         const simulation = simulations.find(
           (s) => s.id === attempt?.simulationId
         );
-        return showPractice ? true : !simulation?.practiceSimulation;
+        return isIncludedByPractice(simulation, showPractice, showNormal);
       });
 
   // Apply role filtering if provided and profiles are available
@@ -1140,7 +1158,8 @@ export const calculateStagnationRate = (
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
   showPractice: boolean = false,
-  profiles?: { id: string; role: ProfileRole }[]
+  profiles?: { id: string; role: ProfileRole }[],
+  showNormal: boolean = true
 ): AnalyticsResult => {
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
@@ -1153,8 +1172,8 @@ export const calculateStagnationRate = (
     const attemptDate = new Date(attempt.createdAt);
     const simulation = simulations.find((s) => s.id === attempt.simulationId);
     if (!(attemptDate >= dateStart && attemptDate <= dateEnd)) return false;
-    const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
-    if (!practiceOk) return false;
+    if (!isIncludedByPractice(simulation, showPractice, showNormal))
+      return false;
     if (rolesAllowed && rolesAllowed.length > 0 && profiles) {
       const prof = profiles.find((p) => p.id === attempt.profileId);
       if (!prof || !rolesAllowed.includes(prof.role)) return false;
@@ -1335,7 +1354,8 @@ export const calculateTimeSpent = (
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
   showPractice: boolean = false,
-  profiles?: { id: string; role: ProfileRole }[]
+  profiles?: { id: string; role: ProfileRole }[],
+  showNormal: boolean = true
 ): AnalyticsResult => {
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
@@ -1358,8 +1378,8 @@ export const calculateTimeSpent = (
   let nonPracticeChats = profileFilteredChats.filter((chat) => {
     const attempt = attempts?.find((a) => a.id === chat.attemptId);
     const simulation = simulations?.find((s) => s.id === attempt?.simulationId);
-    const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
-    if (!practiceOk) return false;
+    if (!isIncludedByPractice(simulation, showPractice, showNormal))
+      return false;
     if (rolesAllowed && rolesAllowed.length > 0 && profiles) {
       const prof = profiles.find((p) => p.id === attempt?.profileId);
       if (!prof || !rolesAllowed.includes(prof.role)) return false;
@@ -1453,7 +1473,8 @@ export const calculateTotalAttempts = (
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
   showPractice: boolean = false,
-  profiles?: { id: string; role: ProfileRole }[]
+  profiles?: { id: string; role: ProfileRole }[],
+  showNormal: boolean = true
 ): AnalyticsResult => {
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
@@ -1466,8 +1487,8 @@ export const calculateTotalAttempts = (
     const attemptDate = new Date(attempt.createdAt);
     const simulation = simulations.find((s) => s.id === attempt.simulationId);
     if (!(attemptDate >= dateStart && attemptDate <= dateEnd)) return false;
-    const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
-    if (!practiceOk) return false;
+    if (!isIncludedByPractice(simulation, showPractice, showNormal))
+      return false;
     if (rolesAllowed && rolesAllowed.length > 0 && profiles) {
       const prof = profiles.find((p) => p.id === attempt.profileId);
       if (!prof || !rolesAllowed.includes(prof.role)) return false;

@@ -7,8 +7,7 @@
 
 "use client";
 
-import { Cohort } from "@/types";
-import { ProfileRole } from "@/types";
+import { Cohort, ProfileRole } from "@/types";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { useQuery } from "@tanstack/react-query";
 import { subDays } from "date-fns";
@@ -29,9 +28,13 @@ export interface AnalyticsContextType {
   selectedRoles: ProfileRole[];
   setSelectedRoles: (roles: ProfileRole[]) => void;
 
-  // Practice data include flag
-  includePractice: boolean;
-  setIncludePractice: (include: boolean) => void;
+  // Practice/Assigned filters
+  includePractice: boolean; // legacy flag (kept for backwards compatibility)
+  setIncludePractice: (include: boolean) => void; // legacy setter
+  showPractice: boolean;
+  setShowPractice: (show: boolean) => void;
+  showNormal: boolean;
+  setShowNormal: (show: boolean) => void;
 
   // Available cohorts data
   cohorts: Cohort[];
@@ -129,8 +132,11 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   const [selectedCohortIds, setSelectedCohortIds] = useState<string[]>([]);
   // Role filtering - empty array means all roles
   const [selectedRoles, setSelectedRoles] = useState<ProfileRole[]>(["ta"]);
-  // Include practice data in analytics
+  // Include practice data in analytics (legacy)
   const [includePractice, setIncludePractice] = useState<boolean>(false);
+  // New dual flags for practice/assigned filtering
+  const [showPractice, setShowPractice] = useState<boolean>(false);
+  const [showNormal, setShowNormal] = useState<boolean>(true);
 
   // Compute effective cohort IDs for filtering
   const effectiveCohortIds = useMemo(() => {
@@ -155,6 +161,8 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     setSelectedCohortIds([]);
     setSelectedRoles(["ta"]);
     setIncludePractice(false);
+    setShowPractice(false);
+    setShowNormal(true);
     setHasUserSetDateRange(false); // Reset user-set date range
   };
 
@@ -170,6 +178,10 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     setSelectedRoles,
     includePractice,
     setIncludePractice,
+    showPractice,
+    setShowPractice,
+    showNormal,
+    setShowNormal,
     cohorts,
     isLoadingCohorts,
     effectiveCohortIds,

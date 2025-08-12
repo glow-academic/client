@@ -1,8 +1,6 @@
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ColumnDef } from "@tanstack/react-table";
-import { MessageSquare } from "lucide-react";
 
 export interface FeedbackData {
   id: number;
@@ -16,7 +14,7 @@ export interface FeedbackData {
 }
 
 export function useFeedbackColumns(
-  onViewDetails?: (feedback: FeedbackData) => void,
+  onViewDetails?: (feedback: FeedbackData) => void
 ) {
   const getFeedbackTypeVariant = (type: string) => {
     switch (type) {
@@ -56,22 +54,7 @@ export function useFeedbackColumns(
   };
 
   const columns: ColumnDef<FeedbackData>[] = [
-    {
-      accessorKey: "id",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="ID" />
-      ),
-      cell: ({ row }) => (
-        <div className="font-medium text-center">{row.getValue("id")}</div>
-      ),
-      enableSorting: true,
-      enableHiding: false,
-      enableColumnFilter: true,
-      filterFn: (row, _, value) => {
-        if (!value || value.length === 0) return true;
-        return value.includes(row.getValue("id"));
-      },
-    },
+    // ID column removed per requirements
     {
       accessorKey: "type",
       header: ({ column }) => (
@@ -157,25 +140,7 @@ export function useFeedbackColumns(
         return value.includes(row.original.formattedDate);
       },
     },
-    {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }) => (
-        <div className="flex justify-center">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              onViewDetails?.(row.original);
-            }}
-          >
-            <MessageSquare className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
+    // Actions column removed per requirements
   ];
 
   // Generate filter options

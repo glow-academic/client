@@ -13,8 +13,11 @@ import {
 } from "@/components/common/cohort/CohortPicker";
 import { RolePicker } from "@/components/common/profile/RolePicker";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+// import { Label } from "@/components/ui/label";
+import {
+  PracticeOption,
+  PracticePicker,
+} from "@/components/common/analytics/PracticePicker";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { profileRole } from "@/utils/drizzle/schema";
 import { useEffect, useMemo } from "react";
@@ -29,8 +32,14 @@ export function AnalyticsFilters() {
     cohorts,
     selectedRoles,
     setSelectedRoles,
-    includePractice,
-    setIncludePractice,
+    // legacy include flag (kept for compatibility)
+    // includePractice,
+    // setIncludePractice,
+    // new dual flags
+    showPractice,
+    setShowPractice,
+    showNormal,
+    setShowNormal,
   } = useAnalytics();
 
   // Convert to DateRange for the date picker component
@@ -113,15 +122,20 @@ export function AnalyticsFilters() {
 
   return (
     <div className="flex items-center gap-2">
-      {/* Include Practice Switch */}
-      <div className="flex items-center gap-2 pr-2">
-        <Switch
-          id="include-practice"
-          checked={includePractice}
-          onCheckedChange={(checked) => setIncludePractice(!!checked)}
-        />
-        <Label htmlFor="include-practice">Include practice</Label>
-      </div>
+      {/* Practice/Assigned Selector (multi-select, matches RolePicker) */}
+      <PracticePicker
+        selected={[
+          ...(showNormal ? (["assigned"] as PracticeOption[]) : []),
+          ...(showPractice ? (["practice"] as PracticeOption[]) : []),
+        ]}
+        onChange={(vals) => {
+          const hasAssigned = vals.includes("assigned");
+          const hasPractice = vals.includes("practice");
+          setShowNormal(hasAssigned);
+          setShowPractice(hasPractice);
+        }}
+        placeholder="Assigned"
+      />
 
       {/* Role Picker */}
       <RolePicker

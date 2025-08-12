@@ -42,7 +42,13 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { logError } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, SlidersHorizontal, Upload } from "lucide-react";
+import {
+  Infinity,
+  Plus,
+  Settings,
+  SlidersHorizontal,
+  Upload,
+} from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -727,8 +733,29 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    // Practice page: show Customize button in header right
+    // Practice page: role-based visibility
+    // - instructional/admin/superadmin: always show
+    // - ta: show only if tour completed (viewedIntro && viewedChat)
+    // - guest: never show
     if (pathname === "/practice") {
+      const role = effectiveProfile?.role;
+      if (role === "guest") {
+        return null;
+      }
+      if (role === "ta") {
+        if (!(effectiveProfile?.viewedIntro && effectiveProfile?.viewedChat)) {
+          return null;
+        }
+      }
+      const privilegedRoles: Array<import("@/types").ProfileRole> = [
+        "instructional",
+        "admin",
+        "superadmin",
+        "ta",
+      ];
+      if (!role || !privilegedRoles.includes(role)) {
+        return null;
+      }
       return (
         <Button onClick={() => setCustomizeOpen(true)} size="sm">
           <SlidersHorizontal className="h-4 w-4 mr-2" />
@@ -784,7 +811,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Customize Practice</DialogTitle>
-                <DialogDescription>
+                <DialogDescription hidden>
                   Create a custom attempt. Use Infinite Mode to keep practicing
                   a single practice simulation repeatedly, or configure a
                   one-off practice scenario.
@@ -794,9 +821,17 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
               <div className="space-y-6">
                 <div className="space-y-1">
                   <div className="flex items-center gap-3">
-                    <Label htmlFor="infinite-mode" className="mb-0">
-                      Infinite Mode
-                    </Label>
+                    {isInfiniteMode ? (
+                      <Label htmlFor="infinite-mode" className="mb-0">
+                        <Infinity />
+                        Infinite Mode
+                      </Label>
+                    ) : (
+                      <Label htmlFor="infinite-mode" className="mb-0">
+                        <Settings />
+                        Custom Mode
+                      </Label>
+                    )}
                     <Switch
                       id="infinite-mode"
                       checked={isInfiniteMode}
@@ -804,8 +839,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                     />
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Practice one simulation continuously. Choose any simulation
-                    marked for practice and repeat it until you stop.
+                    {isInfiniteMode
+                      ? "Practice one simulation continuously."
+                      : "Practice one scenario with a specific persona and parameter set."}
                   </p>
                 </div>
 

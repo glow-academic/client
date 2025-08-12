@@ -60,26 +60,44 @@ export function FeedbackDataTableToolbar<TData extends object>({
           <Input
             placeholder="Search feedback or author..."
             value={(messageColumn?.getFilterValue() as string) ?? ""}
-            onChange={(event) => messageColumn?.setFilterValue(event.target.value)}
+            onChange={(event) =>
+              messageColumn?.setFilterValue(event.target.value)
+            }
             className="h-8 w-[150px] lg:w-[250px]"
           />
         </div>
 
         <div className="flex items-center space-x-2 flex-wrap mb-2">
           {idColumn && idOptions.length > 0 && (
-            <DataTableFacetedFilter column={idColumn} title="ID" options={idOptions} />
+            <DataTableFacetedFilter
+              column={idColumn}
+              title="ID"
+              options={idOptions}
+            />
           )}
 
           {typeColumn && typeOptions.length > 0 && (
-            <DataTableFacetedFilter column={typeColumn} title="Type" options={typeOptions} />
+            <DataTableFacetedFilter
+              column={typeColumn}
+              title="Type"
+              options={typeOptions}
+            />
           )}
 
           {authorColumn && profileOptions.length > 0 && (
-            <DataTableFacetedFilter column={authorColumn} title="Author" options={profileOptions} />
+            <DataTableFacetedFilter
+              column={authorColumn}
+              title="Author"
+              options={profileOptions}
+            />
           )}
 
           {isFiltered && (
-            <Button variant="ghost" onClick={() => table.resetColumnFilters()} className="h-8 px-2 lg:px-3">
+            <Button
+              variant="ghost"
+              onClick={() => table.resetColumnFilters()}
+              className="h-8 px-2 lg:px-3"
+            >
               Reset
               <X className="ml-2 h-4 w-4" />
             </Button>
@@ -88,8 +106,15 @@ export function FeedbackDataTableToolbar<TData extends object>({
       </div>
 
       <div className="flex items-center space-x-2 mb-2">
-        <Button variant="outline" size="sm" onClick={onRefresh} disabled={isRefreshing}>
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onRefresh}
+          disabled={isRefreshing}
+        >
+          <RefreshCw
+            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+          />
         </Button>
 
         <DataTableViewOptions table={table} />

@@ -47,7 +47,8 @@ export default function Reports() {
     endDate,
     effectiveCohortIds,
     selectedRoles,
-    includePractice,
+    showPractice,
+    showNormal,
   } = useAnalytics();
 
   const handleViewReport = (profileId: string) => {
@@ -306,8 +307,9 @@ export default function Reports() {
         cohorts,
         cohortIds,
         selectedRoles,
-        includePractice,
-        profilesForRoles
+        showPractice,
+        profilesForRoles,
+        showNormal
       ).currentValue;
 
       // 2. Completion Percentage
@@ -322,8 +324,9 @@ export default function Reports() {
         cohorts,
         cohortIds,
         selectedRoles,
-        includePractice,
-        profilesForRoles
+        showPractice,
+        profilesForRoles,
+        showNormal
       ).currentValue;
 
       // 3. First Attempt Pass Rate
@@ -338,8 +341,9 @@ export default function Reports() {
         cohorts,
         cohortIds,
         selectedRoles,
-        includePractice,
-        profilesForRoles
+        showPractice,
+        profilesForRoles,
+        showNormal
       ).currentValue;
 
       // 4. Highest Score
@@ -355,8 +359,9 @@ export default function Reports() {
         cohorts,
         cohortIds,
         selectedRoles,
-        includePractice,
-        profilesForRoles
+        showPractice,
+        profilesForRoles,
+        showNormal
       ).currentValue;
 
       // 5. Messages Per Session
@@ -371,8 +376,9 @@ export default function Reports() {
         cohorts,
         cohortIds,
         selectedRoles,
-        includePractice,
-        profilesForRoles
+        showPractice,
+        profilesForRoles,
+        showNormal
       ).currentValue;
 
       // 6. Persona Response Times (seconds -> we show minutes in UI)
@@ -387,8 +393,9 @@ export default function Reports() {
         cohorts,
         cohortIds,
         selectedRoles,
-        includePractice,
-        profilesForRoles
+        showPractice,
+        profilesForRoles,
+        showNormal
       ).currentValue;
       const personaResponseTimes = Math.round(personaResponseSeconds / 60);
 
@@ -405,8 +412,9 @@ export default function Reports() {
         cohorts,
         cohortIds,
         selectedRoles,
-        includePractice,
-        profilesForRoles
+        showPractice,
+        profilesForRoles,
+        showNormal
       ).currentValue;
 
       // 8. Stagnation Rate
@@ -422,8 +430,9 @@ export default function Reports() {
         cohorts,
         cohortIds,
         selectedRoles,
-        includePractice,
-        profilesForRoles
+        showPractice,
+        profilesForRoles,
+        showNormal
       ).currentValue;
 
       // 9. Time Spent (seconds -> minutes)
@@ -437,8 +446,9 @@ export default function Reports() {
         cohorts,
         cohortIds,
         selectedRoles,
-        includePractice,
-        profilesForRoles
+        showPractice,
+        profilesForRoles,
+        showNormal
       ).currentValue;
       const timeSpent = Math.round(timeSpentSeconds / 60);
 
@@ -452,8 +462,9 @@ export default function Reports() {
         cohorts,
         cohortIds,
         selectedRoles,
-        includePractice,
-        profilesForRoles
+        showPractice,
+        profilesForRoles,
+        showNormal
       ).currentValue;
 
       // Calculate risk assessment based on all 10 metrics
@@ -871,7 +882,8 @@ export default function Reports() {
     effectiveCohortIds,
     tas,
     selectedRoles,
-    includePractice,
+    showPractice,
+    showNormal,
   ]);
 
   // Loading state
