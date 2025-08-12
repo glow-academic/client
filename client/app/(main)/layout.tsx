@@ -73,6 +73,7 @@ import {
   useSimulation,
 } from "@/contexts/simulation-context";
 import { TourProvider } from "@/contexts/tour-context";
+import { useWebSocket } from "@/contexts/websocket-context";
 import type {
   Parameter,
   ParameterItem,
@@ -115,6 +116,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("upload:remove-file", handler);
   }, []);
   const router = useRouter();
+  const { isConnected, emitStartSimulation } = useWebSocket();
   const { effectiveProfile, isLoading, activeProfile } = useProfile();
   const queryClient = useQueryClient();
 
@@ -940,30 +942,28 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                           return;
                         }
                         // Start via WebSocket start_simulation with infinite flag
-                        // Emit start over WebSocket so server handles infinite mode
+                        if (!isConnected) {
+                          toast.error(
+                            "WebSocket not connected. Please refresh the page."
+                          );
+                          setIsStartingAttempt(false);
+                          return;
+                        }
                         const profileIdForEmit =
                           effectiveProfile?.role === "guest"
                             ? ""
                             : String(effectiveProfile?.id || "");
                         toast.loading("Starting simulation...");
-                        try {
-                          // Defer to websocket start handler with infinite flags by firing a DOM event
-                          window.dispatchEvent(
-                            new CustomEvent("simulationStartRequested", {
-                              detail: {
-                                simulationId: sim.id,
-                                profileId: profileIdForEmit,
-                                infinite: true,
-                                infiniteTimeLimit: infiniteTimeLimit
-                                  ? parseInt(infiniteTimeLimit, 10)
-                                  : null,
-                              },
-                            })
-                          );
-                        } finally {
-                          setIsStartingAttempt(false);
-                        }
+                        emitStartSimulation({
+                          simulation_id: sim.id,
+                          profile_id: profileIdForEmit,
+                          infinite: true,
+                          infinite_time_limit: infiniteTimeLimit
+                            ? parseInt(infiniteTimeLimit, 10)
+                            : null,
+                        });
                         setCustomizeOpen(false);
+                        setIsStartingAttempt(false);
                         return;
                       }
 

@@ -137,13 +137,13 @@ export default function Providers() {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 items-stretch">
         {providerGroup.models
           .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
           .map((model: Model) => (
             <Card
               key={model.id}
-              className="hover:shadow-md transition-shadow flex flex-col h-full"
+              className="hover:shadow-md transition-shadow flex flex-col h-full min-h-[220px]"
             >
               <CardHeader className="flex-0">
                 <div className="flex justify-between items-start">
@@ -182,7 +182,7 @@ export default function Providers() {
 
         {/* Create New Model Card for this provider */}
         <Card
-          className="border-dashed border-2 hover:border-dashed hover:border-primary/50 transition-colors cursor-pointer flex flex-col h-full"
+          className="border-dashed border-2 hover:border-dashed hover:border-primary/50 transition-colors cursor-pointer flex flex-col h-full min-h-[220px]"
           onClick={() =>
             router.push(
               `/management/providers/p/${providerGroup.provider.id}/new`

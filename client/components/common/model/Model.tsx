@@ -86,8 +86,8 @@ export default function Model({ modelId, providerId }: ModelProps) {
         name: modelToEdit.name,
         description: modelToEdit.description,
         active: modelToEdit.active ? "true" : "false",
-        inputPpm: (modelToEdit as any).inputPpm?.toString?.() ?? "0",
-        outputPpm: (modelToEdit as any).outputPpm?.toString?.() ?? "0",
+        inputPpm: modelToEdit.inputPpm?.toString?.() ?? "0",
+        outputPpm: modelToEdit.outputPpm?.toString?.() ?? "0",
       });
     } else if (!isEditMode) {
       // We are in CREATE mode, so reset the form to its initial state
@@ -265,7 +265,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
                 min="0"
                 value={formData.inputPpm}
                 onChange={(e) =>
-                  handleInputChange("inputPpm" as any, e.target.value)
+                  handleInputChange("inputPpm" as keyof ModelType, e.target.value)
                 }
                 placeholder="e.g. 3.00"
                 className={errors.inputPpm ? "border-destructive" : ""}
@@ -287,7 +287,10 @@ export default function Model({ modelId, providerId }: ModelProps) {
                 min="0"
                 value={formData.outputPpm}
                 onChange={(e) =>
-                  handleInputChange("outputPpm" as any, e.target.value)
+                  handleInputChange(
+                    "outputPpm" as keyof ModelType,
+                    e.target.value
+                  )
                 }
                 placeholder="e.g. 15.00"
                 className={errors.outputPpm ? "border-destructive" : ""}
