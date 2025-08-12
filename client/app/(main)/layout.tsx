@@ -874,12 +874,13 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="infinite-time-limit">
-                        Time Limit (minutes, optional)
+                        Time Limit (minutes)
                       </Label>
                       <Input
                         id="infinite-time-limit"
                         type="number"
                         min={1}
+                        required
                         placeholder="e.g. 15"
                         value={infiniteTimeLimit}
                         onChange={(e) => setInfiniteTimeLimit(e.target.value)}
@@ -938,6 +939,16 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                         );
                         if (!sim) {
                           toast.error("Simulation not found");
+                          setIsStartingAttempt(false);
+                          return;
+                        }
+                        if (
+                          !infiniteTimeLimit ||
+                          parseInt(infiniteTimeLimit, 10) <= 0
+                        ) {
+                          toast.error(
+                            "Please provide a positive time limit for infinite mode"
+                          );
                           setIsStartingAttempt(false);
                           return;
                         }

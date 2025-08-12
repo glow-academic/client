@@ -177,8 +177,17 @@ export default function AttemptChat() {
     );
   }
 
-  // Show results screen
-  if (simulationContext?.showResults) {
+  // In infinite mode, force chat view until time has expired
+  const isAttemptInfinite = Boolean(simulationContext?.attempt?.infiniteMode);
+  const hasInfiniteLimit = Boolean(
+    simulationContext?.attempt?.infiniteModeTimeLimit
+  );
+  const timeRemaining = simulationContext?.timer.remaining;
+  const shouldForceChatView =
+    isAttemptInfinite && (!hasInfiniteLimit || (timeRemaining ?? 1) > 0);
+
+  // Show results screen (but not during active infinite mode)
+  if (simulationContext?.showResults && !shouldForceChatView) {
     const isInfiniteMode = simulationContext?.attempt?.infiniteMode;
     const infiniteLimitMinutes =
       simulationContext?.attempt?.infiniteModeTimeLimit ?? null;
