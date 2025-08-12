@@ -1011,7 +1011,8 @@ export default function Scenario({
             </div>
 
             {/* Checkpoints Section */}
-            <div className="space-y-2">
+            {/* TODO: CHECKPOINTS */}
+            {false && <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
                 Add checkpoints for the scenario. You can think of these as
                 general instructions for the AI model to follow.
@@ -1061,7 +1062,7 @@ export default function Scenario({
                   <PlusCircle className="h-4 w-4 mr-2" /> Add checkpoint
                 </Button>
               </div>
-            </div>
+            </div>}
           </CardContent>
         </Card>
       </div>
