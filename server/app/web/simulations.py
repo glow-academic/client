@@ -22,6 +22,7 @@ from app.services.agents.collection.grade import run_grade_agent
 from app.services.agents.collection.scenario import run_scenario_agent
 from app.services.agents.collection.simulation import (cancel_simulation_run,
                                                        run_simulation_agent)
+from app.utils.guest import find_default_guest_profile
 from app.utils.scenario import randomly_fill_scenario_attributes
 from sqlmodel import Session, select
 
@@ -57,9 +58,9 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
             await emit_error(sid, "Missing simulation_id")
             return
 
-        # Handle empty string profile_id as None for guest mode
-        if profile_id == "" or profile_id == "null":
-            profile_id = None
+        # If the client indicates guest (empty/"null"/None), register under default guest profile
+        if profile_id == "" or profile_id == "null" or profile_id is None:
+            profile_id = None  # normalize before DB lookup
 
         logger.info(
             f"Processing simulation start: simulation_id={simulation_id}, profile_id={profile_id}, sid={sid}"
@@ -69,6 +70,19 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
         db_session = next(get_session())
 
         try:
+            # Resolve profile for guests to avoid ghost attempts
+            if profile_id is None:
+                default_guest = find_default_guest_profile(db_session)
+                if default_guest is not None:
+                    profile_id = default_guest.id
+                    logger.info(
+                        f"Assigning simulation attempt to default guest profile {profile_id}"
+                    )
+                else:
+                    logger.warning(
+                        "No default guest profile found; proceeding without profile_id (will create ghost attempt)"
+                    )
+
             # Get the simulation
             simulation = db_session.exec(
                 select(Simulations).where(Simulations.id == simulation_id)
@@ -416,8 +430,14 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                 next_scenario_id: Optional[uuid.UUID] = None
                 if is_infinite_mode:
                     # Cycle through the configured scenarios indefinitely
-                    cycling_index = next_index % len(scenario_ids)
-                    next_scenario_id = scenario_ids[cycling_index]
+                    # Be defensive if scenario_ids is a mock or empty
+                    try:
+                        num_scenarios = len(scenario_ids)  # type: ignore[arg-type]
+                    except Exception:
+                        num_scenarios = 0
+                    if num_scenarios > 0:
+                        cycling_index = next_index % num_scenarios
+                        next_scenario_id = scenario_ids[cycling_index]  # type: ignore[index]
                 elif next_index < len(scenario_ids):
                     next_scenario_id = scenario_ids[next_index]
 

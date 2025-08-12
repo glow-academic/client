@@ -28,6 +28,7 @@ import { useSimulation } from "@/contexts/simulation-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 
 export default function AttemptInput() {
+  const MAX_INPUT_CHARS = 5000; // generous limit to allow deep explanations without spam
   const simulationContext = useSimulation();
   const { isConnected } = useWebSocket();
 
@@ -35,6 +36,9 @@ export default function AttemptInput() {
 
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const sanitizeInputLength = (value: string) =>
+    value.length > MAX_INPUT_CHARS ? value.slice(0, MAX_INPUT_CHARS) : value;
 
   // Connection state for send button
   const hasTextMessage = newMessage.trim().length > 0;
@@ -108,7 +112,7 @@ export default function AttemptInput() {
         textareaRef.current
       ) {
         textareaRef.current.focus();
-        setNewMessage((prev) => prev + e.key);
+        setNewMessage((prev) => sanitizeInputLength(prev + e.key));
         e.preventDefault();
       }
     };
@@ -130,11 +134,32 @@ export default function AttemptInput() {
             <Textarea
               ref={textareaRef}
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+              onChange={(e) =>
+                setNewMessage(sanitizeInputLength(e.target.value))
+              }
               placeholder="Type your message..."
               disabled={false} // Always allow input - don't disable based on timer
               className="w-full text-md resize-none overflow-hidden h-10 min-h-10"
+              maxLength={MAX_INPUT_CHARS}
+              onPaste={(e) => {
+                // Disable pasting into the input
+                e.preventDefault();
+              }}
+              onDrop={(e) => {
+                // Prevent drag-and-drop text insertion
+                e.preventDefault();
+              }}
               onKeyDown={(e) => {
+                // Block paste keyboard shortcuts (allow copy/cut)
+                const isModifier = e.metaKey || e.ctrlKey;
+                const key = e.key.toLowerCase();
+                const isPaste =
+                  (isModifier && key === "v") ||
+                  (e.shiftKey && e.key === "Insert");
+                if (isPaste) {
+                  e.preventDefault();
+                  return;
+                }
                 if (e.key === "Enter" && !e.shiftKey) handleSendMessage(e);
               }}
             />
