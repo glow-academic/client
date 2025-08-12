@@ -8,11 +8,12 @@
 "use client";
 
 import { PopoverProps } from "@radix-ui/react-popover";
-import { Check, ChevronsUpDown, Eye, X } from "lucide-react";
+import { Check, ChevronsUpDown, Eye, Filter, X } from "lucide-react";
 import * as React from "react";
 
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Command,
   CommandEmpty,
@@ -40,6 +41,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
 import { cn } from "@/lib/utils";
 import { Document } from "@/types";
@@ -84,6 +86,18 @@ export function DocumentPicker({
   const [previewDocument, setPreviewDocument] = React.useState<
     Document | undefined
   >(undefined);
+  const [filterPopoverOpen, setFilterPopoverOpen] = React.useState(false);
+  const [filterTags, setFilterTags] = React.useState<string[]>([]);
+
+  // Unique known tags from provided documents
+  const knownTags = React.useMemo(() => {
+    const tagSet = new Set<string>();
+    documents.forEach((doc) => {
+      const tags = (doc as unknown as { tags?: string[] }).tags || [];
+      tags.forEach((t) => tagSet.add(t));
+    });
+    return Array.from(tagSet).sort();
+  }, [documents]);
 
   // Use external selectedDocument if provided, otherwise use internal state
   const selectedDocument = externalSelectedDocument || internalSelectedDocument;
@@ -309,7 +323,108 @@ export function DocumentPicker({
             </HoverCardContent>
             <Command loop>
               <CommandList className="h-[var(--cmdk-list-height)] max-h-[400px]">
-                <CommandInput placeholder="Search documents..." />
+                <CommandInput
+                  placeholder="Search documents..."
+                  endAdornment={
+                    <Popover
+                      open={filterPopoverOpen}
+                      onOpenChange={setFilterPopoverOpen}
+                    >
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Filter by tags"
+                          title="Filter by tags"
+                          className={cn(
+                            "relative hover:bg-accent overflow-visible h-8 w-8 p-0",
+                            filterTags.length > 0
+                              ? "text-primary"
+                              : "text-muted-foreground"
+                          )}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFilterPopoverOpen((prev) => !prev);
+                          }}
+                        >
+                          <Filter className="h-4 w-4" />
+                          {filterTags.length > 0 && !filterPopoverOpen && (
+                            <span
+                              className="absolute top-0 right-0 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-background z-10"
+                              aria-label="Active tag filters"
+                            />
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        title="Filter by tags"
+                        className="w-72"
+                        align="end"
+                        side="top"
+                        sideOffset={8}
+                      >
+                        <div className="space-y-3">
+                          <div className="text-sm font-medium">
+                            Filter by tags
+                          </div>
+                          <ScrollArea className="max-h-56 pr-2">
+                            <div className="space-y-2">
+                              {knownTags.length === 0 && (
+                                <div className="text-sm text-muted-foreground">
+                                  No tags available
+                                </div>
+                              )}
+                              {knownTags.map((tag) => {
+                                const checked = filterTags.includes(tag);
+                                return (
+                                  <label
+                                    key={tag}
+                                    className="flex items-center gap-2 text-sm cursor-pointer"
+                                  >
+                                    <Checkbox
+                                      checked={checked}
+                                      onCheckedChange={(isChecked) => {
+                                        setFilterTags((prev) => {
+                                          if (isChecked) {
+                                            if (prev.includes(tag)) return prev;
+                                            return [...prev, tag];
+                                          }
+                                          return prev.filter((t) => t !== tag);
+                                        });
+                                      }}
+                                    />
+                                    <span className="truncate">{tag}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </ScrollArea>
+                          <div className="flex justify-between items-center">
+                            <div className="text-xs text-muted-foreground">
+                              {filterTags.length} selected
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setFilterTags([])}
+                              >
+                                Clear
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => setFilterPopoverOpen(false)}
+                              >
+                                Done
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  }
+                />
                 <CommandEmpty>{getSearchNotFoundMessage()}</CommandEmpty>
                 <HoverCardTrigger />
                 {((multiSelect && selectedDocuments.length > 0) ||
@@ -326,6 +441,12 @@ export function DocumentPicker({
                 <CommandGroup heading="Documents">
                   {documents
                     .filter((document) => document.active)
+                    .filter((document) => {
+                      if (filterTags.length === 0) return true;
+                      const tags =
+                        (document as unknown as { tags?: string[] }).tags || [];
+                      return filterTags.every((t) => tags.includes(t));
+                    })
                     .map((document) => (
                       <DocumentItem
                         key={document.id}

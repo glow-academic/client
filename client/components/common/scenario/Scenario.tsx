@@ -1013,8 +1013,7 @@ export default function Scenario({
             {/* Checkpoints Section */}
             {<div className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                Add checkpoints for the scenario. You can think of these as
-                general instructions for the AI model to follow.
+                Add checkpoints for the scenario. You can think of these as general steps the TA should reach.
               </p>
 
               <div className="space-y-2">
