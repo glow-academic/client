@@ -153,6 +153,7 @@ export function SimulationProvider({
   const freshlyCompletedChatsRef = useRef<Set<string>>(new Set());
   const onSimulationFinishedRef = useRef(onSimulationFinished);
   const simulationRef = useRef<Simulation | null>(null);
+  const pendingNextChatIdRef = useRef<string | null>(null);
 
   // Use the global WebSocket context
   const {
@@ -884,6 +885,11 @@ export function SimulationProvider({
         // Turn off the loading indicator for the "End Chat" button
         setEndChatLoading(false);
 
+        // Store nextChatId (if provided) so we can auto-focus it after data refresh
+        if (event.detail.nextChatId) {
+          pendingNextChatIdRef.current = event.detail.nextChatId as string;
+        }
+
         // Dispatch chatEnded event for tour progression and navigating state management
         window.dispatchEvent(
           new CustomEvent("chatEnded", {
@@ -1002,6 +1008,23 @@ export function SimulationProvider({
       );
     };
   }, [queryClient, attemptId, onSimulationFinished]); // Add queryClient, attemptId, and onSimulationFinished to the dependency array
+
+  // After chats refresh, jump to the next chat if one was provided by the server
+  useEffect(() => {
+    if (!chats || chats.length === 0) return;
+    const desiredNextId = pendingNextChatIdRef.current;
+    if (!desiredNextId) return;
+
+    const sortedChats = [...chats].sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+    const idx = sortedChats.findIndex((c) => c.id === desiredNextId);
+    if (idx !== -1) {
+      setCurrentChatIndex(idx);
+      pendingNextChatIdRef.current = null;
+    }
+  }, [chats]);
 
   const value: SimulationContextType = {
     // Data
