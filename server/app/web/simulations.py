@@ -515,14 +515,22 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
 
                 # Emit end all completed event
                 sio_instance = get_sio_instance()
+                payload = {
+                    "success": True,
+                    "message": f"Ended all chats for this attempt",
+                    "attempt_id": attempt_id,
+                }
+                # Emit to requester
                 await sio_instance.emit(
                     "end_all_completed",
-                    {
-                        "success": True,
-                        "message": f"Ended all chats for this attempt",
-                        "attempt_id": attempt_id,
-                    },
+                    payload,
                     room=sid,
+                )
+                # Also broadcast to the simulation room so watchers stay in sync
+                await sio_instance.emit(
+                    "end_all_completed",
+                    payload,
+                    room=f"simulation_{chat_id}",
                 )
 
                 logger.info(
@@ -535,17 +543,25 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                 is_attempt_finished = new_chat_id == completed_chat_id
 
                 sio_instance = get_sio_instance()
+                payload = {
+                    "success": True,
+                    "message": "Simulation continued successfully",
+                    "completed_chat_id": str(completed_chat_id),
+                    "next_chat_id": str(new_chat_id),
+                    "is_attempt_finished": is_attempt_finished,
+                    "simulation_grade_id": simulation_grade_id,
+                }
+                # Emit to requester
                 await sio_instance.emit(
                     "simulation_continued",
-                    {
-                        "success": True,
-                        "message": "Simulation continued successfully",
-                        "completed_chat_id": str(completed_chat_id),
-                        "next_chat_id": str(new_chat_id),
-                        "is_attempt_finished": is_attempt_finished,
-                        "simulation_grade_id": simulation_grade_id,
-                    },
+                    payload,
                     room=sid,
+                )
+                # Also broadcast to the simulation room so watchers stay in sync
+                await sio_instance.emit(
+                    "simulation_continued",
+                    payload,
+                    room=f"simulation_{chat_id}",
                 )
 
                 logger.info(

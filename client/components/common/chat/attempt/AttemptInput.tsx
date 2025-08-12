@@ -120,7 +120,8 @@ export default function AttemptInput() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [simulationContext?.currentChat?.completed]);
 
-  if (simulationContext?.currentChat?.completed) return null;
+  if (simulationContext?.readOnly || simulationContext?.currentChat?.completed)
+    return null;
 
   return (
     <TooltipProvider>
@@ -138,7 +139,7 @@ export default function AttemptInput() {
                 setNewMessage(sanitizeInputLength(e.target.value))
               }
               placeholder="Type your message..."
-              disabled={false} // Always allow input - don't disable based on timer
+              disabled={simulationContext?.readOnly ? true : false}
               className="w-full text-md resize-none overflow-hidden h-10 min-h-10"
               maxLength={MAX_INPUT_CHARS}
               onPaste={(e) => {
@@ -185,6 +186,7 @@ export default function AttemptInput() {
                         : "default"
                     }
                     disabled={
+                      simulationContext?.readOnly ||
                       simulationContext?.isSendingMessage
                         ? simulationContext?.isStoppingMessage
                         : !isConnected || !hasTextMessage

@@ -114,6 +114,9 @@ export interface SimulationContextType {
 
   // Event handlers
   onSimulationFinished?: (() => void) | undefined;
+
+  // Watch mode
+  readOnly: boolean;
 }
 
 const SimulationContext = createContext<SimulationContextType | null>(null);
@@ -126,12 +129,14 @@ interface SimulationProviderProps {
   children: React.ReactNode;
   attemptId: string;
   onSimulationFinished?: () => void;
+  readOnly?: boolean;
 }
 
 export function SimulationProvider({
   children,
   attemptId,
   onSimulationFinished,
+  readOnly = false,
 }: SimulationProviderProps) {
   const [currentChatIndex, setCurrentChatIndex] = useState(0);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
@@ -690,6 +695,7 @@ export function SimulationProvider({
   // WebSocket-based message handler
   const sendMessage = useCallback(
     async (message: string, isRetry?: boolean) => {
+      if (readOnly) return;
       if (!message.trim() || !currentChat || isSendingMessage) return;
 
       setIsSendingMessage(true);
@@ -708,11 +714,12 @@ export function SimulationProvider({
       // (handleSimulationMessageComplete, handleSimulationMessageCancelled, etc.)
       // to ensure proper state management with server responses
     },
-    [currentChat, isSendingMessage, emitSendSimulationMessage]
+    [currentChat, isSendingMessage, emitSendSimulationMessage, readOnly]
   );
 
   // Stop message function
   const stopMessage = useCallback(async () => {
+    if (readOnly) return;
     if (!currentChat || isStoppingMessage) return;
 
     setIsStoppingMessage(true);
@@ -725,10 +732,11 @@ export function SimulationProvider({
       toast.error(`Failed to stop message: ${error}`);
       setIsStoppingMessage(false);
     }
-  }, [currentChat, isStoppingMessage, emitStopSimulation]);
+  }, [currentChat, isStoppingMessage, emitStopSimulation, readOnly]);
 
   const endChat = useCallback(
     async (chatId?: string) => {
+      if (readOnly) return;
       const targetChatId = chatId || currentChat?.id;
       if (!targetChatId) return;
 
@@ -746,10 +754,11 @@ export function SimulationProvider({
         setEndChatLoading(false);
       }
     },
-    [currentChat?.id, emitContinueSimulation, attemptId]
+    [currentChat?.id, emitContinueSimulation, attemptId, readOnly]
   );
 
   const endAllChats = useCallback(async () => {
+    if (readOnly) return;
     if (!simulation || !attempt || !currentChat) return;
 
     setEndChatLoading(true);
@@ -765,7 +774,14 @@ export function SimulationProvider({
       toast.error(`Failed to end all chats: ${error}`);
       setEndChatLoading(false);
     }
-  }, [simulation, attempt, currentChat, attemptId, emitContinueSimulation]);
+  }, [
+    simulation,
+    attempt,
+    currentChat,
+    attemptId,
+    emitContinueSimulation,
+    readOnly,
+  ]);
 
   // Listen for WebSocket loading state changes
   useEffect(() => {
@@ -1075,6 +1091,9 @@ export function SimulationProvider({
 
     // Event handlers
     onSimulationFinished,
+
+    // Watch mode
+    readOnly,
   };
 
   return (

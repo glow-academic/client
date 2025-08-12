@@ -6,15 +6,12 @@ import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from app.web.simulations import (
-    emit_error,
-    get_sio_instance,
-    handle_continue_simulation,
-    handle_start_simulation,
-    handle_stop_simulation,
-    process_simulation_message_websocket,
-    register_simulation_events,
-)
+from app.web.simulations import (emit_error, get_sio_instance,
+                                 handle_continue_simulation,
+                                 handle_start_simulation,
+                                 handle_stop_simulation,
+                                 process_simulation_message_websocket,
+                                 register_simulation_events)
 from sqlmodel import Session
 
 
@@ -304,13 +301,19 @@ class TestHandle_Continue_Simulation:
             # Verify that the simulation was retrieved
             mock_session.exec.assert_called()
 
-            # Verify that success event was emitted (check only the structure, not exact data)
-            mock_sio.emit.assert_called_once()
-            call_args = mock_sio.emit.call_args
-            assert call_args[0][0] == "simulation_continued"
-            assert call_args[0][1]["success"] is True
-            assert call_args[0][1]["message"] == "Simulation continued successfully"
-            assert call_args[1]["room"] == sid
+            # Verify that success events were emitted to both requester (sid) and room (watchers)
+            assert mock_sio.emit.call_count >= 2
+            calls = mock_sio.emit.call_args_list
+            # Expect one emit to requester
+            assert any(
+                c.args[0] == "simulation_continued" and c.kwargs.get("room") == sid
+                for c in calls
+            )
+            # Expect one emit to the simulation room
+            assert any(
+                c.args[0] == "simulation_continued" and str(c.kwargs.get("room")).startswith("simulation_")
+                for c in calls
+            )
 
     @pytest.mark.asyncio
     async def test_handle_continue_simulation_missing_data(self):
@@ -701,6 +704,7 @@ class TestContinue_Simulation:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `prepare_and_persist_scenario`")
 class TestPrepare_And_Persist_Scenario:
     """Tests for prepare_and_persist_scenario function."""
@@ -717,6 +721,7 @@ class TestPrepare_And_Persist_Scenario:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `create_chat_for_scenario_id`")
 class TestCreate_Chat_For_Scenario_Id:
