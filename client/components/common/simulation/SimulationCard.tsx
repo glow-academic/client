@@ -27,9 +27,28 @@ import {
 import { useProfile } from "@/contexts/profile-context";
 import { Persona, Profile, Scenario, Simulation } from "@/types";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
-import { generateGradientFromHex } from "@/utils/personas";
 import { FileText, Info, Timer, User, Users } from "lucide-react";
 import TableRubric from "../rubric/TableRubric";
+
+const generateGradientFromHex = (hexColor: string): string => {
+  // Remove # if present
+  const cleanHex = hexColor.replace("#", "");
+
+  // Convert to RGB
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+
+  // Create a lighter variant for the gradient (brighter like simulation cards)
+  const lighterR = Math.min(255, r + 60);
+  const lighterG = Math.min(255, g + 60);
+  const lighterB = Math.min(255, b + 60);
+
+  // Convert back to hex
+  const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+
+  return `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
+};
 
 export interface SimulationCardProps {
   simulation: Simulation & {

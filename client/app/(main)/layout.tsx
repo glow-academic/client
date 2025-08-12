@@ -939,36 +939,49 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                           setIsStartingAttempt(false);
                           return;
                         }
-                        const attempt = (await createSimulationAttempt({
-                          simulationId: sim.id,
-                          profileId: effectiveProfile?.id,
-                          infiniteMode: true,
-                          infiniteModeTimeLimit: infiniteTimeLimit
-                            ? parseInt(infiniteTimeLimit, 10)
-                            : null,
-                        } as unknown as typeof import("@/utils/drizzle/schema").simulationAttempts.$inferInsert)) as unknown as import("@/types").SimulationAttempt;
+                        // Start via WebSocket start_simulation with infinite flag
+                        // Notify UI and show toast for UX parity
+                        window.dispatchEvent(
+                          new CustomEvent("simulationButtonPressed", {
+                            detail: { simulationId: sim.id },
+                          })
+                        );
+                        toast.loading("Starting simulation...");
+                        // As a safe, server-side path, create attempt then chat as before
+                        try {
+                          const attempt = (await createSimulationAttempt({
+                            simulationId: sim.id,
+                            profileId: effectiveProfile?.id,
+                            infiniteMode: true,
+                            infiniteModeTimeLimit: infiniteTimeLimit
+                              ? parseInt(infiniteTimeLimit, 10)
+                              : null,
+                          } as unknown as typeof import("@/utils/drizzle/schema").simulationAttempts.$inferInsert)) as unknown as import("@/types").SimulationAttempt;
 
-                        if (!attempt || !attempt.id) {
-                          toast.error("Failed to create attempt");
-                          setIsStartingAttempt(false);
+                          if (!attempt || !attempt.id) {
+                            toast.error("Failed to create attempt");
+                            setIsStartingAttempt(false);
+                            return;
+                          }
+                          const attemptIdCreated = attempt.id;
+
+                          const initialScenarioId = (sim.scenarioIds || [])[0];
+                          if (initialScenarioId) {
+                            await createSimulationChat({
+                              title: sim.title,
+                              scenarioId: initialScenarioId,
+                              attemptId: attemptIdCreated,
+                              completed: false,
+                            } as unknown as typeof import("@/utils/drizzle/schema").simulationChats.$inferInsert);
+                          }
+
+                          setCustomizeOpen(false);
+                          router.push(`/practice/a/${attemptIdCreated}`);
+                          toast.success("Simulation started");
                           return;
+                        } finally {
+                          setIsStartingAttempt(false);
                         }
-                        const attemptIdCreated = attempt.id;
-
-                        const initialScenarioId = (sim.scenarioIds || [])[0];
-                        if (initialScenarioId) {
-                          await createSimulationChat({
-                            title: sim.title,
-                            scenarioId: initialScenarioId,
-                            attemptId: attemptIdCreated,
-                            completed: false,
-                          } as unknown as typeof import("@/utils/drizzle/schema").simulationChats.$inferInsert);
-                        }
-
-                        setCustomizeOpen(false);
-                        router.push(`/practice/a/${attemptIdCreated}`);
-                        toast.success("Attempt created");
-                        return;
                       }
 
                       // Custom one-off scenario

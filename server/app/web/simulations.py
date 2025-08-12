@@ -48,6 +48,8 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
 
         simulation_id = data.get("simulation_id")
         profile_id = data.get("profile_id")
+        infinite = bool(data.get("infinite", False))
+        infinite_time_limit = data.get("infinite_time_limit")
 
         if not simulation_id:
             logger.error(f"Missing simulation_id in request from {sid}")
@@ -78,6 +80,12 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
             new_attempt = SimulationAttempts(
                 profile_id=profile_id,
                 simulation_id=simulation_id,
+                infinite_mode=infinite,
+                infinite_mode_time_limit=(
+                    int(infinite_time_limit)
+                    if isinstance(infinite_time_limit, (int, str)) and str(infinite_time_limit).isdigit()
+                    else None
+                ),
             )
             db_session.add(new_attempt)
             db_session.commit()

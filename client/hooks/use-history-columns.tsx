@@ -20,7 +20,7 @@ import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulatio
 // Removed time-based timeout logic per requirements
 import { useQuery } from "@tanstack/react-query";
 import { Column, ColumnDef, Row } from "@tanstack/react-table";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 // Enhanced types for the data table
 interface EnhancedAttempt extends SimulationAttempt {
@@ -117,6 +117,80 @@ export function useHistoryColumns({
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
   });
+
+  // Map persona name -> hex color
+  const personaColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    if (personas && personas.length > 0) {
+      for (const persona of personas) {
+        if (persona?.name && persona?.color) {
+          map[persona.name] = persona.color;
+        }
+      }
+    }
+    return map;
+  }, [personas]);
+
+  // (color utilities are computed inline inside getBadgeColors)
+
+  const getBadgeColors = useCallback(
+    (
+      inputHex?: string
+    ): {
+      bg: string;
+      border: string;
+      text: string;
+    } => {
+      const normalizeHexInline = (hex?: string): string | null => {
+        if (!hex) return null;
+        let clean = hex.replace("#", "");
+        if (clean.length === 3) {
+          clean = clean
+            .split("")
+            .map((c) => c + c)
+            .join("");
+        }
+        if (clean.length !== 6) return null;
+        return `#${clean.toUpperCase()}`;
+      };
+
+      const normalized = normalizeHexInline(inputHex) ?? "#9CA3AF"; // gray-400 fallback
+      // Inline helpers to avoid changing dependencies
+      const hexToRgbInline = (hex: string) => {
+        const clean = hex.replace("#", "");
+        return {
+          r: parseInt(clean.substring(0, 2), 16),
+          g: parseInt(clean.substring(2, 4), 16),
+          b: parseInt(clean.substring(4, 6), 16),
+        };
+      };
+      const rgbToHexInline = (r: number, g: number, b: number) => {
+        const toHex = (v: number) => v.toString(16).padStart(2, "0");
+        return `#${toHex(Math.max(0, Math.min(255, Math.round(r))))}${toHex(
+          Math.max(0, Math.min(255, Math.round(g)))
+        )}${toHex(Math.max(0, Math.min(255, Math.round(b))))}`.toUpperCase();
+      };
+      const mixWithWhiteInline = (hex: string, weight: number) => {
+        const base = hexToRgbInline(hex);
+        const white = { r: 255, g: 255, b: 255 };
+        const r = base.r * (1 - weight) + white.r * weight;
+        const g = base.g * (1 - weight) + white.g * weight;
+        const b = base.b * (1 - weight) + white.b * weight;
+        return rgbToHexInline(r, g, b);
+      };
+      const getLuminanceInline = (hex: string) => {
+        const { r, g, b } = hexToRgbInline(hex);
+        return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+      };
+
+      const bg = mixWithWhiteInline(normalized, 0.88); // very light background
+      const border = mixWithWhiteInline(normalized, 0.7); // light border closer to original outline
+      const text =
+        getLuminanceInline(normalized) > 0.75 ? "#111827" : normalized; // readable text
+      return { bg, border, text };
+    },
+    []
+  );
 
   // Create user options for GTA names
   const profileOptions = useMemo(() => {
@@ -397,20 +471,18 @@ export function useHistoryColumns({
           return (
             <div className="flex flex-wrap gap-1">
               {personasTested.map((agentName, index) => {
-                const badgeColorClass =
-                  agentName.toLowerCase() === "aggressive"
-                    ? "bg-red-100 text-red-800 border-red-300"
-                    : agentName.toLowerCase() === "happy"
-                      ? "bg-green-100 text-green-800 border-green-300"
-                      : agentName.toLowerCase() === "confused"
-                        ? "bg-yellow-100 text-yellow-800 border-yellow-300"
-                        : "bg-gray-100 text-gray-800 border-gray-300";
-
+                const baseHex = personaColorMap[agentName] ?? "#9CA3AF"; // gray-400 fallback
+                const { bg, border, text } = getBadgeColors(baseHex);
                 return (
                   <Badge
                     key={index}
                     variant="outline"
-                    className={`text-xs ${badgeColorClass}`}
+                    className="text-xs"
+                    style={{
+                      backgroundColor: bg,
+                      borderColor: border,
+                      color: text,
+                    }}
                   >
                     {agentName}
                   </Badge>
@@ -628,6 +700,8 @@ export function useHistoryColumns({
     validRubrics,
     profileId,
     showPractice,
+    personaColorMap,
+    getBadgeColors,
   ]);
 
   // Use enhanced attempts data

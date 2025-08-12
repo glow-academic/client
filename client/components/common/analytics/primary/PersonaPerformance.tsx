@@ -459,7 +459,10 @@ export default function PersonaPerformance({
                     <div className="flex items-center gap-3">
                       <div
                         className={cn("w-4 h-4 rounded-full")}
-                        style={{ backgroundColor: personaColorMap[persona.name] ?? "#999999" }}
+                        style={{
+                          backgroundColor:
+                            personaColorMap[persona.name] ?? "#999999",
+                        }}
                       />
                       <div>
                         <p className="font-medium">{persona.name} Student</p>
@@ -473,14 +476,15 @@ export default function PersonaPerformance({
                     </div>
                   </div>
                 </DialogTrigger>
-                <DialogContent
-                  className="max-w-2xl"
-                >
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                       <div
                         className={cn("w-4 h-4 rounded-full")}
-                        style={{ backgroundColor: personaColorMap[persona.name] ?? "#999999" }}
+                        style={{
+                          backgroundColor:
+                            personaColorMap[persona.name] ?? "#999999",
+                        }}
                       />
                       {persona.name} Student Performance
                     </DialogTitle>

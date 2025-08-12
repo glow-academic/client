@@ -10,7 +10,6 @@ import type {
   SimulationChat,
   SimulationChatGrade,
 } from "@/types";
-import { getPersonaConfig } from "@/utils/personas";
 import { format, isAfter, isBefore } from "date-fns";
 
 // Common interfaces for primary analytics data
@@ -807,7 +806,7 @@ export const calculatePersonaPerformance = (
         name: persona.name,
         score: avgScore,
         sessions: personaGrades.length,
-        color: getPersonaConfig(persona.name).colors.bgColor,
+        color: persona.color || "#999999",
         trendData,
       };
     })

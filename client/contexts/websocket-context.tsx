@@ -42,6 +42,8 @@ export interface WebSocketContextType {
   emitStartSimulation: (data: {
     simulation_id: string;
     profile_id?: string | null;
+    infinite?: boolean;
+    infinite_time_limit?: number | null;
   }) => void;
   emitSendSimulationMessage: (data: {
     chat_id: string;
@@ -1025,7 +1027,12 @@ export function WebSocketProvider({
 
   // Event emitters
   const emitStartSimulation = useCallback(
-    (data: { simulation_id: string; profile_id?: string | null }) => {
+    (data: {
+      simulation_id: string;
+      profile_id?: string | null;
+      infinite?: boolean;
+      infinite_time_limit?: number | null;
+    }) => {
       if (!socketRef.current || !isConnected) {
         logError("Cannot start simulation - WebSocket not connected");
         toast.error("WebSocket not connected. Please refresh the page.");
@@ -1036,6 +1043,10 @@ export function WebSocketProvider({
       const payload = {
         simulation_id: data.simulation_id,
         profile_id: data.profile_id ?? "",
+        ...(data.infinite !== undefined && { infinite: data.infinite }),
+        ...(data.infinite_time_limit !== undefined && {
+          infinite_time_limit: data.infinite_time_limit,
+        }),
       };
 
       setIsStartingSimulation(true);
