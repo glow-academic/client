@@ -4,17 +4,19 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, List, Optional
 
-from agents import Runner, trace
+from agents import Runner, TResponseInputItem, trace
 from app.db import get_session
 from app.models import (Agents, DebugInfo, ModelRuns, Models, Providers,
-                        Rubrics, SimulationAttempts, SimulationChatFeedbacks,
-                        SimulationChatGrades, SimulationChats,
-                        SimulationMessages, Simulations, StandardGroups,
-                        Standards)
+                        Rubrics, Scenarios, SimulationAttempts,
+                        SimulationChatFeedbacks, SimulationChatGrades,
+                        SimulationChats, SimulationMessages, Simulations,
+                        StandardGroups, Standards)
 from app.services.agents.generic import GenericAgent
-from app.utils.chat import get_simulation_conversation_history
+from app.utils.chat import (get_chat_scenario,
+                            get_simulation_conversation_history)
 from app.utils.debug_info import DebugContext
 from app.utils.rubric import get_dynamic_rubric
+from app.utils.scenario import get_checkpoints_info
 from fastapi import Depends
 from pydantic import BaseModel, Field, create_model
 from sqlmodel import Session, select
@@ -104,6 +106,11 @@ async def run_grade_agent(
             select(SimulationChats).where(SimulationChats.id == simulation_chat_id)
         ).one()
 
+        # get the scenario from the chat
+        scenario = session.exec(
+            select(Scenarios).where(Scenarios.id == chat.scenario_id)
+        ).one()
+
         # get all the messages for the chat_id, order by created_at
         messages = session.exec(
             select(SimulationMessages).where(
@@ -114,8 +121,19 @@ async def run_grade_agent(
         messages = list(messages)
         messages = sorted(messages, key=lambda x: x.created_at)
 
+        input_items: list[TResponseInputItem] = []
+
         # prepare conversation history from chat_id
         conversation_history = get_simulation_conversation_history(messages)
+
+        chat_scenario = get_chat_scenario(chat, session)
+
+        input_items.insert(0, chat_scenario)
+        input_items.extend(conversation_history)
+
+        if scenario.checkpoints:
+            checkpoint_info = get_checkpoints_info(scenario.checkpoints)
+            input_items.append(checkpoint_info)
 
         # Get the simulation attempt to find the simulation
         attempt = session.exec(
@@ -160,6 +178,9 @@ async def run_grade_agent(
             rubric, list(standard_groups), list(standards)
         )
 
+        # add rubric to beginning of input_items
+        input_items.insert(0, rubric_input)
+
         # Create dynamic Pydantic model for the rubric
         DynamicRubric = create_dynamic_rubric_model(list(standard_groups))
 
@@ -195,9 +216,6 @@ async def run_grade_agent(
         )
 
         agent_instance = grading_agent.agent()
-
-        # Prepare input with rubric and conversation history
-        input_items = [rubric_input] + conversation_history
 
         # create model run
         model_run = ModelRuns(

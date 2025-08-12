@@ -1,6 +1,6 @@
 /**
  * PracticePicker.tsx
- * Multi-select picker for practice/assigned content selection
+ * Multi-select picker for general/practice content selection
  */
 "use client";
 
@@ -23,10 +23,10 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-export type PracticeOption = "assigned" | "practice";
+export type PracticeOption = "general" | "practice";
 
 export interface PracticePickerProps {
-  options?: PracticeOption[]; // defaults to ["assigned", "practice"]
+  options?: PracticeOption[]; // defaults to ["general", "practice"]
   selected?: PracticeOption[]; // any subset of options
   onChange?: (selected: PracticeOption[]) => void;
   placeholder?: string;
@@ -35,13 +35,13 @@ export interface PracticePickerProps {
 }
 
 const LABEL: Record<PracticeOption, string> = {
-  assigned: "General",
+  general: "General",
   practice: "Practice",
 };
 
 export function PracticePicker({
-  options = ["assigned", "practice"],
-  selected = ["assigned"],
+  options = ["general", "practice"],
+  selected = ["general"],
   onChange,
   placeholder = "General",
   className,
@@ -111,7 +111,7 @@ export function PracticePicker({
         <PopoverContent align="end" className="w-[220px] p-0">
           <Command loop>
             <CommandList className="h-[var(--cmdk-list-height)] max-h-[250px]">
-              <CommandInput placeholder="Search simulation modes..." />
+              <CommandInput placeholder="Search simulations..." />
               <CommandEmpty>No options found.</CommandEmpty>
               {selected.length > 0 && (
                 <CommandGroup heading="Actions">

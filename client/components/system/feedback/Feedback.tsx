@@ -303,7 +303,7 @@ export default function Feedback() {
     useCrowdsourcedRubricFeedbackColumns();
 
   return (
-    <Tabs defaultValue="general" className="w-full">
+    <Tabs defaultValue="general" className="w-full gap-4">
       <TabsList className="w-full">
         <TabsTrigger value="general">General</TabsTrigger>
         <TabsTrigger value="messages">Messages</TabsTrigger>

@@ -122,19 +122,19 @@ export function AnalyticsFilters() {
 
   return (
     <div className="flex items-center gap-2">
-      {/* Practice/Assigned Selector (multi-select, matches RolePicker) */}
+      {/* General/Practice Selector (multi-select, matches RolePicker) */}
       <PracticePicker
         selected={[
-          ...(showNormal ? (["assigned"] as PracticeOption[]) : []),
+          ...(showNormal ? (["general"] as PracticeOption[]) : []),
           ...(showPractice ? (["practice"] as PracticeOption[]) : []),
         ]}
         onChange={(vals) => {
-          const hasAssigned = vals.includes("assigned");
+          const hasGeneral = vals.includes("general");
           const hasPractice = vals.includes("practice");
-          setShowNormal(hasAssigned);
+          setShowNormal(hasGeneral);
           setShowPractice(hasPractice);
         }}
-        placeholder="Assigned"
+        placeholder="General"
       />
 
       {/* Role Picker */}

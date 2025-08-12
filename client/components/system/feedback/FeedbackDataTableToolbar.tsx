@@ -38,7 +38,7 @@ export function FeedbackDataTableToolbar<TData extends object>({
     if (!idColumn) return [] as { value: string; label: string }[];
     const uniqueIds = new Set<string>();
     table.getFilteredRowModel().rows.forEach((row) => {
-      uniqueIds.add(String((row as any).original.id));
+      uniqueIds.add(String((row as { original: { id: string } }).original.id));
     });
     return Array.from(uniqueIds)
       .sort((a, b) => {
