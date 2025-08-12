@@ -234,21 +234,6 @@ export function Simulations() {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            {canDuplicate(simulation) && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDuplicate(simulation)}
-                disabled={isDuplicating === simulation.id}
-                aria-label={`Duplicate ${simulation.title}`}
-              >
-                {isDuplicating === simulation.id ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
-            )}
             {canEditSimulation(simulation.id) ? (
               <Button
                 variant="outline"
@@ -268,6 +253,21 @@ export function Simulations() {
                 aria-label={`View ${simulation.title}`}
               >
                 <Eye className="h-4 w-4" />
+              </Button>
+            )}
+            {canDuplicate(simulation) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDuplicate(simulation)}
+                disabled={isDuplicating === simulation.id}
+                aria-label={`Duplicate ${simulation.title}`}
+              >
+                {isDuplicating === simulation.id ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
               </Button>
             )}
             {canDeleteSimulation(simulation) && (

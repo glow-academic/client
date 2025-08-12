@@ -8,11 +8,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useProfile } from "@/contexts/profile-context";
 import { getRubric } from "@/utils/queries/rubrics/get-rubric";
 import { getStandardGroupsByRubric } from "@/utils/queries/standard_groups/get-standard-groups-by-rubric";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
@@ -26,6 +27,7 @@ export interface RubricProps {
 export default function Rubric({ rubricId }: RubricProps) {
   const router = useRouter();
   const isEditMode = !!rubricId;
+  const { effectiveProfile } = useProfile();
 
   const [openCards, setOpenCards] = useState<Record<number, boolean>>({});
 
@@ -67,6 +69,19 @@ export default function Rubric({ rubricId }: RubricProps) {
   // Use default rubric for creation mode, actual rubric for edit mode
   const currentRubric = isEditMode ? rubric || defaultRubric : defaultRubric;
   const currentRubricId = isEditMode ? rubricId! : "new";
+
+  // Determine readonly based on default rubric and role
+  const isReadonly = useMemo(() => {
+    if (!isEditMode) return false;
+    if (!currentRubric) return true;
+    if (
+      currentRubric.defaultRubric &&
+      effectiveProfile?.role !== "superadmin"
+    ) {
+      return true;
+    }
+    return false;
+  }, [isEditMode, currentRubric, effectiveProfile?.role]);
 
   // Initialize open cards when standard groups load
   useEffect(() => {
@@ -142,6 +157,7 @@ export default function Rubric({ rubricId }: RubricProps) {
         rubric={currentRubric}
         rubricId={currentRubricId}
         isCreateMode={!isEditMode}
+        isReadonly={isReadonly}
       />
 
       {/* Standard Groups - Only show in edit mode */}

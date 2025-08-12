@@ -265,6 +265,11 @@ export function TourProvider({ children }: TourProviderProps) {
       return "hidden";
     }
 
+    // Hide tour for TAs with no assigned cohorts
+    if (effectiveProfile.role === "ta" && state.hasAssignedCohorts === false) {
+      return "hidden";
+    }
+
     // Check if we're on a simulation chat page
     if (
       typeof window !== "undefined" &&
@@ -291,7 +296,7 @@ export function TourProvider({ children }: TourProviderProps) {
 
     // Default fallback
     return "hidden";
-  }, [effectiveProfile, state.isOpen]);
+  }, [effectiveProfile, state.isOpen, state.hasAssignedCohorts]);
 
   // Context value
   const value = useMemo(
@@ -528,11 +533,16 @@ export function TourProvider({ children }: TourProviderProps) {
                 </button>
 
                 {(() => {
-                  const disableNextDueToNoCohorts =
+                  // Lock progression when the TA has no cohorts
+                  const lockAtHomeDueToNoCohorts =
+                    state.currentStep === 0 &&
+                    state.hasAssignedCohorts === false;
+                  const disableNextDueToNoCohortsOnLeaderboard =
                     state.currentStep === 1 &&
                     state.hasAssignedCohorts === false;
                   const nextDisabled =
-                    disableNextDueToNoCohorts ||
+                    lockAtHomeDueToNoCohorts ||
+                    disableNextDueToNoCohortsOnLeaderboard ||
                     state.isNavigating ||
                     !!state.loadingSimulation;
 
@@ -562,7 +572,11 @@ export function TourProvider({ children }: TourProviderProps) {
                     </button>
                   );
 
-                  return disableNextDueToNoCohorts ? (
+                  const shouldTooltipNoCohorts =
+                    lockAtHomeDueToNoCohorts ||
+                    disableNextDueToNoCohortsOnLeaderboard;
+
+                  return shouldTooltipNoCohorts ? (
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <span className="flex-1">{nextButton}</span>

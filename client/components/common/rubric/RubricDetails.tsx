@@ -27,12 +27,14 @@ export interface RubricDetailsProps {
   rubric: RubricType;
   rubricId: string;
   isCreateMode?: boolean;
+  isReadonly?: boolean;
 }
 
 export default function RubricDetails({
   rubric,
   rubricId,
   isCreateMode = false,
+  isReadonly = false,
 }: RubricDetailsProps) {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(isCreateMode);
@@ -69,7 +71,7 @@ export default function RubricDetails({
         toast.success(
           isCreateMode
             ? "Rubric created successfully"
-            : "Rubric updated successfully",
+            : "Rubric updated successfully"
         );
         setIsEditing(false);
       }
@@ -77,14 +79,14 @@ export default function RubricDetails({
     onError: (error) => {
       logError("Error updating rubric:", error);
       toast.error(
-        isCreateMode ? "Failed to create rubric" : "Failed to update rubric",
+        isCreateMode ? "Failed to create rubric" : "Failed to update rubric"
       );
     },
   });
 
   const handleInputChange = (
     field: keyof typeof formData,
-    value: string | boolean,
+    value: string | boolean
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -121,7 +123,7 @@ export default function RubricDetails({
                   onChange={(e) => handleInputChange("name", e.target.value)}
                   className="text-2xl font-bold"
                   placeholder="Rubric Name"
-                  disabled={updateRubricMutation.isPending}
+                  disabled={updateRubricMutation.isPending || isReadonly}
                 />
               </div>
               <div className="space-y-2">
@@ -133,7 +135,7 @@ export default function RubricDetails({
                     handleInputChange("description", e.target.value)
                   }
                   placeholder="Rubric Description"
-                  disabled={updateRubricMutation.isPending}
+                  disabled={updateRubricMutation.isPending || isReadonly}
                 />
               </div>
               <div className="flex items-center space-x-2">
@@ -143,7 +145,7 @@ export default function RubricDetails({
                   onCheckedChange={(checked) =>
                     handleInputChange("active", checked)
                   }
-                  disabled={updateRubricMutation.isPending}
+                  disabled={updateRubricMutation.isPending || isReadonly}
                 />
                 <Label htmlFor="active">Active</Label>
               </div>
@@ -202,7 +204,7 @@ export default function RubricDetails({
                 </Button>
                 <Button
                   onClick={handleSave}
-                  disabled={updateRubricMutation.isPending}
+                  disabled={updateRubricMutation.isPending || isReadonly}
                 >
                   {updateRubricMutation.isPending
                     ? isCreateMode
@@ -214,14 +216,17 @@ export default function RubricDetails({
                 </Button>
               </>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditing(true)}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditing(true)}
+                  disabled={isReadonly}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              </>
             )}
           </div>
         </div>

@@ -332,6 +332,7 @@ export function createMockSimulationChatGrade(overrides: Partial<SimulationChatG
   const defaults: SimulationChatGrade = {
     id: faker.string.uuid(),
     createdAt: faker.date.past().toISOString(),
+    description: faker.lorem.paragraph(),
     passed: faker.datatype.boolean(),
     score: faker.number.int({ min: 1, max: 1000 }),
     timeTaken: faker.number.int({ min: 1, max: 1000 }),

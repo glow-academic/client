@@ -31,6 +31,7 @@ export function usePersonaColumns() {
 
   const reasoningOptions = useMemo(
     () => [
+      { value: "minimal", label: "Minimal" },
       { value: "low", label: "Low" },
       { value: "medium", label: "Medium" },
       { value: "high", label: "High" },

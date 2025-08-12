@@ -460,6 +460,15 @@ export default function TATour() {
       return;
     }
 
+    // If TA has no cohorts, don't initialize or show the tour at all
+    if (taCohorts.length === 0) {
+      logInfo("TATour: TA has no cohorts; not initializing or showing tour");
+      setShowGuideButton(false);
+      closeTour();
+      setAttemptId(null);
+      return;
+    }
+
     // Only initialize if we don't already have steps for this profile
     if (
       tourState.steps.length > 0 &&
@@ -508,7 +517,7 @@ export default function TATour() {
       return;
     }
 
-    // Create tour steps for TAs
+    // Create tour steps for TAs (we know they have at least one cohort here)
     const steps = createTATourSteps(
       effectiveProfile,
       () => router.push("/home"),
@@ -524,15 +533,11 @@ export default function TATour() {
     // Determine initial step based on profile completion status
     let initialStep = 0;
     if (!effectiveProfile.viewedIntro) {
-      // User hasn't completed intro steps - start from beginning
       initialStep = 0;
     } else if (effectiveProfile.viewedIntro && !effectiveProfile.viewedChat) {
-      // User has completed intro steps (0-1) but not chat steps (2-4)
-      initialStep = 2; // Start at practice simulation step (step 2)
+      initialStep = 2;
     } else if (effectiveProfile.viewedIntro && effectiveProfile.viewedChat) {
-      // User has completed everything - show completion screen
-      // Always show completion screen when both flags are true, regardless of attemptId
-      initialStep = 4; // Show the final step (end chat) as completion screen
+      initialStep = 4;
     }
 
     logInfo("TATour: Created steps", {

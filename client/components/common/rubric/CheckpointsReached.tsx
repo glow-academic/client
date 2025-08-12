@@ -14,7 +14,6 @@ export interface CheckpointsReachedProps {
  * Assumes the order and length of `checkpointsReached` matches the scenario's `checkpoints`.
  */
 export default function CheckpointsReached({
-  simulationChatId,
   checkpointsReached,
   labels,
 }: CheckpointsReachedProps) {

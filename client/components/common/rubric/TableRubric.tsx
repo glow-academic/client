@@ -672,6 +672,16 @@ export default function TableRubric({
         </Table>
       </div>
 
+      {/* Rubric summary (description from simulation_chat_grade) */}
+      {simulationChatId && chatGrade?.description && (
+        <div className="border rounded-md p-4 bg-card">
+          <div className="text-sm font-semibold mb-2">Rubric summary</div>
+          <div className="text-sm whitespace-pre-wrap">
+            {chatGrade.description}
+          </div>
+        </div>
+      )}
+
       {/* Checkpoints Reached (displayed only when we have a grade and checkpoints) */}
       {simulationChatId && chatGrade && checkpointsReached.length > 0 && (
         <div className="border rounded-md p-4 bg-card">

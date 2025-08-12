@@ -55,6 +55,7 @@ CREATE TABLE simulation_messages (
 CREATE TABLE simulation_chat_grades (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    description TEXT        NOT NULL DEFAULT 'No description provided',
     passed     BOOLEAN     NOT NULL,
     score      INTEGER     NOT NULL,
     time_taken INTEGER     NOT NULL, -- in seconds

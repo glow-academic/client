@@ -7,7 +7,7 @@
 "use client";
 import { logError, logInfo } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Edit, FileCheck, Star, Trash2 } from "lucide-react";
+import { Copy, Edit, Eye, FileCheck, Star, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -68,11 +68,15 @@ export default function Rubrics() {
     return simulations.some((sim) => sim.rubricId === rubricId);
   };
 
-  // Check if user can edit (admin/superadmin or rubric not in use)
-  const canEditRubric = (rubricId: string) => {
-    const isSuperAdmin =
+  // Only superadmin can edit default rubrics; others can edit non-default if admin/superadmin or not in use
+  const canEditRubric = (rubric: Rubric) => {
+    const isAdmin =
+      effectiveProfile?.role === "admin" ||
       effectiveProfile?.role === "superadmin";
-    return isSuperAdmin || !isRubricInUse(rubricId);
+    if (rubric.defaultRubric) {
+      return effectiveProfile?.role === "superadmin";
+    }
+    return isAdmin || !isRubricInUse(rubric.id);
   };
 
   // Get table columns and filter options
@@ -184,10 +188,19 @@ export default function Rubrics() {
               )}
             </div>
             <div className="flex items-center gap-2">
-              {canEditRubric(rubric.id) && (
+              {canEditRubric(rubric) ? (
                 <Button variant="outline" onClick={() => handleEdit(rubric.id)}>
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEdit(rubric.id)}
+                  aria-label={`View ${rubric.name}`}
+                >
+                  <Eye className="h-4 w-4" />
                 </Button>
               )}
               {canDuplicate(rubric) && (

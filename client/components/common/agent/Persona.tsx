@@ -123,23 +123,22 @@ export default function Persona({
     enabled: isEditMode, // Only fetch when in edit mode
   });
 
-  // Check if persona is readonly (default persona and user is not superadmin, or persona is in use)
+  // Readonly rules: default persona editable only by superadmin; otherwise admin/superadmin can edit; others read-only if in use
   const isReadonly = useMemo(() => {
     if (!isEditMode || !persona) return false;
 
     const isSuperAdmin = effectiveProfile?.role === "superadmin";
+    const isAdmin = effectiveProfile?.role === "admin" || isSuperAdmin;
     const isDefaultPersona = persona.defaultPersona;
 
-    // If it's a default persona and user is not superadmin, it's readonly
     if (isDefaultPersona && !isSuperAdmin) {
       return true;
     }
 
-    // Check if persona is in use by any scenarios
-    const isPersonaInUse = scenarios.some(
+    const inUse = scenarios.some(
       (scenario) => scenario.personaId === persona.id
     );
-    if (isPersonaInUse && !isSuperAdmin) {
+    if (!isAdmin && inUse) {
       return true;
     }
 

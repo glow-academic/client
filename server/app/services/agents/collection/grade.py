@@ -72,8 +72,6 @@ def create_dynamic_rubric_model(
         )
 
     # Add overall fields
-    fields["overall_score"] = (int, Field(description="Overall total score"))
-    fields["passed"] = (bool, Field(description="Whether the evaluation passed"))
     fields["summary"] = (str, Field(description="Overall evaluation summary"))
     fields["checkpoints"] = (list[bool], Field(description="List of checkpoints passed"))
 
@@ -185,12 +183,16 @@ async def run_grade_agent(
         # Create dynamic Pydantic model for the rubric
         DynamicRubric = create_dynamic_rubric_model(list(standard_groups))
 
-        # Log the expected field names for debugging
-        expected_fields = []
+        # Log the expected field names for debugging and keep score fields separate
+        expected_score_fields: list[str] = []
+        expected_feedback_fields: list[str] = []
         for group in standard_groups:
             safe_name = create_safe_field_name(group.short_name)
-            expected_fields.extend([f"{safe_name}_score", f"{safe_name}_feedback"])
-        logger.info(f"Expected model fields: {expected_fields}")
+            expected_score_fields.append(f"{safe_name}_score")
+            expected_feedback_fields.append(f"{safe_name}_feedback")
+        logger.info(
+            f"Expected model fields (scores): {expected_score_fields}; (feedback): {expected_feedback_fields}"
+        )
 
         # getting the model from the agent's model_id
         model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
@@ -270,8 +272,6 @@ async def run_grade_agent(
         )
 
         # Extract overall grading data
-        overall_score = getattr(grading_result, "overall_score", 0)
-        passed = getattr(grading_result, "passed", False)
         checkpoints = getattr(grading_result, "checkpoints", [])
 
         # Normalize checkpoints length to match scenario.checkpoints
@@ -294,12 +294,25 @@ async def run_grade_agent(
             logger.exception("Failed to normalize checkpoints; defaulting to empty list")
             checkpoints = []
 
-        logger.info(f"Grading results: score={overall_score}, passed={passed}")
+        # calculate overall score, sum over only the numeric score fields
+        overall_score = 0
+        for score_field in expected_score_fields:
+            value = getattr(grading_result, score_field, 0)
+            try:
+                overall_score += int(value)
+            except (TypeError, ValueError):
+                logger.warning(
+                    f"Non-integer value for {score_field} ('{value}'); treating as 0 in overall score"
+                )
+        passed = overall_score >= rubric.pass_points
+
+        summary = getattr(grading_result, "summary", "")
 
         # Create the simulation chat grade record
         simulation_chat_grade = SimulationChatGrades(
             passed=passed,
             score=overall_score,
+            description=summary,
             time_taken=time_taken,
             rubric_id=rubric_id,
             simulation_chat_id=simulation_chat_id,

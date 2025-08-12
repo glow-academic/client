@@ -534,6 +534,7 @@ class SimulationChatGrades(_Base, table=True):
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
+    description: str = Field(sa_column=Column('description', Text, default=r'No description provided'))
     passed: bool = Field(sa_column=Column('passed', Boolean))
     score: int = Field(sa_column=Column('score', Integer))
     time_taken: int = Field(sa_column=Column('time_taken', Integer))

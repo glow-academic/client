@@ -22,7 +22,10 @@ import { useAnalytics } from "@/contexts/analytics-context";
 import { profileRole } from "@/utils/drizzle/schema";
 import { useEffect, useMemo } from "react";
 import { DateRange } from "react-day-picker";
-export function AnalyticsFilters() {
+export interface AnalyticsFiltersProps {
+  homePage?: boolean; // this means we shouldn't show the first 2 components
+}
+export function AnalyticsFilters({ homePage = false }: AnalyticsFiltersProps) {
   const {
     startDate,
     endDate,
@@ -123,7 +126,7 @@ export function AnalyticsFilters() {
   return (
     <div className="flex items-center gap-2">
       {/* General/Practice Selector (multi-select, matches RolePicker) */}
-      <PracticePicker
+      {!homePage && <PracticePicker
         selected={[
           ...(showNormal ? (["general"] as PracticeOption[]) : []),
           ...(showPractice ? (["practice"] as PracticeOption[]) : []),
@@ -135,15 +138,15 @@ export function AnalyticsFilters() {
           setShowPractice(hasPractice);
         }}
         placeholder="General"
-      />
+      />}
 
       {/* Role Picker */}
-      <RolePicker
+      {!homePage && <RolePicker
         roles={["superadmin", "admin", "instructional", "ta", "guest"]}
         selectedRoles={selectedRoles}
         onChange={handleRoleSelect}
         placeholder="All roles"
-      />
+      />}
 
       {/* Cohort Picker */}
       <CohortPicker

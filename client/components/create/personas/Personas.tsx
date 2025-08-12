@@ -100,18 +100,15 @@ export default function Personas() {
     return scenarios.some((scenario) => scenario.personaId === personaId);
   };
 
-  // Check if user can edit (superadmin can edit all, others can only edit non-default personas not in use)
-  const canEditPersona = (personaId: string) => {
-    const isSuperAdmin = effectiveProfile?.role === "superadmin";
-    const persona = personas.find((p) => p.id === personaId);
-
-    // Superadmin can edit all personas
-    if (isSuperAdmin) {
-      return true;
+  // Only superadmins can edit default personas; admins/superadmins can edit non-default; others can edit non-default only if not in use
+  const canEditPersona = (persona: Persona) => {
+    const isAdmin =
+      effectiveProfile?.role === "admin" ||
+      effectiveProfile?.role === "superadmin";
+    if (persona.defaultPersona) {
+      return effectiveProfile?.role === "superadmin";
     }
-
-    // Non-superadmin users can only edit non-default personas that are not in use
-    return persona && !persona.defaultPersona && !isPersonaInUse(personaId);
+    return isAdmin || !isPersonaInUse(persona.id);
   };
 
   const handleDelete = async () => {
@@ -242,16 +239,17 @@ export default function Personas() {
                     <p>Randomness Level</p>
                   </TooltipContent>
                 </Tooltip>
-                <Badge variant={persona.active ? "default" : "secondary"}>
-                  {persona.active ? "Active" : "Inactive"}
-                </Badge>
+                {persona.defaultPersona && (
+                  <Badge variant="default">Default</Badge>
+                )}
+                {!persona.active && <Badge variant="secondary">Inactive</Badge>}
               </div>
               <p className="text-sm text-muted-foreground">
                 {persona.description || "No description available"}
               </p>
             </div>
             <div className="flex gap-2 items-center">
-              {canEditPersona(persona.id) ? (
+              {canEditPersona(persona) ? (
                 <Button
                   variant="outline"
                   size="sm"

@@ -437,6 +437,7 @@ export const simulationMessages = pgTable("simulation_messages", {
 export const simulationChatGrades = pgTable("simulation_chat_grades", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	description: text().default('No description provided').notNull(),
 	passed: boolean().notNull(),
 	score: integer().notNull(),
 	timeTaken: integer("time_taken").notNull(),
