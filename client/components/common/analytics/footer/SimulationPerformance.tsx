@@ -77,6 +77,7 @@ export default function SimulationPerformance({
   thresholds,
   selectedRoles,
   showPractice,
+  showGeneral,
 }: SimulationPerformanceProps) {
   const [selectedSimulation, setSelectedSimulation] =
     useState<Simulation | null>(null);
@@ -145,7 +146,8 @@ export default function SimulationPerformance({
       cohorts || [],
       cohortIds,
       selectedRoles,
-      showPractice
+      showPractice,
+      showGeneral
     );
   }, [
     simulations,
@@ -160,6 +162,7 @@ export default function SimulationPerformance({
     cohortIds,
     selectedRoles,
     showPractice,
+    showGeneral,
   ]);
 
   // Auto-select simulation if enabled and available
@@ -214,7 +217,9 @@ export default function SimulationPerformance({
       profileId,
       cohorts || [],
       cohortIds,
-      selectedRoles
+      selectedRoles,
+      showPractice,
+      showGeneral
     );
   }, [
     selectedSimulation,
@@ -230,6 +235,8 @@ export default function SimulationPerformance({
     cohorts,
     cohortIds,
     selectedRoles,
+    showPractice,
+    showGeneral,
     thresholds,
   ]);
 

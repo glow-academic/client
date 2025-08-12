@@ -383,13 +383,23 @@ export default function Cohorts() {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-lg">{cohort.title}</CardTitle>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant="outline">
-                <Users className="h-3 w-3 mr-1" />
-                {cohort.profileIds?.length || 0} members
-              </Badge>
-              {cohort.defaultCohort && <Badge variant="default">Default</Badge>}
-              {!cohort.active && <Badge variant="secondary">Inactive</Badge>}
+            <div className="mt-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">
+                  <Users className="h-3 w-3 mr-1" />
+                  {cohort.profileIds?.length || 0} members
+                </Badge>
+              </div>
+              {(cohort.defaultCohort || !cohort.active) && (
+                <div className="flex items-center gap-2">
+                  {cohort.defaultCohort && (
+                    <Badge variant="default">Default</Badge>
+                  )}
+                  {!cohort.active && (
+                    <Badge variant="secondary">Inactive</Badge>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-1">

@@ -140,6 +140,9 @@ export const calculateCohortPerformance = (
     );
   }
 
+  // Only consider active cohorts
+  filteredCohorts = filteredCohorts.filter((c) => c.active);
+
   if (filteredCohorts.length === 0) {
     return {
       cohortData: [],
@@ -155,7 +158,7 @@ export const calculateCohortPerformance = (
       ? simulations
       : simulations.filter((s) => selectedSimulationIds.includes(s.id));
 
-  // Filter grades by date range, optionally include practice/assigned simulations, filter by roles, and filter by selected simulations
+  // Filter grades by date range, include/exclude practice and general simulations, filter by roles, and filter by selected simulations
   const filteredGrades = grades.filter((grade) => {
     const gradeDate = new Date(grade.createdAt);
     const chat = chats.find((c) => c.id === grade.simulationChatId);
@@ -169,10 +172,10 @@ export const calculateCohortPerformance = (
     const inDateRange =
       isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
 
-    // Practice/Assigned filter
+    // Practice/General filter (OR semantics)
     const isPractice = Boolean(simulation?.practiceSimulation);
-    const practiceOk = showPractice ? isPractice : true;
-    const normalOk = showGeneral ? !isPractice : true;
+    const practiceGeneralOk =
+      (showPractice && isPractice) || (showGeneral && !isPractice);
 
     // Role filter
     const roleOk = rolesAllowed
@@ -191,22 +194,15 @@ export const calculateCohortPerformance = (
 
     return (
       inDateRange &&
-      practiceOk &&
-      normalOk &&
+      practiceGeneralOk &&
       roleOk &&
       profileMatch &&
       simulationMatch
     );
   });
 
-  if (filteredGrades.length === 0) {
-    return {
-      cohortData: [],
-      dailyData: [],
-      insights: null,
-      hasData: false,
-    };
-  }
+  // Note: Do not early-return when there are no grades; we still want to
+  // return zeroed cohorts so the UI can display cohort rows even without data
 
   // Calculate pass rates per cohort
   const cohortStats = new Map<
@@ -257,11 +253,19 @@ export const calculateCohortPerformance = (
     );
 
     if (cohort) {
+      // Only count simulations that are part of this cohort
+      if (!cohort.simulationIds.includes(simulation.id)) {
+        return;
+      }
       const cohortData = cohortStats.get(cohort.id);
       if (cohortData) {
         cohortData.totalAttempts++;
         cohortData.totalStudents.add(profile.id);
-        cohortData.totalScores.push(grade.score);
+        // Store normalized percentage per grade to avoid divide-by-zero later
+        const normalizedPercent = Math.round(
+          (grade.score / (rubric.points > 0 ? rubric.points : 100)) * 100
+        );
+        cohortData.totalScores.push(normalizedPercent);
         cohortData.rubricPoints = rubric.points;
         cohortData.rubricPassPoints = rubric.passPoints;
         cohortData.availableSimulations.add(simulation.id);
@@ -325,10 +329,8 @@ export const calculateCohortPerformance = (
       const avgPercentageScore =
         data.totalScores.length > 0
           ? Math.round(
-              (data.totalScores.reduce((sum, score) => sum + score, 0) /
-                data.totalScores.length /
-                data.rubricPoints) *
-                100
+              data.totalScores.reduce((sum, pct) => sum + pct, 0) /
+                data.totalScores.length
             )
           : 0;
 
@@ -357,7 +359,7 @@ export const calculateCohortPerformance = (
         color,
       };
     })
-    .filter((cohort) => cohort.totalStudents > 0)
+    // Keep cohorts even if there are zero students/data so the UI can render them
     .filter((cohort) => {
       if (selectedSimulationIds.length > 0) {
         return cohort.availableSimulations > 0;

@@ -82,64 +82,34 @@ export function ScenariosDataTable({
 
   // Get the current page's parent scenario IDs
   const currentPageRows = table.getRowModel().rows;
-  const currentPageParentIds = React.useMemo(() => {
-    return new Set(currentPageRows.map((row) => row.original.id));
+  const orderedParentIds = React.useMemo(() => {
+    return currentPageRows.map((row) => row.original.id);
   }, [currentPageRows]);
 
-  // Get all scenarios that should be shown on current page
-  const currentPageScenarios = React.useMemo(() => {
-    const parentScenariosOnPage = data.filter(
-      (scenario) => !scenario.generated && currentPageParentIds.has(scenario.id)
-    );
-
-    const childScenariosOnPage = data.filter(
-      (scenario) =>
-        scenario.generated &&
-        scenario.parentId &&
-        currentPageParentIds.has(scenario.parentId)
-    );
-
-    return [...parentScenariosOnPage, ...childScenariosOnPage];
-  }, [data, currentPageParentIds]);
-
-  // Group the current page scenarios
+  // Group the current page scenarios in the exact order of the table's sorting
   const currentPageGroupedScenarios = React.useMemo(() => {
     const groups: { parent: Scenario; children: Scenario[] }[] = [];
-    const parentMap = new Map<string, Scenario>();
-    const childMap = new Map<string, Scenario[]>();
 
-    // First pass: identify parents and collect children
-    currentPageScenarios.forEach((scenario) => {
-      if (scenario.generated && scenario.parentId) {
-        // This is a generated scenario with a parent
-        if (!childMap.has(scenario.parentId)) {
-          childMap.set(scenario.parentId, []);
-        }
-        childMap.get(scenario.parentId)!.push(scenario);
-      } else if (!scenario.generated) {
-        // This is a parent scenario
-        parentMap.set(scenario.id, scenario);
-      }
-    });
+    for (const parentId of orderedParentIds) {
+      const parent = data.find(
+        (scenario) => !scenario.generated && scenario.id === parentId
+      );
+      if (!parent) continue;
 
-    // Second pass: create groups
-    parentMap.forEach((parent) => {
-      const children = childMap.get(parent.id) || [];
+      const children = data
+        .filter(
+          (scenario) => scenario.generated && scenario.parentId === parentId
+        )
+        .sort(
+          (a, b) =>
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        );
+
       groups.push({ parent, children });
-    });
-
-    // Add standalone generated scenarios (those without parents or with missing parents)
-    currentPageScenarios.forEach((scenario) => {
-      if (
-        scenario.generated &&
-        (!scenario.parentId || !parentMap.has(scenario.parentId))
-      ) {
-        groups.push({ parent: scenario, children: [] });
-      }
-    });
+    }
 
     return groups;
-  }, [currentPageScenarios]);
+  }, [data, orderedParentIds]);
 
   return (
     <div className="space-y-4">

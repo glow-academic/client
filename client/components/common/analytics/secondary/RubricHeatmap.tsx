@@ -45,7 +45,13 @@ import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useQuery } from "@tanstack/react-query";
 import { Info, Loader2, TrendingUp } from "lucide-react";
-import { useMemo, useState } from "react";
+import {
+  useCallback,
+  useDeferredValue,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 export interface RubricHeatmapProps {
   dateStart: Date;
@@ -203,19 +209,34 @@ export default function RubricHeatmap({
     defaultRubrics,
   ]);
 
+  // Defer heavy result propagation to avoid blocking interactions/scroll
+  const deferredResult = useDeferredValue(rubricHeatmapResult);
+
+  // Throttle hover updates to once per animation frame to reduce rerenders
+  const hoverRAF = useRef<number | null>(null);
+  const setHoveredThrottled = useCallback((row: number, col: number) => {
+    if (hoverRAF.current !== null) {
+      cancelAnimationFrame(hoverRAF.current);
+    }
+    hoverRAF.current = requestAnimationFrame(() => {
+      setHoveredCell({ row, col });
+      hoverRAF.current = null;
+    });
+  }, []);
+
   // Calculate threshold status based on correlation matrix data
   const getThresholdStatus = () => {
-    if (!rubricHeatmapResult || !rubricHeatmapResult.hasData) return "neutral";
+    if (!deferredResult || !deferredResult.hasData) return "neutral";
 
     // Calculate average correlation strength across all non-diagonal cells
     let totalCorrelation = 0;
     let correlationCount = 0;
 
-    for (let i = 0; i < rubricHeatmapResult.matrix.length; i++) {
-      for (let j = 0; j < rubricHeatmapResult.matrix[i]!.length; j++) {
+    for (let i = 0; i < deferredResult.matrix.length; i++) {
+      for (let j = 0; j < deferredResult.matrix[i]!.length; j++) {
         if (i !== j) {
           // Skip diagonal cells (self-correlation)
-          const cell = rubricHeatmapResult.matrix[i]![j];
+          const cell = deferredResult.matrix[i]![j];
           if (cell && cell.dataPoints > 0) {
             totalCorrelation += Math.abs(cell.correlation);
             correlationCount++;
@@ -281,7 +302,7 @@ export default function RubricHeatmap({
   }
 
   // Show no access message if user doesn't have access to any cohorts
-  if (!rubricHeatmapResult?.hasData) {
+  if (!deferredResult?.hasData) {
     return (
       <Card className="w-full h-full flex flex-col relative">
         <div
@@ -367,7 +388,7 @@ export default function RubricHeatmap({
                   <TableRow>
                     {/* The first empty cell for alignment */}
                     <TableHead className="p-1 w-12"></TableHead>
-                    {rubricHeatmapResult.standardGroups.map(
+                    {(deferredResult?.standardGroups || []).map(
                       (group, colIndex) => (
                         <TableHead
                           key={group.id}
@@ -391,40 +412,78 @@ export default function RubricHeatmap({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rubricHeatmapResult.standardGroups.map((group, rowIndex) => (
-                    <TableRow
-                      key={group.id}
-                      onMouseLeave={() =>
-                        setHoveredCell({ row: null, col: null })
-                      }
-                    >
-                      {/* This is now the row header, not part of the grid */}
-                      <TableCell
-                        className={cn(
-                          "font-medium text-xs p-1 text-right text-muted-foreground",
-                          hoveredCell.row === rowIndex && "bg-muted" // Highlight on hover
-                        )}
+                  {(deferredResult?.standardGroups || []).map(
+                    (group, rowIndex) => (
+                      <TableRow
+                        key={group.id}
+                        onMouseLeave={() =>
+                          setHoveredCell({ row: null, col: null })
+                        }
                       >
-                        {group.shortName}
-                      </TableCell>
-                      {rubricHeatmapResult.standardGroups.map(
-                        (colGroup, colIndex) => {
-                          const cell =
-                            rubricHeatmapResult.matrix[rowIndex]?.[colIndex];
-                          if (!cell) {
-                            return <TableCell key={colIndex} className="p-1" />;
-                          }
+                        {/* This is now the row header, not part of the grid */}
+                        <TableCell
+                          className={cn(
+                            "font-medium text-xs p-1 text-right text-muted-foreground",
+                            hoveredCell.row === rowIndex && "bg-muted" // Highlight on hover
+                          )}
+                        >
+                          {group.shortName}
+                        </TableCell>
+                        {(deferredResult?.standardGroups || []).map(
+                          (colGroup, colIndex) => {
+                            const cell =
+                              deferredResult?.matrix?.[rowIndex]?.[colIndex];
+                            if (!cell) {
+                              return (
+                                <TableCell key={colIndex} className="p-1" />
+                              );
+                            }
 
-                          return (
-                            <TableCell
-                              key={colIndex}
-                              className="text-center p-1 w-20"
-                              onMouseEnter={() =>
-                                setHoveredCell({ row: rowIndex, col: colIndex })
-                              }
-                            >
-                              <Tooltip>
-                                <TooltipTrigger asChild>
+                            // Disable tooltips for very large matrices to reduce DOM weight
+                            const totalCells =
+                              (deferredResult?.standardGroups?.length || 0) *
+                              (deferredResult?.standardGroups?.length || 0);
+                            const enableTooltips = totalCells <= 1200; // 35x35
+
+                            return (
+                              <TableCell
+                                key={colIndex}
+                                className="text-center p-1 w-20"
+                                onMouseEnter={() =>
+                                  setHoveredThrottled(rowIndex, colIndex)
+                                }
+                              >
+                                {enableTooltips ? (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div
+                                        className="w-20 h-7 rounded-sm flex items-center justify-center text-xs font-mono"
+                                        style={{ backgroundColor: cell.color }}
+                                      >
+                                        <span
+                                          className={cn(
+                                            "font-semibold",
+                                            Math.abs(cell.correlation) >= 0.7
+                                              ? "text-white"
+                                              : "text-gray-800"
+                                          )}
+                                        >
+                                          {cell.correlation.toFixed(2)}
+                                        </span>
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>{`${group.shortName} ↔ ${colGroup.shortName}`}</p>
+                                      <p>
+                                        Pearson r:{" "}
+                                        {cell.correlation > 0 ? "+" : ""}
+                                        {cell.correlation.toFixed(2)}
+                                      </p>
+                                      <p>p-value: {cell.pValue.toFixed(3)}</p>
+                                      <p>Data points: {cell.dataPoints}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                ) : (
                                   <div
                                     className="w-20 h-7 rounded-sm flex items-center justify-center text-xs font-mono"
                                     style={{ backgroundColor: cell.color }}
@@ -440,23 +499,14 @@ export default function RubricHeatmap({
                                       {cell.correlation.toFixed(2)}
                                     </span>
                                   </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{`${group.shortName} ↔ ${colGroup.shortName}`}</p>
-                                  <p>
-                                    Pearson r: {cell.correlation > 0 ? "+" : ""}
-                                    {cell.correlation.toFixed(2)}
-                                  </p>
-                                  <p>p-value: {cell.pValue.toFixed(3)}</p>
-                                  <p>Data points: {cell.dataPoints}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TableCell>
-                          );
-                        }
-                      )}
-                    </TableRow>
-                  ))}
+                                )}
+                              </TableCell>
+                            );
+                          }
+                        )}
+                      </TableRow>
+                    )
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -505,10 +555,10 @@ export default function RubricHeatmap({
           </div>
 
           {/* Actionable Insights */}
-          {rubricHeatmapResult.insights && (
+          {deferredResult?.insights && (
             <div className="p-3 bg-muted rounded-lg text-left flex-shrink-0 w-full">
               <p className="text-xs text-muted-foreground">
-                {rubricHeatmapResult.insights}
+                {deferredResult.insights}
               </p>
             </div>
           )}

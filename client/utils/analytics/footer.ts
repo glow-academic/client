@@ -1216,7 +1216,8 @@ export const calculateScenarioPerformanceWithinSimulation = (
   cohorts: Cohort[] = [],
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
-  _showPractice: boolean = false
+  showPractice: boolean = false,
+  showGeneral: boolean = true
 ): Array<{
   scenarioId: string;
   scenarioName: string;
@@ -1232,7 +1233,8 @@ export const calculateScenarioPerformanceWithinSimulation = (
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
     cohortIds,
-    profileId
+    profileId,
+    profiles?.map((p) => ({ id: p.id, role: p.role }))
   );
 
   // Get rubric for score calculation
@@ -1265,8 +1267,9 @@ export const calculateScenarioPerformanceWithinSimulation = (
     const profileMatch = profileId ? attempt?.profileId === profileId : true;
 
     // Apply cohort-based simulation filtering unless practice-only mode
+    const practiceOnly = showPractice && !showGeneral;
     const cohortSimulationMatch =
-      allowedSimulationIds && !(_showPractice && true)
+      allowedSimulationIds && !practiceOnly
         ? selectedSimulation &&
           allowedSimulationIds.includes(selectedSimulation.id)
         : true;
@@ -1280,7 +1283,7 @@ export const calculateScenarioPerformanceWithinSimulation = (
     );
   });
 
-  if (filteredGrades.length === 0) return [];
+  // Do not early return on no grades; we can still show scenarios using chat-based data
 
   // Get scenarios for the selected simulation
   const simulationScenarios = scenarios.filter((scenario) =>
@@ -1290,27 +1293,40 @@ export const calculateScenarioPerformanceWithinSimulation = (
   // Calculate performance for each scenario
   const scenarioData = simulationScenarios
     .map((scenario) => {
-      const scenarioChats = chats.filter(
-        (chat) => chat.scenarioId === scenario.id
-      );
+      const scenarioChats = chats.filter((chat) => {
+        const attempt = attempts.find((a) => a.id === chat.attemptId);
+        const inSim = attempt?.simulationId === selectedSimulation.id;
+        const inDate =
+          isAfter(new Date(chat.createdAt), dateStart) &&
+          isBefore(new Date(chat.createdAt), dateEnd);
+        return chat.scenarioId === scenario.id && inSim && inDate;
+      });
       const scenarioGrades = filteredGrades.filter((grade) =>
         scenarioChats.some((chat) => chat.id === grade.simulationChatId)
       );
+      // If there are no grades but there are chats, still include the scenario with defaults
 
-      if (scenarioGrades.length === 0) return null;
-
-      const completedChats = scenarioChats.filter((chat) => chat.completed);
+      // Treat a chat as "completed" if it is marked completed OR it has a grade
+      const gradedChatIds = new Set(
+        scenarioGrades.map((g) => g.simulationChatId)
+      );
+      const completedChats = scenarioChats.filter(
+        (chat) => chat.completed || gradedChatIds.has(chat.id)
+      );
       const successRate = Math.round(
-        (completedChats.length / scenarioChats.length) * 100
+        (completedChats.length / Math.max(1, scenarioChats.length)) * 100
       );
 
       // Calculate average score as percentage
-      const avgScore = Math.round(
-        (scenarioGrades.reduce((sum, grade) => sum + grade.score, 0) /
-          scenarioGrades.length /
-          rubricTotalPoints) *
-          100
-      );
+      const avgScore =
+        scenarioGrades.length > 0
+          ? Math.round(
+              (scenarioGrades.reduce((sum, grade) => sum + grade.score, 0) /
+                scenarioGrades.length /
+                rubricTotalPoints) *
+                100
+            )
+          : 0;
 
       // Calculate performance trend (simple comparison with previous period)
       const midPoint = new Date((dateStart.getTime() + dateEnd.getTime()) / 2);
@@ -1350,10 +1366,7 @@ export const calculateScenarioPerformanceWithinSimulation = (
               : "#ef4444",
       };
     })
-    .filter(
-      (item): item is NonNullable<typeof item> =>
-        item !== null && item.totalAttempts >= 1
-    )
+    .filter((item) => item.totalAttempts >= 1)
     .sort((a, b) => b.avgScore - a.avgScore);
 
   return scenarioData;
@@ -1385,12 +1398,20 @@ export const getAvailableSimulations = (
   cohorts: Cohort[] = [],
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
-  showPractice: boolean = false
+  showPractice: boolean = false,
+  showGeneral: boolean = true
 ): Simulation[] => {
+  const isPrivileged = profileId
+    ? profiles?.some(
+        (p) =>
+          p.id === profileId && (p.role === "admin" || p.role === "superadmin")
+      )
+    : false;
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
     cohortIds,
-    profileId
+    profileId,
+    profiles?.map((p) => ({ id: p.id, role: p.role }))
   );
 
   // First, get all active simulations, optionally including practice
@@ -1409,15 +1430,15 @@ export const getAvailableSimulations = (
       rubricId: sim.rubricId,
     }));
 
-  // Apply cohort-based simulation filtering unless practice-only mode
+  // Apply cohort-based simulation filtering, but always keep practice sims when showPractice is true
+  const practiceOnly = showPractice && !showGeneral;
   const cohortFilteredSimulations =
-    allowedSimulationIds &&
-    !(
-      (
-        showPractice && true
-      ) /* practice only if caller set showPractice and not normal in upstream */
-    )
-      ? activeSimulations.filter((sim) => allowedSimulationIds.includes(sim.id))
+    allowedSimulationIds && !practiceOnly
+      ? activeSimulations.filter((sim) => {
+          if (sim.practiceSimulation && showPractice) return true;
+          if (isPrivileged && showGeneral) return true; // privileged users can see all general sims
+          return allowedSimulationIds.includes(sim.id);
+        })
       : activeSimulations;
 
   // Filter out simulations that don't have data in the selected date range
@@ -1439,6 +1460,12 @@ export const getAvailableSimulations = (
     if (simulationChats.length === 0) {
       return false;
     }
+
+    // Check if any of these chats are in the date range
+    const chatsInDateRange = simulationChats.some((chat) => {
+      const chatDate = new Date(chat.createdAt);
+      return isAfter(chatDate, dateStart) && isBefore(chatDate, dateEnd);
+    });
 
     // Check if any of these chats have grades in the date range and match role filters
     const simulationGrades = grades.filter((grade) => {
@@ -1469,8 +1496,16 @@ export const getAvailableSimulations = (
       return inDateRange && roleOk && profileMatch && cohortProfileMatch;
     });
 
-    // Only include simulations that have at least 1 grade
-    return simulationGrades.length >= 1;
+    const isPractice = Boolean(sim.practiceSimulation);
+    // Include practice sims when showPractice is enabled if they have any chats or grades in date range
+    if (isPractice && showPractice) {
+      return chatsInDateRange || simulationGrades.length >= 1;
+    }
+    // For general sims, allow if there are chats in range OR at least one grade (so general sims without grades but with chats still appear)
+    if (showGeneral) {
+      return chatsInDateRange || simulationGrades.length >= 1;
+    }
+    return false;
   });
 
   return simulationsWithData;
