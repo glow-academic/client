@@ -45,7 +45,7 @@ export interface TotalAttemptsProps {
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
   showPractice: boolean;
-  showNormal: boolean;
+  showGeneral: boolean;
 }
 
 const COLOR_CONFIGS = {
@@ -85,7 +85,7 @@ export default function TotalAttempts({
   cohortIds,
   selectedRoles,
   showPractice,
-  showNormal,
+  showGeneral,
 }: TotalAttemptsProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -129,7 +129,7 @@ export default function TotalAttempts({
       selectedRoles,
       showPractice,
       profiles?.map((p) => ({ id: p.id, role: p.role })),
-      showNormal
+      showGeneral
     );
   }, [
     attempts,
@@ -141,7 +141,7 @@ export default function TotalAttempts({
     cohortIds,
     selectedRoles,
     showPractice,
-    showNormal,
+    showGeneral,
     profiles,
   ]);
 

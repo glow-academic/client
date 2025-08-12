@@ -59,7 +59,7 @@ export interface CohortPerformanceProps {
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
   showPractice: boolean;
-  showNormal: boolean;
+  showGeneral: boolean;
 }
 
 export default function CohortPerformance({
@@ -70,7 +70,7 @@ export default function CohortPerformance({
   cohortIds,
   selectedRoles,
   showPractice,
-  showNormal,
+  showGeneral,
 }: CohortPerformanceProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
     []
@@ -148,7 +148,7 @@ export default function CohortPerformance({
       selectedSimulations.map((s) => s.id),
       selectedRoles,
       showPractice,
-      showNormal
+      showGeneral
     );
   }, [
     allCohorts,
@@ -166,7 +166,7 @@ export default function CohortPerformance({
     thresholds,
     selectedRoles,
     showPractice,
-    showNormal,
+    showGeneral,
   ]);
 
   // Get simulations that have data available

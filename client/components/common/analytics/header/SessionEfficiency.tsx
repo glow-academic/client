@@ -48,7 +48,7 @@ export interface SessionEfficiencyProps {
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
   showPractice: boolean;
-  showNormal: boolean;
+  showGeneral: boolean;
 }
 
 const COLOR_CONFIGS = {
@@ -88,7 +88,7 @@ export default function SessionEfficiency({
   cohortIds,
   selectedRoles,
   showPractice,
-  showNormal,
+  showGeneral,
 }: SessionEfficiencyProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -161,7 +161,7 @@ export default function SessionEfficiency({
       selectedRoles,
       showPractice,
       profiles?.map((p) => ({ id: p.id, role: p.role })),
-      showNormal
+      showGeneral
     );
   }, [
     grades,
@@ -176,7 +176,7 @@ export default function SessionEfficiency({
     cohortIds,
     selectedRoles,
     showPractice,
-    showNormal,
+    showGeneral,
     profiles,
   ]);
 

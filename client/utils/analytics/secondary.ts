@@ -116,7 +116,7 @@ export const calculateCohortPerformance = (
   selectedSimulationIds: string[] = [],
   rolesAllowed?: ProfileRole[],
   showPractice: boolean = false,
-  showNormal: boolean = true
+  showGeneral: boolean = true
 ): CohortPerformanceResult => {
   // Filter cohorts based on cohortIds and profileId
   let filteredCohorts = cohorts;
@@ -172,7 +172,7 @@ export const calculateCohortPerformance = (
     // Practice/Assigned filter
     const isPractice = Boolean(simulation?.practiceSimulation);
     const practiceOk = showPractice ? isPractice : true;
-    const normalOk = showNormal ? !isPractice : true;
+    const normalOk = showGeneral ? !isPractice : true;
 
     // Role filter
     const roleOk = rolesAllowed

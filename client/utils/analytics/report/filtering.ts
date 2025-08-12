@@ -69,7 +69,7 @@ export interface AnalyticsFilters {
   effectiveCohortIds: string[];
   selectedRoles: ProfileRole[];
   showPractice: boolean;
-  showNormal: boolean;
+  showGeneral: boolean;
   cohorts: CohortEntity[];
 }
 
@@ -127,9 +127,9 @@ export function buildFilteredViewForTa(
   // Practice/Normal flags
   const practicePredicate = (simulation: SimulationEntity) => {
     const isPractice = !!simulation.practiceSimulation;
-    if (analytics.showPractice && analytics.showNormal) return true;
-    if (analytics.showPractice && !analytics.showNormal) return isPractice;
-    if (!analytics.showPractice && analytics.showNormal) return !isPractice;
+    if (analytics.showPractice && analytics.showGeneral) return true;
+    if (analytics.showPractice && !analytics.showGeneral) return isPractice;
+    if (!analytics.showPractice && analytics.showGeneral) return !isPractice;
     return false; // both false → nothing
   };
 

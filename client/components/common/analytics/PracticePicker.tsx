@@ -41,9 +41,9 @@ const LABEL: Record<PracticeOption, string> = {
 
 export function PracticePicker({
   options = ["general", "practice"],
-  selected = ["general"],
+  selected = [],
   onChange,
-  placeholder = "General",
+  placeholder = "All simulations",
   className,
   hideSelectedChips = true,
 }: PracticePickerProps) {

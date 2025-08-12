@@ -48,7 +48,7 @@ export default function Reports() {
     effectiveCohortIds,
     selectedRoles,
     showPractice,
-    showNormal,
+    showGeneral,
   } = useAnalytics();
 
   const handleViewReport = (profileId: string) => {
@@ -100,7 +100,12 @@ export default function Reports() {
       selectedCohorts.forEach((cohort) => {
         cohort.profileIds.forEach((id) => cohortProfileIds.add(id));
       });
-      tas = tas.filter((profile) => cohortProfileIds.has(profile.id));
+      tas = tas.filter(
+        (profile) =>
+          profile.role === "admin" ||
+          profile.role === "superadmin" ||
+          cohortProfileIds.has(profile.id)
+      );
     }
     return tas;
   }, [profiles, effectiveCohortIds, cohorts, selectedRoles]);
@@ -181,7 +186,7 @@ export default function Reports() {
 
     // Filter simulations based on selected cohorts (used for cohort comparisons and breakdowns)
     let filteredSimulations = simulations;
-    if (effectiveCohortIds.length > 0) {
+    if (effectiveCohortIds.length > 0 && !(showPractice && !showGeneral)) {
       const selectedCohorts = cohorts.filter((cohort) =>
         effectiveCohortIds.includes(cohort.id)
       );
@@ -309,7 +314,7 @@ export default function Reports() {
         selectedRoles,
         showPractice,
         profilesForRoles,
-        showNormal
+        showGeneral
       ).currentValue;
 
       // 2. Completion Percentage
@@ -326,7 +331,7 @@ export default function Reports() {
         selectedRoles,
         showPractice,
         profilesForRoles,
-        showNormal
+        showGeneral
       ).currentValue;
 
       // 3. First Attempt Pass Rate
@@ -343,7 +348,7 @@ export default function Reports() {
         selectedRoles,
         showPractice,
         profilesForRoles,
-        showNormal
+        showGeneral
       ).currentValue;
 
       // 4. Highest Score
@@ -361,7 +366,7 @@ export default function Reports() {
         selectedRoles,
         showPractice,
         profilesForRoles,
-        showNormal
+        showGeneral
       ).currentValue;
 
       // 5. Messages Per Session
@@ -378,7 +383,7 @@ export default function Reports() {
         selectedRoles,
         showPractice,
         profilesForRoles,
-        showNormal
+        showGeneral
       ).currentValue;
 
       // 6. Persona Response Times (seconds -> we show minutes in UI)
@@ -395,7 +400,7 @@ export default function Reports() {
         selectedRoles,
         showPractice,
         profilesForRoles,
-        showNormal
+        showGeneral
       ).currentValue;
       const personaResponseTimes = Math.round(personaResponseSeconds / 60);
 
@@ -414,7 +419,7 @@ export default function Reports() {
         selectedRoles,
         showPractice,
         profilesForRoles,
-        showNormal
+        showGeneral
       ).currentValue;
 
       // 8. Stagnation Rate
@@ -432,7 +437,7 @@ export default function Reports() {
         selectedRoles,
         showPractice,
         profilesForRoles,
-        showNormal
+        showGeneral
       ).currentValue;
 
       // 9. Time Spent (seconds -> minutes)
@@ -448,7 +453,7 @@ export default function Reports() {
         selectedRoles,
         showPractice,
         profilesForRoles,
-        showNormal
+        showGeneral
       ).currentValue;
       const timeSpent = Math.round(timeSpentSeconds / 60);
 
@@ -464,7 +469,7 @@ export default function Reports() {
         selectedRoles,
         showPractice,
         profilesForRoles,
-        showNormal
+        showGeneral
       ).currentValue;
 
       // Calculate risk assessment based on all 10 metrics
@@ -716,8 +721,11 @@ export default function Reports() {
       const scenariosCompleted = uniqueScenarios.size;
 
       // Cohorts this user belongs to
-      const userCohorts = cohorts.filter((cohort) =>
-        cohort.profileIds.includes(user.id)
+      const userCohorts = cohorts.filter(
+        (cohort) =>
+          user.role === "admin" ||
+          user.role === "superadmin" ||
+          cohort.profileIds.includes(user.id)
       );
       const activeCohorts = userCohorts.filter((cohort) => cohort.active);
 
@@ -883,7 +891,7 @@ export default function Reports() {
     tas,
     selectedRoles,
     showPractice,
-    showNormal,
+    showGeneral,
   ]);
 
   // Loading state

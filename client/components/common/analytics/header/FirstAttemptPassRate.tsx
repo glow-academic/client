@@ -47,7 +47,7 @@ export interface FirstAttemptPassRateProps {
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
   showPractice: boolean;
-  showNormal: boolean;
+  showGeneral: boolean;
 }
 
 const COLOR_CONFIGS = {
@@ -87,7 +87,7 @@ export default function FirstAttemptPassRate({
   cohortIds,
   selectedRoles,
   showPractice,
-  showNormal,
+  showGeneral,
 }: FirstAttemptPassRateProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -147,7 +147,7 @@ export default function FirstAttemptPassRate({
       selectedRoles,
       showPractice,
       profiles?.map((p) => ({ id: p.id, role: p.role })),
-      showNormal
+      showGeneral
     );
   }, [
     attempts,
@@ -161,7 +161,7 @@ export default function FirstAttemptPassRate({
     cohortIds,
     selectedRoles,
     showPractice,
-    showNormal,
+    showGeneral,
     profiles,
   ]);
 

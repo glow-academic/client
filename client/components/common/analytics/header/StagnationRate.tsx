@@ -48,7 +48,7 @@ export interface StagnationRateProps {
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
   showPractice: boolean;
-  showNormal: boolean;
+  showGeneral: boolean;
 }
 
 const COLOR_CONFIGS = {
@@ -88,7 +88,7 @@ export default function StagnationRate({
   cohortIds,
   selectedRoles,
   showPractice,
-  showNormal,
+  showGeneral,
 }: StagnationRateProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -161,7 +161,7 @@ export default function StagnationRate({
       selectedRoles,
       showPractice,
       profiles?.map((p) => ({ id: p.id, role: p.role })),
-      showNormal
+      showGeneral
     );
   }, [
     attempts,
@@ -176,7 +176,7 @@ export default function StagnationRate({
     cohortIds,
     selectedRoles,
     showPractice,
-    showNormal,
+    showGeneral,
     profiles,
   ]);
 

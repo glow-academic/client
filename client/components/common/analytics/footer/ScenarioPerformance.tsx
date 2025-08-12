@@ -76,7 +76,7 @@ export interface ScenarioPerformanceProps {
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
   showPractice: boolean;
-  showNormal: boolean;
+  showGeneral: boolean;
 }
 
 interface ParameterOption {
@@ -93,7 +93,7 @@ export default function ScenarioPerformance({
   cohortIds,
   selectedRoles,
   showPractice,
-  showNormal,
+  showGeneral,
 }: ScenarioPerformanceProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -214,7 +214,7 @@ export default function ScenarioPerformance({
       cohortIds,
       selectedRoles,
       showPractice,
-      showNormal
+      showGeneral
     );
   }, [
     scenarios,
@@ -233,7 +233,7 @@ export default function ScenarioPerformance({
     cohortIds,
     selectedRoles,
     showPractice,
-    showNormal,
+    showGeneral,
   ]);
 
   // Calculate threshold status based on attribute performance

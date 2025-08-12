@@ -54,7 +54,7 @@ export interface AttemptImprovementProps {
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
   showPractice: boolean;
-  showNormal: boolean;
+  showGeneral: boolean;
 }
 
 export default function AttemptImprovement({
@@ -65,7 +65,7 @@ export default function AttemptImprovement({
   thresholds,
   selectedRoles,
   showPractice,
-  showNormal,
+  showGeneral,
 }: AttemptImprovementProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
     []
@@ -210,7 +210,7 @@ export default function AttemptImprovement({
       selectedSimulations.map((s) => s.id),
       selectedRoles,
       showPractice,
-      showNormal
+      showGeneral
     );
   }, [
     profiles,
@@ -227,7 +227,7 @@ export default function AttemptImprovement({
     selectedSimulations,
     selectedRoles,
     showPractice,
-    showNormal,
+    showGeneral,
   ]);
 
   // Get actionable insights

@@ -72,7 +72,7 @@ export interface ScenarioStatsProps {
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
   showPractice: boolean;
-  showNormal: boolean;
+  showGeneral: boolean;
 }
 
 interface MetricOption {
@@ -89,7 +89,7 @@ export default function ScenarioStats({
   thresholds,
   selectedRoles,
   showPractice,
-  showNormal,
+  showGeneral,
 }: ScenarioStatsProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -280,7 +280,7 @@ export default function ScenarioStats({
         cohortIds,
         selectedRoles,
         showPractice,
-        showNormal
+        showGeneral
       );
     }, [
       scenarios,
@@ -301,7 +301,7 @@ export default function ScenarioStats({
       cohortIds,
       selectedRoles,
       showPractice,
-      showNormal,
+      showGeneral,
     ]);
 
   const { correlation, pValue } = correlationData;

@@ -1075,6 +1075,7 @@ export default function Home() {
           cohortIds={effectiveCohortIds}
           showExport={true}
           showPractice={false}
+          showGeneral={true}
           startDate={startDate}
           endDate={endDate}
         />

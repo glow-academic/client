@@ -134,7 +134,7 @@ export const calculateScenarioAttributeBreakdown = (
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
   showPractice: boolean = false,
-  showNormal: boolean = true
+  showGeneral: boolean = true
 ): ScenarioAttributeElement[] => {
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
@@ -167,7 +167,7 @@ export const calculateScenarioAttributeBreakdown = (
     // Practice/Normal filter
     const isPractice = Boolean(simulation?.practiceSimulation);
     const practiceOk =
-      (showPractice && isPractice) || (showNormal && !isPractice);
+      (showPractice && isPractice) || (showGeneral && !isPractice);
 
     // Role filter (default to allow all when not provided)
     const roleOk = rolesAllowed
@@ -428,7 +428,7 @@ export const calculateScenarioPerformance = (
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
   showPractice: boolean = false,
-  showNormal: boolean = true
+  showGeneral: boolean = true
 ): {
   performanceData: ScenarioPerformanceData[];
   correlationData: CorrelationData;
@@ -467,7 +467,7 @@ export const calculateScenarioPerformance = (
     // Practice/Normal filter
     const isPractice = Boolean(simulation?.practiceSimulation);
     const practiceOk =
-      (showPractice && isPractice) || (showNormal && !isPractice);
+      (showPractice && isPractice) || (showGeneral && !isPractice);
 
     // Role filter
     const roleOk = rolesAllowed
@@ -479,10 +479,11 @@ export const calculateScenarioPerformance = (
     // Filter by profile if provided
     const profileMatch = profileId ? attempt?.profileId === profileId : true;
 
-    // Apply cohort-based simulation filtering
-    const cohortSimulationMatch = allowedSimulationIds
-      ? simulation && allowedSimulationIds.includes(simulation.id)
-      : true;
+    // Apply cohort-based simulation filtering unless practice-only mode
+    const cohortSimulationMatch =
+      allowedSimulationIds && !(showPractice && true)
+        ? simulation && allowedSimulationIds.includes(simulation.id)
+        : true;
 
     return (
       inDateRange &&
@@ -1260,11 +1261,12 @@ export const calculateScenarioPerformanceWithinSimulation = (
     // Filter by profile if provided
     const profileMatch = profileId ? attempt?.profileId === profileId : true;
 
-    // Apply cohort-based simulation filtering
-    const cohortSimulationMatch = allowedSimulationIds
-      ? selectedSimulation &&
-        allowedSimulationIds.includes(selectedSimulation.id)
-      : true;
+    // Apply cohort-based simulation filtering unless practice-only mode
+    const cohortSimulationMatch =
+      allowedSimulationIds && !(_showPractice && true)
+        ? selectedSimulation &&
+          allowedSimulationIds.includes(selectedSimulation.id)
+        : true;
 
     return (
       inDateRange &&
@@ -1404,10 +1406,16 @@ export const getAvailableSimulations = (
       rubricId: sim.rubricId,
     }));
 
-  // Apply cohort-based simulation filtering
-  const cohortFilteredSimulations = allowedSimulationIds
-    ? activeSimulations.filter((sim) => allowedSimulationIds.includes(sim.id))
-    : activeSimulations;
+  // Apply cohort-based simulation filtering unless practice-only mode
+  const cohortFilteredSimulations =
+    allowedSimulationIds &&
+    !(
+      (
+        showPractice && true
+      ) /* practice only if caller set showPractice and not normal in upstream */
+    )
+      ? activeSimulations.filter((sim) => allowedSimulationIds.includes(sim.id))
+      : activeSimulations;
 
   // Filter out simulations that don't have data in the selected date range
   const simulationsWithData = cohortFilteredSimulations.filter((sim) => {

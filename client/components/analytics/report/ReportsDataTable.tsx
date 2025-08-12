@@ -192,7 +192,7 @@ export function ReportsDataTable({
           effectiveCohortIds: analytics.effectiveCohortIds,
           selectedRoles: analytics.selectedRoles,
           showPractice: analytics.showPractice,
-          showNormal: analytics.showNormal,
+          showGeneral: analytics.showGeneral,
           cohorts: analytics.cohorts,
         },
         {
@@ -214,7 +214,7 @@ export function ReportsDataTable({
       analytics.effectiveCohortIds,
       analytics.selectedRoles,
       analytics.showPractice,
-      analytics.showNormal,
+      analytics.showGeneral,
       analytics.cohorts,
       personaFilter,
       scenarioFilter,

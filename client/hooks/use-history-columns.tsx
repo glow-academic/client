@@ -36,7 +36,7 @@ export function useHistoryColumns({
   showExport: _showExport = true,
   cohortIds = undefined,
   showPractice = false,
-  showNormal = true,
+  showGeneral = true,
   startDate,
   endDate,
   allowedRoles,
@@ -45,7 +45,7 @@ export function useHistoryColumns({
   showExport?: boolean;
   cohortIds: string[] | undefined;
   showPractice?: boolean;
-  showNormal?: boolean;
+  showGeneral?: boolean;
   startDate?: Date;
   endDate?: Date;
   allowedRoles?: ProfileRole[] | undefined;
@@ -782,14 +782,14 @@ export function useHistoryColumns({
   }
 
   // Apply practice/normal filtering using combined flags
-  if (showPractice || showNormal) {
+  if (showPractice || showGeneral) {
     data = data.filter((attempt: unknown) => {
       const attemptData = attempt as Record<string, unknown>;
       const simulation = simulations?.find(
         (s) => s.id === attemptData["simulationId"]
       );
       const isPractice = Boolean(simulation?.practiceSimulation);
-      return (showPractice && isPractice) || (showNormal && !isPractice);
+      return (showPractice && isPractice) || (showGeneral && !isPractice);
     });
   } else {
     // If both are false, show nothing

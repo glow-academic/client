@@ -81,7 +81,7 @@ export const calculateAttemptImprovement = (
   selectedSimulations: string[] = [],
   rolesAllowed?: ProfileRole[],
   showPractice: boolean = false,
-  showNormal: boolean = true
+  showGeneral: boolean = true
 ): AttemptImprovementDataPoint[] => {
   if (!profiles || !chats || !grades || !attempts || !simulations || !rubrics) {
     return [];
@@ -109,6 +109,9 @@ export const calculateAttemptImprovement = (
   const isSimulationInCohorts = (simulationId: string) => {
     if (!cohortIds || cohortIds.length === 0) return true;
     if (!cohorts) return false;
+    // When showing practice-only, bypass cohort simulation restriction entirely
+    // (practice simulations may not belong to any cohort)
+    if (showPractice && !showGeneral) return true;
 
     return cohorts.some(
       (cohort) =>
@@ -151,7 +154,7 @@ export const calculateAttemptImprovement = (
     // Practice/Normal filter
     const isPractice = Boolean(simulation?.practiceSimulation);
     const practiceOk =
-      (showPractice && isPractice) || (showNormal && !isPractice);
+      (showPractice && isPractice) || (showGeneral && !isPractice);
 
     // Role filter
     const roleOk = rolesAllowed
@@ -163,8 +166,13 @@ export const calculateAttemptImprovement = (
     // Filter by profile if provided
     const profileMatch = profileId ? attempt?.profileId === profileId : true;
 
-    // Filter by cohorts
-    const cohortMatch = profile ? isProfileInCohorts(profile.id) : true;
+    // Filter by cohorts (bypass if practice-only)
+    const cohortMatch =
+      showPractice && !showGeneral
+        ? true
+        : profile
+          ? isProfileInCohorts(profile.id)
+          : true;
 
     return inDateRange && practiceOk && roleOk && profileMatch && cohortMatch;
   });
@@ -338,7 +346,7 @@ export const calculatePlatformGrowth = (
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
   showPractice: boolean = false,
-  showNormal: boolean = true
+  showGeneral: boolean = true
 ): GrowthDataPoint[] => {
   if (!profiles || !chats || !grades || !attempts || !simulations || !rubrics) {
     return [];
@@ -377,7 +385,7 @@ export const calculatePlatformGrowth = (
     // Practice/Normal filter
     const isPractice = Boolean(simulation?.practiceSimulation);
     const practiceOk =
-      (showPractice && isPractice) || (showNormal && !isPractice);
+      (showPractice && isPractice) || (showGeneral && !isPractice);
 
     // Role filter
     const roleOk = rolesAllowed

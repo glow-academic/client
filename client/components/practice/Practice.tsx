@@ -406,6 +406,7 @@ export default function Practice() {
               profileId={effectiveProfile.id}
               showExport={false}
               showPractice={true}
+              showGeneral={false}
             />
           </div>
         )}

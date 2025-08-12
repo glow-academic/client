@@ -51,7 +51,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
     effectiveCohortIds,
     selectedRoles,
     showPractice,
-    showNormal,
+    showGeneral,
   } = useAnalytics();
 
   // Threshold data
@@ -109,7 +109,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
     <CompletionPercentage
       key="completion-percentage"
@@ -120,7 +120,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
     <FirstAttemptPassRate
       key="first-attempt-pass-rate"
@@ -131,7 +131,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
     <HighestScore
       key="highest-score"
@@ -142,7 +142,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
     <MessagesPerSession
       key="messages-per-session"
@@ -153,7 +153,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
     <PersonaResponseTimes
       key="persona-response-times"
@@ -164,7 +164,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
     <SessionEfficiency
       key="session-efficiency"
@@ -175,7 +175,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
     <StagnationRate
       key="stagnation-rate"
@@ -186,7 +186,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
     <TimeSpent
       key="time-spent"
@@ -197,7 +197,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
     <TotalAttempts
       key="total-attempts"
@@ -208,7 +208,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
   ];
 
@@ -222,7 +222,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
     <PersonaPerformance
       key="persona-performance"
@@ -233,7 +233,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
     <RubricHeatmap
       key="rubric-heatmap"
@@ -244,7 +244,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
   ];
 
@@ -258,7 +258,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
     <AttemptImprovement
       key="attempt-improvement"
@@ -269,7 +269,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
     <SkillPerformance
       key="skill-performance"
@@ -280,7 +280,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
   ];
 
@@ -294,7 +294,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
     <ScenarioStats
       key="scenario-stats"
@@ -305,7 +305,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
   ];
 
@@ -319,7 +319,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
     <SimulationComposition
       key="simulation-composition"
@@ -330,7 +330,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds={effectiveCohortIds}
       selectedRoles={selectedRoles}
       showPractice={showPractice}
-      showNormal={showNormal}
+      showGeneral={showGeneral}
     />,
   ];
 
@@ -773,7 +773,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
         cohortIds={effectiveCohortIds}
         showExport={false}
         showPractice={showPractice}
-        showNormal={showNormal}
+        showGeneral={showGeneral}
         allowedRoles={selectedRoles}
         startDate={startDate}
         endDate={endDate}

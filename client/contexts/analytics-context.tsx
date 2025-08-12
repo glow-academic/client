@@ -33,8 +33,8 @@ export interface AnalyticsContextType {
   setIncludePractice: (include: boolean) => void; // legacy setter
   showPractice: boolean;
   setShowPractice: (show: boolean) => void;
-  showNormal: boolean;
-  setShowNormal: (show: boolean) => void;
+  showGeneral: boolean;
+  setshowGeneral: (show: boolean) => void;
 
   // Available cohorts data
   cohorts: Cohort[];
@@ -131,12 +131,12 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   // Cohort filtering - empty array means all cohorts
   const [selectedCohortIds, setSelectedCohortIds] = useState<string[]>([]);
   // Role filtering - empty array means all roles
-  const [selectedRoles, setSelectedRoles] = useState<ProfileRole[]>(["ta"]);
+  const [selectedRoles, setSelectedRoles] = useState<ProfileRole[]>([]);
   // Include practice data in analytics (legacy)
   const [includePractice, setIncludePractice] = useState<boolean>(false);
   // New dual flags for practice/assigned filtering
   const [showPractice, setShowPractice] = useState<boolean>(false);
-  const [showNormal, setShowNormal] = useState<boolean>(true);
+  const [showGeneral, setshowGeneral] = useState<boolean>(true);
 
   // Compute effective cohort IDs for filtering
   const effectiveCohortIds = useMemo(() => {
@@ -159,10 +159,10 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     setStartDate(earliestCohortDate);
     setEndDate(new Date());
     setSelectedCohortIds([]);
-    setSelectedRoles(["ta"]);
+    setSelectedRoles([]);
     setIncludePractice(false);
     setShowPractice(false);
-    setShowNormal(true);
+    setshowGeneral(true);
     setHasUserSetDateRange(false); // Reset user-set date range
   };
 
@@ -180,8 +180,8 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     setIncludePractice,
     showPractice,
     setShowPractice,
-    showNormal,
-    setShowNormal,
+    showGeneral,
+    setshowGeneral,
     cohorts,
     isLoadingCohorts,
     effectiveCohortIds,

@@ -46,7 +46,7 @@ export interface TimeSpentProps {
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
   showPractice: boolean;
-  showNormal: boolean;
+  showGeneral: boolean;
 }
 
 const COLOR_CONFIGS = {
@@ -86,7 +86,7 @@ export default function TimeSpent({
   cohortIds,
   selectedRoles,
   showPractice,
-  showNormal,
+  showGeneral,
 }: TimeSpentProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -138,7 +138,7 @@ export default function TimeSpent({
       selectedRoles,
       showPractice,
       profiles?.map((p) => ({ id: p.id, role: p.role })),
-      showNormal
+      showGeneral
     );
   }, [
     chats,
@@ -151,7 +151,7 @@ export default function TimeSpent({
     cohortIds,
     selectedRoles,
     showPractice,
-    showNormal,
+    showGeneral,
     profiles,
   ]);
 

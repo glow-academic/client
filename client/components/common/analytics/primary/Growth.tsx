@@ -49,7 +49,7 @@ export interface GrowthProps {
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
   showPractice: boolean;
-  showNormal: boolean;
+  showGeneral: boolean;
 }
 
 export default function Growth({
@@ -60,7 +60,7 @@ export default function Growth({
   thresholds,
   selectedRoles,
   showPractice,
-  showNormal,
+  showGeneral,
 }: GrowthProps) {
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([
     "averageScore",
@@ -242,7 +242,7 @@ export default function Growth({
       cohortIds,
       selectedRoles,
       showPractice,
-      showNormal
+      showGeneral
     );
   }, [
     grades,
@@ -258,7 +258,7 @@ export default function Growth({
     cohortIds,
     selectedRoles,
     showPractice,
-    showNormal,
+    showGeneral,
   ]);
 
   // Calculate threshold status based on growth data

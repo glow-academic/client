@@ -48,7 +48,7 @@ export interface AverageScoreProps {
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
   showPractice: boolean;
-  showNormal: boolean;
+  showGeneral: boolean;
 }
 
 const COLOR_CONFIGS = {
@@ -88,7 +88,7 @@ export default function AverageScore({
   cohortIds,
   selectedRoles,
   showPractice,
-  showNormal,
+  showGeneral,
 }: AverageScoreProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -161,7 +161,7 @@ export default function AverageScore({
       selectedRoles,
       showPractice,
       profiles?.map((p) => ({ id: p.id, role: p.role })),
-      showNormal
+      showGeneral
     );
   }, [
     grades,
@@ -176,7 +176,7 @@ export default function AverageScore({
     cohortIds,
     selectedRoles,
     showPractice,
-    showNormal,
+    showGeneral,
     profiles,
   ]);
 

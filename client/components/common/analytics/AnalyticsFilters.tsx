@@ -20,7 +20,7 @@ import {
 } from "@/components/common/analytics/PracticePicker";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { profileRole } from "@/utils/drizzle/schema";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DateRange } from "react-day-picker";
 export interface AnalyticsFiltersProps {
   homePage?: boolean; // this means we shouldn't show the first 2 components
@@ -41,9 +41,40 @@ export function AnalyticsFilters({ homePage = false }: AnalyticsFiltersProps) {
     // new dual flags
     showPractice,
     setShowPractice,
-    showNormal,
-    setShowNormal,
+    showGeneral,
+    setshowGeneral,
   } = useAnalytics();
+
+  // Local UI state to distinguish between "empty (all)" and "both selected"
+  const [practiceSelected, setPracticeSelected] = useState<PracticeOption[]>(
+    () => {
+      const vals: PracticeOption[] = [];
+      if (showGeneral) vals.push("general");
+      if (showPractice) vals.push("practice");
+      // When both are enabled functionally, start with empty to indicate "All simulations"
+      return vals.length === 2 ? [] : vals;
+    }
+  );
+
+  // Keep local selection in sync when context flags change externally
+  useEffect(() => {
+    if (showGeneral && !showPractice) {
+      if (
+        !(practiceSelected.length === 1 && practiceSelected[0] === "general")
+      ) {
+        setPracticeSelected(["general"]);
+      }
+    } else if (!showGeneral && showPractice) {
+      if (
+        !(practiceSelected.length === 1 && practiceSelected[0] === "practice")
+      ) {
+        setPracticeSelected(["practice"]);
+      }
+    } else if (showGeneral && showPractice) {
+      // Do not force a specific UI when both are functionally enabled.
+      // Preserve whether the user has chosen "All" (empty) or "General + Practice" (both selected).
+    }
+  }, [showGeneral, showPractice, practiceSelected]);
 
   // Convert to DateRange for the date picker component
   const dateRange: DateRange = {
@@ -126,27 +157,36 @@ export function AnalyticsFilters({ homePage = false }: AnalyticsFiltersProps) {
   return (
     <div className="flex items-center gap-2">
       {/* General/Practice Selector (multi-select, matches RolePicker) */}
-      {!homePage && <PracticePicker
-        selected={[
-          ...(showNormal ? (["general"] as PracticeOption[]) : []),
-          ...(showPractice ? (["practice"] as PracticeOption[]) : []),
-        ]}
-        onChange={(vals) => {
-          const hasGeneral = vals.includes("general");
-          const hasPractice = vals.includes("practice");
-          setShowNormal(hasGeneral);
-          setShowPractice(hasPractice);
-        }}
-        placeholder="General"
-      />}
+      {!homePage && (
+        <PracticePicker
+          selected={practiceSelected}
+          onChange={(vals) => {
+            // Update UI state first
+            setPracticeSelected(vals);
+            // Empty selection means all simulations (both modes on)
+            if (vals.length === 0) {
+              setshowGeneral(true);
+              setShowPractice(true);
+              return;
+            }
+            const hasGeneral = vals.includes("general");
+            const hasPractice = vals.includes("practice");
+            setshowGeneral(hasGeneral);
+            setShowPractice(hasPractice);
+          }}
+          placeholder="All simulations"
+        />
+      )}
 
       {/* Role Picker */}
-      {!homePage && <RolePicker
-        roles={["superadmin", "admin", "instructional", "ta", "guest"]}
-        selectedRoles={selectedRoles}
-        onChange={handleRoleSelect}
-        placeholder="All roles"
-      />}
+      {!homePage && (
+        <RolePicker
+          roles={["superadmin", "admin", "instructional", "ta", "guest"]}
+          selectedRoles={selectedRoles}
+          onChange={handleRoleSelect}
+          placeholder="All roles"
+        />
+      )}
 
       {/* Cohort Picker */}
       <CohortPicker

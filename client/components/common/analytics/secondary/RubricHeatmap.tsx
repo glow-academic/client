@@ -59,7 +59,7 @@ export interface RubricHeatmapProps {
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
   showPractice: boolean;
-  showNormal: boolean;
+  showGeneral: boolean;
 }
 
 export default function RubricHeatmap({

@@ -66,7 +66,7 @@ export interface PersonaPerformanceProps {
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
   showPractice: boolean;
-  showNormal: boolean;
+  showGeneral: boolean;
 }
 
 export default function PersonaPerformance({

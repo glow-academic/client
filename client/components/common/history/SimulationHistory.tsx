@@ -15,7 +15,7 @@ export interface SimulationHistoryProps {
   cohortIds?: string[];
   showExport?: boolean;
   showPractice?: boolean;
-  showNormal?: boolean;
+  showGeneral?: boolean;
   startDate?: Date;
   endDate?: Date;
   allowedRoles?: ProfileRole[];
@@ -26,7 +26,7 @@ export default function SimulationHistory({
   showExport = true,
   cohortIds = undefined,
   showPractice = false,
-  showNormal = true,
+  showGeneral = true,
   startDate,
   endDate,
   allowedRoles,
@@ -49,7 +49,7 @@ export default function SimulationHistory({
       showExport,
       cohortIds,
       showPractice,
-      showNormal,
+      showGeneral,
       allowedRoles: effectiveAllowedRoles,
       ...(startDate && { startDate }),
       ...(endDate && { endDate }),
