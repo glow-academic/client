@@ -51,7 +51,8 @@ export interface CorrelationData {
 function getAllowedSimulationIds(
   cohorts: Cohort[],
   cohortIds: string[],
-  profileId?: string
+  profileId?: string,
+  profiles?: { id: string; role: ProfileRole }[]
 ): string[] | null {
   if (!cohortIds || cohortIds.length === 0) {
     return null; // No cohort filtering, allow all simulations
@@ -68,12 +69,19 @@ function getAllowedSimulationIds(
 
   // If profileId is provided, check if profile belongs to any of the filtered cohorts
   if (profileId) {
-    const profileInCohorts = filteredCohorts.some((cohort) =>
-      cohort.profileIds.includes(profileId)
+    // Treat admin/superadmin as members of all cohorts
+    const isPrivileged = profiles?.some(
+      (p) =>
+        p.id === profileId && (p.role === "admin" || p.role === "superadmin")
     );
+    if (!isPrivileged) {
+      const profileInCohorts = filteredCohorts.some((cohort) =>
+        cohort.profileIds.includes(profileId)
+      );
 
-    if (!profileInCohorts) {
-      return []; // Profile not in any of the specified cohorts, no data allowed
+      if (!profileInCohorts) {
+        return []; // Profile not in any of the specified cohorts, no data allowed
+      }
     }
   }
 
@@ -131,7 +139,8 @@ export const calculateScenarioAttributeBreakdown = (
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
     cohortIds,
-    profileId
+    profileId,
+    profiles
   );
 
   // Get parameter items for the selected parameter
@@ -427,7 +436,8 @@ export const calculateScenarioPerformance = (
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
     cohortIds,
-    profileId
+    profileId,
+    profiles
   );
 
   // Get parameter items for the selected parameter
@@ -710,7 +720,8 @@ export const calculateSimulationComposition = (
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
     cohortIds,
-    profileId
+    profileId,
+    profiles
   );
 
   // Filter grades by date range, optionally include practice simulations, and filter by roles if provided

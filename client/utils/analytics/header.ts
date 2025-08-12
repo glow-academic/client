@@ -27,7 +27,8 @@ export interface AnalyticsResult {
 function getAllowedSimulationIds(
   cohorts: Cohort[],
   cohortIds: string[],
-  profileId?: string
+  profileId?: string,
+  profiles?: { id: string; role: ProfileRole }[]
 ): string[] | null {
   if (!cohortIds || cohortIds.length === 0) {
     return null; // No cohort filtering, allow all simulations
@@ -44,12 +45,21 @@ function getAllowedSimulationIds(
 
   // If profileId is provided, check if profile belongs to any of the filtered cohorts
   if (profileId) {
-    const profileInCohorts = filteredCohorts.some((cohort) =>
-      cohort.profileIds.includes(profileId)
+    // Treat admin/superadmin as members of all cohorts
+    const isPrivileged = profiles?.some(
+      (p) =>
+        p.id === profileId && (p.role === "admin" || p.role === "superadmin")
     );
+    if (isPrivileged) {
+      // Skip profile membership check for privileged roles
+    } else {
+      const profileInCohorts = filteredCohorts.some((cohort) =>
+        cohort.profileIds.includes(profileId)
+      );
 
-    if (!profileInCohorts) {
-      return []; // Profile not in any of the specified cohorts, no data allowed
+      if (!profileInCohorts) {
+        return []; // Profile not in any of the specified cohorts, no data allowed
+      }
     }
   }
 
@@ -133,7 +143,8 @@ export const calculateAverageScore = (
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
     cohortIds,
-    profileId
+    profileId,
+    profiles
   );
 
   // Filter grades by date range
@@ -274,7 +285,8 @@ export const calculateCompletionPercentage = (
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
     cohortIds,
-    profileId
+    profileId,
+    profiles
   );
 
   // Filter chats by date range
@@ -400,7 +412,8 @@ export const calculateFirstAttemptPassRate = (
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
     cohortIds,
-    profileId
+    profileId,
+    profiles
   );
 
   // Filter attempts by date range and optionally include practice simulations
@@ -561,7 +574,8 @@ export const calculateHighestScore = (
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
     cohortIds,
-    profileId
+    profileId,
+    profiles
   );
 
   // Filter grades by date range
@@ -701,7 +715,8 @@ export const calculateMessagesPerSession = (
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
     cohortIds,
-    profileId
+    profileId,
+    profiles
   );
 
   // Filter chats by date range
@@ -816,7 +831,8 @@ export const calculatePersonaResponseTimes = (
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
     cohortIds,
-    profileId
+    profileId,
+    profiles
   );
 
   // Filter chats by date range
@@ -989,7 +1005,8 @@ export const calculateSessionEfficiency = (
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
     cohortIds,
-    profileId
+    profileId,
+    profiles
   );
 
   // Filter grades by date range
@@ -1164,7 +1181,8 @@ export const calculateStagnationRate = (
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
     cohortIds,
-    profileId
+    profileId,
+    profiles
   );
 
   // Filter attempts by date range and optionally include practice simulations
@@ -1360,7 +1378,8 @@ export const calculateTimeSpent = (
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
     cohortIds,
-    profileId
+    profileId,
+    profiles
   );
 
   // Filter chats by date range

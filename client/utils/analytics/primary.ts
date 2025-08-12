@@ -92,6 +92,13 @@ export const calculateAttemptImprovement = (
     if (!cohortIds || cohortIds.length === 0) return true;
     if (!cohorts) return false;
 
+    // Treat admin/superadmin as members of all cohorts
+    const isPrivileged = profiles?.some(
+      (p) =>
+        p.id === profileId && (p.role === "admin" || p.role === "superadmin")
+    );
+    if (isPrivileged) return true;
+
     return cohorts.some(
       (cohort) =>
         cohort.profileIds.includes(profileId) && cohortIds.includes(cohort.id)
@@ -341,6 +348,13 @@ export const calculatePlatformGrowth = (
   const isProfileInCohorts = (profileId: string) => {
     if (!cohortIds || cohortIds.length === 0) return true;
     if (!cohorts) return false;
+
+    // Treat admin/superadmin as members of all cohorts
+    const isPrivileged = profiles?.some(
+      (p) =>
+        p.id === profileId && (p.role === "admin" || p.role === "superadmin")
+    );
+    if (isPrivileged) return true;
 
     return cohorts.some(
       (cohort) =>

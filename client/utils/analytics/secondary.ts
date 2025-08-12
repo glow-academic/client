@@ -122,9 +122,16 @@ export const calculateCohortPerformance = (
   let filteredCohorts = cohorts;
 
   if (profileId) {
-    filteredCohorts = filteredCohorts.filter((cohort) =>
-      cohort.profileIds.includes(profileId)
+    // Treat admin/superadmin as members of all cohorts
+    const isPrivileged = profiles.some(
+      (p) =>
+        p.id === profileId && (p.role === "admin" || p.role === "superadmin")
     );
+    filteredCohorts = isPrivileged
+      ? filteredCohorts
+      : filteredCohorts.filter((cohort) =>
+          cohort.profileIds.includes(profileId)
+        );
   }
 
   if (cohortIds.length > 0) {
@@ -408,9 +415,15 @@ export const calculateSkillPerformance = (
   let filteredCohorts = cohorts;
 
   if (profileId) {
-    filteredCohorts = filteredCohorts.filter((cohort) =>
-      cohort.profileIds.includes(profileId)
+    const isPrivileged = profiles.some(
+      (p) =>
+        p.id === profileId && (p.role === "admin" || p.role === "superadmin")
     );
+    filteredCohorts = isPrivileged
+      ? filteredCohorts
+      : filteredCohorts.filter((cohort) =>
+          cohort.profileIds.includes(profileId)
+        );
   }
 
   if (cohortIds.length > 0) {
@@ -609,9 +622,15 @@ export const calculateRubricHeatmap = (
   let filteredCohorts = cohorts;
 
   if (profileId) {
-    filteredCohorts = filteredCohorts.filter((cohort) =>
-      cohort.profileIds.includes(profileId)
+    const isPrivileged = profiles.some(
+      (p) =>
+        p.id === profileId && (p.role === "admin" || p.role === "superadmin")
     );
+    filteredCohorts = isPrivileged
+      ? filteredCohorts
+      : filteredCohorts.filter((cohort) =>
+          cohort.profileIds.includes(profileId)
+        );
   }
 
   if (cohortIds.length > 0) {
