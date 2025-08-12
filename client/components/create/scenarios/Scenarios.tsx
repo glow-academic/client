@@ -14,6 +14,7 @@ import {
   Edit,
   Eye,
   Trash2,
+  Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -209,9 +210,7 @@ export function Scenarios() {
     router.push(`/create/scenarios/s/${id}`);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
-  };
+  // no-op
 
   const canDuplicate = (_scenario: Scenario) => {
     // Allow all scenarios to be duplicated for ease of use
@@ -375,17 +374,18 @@ export function Scenarios() {
           </div>
         </div>
       </CardHeader>
-      <div className="flex-grow"></div>
-      <CardContent className="pt-0">
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div className="col-span-2">
-            <span className="text-muted-foreground">Updated:</span>
-            <span className="font-medium ml-2">
-              {formatDate(scenario.updatedAt)}
-            </span>
+      {!isChild && (
+        <CardContent className="pt-0 flex-grow flex flex-col">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Users className="h-3 w-3" />
+            {
+              simulations.filter((s) => s.scenarioIds?.includes(scenario.id))
+                .length
+            }{" "}
+            simulations
           </div>
-        </div>
-      </CardContent>
+        </CardContent>
+      )}
     </Card>
   );
 

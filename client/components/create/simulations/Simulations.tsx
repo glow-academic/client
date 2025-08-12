@@ -218,18 +218,24 @@ export function Simulations() {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-lg">{simulation.title}</CardTitle>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant="outline">
-                <Timer className="h-3 w-3 mr-1" />
-                {simulation.timeLimit
-                  ? `${simulation.timeLimit} minutes`
-                  : "No time limit"}
-              </Badge>
-              {simulation.defaultSimulation && (
-                <Badge variant="default">Default</Badge>
-              )}
-              {!simulation.active && (
-                <Badge variant="secondary">Inactive</Badge>
+            <div className="mt-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">
+                  <Timer className="h-3 w-3 mr-1" />
+                  {simulation.timeLimit
+                    ? `${simulation.timeLimit} minutes`
+                    : "No time limit"}
+                </Badge>
+              </div>
+              {(simulation.defaultSimulation || !simulation.active) && (
+                <div className="flex items-center gap-2">
+                  {simulation.defaultSimulation && (
+                    <Badge variant="default">Default</Badge>
+                  )}
+                  {!simulation.active && (
+                    <Badge variant="secondary">Inactive</Badge>
+                  )}
+                </div>
               )}
             </div>
           </div>

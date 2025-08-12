@@ -176,9 +176,7 @@ export default function Personas() {
     return temp.toFixed(2);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
-  };
+  // no-op
 
   const renderPersonaCard = (persona: Persona) => {
     // Get the icon component from the persona's stored icon name
@@ -210,43 +208,51 @@ export default function Personas() {
                     style={{ color: iconColor }}
                   />
                 </div>
-                <CardTitle className="text-base">
+                <CardTitle className="text-lg">
                   {persona.name || "Unnamed Persona"}
                 </CardTitle>
               </div>
-              <div className="flex gap-1">
-                {persona.reasoning && (
+              <div className="mt-1 space-y-2">
+                <div className="flex items-center gap-2">
+                  {persona.reasoning && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          variant="outline"
+                          className="text-xs cursor-help"
+                        >
+                          <Brain className="h-3 w-3 mr-1" />
+                          {persona.reasoning}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Reasoning Level</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Badge variant="outline" className="text-xs cursor-help">
-                        <Brain className="h-3 w-3 mr-1" />
-                        {persona.reasoning}
+                        <Thermometer className="h-3 w-3 mr-1" />
+                        {formatTemperature(persona.temperature)}
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Reasoning Level</p>
+                      <p>Randomness Level</p>
                     </TooltipContent>
                   </Tooltip>
+                </div>
+                {(persona.defaultPersona || !persona.active) && (
+                  <div className="flex items-center gap-2">
+                    {persona.defaultPersona && (
+                      <Badge variant="default">Default</Badge>
+                    )}
+                    {!persona.active && (
+                      <Badge variant="secondary">Inactive</Badge>
+                    )}
+                  </div>
                 )}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge variant="outline" className="text-xs cursor-help">
-                      <Thermometer className="h-3 w-3 mr-1" />
-                      {formatTemperature(persona.temperature)}
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Randomness Level</p>
-                  </TooltipContent>
-                </Tooltip>
-                {persona.defaultPersona && (
-                  <Badge variant="default">Default</Badge>
-                )}
-                {!persona.active && <Badge variant="secondary">Inactive</Badge>}
               </div>
-              <p className="text-sm text-muted-foreground">
-                {persona.description || "No description available"}
-              </p>
             </div>
             <div className="flex gap-2 items-center">
               {canEditPersona(persona) ? (
@@ -299,12 +305,14 @@ export default function Personas() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="text-sm">
-            <span className="text-muted-foreground">Updated:</span>
-            <span className="font-medium ml-2">
-              {formatDate(persona.updatedAt)}
-            </span>
+        <CardContent className="pt-0 flex-grow flex flex-col">
+          <p className="text-sm text-muted-foreground line-clamp-2 flex-grow">
+            {persona.description || "No description available"}
+          </p>
+          <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
+            <Eye className="h-3 w-3" />
+            {scenarios.filter((s) => s.personaId === persona.id).length}{" "}
+            scenarios
           </div>
         </CardContent>
       </Card>

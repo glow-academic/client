@@ -312,12 +312,6 @@ export default function Cohorts() {
   };
 
   const handleDuplicate = async (cohort: Cohort) => {
-    // Only allow duplicating non-default cohorts
-    if (!cohort.defaultCohort) {
-      toast.error("This cohort cannot be duplicated");
-      return;
-    }
-
     setIsDuplicating(cohort.id);
     try {
       await createCohort({
@@ -365,11 +359,6 @@ export default function Cohorts() {
 
   const handleCreateNew = () => {
     router.push("/cohorts/new");
-  };
-
-  const canDuplicate = (cohort: Cohort) => {
-    // Can only duplicate non-default cohorts
-    return cohort.defaultCohort;
   };
 
   const renderCohortCard = (cohort: Cohort) => (
@@ -424,21 +413,19 @@ export default function Cohorts() {
                 <Eye className="h-4 w-4" />
               </Button>
             )}
-            {canDuplicate(cohort) && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDuplicate(cohort)}
-                disabled={isDuplicating === cohort.id}
-                aria-label={`Duplicate ${cohort.title}`}
-              >
-                {isDuplicating === cohort.id ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDuplicate(cohort)}
+              disabled={isDuplicating === cohort.id}
+              aria-label={`Duplicate ${cohort.title}`}
+            >
+              {isDuplicating === cohort.id ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+            </Button>
             {canDeleteCohort(cohort.id) && (
               <Button
                 variant="outline"

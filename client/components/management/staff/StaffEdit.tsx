@@ -45,6 +45,7 @@ type FormData = {
   lastName?: string;
   alias?: string;
   role?: string;
+  reqPerDay?: number | "";
 };
 
 export interface StaffEditProps {
@@ -77,11 +78,16 @@ const useStaffEditBusinessLogic = (profileId: string) => {
     async (formData: FormData) => {
       setIsSubmitting(true);
       try {
+        const parsedReqPerDay =
+          formData.reqPerDay === "" || formData.reqPerDay === undefined
+            ? null
+            : Number(formData.reqPerDay);
         await updateProfile(profileId, {
           firstName: formData.firstName || "",
           lastName: formData.lastName || "",
           alias: formData.alias || "",
           role: formData.role as ProfileRole,
+          reqPerDay: parsedReqPerDay,
         });
         setHasChanges(false);
         queryClient.invalidateQueries({ queryKey: ["profiles"] });
@@ -154,6 +160,7 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
         lastName: targetUser.lastName,
         alias: targetUser.alias,
         role: targetUser.role,
+        reqPerDay: targetUser.reqPerDay ?? "",
       });
     }
   }, [targetUser]);
@@ -167,9 +174,9 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
   );
 
   const handleFormInputChange = useCallback(
-    (field: string, value: string) => {
+    (field: keyof FormData, value: string | number | "") => {
       setFormData((prev) => ({ ...prev, [field]: value }));
-      handleInputChange(field, value);
+      handleInputChange(String(field), String(value));
     },
     [handleInputChange]
   );
@@ -282,6 +289,43 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
                     </SelectItem>
                   </SelectContent>
                 </Select>
+              ) : (
+                <Skeleton className="h-10 w-full" />
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reqPerDay">Requests per day</Label>
+              {formData?.reqPerDay !== undefined && !isLoading ? (
+                <div className="space-y-1">
+                  <Input
+                    id="reqPerDay"
+                    type="number"
+                    value={
+                      formData.reqPerDay === ""
+                        ? ""
+                        : String(formData.reqPerDay)
+                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "") {
+                        handleFormInputChange("reqPerDay", "");
+                      } else {
+                        const num = parseInt(val, 10);
+                        handleFormInputChange(
+                          "reqPerDay",
+                          Number.isNaN(num) ? "" : num
+                        );
+                      }
+                    }}
+                    placeholder="Unlimited"
+                    min={1}
+                    step={1}
+                    disabled={isSubmitting}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Leave blank for unlimited
+                  </p>
+                </div>
               ) : (
                 <Skeleton className="h-10 w-full" />
               )}
