@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { calculatePersonaPerformance } from "@/utils/analytics/primary";
-import { getPersonaConfig } from "@/utils/personas";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
@@ -128,6 +127,19 @@ export default function PersonaPerformance({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
   });
+
+  // Map persona name -> hex color from personas table
+  const personaColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    if (personas && personas.length > 0) {
+      for (const persona of personas) {
+        if (persona?.name && persona?.color) {
+          map[persona.name] = persona.color;
+        }
+      }
+    }
+    return map;
+  }, [personas]);
 
   // Helper function to check if a profile is in any of the specified cohorts
   const isProfileInCohorts = useMemo(() => {
@@ -424,11 +436,7 @@ export default function PersonaPerformance({
                   {performanceData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={
-                        getPersonaConfig(entry.name)
-                          .colors.bgColor.replace("bg-", "")
-                          .split("-")[0]
-                      }
+                      fill={personaColorMap[entry.name] ?? "#999999"}
                       className="hover:opacity-80 transition-opacity"
                     />
                   ))}
@@ -450,7 +458,8 @@ export default function PersonaPerformance({
                   >
                     <div className="flex items-center gap-3">
                       <div
-                        className={cn("w-4 h-4 rounded-full", persona.color)}
+                        className={cn("w-4 h-4 rounded-full")}
+                        style={{ backgroundColor: personaColorMap[persona.name] ?? "#999999" }}
                       />
                       <div>
                         <p className="font-medium">{persona.name} Student</p>
@@ -470,7 +479,8 @@ export default function PersonaPerformance({
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                       <div
-                        className={cn("w-4 h-4 rounded-full", persona.color)}
+                        className={cn("w-4 h-4 rounded-full")}
+                        style={{ backgroundColor: personaColorMap[persona.name] ?? "#999999" }}
                       />
                       {persona.name} Student Performance
                     </DialogTitle>
@@ -516,11 +526,7 @@ export default function PersonaPerformance({
                           <Line
                             type="monotone"
                             dataKey="score"
-                            stroke={
-                              getPersonaConfig(persona.name)
-                                .colors.bgColor.replace("bg-", "")
-                                .split("-")[0]
-                            }
+                            stroke={personaColorMap[persona.name] ?? "#999999"}
                             strokeWidth={2}
                             dot={{ r: 4 }}
                             name="Score"

@@ -81,6 +81,8 @@ import type {
   Simulation,
 } from "@/types";
 import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
+import { newScenario as generateScenario } from "@/utils/api/scenarios/new-scenario";
+import { randomizeScenario } from "@/utils/api/scenarios/randomize-scenario";
 import {
   generateEnhancedBreadcrumbs,
   getActiveSectionFromPath,
@@ -162,6 +164,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Practice customize dialog state
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [isStartingAttempt, setIsStartingAttempt] = useState(false);
   const [isInfiniteMode, setIsInfiniteMode] = useState(false);
   const [infiniteTimeLimit, setInfiniteTimeLimit] = useState<string>("");
   const [selectedSimulationId, setSelectedSimulationId] = useState<string>("");
@@ -919,6 +922,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                   Cancel
                 </Button>
                 <Button
+                  disabled={isStartingAttempt}
                   onClick={async () => {
                     try {
                       if (isInfiniteMode) {
@@ -926,11 +930,13 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                           toast.error("Select a simulation to start");
                           return;
                         }
+                        setIsStartingAttempt(true);
                         const sim = (simulations as Simulation[]).find(
                           (s) => s.id === selectedSimulationId
                         );
                         if (!sim) {
                           toast.error("Simulation not found");
+                          setIsStartingAttempt(false);
                           return;
                         }
                         const attempt = (await createSimulationAttempt({
@@ -944,6 +950,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
                         if (!attempt || !attempt.id) {
                           toast.error("Failed to create attempt");
+                          setIsStartingAttempt(false);
                           return;
                         }
                         const attemptIdCreated = attempt.id;
@@ -970,30 +977,116 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                         return;
                       }
 
-                      const name = `Custom Practice - ${selectedPersona.name}`;
-                      const filteredParamIds = (
-                        parameterItems as ParameterItem[]
-                      )
-                        .filter((pi) => !pi.defaultItem)
-                        .map((pi) => pi.id)
-                        .filter((id) => selectedParameterItemIds.includes(id));
+                      // Toast loading state lifecycle
+                      const startToastId = toast.loading(
+                        "Starting simulation..."
+                      ) as unknown as string;
+                      setIsStartingAttempt(true);
 
-                      const newScenario = (await createScenario({
-                        name,
-                        description: "",
+                      // 1) Ask server to randomize missing pieces (keep persona and existing selections)
+                      const selectedParamItemIds = [
+                        ...(selectedParameterItemIds || []),
+                      ];
+                      const randomize = await randomizeScenario({
+                        name: null,
+                        description: null,
                         personaId: selectedPersona.id,
-                        parameterItemIds: filteredParamIds,
+                        parameterItemIds: selectedParamItemIds,
+                        targets: ["parameters", "documents"],
+                      });
+                      if (!randomize.success) {
+                        toast.error("Failed to randomize parameters", {
+                          id: startToastId,
+                        });
+                        setIsStartingAttempt(false);
+                        return;
+                      }
+                      // keep loading toast active with same message
+                      const randomizedParamItemIds =
+                        randomize.parameterItemIds || [];
+                      const randomizedDocumentIds = randomize.documentIds || [];
+
+                      // Merge user selections and server suggestions, keeping at most one per parameter
+                      const itemIdToParamId = new Map<string, string>();
+                      (parameterItems as ParameterItem[]).forEach((pi) => {
+                        const paramId = (
+                          pi as unknown as { parameterId?: string }
+                        ).parameterId;
+                        if (pi?.id && paramId) {
+                          itemIdToParamId.set(pi.id, paramId);
+                        }
+                      });
+
+                      const takenParamIds = new Set<string>();
+                      const finalParamItemIds: string[] = [];
+
+                      // Prefer user selections
+                      for (const id of selectedParamItemIds) {
+                        const pId = itemIdToParamId.get(id);
+                        if (!pId) continue;
+                        if (!takenParamIds.has(pId)) {
+                          takenParamIds.add(pId);
+                          finalParamItemIds.push(id);
+                        }
+                      }
+
+                      // Fill remaining from server suggestions
+                      for (const id of randomizedParamItemIds) {
+                        const pId = itemIdToParamId.get(id);
+                        if (!pId) continue;
+                        if (!takenParamIds.has(pId)) {
+                          takenParamIds.add(pId);
+                          finalParamItemIds.push(id);
+                        }
+                      }
+
+                      // 2) Ask server to generate scenario title/description/checkpoints
+                      const generated = await generateScenario({
+                        personaId: selectedPersona.id,
+                        parameterItemIds: finalParamItemIds,
+                        documentIds: randomizedDocumentIds,
+                        profileId: effectiveProfile?.id || null,
+                      });
+                      if (!generated.success) {
+                        toast.error("Failed to generate scenario details", {
+                          id: startToastId,
+                        });
+                        setIsStartingAttempt(false);
+                        return;
+                      }
+
+                      const scenarioName =
+                        generated.title ||
+                        `Custom Practice - ${selectedPersona.name}`;
+                      const scenarioDescription = generated.description || "";
+
+                      // 3) Persist scenario in DB with generated attributes and randomized parameters
+                      // keep loading toast active with same message
+                      const createdScenario = (await createScenario({
+                        name: scenarioName,
+                        description: scenarioDescription,
+                        personaId: selectedPersona.id,
+                        parameterItemIds: finalParamItemIds,
+                        documentIds: randomizedDocumentIds,
+                        checkpoints: generated.checkpoints,
                         practiceScenario: true,
                         defaultScenario: false,
                         generated: true,
                         active: true,
                       } as unknown as typeof import("@/utils/drizzle/schema").scenarios.$inferInsert)) as unknown as import("@/types").Scenario;
 
-                      if (!newScenario || !newScenario.id) {
-                        toast.error("Failed to create scenario");
+                      if (!createdScenario || !createdScenario.id) {
+                        toast.error("Failed to create scenario", {
+                          id: startToastId,
+                        });
+                        setIsStartingAttempt(false);
                         return;
                       }
-                      const newScenarioId = newScenario.id;
+                      const newScenarioId = createdScenario.id;
+                      toast.loading("Creating attempt...", {
+                        description: "Starting your practice session",
+                        id: startToastId,
+                      });
 
                       // Find base default practice scenario for this persona
                       const baseScenario = (scenarios as Scenario[]).find(
@@ -1021,6 +1114,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
                       if (!targetSimulation) {
                         toast.error("No practice simulation found for persona");
+                        setIsStartingAttempt(false);
                         return;
                       }
 
@@ -1031,27 +1125,29 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                       } as unknown as typeof import("@/utils/drizzle/schema").simulationAttempts.$inferInsert)) as unknown as import("@/types").SimulationAttempt;
                       if (!attempt || !attempt.id) {
                         toast.error("Failed to create attempt");
+                        setIsStartingAttempt(false);
                         return;
                       }
                       const attemptIdCreated = attempt.id;
 
                       await createSimulationChat({
-                        title: name,
+                        title: scenarioName,
                         scenarioId: newScenarioId,
                         attemptId: attemptIdCreated,
                         completed: false,
                       } as unknown as typeof import("@/utils/drizzle/schema").simulationChats.$inferInsert);
 
                       setCustomizeOpen(false);
+                      toast.success("Simulation started", { id: startToastId });
                       router.push(`/practice/a/${attemptIdCreated}`);
-                      toast.success("Custom scenario attempt created");
                     } catch (err) {
                       logError("Failed to create attempt", err);
                       toast.error("Failed to create attempt");
+                      setIsStartingAttempt(false);
                     }
                   }}
                 >
-                  Start
+                  {isStartingAttempt ? "Starting..." : "Start"}
                 </Button>
               </DialogFooter>
             </DialogContent>

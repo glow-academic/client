@@ -381,6 +381,7 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
 
             # Scenario list for this simulation
             scenario_ids = simulation.scenario_ids or []
+            is_infinite_mode = bool(simulation_attempt.infinite_mode)
 
             # Determine how many chats already exist for this attempt
             existing_chats = db_session.exec(
@@ -390,16 +391,27 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
             ).all()
             next_index = len(existing_chats)
 
-            # If not processing end_all, create at most one next chat
+            # If not processing end_all, create the next chat
+            # - Normal mode: create next chat only if we haven't exhausted scenario_ids
+            # - Infinite mode: always create next chat by cycling through scenario_ids
             next_chat_id = chat_id
-            if not end_all and scenario_ids and next_index < len(scenario_ids):
-                created_next_chat = await create_chat_for_scenario_id(
-                    scenario_ids[next_index], mark_completed=False
-                )
-                if created_next_chat is None:
-                    await emit_error(sid, "Next scenario not found")
-                    return
-                next_chat_id = created_next_chat.id
+            if not end_all and scenario_ids:
+                next_scenario_id: Optional[uuid.UUID] = None
+                if is_infinite_mode:
+                    # Cycle through the configured scenarios indefinitely
+                    cycling_index = next_index % len(scenario_ids)
+                    next_scenario_id = scenario_ids[cycling_index]
+                elif next_index < len(scenario_ids):
+                    next_scenario_id = scenario_ids[next_index]
+
+                if next_scenario_id is not None:
+                    created_next_chat = await create_chat_for_scenario_id(
+                        next_scenario_id, mark_completed=False
+                    )
+                    if created_next_chat is None:
+                        await emit_error(sid, "Next scenario not found")
+                        return
+                    next_chat_id = created_next_chat.id
 
             # Grade the just-completed chat if it has at least 2 messages
             messages = db_session.exec(

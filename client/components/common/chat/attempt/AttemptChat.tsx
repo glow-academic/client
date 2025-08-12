@@ -29,7 +29,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Icons
-import { Clock, FileText, Table } from "lucide-react";
+import { Clock, FileText, Infinity as InfinityIcon, Table } from "lucide-react";
 
 // Tooltip
 import {
@@ -179,6 +179,9 @@ export default function AttemptChat() {
 
   // Show results screen
   if (simulationContext?.showResults) {
+    const isInfiniteMode = simulationContext?.attempt?.infiniteMode;
+    const infiniteLimitMinutes =
+      simulationContext?.attempt?.infiniteModeTimeLimit ?? null;
     return (
       <div className="h-[calc(100vh-4rem)]">
         <ResizablePanelGroup direction="horizontal" className="h-full">
@@ -286,7 +289,11 @@ export default function AttemptChat() {
                                         : "bg-muted"
                                 }`}
                               >
-                                <Clock className="h-4 w-4" />
+                                {isInfiniteMode ? (
+                                  <InfinityIcon className="h-4 w-4" />
+                                ) : (
+                                  <Clock className="h-4 w-4" />
+                                )}
                                 <span
                                   className={`text-sm font-medium ${
                                     selectedChat && selectedChat.completed
@@ -301,12 +308,19 @@ export default function AttemptChat() {
                                     ? formatTime(
                                         calculateChatTimeTaken(selectedChat)
                                       )
-                                    : simulationContext?.simulation?.timeLimit
-                                      ? formatTime(
-                                          simulationContext.simulation
-                                            .timeLimit * 60
-                                        )
-                                      : "No time limit"}
+                                    : isInfiniteMode
+                                      ? infiniteLimitMinutes
+                                        ? formatTime(infiniteLimitMinutes * 60)
+                                        : formatTime(
+                                            simulationContext?.timer.elapsed ||
+                                              0
+                                          )
+                                      : simulationContext?.simulation?.timeLimit
+                                        ? formatTime(
+                                            simulationContext.simulation
+                                              .timeLimit * 60
+                                          )
+                                        : "No time limit"}
                                 </span>
                               </div>
                             </TooltipTrigger>
@@ -537,7 +551,9 @@ export default function AttemptChat() {
                         </div>
                         <div className="flex items-start justify-end gap-2">
                           <div className="flex items-center gap-4">
-                            {simulationContext?.currentChat?.completed &&
+                            {/* Hide completed badge logic in infinite mode */}
+                            {!simulationContext?.attempt?.infiniteMode &&
+                              simulationContext?.currentChat?.completed &&
                               simulationContext?.simulation?.scenarioIds
                                 ?.length ===
                                 simulationContext?.chats.filter(
@@ -579,6 +595,7 @@ export default function AttemptChat() {
                               <TooltipTrigger asChild>
                                 <div
                                   className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                                    !simulationContext?.attempt?.infiniteMode &&
                                     simulationContext?.currentChat?.completed &&
                                     simulationContext?.currentDynamicRubric &&
                                     simulationContext?.simulation?.scenarioIds
@@ -593,36 +610,55 @@ export default function AttemptChat() {
                                       : "bg-muted"
                                   }`}
                                 >
-                                  <Clock className="h-4 w-4" />
+                                  {simulationContext?.attempt?.infiniteMode ? (
+                                    <InfinityIcon className="h-4 w-4" />
+                                  ) : (
+                                    <Clock className="h-4 w-4" />
+                                  )}
                                   <span
                                     className={`text-sm font-medium ${
-                                      (
-                                        simulationContext?.simulation
-                                          ?.timeLimit &&
-                                        simulationContext?.timer.remaining !==
-                                          null
-                                          ? simulationContext?.timer.remaining <
-                                            0
-                                          : false
-                                      )
-                                        ? "text-red-500"
-                                        : ""
+                                      simulationContext?.attempt?.infiniteMode
+                                        ? ""
+                                        : simulationContext?.simulation
+                                              ?.timeLimit &&
+                                            simulationContext?.timer
+                                              .remaining !== null &&
+                                            simulationContext?.timer.remaining <
+                                              0
+                                          ? "text-red-500"
+                                          : ""
                                     }`}
                                     data-testid="timer"
                                   >
-                                    {simulationContext?.simulation?.timeLimit &&
-                                    simulationContext?.timer.remaining !== null
-                                      ? formatTime(
-                                          simulationContext?.timer.remaining
-                                        )
-                                      : formatTime(
-                                          simulationContext?.timer.elapsed
-                                        )}
+                                    {simulationContext?.attempt?.infiniteMode
+                                      ? simulationContext?.attempt
+                                          ?.infiniteModeTimeLimit
+                                        ? formatTime(
+                                            Math.max(
+                                              simulationContext?.timer
+                                                .remaining || 0,
+                                              0
+                                            )
+                                          )
+                                        : formatTime(
+                                            simulationContext?.timer.elapsed
+                                          )
+                                      : simulationContext?.simulation
+                                            ?.timeLimit &&
+                                          simulationContext?.timer.remaining !==
+                                            null
+                                        ? formatTime(
+                                            simulationContext?.timer.remaining
+                                          )
+                                        : formatTime(
+                                            simulationContext?.timer.elapsed
+                                          )}
                                   </span>
-                                  {/* Removed "(Expired)" text - allow users to continue with negative timer */}
+                                  {/* In infinite mode, we don't show negative state; we auto-finish on expiry */}
                                 </div>
                               </TooltipTrigger>
-                              {simulationContext?.currentChat?.completed &&
+                              {!simulationContext?.attempt?.infiniteMode &&
+                                simulationContext?.currentChat?.completed &&
                                 simulationContext?.currentDynamicRubric &&
                                 simulationContext?.simulation?.scenarioIds
                                   ?.length ===
@@ -657,20 +693,22 @@ export default function AttemptChat() {
 
                     {/* Messages Area */}
                     {/* Progress Bar at the very top */}
-                    {simulationContext?.expectedChatCount > 1 && (
-                      <div className="p-0">
-                        <Progress
-                          value={
-                            (simulationContext?.chats.filter(
-                              (chat: SimulationChat) => chat.completed
-                            ).length /
-                              simulationContext?.expectedChatCount) *
-                            100
-                          }
-                          className="w-full bg-transparent rounded-none [&>div]:rounded-none [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-purple-500"
-                        />
-                      </div>
-                    )}
+                    {/* Hide progress bar in infinite mode */}
+                    {!simulationContext?.attempt?.infiniteMode &&
+                      simulationContext?.expectedChatCount > 1 && (
+                        <div className="p-0">
+                          <Progress
+                            value={
+                              (simulationContext?.chats.filter(
+                                (chat: SimulationChat) => chat.completed
+                              ).length /
+                                simulationContext?.expectedChatCount) *
+                              100
+                            }
+                            className="w-full bg-transparent rounded-none [&>div]:rounded-none [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-purple-500"
+                          />
+                        </div>
+                      )}
                     <AttemptMessages />
                   </div>
                 </ResizablePanel>

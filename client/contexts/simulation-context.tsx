@@ -444,7 +444,8 @@ export function SimulationProvider({
     return {
       elapsed: elapsedTime,
       remaining: timeRemaining,
-      expired: false, // Never mark as expired - allow negative timer
+      // Keep expired false for normal mode; for infinite mode we handle expiry by flipping to results immediately
+      expired: false,
     };
   }, [elapsedTime, timeRemaining]);
 
@@ -468,13 +469,28 @@ export function SimulationProvider({
         (currentTime.getTime() - attemptStartTime.getTime()) / 1000
       );
 
+      // Infinite mode uses attempt.infiniteMode and optional attempt.infiniteModeTimeLimit
+      if (attempt.infiniteMode) {
+        if (attempt.infiniteModeTimeLimit) {
+          const totalTimeSeconds = attempt.infiniteModeTimeLimit * 60;
+          const remainingSeconds = totalTimeSeconds - elapsedSeconds;
+          // Clamp to zero for display; we'll trigger results on expiry below
+          return {
+            elapsedTime: elapsedSeconds,
+            timeRemaining: Math.max(remainingSeconds, 0),
+          };
+        }
+        // No limit: count up only
+        return { elapsedTime: elapsedSeconds, timeRemaining: null };
+      }
+
+      // Normal mode uses simulation.timeLimit (can go negative for display)
       if (currentSimulation.timeLimit) {
         const totalTimeSeconds = currentSimulation.timeLimit * 60;
         const remainingSeconds = totalTimeSeconds - elapsedSeconds;
         return { elapsedTime: elapsedSeconds, timeRemaining: remainingSeconds };
-      } else {
-        return { elapsedTime: elapsedSeconds, timeRemaining: null };
       }
+      return { elapsedTime: elapsedSeconds, timeRemaining: null };
     };
 
     const { elapsedTime: initialElapsed, timeRemaining: initialRemaining } =
@@ -482,8 +498,18 @@ export function SimulationProvider({
     setElapsedTime(initialElapsed);
     setTimeRemaining(initialRemaining);
 
-    // Don't force session to end when time limit is reached
-    // Allow users to continue with negative timer
+    // For infinite mode with a time limit, end immediately at expiry and show results
+    if (
+      attempt.infiniteMode &&
+      attempt.infiniteModeTimeLimit &&
+      initialRemaining !== null &&
+      initialRemaining <= 0
+    ) {
+      setShowResults(true);
+      setIsActive(false);
+      onSimulationFinishedRef.current?.();
+      return; // No interval needed; we've finished
+    }
 
     const timerInterval = setInterval(() => {
       const { elapsedTime: newElapsed, timeRemaining: newRemaining } =
@@ -491,8 +517,18 @@ export function SimulationProvider({
       setElapsedTime(newElapsed);
       setTimeRemaining(newRemaining);
 
-      // Don't force session to end when time limit is reached
-      // Allow users to continue with negative timer
+      // Infinite mode: when a time limit is set and hits zero, finish immediately
+      if (
+        attempt.infiniteMode &&
+        attempt.infiniteModeTimeLimit &&
+        newRemaining !== null &&
+        newRemaining <= 0
+      ) {
+        clearInterval(timerInterval);
+        setShowResults(true);
+        setIsActive(false);
+        onSimulationFinishedRef.current?.();
+      }
     }, 1000);
 
     return () => clearInterval(timerInterval);
@@ -503,6 +539,8 @@ export function SimulationProvider({
     isSingleChatAttempt,
     onSimulationFinished,
     simulation?.id, // Only depend on simulation ID to trigger re-run when simulation changes
+    attempt?.infiniteMode,
+    attempt?.infiniteModeTimeLimit,
   ]);
 
   // Initialize to first incomplete chat when data loads
