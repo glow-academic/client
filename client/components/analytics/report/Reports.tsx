@@ -14,6 +14,18 @@ import {
   TAPerformanceData,
   useReportColumns,
 } from "@/hooks/use-report-columns";
+import {
+  calculateAverageScore,
+  calculateCompletionPercentage,
+  calculateFirstAttemptPassRate,
+  calculateHighestScore,
+  calculateMessagesPerSession,
+  calculatePersonaResponseTimes,
+  calculateSessionEfficiency,
+  calculateStagnationRate,
+  calculateTimeSpent,
+  calculateTotalAttempts,
+} from "@/utils/analytics/header";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -30,23 +42,23 @@ import { ReportsDataTable } from "./ReportsDataTable";
 
 export default function Reports() {
   const router = useRouter();
-  const { startDate, endDate, effectiveCohortIds } = useAnalytics();
+  const {
+    startDate,
+    endDate,
+    effectiveCohortIds,
+    selectedRoles,
+    includePractice,
+  } = useAnalytics();
 
   const handleViewReport = (profileId: string) => {
     router.push(`/analytics/reports/p/${profileId}`);
   };
 
-  const {
-    columns,
-    roleOptions,
-    cohortOptions,
-    personaOptions,
-    scenarioOptions,
-    simulationOptions,
-  } = useReportColumns({
-    showExport: true,
-    onViewReport: handleViewReport,
-  });
+  const { columns, personaOptions, scenarioOptions, simulationOptions } =
+    useReportColumns({
+      showExport: true,
+      onViewReport: handleViewReport,
+    });
 
   // Filter out default profiles and only include non-default profiles
   const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
@@ -74,9 +86,14 @@ export default function Reports() {
     if (!profiles) return [];
     let tas = profiles.filter((profile) => !profile.defaultProfile);
 
+    // Apply role filtering from analytics filters (higher-level logic)
+    if (selectedRoles && selectedRoles.length > 0) {
+      tas = tas.filter((profile) => selectedRoles.includes(profile.role));
+    }
+
     if (effectiveCohortIds.length > 0 && cohorts) {
       const selectedCohorts = cohorts.filter((cohort) =>
-        effectiveCohortIds.includes(cohort.id),
+        effectiveCohortIds.includes(cohort.id)
       );
       const cohortProfileIds = new Set<string>();
       selectedCohorts.forEach((cohort) => {
@@ -85,7 +102,7 @@ export default function Reports() {
       tas = tas.filter((profile) => cohortProfileIds.has(profile.id));
     }
     return tas;
-  }, [profiles, effectiveCohortIds, cohorts]);
+  }, [profiles, effectiveCohortIds, cohorts, selectedRoles]);
 
   const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
     queryKey: ["rubrics"],
@@ -98,7 +115,7 @@ export default function Reports() {
       queryFn: () =>
         getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
       enabled: !!rubrics && rubrics.length > 0,
-    },
+    }
   );
 
   const { data: standards, isLoading: isLoadingStandards } = useQuery({
@@ -139,7 +156,7 @@ export default function Reports() {
     queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
     queryFn: () =>
       getSimulationChatFeedbacksBySimulationChatGrades(
-        grades!.map((grade) => grade.id),
+        grades!.map((grade) => grade.id)
       ),
     enabled: !!grades && grades.length > 0,
   });
@@ -161,22 +178,22 @@ export default function Reports() {
     )
       return [];
 
-    // Filter simulations based on selected cohorts
+    // Filter simulations based on selected cohorts (used for cohort comparisons and breakdowns)
     let filteredSimulations = simulations;
     if (effectiveCohortIds.length > 0) {
       const selectedCohorts = cohorts.filter((cohort) =>
-        effectiveCohortIds.includes(cohort.id),
+        effectiveCohortIds.includes(cohort.id)
       );
       const cohortSimulationIds = new Set<string>();
       selectedCohorts.forEach((cohort) => {
         cohort.simulationIds.forEach((id) => cohortSimulationIds.add(id));
       });
       filteredSimulations = simulations.filter((simulation) =>
-        cohortSimulationIds.has(simulation.id),
+        cohortSimulationIds.has(simulation.id)
       );
     }
 
-    // Filter data by date range and selected simulations
+    // Local filtered collections for non-header extras (skill breakdown, cohort comparisons)
     const dateFilteredGrades = grades.filter((grade) => {
       const gradeDate = new Date(grade.createdAt);
       return gradeDate >= startDate && gradeDate <= endDate;
@@ -193,49 +210,41 @@ export default function Reports() {
         return attemptDate >= startDate && attemptDate <= endDate;
       }) || [];
 
-    const dateFilteredMessages = messages.filter((message) => {
-      const messageDate = new Date(message.createdAt);
-      return messageDate >= startDate && messageDate <= endDate;
-    });
+    // messages are not needed for centralized header metric calculations here
 
     // Filter attempts by selected simulations
     const simulationFilteredAttempts = dateFilteredAttempts.filter((attempt) =>
       filteredSimulations.some(
-        (simulation) => simulation.id === attempt.simulationId,
-      ),
+        (simulation) => simulation.id === attempt.simulationId
+      )
     );
 
     // Filter chats by filtered attempts
     const simulationFilteredChats = dateFilteredChats.filter((chat) =>
       simulationFilteredAttempts.some(
-        (attempt) => attempt.id === chat.attemptId,
-      ),
+        (attempt) => attempt.id === chat.attemptId
+      )
     );
 
     // Filter grades by filtered chats
     const simulationFilteredGrades = dateFilteredGrades.filter((grade) =>
-      simulationFilteredChats.some(
-        (chat) => chat.id === grade.simulationChatId,
-      ),
+      simulationFilteredChats.some((chat) => chat.id === grade.simulationChatId)
     );
 
-    // Filter messages by filtered chats
-    const simulationFilteredMessages = dateFilteredMessages.filter((message) =>
-      simulationFilteredChats.some((chat) => chat.id === message.chatId),
-    );
+    // messages filtered by chats not required here
 
     // Calculate cohort performance averages
     const cohortPerformance = cohorts.reduce(
       (acc, cohort) => {
         const cohortMembers = tas.filter((member) =>
-          cohort.profileIds.includes(member.id),
+          cohort.profileIds.includes(member.id)
         );
         const cohortGrades = simulationFilteredGrades.filter((grade) => {
           const chat = simulationFilteredChats.find(
-            (c) => c.id === grade.simulationChatId,
+            (c) => c.id === grade.simulationChatId
           );
           const attempt = simulationFilteredAttempts?.find(
-            (a) => a.id === chat?.attemptId,
+            (a) => a.id === chat?.attemptId
           );
           return (
             attempt &&
@@ -248,18 +257,18 @@ export default function Reports() {
         if (cohortGrades.length > 0) {
           const cohortScoreSum = cohortGrades.reduce((sum, grade) => {
             const chat = simulationFilteredChats.find(
-              (c) => c.id === grade.simulationChatId,
+              (c) => c.id === grade.simulationChatId
             );
             const attempt = simulationFilteredAttempts?.find(
-              (a) => a.id === chat?.attemptId,
+              (a) => a.id === chat?.attemptId
             );
             const simulation = filteredSimulations?.find(
-              (s) => s.id === attempt?.simulationId,
+              (s) => s.id === attempt?.simulationId
             );
             const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
             const rubricTotalPoints = rubric?.points || 100;
             const scorePercent = Math.round(
-              (grade.score / rubricTotalPoints) * 100,
+              (grade.score / rubricTotalPoints) * 100
             );
             return sum + scorePercent;
           }, 0);
@@ -272,208 +281,180 @@ export default function Reports() {
         };
         return acc;
       },
-      {} as Record<string, { avgScore: number; memberCount: number }>,
+      {} as Record<string, { avgScore: number; memberCount: number }>
     );
 
-    // User performance based on the 10 metrics from header components
+    // User performance based on the 10 metrics from centralized header analytics
     const taPerformance = tas.map((user): TAPerformanceData => {
-      const userAttempts =
-        simulationFilteredAttempts?.filter(
-          (attempt) => attempt.profileId === user.id,
-        ) || [];
-      const userChats = simulationFilteredChats.filter((chat) =>
-        userAttempts.some((attempt) => attempt.id === chat.attemptId),
-      );
-      const userGrades = simulationFilteredGrades.filter((grade) =>
-        userChats.some((chat) => chat.id === grade.simulationChatId),
-      );
-      const userMessages = simulationFilteredMessages.filter((message) =>
-        userChats.some((chat) => chat.id === message.chatId),
-      );
-
-      // Filter out practice simulations
-      const nonPracticeChats = userChats.filter((chat) => {
-        const attempt = userAttempts.find((a) => a.id === chat.attemptId);
-        const simulation = filteredSimulations?.find(
-          (s) => s.id === attempt?.simulationId,
-        );
-        return !simulation?.practiceSimulation;
-      });
-
-      const nonPracticeGrades = userGrades.filter((grade) => {
-        const chat = chats.find((c) => c.id === grade.simulationChatId);
-        const attempt = userAttempts.find((a) => a.id === chat?.attemptId);
-        const simulation = filteredSimulations?.find(
-          (s) => s.id === attempt?.simulationId,
-        );
-        return !simulation?.practiceSimulation;
-      });
+      // Build common inputs
+      const cohortIds = effectiveCohortIds;
+      const profilesForRoles = profiles.map((p) => ({
+        id: p.id,
+        role: p.role,
+      }));
 
       // 1. Average Score
-      let averageScore = 0;
-      if (nonPracticeGrades.length > 0) {
-        const scoreSum = nonPracticeGrades.reduce((sum, grade) => {
-          const chat = chats.find((c) => c.id === grade.simulationChatId);
-          const attempt = userAttempts.find((a) => a.id === chat?.attemptId);
-          const simulation = filteredSimulations?.find(
-            (s) => s.id === attempt?.simulationId,
-          );
-          const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
-          const rubricTotalPoints = rubric?.points || 100;
-          const scorePercent = Math.round(
-            (grade.score / rubricTotalPoints) * 100,
-          );
-          return sum + scorePercent;
-        }, 0);
-        averageScore = Math.round(scoreSum / nonPracticeGrades.length);
-      }
+      const averageScore = calculateAverageScore(
+        grades,
+        chats,
+        attempts || [],
+        simulations,
+        rubrics,
+        startDate,
+        endDate,
+        user.id,
+        cohorts,
+        cohortIds,
+        selectedRoles,
+        includePractice,
+        profilesForRoles
+      ).currentValue;
 
       // 2. Completion Percentage
-      let completionPercentage = 0;
-      if (nonPracticeChats.length > 0) {
-        const passingChats = nonPracticeChats.filter((chat) => {
-          const chatGrade = grades.find(
-            (grade) => grade.simulationChatId === chat.id,
-          );
-          return chatGrade?.passed === true;
-        });
-        completionPercentage = Math.round(
-          (passingChats.length / nonPracticeChats.length) * 100,
-        );
-      }
+      const completionPercentage = calculateCompletionPercentage(
+        chats,
+        grades,
+        attempts || [],
+        simulations,
+        startDate,
+        endDate,
+        user.id,
+        cohorts,
+        cohortIds,
+        selectedRoles,
+        includePractice,
+        profilesForRoles
+      ).currentValue;
 
       // 3. First Attempt Pass Rate
-      let firstAttemptPassRate = 0;
-      if (nonPracticeGrades.length > 0) {
-        const firstAttemptGrades = nonPracticeGrades.filter((_grade) => {
-          // This is a simplified version - in reality, you'd need to track first attempts
-          return true; // For now, assume all grades are from first attempts
-        });
-        const passingFirstAttempts = firstAttemptGrades.filter(
-          (grade) => grade.passed,
-        );
-        firstAttemptPassRate = Math.round(
-          (passingFirstAttempts.length / firstAttemptGrades.length) * 100,
-        );
-      }
+      const firstAttemptPassRate = calculateFirstAttemptPassRate(
+        attempts || [],
+        chats,
+        grades,
+        simulations,
+        startDate,
+        endDate,
+        user.id,
+        cohorts,
+        cohortIds,
+        selectedRoles,
+        includePractice,
+        profilesForRoles
+      ).currentValue;
 
       // 4. Highest Score
-      let highestScore = 0;
-      if (nonPracticeGrades.length > 0) {
-        const scores = nonPracticeGrades.map((grade) => {
-          const chat = chats.find((c) => c.id === grade.simulationChatId);
-          const attempt = userAttempts.find((a) => a.id === chat?.attemptId);
-          const simulation = filteredSimulations?.find(
-            (s) => s.id === attempt?.simulationId,
-          );
-          const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
-          const rubricTotalPoints = rubric?.points || 100;
-          return Math.round((grade.score / rubricTotalPoints) * 100);
-        });
-        highestScore = Math.max(...scores);
-      }
+      const highestScore = calculateHighestScore(
+        grades,
+        chats,
+        attempts || [],
+        simulations,
+        rubrics,
+        startDate,
+        endDate,
+        user.id,
+        cohorts,
+        cohortIds,
+        selectedRoles,
+        includePractice,
+        profilesForRoles
+      ).currentValue;
 
       // 5. Messages Per Session
-      let messagesPerSession = 0;
-      if (nonPracticeChats.length > 0) {
-        const messagesPerChat = nonPracticeChats.map((chat) => {
-          const chatMessages = userMessages.filter(
-            (message) =>
-              message.chatId === chat.id &&
-              message.type === "query" &&
-              message.completed,
-          );
-          return chatMessages.length;
-        });
-        const totalMessages = messagesPerChat.reduce(
-          (sum, count) => sum + count,
-          0,
-        );
-        messagesPerSession =
-          Math.round((totalMessages / nonPracticeChats.length) * 10) / 10;
-      }
+      const messagesPerSession = calculateMessagesPerSession(
+        messages,
+        chats,
+        attempts || [],
+        simulations,
+        startDate,
+        endDate,
+        user.id,
+        cohorts,
+        cohortIds,
+        selectedRoles,
+        includePractice,
+        profilesForRoles
+      ).currentValue;
 
-      // 6. Persona Response Times (simplified - average time between messages)
-      let personaResponseTimes = 0;
-      if (nonPracticeChats.length > 0) {
-        const responseTimes = nonPracticeChats.map((chat) => {
-          const chatMessages = userMessages.filter(
-            (message) => message.chatId === chat.id,
-          );
-          if (chatMessages.length < 2) return 0;
+      // 6. Persona Response Times (seconds -> we show minutes in UI)
+      const personaResponseSeconds = calculatePersonaResponseTimes(
+        messages,
+        chats,
+        attempts || [],
+        simulations,
+        startDate,
+        endDate,
+        user.id,
+        cohorts,
+        cohortIds,
+        selectedRoles,
+        includePractice,
+        profilesForRoles
+      ).currentValue;
+      const personaResponseTimes = Math.round(personaResponseSeconds / 60);
 
-          const sortedMessages = chatMessages.sort(
-            (a, b) =>
-              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-          );
+      // 7. Session Efficiency
+      const sessionEfficiency = calculateSessionEfficiency(
+        grades,
+        chats,
+        attempts || [],
+        simulations,
+        rubrics,
+        startDate,
+        endDate,
+        user.id,
+        cohorts,
+        cohortIds,
+        selectedRoles,
+        includePractice,
+        profilesForRoles
+      ).currentValue;
 
-          let totalTime = 0;
-          for (let i = 1; i < sortedMessages.length; i++) {
-            const currentMessage = sortedMessages[i];
-            const previousMessage = sortedMessages[i - 1];
-            if (currentMessage && previousMessage) {
-              const timeDiff =
-                new Date(currentMessage.createdAt).getTime() -
-                new Date(previousMessage.createdAt).getTime();
-              totalTime += timeDiff;
-            }
-          }
-          return totalTime / (sortedMessages.length - 1) / (1000 * 60); // Convert to minutes
-        });
-        const avgResponseTime =
-          responseTimes.reduce((sum, time) => sum + time, 0) /
-          responseTimes.length;
-        personaResponseTimes = Math.round(avgResponseTime);
-      }
+      // 8. Stagnation Rate
+      const stagnationRate = calculateStagnationRate(
+        attempts || [],
+        chats,
+        grades,
+        simulations,
+        rubrics,
+        startDate,
+        endDate,
+        user.id,
+        cohorts,
+        cohortIds,
+        selectedRoles,
+        includePractice,
+        profilesForRoles
+      ).currentValue;
 
-      // 7. Session Efficiency (simplified - completion rate weighted by time)
-      let sessionEfficiency = 0;
-      if (nonPracticeChats.length > 0) {
-        const completedChats = nonPracticeChats.filter(
-          (chat) => chat.completed,
-        );
-        const baseEfficiency =
-          (completedChats.length / nonPracticeChats.length) * 100;
-
-        // Weight by average time (shorter time = higher efficiency)
-        const avgTimeMinutes =
-          nonPracticeGrades.length > 0
-            ? nonPracticeGrades.reduce(
-                (sum, grade) => sum + grade.timeTaken,
-                0,
-              ) /
-              nonPracticeGrades.length /
-              60
-            : 0;
-
-        // Normalize time efficiency (assume 30 minutes is optimal)
-        const timeEfficiency = Math.max(0, 100 - (avgTimeMinutes - 30) * 2);
-        sessionEfficiency = Math.round((baseEfficiency + timeEfficiency) / 2);
-      }
-
-      // 8. Stagnation Rate (simplified - sessions that took too long)
-      let stagnationRate = 0;
-      if (nonPracticeChats.length > 0) {
-        const longSessions = nonPracticeGrades.filter((grade) => {
-          const timeMinutes = grade.timeTaken / 60;
-          return timeMinutes > 45; // Consider sessions over 45 minutes as stagnant
-        });
-        stagnationRate = Math.round(
-          (longSessions.length / nonPracticeGrades.length) * 100,
-        );
-      }
-
-      // 9. Time Spent (total time in minutes)
-      let timeSpent = 0;
-      if (nonPracticeGrades.length > 0) {
-        timeSpent = Math.round(
-          nonPracticeGrades.reduce((sum, grade) => sum + grade.timeTaken, 0) /
-            60,
-        );
-      }
+      // 9. Time Spent (seconds -> minutes)
+      const timeSpentSeconds = calculateTimeSpent(
+        chats,
+        attempts || [],
+        simulations,
+        startDate,
+        endDate,
+        user.id,
+        cohorts,
+        cohortIds,
+        selectedRoles,
+        includePractice,
+        profilesForRoles
+      ).currentValue;
+      const timeSpent = Math.round(timeSpentSeconds / 60);
 
       // 10. Total Attempts
-      const totalAttempts = userAttempts.length;
+      const totalAttempts = calculateTotalAttempts(
+        attempts || [],
+        simulations,
+        startDate,
+        endDate,
+        user.id,
+        cohorts,
+        cohortIds,
+        selectedRoles,
+        includePractice,
+        profilesForRoles
+      ).currentValue;
 
       // Calculate risk assessment based on all 10 metrics
       const thresholds = {
@@ -556,7 +537,7 @@ export default function Reports() {
         dangerCount: Object.values(riskAssessment).filter((r) => r === "danger")
           .length,
         warningCount: Object.values(riskAssessment).filter(
-          (r) => r === "warning",
+          (r) => r === "warning"
         ).length,
         goodCount: Object.values(riskAssessment).filter((r) => r === "good")
           .length,
@@ -571,32 +552,42 @@ export default function Reports() {
       }
 
       // Legacy calculations for compatibility
+      const userAttempts =
+        simulationFilteredAttempts?.filter(
+          (attempt) => attempt.profileId === user.id
+        ) || [];
+      const userChats = simulationFilteredChats.filter((chat) =>
+        userAttempts.some((attempt) => attempt.id === chat.attemptId)
+      );
+      const userGrades = simulationFilteredGrades.filter((grade) =>
+        userChats.some((chat) => chat.id === grade.simulationChatId)
+      );
       const completedSessions = userChats.filter(
-        (chat) => chat.completed,
+        (chat) => chat.completed
       ).length;
       const totalSessions = userChats.length;
 
       // Calculate skill breakdown for this user using only simulation chat rubrics
       const userFeedbacks = feedbacks.filter((f) =>
-        userGrades.some((g) => g.id === f.simulationChatGradeId),
+        userGrades.some((g) => g.id === f.simulationChatGradeId)
       );
 
       const validRubrics = rubrics?.filter((r) =>
-        simulations?.some((s) => s.rubricId === r.id),
+        simulations?.some((s) => s.rubricId === r.id)
       );
       const validGroupStandards = standardGroups?.filter((g) =>
-        validRubrics?.some((r) => r.id === g.rubricId),
+        validRubrics?.some((r) => r.id === g.rubricId)
       );
       const validStandards = standards?.filter((s) =>
-        validGroupStandards?.some((g) => g.id === s.standardGroupId),
+        validGroupStandards?.some((g) => g.id === s.standardGroupId)
       );
 
       const skillBreakdown = validGroupStandards.map((group) => {
         const groupStandards = validStandards.filter(
-          (s) => s.standardGroupId === group.id,
+          (s) => s.standardGroupId === group.id
         );
         const groupFeedbacks = userFeedbacks.filter((f) =>
-          groupStandards.some((s) => s.id === f.standardId),
+          groupStandards.some((s) => s.id === f.standardId)
         );
 
         const avgSkillScore =
@@ -606,7 +597,7 @@ export default function Reports() {
                   groupFeedbacks.length /
                   (rubrics?.find((r) => r.id === group.rubricId)?.points ||
                     100)) *
-                  100,
+                  100
               )
             : 0;
 
@@ -620,12 +611,12 @@ export default function Reports() {
       // Find weakest and strongest skills
       const weakestSkill = skillBreakdown.reduce(
         (min, skill) => (skill.score < min.score ? skill : min),
-        skillBreakdown[0] || { skill: "Unknown", score: 100, feedbackCount: 0 },
+        skillBreakdown[0] || { skill: "Unknown", score: 100, feedbackCount: 0 }
       );
 
       const strongestSkill = skillBreakdown.reduce(
         (max, skill) => (skill.score > max.score ? skill : max),
-        skillBreakdown[0] || { skill: "Unknown", score: 0, feedbackCount: 0 },
+        skillBreakdown[0] || { skill: "Unknown", score: 0, feedbackCount: 0 }
       );
 
       // Calculate average time taken
@@ -634,7 +625,7 @@ export default function Reports() {
           ? Math.round(
               userGrades.reduce((sum, g) => sum + g.timeTaken, 0) /
                 userGrades.length /
-                60,
+                60
             )
           : 0;
 
@@ -643,7 +634,7 @@ export default function Reports() {
         userGrades.length > 0
           ? Math.round(
               (userGrades.filter((g) => g.passed).length / userGrades.length) *
-                100,
+                100
             )
           : 0;
 
@@ -654,7 +645,7 @@ export default function Reports() {
       // Calculate trend (last 3 vs first 3 sessions) using rubric-based scores
       const sortedGrades = userGrades.sort(
         (a, b) =>
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
       let trend: "improving" | "declining" | "stable" = "stable";
       if (sortedGrades.length >= 3) {
@@ -667,12 +658,12 @@ export default function Reports() {
             const chat = chats.find((c) => c.id === grade.simulationChatId);
             const attempt = userAttempts.find((a) => a.id === chat?.attemptId);
             const simulation = filteredSimulations?.find(
-              (s) => s.id === attempt?.simulationId,
+              (s) => s.id === attempt?.simulationId
             );
             const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
             const rubricTotalPoints = rubric?.points || 100;
             const scorePercent = Math.round(
-              (grade.score / rubricTotalPoints) * 100,
+              (grade.score / rubricTotalPoints) * 100
             );
             return sum + scorePercent;
           }, 0) / firstThree.length;
@@ -683,12 +674,12 @@ export default function Reports() {
             const chat = chats.find((c) => c.id === grade.simulationChatId);
             const attempt = userAttempts.find((a) => a.id === chat?.attemptId);
             const simulation = filteredSimulations?.find(
-              (s) => s.id === attempt?.simulationId,
+              (s) => s.id === attempt?.simulationId
             );
             const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
             const rubricTotalPoints = rubric?.points || 100;
             const scorePercent = Math.round(
-              (grade.score / rubricTotalPoints) * 100,
+              (grade.score / rubricTotalPoints) * 100
             );
             return sum + scorePercent;
           }, 0) / lastThree.length;
@@ -703,9 +694,9 @@ export default function Reports() {
           ? new Date(
               Math.max(
                 ...userChats.map((chat) =>
-                  new Date(chat.completedAt || chat.updatedAt).getTime(),
-                ),
-              ),
+                  new Date(chat.completedAt || chat.updatedAt).getTime()
+                )
+              )
             )
           : null;
 
@@ -715,7 +706,7 @@ export default function Reports() {
 
       // Cohorts this user belongs to
       const userCohorts = cohorts.filter((cohort) =>
-        cohort.profileIds.includes(user.id),
+        cohort.profileIds.includes(user.id)
       );
       const activeCohorts = userCohorts.filter((cohort) => cohort.active);
 
@@ -737,7 +728,7 @@ export default function Reports() {
         const cohortTAs = tas.filter((ta) =>
           cohorts
             .find((c) => c.id === comparison.cohortId)
-            ?.profileIds.includes(ta.id),
+            ?.profileIds.includes(ta.id)
         );
         const cohortScores = cohortTAs
           .map((ta) => {
@@ -753,14 +744,14 @@ export default function Reports() {
               const chat = chats.find((c) => c.id === grade.simulationChatId);
               const attempt = attempts?.find((a) => a.id === chat?.attemptId);
               const simulation = filteredSimulations?.find(
-                (s) => s.id === attempt?.simulationId,
+                (s) => s.id === attempt?.simulationId
               );
               const rubric = rubrics?.find(
-                (r) => r.id === simulation?.rubricId,
+                (r) => r.id === simulation?.rubricId
               );
               const rubricTotalPoints = rubric?.points || 100;
               const scorePercent = Math.round(
-                (grade.score / rubricTotalPoints) * 100,
+                (grade.score / rubricTotalPoints) * 100
               );
               return sum + scorePercent;
             }, 0);
@@ -786,7 +777,7 @@ export default function Reports() {
               const scenario = scenarios.find((s) => s.id === chat.scenarioId);
               return scenario?.personaId;
             })
-            .filter((personaId): personaId is string => personaId !== null),
+            .filter((personaId): personaId is string => personaId !== null)
         ),
       ];
 
@@ -879,6 +870,8 @@ export default function Reports() {
     endDate,
     effectiveCohortIds,
     tas,
+    selectedRoles,
+    includePractice,
   ]);
 
   // Loading state
@@ -911,8 +904,6 @@ export default function Reports() {
       <ReportsDataTable
         columns={columns}
         data={taPerformanceData}
-        roleOptions={roleOptions}
-        cohortOptions={cohortOptions}
         personaOptions={personaOptions}
         scenarioOptions={scenarioOptions}
         simulationOptions={simulationOptions}

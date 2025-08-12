@@ -30,8 +30,6 @@ import { ReportsDataTableToolbar } from "./ReportsDataTableToolbar";
 export interface ReportsDataTableProps {
   columns: ColumnDef<TAPerformanceData>[];
   data: TAPerformanceData[];
-  roleOptions: { value: string; label: string }[];
-  cohortOptions: { value: string; label: string }[];
   personaOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
   simulationOptions: { value: string; label: string }[];
@@ -43,8 +41,6 @@ export interface ReportsDataTableProps {
 export function ReportsDataTable({
   columns,
   data,
-  roleOptions,
-  cohortOptions,
   personaOptions,
   scenarioOptions,
   simulationOptions,
@@ -58,7 +54,7 @@ export function ReportsDataTable({
       personasTested: false,
       scenarioIds: false,
       simulationIds: false,
-      role: false, // Hide role column from toggle view
+      taCohortIds: false,
       personaResponseTimes: false,
       stagnationRate: false,
     });
@@ -94,8 +90,6 @@ export function ReportsDataTable({
     <div className="space-y-2">
       <ReportsDataTableToolbar
         table={table}
-        roleOptions={roleOptions}
-        cohortOptions={cohortOptions}
         personaOptions={personaOptions}
         scenarioOptions={scenarioOptions}
         simulationOptions={simulationOptions}

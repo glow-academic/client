@@ -12,6 +12,7 @@ import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { Award, Crown, MessageSquareText, Zap } from "lucide-react";
 import Link from "next/link";
@@ -26,7 +27,14 @@ export interface LeaderboardProps {
 
 export default function Leaderboard({ cohortId }: LeaderboardProps) {
   const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
-  const { startDate, endDate, effectiveCohortIds, cohorts } = useAnalytics();
+  const {
+    startDate,
+    endDate,
+    effectiveCohortIds,
+    cohorts,
+    selectedRoles,
+    includePractice,
+  } = useAnalytics();
   const router = useRouter();
 
   const handleViewReport = (profileId: string) => {
@@ -45,6 +53,15 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
 
   // Check if user is a TA
   const isTA = effectiveProfile?.role === "ta";
+  // Determine effective allowed roles
+  const enforcedTARoles: Array<"ta"> | undefined =
+    cohortId && isTA ? ["ta"] : undefined;
+  const effectiveAllowedRoles =
+    enforcedTARoles ??
+    (selectedRoles && selectedRoles.length > 0 ? selectedRoles : undefined);
+
+  // Determine whether practice is allowed in leaderboard calculations
+  const practiceAllowed = cohortId && isTA ? false : includePractice;
 
   // Check if navigation should be disabled for TAs viewing a specific cohort
   const shouldDisableNavigation = cohortId && isTA;
@@ -73,6 +90,12 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     queryKey: ["simulationAttempts", cohortMemberIds],
     queryFn: () => getSimulationAttemptsByProfiles(cohortMemberIds),
     enabled: cohortMemberIds.length > 0,
+  });
+
+  // 5b. Fetch all simulations to filter practice vs normal
+  const { data: allSimulations } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getAllSimulations(),
   });
 
   // 6. Fetch chats for those attempts
@@ -163,7 +186,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     effectiveProfile?.id,
   ]);
 
-  // Filter profiles to only include those in the selected cohorts
+  // Filter profiles to only include those in the selected cohorts and allowed roles
   const cohortProfiles = useMemo(() => {
     if (!allProfiles || !filteredCohorts) return [];
 
@@ -173,13 +196,17 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       cohort.profileIds?.forEach((id) => allCohortProfileIds.add(id));
     });
 
-    // Filter profiles to only include those in the cohort AND with role "ta"
-    const filteredProfiles = allProfiles.filter(
-      (profile) => allCohortProfileIds.has(profile.id) && profile.role === "ta"
-    );
+    // Filter by membership and allowed roles (if provided)
+    const filteredProfiles = allProfiles.filter((profile) => {
+      if (!allCohortProfileIds.has(profile.id)) return false;
+      if (!effectiveAllowedRoles || effectiveAllowedRoles.length === 0) {
+        return true;
+      }
+      return effectiveAllowedRoles.includes(profile.role);
+    });
 
     return filteredProfiles;
-  }, [allProfiles, filteredCohorts]);
+  }, [allProfiles, filteredCohorts, effectiveAllowedRoles]);
 
   // Filter attempts to only include those from selected cohorts and date range
   const attempts = useMemo(() => {
@@ -190,7 +217,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       cohort.profileIds?.forEach((id) => cohortProfileIds.add(id));
     });
 
-    const filteredAttempts = allAttempts.filter((attempt) => {
+    let filteredAttempts = allAttempts.filter((attempt) => {
       // Filter by cohort membership
       if (!attempt.profileId || !cohortProfileIds.has(attempt.profileId)) {
         return false;
@@ -205,8 +232,25 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       return true;
     });
 
+    // Apply practice filter based on simulations
+    if (allSimulations && allSimulations.length > 0) {
+      const simById = new Map(allSimulations.map((s) => [s.id, s]));
+      filteredAttempts = filteredAttempts.filter((attempt) => {
+        const sim = simById.get(attempt.simulationId);
+        const isPractice = Boolean(sim?.practiceSimulation);
+        return practiceAllowed ? true : !isPractice;
+      });
+    }
+
     return filteredAttempts;
-  }, [allAttempts, filteredCohorts, startDate, endDate]);
+  }, [
+    allAttempts,
+    filteredCohorts,
+    startDate,
+    endDate,
+    allSimulations,
+    practiceAllowed,
+  ]);
 
   // Filter chats to only include those from selected cohort attempts
   const chats = useMemo(() => {

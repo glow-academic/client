@@ -9,12 +9,9 @@ import { DataTableViewOptions } from "@/components/common/history/DataTableViewO
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TAPerformanceData } from "@/hooks/use-report-columns";
-import React from "react";
 
 export interface ReportsDataTableToolbarProps {
   table: Table<TAPerformanceData>;
-  roleOptions: { value: string; label: string }[];
-  cohortOptions: { value: string; label: string }[];
   personaOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
   simulationOptions: { value: string; label: string }[];
@@ -24,8 +21,6 @@ export interface ReportsDataTableToolbarProps {
 
 export function ReportsDataTableToolbar({
   table,
-  roleOptions,
-  cohortOptions,
   personaOptions,
   scenarioOptions,
   simulationOptions,
@@ -36,15 +31,8 @@ export function ReportsDataTableToolbar({
   const isFiltered = table.getState().columnFilters.length > 0;
 
   const firstNameColumn = table.getColumn("firstName");
-  const taCohortsColumn = table.getColumn("taCohorts");
-  const roleColumn = table.getColumn("role");
-
-  // Set default role filter to "ta" if no filter is applied
-  React.useEffect(() => {
-    if (!roleColumn?.getFilterValue()) {
-      roleColumn?.setFilterValue(["ta"]);
-    }
-  }, [roleColumn]);
+  // Cohort filter removed (handled at top-level)
+  // Role filter removed; handled at a higher level
 
   return (
     <div className="flex items-center justify-between">
@@ -61,23 +49,9 @@ export function ReportsDataTableToolbar({
         </div>
 
         <div className="flex items-center space-x-2 flex-wrap mb-2">
-          {/* Role Filter */}
-          {roleColumn && roleOptions.length > 0 && (
-            <DataTableFacetedFilter
-              column={roleColumn}
-              title="Role"
-              options={roleOptions}
-            />
-          )}
+          {/* Role filter removed */}
 
-          {/* Cohort Filter */}
-          {taCohortsColumn && cohortOptions.length > 0 && (
-            <DataTableFacetedFilter
-              column={taCohortsColumn}
-              title="Cohort"
-              options={cohortOptions}
-            />
-          )}
+          {/* Cohort filter removed */}
 
           {/* Persona Filter */}
           {personaOptions.length > 0 && table.getColumn("personasTested") && (

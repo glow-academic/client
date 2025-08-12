@@ -16,15 +16,33 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { Switch } from "@/components/ui/switch";
 import { logError } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Upload } from "lucide-react";
+import { Plus, SlidersHorizontal, Upload } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -38,6 +56,8 @@ import ChatWidget from "@/components/common/home/ChatWidget";
 import { AccessControl } from "@/components/common/layout/AccessControl";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
+import { ParameterSelector } from "@/components/common/scenario/ParameterSelector";
+import { PersonaPicker } from "@/components/common/scenario/PersonaPicker";
 import TATour from "@/components/home/TATour";
 import { AnalyticsProvider } from "@/contexts/analytics-context";
 import { AssistantProvider } from "@/contexts/assistant-context";
@@ -47,17 +67,32 @@ import {
   useSimulation,
 } from "@/contexts/simulation-context";
 import { TourProvider } from "@/contexts/tour-context";
+import type {
+  Parameter,
+  ParameterItem,
+  Persona,
+  Scenario,
+  Simulation,
+} from "@/types";
 import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
 import {
   generateEnhancedBreadcrumbs,
   getActiveSectionFromPath,
 } from "@/utils/breadcrumb-utils";
 import { inferMimeFromName } from "@/utils/mime-map";
+import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
+import { createSimulationAttempt } from "@/utils/mutations/simulation_attempts/create-simulation-attempt";
+import { createSimulationChat } from "@/utils/mutations/simulation_chats/create-simulation-chat";
 import {
   createSectionChangeHandler,
   isMainScreen,
 } from "@/utils/navigation-utils";
+import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
+import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
+import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import * as tus from "tus-js-client";
 
 // Inner component that uses the role context
@@ -118,6 +153,54 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       setEndingAction(null);
     }
   }, [simulationContext?.endChatLoading]);
+
+  // Practice customize dialog state
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [isInfiniteMode, setIsInfiniteMode] = useState(false);
+  const [infiniteTimeLimit, setInfiniteTimeLimit] = useState<string>("");
+  const [selectedSimulationId, setSelectedSimulationId] = useState<string>("");
+  const [selectedPersona, setSelectedPersona] = useState<Persona | undefined>(
+    undefined
+  );
+  const [selectedParameterItemIds, setSelectedParameterItemIds] = useState<
+    string[]
+  >([]);
+
+  // Data for customize dialog
+  const { data: simulations = [] } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getAllSimulations(),
+  });
+  const { data: scenarios = [] } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => getAllScenarios(),
+  });
+  const { data: personas = [] } = useQuery({
+    queryKey: ["personas"],
+    queryFn: () => getAllPersonas(),
+  });
+  const { data: parameters = [] } = useQuery({
+    queryKey: ["parameters"],
+    queryFn: () => getAllParameters(),
+  });
+  const { data: parameterItems = [] } = useQuery({
+    queryKey: ["parameter-items"],
+    queryFn: () => getAllParameterItems(),
+  });
+
+  // Only allow customizing non-default parameters and non-default items
+  const customParameters = React.useMemo(() => {
+    return (parameters as Parameter[]).filter(
+      (p) => p.defaultParameter === false
+    );
+  }, [parameters]);
+  const customParameterItems = React.useMemo(() => {
+    // Use ONLY default items, but only for the non-default parameters
+    const customParamIds = new Set(customParameters.map((p) => p.id));
+    return (parameterItems as ParameterItem[]).filter(
+      (pi) => pi.defaultItem === true && customParamIds.has(pi.parameterId)
+    );
+  }, [parameterItems, customParameters]);
 
   // Upload functions
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -644,6 +727,16 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
+    // Practice page: show Customize button in header right
+    if (pathname === "/practice") {
+      return (
+        <Button onClick={() => setCustomizeOpen(true)} size="sm">
+          <SlidersHorizontal className="h-4 w-4 mr-2" />
+          Customize
+        </Button>
+      );
+    }
+
     if (!shouldShowChatComponents && canShowChatComponents) {
       return (
         <>
@@ -686,6 +779,247 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
             {actionButton && <div className="px-4">{actionButton}</div>}
           </header>
+          {/* Practice Customize Dialog */}
+          <Dialog open={customizeOpen} onOpenChange={setCustomizeOpen}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Customize Practice</DialogTitle>
+                <DialogDescription>
+                  Create a custom attempt. Use Infinite Mode to keep practicing
+                  a single practice simulation repeatedly, or configure a
+                  one-off practice scenario.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3">
+                    <Label htmlFor="infinite-mode" className="mb-0">
+                      Infinite Mode
+                    </Label>
+                    <Switch
+                      id="infinite-mode"
+                      checked={isInfiniteMode}
+                      onCheckedChange={setIsInfiniteMode}
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Practice one simulation continuously. Choose any simulation
+                    marked for practice and repeat it until you stop.
+                  </p>
+                </div>
+
+                {isInfiniteMode ? (
+                  <div className="grid gap-4">
+                    <div className="grid gap-2">
+                      <Label>Start Simulation</Label>
+                      <Select
+                        value={selectedSimulationId}
+                        onValueChange={setSelectedSimulationId}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a simulation" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(simulations as Simulation[])
+                            .filter((sim) => sim.practiceSimulation === true)
+                            .map((sim: Simulation) => (
+                              <SelectItem key={sim.id} value={sim.id}>
+                                {sim.title}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="infinite-time-limit">
+                        Time Limit (minutes, optional)
+                      </Label>
+                      <Input
+                        id="infinite-time-limit"
+                        type="number"
+                        min={1}
+                        placeholder="e.g. 15"
+                        value={infiniteTimeLimit}
+                        onChange={(e) => setInfiniteTimeLimit(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid gap-6">
+                    <div className="grid gap-2">
+                      <PersonaPicker
+                        personas={personas as Persona[]}
+                        onSelect={(p) => setSelectedPersona(p)}
+                        selectedPersona={selectedPersona}
+                        label="Persona"
+                        description="Choose who you'll practice with."
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <ParameterSelector
+                        parameters={customParameters}
+                        parameterItems={customParameterItems}
+                        selectedParameterItemIds={selectedParameterItemIds}
+                        onParameterItemIdsChange={setSelectedParameterItemIds}
+                      />
+                      {customParameterItems.length === 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          No default parameter items were found for these
+                          parameters. Ensure the parameters have default options
+                          configured under Management → Parameters.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setCustomizeOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      if (isInfiniteMode) {
+                        if (!selectedSimulationId) {
+                          toast.error("Select a simulation to start");
+                          return;
+                        }
+                        const sim = (simulations as Simulation[]).find(
+                          (s) => s.id === selectedSimulationId
+                        );
+                        if (!sim) {
+                          toast.error("Simulation not found");
+                          return;
+                        }
+                        const attempt = (await createSimulationAttempt({
+                          simulationId: sim.id,
+                          profileId: effectiveProfile?.id,
+                          infiniteMode: true,
+                          infiniteModeTimeLimit: infiniteTimeLimit
+                            ? parseInt(infiniteTimeLimit, 10)
+                            : null,
+                        } as unknown as typeof import("@/utils/drizzle/schema").simulationAttempts.$inferInsert)) as unknown as import("@/types").SimulationAttempt;
+
+                        if (!attempt || !attempt.id) {
+                          toast.error("Failed to create attempt");
+                          return;
+                        }
+                        const attemptIdCreated = attempt.id;
+
+                        const initialScenarioId = (sim.scenarioIds || [])[0];
+                        if (initialScenarioId) {
+                          await createSimulationChat({
+                            title: sim.title,
+                            scenarioId: initialScenarioId,
+                            attemptId: attemptIdCreated,
+                            completed: false,
+                          } as unknown as typeof import("@/utils/drizzle/schema").simulationChats.$inferInsert);
+                        }
+
+                        setCustomizeOpen(false);
+                        router.push(`/practice/a/${attemptIdCreated}`);
+                        toast.success("Attempt created");
+                        return;
+                      }
+
+                      // Custom one-off scenario
+                      if (!selectedPersona) {
+                        toast.error("Select a persona");
+                        return;
+                      }
+
+                      const name = `Custom Practice - ${selectedPersona.name}`;
+                      const filteredParamIds = (
+                        parameterItems as ParameterItem[]
+                      )
+                        .filter((pi) => !pi.defaultItem)
+                        .map((pi) => pi.id)
+                        .filter((id) => selectedParameterItemIds.includes(id));
+
+                      const newScenario = (await createScenario({
+                        name,
+                        description: "",
+                        personaId: selectedPersona.id,
+                        parameterItemIds: filteredParamIds,
+                        practiceScenario: true,
+                        defaultScenario: false,
+                        generated: true,
+                        active: true,
+                      } as unknown as typeof import("@/utils/drizzle/schema").scenarios.$inferInsert)) as unknown as import("@/types").Scenario;
+
+                      if (!newScenario || !newScenario.id) {
+                        toast.error("Failed to create scenario");
+                        return;
+                      }
+                      const newScenarioId = newScenario.id;
+
+                      // Find base default practice scenario for this persona
+                      const baseScenario = (scenarios as Scenario[]).find(
+                        (s) =>
+                          s.personaId === selectedPersona.id &&
+                          s.defaultScenario === true &&
+                          s.practiceScenario === true
+                      );
+
+                      // Find simulation that includes the base scenario (prefer default+practice)
+                      const targetSimulation =
+                        (simulations as Simulation[]).find(
+                          (sim) =>
+                            (sim.scenarioIds || []).includes(
+                              baseScenario?.id || ""
+                            ) &&
+                            sim.defaultSimulation === true &&
+                            sim.practiceSimulation === true
+                        ) ||
+                        (simulations as Simulation[]).find((sim) =>
+                          (sim.scenarioIds || []).includes(
+                            baseScenario?.id || ""
+                          )
+                        );
+
+                      if (!targetSimulation) {
+                        toast.error("No practice simulation found for persona");
+                        return;
+                      }
+
+                      const attempt = (await createSimulationAttempt({
+                        simulationId: targetSimulation.id,
+                        profileId: effectiveProfile?.id,
+                        infiniteMode: false,
+                      } as unknown as typeof import("@/utils/drizzle/schema").simulationAttempts.$inferInsert)) as unknown as import("@/types").SimulationAttempt;
+                      if (!attempt || !attempt.id) {
+                        toast.error("Failed to create attempt");
+                        return;
+                      }
+                      const attemptIdCreated = attempt.id;
+
+                      await createSimulationChat({
+                        title: name,
+                        scenarioId: newScenarioId,
+                        attemptId: attemptIdCreated,
+                        completed: false,
+                      } as unknown as typeof import("@/utils/drizzle/schema").simulationChats.$inferInsert);
+
+                      setCustomizeOpen(false);
+                      router.push(`/practice/a/${attemptIdCreated}`);
+                      toast.success("Custom scenario attempt created");
+                    } catch (err) {
+                      logError("Failed to create attempt", err);
+                      toast.error("Failed to create attempt");
+                    }
+                  }}
+                >
+                  Start
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           {/* Confirm End All Dialog */}
           <AlertDialog
             open={confirmEndAllOpen}

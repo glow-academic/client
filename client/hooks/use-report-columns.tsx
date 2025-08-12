@@ -6,6 +6,7 @@ import { ColumnDef, Row, Table } from "@tanstack/react-table";
 import { Clock, MessageCircle, Target, Timer } from "lucide-react";
 import { useMemo } from "react";
 
+import { useAnalytics } from "@/contexts/analytics-context";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
@@ -91,6 +92,7 @@ export function useReportColumns({
   showExport = true,
   onViewReport,
 }: UseReportColumnsProps) {
+  const { includePractice } = useAnalytics();
   // Fetch data for filter options
   const { data: _profiles } = useQuery({
     queryKey: ["profiles"],
@@ -118,23 +120,8 @@ export function useReportColumns({
   });
 
   // Create filter options
-  const roleOptions = useMemo(
-    () => [
-      {
-        value: "ta",
-        label: "Teaching Assistant",
-      },
-      {
-        value: "instructor",
-        label: "Instructor",
-      },
-      {
-        value: "admin",
-        label: "Administrator",
-      },
-    ],
-    []
-  );
+  // Role filter is removed; role filtering is handled at a higher level
+  const roleOptions: { value: string; label: string }[] = [];
 
   const cohortOptions = useMemo(() => {
     if (!cohorts) return [];
@@ -156,19 +143,25 @@ export function useReportColumns({
 
   const scenarioOptions = useMemo(() => {
     if (!scenarios) return [];
-    return scenarios.map((scenario) => ({
+    const filtered = scenarios.filter((scenario) =>
+      includePractice ? true : !scenario.practiceScenario
+    );
+    return filtered.map((scenario) => ({
       value: scenario.id,
       label: scenario.name,
     }));
-  }, [scenarios]);
+  }, [scenarios, includePractice]);
 
   const simulationOptions = useMemo(() => {
     if (!simulations) return [];
-    return simulations.map((simulation) => ({
+    const filtered = simulations.filter((simulation) =>
+      includePractice ? true : !simulation.practiceSimulation
+    );
+    return filtered.map((simulation) => ({
       value: simulation.id,
       label: simulation.title,
     }));
-  }, [simulations]);
+  }, [simulations, includePractice]);
 
   // Define columns
   const columns = useMemo(() => {
@@ -491,19 +484,7 @@ export function useReportColumns({
       },
 
       // Hidden columns for filtering
-      {
-        accessorKey: "role",
-        header: "Role",
-        cell: () => null,
-        enableSorting: false,
-        enableHiding: false,
-        enableColumnFilter: true,
-        filterFn: (row, _, value) => {
-          const ta = row.original;
-          if (!value || value.length === 0) return true;
-          return value.includes(ta.role);
-        },
-      },
+      // Removed role column filter; handled by higher-level analytics filters
       {
         accessorKey: "personasTested",
         header: "Personas Tested",
@@ -549,6 +530,7 @@ export function useReportColumns({
           );
         },
       },
+      // Cohort filter removed; handled at top-level analytics filters
     ];
 
     return reportColumns;

@@ -171,19 +171,24 @@ export function ParameterSelector({
     handleNumericalParameterChange(parameterId, null);
   };
 
+  const hasNonNumerical = nonNumericalParameters.length > 0;
+  const hasNumerical = numericalParameters.length > 0;
+
+  const showTwoColumns = hasNonNumerical && hasNumerical;
+
   return (
     <div className="relative">
-      {/* Vertical divider - only visible on large screens */}
-      <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-px bg-border transform -translate-x-1/2" />
+      {/* Vertical divider only when both columns exist */}
+      {showTwoColumns && (
+        <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-px bg-border transform -translate-x-1/2" />
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div
+        className={`grid grid-cols-1 ${showTwoColumns ? "lg:grid-cols-2" : ""} gap-6`}
+      >
         {/* Left side - Non-numerical parameters */}
-        <div className="space-y-4">
-          {nonNumericalParameters.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No categorical parameters available
-            </p>
-          ) : (
+        {hasNonNumerical && (
+          <div className="space-y-4">
             <div className="space-y-4">
               {nonNumericalParameters.map((parameter) => {
                 const items = parameterItemsByParameter[parameter.id] || [];
@@ -231,16 +236,12 @@ export function ParameterSelector({
                 );
               })}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Right side - Numerical parameters */}
-        <div className="space-y-4">
-          {numericalParameters.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No numerical parameters available
-            </p>
-          ) : (
+        {hasNumerical && (
+          <div className="space-y-4">
             <div className="space-y-6">
               {numericalParameters.map((parameter) => {
                 const items = parameterItemsByParameter[parameter.id] || [];
@@ -310,9 +311,15 @@ export function ParameterSelector({
                 );
               })}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
+
+      {!hasNonNumerical && !hasNumerical && (
+        <p className="text-sm text-muted-foreground">
+          No parameters available.
+        </p>
+      )}
     </div>
   );
 }

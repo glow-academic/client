@@ -2,7 +2,12 @@
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { DataTableRowActions } from "@/components/common/history/DataTableRowActions";
 import { Badge } from "@/components/ui/badge";
-import { Profile, SimulationAttempt, SimulationChat } from "@/types";
+import {
+  Profile,
+  ProfileRole,
+  SimulationAttempt,
+  SimulationChat,
+} from "@/types";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
@@ -30,15 +35,19 @@ export function useHistoryColumns({
   showExport: _showExport = true,
   cohortIds = undefined,
   showPractice = false,
+  showNormal = true,
   startDate,
   endDate,
+  allowedRoles,
 }: {
   profileId?: string | null;
   showExport?: boolean;
   cohortIds: string[] | undefined;
   showPractice?: boolean;
+  showNormal?: boolean;
   startDate?: Date;
   endDate?: Date;
+  allowedRoles?: ProfileRole[] | undefined;
 }) {
   const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
     queryKey: ["profiles"],
@@ -671,24 +680,32 @@ export function useHistoryColumns({
     }
   }
 
-  // Apply practice simulation filtering
-  if (showPractice) {
-    // Filter in only practice simulations when showPractice is true
+  // Apply practice/normal filtering using combined flags
+  if (showPractice || showNormal) {
     data = data.filter((attempt: unknown) => {
       const attemptData = attempt as Record<string, unknown>;
       const simulation = simulations?.find(
         (s) => s.id === attemptData["simulationId"]
       );
-      return simulation?.practiceSimulation;
+      const isPractice = Boolean(simulation?.practiceSimulation);
+      return (showPractice && isPractice) || (showNormal && !isPractice);
     });
   } else {
-    // Filter out practice simulations when showPractice is false
+    // If both are false, show nothing
+    data = [];
+  }
+
+  // Apply role filtering if allowedRoles provided
+  if (allowedRoles && allowedRoles.length > 0 && profiles) {
+    const allowedSet = new Set<ProfileRole>(allowedRoles);
+    const profileIdToRole = new Map<string, ProfileRole>();
+    profiles.forEach((p) => profileIdToRole.set(p.id, p.role));
     data = data.filter((attempt: unknown) => {
       const attemptData = attempt as Record<string, unknown>;
-      const simulation = simulations?.find(
-        (s) => s.id === attemptData["simulationId"]
-      );
-      return !simulation?.practiceSimulation;
+      const pid = attemptData["profileId"] as string | undefined;
+      if (!pid) return false;
+      const role = profileIdToRole.get(pid);
+      return role ? allowedSet.has(role) : false;
     });
   }
 

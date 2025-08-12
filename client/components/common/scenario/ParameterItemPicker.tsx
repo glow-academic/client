@@ -51,6 +51,8 @@ export interface ParameterItemPickerProps {
   selectedItem?: ParameterItem;
   onSelect: (parameterItemId: string | null) => void;
   disabled?: boolean;
+  allowCreateForDefaultParameters?: boolean;
+  allowCreate?: boolean; // gate creating new items entirely
 }
 
 export function ParameterItemPicker({
@@ -59,6 +61,8 @@ export function ParameterItemPicker({
   selectedItem,
   onSelect,
   disabled = false,
+  allowCreateForDefaultParameters = false,
+  allowCreate = true,
 }: ParameterItemPickerProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -94,7 +98,8 @@ export function ParameterItemPicker({
   };
 
   const canOfferCreate =
-    parameter.defaultParameter === false &&
+    allowCreate &&
+    (allowCreateForDefaultParameters || parameter.defaultParameter === false) &&
     search.trim().length > 0 &&
     filteredItems.length === 0;
 

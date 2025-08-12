@@ -8,32 +8,32 @@ import { DataTableFacetedFilter } from "@/components/common/history/DataTableFac
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FeedbackData } from "@/hooks/use-feedback-columns";
 
-export interface FeedbackDataTableToolbarProps {
-  table: Table<FeedbackData>;
+export interface FeedbackDataTableToolbarProps<TData extends object> {
+  table: Table<TData>;
   typeOptions: { value: string; label: string }[];
   profileOptions: { value: string; label: string }[];
   isRefreshing: boolean;
   onRefresh: () => void;
+  /** Which column id to use for the search input; defaults to "message" */
+  searchColumnId?: string;
 }
 
-export function FeedbackDataTableToolbar({
+export function FeedbackDataTableToolbar<TData extends object>({
   table,
   typeOptions,
   profileOptions,
   isRefreshing,
   onRefresh,
-}: FeedbackDataTableToolbarProps) {
-  // Check if any filters are active
+  searchColumnId = "message",
+}: FeedbackDataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
 
-  const messageColumn = table.getColumn("message");
+  const messageColumn = table.getColumn(searchColumnId);
   const typeColumn = table.getColumn("type");
   const authorColumn = table.getColumn("authorName");
   const idColumn = table.getColumn("id");
 
-  // Generate ID options for filtering
   const idOptions = useMemo(() => {
     if (!idColumn) return [] as { value: string; label: string }[];
     const uniqueIds = new Set<string>();
@@ -60,47 +60,26 @@ export function FeedbackDataTableToolbar({
           <Input
             placeholder="Search feedback or author..."
             value={(messageColumn?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              messageColumn?.setFilterValue(event.target.value)
-            }
+            onChange={(event) => messageColumn?.setFilterValue(event.target.value)}
             className="h-8 w-[150px] lg:w-[250px]"
           />
         </div>
 
         <div className="flex items-center space-x-2 flex-wrap mb-2">
-          {/* ID Filter */}
           {idColumn && idOptions.length > 0 && (
-            <DataTableFacetedFilter
-              column={idColumn}
-              title="ID"
-              options={idOptions}
-            />
+            <DataTableFacetedFilter column={idColumn} title="ID" options={idOptions} />
           )}
 
-          {/* Type Filter */}
           {typeColumn && typeOptions.length > 0 && (
-            <DataTableFacetedFilter
-              column={typeColumn}
-              title="Type"
-              options={typeOptions}
-            />
+            <DataTableFacetedFilter column={typeColumn} title="Type" options={typeOptions} />
           )}
 
-          {/* Author Filter */}
           {authorColumn && profileOptions.length > 0 && (
-            <DataTableFacetedFilter
-              column={authorColumn}
-              title="Author"
-              options={profileOptions}
-            />
+            <DataTableFacetedFilter column={authorColumn} title="Author" options={profileOptions} />
           )}
 
           {isFiltered && (
-            <Button
-              variant="ghost"
-              onClick={() => table.resetColumnFilters()}
-              className="h-8 px-2 lg:px-3"
-            >
+            <Button variant="ghost" onClick={() => table.resetColumnFilters()} className="h-8 px-2 lg:px-3">
               Reset
               <X className="ml-2 h-4 w-4" />
             </Button>
@@ -109,15 +88,8 @@ export function FeedbackDataTableToolbar({
       </div>
 
       <div className="flex items-center space-x-2 mb-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onRefresh}
-          disabled={isRefreshing}
-        >
-          <RefreshCw
-            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-          />
+        <Button variant="outline" size="sm" onClick={onRefresh} disabled={isRefreshing}>
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
         </Button>
 
         <DataTableViewOptions table={table} />
