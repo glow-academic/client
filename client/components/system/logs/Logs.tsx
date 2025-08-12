@@ -6,7 +6,7 @@
  */
 "use client";
 
-import { logError, logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -36,10 +36,17 @@ export default function Logs() {
     setIsRefreshing(true);
     try {
       await queryClient.invalidateQueries({ queryKey: ["logs"] });
-      logInfo("Logs refreshed successfully");
+      log.info("logs.refresh.success", {
+        message: "Logs refreshed successfully",
+        context: { component: "Logs" },
+      });
       toast.success("Logs refreshed successfully");
     } catch (error) {
-      logError("Error refreshing logs:", error);
+      log.error("logs.refresh.failed", {
+        message: "Error refreshing logs",
+        error,
+        context: { component: "Logs" },
+      });
       toast.error("Failed to refresh logs");
     } finally {
       setIsRefreshing(false);

@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { simulationAttempts } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _getSimulationAttemptsByProfiles(profileIds: string[]) {
   try {
     return await db.select().from(simulationAttempts).where(inArray(simulationAttempts.profileId, profileIds));
   } catch (error) {
-    logError("Error fetching simulation_attempts by profiles:", error);
+    await log.error("query.fetch_by_fk_plural.failed", {
+      message: "Error fetching simulation_attempts by profiles",
+      subject: { entityType: "simulation_attempts" },
+      context: { function: "_getSimulationAttemptsByProfiles", file: "utils/queries/simulation_attempts/get-simulation-attempts-by-profiles.ts", foreignKey: "profileId", foreignIdsCount: profileIds.length },
+      error,
+    });
     throw error;
   }
 }

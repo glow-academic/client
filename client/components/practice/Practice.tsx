@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 "use client";
-import { logError, logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -209,7 +209,11 @@ export default function Practice() {
         setLoadingToastId(null);
       }
       const { attemptId } = event.detail;
-      logInfo("Navigating to simulation attempt", { attemptId });
+      log.info("simulation.navigate.attempt", {
+        message: "Navigating to simulation attempt",
+        subject: { entityType: "attempt", entityId: attemptId },
+        context: { component: "Practice", function: "handleSimulationStarted" },
+      });
       router.push(`/practice/a/${attemptId}`);
       setLoadingSimulation(null);
     };
@@ -258,10 +262,17 @@ export default function Practice() {
           toast.error(
             "WebSocket not connected. Please wait for connection or refresh the page."
           );
-          logError("WebSocket not connected when trying to start simulation", {
-            simulationId,
-            profileId: effectiveProfile?.id,
-            isConnected,
+          log.error("simulation.start.precheck.failed", {
+            message: "WebSocket not connected when trying to start simulation",
+            subject: { entityType: "simulation", entityId: simulationId },
+            ...(effectiveProfile?.id
+              ? { actor: { profileId: effectiveProfile.id } }
+              : {}),
+            context: {
+              component: "Practice",
+              function: "handleStartSimulation",
+              isConnected,
+            },
           });
           return;
         }
@@ -273,10 +284,17 @@ export default function Practice() {
         const profileIdForEmit =
           effectiveProfile?.role === "guest" ? "" : String(activeProfile!.id); // "" → guest
 
-        logInfo("Starting simulation via global WebSocket", {
-          simulationId,
-          profileId: profileIdForEmit || "(guest)",
-          isConnected,
+        log.info("simulation.start", {
+          message: "Starting simulation via global WebSocket",
+          subject: { entityType: "simulation", entityId: simulationId },
+          ...(effectiveProfile?.id
+            ? { actor: { profileId: effectiveProfile.id } }
+            : {}),
+          context: {
+            component: "Practice",
+            function: "handleStartSimulation",
+            isConnected,
+          },
         });
 
         emitStartSimulation({
@@ -287,14 +305,32 @@ export default function Practice() {
         // timeout...
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         timeoutRef.current = setTimeout(() => {
-          logError("Simulation start timeout - no response from server");
+          log.error("simulation.start.timeout", {
+            message: "Simulation start timeout - no response from server",
+            subject: { entityType: "simulation", entityId: simulationId },
+            ...(effectiveProfile?.id
+              ? { actor: { profileId: effectiveProfile.id } }
+              : {}),
+            context: {
+              component: "Practice",
+              function: "handleStartSimulation",
+            },
+          });
           toast.dismiss(toastId);
           toast.error("Simulation start timed out. Please try again.");
           setLoadingSimulation(null);
           setLoadingToastId(null);
         }, 30000);
       } catch (error) {
-        logError("Error starting simulation:", error);
+        log.error("simulation.start.failed", {
+          message: "Error starting simulation",
+          subject: { entityType: "simulation", entityId: simulationId },
+          ...(effectiveProfile?.id
+            ? { actor: { profileId: effectiveProfile.id } }
+            : {}),
+          context: { component: "Practice", function: "handleStartSimulation" },
+          error,
+        });
         if (loadingToastId) toast.dismiss(loadingToastId);
         toast.error("Failed to start simulation. Please try again.");
         setLoadingSimulation(null);

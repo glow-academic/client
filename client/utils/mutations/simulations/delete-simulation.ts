@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { simulations } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -12,7 +12,12 @@ async function _deleteSimulation(id: string) {
     const result = await db.delete(simulations).where(eq(simulations.id, id)).returning();
     return result[0];
   } catch (error) {
-    logError("Error deleting simulation:", error);
+    await log.error("mutation.delete.failed", {
+      message: "Error deleting simulation",
+      subject: { entityType: "simulations", entityId: String(id) },
+      context: { function: "_deleteSimulation", file: "utils/mutations/simulations/delete-simulation.ts" },
+      error,
+    });
     throw error;
   }
 }

@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Rubric as RubricType } from "@/types";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createRubric } from "@/utils/mutations/rubrics/create-rubric";
 import { updateRubric } from "@/utils/mutations/rubrics/update-rubric";
 import { Edit } from "lucide-react";
@@ -77,7 +77,11 @@ export default function RubricDetails({
       }
     },
     onError: (error) => {
-      logError("Error updating rubric:", error);
+      log.error("rubric.update.failed", {
+        message: "Error updating rubric",
+        error,
+        context: { component: "RubricDetails", rubricId },
+      });
       toast.error(
         isCreateMode ? "Failed to create rubric" : "Failed to update rubric"
       );

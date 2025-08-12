@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { standards } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _updateStandards(ids: string[], data: Partial<typeof standards.$i
   try {
     return await db.update(standards).set(data).where(inArray(standards.id, ids)).returning();
   } catch (error) {
-    logError("Error updating multiple standards:", error);
+    await log.error("mutation.update_many.failed", {
+      message: "Error updating multiple standards",
+      subject: { entityType: "standards" },
+      context: { function: "_updateStandards", file: "utils/mutations/standards/update-standards.ts", count: ids.length },
+      error,
+    });
     throw error;
   }
 }

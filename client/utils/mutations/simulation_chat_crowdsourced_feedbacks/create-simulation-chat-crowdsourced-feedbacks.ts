@@ -2,7 +2,7 @@
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { simulationChatCrowdsourcedFeedbacks } from "@/utils/drizzle/schema";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -10,7 +10,12 @@ async function _createSimulationChatCrowdsourcedFeedbacks(data: (typeof simulati
   try {
     return await db.insert(simulationChatCrowdsourcedFeedbacks).values(data).returning();
   } catch (error) {
-    logError("Error creating multiple simulation_chat_crowdsourced_feedbacks:", error);
+    await log.error("mutation.create_many.failed", {
+      message: "Error creating multiple simulation_chat_crowdsourced_feedbacks",
+      subject: { entityType: "simulation_chat_crowdsourced_feedbacks" },
+      context: { function: "_createSimulationChatCrowdsourcedFeedbacks", file: "utils/mutations/simulation_chat_crowdsourced_feedbacks/create-simulation-chat-crowdsourced-feedbacks.ts", count: Array.isArray(data) ? data.length : undefined },
+      error,
+    });
     throw error;
   }
 }

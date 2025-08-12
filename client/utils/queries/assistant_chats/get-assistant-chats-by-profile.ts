@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { assistantChats } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _getAssistantChatsByProfile(profileId: string) {
   try {
     return await db.select().from(assistantChats).where(eq(assistantChats.profileId, profileId));
   } catch (error) {
-    logError("Error fetching assistant_chats by profile:", error);
+    await log.error("query.fetch_by_fk.failed", {
+      message: "Error fetching assistant_chats by profile",
+      subject: { entityType: "assistant_chats" },
+      context: { function: "_getAssistantChatsByProfile", file: "utils/queries/assistant_chats/get-assistant-chats-by-profile.ts", foreignKey: "profileId", foreignId: String(profileId) },
+      error,
+    });
     throw error;
   }
 }

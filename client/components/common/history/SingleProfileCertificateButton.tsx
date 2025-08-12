@@ -7,7 +7,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
-import { logError, logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -184,11 +184,15 @@ export function SingleProfileCertificateButton<TData>({
       // If admin/superadmin and no cohorts found, include all active cohorts
       if (isAdminUser && profileCohorts.length === 0) {
         profileCohorts = cohorts.filter((cohort) => cohort.active);
-        logInfo("Admin user - using all active cohorts", {
-          profileId,
-          profileRole: profile?.role,
-          totalCohorts: cohorts.length,
-          activeCohortsCount: profileCohorts.length,
+        log.info("certificate.admin.using_active_cohorts", {
+          message: "Admin user - using all active cohorts",
+          actor: { profileId },
+          context: {
+            component: "SingleProfileCertificateButton",
+            profileRole: profile?.role,
+            totalCohorts: cohorts.length,
+            activeCohortsCount: profileCohorts.length,
+          },
         });
       }
 
@@ -227,14 +231,18 @@ export function SingleProfileCertificateButton<TData>({
         });
       });
 
-      logInfo("Generating certificate", {
-        profileId,
-        profileName,
-        profileRole: profile?.role,
-        isAdminUser,
-        cohortCount: cohortData.length,
-        selectedRows,
-        profileOptionsLength: profileOptions.length,
+      log.info("certificate.generate.start", {
+        message: "Generating certificate",
+        actor: { profileId },
+        context: {
+          component: "SingleProfileCertificateButton",
+          profileName,
+          profileRole: profile?.role,
+          isAdminUser,
+          cohortCount: cohortData.length,
+          selectedRows,
+          profileOptionsLength: profileOptions.length,
+        },
       });
 
       // Call the certificate generation API
@@ -279,7 +287,11 @@ export function SingleProfileCertificateButton<TData>({
 
       toast?.success(`Certificate generated for ${profileName}`);
     } catch (error) {
-      logError("Error generating certificate:", error);
+      log.error("certificate.generate.failed", {
+        message: "Error generating certificate",
+        error,
+        context: { component: "SingleProfileCertificateButton" },
+      });
       toast?.error("Failed to generate certificate");
     } finally {
       setIsGenerating(false);

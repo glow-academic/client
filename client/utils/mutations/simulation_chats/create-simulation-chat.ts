@@ -2,7 +2,7 @@
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { simulationChats } from "@/utils/drizzle/schema";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _createSimulationChat(data: typeof simulationChats.$inferInsert) 
     const result = await db.insert(simulationChats).values(data).returning();
     return result[0];
   } catch (error) {
-    logError("Error creating simulationChat:", error);
+    await log.error("mutation.create.failed", {
+      message: "Error creating simulationChat",
+      subject: { entityType: "simulation_chats" },
+      context: { function: "_createSimulationChat", file: "utils/mutations/simulation_chats/create-simulation-chat.ts" },
+      error,
+    });
     throw error;
   }
 }

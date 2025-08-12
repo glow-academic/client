@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { scenarios } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _getScenariosByPersonas(personaIds: string[]) {
   try {
     return await db.select().from(scenarios).where(inArray(scenarios.personaId, personaIds));
   } catch (error) {
-    logError("Error fetching scenarios by personas:", error);
+    await log.error("query.fetch_by_fk_plural.failed", {
+      message: "Error fetching scenarios by personas",
+      subject: { entityType: "scenarios" },
+      context: { function: "_getScenariosByPersonas", file: "utils/queries/scenarios/get-scenarios-by-personas.ts", foreignKey: "personaId", foreignIdsCount: personaIds.length },
+      error,
+    });
     throw error;
   }
 }

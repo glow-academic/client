@@ -2,7 +2,7 @@
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { rubrics, standardGroups, standards } from "@/utils/drizzle/schema";
-import { logError, logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { eq } from "drizzle-orm";
 
 export async function duplicateRubric(rubricId: string, newName: string) {
@@ -94,19 +94,27 @@ export async function duplicateRubric(rubricId: string, newName: string) {
         }
       }
 
-      logInfo("Rubric duplicated successfully:", {
-        originalId: rubricId,
-        newId: newRubricId,
-        originalName: rubric.name,
-        newName,
-        standardGroupsCount: originalStandardGroups.length,
-        standardsCount: totalStandardsCount,
+      log.info("rubric.duplicate.success", {
+        message: "Rubric duplicated successfully",
+        context: {
+          function: "duplicateRubric",
+          originalId: rubricId,
+          newId: newRubricId,
+          originalName: rubric.name,
+          newName,
+          standardGroupsCount: originalStandardGroups.length,
+          standardsCount: totalStandardsCount,
+        },
       });
 
       return newRubric[0]!;
     });
   } catch (error) {
-    logError("Error duplicating rubric:", error);
+    log.error("rubric.duplicate.failed", {
+      message: "Error duplicating rubric",
+      error,
+      context: { function: "duplicateRubric", rubricId, newName },
+    });
     throw error;
   }
 }

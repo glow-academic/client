@@ -35,9 +35,15 @@ export function createMockAppFeedback(overrides: Partial<AppFeedback> = {}): App
 export function createMockAppLog(overrides: Partial<AppLog> = {}): AppLog {
   const defaults: AppLog = {
     id: faker.number.int(),
+    event: faker.lorem.word(),
     level: faker.lorem.word(),
     message: faker.lorem.paragraph(),
+    correlationId: faker.lorem.word(),
+    actor: {},
+    subject: {},
+    metrics: {},
     context: {},
+    error: {},
     createdAt: faker.date.past().toISOString(),
   };
 

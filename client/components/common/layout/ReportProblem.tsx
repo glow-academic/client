@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/contexts/profile-context";
-import { logError, logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createAppFeedback } from "@/utils/mutations/app_feedback/create-app-feedback";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MessageSquare } from "lucide-react";
@@ -90,8 +90,18 @@ export default function ReportProblem({
 
   const createFeedbackMutation = useMutation({
     mutationFn: createAppFeedback,
-    onSuccess: (data) => {
-      logInfo("Feedback submitted successfully", { feedbackId: data[0]?.id });
+    onSuccess: async (data) => {
+      await log.info("feedback.create.success", {
+        message: "Feedback submitted successfully",
+        subject: {
+          entityType: "app_feedback",
+          entityId: String(data[0]?.id ?? ""),
+        },
+        context: {
+          component: "ReportProblem",
+          function: "createFeedbackMutation.onSuccess",
+        },
+      });
       queryClient.invalidateQueries({ queryKey: ["app_feedback"] });
       toast.success(
         "Feedback submitted successfully! Thank you for your input."
@@ -99,8 +109,16 @@ export default function ReportProblem({
       setIsOpen(false);
       resetForm();
     },
-    onError: (error) => {
-      logError("Failed to submit feedback", error);
+    onError: async (error) => {
+      await log.error("feedback.create.failed", {
+        message: "Failed to submit feedback",
+        subject: { entityType: "app_feedback" },
+        context: {
+          component: "ReportProblem",
+          function: "createFeedbackMutation.onError",
+        },
+        error,
+      });
       toast.error("Failed to submit feedback. Please try again.");
     },
   });
@@ -156,10 +174,25 @@ export default function ReportProblem({
         profileId: activeProfile?.id || null,
       };
 
-      logInfo("Submitting feedback", feedbackData);
+      await log.info("feedback.create.start", {
+        message: "Submitting feedback",
+        subject: { entityType: "app_feedback" },
+        ...(activeProfile?.id
+          ? { actor: { profileId: activeProfile.id } }
+          : {}),
+        context: { component: "ReportProblem", function: "handleSubmit" },
+      });
       createFeedbackMutation.mutate([feedbackData]);
     } catch (error) {
-      logError("Error preparing feedback data", error);
+      await log.error("feedback.create.error", {
+        message: "Error preparing feedback data",
+        subject: { entityType: "app_feedback" },
+        ...(activeProfile?.id
+          ? { actor: { profileId: activeProfile.id } }
+          : {}),
+        context: { component: "ReportProblem", function: "handleSubmit" },
+        error,
+      });
       toast.error("Error preparing feedback. Please try again.");
     } finally {
       setIsSubmitting(false);

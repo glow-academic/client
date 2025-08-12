@@ -2,7 +2,7 @@
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { parameters } from "@/utils/drizzle/schema";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _createParameter(data: typeof parameters.$inferInsert) {
     const result = await db.insert(parameters).values(data).returning();
     return result[0];
   } catch (error) {
-    logError("Error creating parameter:", error);
+    await log.error("mutation.create.failed", {
+      message: "Error creating parameter",
+      subject: { entityType: "parameters" },
+      context: { function: "_createParameter", file: "utils/mutations/parameters/create-parameter.ts" },
+      error,
+    });
     throw error;
   }
 }

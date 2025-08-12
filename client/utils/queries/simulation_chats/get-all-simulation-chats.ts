@@ -2,7 +2,7 @@
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { simulationChats } from "@/utils/drizzle/schema";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -10,7 +10,12 @@ async function _getAllSimulationChats() {
   try {
     return await db.select().from(simulationChats);
   } catch (error) {
-    logError("Error fetching all simulation_chats:", error);
+    await log.error("query.fetch_all.failed", {
+      message: "Error fetching all simulation_chats",
+      subject: { entityType: "simulation_chats" },
+      context: { function: "_getAllSimulationChats", file: "utils/queries/simulation_chats/get-all-simulation-chats.ts" },
+      error,
+    });
     throw error;
   }
 }

@@ -1,5 +1,4 @@
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render, screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -36,14 +35,14 @@ vi.mock("@/utils/logs/get-logs", () => ({
 }));
 
 // Import mocked functions
-import { logError, logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { getAppLogs } from "@/utils/logs/get-logs";
 import { toast } from "sonner";
 
 // Get mock functions
 const mockGetAppLogs = vi.mocked(getAppLogs);
-const mockLogInfo = vi.mocked(logInfo);
-const mockLogError = vi.mocked(logError);
+const infoSpy = vi.spyOn(log, "info").mockResolvedValue();
+const errorSpy = vi.spyOn(log, "error").mockResolvedValue();
 const mockToast = vi.mocked(toast);
 
 // Mock data
@@ -216,7 +215,13 @@ describe("Logs", () => {
         expect(mockInvalidateQueries).toHaveBeenCalledWith({
           queryKey: ["logs"],
         });
-        expect(mockLogInfo).toHaveBeenCalledWith("Logs refreshed successfully");
+        expect(infoSpy).toHaveBeenCalledWith(
+          "logs.refresh.success",
+          expect.objectContaining({
+            message: "Logs refreshed successfully",
+            context: { component: "Logs" },
+          })
+        );
         expect(mockToast.success).toHaveBeenCalledWith(
           "Logs refreshed successfully"
         );
@@ -248,9 +253,13 @@ describe("Logs", () => {
         expect(mockInvalidateQueries).toHaveBeenCalledWith({
           queryKey: ["logs"],
         });
-        expect(mockLogError).toHaveBeenCalledWith(
-          "Error refreshing logs:",
-          error
+        expect(errorSpy).toHaveBeenCalledWith(
+          "logs.refresh.failed",
+          expect.objectContaining({
+            message: "Error refreshing logs",
+            error,
+            context: { component: "Logs" },
+          })
         );
         expect(mockToast.error).toHaveBeenCalledWith("Failed to refresh logs");
       });

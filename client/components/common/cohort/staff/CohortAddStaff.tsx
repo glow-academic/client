@@ -62,7 +62,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { Profile, ProfileRole } from "@/types";
 import { getProfileByAlias } from "@/utils/auth/get-profile-by-alias";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createProfiles } from "@/utils/mutations/profiles/create-profiles";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { useQuery } from "@tanstack/react-query";
@@ -147,7 +147,11 @@ export default function CohortAddStaff({
       const existingProfile = await getProfileByAlias(alias.trim());
       return !existingProfile; // Return true if alias is available (no existing profile)
     } catch (error) {
-      logError("Error validating alias:", error);
+      log.error("staff.alias.validate.failed", {
+        message: "Error validating alias",
+        error,
+        context: { component: "CohortAddStaff", function: "validateAlias" },
+      });
       return false;
     } finally {
       setIsValidatingAlias(false);
@@ -286,7 +290,14 @@ export default function CohortAddStaff({
               toast.error(
                 "Failed to create some profiles in the database. Please check your data and try again."
               );
-              logError("Error creating profiles:", error);
+              log.error("staff.bulk_create.failed", {
+                message: "Error creating profiles",
+                error,
+                context: {
+                  component: "CohortAddStaff",
+                  function: "handleCsvUpload",
+                },
+              });
             }
           }
 
@@ -432,7 +443,14 @@ export default function CohortAddStaff({
         toast.error(
           "Failed to create profile in the database. Please check your information and try again."
         );
-        logError("Error creating profile:", error);
+        log.error("staff.create_profile.failed", {
+          message: "Error creating profile",
+          error,
+          context: {
+            component: "CohortAddStaff",
+            function: "addManualProfile",
+          },
+        });
         return;
       }
     }
@@ -483,9 +501,7 @@ export default function CohortAddStaff({
           Add Staff
         </Button>
       </DialogTrigger>
-      <DialogContent
-        className="max-w-4xl max-h-[80vh] overflow-y-auto"
-      >
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Staff to Cohort</DialogTitle>
           <DialogDescription>

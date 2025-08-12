@@ -7,7 +7,7 @@
  */
 
 import { getApiBase } from "@/lib/api-base";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import type { NextRequest } from "next/server";
 
 // Helper function to handle proxy requests using fetch
@@ -44,10 +44,11 @@ async function handleProxyRequest(req: NextRequest) {
       headers: responseHeaders,
     });
   } catch (error) {
-    logError(
-      "[TUS proxy] Error:",
-      error instanceof Error ? error.message : "Unknown error",
-    );
+    log.error("upload.tus.proxy.error", {
+      message: "[TUS proxy] Error",
+      error: error instanceof Error ? error : String(error),
+      context: { function: "handleProxyRequest" },
+    });
     return new Response("Proxy Error", { status: 500 });
   }
 }

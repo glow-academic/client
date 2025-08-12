@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { providers } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -12,7 +12,12 @@ async function _updateProvider(id: string, data: Partial<typeof providers.$infer
     const result = await db.update(providers).set(data).where(eq(providers.id, id)).returning();
     return result[0];
   } catch (error) {
-    logError("Error updating provider:", error);
+    await log.error("mutation.update.failed", {
+      message: "Error updating provider",
+      subject: { entityType: "providers", entityId: String(id) },
+      context: { function: "_updateProvider", file: "utils/mutations/providers/update-provider.ts" },
+      error,
+    });
     throw error;
   }
 }

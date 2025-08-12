@@ -45,7 +45,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
 import { Cohort } from "@/types";
 import { getSimulatableProfiles } from "@/utils/auth/get-simulatable-profiles";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAvailableSubsectionsForRole } from "@/utils/route-permissions";
@@ -636,7 +636,14 @@ export function UnifiedSidebar({
           await signOut({ redirectTo: `${appPrefix}/` });
           return "Logged out successfully";
         } catch (error) {
-          logError("Error logging out:", error);
+          log.error("auth.logout.failed", {
+            message: "Error logging out",
+            error,
+            context: {
+              component: "UnifiedSidebar",
+              function: "handleLoginOrLogout",
+            },
+          });
           throw new Error(
             typeof error === "string" ? error : "Failed to log out"
           );
@@ -653,8 +660,7 @@ export function UnifiedSidebar({
   };
 
   // Show skeleton while profile is loading or while we don't have a complete profile yet
-  const shouldShowSkeleton =
-    isLoading || !effectiveProfile;
+  const shouldShowSkeleton = isLoading || !effectiveProfile;
 
   if (shouldShowSkeleton) {
     return <SidebarSkeleton />;

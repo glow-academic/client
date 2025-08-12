@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { assistantChats } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -12,7 +12,12 @@ async function _getAssistantChat(id: string) {
     const result = await db.select().from(assistantChats).where(eq(assistantChats.id, id));
     return result[0] || null;
   } catch (error) {
-    logError("Error fetching assistantChat:", error);
+    await log.error("query.fetch_one.failed", {
+      message: "Error fetching assistantChat",
+      subject: { entityType: "assistant_chats", entityId: String(id) },
+      context: { function: "_getAssistantChat", file: "utils/queries/assistant_chats/get-assistant-chat.ts" },
+      error,
+    });
     throw error;
   }
 }

@@ -120,9 +120,15 @@ export const standardGroups = pgTable("standard_groups", {
 
 export const appLogs = pgTable("app_logs", {
 	id: serial().primaryKey().notNull(),
+	event: text().notNull(),
 	level: text().notNull(),
 	message: text(),
+	correlationId: text("correlation_id"),
+	actor: jsonb(),
+	subject: jsonb(),
+	metrics: jsonb(),
 	context: jsonb(),
+	error: jsonb(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow()});
 
 export const standards = pgTable("standards", {

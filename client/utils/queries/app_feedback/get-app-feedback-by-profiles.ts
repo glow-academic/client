@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { appFeedback } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _getAppFeedbackByProfiles(profileIds: string[]) {
   try {
     return await db.select().from(appFeedback).where(inArray(appFeedback.profileId, profileIds));
   } catch (error) {
-    logError("Error fetching app_feedback by profiles:", error);
+    await log.error("query.fetch_by_fk_plural.failed", {
+      message: "Error fetching app_feedback by profiles",
+      subject: { entityType: "app_feedback" },
+      context: { function: "_getAppFeedbackByProfiles", file: "utils/queries/app_feedback/get-app-feedback-by-profiles.ts", foreignKey: "profileId", foreignIdsCount: profileIds.length },
+      error,
+    });
     throw error;
   }
 }

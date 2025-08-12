@@ -6,7 +6,7 @@
  */
 "use server";
 import { getApiBase } from "@/lib/api-base";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 
 export interface TestScenarioParams {
   agentId: string;
@@ -23,7 +23,7 @@ export interface TestScenarioResponse {
 }
 
 export async function testScenario(
-  params: TestScenarioParams,
+  params: TestScenarioParams
 ): Promise<TestScenarioResponse> {
   try {
     const formData = new FormData();
@@ -44,7 +44,10 @@ export async function testScenario(
       const errorMessage =
         errorData.message ||
         `Failed to test scenario: ${response.status} ${response.statusText}`;
-      logError(errorMessage);
+      log.error("scenario.test.failed", {
+        message: errorMessage,
+        context: { function: "testScenario" },
+      });
       return {
         success: false,
         message: errorMessage,
@@ -56,7 +59,10 @@ export async function testScenario(
     const reader = response.body?.getReader();
     if (!reader) {
       const errorMessage = "No response body available for streaming";
-      logError(errorMessage);
+      log.error("scenario.test.reader_missing", {
+        message: errorMessage,
+        context: { function: "testScenario" },
+      });
       return {
         success: false,
         message: errorMessage,
@@ -73,7 +79,11 @@ export async function testScenario(
     };
   } catch (error) {
     const errorMessage = `Error testing scenario: ${error instanceof Error ? error.message : "Unknown error"}`;
-    logError(errorMessage, error);
+    log.error("scenario.test.error", {
+      message: errorMessage,
+      error,
+      context: { function: "testScenario" },
+    });
     return {
       success: false,
       message: errorMessage,

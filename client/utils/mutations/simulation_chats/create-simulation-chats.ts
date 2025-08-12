@@ -2,7 +2,7 @@
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { simulationChats } from "@/utils/drizzle/schema";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -10,7 +10,12 @@ async function _createSimulationChats(data: (typeof simulationChats.$inferInsert
   try {
     return await db.insert(simulationChats).values(data).returning();
   } catch (error) {
-    logError("Error creating multiple simulation_chats:", error);
+    await log.error("mutation.create_many.failed", {
+      message: "Error creating multiple simulation_chats",
+      subject: { entityType: "simulation_chats" },
+      context: { function: "_createSimulationChats", file: "utils/mutations/simulation_chats/create-simulation-chats.ts", count: Array.isArray(data) ? data.length : undefined },
+      error,
+    });
     throw error;
   }
 }

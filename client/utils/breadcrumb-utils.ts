@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { getPersona } from "@/utils/queries/personas/get-persona";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
@@ -100,7 +100,11 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         return id.length > 10 ? `${id.substring(0, 8)}...` : id;
     }
   } catch (error) {
-    logError(`Error fetching name for ${context} ID ${id}:`, error);
+    log.error("breadcrumb.fetch_name.failed", {
+      message: `Error fetching name for ${context} ID ${id}`,
+      error,
+      context: { function: "fetchNameForId", contextType: context, id },
+    });
     // Fallback to generic titles for known contexts to avoid exposing raw IDs
     switch (context) {
       case "provider":

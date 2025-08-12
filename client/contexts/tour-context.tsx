@@ -5,7 +5,7 @@
  * 01/15/2025
  */
 "use client";
-import { logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import {
   createContext,
   useCallback,
@@ -555,8 +555,12 @@ export function TourProvider({ children }: TourProviderProps) {
                             detail: { stepIndex: state.currentStep },
                           })
                         );
-                        logInfo("Tour Next button clicked", {
-                          stepIndex: state.currentStep,
+                        log.info("tour.next.clicked", {
+                          message: "Tour Next button clicked",
+                          context: {
+                            component: "TourContext",
+                            stepIndex: state.currentStep,
+                          },
                         });
                       }}
                       disabled={nextDisabled}

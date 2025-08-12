@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { debugInfo } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _getDebugInfoByModelRuns(modelRunIds: string[]) {
   try {
     return await db.select().from(debugInfo).where(inArray(debugInfo.modelRunId, modelRunIds));
   } catch (error) {
-    logError("Error fetching debug_info by modelRuns:", error);
+    await log.error("query.fetch_by_fk_plural.failed", {
+      message: "Error fetching debug_info by modelRuns",
+      subject: { entityType: "debug_info" },
+      context: { function: "_getDebugInfoByModelRuns", file: "utils/queries/debug_info/get-debug-info-by-model-runs.ts", foreignKey: "modelRunId", foreignIdsCount: modelRunIds.length },
+      error,
+    });
     throw error;
   }
 }

@@ -1,5 +1,5 @@
 // auth.ts
-import { logError, logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import PostgresAdapter from "@auth/pg-adapter";
 import NextAuth from "next-auth";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
@@ -37,7 +37,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async createUser({ user }) {
       try {
         if (!user.email) {
-          logError("Missing email for new user:", { userId: user.id });
+          log.error("auth.create_user.precheck.failed", {
+            message: "Missing email for new user",
+            context: { file: "client/auth.ts", function: "events.createUser" },
+          });
           return;
         }
 
@@ -54,11 +57,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             lastLogin: new Date().toISOString(),
           });
 
-          logInfo("Linked existing profile to new user:", {
-            profileId: existingProfile.id,
-            userId: user.id,
-            email: user.email,
-            alias: alias,
+          await log.info("auth.profile.linked", {
+            subject: { entityType: "profile", entityId: existingProfile.id },
+            actor: { profileId: existingProfile.id },
+            context: { file: "client/auth.ts", function: "events.createUser" },
+            message: "Linked existing profile to new user",
           });
         } else {
           // Create a new profile for this user
@@ -75,20 +78,33 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             role: "guest",
           });
 
-          logInfo("Created new profile for user:", {
-            userId: user.id,
-            email: user.email,
-            alias: alias,
+          await log.info("auth.profile.created", {
+            subject: { entityType: "profile" },
+            context: {
+              file: "client/auth.ts",
+              function: "events.createUser",
+              userId: user.id,
+              email: user.email,
+              alias,
+            },
+            message: "Created new profile for user",
           });
         }
       } catch (error) {
-        logError("Error handling new user:", error);
+        await log.error("auth.create_user.failed", {
+          message: "Error handling new user",
+          context: { file: "client/auth.ts", function: "events.createUser" },
+          error,
+        });
       }
     },
     async signIn({ user, profile, isNewUser }) {
       try {
         if (!user.email) {
-          logError("Missing email during sign in:", { userId: user.id });
+          await log.error("auth.sign_in.precheck.failed", {
+            message: "Missing email during sign in",
+            context: { file: "client/auth.ts", function: "events.signIn" },
+          });
           return;
         }
 
@@ -99,9 +115,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const firstName = nameParts[0] || "Unknown";
           const lastName = nameParts[nameParts.length - 1] || "User";
 
-          logInfo("Updating existing user profile:", {
-            userId: user.id,
-            email: user.email,
+          await log.info("auth.profile.update.start", {
+            subject: { entityType: "user", entityId: user.id ?? "" },
+            context: {
+              file: "client/auth.ts",
+              function: "events.signIn",
+              email: user.email,
+            },
+            message: "Updating existing user profile",
           });
 
           // Get the user's profile to update it
@@ -115,15 +136,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               lastLogin: new Date().toISOString(),
             });
 
-            logInfo("Updated existing user profile:", {
-              profileId: userProfile.id,
-              userId: user.id,
-              email: user.email,
+            await log.info("auth.profile.updated", {
+              subject: { entityType: "profile", entityId: userProfile.id },
+              context: {
+                file: "client/auth.ts",
+                function: "events.signIn",
+                userId: user.id,
+                email: user.email,
+              },
+              message: "Updated existing user profile",
             });
           }
         }
       } catch (error) {
-        logError("Error in signIn event:", error);
+        await log.error("auth.sign_in.failed", {
+          message: "Error in signIn event",
+          context: { file: "client/auth.ts", function: "events.signIn" },
+          error,
+        });
       }
     },
   },

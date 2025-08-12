@@ -40,7 +40,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Switch } from "@/components/ui/switch";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Infinity,
@@ -257,7 +257,11 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
           fileId: fileId,
         },
         onError: (error) => {
-          logError("Upload failed:", error);
+          log.error("upload.tus.failed", {
+            message: "Upload failed",
+            error,
+            context: { component: "MainLayoutContent", function: "uploadFile" },
+          });
           toast.error(`Upload failed: ${file.name}`, {
             description: error.message || "An error occurred during upload",
             id: toastId,
@@ -375,10 +379,11 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                   }
                 }
               } catch (classificationError) {
-                logError(
-                  "Post-upload classification update failed:",
-                  classificationError
-                );
+                log.error("upload.classification.update.failed", {
+                  message: "Post-upload classification update failed",
+                  error: classificationError,
+                  context: { component: "MainLayoutContent" },
+                });
               }
 
               // Invalidate documents queries to refresh the UI
@@ -415,7 +420,11 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
               });
             }
           } catch (finalizeError) {
-            logError("Finalization failed:", finalizeError);
+            log.error("upload.finalize.failed", {
+              message: "Finalization failed",
+              error: finalizeError,
+              context: { component: "MainLayoutContent" },
+            });
             toast.error(`Upload processing failed: ${file.name}`, {
               description: "Failed to process uploaded file",
               id: toastId,
@@ -439,7 +448,11 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       // Start the upload
       await upload.start();
     } catch (error) {
-      logError("Upload error:", error);
+      log.error("upload.error", {
+        message: "Upload error",
+        error,
+        context: { component: "MainLayoutContent" },
+      });
       toast.error(`Upload failed: ${file.name}`, {
         description:
           error instanceof Error
@@ -1160,7 +1173,11 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                       toast.success("Simulation started", { id: startToastId });
                       router.push(`/practice/a/${attemptIdCreated}`);
                     } catch (err) {
-                      logError("Failed to create attempt", err);
+                      log.error("simulation.attempt.create.failed", {
+                        message: "Failed to create attempt",
+                        error: err,
+                        context: { component: "MainLayoutContent" },
+                      });
                       toast.error("Failed to create attempt");
                       setIsStartingAttempt(false);
                     }

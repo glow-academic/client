@@ -2,7 +2,7 @@
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { standards } from "@/utils/drizzle/schema";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -10,7 +10,12 @@ async function _getAllStandards() {
   try {
     return await db.select().from(standards);
   } catch (error) {
-    logError("Error fetching all standards:", error);
+    await log.error("query.fetch_all.failed", {
+      message: "Error fetching all standards",
+      subject: { entityType: "standards" },
+      context: { function: "_getAllStandards", file: "utils/queries/standards/get-all-standards.ts" },
+      error,
+    });
     throw error;
   }
 }

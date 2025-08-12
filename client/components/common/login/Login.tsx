@@ -6,7 +6,7 @@
  */
 "use client";
 import { Button } from "@/components/ui/button";
-import { logError, logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -199,7 +199,10 @@ export default function Login() {
       setLoadingMicrosoft(true);
 
       // Log the login attempt start
-      await logInfo("Microsoft login attempt started");
+      await log.info("auth.microsoft.start", {
+        message: "Microsoft login attempt started",
+        context: { component: "Login" },
+      });
 
       // Clear guest mode and simulated profile from localStorage
       localStorage.removeItem("guestMode");
@@ -213,8 +216,9 @@ export default function Login() {
       await signIn("microsoft-entra-id", { redirectTo: redirectTo });
 
       // Log successful login attempt
-      await logInfo("Microsoft login attempt successful", {
-        redirectTo: "/home",
+      await log.info("auth.microsoft.success", {
+        message: "Microsoft login attempt successful",
+        context: { component: "Login", redirectTo: "/home" },
       });
 
       toast.success("Signing in with Microsoft...");
@@ -222,7 +226,11 @@ export default function Login() {
       const errorMessage = (error as Error).message;
 
       // Log the error to database
-      await logError("Microsoft login attempt failed", error as Error);
+      await log.error("auth.microsoft.failed", {
+        message: "Microsoft login attempt failed",
+        error: error as Error,
+        context: { component: "Login" },
+      });
 
       if (!errorMessage.toLowerCase().includes("load failed")) {
         toast.error("An error occurred during login: " + errorMessage);
@@ -237,8 +245,9 @@ export default function Login() {
       setLoadingGuest(true);
 
       // Log guest access attempt
-      await logInfo("Guest access attempt started", {
-        redirectTo: "/practice",
+      await log.info("auth.guest.start", {
+        message: "Guest access attempt started",
+        context: { component: "Login", redirectTo: "/practice" },
       });
 
       // Set guest mode in localStorage and redirect to practice
@@ -247,8 +256,9 @@ export default function Login() {
       localStorage.setItem("guestMode", "true");
 
       // Log successful guest access
-      await logInfo("Guest access attempt successful", {
-        redirectTo: "/practice",
+      await log.info("auth.guest.success", {
+        message: "Guest access attempt successful",
+        context: { component: "Login", redirectTo: "/practice" },
       });
 
       toast.success("Accessing as guest!");
@@ -256,11 +266,12 @@ export default function Login() {
     } catch (error) {
       const errorMessage = (error as Error).message;
 
-      // Log the error to database
-      await logError("Guest access attempt failed", error as Error);
-
       // Log failed guest access
-      await logError("Guest access attempt failed", error as Error);
+      await log.error("auth.guest.failed", {
+        message: "Guest access attempt failed",
+        error: error as Error,
+        context: { component: "Login" },
+      });
 
       if (!errorMessage.toLowerCase().includes("load failed")) {
         toast.error("An error occurred during login: " + errorMessage);

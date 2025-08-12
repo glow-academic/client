@@ -12,7 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAssistant } from "@/contexts/assistant-context";
 import { AssistantMessage, AssistantToolCall } from "@/types";
-import { logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { getAssistantMessagesByChat } from "@/utils/queries/assistant_messages/get-assistant-messages-by-chat";
 import { getAssistantToolCallsByChat } from "@/utils/queries/assistant_tool_calls/get-assistant-tool-calls-by-chat";
 import { useQuery } from "@tanstack/react-query";
@@ -264,10 +264,16 @@ export default function ChatMessages({
   });
 
   useEffect(() => {
-    logInfo("ChatMessages - currentChatId", { currentChatId });
-    logInfo("ChatMessages - messages", { messages });
-    logInfo("ChatMessages - toolCalls", { toolCalls });
-    logInfo("ChatMessages - isConnected", { isConnected });
+    log.debug("chat.messages.debug", {
+      message: "ChatMessages state",
+      context: {
+        component: "ChatMessages",
+        currentChatId: currentChatId ?? undefined,
+        messagesCount: messages?.length ?? 0,
+        toolCallsCount: toolCalls?.length ?? 0,
+        isConnected,
+      },
+    });
   }, [currentChatId, messages, toolCalls, isConnected]);
 
   const createTimeline = useCallback((): TimelineItem[] => {

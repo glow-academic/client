@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { profiles } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _getProfilesByUser(userId: number) {
   try {
     return await db.select().from(profiles).where(eq(profiles.userId, userId));
   } catch (error) {
-    logError("Error fetching profiles by user:", error);
+    await log.error("query.fetch_by_fk.failed", {
+      message: "Error fetching profiles by user",
+      subject: { entityType: "profiles" },
+      context: { function: "_getProfilesByUser", file: "utils/queries/profiles/get-profiles-by-user.ts", foreignKey: "userId", foreignId: String(userId) },
+      error,
+    });
     throw error;
   }
 }

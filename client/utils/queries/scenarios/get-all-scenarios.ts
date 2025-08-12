@@ -2,7 +2,7 @@
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { scenarios } from "@/utils/drizzle/schema";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -10,7 +10,12 @@ async function _getAllScenarios() {
   try {
     return await db.select().from(scenarios);
   } catch (error) {
-    logError("Error fetching all scenarios:", error);
+    await log.error("query.fetch_all.failed", {
+      message: "Error fetching all scenarios",
+      subject: { entityType: "scenarios" },
+      context: { function: "_getAllScenarios", file: "utils/queries/scenarios/get-all-scenarios.ts" },
+      error,
+    });
     throw error;
   }
 }

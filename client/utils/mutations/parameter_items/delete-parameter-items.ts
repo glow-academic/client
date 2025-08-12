@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { parameterItems } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _deleteParameterItems(ids: string[]) {
   try {
     return await db.delete(parameterItems).where(inArray(parameterItems.id, ids)).returning();
   } catch (error) {
-    logError("Error deleting multiple parameter_items:", error);
+    await log.error("mutation.delete_many.failed", {
+      message: "Error deleting multiple parameter_items",
+      subject: { entityType: "parameter_items" },
+      context: { function: "_deleteParameterItems", file: "utils/mutations/parameter_items/delete-parameter-items.ts", count: ids.length },
+      error,
+    });
     throw error;
   }
 }

@@ -5,7 +5,7 @@
  * 06/18/2025
  */
 "use client";
-import { logError, logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Copy,
@@ -253,16 +253,26 @@ export default function Cohorts() {
     setIsDeleting(true);
     try {
       await deleteCohort(deleteItem.id);
-      logInfo("Cohort deleted successfully:", {
-        id: deleteItem.id,
-        name: deleteItem.name,
+      await log.info("cohort.delete.success", {
+        message: "Cohort deleted successfully",
+        subject: { entityType: "cohort", entityId: deleteItem.id },
+        context: {
+          component: "Cohorts",
+          function: "handleDelete",
+          name: deleteItem.name,
+        },
       });
       toast.success("Cohort deleted successfully");
       // Invalidate queries to ensure all components refresh
       queryClient.invalidateQueries({ queryKey: ["cohorts"] });
       refetchCohorts();
     } catch (error) {
-      logError("Error deleting cohort:", error);
+      await log.error("cohort.delete.failed", {
+        message: "Error deleting cohort",
+        subject: { entityType: "cohort", entityId: deleteItem?.id },
+        context: { component: "Cohorts", function: "handleDelete" },
+        error,
+      });
       toast.error("Failed to delete cohort");
     } finally {
       setIsDeleting(false);
@@ -293,16 +303,26 @@ export default function Cohorts() {
         updatedAt: new Date().toISOString(),
       });
 
-      logInfo("Left cohort successfully:", {
-        id: leaveItem.id,
-        name: leaveItem.name,
+      await log.info("cohort.leave.success", {
+        message: "Left cohort successfully",
+        subject: { entityType: "cohort", entityId: leaveItem.id },
+        context: {
+          component: "Cohorts",
+          function: "handleLeave",
+          name: leaveItem.name,
+        },
       });
       toast.success("Left cohort successfully");
       // Invalidate queries to ensure all components refresh
       queryClient.invalidateQueries({ queryKey: ["cohorts"] });
       refetchCohorts();
     } catch (error) {
-      logError("Error leaving cohort:", error);
+      await log.error("cohort.leave.failed", {
+        message: "Error leaving cohort",
+        subject: { entityType: "cohort", entityId: leaveItem?.id },
+        context: { component: "Cohorts", function: "handleLeave" },
+        error,
+      });
       toast.error("Failed to leave cohort");
     } finally {
       setIsLeaving(false);
@@ -323,16 +343,30 @@ export default function Cohorts() {
         active: false,
         title: `${cohort.title} Copy`,
       });
-      logInfo("Cohort duplicated successfully:", {
-        originalId: cohort.id,
-        originalTitle: cohort.title,
+      await log.info("cohort.duplicate.success", {
+        message: "Cohort duplicated successfully",
+        subject: { entityType: "cohort", entityId: cohort.id },
+        context: {
+          component: "Cohorts",
+          function: "handleDuplicate",
+          originalTitle: cohort.title,
+        },
       });
       toast.success(`Cohort "${cohort.title}" duplicated successfully`);
       // Invalidate queries to ensure all components refresh
       queryClient.invalidateQueries({ queryKey: ["cohorts"] });
       refetchCohorts();
     } catch (error) {
-      logError("Error duplicating cohort:", error);
+      await log.error("cohort.duplicate.failed", {
+        message: "Error duplicating cohort",
+        subject: { entityType: "cohort", entityId: cohort.id },
+        context: {
+          component: "Cohorts",
+          function: "handleDuplicate",
+          originalTitle: cohort.title,
+        },
+        error,
+      });
       toast.error("Failed to duplicate cohort");
     } finally {
       setIsDuplicating(null);

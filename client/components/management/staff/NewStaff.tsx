@@ -36,7 +36,7 @@ import { useProfile } from "@/contexts/profile-context";
 import { Profile } from "@/types";
 import { getProfileByAlias } from "@/utils/auth/get-profile-by-alias";
 import { profileRole } from "@/utils/drizzle/schema";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
 import { createProfiles } from "@/utils/mutations/profiles/create-profiles";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
@@ -234,7 +234,11 @@ const useNewStaffBusinessLogic = (onDone?: () => void) => {
       const existingProfile = await getProfileByAlias(alias.trim());
       return !existingProfile; // Return true if alias is available (no existing profile)
     } catch (error) {
-      logError("Error validating alias:", error);
+      log.error("staff.alias.validate.failed", {
+        message: "Error validating alias",
+        error,
+        context: { component: "NewStaff", function: "validateAlias" },
+      });
       return false;
     } finally {
       setIsValidatingAlias(false);
@@ -379,7 +383,11 @@ const useNewStaffBusinessLogic = (onDone?: () => void) => {
               toast.error(
                 "Failed to create some profiles in the database. Please check your data and try again."
               );
-              logError("Error creating profiles:", error);
+              log.error("staff.bulk_create.failed", {
+                message: "Error creating profiles",
+                error,
+                context: { component: "NewStaff", function: "handleCsvUpload" },
+              });
             }
           }
 
@@ -473,7 +481,11 @@ const useNewStaffBusinessLogic = (onDone?: () => void) => {
       toast.error(
         "Failed to create profile in the database. Please check your information and try again."
       );
-      logError("Error creating profile:", error);
+      log.error("staff.create_profile.failed", {
+        message: "Error creating profile",
+        error,
+        context: { component: "NewStaff", function: "addManualProfile" },
+      });
       return;
     }
   }, [manualProfile, allProfiles, validateAlias, onDone]);
@@ -533,7 +545,11 @@ const useNewStaffBusinessLogic = (onDone?: () => void) => {
         router.push("/management/staff");
       }
     } catch (error) {
-      logError("Error creating staff members from CSV:", error);
+      log.error("staff.bulk_create.failed", {
+        message: "Error creating staff members from CSV",
+        error,
+        context: { component: "NewStaff", function: "handleCSVSubmit" },
+      });
       toast.error("Failed to create some staff members. Please try again.");
     } finally {
       setIsSubmitting(false);

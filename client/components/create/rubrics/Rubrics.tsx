@@ -5,7 +5,7 @@
  * 06/18/2025
  */
 "use client";
-import { logError, logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Edit, Eye, FileCheck, Star, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -93,16 +93,26 @@ export default function Rubrics() {
     setIsDeleting(true);
     try {
       await deleteRubric(deleteItem.id);
-      logInfo("Rubric deleted successfully:", {
-        id: deleteItem.id,
-        name: deleteItem.name,
+      await log.info("rubric.delete.success", {
+        message: "Rubric deleted successfully",
+        subject: { entityType: "rubric", entityId: deleteItem.id },
+        context: {
+          component: "Rubrics",
+          function: "handleDelete",
+          name: deleteItem.name,
+        },
       });
       toast.success("Rubric deleted successfully");
       // Invalidate queries to ensure all components refresh
       queryClient.invalidateQueries({ queryKey: ["rubrics"] });
       refetchRubrics();
     } catch (error) {
-      logError("Error deleting rubric:", error);
+      await log.error("rubric.delete.failed", {
+        message: "Error deleting rubric",
+        subject: { entityType: "rubric", entityId: deleteItem?.id },
+        context: { component: "Rubrics", function: "handleDelete" },
+        error,
+      });
       toast.error("Failed to delete rubric");
     } finally {
       setIsDeleting(false);
@@ -121,16 +131,30 @@ export default function Rubrics() {
     setIsDuplicating(rubric.id);
     try {
       await duplicateRubric(rubric.id, `${rubric.name} Copy`);
-      logInfo("Rubric duplicated successfully:", {
-        originalId: rubric.id,
-        originalName: rubric.name,
+      await log.info("rubric.duplicate.success", {
+        message: "Rubric duplicated successfully",
+        subject: { entityType: "rubric", entityId: rubric.id },
+        context: {
+          component: "Rubrics",
+          function: "handleDuplicate",
+          originalName: rubric.name,
+        },
       });
       toast.success(`Rubric "${rubric.name}" duplicated successfully`);
       // Invalidate queries to ensure all components refresh
       queryClient.invalidateQueries({ queryKey: ["rubrics"] });
       refetchRubrics();
     } catch (error) {
-      logError("Error duplicating rubric:", error);
+      await log.error("rubric.duplicate.failed", {
+        message: "Error duplicating rubric",
+        subject: { entityType: "rubric", entityId: rubric.id },
+        context: {
+          component: "Rubrics",
+          function: "handleDuplicate",
+          originalName: rubric.name,
+        },
+        error,
+      });
       toast.error("Failed to duplicate rubric");
     } finally {
       setIsDuplicating(null);

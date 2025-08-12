@@ -5,7 +5,7 @@
  */
 "use server";
 import { getApiBase } from "@/lib/api-base";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 
 export interface RandomizeParams {
   name?: string | null;
@@ -61,7 +61,10 @@ export async function randomizeScenario(
         errorData.message ||
         errorData.detail ||
         `Failed to randomize scenario: ${response.status} ${response.statusText}`;
-      logError(errorMessage);
+      log.error("scenario.randomize.failed", {
+        message: errorMessage,
+        context: { function: "randomizeScenario" },
+      });
       return { success: false, message: errorMessage, status: "error" };
     }
 
@@ -78,7 +81,11 @@ export async function randomizeScenario(
     const errorMessage = `Error randomizing scenario: ${
       error instanceof Error ? error.message : "Unknown error"
     }`;
-    logError(errorMessage, error);
+    log.error("scenario.randomize.error", {
+      message: errorMessage,
+      error,
+      context: { function: "randomizeScenario" },
+    });
     return { success: false, message: errorMessage, status: "error" };
   }
 }

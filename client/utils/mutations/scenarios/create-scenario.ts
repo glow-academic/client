@@ -2,7 +2,7 @@
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { scenarios } from "@/utils/drizzle/schema";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _createScenario(data: typeof scenarios.$inferInsert) {
     const result = await db.insert(scenarios).values(data).returning();
     return result[0];
   } catch (error) {
-    logError("Error creating scenario:", error);
+    await log.error("mutation.create.failed", {
+      message: "Error creating scenario",
+      subject: { entityType: "scenarios" },
+      context: { function: "_createScenario", file: "utils/mutations/scenarios/create-scenario.ts" },
+      error,
+    });
     throw error;
   }
 }

@@ -5,7 +5,7 @@
  * 06/07/2025
  */
 "use client";
-import { logError, logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { useQuery } from "@tanstack/react-query";
 import {
   ChevronDown,
@@ -148,14 +148,24 @@ export function Scenarios() {
     setIsDeleting(true);
     try {
       await deleteScenario(deleteItem.id);
-      logInfo("Scenario deleted successfully:", {
-        id: deleteItem.id,
-        name: deleteItem.name,
+      await log.info("scenario.delete.success", {
+        message: "Scenario deleted successfully",
+        subject: { entityType: "scenario", entityId: deleteItem.id },
+        context: {
+          component: "Scenarios",
+          function: "handleDelete",
+          name: deleteItem.name,
+        },
       });
       toast.success("Scenario deleted successfully");
       refetchScenarios();
     } catch (error) {
-      logError("Error deleting scenario:", error);
+      await log.error("scenario.delete.failed", {
+        message: "Error deleting scenario",
+        subject: { entityType: "scenario", entityId: deleteItem?.id },
+        context: { component: "Scenarios", function: "handleDelete" },
+        error,
+      });
       toast.error("Failed to delete scenario");
     } finally {
       setIsDeleting(false);
@@ -183,14 +193,28 @@ export function Scenarios() {
         generated: false,
         name: `${scenario.name} Copy`,
       });
-      logInfo("Scenario duplicated successfully:", {
-        originalId: scenario.id,
-        originalName: scenario.name,
+      await log.info("scenario.duplicate.success", {
+        message: "Scenario duplicated successfully",
+        subject: { entityType: "scenario", entityId: scenario.id },
+        context: {
+          component: "Scenarios",
+          function: "handleDuplicate",
+          originalName: scenario.name,
+        },
       });
       toast.success(`Scenario "${scenario.name}" duplicated successfully`);
       refetchScenarios();
     } catch (error) {
-      logError("Error duplicating scenario:", error);
+      await log.error("scenario.duplicate.failed", {
+        message: "Error duplicating scenario",
+        subject: { entityType: "scenario", entityId: scenario.id },
+        context: {
+          component: "Scenarios",
+          function: "handleDuplicate",
+          originalName: scenario.name,
+        },
+        error,
+      });
       toast.error("Failed to duplicate scenario");
     } finally {
       setIsDuplicating(null);

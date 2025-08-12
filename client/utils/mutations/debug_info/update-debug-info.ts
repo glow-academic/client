@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { debugInfo } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _updateDebugInfo(ids: string[], data: Partial<typeof debugInfo.$i
   try {
     return await db.update(debugInfo).set(data).where(inArray(debugInfo.id, ids)).returning();
   } catch (error) {
-    logError("Error updating multiple debug_info:", error);
+    await log.error("mutation.update_many.failed", {
+      message: "Error updating multiple debug_info",
+      subject: { entityType: "debug_info" },
+      context: { function: "_updateDebugInfo", file: "utils/mutations/debug_info/update-debug-info.ts", count: ids.length },
+      error,
+    });
     throw error;
   }
 }

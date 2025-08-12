@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { documents } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -12,7 +12,12 @@ async function _updateDocument(id: string, data: Partial<typeof documents.$infer
     const result = await db.update(documents).set(data).where(eq(documents.id, id)).returning();
     return result[0];
   } catch (error) {
-    logError("Error updating document:", error);
+    await log.error("mutation.update.failed", {
+      message: "Error updating document",
+      subject: { entityType: "documents", entityId: String(id) },
+      context: { function: "_updateDocument", file: "utils/mutations/documents/update-document.ts" },
+      error,
+    });
     throw error;
   }
 }

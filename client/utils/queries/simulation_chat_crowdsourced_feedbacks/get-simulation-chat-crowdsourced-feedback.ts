@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { simulationChatCrowdsourcedFeedbacks } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -12,7 +12,12 @@ async function _getSimulationChatCrowdsourcedFeedback(id: string) {
     const result = await db.select().from(simulationChatCrowdsourcedFeedbacks).where(eq(simulationChatCrowdsourcedFeedbacks.id, id));
     return result[0] || null;
   } catch (error) {
-    logError("Error fetching simulationChatCrowdsourcedFeedback:", error);
+    await log.error("query.fetch_one.failed", {
+      message: "Error fetching simulationChatCrowdsourcedFeedback",
+      subject: { entityType: "simulation_chat_crowdsourced_feedbacks", entityId: String(id) },
+      context: { function: "_getSimulationChatCrowdsourcedFeedback", file: "utils/queries/simulation_chat_crowdsourced_feedbacks/get-simulation-chat-crowdsourced-feedback.ts" },
+      error,
+    });
     throw error;
   }
 }

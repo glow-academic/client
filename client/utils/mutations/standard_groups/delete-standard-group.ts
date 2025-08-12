@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { standardGroups } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -12,7 +12,12 @@ async function _deleteStandardGroup(id: string) {
     const result = await db.delete(standardGroups).where(eq(standardGroups.id, id)).returning();
     return result[0];
   } catch (error) {
-    logError("Error deleting standardGroup:", error);
+    await log.error("mutation.delete.failed", {
+      message: "Error deleting standardGroup",
+      subject: { entityType: "standard_groups", entityId: String(id) },
+      context: { function: "_deleteStandardGroup", file: "utils/mutations/standard_groups/delete-standard-group.ts" },
+      error,
+    });
     throw error;
   }
 }

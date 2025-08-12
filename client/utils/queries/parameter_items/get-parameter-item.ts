@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { parameterItems } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -12,7 +12,12 @@ async function _getParameterItem(id: string) {
     const result = await db.select().from(parameterItems).where(eq(parameterItems.id, id));
     return result[0] || null;
   } catch (error) {
-    logError("Error fetching parameterItem:", error);
+    await log.error("query.fetch_one.failed", {
+      message: "Error fetching parameterItem",
+      subject: { entityType: "parameter_items", entityId: String(id) },
+      context: { function: "_getParameterItem", file: "utils/queries/parameter_items/get-parameter-item.ts" },
+      error,
+    });
     throw error;
   }
 }

@@ -807,7 +807,7 @@ function generateGetAllQuery(exportName, tableName) {
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -815,7 +815,14 @@ async function _${functionName}() {
   try {
     return await db.select().from(${exportName});
   } catch (error) {
-    logError("Error fetching all ${tableName}:", error);
+    await log.error("query.fetch_all.failed", {
+      message: "Error fetching all ${tableName}",
+      subject: { entityType: "${tableName}" },
+      context: { function: "_${functionName}", file: "utils/queries/${tableName}/get-all-${toKebabCase(
+    tableName
+  )}.ts" },
+      error,
+    });
     throw error;
   }
 }
@@ -843,7 +850,7 @@ function generateGetByIdQuery(
 import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -852,7 +859,14 @@ async function _${functionName}(${primaryKey}: ${primaryKeyType}) {
     const result = await db.select().from(${exportName}).where(eq(${exportName}.${primaryKey}, ${primaryKey}));
     return result[0] || null;
   } catch (error) {
-    logError("Error fetching ${singularName}:", error);
+    await log.error("query.fetch_one.failed", {
+      message: "Error fetching ${singularName}",
+      subject: { entityType: "${tableName}", entityId: String(${primaryKey}) },
+      context: { function: "_${functionName}", file: "utils/queries/${tableName}/get-${toKebabCase(
+    singularName
+  )}.ts" },
+      error,
+    });
     throw error;
   }
 }
@@ -902,7 +916,7 @@ function generateGetByForeignKeyQuery(
 import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -910,7 +924,14 @@ async function _${functionName}(${paramName}Id: ${paramType}) {
   try {
     return await db.select().from(${exportName}).where(eq(${exportName}.${tsPropertyName}, ${paramName}Id));
   } catch (error) {
-    logError("Error fetching ${tableName} by ${paramName}:", error);
+    await log.error("query.fetch_by_fk.failed", {
+      message: "Error fetching ${tableName} by ${paramName}",
+      subject: { entityType: "${tableName}" },
+      context: { function: "_${functionName}", file: "utils/queries/${tableName}/get-${toKebabCase(
+    tableName
+  )}-by-${cleanParamName}.ts", foreignKey: "${tsPropertyName}", foreignId: String(${paramName}Id) },
+      error,
+    });
     throw error;
   }
 }
@@ -963,7 +984,7 @@ function generateGetByForeignKeyPluralQuery(
 import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -971,7 +992,14 @@ async function _${functionName}(${paramName}Ids: ${paramType}[]) {
   try {
     return await db.select().from(${exportName}).where(inArray(${exportName}.${tsPropertyName}, ${paramName}Ids));
   } catch (error) {
-    logError("Error fetching ${tableName} by ${pluralParamName}:", error);
+    await log.error("query.fetch_by_fk_plural.failed", {
+      message: "Error fetching ${tableName} by ${pluralParamName}",
+      subject: { entityType: "${tableName}" },
+      context: { function: "_${functionName}", file: "utils/queries/${tableName}/get-${toKebabCase(
+    tableName
+  )}-by-${cleanPluralParamName}.ts", foreignKey: "${tsPropertyName}", foreignIdsCount: ${paramName}Ids.length },
+      error,
+    });
     throw error;
   }
 }
@@ -992,7 +1020,7 @@ function generateCreateMutation(exportName, tableName, singularName) {
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -1001,7 +1029,14 @@ async function _${functionName}(data: typeof ${exportName}.$inferInsert) {
     const result = await db.insert(${exportName}).values(data).returning();
     return result[0];
   } catch (error) {
-    logError("Error creating ${singularName}:", error);
+    await log.error("mutation.create.failed", {
+      message: "Error creating ${singularName}",
+      subject: { entityType: "${tableName}" },
+      context: { function: "_${functionName}", file: "utils/mutations/${tableName}/create-${toKebabCase(
+    singularName
+  )}.ts" },
+      error,
+    });
     throw error;
   }
 }
@@ -1022,7 +1057,7 @@ function generateCreateMultipleMutation(exportName, tableName) {
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -1030,7 +1065,14 @@ async function _${functionName}(data: (typeof ${exportName}.$inferInsert)[]) {
   try {
     return await db.insert(${exportName}).values(data).returning();
   } catch (error) {
-    logError("Error creating multiple ${tableName}:", error);
+    await log.error("mutation.create_many.failed", {
+      message: "Error creating multiple ${tableName}",
+      subject: { entityType: "${tableName}" },
+      context: { function: "_${functionName}", file: "utils/mutations/${tableName}/create-${toKebabCase(
+    tableName
+  )}.ts", count: Array.isArray(data) ? data.length : undefined },
+      error,
+    });
     throw error;
   }
 }
@@ -1059,7 +1101,7 @@ function generateUpdateMutation(
 import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -1068,7 +1110,14 @@ async function _${functionName}(${primaryKey}: ${primaryKeyType}, data: Partial<
     const result = await db.update(${exportName}).set(data).where(eq(${exportName}.${primaryKey}, ${primaryKey})).returning();
     return result[0];
   } catch (error) {
-    logError("Error updating ${singularName}:", error);
+    await log.error("mutation.update.failed", {
+      message: "Error updating ${singularName}",
+      subject: { entityType: "${tableName}", entityId: String(${primaryKey}) },
+      context: { function: "_${functionName}", file: "utils/mutations/${tableName}/update-${toKebabCase(
+    singularName
+  )}.ts" },
+      error,
+    });
     throw error;
   }
 }
@@ -1097,7 +1146,7 @@ function generateUpdateMultipleMutation(
 import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -1105,7 +1154,14 @@ async function _${functionName}(${primaryKey}s: ${primaryKeyType}[], data: Parti
   try {
     return await db.update(${exportName}).set(data).where(inArray(${exportName}.${primaryKey}, ${primaryKey}s)).returning();
   } catch (error) {
-    logError("Error updating multiple ${tableName}:", error);
+    await log.error("mutation.update_many.failed", {
+      message: "Error updating multiple ${tableName}",
+      subject: { entityType: "${tableName}" },
+      context: { function: "_${functionName}", file: "utils/mutations/${tableName}/update-${toKebabCase(
+    tableName
+  )}.ts", count: ${primaryKey}s.length },
+      error,
+    });
     throw error;
   }
 }
@@ -1133,7 +1189,7 @@ function generateDeleteMutation(
 import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -1142,7 +1198,14 @@ async function _${functionName}(${primaryKey}: ${primaryKeyType}) {
     const result = await db.delete(${exportName}).where(eq(${exportName}.${primaryKey}, ${primaryKey})).returning();
     return result[0];
   } catch (error) {
-    logError("Error deleting ${singularName}:", error);
+    await log.error("mutation.delete.failed", {
+      message: "Error deleting ${singularName}",
+      subject: { entityType: "${tableName}", entityId: String(${primaryKey}) },
+      context: { function: "_${functionName}", file: "utils/mutations/${tableName}/delete-${toKebabCase(
+    singularName
+  )}.ts" },
+      error,
+    });
     throw error;
   }
 }
@@ -1170,7 +1233,7 @@ function generateDeleteMultipleMutation(
 import { db } from "@/utils/drizzle/db";
 import { ${exportName} } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -1178,7 +1241,14 @@ async function _${functionName}(${primaryKey}s: ${primaryKeyType}[]) {
   try {
     return await db.delete(${exportName}).where(inArray(${exportName}.${primaryKey}, ${primaryKey}s)).returning();
   } catch (error) {
-    logError("Error deleting multiple ${tableName}:", error);
+    await log.error("mutation.delete_many.failed", {
+      message: "Error deleting multiple ${tableName}",
+      subject: { entityType: "${tableName}" },
+      context: { function: "_${functionName}", file: "utils/mutations/${tableName}/delete-${toKebabCase(
+    tableName
+  )}.ts", count: ${primaryKey}s.length },
+      error,
+    });
     throw error;
   }
 }

@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { simulationAttempts } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _deleteSimulationAttempts(ids: string[]) {
   try {
     return await db.delete(simulationAttempts).where(inArray(simulationAttempts.id, ids)).returning();
   } catch (error) {
-    logError("Error deleting multiple simulation_attempts:", error);
+    await log.error("mutation.delete_many.failed", {
+      message: "Error deleting multiple simulation_attempts",
+      subject: { entityType: "simulation_attempts" },
+      context: { function: "_deleteSimulationAttempts", file: "utils/mutations/simulation_attempts/delete-simulation-attempts.ts", count: ids.length },
+      error,
+    });
     throw error;
   }
 }

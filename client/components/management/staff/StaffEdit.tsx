@@ -31,7 +31,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
 import { ProfileRole } from "@/types";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { deleteProfile } from "@/utils/mutations/profiles/delete-profile";
 import { updateProfile } from "@/utils/mutations/profiles/update-profile";
 import { getProfile } from "@/utils/queries/profiles/get-profile";
@@ -109,7 +109,15 @@ const useStaffEditBusinessLogic = (
           onDone();
         }
       } catch (error) {
-        logError("Error updating user:", error);
+        log.error("staff.update.failed", {
+          message: "Error updating user",
+          error,
+          context: {
+            component: "StaffEdit",
+            function: "handleSubmit",
+            profileId,
+          },
+        });
       } finally {
         setIsSubmitting(false);
       }
@@ -126,7 +134,15 @@ const useStaffEditBusinessLogic = (
       toast.success("User deleted successfully");
       router.push("/management/staff");
     } catch (error) {
-      logError("Error deleting user:", error);
+      log.error("staff.delete.failed", {
+        message: "Error deleting user",
+        error,
+        context: {
+          component: "StaffEdit",
+          function: "handleDelete",
+          profileId,
+        },
+      });
     } finally {
       setIsSubmitting(false);
     }

@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { standardGroups } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -12,7 +12,12 @@ async function _updateStandardGroup(id: string, data: Partial<typeof standardGro
     const result = await db.update(standardGroups).set(data).where(eq(standardGroups.id, id)).returning();
     return result[0];
   } catch (error) {
-    logError("Error updating standardGroup:", error);
+    await log.error("mutation.update.failed", {
+      message: "Error updating standardGroup",
+      subject: { entityType: "standard_groups", entityId: String(id) },
+      context: { function: "_updateStandardGroup", file: "utils/mutations/standard_groups/update-standard-group.ts" },
+      error,
+    });
     throw error;
   }
 }

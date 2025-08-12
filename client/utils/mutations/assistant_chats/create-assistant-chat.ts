@@ -2,7 +2,7 @@
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { assistantChats } from "@/utils/drizzle/schema";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _createAssistantChat(data: typeof assistantChats.$inferInsert) {
     const result = await db.insert(assistantChats).values(data).returning();
     return result[0];
   } catch (error) {
-    logError("Error creating assistantChat:", error);
+    await log.error("mutation.create.failed", {
+      message: "Error creating assistantChat",
+      subject: { entityType: "assistant_chats" },
+      context: { function: "_createAssistantChat", file: "utils/mutations/assistant_chats/create-assistant-chat.ts" },
+      error,
+    });
     throw error;
   }
 }

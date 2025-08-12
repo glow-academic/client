@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { simulationChats } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _updateSimulationChats(ids: string[], data: Partial<typeof simula
   try {
     return await db.update(simulationChats).set(data).where(inArray(simulationChats.id, ids)).returning();
   } catch (error) {
-    logError("Error updating multiple simulation_chats:", error);
+    await log.error("mutation.update_many.failed", {
+      message: "Error updating multiple simulation_chats",
+      subject: { entityType: "simulation_chats" },
+      context: { function: "_updateSimulationChats", file: "utils/mutations/simulation_chats/update-simulation-chats.ts", count: ids.length },
+      error,
+    });
     throw error;
   }
 }

@@ -5,7 +5,7 @@
  */
 
 import { getApiBase } from "@/lib/api-base";
-import { logError, logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import type { NextRequest } from "next/server";
 
 export async function GET(
@@ -19,7 +19,15 @@ export async function GET(
     const { searchParams } = new URL(req.url);
     const name = searchParams.get("name");
 
-    logInfo(`Downloading csv ${tokenId}`, { tokenId, requestedName: name });
+    await log.info("download.csv.start", {
+      message: `Downloading csv ${tokenId}`,
+      subject: { entityType: "csv", entityId: tokenId },
+      context: {
+        function: "GET",
+        file: "app/api/download/csv/token/[tokenId]/route.ts",
+        requestedName: name ?? undefined,
+      },
+    });
 
     // Forward the request to FastAPI backend
     const response = await fetch(`${getApiBase()}/csv/token/${tokenId}`, {
@@ -38,7 +46,15 @@ export async function GET(
 
     if (!response.ok) {
       const errorMessage = `Failed to download csv ${tokenId}: ${response.status} ${response.statusText}`;
-      logError(errorMessage, { tokenId, status: response.status });
+      await log.error("download.csv.failed", {
+        message: errorMessage,
+        subject: { entityType: "csv", entityId: tokenId },
+        context: {
+          function: "GET",
+          file: "app/api/download/csv/token/[tokenId]/route.ts",
+          status: response.status,
+        },
+      });
 
       return new Response(
         JSON.stringify({
@@ -63,12 +79,17 @@ export async function GET(
     );
     const contentLength = response.headers.get("content-length");
 
-    logInfo(`CSV ${tokenId} downloaded successfully`, {
-      tokenId,
-      contentType,
-      contentLength,
-      usedName: name,
-      backendContentDisposition: contentDispositionFromBackend,
+    await log.info("download.csv.success", {
+      message: `CSV ${tokenId} downloaded successfully`,
+      subject: { entityType: "csv", entityId: tokenId },
+      context: {
+        function: "GET",
+        file: "app/api/download/csv/token/[tokenId]/route.ts",
+        contentType,
+        contentLength,
+        usedName: name ?? undefined,
+        backendContentDisposition: contentDispositionFromBackend ?? undefined,
+      },
     });
 
     // Create response headers
@@ -102,7 +123,15 @@ export async function GET(
     });
   } catch (error) {
     const errorMessage = `Error downloading csv: ${error instanceof Error ? error.message : "Unknown error"}`;
-    logError(errorMessage, error);
+    await log.error("download.csv.error", {
+      message: errorMessage,
+      subject: { entityType: "csv" },
+      context: {
+        function: "GET",
+        file: "app/api/download/csv/token/[tokenId]/route.ts",
+      },
+      error,
+    });
 
     return new Response(
       JSON.stringify({

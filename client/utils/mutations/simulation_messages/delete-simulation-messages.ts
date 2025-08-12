@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { simulationMessages } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _deleteSimulationMessages(ids: string[]) {
   try {
     return await db.delete(simulationMessages).where(inArray(simulationMessages.id, ids)).returning();
   } catch (error) {
-    logError("Error deleting multiple simulation_messages:", error);
+    await log.error("mutation.delete_many.failed", {
+      message: "Error deleting multiple simulation_messages",
+      subject: { entityType: "simulation_messages" },
+      context: { function: "_deleteSimulationMessages", file: "utils/mutations/simulation_messages/delete-simulation-messages.ts", count: ids.length },
+      error,
+    });
     throw error;
   }
 }

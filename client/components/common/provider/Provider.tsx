@@ -5,7 +5,6 @@
  * 07/18/2025
  */
 "use client";
-import { logError } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -59,7 +58,7 @@ export default function Provider({ providerId }: ProviderProps) {
       apiKey: "",
       baseUrl: "",
     }),
-    [],
+    []
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -90,7 +89,7 @@ export default function Provider({ providerId }: ProviderProps) {
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | undefined,
+    value: string | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -192,16 +191,19 @@ export default function Provider({ providerId }: ProviderProps) {
       toast.success(
         isEditMode && providerId
           ? "Provider updated successfully!"
-          : "Provider created successfully!",
+          : "Provider created successfully!"
       );
       router.push(`/management/providers`);
     } catch (error) {
-      logError(
-        `Error ${isEditMode ? "updating" : "creating"} provider:`,
+      const message = `Error ${isEditMode ? "updating" : "creating"} provider:`;
+      // Keep toast text as-is, switch to structured log
+      log.error("provider.save.failed", {
+        message,
         error,
-      );
+        context: { component: "Provider", isEditMode, providerId },
+      });
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} provider: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${isEditMode ? "update" : "create"} provider: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsSubmitting(false);
@@ -218,7 +220,15 @@ export default function Provider({ providerId }: ProviderProps) {
         setDecryptedApiKey(decrypted);
         setShowApiKey(true);
       } catch (error) {
-        logError("Error decrypting API key:", error);
+        log.error("provider.api_key.decrypt.failed", {
+          message: "Error decrypting API key",
+          error,
+          context: {
+            component: "Provider",
+            function: "handleToggleApiKey",
+            providerId,
+          },
+        });
         toast.error("Failed to decrypt API key");
       } finally {
         setIsDecrypting(false);

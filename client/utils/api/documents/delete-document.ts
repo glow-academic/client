@@ -6,7 +6,7 @@
  */
 "use server";
 import { getApiBase } from "@/lib/api-base";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 
 export interface DeleteDocumentParams {
   documentId: string;
@@ -21,7 +21,7 @@ export interface DeleteDocumentResponse {
 
 export async function deleteDocument(
   documentId: string,
-  force: boolean = true,
+  force: boolean = true
 ): Promise<DeleteDocumentResponse> {
   try {
     const url = new URL(`${getApiBase()}/documents/id/${documentId}`);
@@ -42,7 +42,10 @@ export async function deleteDocument(
       const errorMessage =
         errorData.message ||
         `Failed to delete document: ${response.status} ${response.statusText}`;
-      logError(errorMessage);
+      log.error("documents.delete.failed", {
+        message: errorMessage,
+        context: { function: "deleteDocument", documentId },
+      });
       return {
         success: false,
         message: errorMessage,
@@ -58,7 +61,11 @@ export async function deleteDocument(
     };
   } catch (error) {
     const errorMessage = `Error deleting document ${documentId}: ${error instanceof Error ? error.message : "Unknown error"}`;
-    logError(errorMessage, error);
+    log.error("documents.delete.error", {
+      message: errorMessage,
+      error,
+      context: { function: "deleteDocument", documentId },
+    });
     return {
       success: false,
       message: errorMessage,

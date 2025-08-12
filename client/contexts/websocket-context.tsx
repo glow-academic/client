@@ -7,7 +7,7 @@
 
 import { getApiBase } from "@/lib/api-base";
 import { AssistantChat, AssistantMessage, SimulationMessage } from "@/types";
-import { logError, logInfo } from "@/utils/logger";
+import { log, type LogEntry } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
@@ -135,10 +135,12 @@ export function WebSocketProvider({
           completed: boolean;
           created_at: string;
         }) => {
-          logInfo("Received assistant_new_message event", {
-            messageId: data.message_id,
-            chatId: data.chat_id,
-            role: data.role,
+          log.debug("ws.assistant.new_message", {
+            context: {
+              messageId: data.message_id,
+              chatId: data.chat_id,
+              role: data.role,
+            },
           });
 
           queryClient.setQueryData(
@@ -185,10 +187,12 @@ export function WebSocketProvider({
           completed: boolean;
           created_at: string;
         }) => {
-          logInfo("Received simulation_new_message event", {
-            messageId: data.message_id,
-            chatId: data.chat_id,
-            role: data.role,
+          log.debug("ws.simulation.new_message", {
+            context: {
+              messageId: data.message_id,
+              chatId: data.chat_id,
+              role: data.role,
+            },
           });
 
           queryClient.setQueryData(
@@ -256,9 +260,8 @@ export function WebSocketProvider({
           chat_id: string;
           accumulated_content: string;
         }) => {
-          logInfo("Received assistant_message_token event", {
-            messageId: data.message_id,
-            chatId: data.chat_id,
+          log.debug("ws.assistant.message_token", {
+            context: { messageId: data.message_id, chatId: data.chat_id },
           });
 
           queryClient.setQueryData(
@@ -289,9 +292,8 @@ export function WebSocketProvider({
           token: string;
           accumulated_content: string;
         }) => {
-          logInfo("Received simulation_message_token event", {
-            messageId: data.message_id,
-            chatId: data.chat_id,
+          log.debug("ws.simulation.message_token", {
+            context: { messageId: data.message_id, chatId: data.chat_id },
           });
 
           queryClient.setQueryData(
@@ -327,9 +329,8 @@ export function WebSocketProvider({
           final_content: string;
           completed?: boolean;
         }) => {
-          logInfo("Received assistant_message_complete event", {
-            messageId: data.message_id,
-            chatId: data.chat_id,
+          log.debug("ws.assistant.message_complete", {
+            context: { messageId: data.message_id, chatId: data.chat_id },
           });
 
           queryClient.setQueryData(
@@ -373,9 +374,8 @@ export function WebSocketProvider({
           chat_id: string;
           final_content: string;
         }) => {
-          logInfo("Received assistant_message_cancelled event", {
-            messageId: data.message_id,
-            chatId: data.chat_id,
+          log.debug("ws.assistant.message_cancelled", {
+            context: { messageId: data.message_id, chatId: data.chat_id },
           });
 
           queryClient.setQueryData(
@@ -422,9 +422,8 @@ export function WebSocketProvider({
           completed?: boolean;
           audio?: boolean;
         }) => {
-          logInfo("Received simulation_message_complete event", {
-            messageId: data.message_id,
-            chatId: data.chat_id,
+          log.debug("ws.simulation.message_complete", {
+            context: { messageId: data.message_id, chatId: data.chat_id },
           });
 
           queryClient.setQueryData(
@@ -467,9 +466,8 @@ export function WebSocketProvider({
           chat_id: string;
           final_content: string;
         }) => {
-          logInfo("Received simulation_message_cancelled event", {
-            messageId: data.message_id,
-            chatId: data.chat_id,
+          log.debug("ws.simulation.message_cancelled", {
+            context: { messageId: data.message_id, chatId: data.chat_id },
           });
 
           queryClient.setQueryData(
@@ -509,9 +507,9 @@ export function WebSocketProvider({
       socket.on(
         "simulation_message_error",
         (data: { chat_id: string; error: string }) => {
-          logError("Received simulation_message_error event", {
-            chatId: data.chat_id,
-            error: data.error,
+          log.error("ws.simulation.message_error", {
+            message: data.error,
+            context: { chatId: data.chat_id },
           });
 
           // Reset loading states
@@ -534,9 +532,8 @@ export function WebSocketProvider({
       socket.on(
         "message_cancelled",
         (data: { message_id: string; chat_id: string }) => {
-          logInfo("Received message_cancelled event", {
-            messageId: data.message_id,
-            chatId: data.chat_id,
+          log.debug("ws.message_cancelled", {
+            context: { messageId: data.message_id, chatId: data.chat_id },
           });
 
           // Update both caches
@@ -570,9 +567,8 @@ export function WebSocketProvider({
       );
 
       socket.on("title_updated", (data: { chat_id: string; title: string }) => {
-        logInfo("Received title_updated event", {
-          chatId: data.chat_id,
-          title: data.title,
+        log.debug("ws.title_updated", {
+          context: { chatId: data.chat_id, title: data.title },
         });
 
         queryClient.setQueryData(
@@ -601,9 +597,10 @@ export function WebSocketProvider({
       socket.on(
         "joined_chat",
         (data: { chat_type: string; chat_id: string }) => {
-          logInfo(
-            `Successfully joined ${data.chat_type} chat: ${data.chat_id}`
-          );
+          log.info("ws.joined_chat", {
+            message: `Successfully joined ${data.chat_type} chat: ${data.chat_id}`,
+            context: { chatId: data.chat_id, chatType: data.chat_type },
+          });
         }
       );
 
@@ -611,9 +608,9 @@ export function WebSocketProvider({
       socket.on(
         "tool_call_created",
         (data: { tool_name: string; chat_id: string }) => {
-          logInfo(
-            `Tool call created: ${data.tool_name} for chat ${data.chat_id}`
-          );
+          log.debug("ws.tool_call.created", {
+            context: { tool: data.tool_name, chatId: data.chat_id },
+          });
           queryClient.invalidateQueries({
             queryKey: ["assistantToolCalls", data.chat_id],
           });
@@ -623,9 +620,9 @@ export function WebSocketProvider({
       socket.on(
         "tool_call_completed",
         (data: { tool_name: string; chat_id: string }) => {
-          logInfo(
-            `Tool call completed: ${data.tool_name} for chat ${data.chat_id}`
-          );
+          log.debug("ws.tool_call.completed", {
+            context: { tool: data.tool_name, chatId: data.chat_id },
+          });
           queryClient.invalidateQueries({
             queryKey: ["assistantToolCalls", data.chat_id],
           });
@@ -641,7 +638,10 @@ export function WebSocketProvider({
           attempt_id: string;
           chat_id: string;
         }) => {
-          logInfo("Simulation started", data);
+          log.info("ws.simulation.started", {
+            message: "Simulation started",
+            context: data,
+          });
           setIsStartingSimulation(false);
           if (data.success) {
             toast.success(data.message);
@@ -660,14 +660,14 @@ export function WebSocketProvider({
       socket.on(
         "simulation_message_processing",
         (data: { chat_id: string; status: string; message: string }) => {
-          logInfo("Simulation message processing", data);
+          log.debug("ws.simulation.message_processing", { context: data });
         }
       );
 
       socket.on(
         "simulation_stopped",
         (data: { chat_id: string; success: boolean; message: string }) => {
-          logInfo("Simulation stopped", data);
+          log.info("ws.simulation.stopped", { context: data });
           setIsStoppingSimulation(false);
 
           // Always let SimulationContext know about the stop event
@@ -701,7 +701,7 @@ export function WebSocketProvider({
           next_chat_id: string;
           is_attempt_finished: boolean;
         }) => {
-          logInfo("Simulation continued", data);
+          log.info("ws.simulation.continued", { context: data });
           setIsContinuingSimulation(false);
 
           if (data.success) {
@@ -734,7 +734,7 @@ export function WebSocketProvider({
       socket.on(
         "end_all_completed",
         (data: { success: boolean; message: string; attempt_id: string }) => {
-          logInfo("End all completed", data);
+          log.info("ws.simulation.end_all_completed", { context: data });
           setIsContinuingSimulation(false);
 
           if (data.success) {
@@ -756,7 +756,7 @@ export function WebSocketProvider({
       socket.on(
         "simulation_error",
         (data: { success: boolean; message: string }) => {
-          logError("Simulation error", data.message);
+          log.error("ws.simulation.error", { message: data.message });
           setIsStartingSimulation(false);
           setIsSendingSimulationMessage(false);
           setIsStoppingSimulation(false);
@@ -771,7 +771,7 @@ export function WebSocketProvider({
       socket.on(
         "assistant_started",
         (data: { success: boolean; message: string; chat_id: string }) => {
-          logInfo("Assistant started", data);
+          log.info("ws.assistant.started", { context: data });
           setIsStartingAssistant(false);
           if (data.success) {
             // toast.success(data.message);
@@ -784,14 +784,14 @@ export function WebSocketProvider({
       socket.on(
         "assistant_message_processing",
         (data: { chat_id: string; status: string; message: string }) => {
-          logInfo("Assistant message processing", data);
+          log.debug("ws.assistant.message_processing", { context: data });
         }
       );
 
       socket.on(
         "assistant_stopped",
         (data: { chat_id: string; success: boolean; message: string }) => {
-          logInfo("Assistant stopped", data);
+          log.info("ws.assistant.stopped", { context: data });
           setIsStoppingAssistant(false);
           if (data.success) {
             toast.success(data.message);
@@ -804,7 +804,7 @@ export function WebSocketProvider({
       socket.on(
         "assistant_error",
         (data: { success: boolean; message: string }) => {
-          logError("Assistant error", data.message);
+          log.error("ws.assistant.error", { message: data.message });
           setIsStartingAssistant(false);
           setIsSendingAssistantMessage(false);
           setIsStoppingAssistant(false);
@@ -828,14 +828,16 @@ export function WebSocketProvider({
   useEffect(() => {
     // Distinguish undefined (still loading) vs null (guest) vs string (user)
     if (profileId === undefined) {
-      logInfo("Waiting for profileId resolution before connecting WebSocket");
+      log.debug("ws.connect.wait_profile", {
+        message: "Waiting for profileId resolution before connecting WebSocket",
+      });
       return;
     }
 
     // Don't create multiple connections
     if (socketRef.current?.connected) {
-      logInfo("WebSocket already connected, skipping initialization", {
-        profileId,
+      log.debug("ws.connect.skip_already_connected", {
+        context: { profileId },
       });
       return;
     }
@@ -844,9 +846,14 @@ export function WebSocketProvider({
     const roomsToCleanup = currentRoomsRef.current;
 
     const connectWebSocket = async () => {
-      logInfo("Initializing global WebSocket connection", {
-        profileId,
-        attempt: connectionAttempts.current + 1,
+      log.info("websocket.connect.start", {
+        message: "Initializing global WebSocket connection",
+        context: {
+          component: "WebSocketContext",
+          function: "connectWebSocket",
+          profileId,
+          attempt: connectionAttempts.current + 1,
+        },
       });
 
       const socketPath = `${process.env["NEXT_PUBLIC_APP_PREFIX"] || ""}/socket.io`;
@@ -880,12 +887,18 @@ export function WebSocketProvider({
       socket.on("connect", () => {
         setIsConnected(true);
         connectionAttempts.current = 0;
-        logInfo("Global WebSocket connected successfully", {
-          socketId: socket.id,
-          profileId,
-          transport: socket.io.engine.transport.name,
-          guestId: !profileId ? guestIdRef.current : undefined,
-        });
+        const payload: Omit<LogEntry, "event" | "level"> = {
+          message: "Global WebSocket connected successfully",
+          context: {
+            component: "WebSocketContext",
+            function: "onConnect",
+            profileId,
+            transport: socket.io.engine.transport.name,
+            guestId: !profileId ? guestIdRef.current : undefined,
+          },
+        };
+        if (socket.id) payload.correlation = { sessionId: socket.id };
+        log.info("websocket.connected", payload);
       });
 
       // Handle connection confirmation from server
@@ -897,34 +910,51 @@ export function WebSocketProvider({
           guest_id?: string;
           server_time: number;
         }) => {
-          logInfo("Server confirmed WebSocket connection", {
-            serverSid: data.sid,
-            profileId: data.profile_id,
-            guestId: data.guest_id,
-            serverTime: data.server_time,
-            clientTime: Date.now(),
-          });
+          const payload2: Omit<LogEntry, "event" | "level"> = {
+            message: "Server confirmed WebSocket connection",
+            context: {
+              component: "WebSocketContext",
+              function: "onConnectionConfirmed",
+              profileId: data.profile_id,
+              guestId: data.guest_id,
+              serverTime: data.server_time,
+              clientTime: Date.now(),
+            },
+          };
+          if (data.sid) payload2.correlation = { sessionId: data.sid };
+          log.info("websocket.connection.confirmed", payload2);
         }
       );
 
       socket.on("disconnect", (reason: string) => {
         setIsConnected(false);
-        logInfo(`Global WebSocket disconnected: ${reason}`, {
-          socketId: socket.id,
-          profileId,
-        });
+        const payload3: Omit<LogEntry, "event" | "level"> = {
+          message: `Global WebSocket disconnected: ${reason}`,
+          context: {
+            component: "WebSocketContext",
+            function: "onDisconnect",
+            profileId,
+          },
+        };
+        if (socket.id) payload3.correlation = { sessionId: socket.id };
+        log.info("websocket.disconnected", payload3);
       });
 
       socket.on("connect_error", (error: Error) => {
         connectionAttempts.current++;
-        logError("Global WebSocket connection error:", error.message, {
-          attempt: connectionAttempts.current,
-          maxAttempts: maxConnectionAttempts,
-          profileId,
-          errorType: error.name,
-          errorStack: error.stack,
-          fullError: JSON.stringify(error, Object.getOwnPropertyNames(error)),
-        });
+        const payload4: Omit<LogEntry, "event" | "level"> = {
+          message: "Global WebSocket connection error",
+          error,
+          context: {
+            component: "WebSocketContext",
+            function: "onConnectError",
+            attempt: connectionAttempts.current,
+            maxAttempts: maxConnectionAttempts,
+            profileId,
+          },
+        };
+        if (socket.id) payload4.correlation = { sessionId: socket.id };
+        log.error("websocket.connect.error", payload4);
         setIsConnected(false);
 
         if (connectionAttempts.current >= maxConnectionAttempts) {
@@ -936,25 +966,46 @@ export function WebSocketProvider({
 
       socket.on("reconnect", (attemptNumber: number) => {
         setIsConnected(true);
-        logInfo("Global WebSocket reconnected", {
-          socketId: socket.id,
-          profileId,
-          attemptNumber,
-        });
+        const payload5: Omit<LogEntry, "event" | "level"> = {
+          message: "Global WebSocket reconnected",
+          context: {
+            component: "WebSocketContext",
+            function: "onReconnect",
+            profileId,
+            attemptNumber,
+          },
+        };
+        if (socket.id) payload5.correlation = { sessionId: socket.id };
+        log.info("websocket.reconnected", payload5);
         toast.success("Connection restored!");
       });
 
       socket.on("reconnect_error", (error: Error) => {
-        logError("Global WebSocket reconnection failed:", error.message, {
-          profileId,
-        });
+        const payload6: Omit<LogEntry, "event" | "level"> = {
+          message: "Global WebSocket reconnection failed",
+          error,
+          context: {
+            component: "WebSocketContext",
+            function: "onReconnectError",
+            profileId,
+          },
+        };
+        if (socket.id) payload6.correlation = { sessionId: socket.id };
+        log.error("websocket.reconnect.error", payload6);
       });
 
       socket.on("reconnect_failed", () => {
         setIsConnected(false);
-        logError("Global WebSocket reconnection failed permanently", {
-          profileId,
-        });
+        const payload7: Omit<LogEntry, "event" | "level"> = {
+          message: "Global WebSocket reconnection failed permanently",
+          context: {
+            component: "WebSocketContext",
+            function: "onReconnectFailed",
+            profileId,
+          },
+        };
+        if (socket.id) payload7.correlation = { sessionId: socket.id };
+        log.error("websocket.reconnect.failed", payload7);
         toast.error("Connection lost. Please refresh the page to reconnect.");
       });
 
@@ -966,7 +1017,13 @@ export function WebSocketProvider({
 
     return () => {
       if (socketRef.current) {
-        logInfo("Cleaning up global WebSocket connection");
+        const payload8: Omit<LogEntry, "event" | "level"> = {
+          message: "Cleaning up global WebSocket connection",
+          context: { component: "WebSocketContext", function: "cleanup" },
+        };
+        if (socketRef.current?.id)
+          payload8.correlation = { sessionId: socketRef.current.id };
+        log.info("websocket.cleanup", payload8);
         // Leave all rooms before disconnecting using captured rooms
         roomsToCleanup.forEach((roomId) => {
           socketRef.current?.emit("leave_chat", {
@@ -987,14 +1044,13 @@ export function WebSocketProvider({
   const joinRoom = useCallback(
     (roomId: string, roomType: "assistant" | "simulation") => {
       if (!socketRef.current || !isConnected) {
-        logInfo("Cannot join room - WebSocket not connected", {
-          roomId,
-          roomType,
+        log.debug("ws.room.join.skip_not_connected", {
+          context: { roomId, roomType },
         });
         return;
       }
 
-      logInfo(`Joining room: ${roomId} (${roomType})`);
+      log.debug("ws.room.join", { context: { roomId, roomType } });
       socketRef.current.emit("join_chat", {
         chat_id: roomId,
         chat_type: roomType,
@@ -1007,14 +1063,13 @@ export function WebSocketProvider({
   const leaveRoom = useCallback(
     (roomId: string, roomType: "assistant" | "simulation") => {
       if (!socketRef.current) {
-        logInfo("Cannot leave room - WebSocket not available", {
-          roomId,
-          roomType,
+        log.debug("ws.room.leave.skip_no_socket", {
+          context: { roomId, roomType },
         });
         return;
       }
 
-      logInfo(`Leaving room: ${roomId} (${roomType})`);
+      log.debug("ws.room.leave", { context: { roomId, roomType } });
       socketRef.current.emit("leave_chat", {
         chat_id: roomId,
         chat_type: roomType,
@@ -1036,7 +1091,9 @@ export function WebSocketProvider({
       infinite_time_limit?: number | null;
     }) => {
       if (!socketRef.current || !isConnected) {
-        logError("Cannot start simulation - WebSocket not connected");
+        log.error("ws.simulation.start.skip_not_connected", {
+          context: { function: "emitStartSimulation" },
+        });
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
@@ -1055,7 +1112,7 @@ export function WebSocketProvider({
       };
 
       setIsStartingSimulation(true);
-      logInfo("Emitting start_simulation", payload);
+      log.debug("ws.emit.start_simulation", { context: payload });
       socketRef.current.emit("start_simulation", payload);
     },
     [isConnected]
@@ -1064,14 +1121,15 @@ export function WebSocketProvider({
   const emitSendSimulationMessage = useCallback(
     (data: { chat_id: string; message: string; isRetry?: boolean }) => {
       if (!socketRef.current || !isConnected) {
-        logError("Cannot send simulation message - WebSocket not connected");
+        log.error("ws.simulation.send.skip_not_connected", {
+          context: { function: "emitSendSimulationMessage" },
+        });
         return;
       }
 
       setIsSendingSimulationMessage(true);
-      logInfo("Emitting send_simulation_message", {
-        chatId: data.chat_id,
-        isRetry: data.isRetry,
+      log.debug("ws.emit.send_simulation_message", {
+        context: { chatId: data.chat_id, isRetry: data.isRetry },
       });
       socketRef.current.emit("send_simulation_message", data);
     },
@@ -1081,13 +1139,15 @@ export function WebSocketProvider({
   const emitStopSimulation = useCallback(
     (data: { chat_id: string }) => {
       if (!socketRef.current || !isConnected) {
-        logError("Cannot stop simulation - WebSocket not connected");
+        log.error("ws.simulation.stop.skip_not_connected", {
+          context: { function: "emitStopSimulation" },
+        });
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
 
       setIsStoppingSimulation(true);
-      logInfo("Emitting stop_simulation", data);
+      log.debug("ws.emit.stop_simulation", { context: data });
       socketRef.current.emit("stop_simulation", data);
     },
     [isConnected]
@@ -1096,13 +1156,15 @@ export function WebSocketProvider({
   const emitContinueSimulation = useCallback(
     (data: { chat_id: string; attempt_id: string; end_all?: boolean }) => {
       if (!socketRef.current || !isConnected) {
-        logError("Cannot continue simulation - WebSocket not connected");
+        log.error("ws.simulation.continue.skip_not_connected", {
+          context: { function: "emitContinueSimulation" },
+        });
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
 
       setIsContinuingSimulation(true);
-      logInfo("Emitting continue_simulation", data);
+      log.debug("ws.emit.continue_simulation", { context: data });
       socketRef.current.emit("continue_simulation", data);
     },
     [isConnected]
@@ -1112,13 +1174,15 @@ export function WebSocketProvider({
   const emitStartAssistant = useCallback(
     (data: { chat_id: string; initial_message: string }) => {
       if (!socketRef.current || !isConnected) {
-        logError("Cannot start assistant - WebSocket not connected");
+        log.error("ws.assistant.start.skip_not_connected", {
+          context: { function: "emitStartAssistant" },
+        });
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
 
       setIsStartingAssistant(true);
-      logInfo("Emitting start_assistant", data);
+      log.debug("ws.emit.start_assistant", { context: data });
       socketRef.current.emit("start_assistant", data);
     },
     [isConnected]
@@ -1127,12 +1191,16 @@ export function WebSocketProvider({
   const emitSendAssistantMessage = useCallback(
     (data: { chat_id: string; message: string }) => {
       if (!socketRef.current || !isConnected) {
-        logError("Cannot send assistant message - WebSocket not connected");
+        log.error("ws.assistant.send.skip_not_connected", {
+          context: { function: "emitSendAssistantMessage" },
+        });
         return;
       }
 
       setIsSendingAssistantMessage(true);
-      logInfo("Emitting send_assistant_message", { chatId: data.chat_id });
+      log.debug("ws.emit.send_assistant_message", {
+        context: { chatId: data.chat_id },
+      });
       socketRef.current.emit("send_assistant_message", data);
     },
     [isConnected]
@@ -1141,13 +1209,15 @@ export function WebSocketProvider({
   const emitStopAssistant = useCallback(
     (data: { chat_id: string }) => {
       if (!socketRef.current || !isConnected) {
-        logError("Cannot stop assistant - WebSocket not connected");
+        log.error("ws.assistant.stop.skip_not_connected", {
+          context: { function: "emitStopAssistant" },
+        });
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
 
       setIsStoppingAssistant(true);
-      logInfo("Emitting stop_assistant", data);
+      log.debug("ws.emit.stop_assistant", { context: data });
       socketRef.current.emit("stop_assistant", data);
     },
     [isConnected]

@@ -2,7 +2,7 @@
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { documents } from "@/utils/drizzle/schema";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _createDocument(data: typeof documents.$inferInsert) {
     const result = await db.insert(documents).values(data).returning();
     return result[0];
   } catch (error) {
-    logError("Error creating document:", error);
+    await log.error("mutation.create.failed", {
+      message: "Error creating document",
+      subject: { entityType: "documents" },
+      context: { function: "_createDocument", file: "utils/mutations/documents/create-document.ts" },
+      error,
+    });
     throw error;
   }
 }

@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { scenarios } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -12,7 +12,12 @@ async function _getScenario(id: string) {
     const result = await db.select().from(scenarios).where(eq(scenarios.id, id));
     return result[0] || null;
   } catch (error) {
-    logError("Error fetching scenario:", error);
+    await log.error("query.fetch_one.failed", {
+      message: "Error fetching scenario",
+      subject: { entityType: "scenarios", entityId: String(id) },
+      context: { function: "_getScenario", file: "utils/queries/scenarios/get-scenario.ts" },
+      error,
+    });
     throw error;
   }
 }

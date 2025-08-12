@@ -5,7 +5,7 @@
  * 06/07/2025
  */
 "use client";
-import { logError, logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Edit, Eye, Timer, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -130,9 +130,14 @@ export function Simulations() {
 
     setIsDeleting(true);
     try {
-      logInfo("Deleting simulation:", {
-        simulationId: deleteItem.id,
-        name: deleteItem.name,
+      await log.info("simulation.delete.start", {
+        message: "Deleting simulation",
+        subject: { entityType: "simulation", entityId: deleteItem.id },
+        context: {
+          component: "Simulations",
+          function: "handleDelete",
+          name: deleteItem.name,
+        },
       });
       await deleteSimulation(deleteItem.id);
 
@@ -140,11 +145,18 @@ export function Simulations() {
       // Invalidate queries to ensure all components refresh
       queryClient.invalidateQueries({ queryKey: ["simulations"] });
       refetchSimulations();
-      logInfo("Simulation deleted successfully:", {
-        simulationId: deleteItem.id,
+      await log.info("simulation.delete.success", {
+        message: "Simulation deleted successfully",
+        subject: { entityType: "simulation", entityId: deleteItem.id },
+        context: { component: "Simulations", function: "handleDelete" },
       });
     } catch (error) {
-      logError("Error deleting simulation:", error);
+      await log.error("simulation.delete.failed", {
+        message: "Error deleting simulation",
+        subject: { entityType: "simulation", entityId: deleteItem?.id },
+        context: { component: "Simulations", function: "handleDelete" },
+        error,
+      });
       toast.error("Failed to delete simulation");
     } finally {
       setIsDeleting(false);
@@ -171,9 +183,14 @@ export function Simulations() {
 
     setIsDuplicating(simulation.id);
     try {
-      logInfo("Duplicating simulation:", {
-        simulationId: simulation.id,
-        title: simulation.title,
+      await log.info("simulation.duplicate.start", {
+        message: "Duplicating simulation",
+        subject: { entityType: "simulation", entityId: simulation.id },
+        context: {
+          component: "Simulations",
+          function: "handleDuplicate",
+          title: simulation.title,
+        },
       });
 
       const duplicatedSimulation = {
@@ -190,12 +207,22 @@ export function Simulations() {
       toast.success("Simulation duplicated successfully");
       queryClient.invalidateQueries({ queryKey: ["simulations"] });
       refetchSimulations();
-      logInfo("Simulation duplicated successfully:", {
-        originalId: simulation.id,
-        title: duplicatedSimulation.title,
+      await log.info("simulation.duplicate.success", {
+        message: "Simulation duplicated successfully",
+        subject: { entityType: "simulation", entityId: simulation.id },
+        context: {
+          component: "Simulations",
+          function: "handleDuplicate",
+          title: duplicatedSimulation.title,
+        },
       });
     } catch (error) {
-      logError("Error duplicating simulation:", error);
+      await log.error("simulation.duplicate.failed", {
+        message: "Error duplicating simulation",
+        subject: { entityType: "simulation", entityId: simulation.id },
+        context: { component: "Simulations", function: "handleDuplicate" },
+        error,
+      });
       toast.error("Failed to duplicate simulation");
     } finally {
       setIsDuplicating(null);

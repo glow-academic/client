@@ -6,7 +6,7 @@
  */
 "use server";
 import { getApiBase } from "@/lib/api-base";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 
 export interface NewScenarioParams {
   personaId?: string | null;
@@ -72,7 +72,10 @@ export async function newScenario(
         errorData.message ||
         errorData.detail ||
         `Failed to generate new scenario: ${response.status} ${response.statusText}`;
-      logError(errorMessage);
+      log.error("scenario.new.failed", {
+        message: errorMessage,
+        context: { function: "newScenario" },
+      });
       return {
         success: false,
         message: errorMessage,
@@ -91,7 +94,11 @@ export async function newScenario(
     };
   } catch (error) {
     const errorMessage = `Error generating new scenario: ${error instanceof Error ? error.message : "Unknown error"}`;
-    logError(errorMessage, error);
+    log.error("scenario.new.error", {
+      message: errorMessage,
+      error,
+      context: { function: "newScenario" },
+    });
     return {
       success: false,
       message: errorMessage,

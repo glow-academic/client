@@ -3,7 +3,7 @@
 import { auth } from "@/auth";
 import { db } from "@/utils/drizzle/db";
 import { profiles } from "@/utils/drizzle/schema";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { eq, ne } from "drizzle-orm";
 
 export async function getSimulatableProfiles() {
@@ -49,8 +49,7 @@ export async function getSimulatableProfiles() {
           .where(ne(profiles.id, userProfile.id));
         // Filter out superadmin and admin profiles
         simulatableProfiles = simulatableProfiles.filter(
-          (profile) =>
-            profile.role !== "superadmin" && profile.role !== "admin",
+          (profile) => profile.role !== "superadmin" && profile.role !== "admin"
         );
         break;
 
@@ -65,7 +64,7 @@ export async function getSimulatableProfiles() {
           (profile) =>
             profile.role !== "superadmin" &&
             profile.role !== "admin" &&
-            profile.role !== "instructional",
+            profile.role !== "instructional"
         );
         break;
       case "ta":
@@ -81,7 +80,11 @@ export async function getSimulatableProfiles() {
 
     return simulatableProfiles;
   } catch (error) {
-    logError("Error fetching simulatable profiles:", error);
+    log.error("profiles.simulatable.fetch.failed", {
+      message: "Error fetching simulatable profiles",
+      error,
+      context: { function: "getSimulatableProfiles" },
+    });
     throw error;
   }
 }

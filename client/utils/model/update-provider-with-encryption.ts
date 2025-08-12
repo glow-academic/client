@@ -1,7 +1,7 @@
 "use server";
 
 import { providers } from "@/utils/drizzle/schema";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { encryptProviderKey } from "@/utils/model/server-model";
 import { updateProvider } from "@/utils/mutations/providers/update-provider";
 
@@ -14,7 +14,7 @@ interface UpdateProviderData {
 
 export async function updateProviderWithEncryption(
   id: string,
-  data: UpdateProviderData,
+  data: UpdateProviderData
 ) {
   try {
     // Prepare the update data
@@ -45,7 +45,11 @@ export async function updateProviderWithEncryption(
 
     return result;
   } catch (error) {
-    logError("Error updating provider with encryption:", error);
+    log.error("provider.update.encryption_failed", {
+      message: "Error updating provider with encryption",
+      error,
+      context: { function: "updateProviderWithEncryption", id },
+    });
     throw error;
   }
 }

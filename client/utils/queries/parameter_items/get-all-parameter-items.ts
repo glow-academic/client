@@ -2,7 +2,7 @@
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { parameterItems } from "@/utils/drizzle/schema";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -10,7 +10,12 @@ async function _getAllParameterItems() {
   try {
     return await db.select().from(parameterItems);
   } catch (error) {
-    logError("Error fetching all parameter_items:", error);
+    await log.error("query.fetch_all.failed", {
+      message: "Error fetching all parameter_items",
+      subject: { entityType: "parameter_items" },
+      context: { function: "_getAllParameterItems", file: "utils/queries/parameter_items/get-all-parameter-items.ts" },
+      error,
+    });
     throw error;
   }
 }

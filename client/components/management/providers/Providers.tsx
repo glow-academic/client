@@ -5,7 +5,7 @@
  * 06/18/2025
  */
 "use client";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Cpu, Edit, Plus, Settings, Sparkles, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -83,7 +83,15 @@ export default function Providers() {
       queryClient.invalidateQueries({ queryKey: ["models"] });
       refetchModels();
     } catch (error) {
-      logError("Error deleting model:", error);
+      log.error("provider.model.delete.failed", {
+        message: "Error deleting model",
+        error,
+        context: {
+          component: "Providers",
+          function: "handleDelete",
+          modelId: deleteItem.id,
+        },
+      });
       toast.error("Failed to delete model");
     } finally {
       setIsDeleting(false);

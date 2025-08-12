@@ -2,7 +2,7 @@
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { profiles } from "@/utils/drizzle/schema";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _createProfile(data: typeof profiles.$inferInsert) {
     const result = await db.insert(profiles).values(data).returning();
     return result[0];
   } catch (error) {
-    logError("Error creating profile:", error);
+    await log.error("mutation.create.failed", {
+      message: "Error creating profile",
+      subject: { entityType: "profiles" },
+      context: { function: "_createProfile", file: "utils/mutations/profiles/create-profile.ts" },
+      error,
+    });
     throw error;
   }
 }

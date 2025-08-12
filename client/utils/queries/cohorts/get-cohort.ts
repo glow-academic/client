@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { cohorts } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -12,7 +12,12 @@ async function _getCohort(id: string) {
     const result = await db.select().from(cohorts).where(eq(cohorts.id, id));
     return result[0] || null;
   } catch (error) {
-    logError("Error fetching cohort:", error);
+    await log.error("query.fetch_one.failed", {
+      message: "Error fetching cohort",
+      subject: { entityType: "cohorts", entityId: String(id) },
+      context: { function: "_getCohort", file: "utils/queries/cohorts/get-cohort.ts" },
+      error,
+    });
     throw error;
   }
 }

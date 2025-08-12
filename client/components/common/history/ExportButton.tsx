@@ -10,7 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { toast } from "sonner";
 
 // Define proper types for the data structures
@@ -322,7 +322,11 @@ export function ExportButton<TData>({
       toast?.success(`Exported ${selectedData.length} rows to CSV`);
       setExportPopoverOpen(false);
     } catch (error) {
-      logError("Error exporting to CSV:", error);
+      log.error("export.csv.failed", {
+        message: "Error exporting to CSV",
+        error,
+        context: { component: "ExportButton" },
+      });
       toast?.error("Failed to export data");
     }
   };

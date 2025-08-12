@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAnalytics } from "@/contexts/analytics-context";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { toast } from "sonner";
 
@@ -142,7 +142,8 @@ export function BrightspaceExportButton<TData>({
       const headerRow = [
         "Username",
         ...filteredSimulations.map(
-          (sim: { id: string; title: string }) => `${sim.title} Points Grade <Numeric MaxPoints:100>`
+          (sim: { id: string; title: string }) =>
+            `${sim.title} Points Grade <Numeric MaxPoints:100>`
         ),
         "End-of-Line Indicator",
       ].join(",");
@@ -210,7 +211,11 @@ export function BrightspaceExportButton<TData>({
       toast?.success(`Exported ${selectedData.length} rows to Brightspace CSV`);
       setExportPopoverOpen(false);
     } catch (error) {
-      logError("Error exporting to Brightspace CSV:", error);
+      log.error("export.brightspace.failed", {
+        message: "Error exporting to Brightspace CSV",
+        error,
+        context: { component: "BrightspaceExportButton" },
+      });
       toast?.error("Failed to export data");
     }
   };

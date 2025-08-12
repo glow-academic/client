@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { rubrics } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _deleteRubrics(ids: string[]) {
   try {
     return await db.delete(rubrics).where(inArray(rubrics.id, ids)).returning();
   } catch (error) {
-    logError("Error deleting multiple rubrics:", error);
+    await log.error("mutation.delete_many.failed", {
+      message: "Error deleting multiple rubrics",
+      subject: { entityType: "rubrics" },
+      context: { function: "_deleteRubrics", file: "utils/mutations/rubrics/delete-rubrics.ts", count: ids.length },
+      error,
+    });
     throw error;
   }
 }

@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { simulationChatGrades } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -12,7 +12,12 @@ async function _updateSimulationChatGrade(id: string, data: Partial<typeof simul
     const result = await db.update(simulationChatGrades).set(data).where(eq(simulationChatGrades.id, id)).returning();
     return result[0];
   } catch (error) {
-    logError("Error updating simulationChatGrade:", error);
+    await log.error("mutation.update.failed", {
+      message: "Error updating simulationChatGrade",
+      subject: { entityType: "simulation_chat_grades", entityId: String(id) },
+      context: { function: "_updateSimulationChatGrade", file: "utils/mutations/simulation_chat_grades/update-simulation-chat-grade.ts" },
+      error,
+    });
     throw error;
   }
 }

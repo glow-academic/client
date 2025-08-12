@@ -5,16 +5,20 @@
  */
 
 import { getApiBase } from "@/lib/api-base";
-import { logError, logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import type { NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    logInfo("Generating certificate", {
-      profileId: body.profileId,
-      profileName: body.profileName,
+    await log.info("certificate.generate.start", {
+      message: "Generating certificate",
+      ...(body?.profileId
+        ? { actor: { profileId: String(body.profileId) } }
+        : {}),
+      subject: { entityType: "certificate" },
+      context: { function: "POST", file: "app/api/certificate/route.ts" },
     });
 
     // Forward the request to FastAPI backend
@@ -36,7 +40,18 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const errorMessage = `Failed to generate certificate: ${response.status} ${response.statusText}`;
-      logError(errorMessage);
+      await log.error("certificate.generate.failed", {
+        message: errorMessage,
+        ...(body?.profileId
+          ? { actor: { profileId: String(body.profileId) } }
+          : {}),
+        subject: { entityType: "certificate" },
+        context: {
+          function: "POST",
+          file: "app/api/certificate/route.ts",
+          status: response.status,
+        },
+      });
 
       return new Response(
         JSON.stringify({
@@ -66,9 +81,15 @@ export async function POST(req: NextRequest) {
     const pragma = response.headers.get("pragma") || "no-cache";
     const expires = response.headers.get("expires") || "0";
 
-    logInfo("Certificate generated successfully", {
-      contentType,
-      contentDisposition,
+    await log.info("certificate.generate.success", {
+      message: "Certificate generated successfully",
+      subject: { entityType: "certificate" },
+      context: {
+        function: "POST",
+        file: "app/api/certificate/route.ts",
+        contentType,
+        contentDisposition,
+      },
     });
 
     // Return the file directly as a download response
@@ -84,7 +105,12 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     const errorMessage = `Error generating certificate: ${error instanceof Error ? error.message : "Unknown error"}`;
-    logError(errorMessage, error);
+    await log.error("certificate.generate.error", {
+      message: errorMessage,
+      subject: { entityType: "certificate" },
+      context: { function: "POST", file: "app/api/certificate/route.ts" },
+      error,
+    });
 
     return new Response(
       JSON.stringify({

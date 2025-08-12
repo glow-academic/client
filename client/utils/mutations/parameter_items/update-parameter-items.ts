@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { parameterItems } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _updateParameterItems(ids: string[], data: Partial<typeof paramet
   try {
     return await db.update(parameterItems).set(data).where(inArray(parameterItems.id, ids)).returning();
   } catch (error) {
-    logError("Error updating multiple parameter_items:", error);
+    await log.error("mutation.update_many.failed", {
+      message: "Error updating multiple parameter_items",
+      subject: { entityType: "parameter_items" },
+      context: { function: "_updateParameterItems", file: "utils/mutations/parameter_items/update-parameter-items.ts", count: ids.length },
+      error,
+    });
     throw error;
   }
 }

@@ -60,7 +60,7 @@ import { useProfile } from "@/contexts/profile-context";
 import { Scenario as ScenarioType, Simulation } from "@/types";
 import { newScenario } from "@/utils/api/scenarios/new-scenario";
 import { randomizeScenario } from "@/utils/api/scenarios/randomize";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
 import { updateScenario } from "@/utils/mutations/scenarios/update-scenario";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
@@ -352,7 +352,14 @@ export default function Scenario({
       handleInputChange("parameterItemIds", resp.parameterItemIds || []);
       toast.success("Parameter suggestions applied");
     } catch (error) {
-      logError("Error randomizing parameters", error);
+      log.error("scenario.parameters.randomize.failed", {
+        message: "Error randomizing parameters",
+        error,
+        context: {
+          component: "Scenario",
+          function: "handleRandomizeParameters",
+        },
+      });
       toast.error("Failed to randomize parameters");
     } finally {
       setIsRandomizingParameters(false);
@@ -364,7 +371,11 @@ export default function Scenario({
       handleInputChange("parameterItemIds", []);
       toast.success("Parameters reset");
     } catch (error) {
-      logError("Error resetting parameters", error);
+      log.error("scenario.parameters.reset.failed", {
+        message: "Error resetting parameters",
+        error,
+        context: { component: "Scenario", function: "handleResetParameters" },
+      });
       toast.error("Failed to reset parameters");
     }
   };
@@ -385,7 +396,11 @@ export default function Scenario({
       if (resp.personaId) handleInputChange("personaId", resp.personaId);
       toast.success("Persona suggestion applied");
     } catch (error) {
-      logError("Error randomizing persona", error);
+      log.error("scenario.persona.randomize.failed", {
+        message: "Error randomizing persona",
+        error,
+        context: { component: "Scenario", function: "handleRandomizePersona" },
+      });
       toast.error("Failed to randomize persona");
     } finally {
       setIsRandomizingPersona(false);
@@ -397,7 +412,11 @@ export default function Scenario({
       handleInputChange("personaId", null);
       toast.success("Persona reset");
     } catch (error) {
-      logError("Error resetting persona", error);
+      log.error("scenario.persona.reset.failed", {
+        message: "Error resetting persona",
+        error,
+        context: { component: "Scenario", function: "handleResetPersona" },
+      });
       toast.error("Failed to reset persona");
     }
   };
@@ -422,7 +441,14 @@ export default function Scenario({
       handleInputChange("documentIds", resp.documentIds || []);
       toast.success("Document suggestions applied");
     } catch (error) {
-      logError("Error randomizing documents", error);
+      log.error("scenario.documents.randomize.failed", {
+        message: "Error randomizing documents",
+        error,
+        context: {
+          component: "Scenario",
+          function: "handleRandomizeDocuments",
+        },
+      });
       toast.error("Failed to randomize documents");
     } finally {
       setIsRandomizingDocuments(false);
@@ -434,7 +460,11 @@ export default function Scenario({
       handleInputChange("documentIds", []);
       toast.success("Documents reset");
     } catch (error) {
-      logError("Error resetting documents", error);
+      log.error("scenario.documents.reset.failed", {
+        message: "Error resetting documents",
+        error,
+        context: { component: "Scenario", function: "handleResetDocuments" },
+      });
       toast.error("Failed to reset documents");
     }
   };
@@ -444,7 +474,11 @@ export default function Scenario({
       setFormData((prev) => ({ ...prev, description: "", checkpoints: [] }));
       toast.success("Scenario content reset");
     } catch (error) {
-      logError("Error resetting content", error);
+      log.error("scenario.content.reset.failed", {
+        message: "Error resetting content",
+        error,
+        context: { component: "Scenario", function: "handleResetContent" },
+      });
       toast.error("Failed to reset content");
     }
   };
@@ -479,7 +513,11 @@ export default function Scenario({
         throw new Error("No scenario content was generated");
       }
     } catch (error) {
-      logError("Error generating scenario:", error);
+      log.error("scenario.generate.failed", {
+        message: "Error generating scenario",
+        error,
+        context: { component: "Scenario", function: "handleGenerateScenario" },
+      });
       toast.error(
         `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`
       );
@@ -1011,56 +1049,61 @@ export default function Scenario({
             </div>
 
             {/* Checkpoints Section */}
-            {<div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Add checkpoints for the scenario. You can think of these as general steps the TA should reach.
-              </p>
-
+            {
               <div className="space-y-2">
-                {(formData.checkpoints || []).map((checkpoint, index) => (
-                  <div
-                    key={`checkpoint-${index}`}
-                    className={`flex items-center gap-2 rounded-md p-2 bg-white ${
-                      draggedCheckpointIndex === index ? "opacity-50" : ""
-                    }`}
-                    draggable={!isReadonly}
-                    onDragStart={(e) => handleDragStartCheckpoint(e, index)}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDropCheckpoint(e, index)}
-                  >
-                    <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <Input
-                      value={checkpoint || ""}
-                      onChange={(e) => updateCheckpoint(index, e.target.value)}
-                      placeholder={`Checkpoint ${index + 1}`}
-                      className="flex-1"
-                      disabled={isReadonly}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => removeCheckpoint(index)}
-                      className="h-8 w-8"
-                      disabled={isReadonly}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
+                <p className="text-sm text-muted-foreground">
+                  Add checkpoints for the scenario. You can think of these as
+                  general steps the TA should reach.
+                </p>
 
-              <div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={addCheckpoint}
-                  disabled={isReadonly}
-                >
-                  <PlusCircle className="h-4 w-4 mr-2" /> Add checkpoint
-                </Button>
+                <div className="space-y-2">
+                  {(formData.checkpoints || []).map((checkpoint, index) => (
+                    <div
+                      key={`checkpoint-${index}`}
+                      className={`flex items-center gap-2 rounded-md p-2 bg-white ${
+                        draggedCheckpointIndex === index ? "opacity-50" : ""
+                      }`}
+                      draggable={!isReadonly}
+                      onDragStart={(e) => handleDragStartCheckpoint(e, index)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDropCheckpoint(e, index)}
+                    >
+                      <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <Input
+                        value={checkpoint || ""}
+                        onChange={(e) =>
+                          updateCheckpoint(index, e.target.value)
+                        }
+                        placeholder={`Checkpoint ${index + 1}`}
+                        className="flex-1"
+                        disabled={isReadonly}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => removeCheckpoint(index)}
+                        className="h-8 w-8"
+                        disabled={isReadonly}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                <div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={addCheckpoint}
+                    disabled={isReadonly}
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" /> Add checkpoint
+                  </Button>
+                </div>
               </div>
-            </div>}
+            }
           </CardContent>
         </Card>
       </div>

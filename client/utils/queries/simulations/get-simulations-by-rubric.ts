@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { simulations } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _getSimulationsByRubric(rubricId: string) {
   try {
     return await db.select().from(simulations).where(eq(simulations.rubricId, rubricId));
   } catch (error) {
-    logError("Error fetching simulations by rubric:", error);
+    await log.error("query.fetch_by_fk.failed", {
+      message: "Error fetching simulations by rubric",
+      subject: { entityType: "simulations" },
+      context: { function: "_getSimulationsByRubric", file: "utils/queries/simulations/get-simulations-by-rubric.ts", foreignKey: "rubricId", foreignId: String(rubricId) },
+      error,
+    });
     throw error;
   }
 }

@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { parameterItems } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -12,7 +12,12 @@ async function _updateParameterItem(id: string, data: Partial<typeof parameterIt
     const result = await db.update(parameterItems).set(data).where(eq(parameterItems.id, id)).returning();
     return result[0];
   } catch (error) {
-    logError("Error updating parameterItem:", error);
+    await log.error("mutation.update.failed", {
+      message: "Error updating parameterItem",
+      subject: { entityType: "parameter_items", entityId: String(id) },
+      context: { function: "_updateParameterItem", file: "utils/mutations/parameter_items/update-parameter-item.ts" },
+      error,
+    });
     throw error;
   }
 }

@@ -13,7 +13,7 @@ import {
   SimulationChat,
   SimulationMessage,
 } from "@/types";
-import { logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -674,8 +674,14 @@ export function SimulationProvider({
     joinRoom(currentChat.id, "simulation");
     currentRoomRef.current = currentChat.id;
     currentChatIdRef.current = currentChat.id;
-
-    logInfo(`Joined simulation chat room: ${currentChat.id}`);
+    log.info("simulation.room.joined", {
+      message: `Joined simulation chat room: ${currentChat.id}`,
+      subject: { entityType: "simulation_chat", entityId: currentChat.id },
+      context: {
+        component: "SimulationContext",
+        function: "useEffect(joinRoom)",
+      },
+    });
 
     return () => {
       if (currentRoomRef.current) {
@@ -879,9 +885,18 @@ export function SimulationProvider({
     const handleChatEnded = (event: CustomEvent) => {
       // THE FIX: Check if the event's completedChatId matches the current one.
       if (event.detail.completedChatId === currentChatIdRef.current) {
-        logInfo(
-          `Chat ${event.detail.completedChatId} ended. Invalidating data to fetch next state.`
-        );
+        log.debug("simulation.chat.ended", {
+          message: `Chat ${event.detail.completedChatId} ended. Invalidating data to fetch next state.`,
+          subject: {
+            entityType: "simulation_chat",
+            entityId: String(event.detail.completedChatId),
+          },
+          context: {
+            component: "SimulationContext",
+            function: "handleChatEnded",
+            attemptId,
+          },
+        });
 
         // Mark the chat as freshly completed so the UI can auto-advance
         setFreshlyCompletedChats((prev) =>

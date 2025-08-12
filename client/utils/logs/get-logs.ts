@@ -2,7 +2,7 @@
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { appLogs } from "@/utils/drizzle/schema";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { count, desc } from "drizzle-orm";
 
 interface GetAppLogsParams {
@@ -57,7 +57,11 @@ export async function getAppLogs({
       hasPreviousPage: page > 1,
     };
   } catch (error) {
-    logError("Error fetching paginated app_logs:", error);
+    log.error("logs.fetch.failed", {
+      message: "Error fetching paginated app_logs",
+      error,
+      context: { function: "getAppLogs" },
+    });
     throw error;
   }
 }

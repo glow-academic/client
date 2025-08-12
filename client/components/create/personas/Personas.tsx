@@ -5,7 +5,7 @@
  * 06/07/2025
  */
 "use client";
-import { logError, logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { useQuery } from "@tanstack/react-query";
 import { Brain, Copy, Edit, Eye, Thermometer, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -117,14 +117,24 @@ export default function Personas() {
     setIsDeleting(true);
     try {
       await deletePersona(deleteItem.id);
-      logInfo("Persona deleted successfully:", {
-        id: deleteItem.id,
-        name: deleteItem.name,
+      await log.info("persona.delete.success", {
+        message: "Persona deleted successfully",
+        subject: { entityType: "persona", entityId: deleteItem.id },
+        context: {
+          component: "Personas",
+          function: "handleDelete",
+          name: deleteItem.name,
+        },
       });
       toast.success("Persona deleted successfully");
       refetchPersonas();
     } catch (error) {
-      logError("Error deleting persona:", error);
+      await log.error("persona.delete.failed", {
+        message: "Error deleting persona",
+        subject: { entityType: "persona", entityId: deleteItem?.id },
+        context: { component: "Personas", function: "handleDelete" },
+        error,
+      });
       toast.error("Failed to delete persona");
     } finally {
       setIsDeleting(false);
@@ -145,14 +155,28 @@ export default function Personas() {
         defaultPersona: false,
         name: `${persona.name} Copy`,
       });
-      logInfo("Persona duplicated successfully:", {
-        originalId: persona.id,
-        originalName: persona.name,
+      await log.info("persona.duplicate.success", {
+        message: "Persona duplicated successfully",
+        subject: { entityType: "persona", entityId: persona.id },
+        context: {
+          component: "Personas",
+          function: "handleDuplicate",
+          originalName: persona.name,
+        },
       });
       toast.success(`Persona "${persona.name}" duplicated successfully`);
       refetchPersonas();
     } catch (error) {
-      logError("Error duplicating persona:", error);
+      await log.error("persona.duplicate.failed", {
+        message: "Error duplicating persona",
+        subject: { entityType: "persona", entityId: persona.id },
+        context: {
+          component: "Personas",
+          function: "handleDuplicate",
+          originalName: persona.name,
+        },
+        error,
+      });
       toast.error("Failed to duplicate persona");
     } finally {
       setIsDuplicating(null);

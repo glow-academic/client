@@ -6,7 +6,7 @@
  */
 "use client";
 
-import { logError, logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -285,10 +285,17 @@ export default function Feedback() {
         }),
         queryClient.invalidateQueries({ queryKey: ["profiles", profileIds] }),
       ]);
-      logInfo("Feedback data refreshed successfully");
+      await log.info("feedback.refresh.success", {
+        message: "Feedback data refreshed successfully",
+        context: { component: "Feedback", function: "handleRefresh" },
+      });
       toast.success("Feedback data refreshed");
     } catch (error) {
-      logError("Error refreshing feedback data:", error);
+      await log.error("feedback.refresh.failed", {
+        message: "Error refreshing feedback data",
+        context: { component: "Feedback", function: "handleRefresh" },
+        error,
+      });
       toast.error("Failed to refresh feedback data");
     } finally {
       setIsRefreshing(false);

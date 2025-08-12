@@ -1,102 +1,201 @@
-"use server";
-// This file should only be imported on the server side
-import { db_url } from "@/utils/drizzle/db";
-import postgres from "postgres";
+// Isomorphic structured logger that works in both client and server environments.
+// - Client: POSTs to /api/log (sendBeacon when available)
+// - Server: Writes directly to Postgres
 
-// Server-only PostgreSQL logger, log to console in non production
+type LogLevel = "debug" | "info" | "warn" | "error";
+
+// Keep event name open for now; we will tighten this to a union incrementally
+type LogEventName = string;
+
+type LogActor = { userId?: string; profileId?: string };
+type LogSubject = { entityType?: string; entityId?: string };
+type LogCorrelation = {
+  correlationId?: string;
+  requestId?: string;
+  sessionId?: string;
+  attemptId?: string;
+  chatId?: string;
+};
+type LogMetrics = { durationMs?: number; size?: number; count?: number };
+type LogError = {
+  name?: string;
+  message?: string;
+  stack?: string;
+  code?: string;
+};
+type LogContext = {
+  route?: string;
+  component?: string;
+  function?: string;
+  provider?: string;
+  model?: string;
+} & Record<string, unknown>;
+
+export type LogEntry = {
+  event: LogEventName;
+  level: LogLevel;
+  message?: string;
+  correlation?: LogCorrelation;
+  actor?: LogActor;
+  subject?: LogSubject;
+  metrics?: LogMetrics;
+  context?: LogContext;
+  error?: LogError | unknown;
+};
+
 const isProduction = process.env.NODE_ENV === "production";
 
-let sql: postgres.Sql | null = null;
-
-// Initialize PostgreSQL connection
-function initializePostgres() {
-  if (!sql && db_url) {
-    sql = postgres(db_url);
+function safeStringify(value: unknown): string {
+  try {
+    return JSON.stringify(value);
+  } catch (err) {
+    return "<unserializable>";
   }
-  return sql;
 }
 
-// Direct PostgreSQL logging function
-async function insertLogToDatabase(
-  level: string,
-  message: string,
-  context: Record<string, unknown>,
-): Promise<void> {
+function generateCorrelationId(): string {
   try {
-    const pgSql = initializePostgres();
-    if (!pgSql) {
-      throw new Error("PostgreSQL connection not available");
+    // Browser or Node 18+
+    const g = (globalThis as any).crypto?.randomUUID;
+    if (typeof g === "function") return g();
+  } catch (_) {
+    // ignore
+  }
+  return `cor_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+}
+
+// Legacy normalizer removed along with shim functions
+
+// --- Server transport (loaded lazily only on server) ---
+async function insertStructuredLogToDatabase(entry: LogEntry): Promise<void> {
+  // Lazy import to avoid bundling postgres in client
+  const { db_url } = await import("@/utils/drizzle/db");
+  const postgres = (await import("postgres")).default;
+  const sql = db_url ? postgres(db_url) : null;
+  if (!sql) throw new Error("PostgreSQL connection not available");
+
+  const {
+    event,
+    level,
+    message,
+    correlation,
+    actor,
+    subject,
+    metrics,
+    context,
+    error,
+  } = entry;
+
+  await sql`
+    INSERT INTO app_logs (
+      event, level, message, correlation_id, actor, subject, metrics, context, error, created_at
+    ) VALUES (
+      ${event}, ${level}, ${message ?? null}, ${correlation?.correlationId ?? null},
+      ${actor ? sql.json(actor as any) : null},
+      ${subject ? sql.json(subject as any) : null},
+      ${metrics ? sql.json(metrics as any) : null},
+      ${context ? sql.json(context as any) : null},
+      ${
+        error
+          ? sql.json(
+              error instanceof Error
+                ? {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack,
+                  }
+                : (error as any)
+            )
+          : null
+      },
+      ${new Date()}
+    )
+  `;
+}
+
+// --- Client transport ---
+async function sendClientLog(entry: LogEntry): Promise<void> {
+  try {
+    const body = safeStringify(entry);
+    if (
+      typeof navigator !== "undefined" &&
+      typeof navigator.sendBeacon === "function"
+    ) {
+      const ok = navigator.sendBeacon(
+        "/api/log",
+        new Blob([body], { type: "application/json" })
+      );
+      if (ok) return;
     }
-
-    await pgSql`
-      INSERT INTO app_logs (level, message, context, created_at)
-      VALUES (${level}, ${message}, ${JSON.stringify(context)}, ${new Date()})
-    `;
-  } catch (error) {
-    throw new Error(`Failed to insert log to database: ${error}`);
+  } catch (_) {
+    // fallthrough to fetch
   }
-}
-
-// Simple async logging functions that store directly to PostgreSQL
-export async function logToDatabase(
-  level: "info" | "warn" | "error" | "debug",
-  message: string,
-  context?: Record<string, unknown>,
-): Promise<void> {
-  try {
-    await insertLogToDatabase(level, message, context || {});
-  } catch (error) {
-    throw new Error(`Failed to log to database: ${error}`);
-  }
-}
-
-// Convenience functions
-export async function logInfo(
-  message: string,
-  context?: Record<string, unknown>,
-): Promise<void> {
-  if (!isProduction) {
-    console.log(message, context);
-  }
-  return logToDatabase("info", message, context);
-}
-
-export async function logError(
-  message: string,
-  error?: Error | unknown,
-  context?: Record<string, unknown>,
-): Promise<void> {
-  const errorInfo =
-    error instanceof Error
-      ? { message: error.message, stack: error.stack, name: error.name }
-      : error;
-
-  if (!isProduction) {
-    console.error(message, errorInfo);
-  }
-
-  return logToDatabase("error", message, {
-    ...context,
-    error: errorInfo,
+  await fetch("/api/log", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(entry),
+    keepalive: true,
+    credentials: "same-origin",
   });
 }
 
-export async function logWarn(
-  message: string,
-  context?: Record<string, unknown>,
-): Promise<void> {
-  if (!isProduction) {
-    console.warn(message, context);
+type Transport = (entry: LogEntry) => Promise<void>;
+
+function getTransport(): Transport {
+  if (typeof window === "undefined") {
+    return insertStructuredLogToDatabase;
   }
-  return logToDatabase("warn", message, context);
+  return sendClientLog;
 }
 
-export async function logDebug(
-  message: string,
-  context?: Record<string, unknown>,
-): Promise<void> {
-  if (!isProduction) {
-    console.debug(message, context);
-  }
-  return logToDatabase("debug", message, context);
+const transport: Transport = getTransport();
+
+export const log = {
+  async event(entry: LogEntry): Promise<void> {
+    // Console echo in non-production to aid dev UX
+    if (!isProduction) {
+      const label = `[${entry.level}] ${entry.event}`;
+      // eslint-disable-next-line no-console
+      (console as any)[entry.level === "error" ? "error" : entry.level](
+        label,
+        entry
+      );
+    }
+    const withCorr = {
+      correlation: {
+        correlationId:
+          entry.correlation?.correlationId ?? generateCorrelationId(),
+        ...entry.correlation,
+      },
+      ...entry,
+    } satisfies LogEntry;
+    return transport(withCorr);
+  },
+  async info(event: LogEventName, rest: Omit<LogEntry, "event" | "level">) {
+    return this.event({ event, level: "info", ...rest });
+  },
+  async warn(event: LogEventName, rest: Omit<LogEntry, "event" | "level">) {
+    return this.event({ event, level: "warn", ...rest });
+  },
+  async debug(event: LogEventName, rest: Omit<LogEntry, "event" | "level">) {
+    // Optionally drop/sampling in prod later
+    return this.event({ event, level: "debug", ...rest });
+  },
+  async error(event: LogEventName, rest: Omit<LogEntry, "event" | "level">) {
+    return this.event({ event, level: "error", ...rest });
+  },
+};
+
+// Backwards-compatibility shims removed
+
+// Optional helper for timings
+export async function withDuration<T>(
+  fn: () => Promise<T>
+): Promise<[T, number]> {
+  const start =
+    typeof performance !== "undefined" ? performance.now() : Date.now();
+  const result = await fn();
+  const end =
+    typeof performance !== "undefined" ? performance.now() : Date.now();
+  return [result, end - start];
 }

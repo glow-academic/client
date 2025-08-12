@@ -5,17 +5,24 @@
  */
 
 import { getApiBase } from "@/lib/api-base";
-import { logError, logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import type { NextRequest } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ documentId: string }> },
+  { params }: { params: Promise<{ documentId: string }> }
 ) {
   try {
     const { documentId } = await params;
 
-    logInfo(`Downloading document ${documentId}`, { documentId });
+    await log.info("download.document.start", {
+      message: `Downloading document ${documentId}`,
+      subject: { entityType: "document", entityId: documentId },
+      context: {
+        function: "GET",
+        file: "app/api/download/document/[documentId]/route.ts",
+      },
+    });
 
     // Forward the request to FastAPI backend
     const response = await fetch(`${getApiBase()}/documents/id/${documentId}`, {
@@ -25,16 +32,24 @@ export async function GET(
         ...Object.fromEntries(
           [...req.headers.entries()].filter(([key]) =>
             ["authorization", "cookie", "user-agent"].includes(
-              key.toLowerCase(),
-            ),
-          ),
+              key.toLowerCase()
+            )
+          )
         ),
       },
     });
 
     if (!response.ok) {
       const errorMessage = `Failed to download document ${documentId}: ${response.status} ${response.statusText}`;
-      logError(errorMessage);
+      await log.error("download.document.failed", {
+        message: errorMessage,
+        subject: { entityType: "document", entityId: documentId },
+        context: {
+          function: "GET",
+          file: "app/api/download/document/[documentId]/route.ts",
+          status: response.status,
+        },
+      });
 
       return new Response(
         JSON.stringify({
@@ -47,7 +62,7 @@ export async function GET(
           headers: {
             "Content-Type": "application/json",
           },
-        },
+        }
       );
     }
 
@@ -57,10 +72,15 @@ export async function GET(
     const contentDisposition = response.headers.get("content-disposition");
     const contentLength = response.headers.get("content-length");
 
-    logInfo(`Document ${documentId} downloaded successfully`, {
-      documentId,
-      contentType,
-      contentLength,
+    await log.info("download.document.success", {
+      message: `Document ${documentId} downloaded successfully`,
+      subject: { entityType: "document", entityId: documentId },
+      context: {
+        function: "GET",
+        file: "app/api/download/document/[documentId]/route.ts",
+        contentType,
+        contentLength,
+      },
     });
 
     // Create response headers
@@ -86,7 +106,15 @@ export async function GET(
     });
   } catch (error) {
     const errorMessage = `Error downloading document: ${error instanceof Error ? error.message : "Unknown error"}`;
-    logError(errorMessage, error);
+    await log.error("download.document.error", {
+      message: errorMessage,
+      subject: { entityType: "document" },
+      context: {
+        function: "GET",
+        file: "app/api/download/document/[documentId]/route.ts",
+      },
+      error,
+    });
 
     return new Response(
       JSON.stringify({
@@ -99,7 +127,7 @@ export async function GET(
         headers: {
           "Content-Type": "application/json",
         },
-      },
+      }
     );
   }
 }

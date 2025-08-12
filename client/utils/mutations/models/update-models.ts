@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { models } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -11,7 +11,12 @@ async function _updateModels(ids: string[], data: Partial<typeof models.$inferIn
   try {
     return await db.update(models).set(data).where(inArray(models.id, ids)).returning();
   } catch (error) {
-    logError("Error updating multiple models:", error);
+    await log.error("mutation.update_many.failed", {
+      message: "Error updating multiple models",
+      subject: { entityType: "models" },
+      context: { function: "_updateModels", file: "utils/mutations/models/update-models.ts", count: ids.length },
+      error,
+    });
     throw error;
   }
 }

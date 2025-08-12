@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/card";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { getApiBase } from "@/lib/api-base";
-import { logError, logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import {
   AlertCircle,
   CheckCircle,
@@ -288,7 +288,11 @@ export default function Health() {
         };
       } catch (error) {
         const responseTime = Date.now() - startTime;
-        logError(`Health check failed for ${checkId}:`, error);
+        log.error("health.check.failed", {
+          message: `Health check failed for ${checkId}`,
+          error,
+          context: { component: "Health", checkId },
+        });
         return {
           id: checkId,
           name: currentCheck?.name || checkId,
@@ -305,7 +309,10 @@ export default function Health() {
   );
 
   const runAllHealthChecks = useCallback(async () => {
-    logInfo("Starting comprehensive health checks");
+    log.info("health.checks.start", {
+      message: "Starting comprehensive health checks",
+      context: { component: "Health" },
+    });
 
     const checkIds = [
       "client-api",

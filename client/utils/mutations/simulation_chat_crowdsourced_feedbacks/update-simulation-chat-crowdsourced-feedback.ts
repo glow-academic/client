@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { simulationChatCrowdsourcedFeedbacks } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -12,7 +12,12 @@ async function _updateSimulationChatCrowdsourcedFeedback(id: string, data: Parti
     const result = await db.update(simulationChatCrowdsourcedFeedbacks).set(data).where(eq(simulationChatCrowdsourcedFeedbacks.id, id)).returning();
     return result[0];
   } catch (error) {
-    logError("Error updating simulationChatCrowdsourcedFeedback:", error);
+    await log.error("mutation.update.failed", {
+      message: "Error updating simulationChatCrowdsourcedFeedback",
+      subject: { entityType: "simulation_chat_crowdsourced_feedbacks", entityId: String(id) },
+      context: { function: "_updateSimulationChatCrowdsourcedFeedback", file: "utils/mutations/simulation_chat_crowdsourced_feedbacks/update-simulation-chat-crowdsourced-feedback.ts" },
+      error,
+    });
     throw error;
   }
 }

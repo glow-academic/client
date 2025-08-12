@@ -37,9 +37,15 @@ class AppLogs(_Base, table=True):
     )
 
     id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
+    event: str = Field(sa_column=Column('event', Text))
     level: str = Field(sa_column=Column('level', Text))
     message: Optional[str] = Field(default=None, sa_column=Column('message', Text))
+    correlation_id: Optional[str] = Field(default=None, sa_column=Column('correlation_id', Text))
+    actor: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('actor', JSONB))
+    subject: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('subject', JSONB))
+    metrics: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('metrics', JSONB))
     context: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('context', JSONB))
+    error: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('error', JSONB))
     created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
 
 

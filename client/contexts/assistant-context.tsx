@@ -5,7 +5,7 @@
 "use client";
 import { useProfile } from "@/contexts/profile-context";
 import { AssistantChat } from "@/types";
-import { logError, logInfo } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createAssistantChat } from "@/utils/mutations/assistant_chats/create-assistant-chat";
 import { getAssistantChatsByProfile } from "@/utils/queries/assistant_chats/get-assistant-chats-by-profile";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -106,12 +106,19 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       if (newChat) {
         queryClient.setQueryData(
           ["assistantChats", activeProfile?.id],
-          (old: AssistantChat[] = []) => [newChat, ...old],
+          (old: AssistantChat[] = []) => [newChat, ...old]
         );
       }
     },
     onError: (error) => {
-      logError("Failed to create chat:", error);
+      log.error("assistant.chat.create.failed", {
+        message: "Failed to create chat",
+        context: {
+          component: "AssistantContext",
+          function: "createChatMutation.onError",
+        },
+        error,
+      });
       toast.error("Failed to create new chat");
     },
   });
@@ -122,28 +129,46 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
 
     // Listen for assistant message completion to reset loading state
     const handleAssistantMessageComplete = () => {
-      logInfo("Assistant message completed, resetting sending state");
+      log.debug("assistant.message.complete", {
+        message: "Assistant message completed, resetting sending state",
+        context: {
+          component: "AssistantContext",
+          function: "handleAssistantMessageComplete",
+        },
+      });
       setIsSendingMessage(false);
     };
 
     const handleAssistantMessageCancelled = () => {
-      logInfo("Assistant message cancelled, resetting sending state");
+      log.debug("assistant.message.cancelled", {
+        message: "Assistant message cancelled, resetting sending state",
+        context: {
+          component: "AssistantContext",
+          function: "handleAssistantMessageCancelled",
+        },
+      });
       setIsSendingMessage(false);
     };
 
     const handleAssistantError = () => {
-      logInfo("Assistant error occurred, resetting sending state");
+      log.debug("assistant.message.error", {
+        message: "Assistant error occurred, resetting sending state",
+        context: {
+          component: "AssistantContext",
+          function: "handleAssistantError",
+        },
+      });
       setIsSendingMessage(false);
     };
 
     // Add event listeners
     window.addEventListener(
       "assistant_message_complete",
-      handleAssistantMessageComplete,
+      handleAssistantMessageComplete
     );
     window.addEventListener(
       "assistant_message_cancelled",
-      handleAssistantMessageCancelled,
+      handleAssistantMessageCancelled
     );
     window.addEventListener("assistant_error", handleAssistantError);
 
@@ -151,11 +176,11 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       // Remove event listeners
       window.removeEventListener(
         "assistant_message_complete",
-        handleAssistantMessageComplete,
+        handleAssistantMessageComplete
       );
       window.removeEventListener(
         "assistant_message_cancelled",
-        handleAssistantMessageCancelled,
+        handleAssistantMessageCancelled
       );
       window.removeEventListener("assistant_error", handleAssistantError);
     };
@@ -174,8 +199,14 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       // Join new room
       joinRoom(currentChatId, "assistant");
       currentRoomRef.current = currentChatId;
-
-      logInfo(`Joined assistant chat room: ${currentChatId}`);
+      log.info("assistant.room.joined", {
+        message: `Joined assistant chat room: ${currentChatId}`,
+        subject: { entityType: "assistant_chat", entityId: currentChatId },
+        context: {
+          component: "AssistantContext",
+          function: "useEffect(joinRoom)",
+        },
+      });
     } else if (currentRoomRef.current) {
       // Leave current room when no chat is selected
       leaveRoom(currentRoomRef.current, "assistant");
@@ -217,7 +248,11 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
         setCurrentChatId(newChat.id);
       }
     } catch (error) {
-      logError("Failed to create chat:", error);
+      log.error("assistant.chat.create.failed", {
+        message: "Failed to create chat",
+        context: { component: "AssistantContext", function: "startBlankChat" },
+        error,
+      });
     }
   }, [activeProfile?.id, createChatMutation]);
 
@@ -231,7 +266,11 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       const newChat = await createChatMutation.mutateAsync(activeProfile.id);
       return newChat?.id || null;
     } catch (error) {
-      logError("Failed to create chat:", error);
+      log.error("assistant.chat.create.failed", {
+        message: "Failed to create chat",
+        context: { component: "AssistantContext", function: "createNewChat" },
+        error,
+      });
       return null;
     }
   }, [activeProfile?.id, createChatMutation]);
@@ -261,9 +300,12 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
             return;
           }
 
-          logInfo("No chat selected, creating new chat for message");
+          log.debug("assistant.message.no_chat", {
+            message: "No chat selected, creating new chat for message",
+            context: { component: "AssistantContext", function: "sendMessage" },
+          });
           const newChat = await createChatMutation.mutateAsync(
-            activeProfile.id,
+            activeProfile.id
           );
           if (!newChat?.id) {
             toast.error("Failed to create new chat");
@@ -273,7 +315,11 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
 
           chatId = newChat.id;
           setCurrentChatId(chatId);
-          logInfo("Created new chat for message", { chatId });
+          log.info("assistant.chat.created", {
+            message: "Created new chat for message",
+            subject: { entityType: "assistant_chat", entityId: chatId },
+            context: { component: "AssistantContext", function: "sendMessage" },
+          });
         }
 
         // Check if this is the first message in the chat
@@ -285,27 +331,46 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
 
         if (isFirstMessage) {
           // 1️⃣ Tell the server to create/initialise this assistant chat and process the initial message
-          logInfo("Sending first message via emitStartAssistant", {
-            chatId,
-            messageLength: message.length,
+          log.info("assistant.message.first.start", {
+            message: "Sending first message via emitStartAssistant",
+            subject: { entityType: "assistant_chat", entityId: chatId },
+            context: {
+              component: "AssistantContext",
+              function: "sendMessage",
+              messageLength: message.length,
+            },
           });
           emitStartAssistant({ chat_id: chatId, initial_message: message });
         }
         // 2️⃣ For subsequent messages, deliver the text via the best transport:
 
-        logInfo("Sending subsequent message via WebSocket", {
-          chatId,
-          messageLength: message.length,
+        log.debug("assistant.message.subsequent.start", {
+          message: "Sending subsequent message via WebSocket",
+          subject: { entityType: "assistant_chat", entityId: chatId },
+          context: {
+            component: "AssistantContext",
+            function: "sendMessage",
+            messageLength: message.length,
+          },
         });
         emitSendAssistantMessage({ chat_id: chatId, message }); // fallback
 
-        logInfo("Message sent via WebSocket", {
-          chatId,
-          isFirstMessage,
-          messageLength: message.length,
+        log.info("assistant.message.sent", {
+          message: "Message sent via WebSocket",
+          subject: { entityType: "assistant_chat", entityId: chatId },
+          context: {
+            component: "AssistantContext",
+            function: "sendMessage",
+            isFirstMessage,
+            messageLength: message.length,
+          },
         });
       } catch (error) {
-        logError("Error sending message:", error);
+        log.error("assistant.message.send.failed", {
+          message: "Error sending message",
+          context: { component: "AssistantContext", function: "sendMessage" },
+          error,
+        });
         toast.error("Failed to send message");
         setIsSendingMessage(false);
       }
@@ -322,7 +387,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       createChatMutation,
       emitStartAssistant,
       emitSendAssistantMessage,
-    ],
+    ]
   );
 
   const stopMessage = useCallback(() => {
@@ -341,11 +406,18 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     try {
       emitStopAssistant({ chat_id: currentChatId });
 
-      logInfo("Stop message sent via WebSocket", {
-        chatId: currentChatId,
+      log.info("assistant.message.stop.sent", {
+        message: "Stop message sent via WebSocket",
+        subject: { entityType: "assistant_chat", entityId: currentChatId },
+        context: { component: "AssistantContext", function: "stopMessage" },
       });
     } catch (error) {
-      logError("Error stopping message:", error);
+      log.error("assistant.message.stop.failed", {
+        message: "Error stopping message",
+        subject: { entityType: "assistant_chat", entityId: currentChatId },
+        context: { component: "AssistantContext", function: "stopMessage" },
+        error,
+      });
       toast.error("Failed to stop message");
       setIsStoppingMessage(false);
     }

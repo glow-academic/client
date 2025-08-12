@@ -6,7 +6,7 @@
  */
 "use server";
 import { getApiBase } from "@/lib/api-base";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 
 export interface FinalizeDocumentUploadParams {
   fileId: string;
@@ -61,7 +61,7 @@ export async function finalizeDocumentUpload(
   autoClassify?: boolean,
   profileId?: string,
   csv?: boolean,
-  test?: boolean,
+  test?: boolean
 ): Promise<FinalizeDocumentUploadResponse> {
   try {
     const payload: FinalizeDocumentUploadParams = {
@@ -87,7 +87,10 @@ export async function finalizeDocumentUpload(
       const errorMessage =
         errorData.message ||
         `Failed to finalize document upload: ${response.status} ${response.statusText}`;
-      logError(errorMessage);
+      log.error("documents.finalize.failed", {
+        message: errorMessage,
+        context: { function: "finalizeDocumentUpload", fileId },
+      });
       return {
         success: false,
         message: errorMessage,
@@ -113,7 +116,11 @@ export async function finalizeDocumentUpload(
     };
   } catch (error) {
     const errorMessage = `Error finalizing document upload: ${error instanceof Error ? error.message : "Unknown error"}`;
-    logError(errorMessage, error);
+    log.error("documents.finalize.error", {
+      message: errorMessage,
+      error,
+      context: { function: "finalizeDocumentUpload", fileId },
+    });
     return {
       success: false,
       message: errorMessage,

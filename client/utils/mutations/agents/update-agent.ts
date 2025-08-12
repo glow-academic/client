@@ -3,7 +3,7 @@
 import { db } from "@/utils/drizzle/db";
 import { agents } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createMockableAction } from "@/lib/testing/create-mockable-action";
 
 // Original logic is now a "private" function
@@ -12,7 +12,12 @@ async function _updateAgent(id: string, data: Partial<typeof agents.$inferInsert
     const result = await db.update(agents).set(data).where(eq(agents.id, id)).returning();
     return result[0];
   } catch (error) {
-    logError("Error updating agent:", error);
+    await log.error("mutation.update.failed", {
+      message: "Error updating agent",
+      subject: { entityType: "agents", entityId: String(id) },
+      context: { function: "_updateAgent", file: "utils/mutations/agents/update-agent.ts" },
+      error,
+    });
     throw error;
   }
 }

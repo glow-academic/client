@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Parameter, ParameterItem } from "@/types";
-import { logError } from "@/utils/logger";
+import { log } from "@/utils/logger";
 import { createParameterItem } from "@/utils/mutations/parameter_items/create-parameter-item";
 
 export interface ParameterItemPickerProps {
@@ -147,7 +147,14 @@ export function ParameterItemPicker({
       setOpen(false);
       onSelect((created as unknown as ParameterItem).id);
     } catch (error) {
-      logError("Failed to create parameter item", error);
+      log.error("parameter_item.create.failed", {
+        message: "Failed to create parameter item",
+        error,
+        context: {
+          component: "ParameterItemPicker",
+          parameterId: parameter.id,
+        },
+      });
       toast.error("Failed to create parameter item");
     } finally {
       setIsCreating(false);
