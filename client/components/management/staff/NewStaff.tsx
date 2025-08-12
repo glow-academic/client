@@ -158,7 +158,7 @@ const getRoleBadgeVariant = (role: string) => {
 };
 
 // Internal business logic functions for better testability
-const useNewStaffBusinessLogic = () => {
+const useNewStaffBusinessLogic = (onDone?: () => void) => {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
 
@@ -464,6 +464,9 @@ const useNewStaffBusinessLogic = () => {
             alias: "",
             role: "",
           });
+          if (onDone) {
+            onDone();
+          }
         }
       }
     } catch (error) {
@@ -473,7 +476,7 @@ const useNewStaffBusinessLogic = () => {
       logError("Error creating profile:", error);
       return;
     }
-  }, [manualProfile, allProfiles, validateAlias]);
+  }, [manualProfile, allProfiles, validateAlias, onDone]);
 
   // Remove selected profile from CSV preview
   const removeSelectedProfile = useCallback((profileId: string) => {
@@ -524,14 +527,18 @@ const useNewStaffBusinessLogic = () => {
       toast.success(
         `Successfully created ${csvPreview.length} staff member(s)!`
       );
-      router.push("/management/staff");
+      if (onDone) {
+        onDone();
+      } else {
+        router.push("/management/staff");
+      }
     } catch (error) {
       logError("Error creating staff members from CSV:", error);
       toast.error("Failed to create some staff members. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
-  }, [csvPreview, allCohorts, router]);
+  }, [csvPreview, allCohorts, router, onDone]);
 
   // Clear CSV preview
   const clearCsvPreview = useCallback(() => {
@@ -573,7 +580,11 @@ const useNewStaffBusinessLogic = () => {
   };
 };
 
-export default function NewStaff() {
+export interface NewStaffProps {
+  onDone?: () => void;
+}
+
+export default function NewStaff({ onDone }: NewStaffProps) {
   const csvInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -593,7 +604,7 @@ export default function NewStaff() {
     handleCSVSubmit,
     clearCsvPreview,
     updateManualProfile,
-  } = useNewStaffBusinessLogic();
+  } = useNewStaffBusinessLogic(onDone);
 
   // Handle CSV file input change
   const handleCsvInputChange = useCallback(

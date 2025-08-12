@@ -5,17 +5,48 @@
  * 06/07/2025
  */
 "use client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useProfile } from "@/contexts/profile-context";
 import { StaffData, useStaffColumns } from "@/hooks/use-staff-columns";
 import { Profile } from "@/types";
+import { deleteProfiles } from "@/utils/mutations/profiles/delete-profiles";
+import { updateProfiles } from "@/utils/mutations/profiles/update-profiles";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, Shield, User as UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
+import { toast } from "sonner";
+import NewStaff from "./NewStaff";
 import { StaffDataTable } from "./StaffDataTable";
+import StaffEdit from "./StaffEdit";
 import { StaffFilterDialog } from "./StaffFilterDialog";
 
 export default function Staff() {
@@ -27,6 +58,24 @@ export default function Staff() {
   >([]);
   const router = useRouter();
   const { effectiveProfile } = useProfile();
+  const queryClient = useQueryClient();
+
+  // Selection
+  const [selectedStaffIds, setSelectedStaffIds] = React.useState<string[]>([]);
+
+  // Create modal
+  const [showCreateModal, setShowCreateModal] = React.useState(false);
+
+  // Edit modal
+  const [editProfileId, setEditProfileId] = React.useState<string | null>(null);
+
+  // Bulk edit modal state
+  const [showBulkEditModal, setShowBulkEditModal] = React.useState(false);
+  const [bulkRole, setBulkRole] = React.useState<string>("__keep__");
+  const [bulkReqPerDay, setBulkReqPerDay] = React.useState<string>("");
+
+  // Bulk delete dialog
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = React.useState(false);
 
   // Fetch all users and cohorts
   const { data: allProfiles = [], isLoading: isLoadingProfiles } = useQuery({
@@ -115,7 +164,8 @@ export default function Staff() {
   }, [staffUsers]);
 
   const handleEditUser = (profileId: string) => {
-    router.push(`/management/staff/p/${profileId}`);
+    // Open modal for in-place edit
+    setEditProfileId(profileId);
   };
 
   const handleRefresh = async () => {
@@ -311,6 +361,29 @@ export default function Staff() {
         lastActiveOptions={lastActiveOptions}
         isRefreshing={isRefreshing}
         onRefresh={handleRefresh}
+        selectedStaffIds={selectedStaffIds}
+        onStaffSelect={(id, checked) =>
+          setSelectedStaffIds((prev) =>
+            checked ? [...prev, id] : prev.filter((x) => x !== id)
+          )
+        }
+        onSelectAll={(checked) =>
+          setSelectedStaffIds(checked ? staffData.map((s) => s.id) : [])
+        }
+        onCreate={() => setShowCreateModal(true)}
+        onPreview={(staff) => router.push(`/analytics/reports/p/${staff.id}`)}
+        onEdit={(staff) => setEditProfileId(staff.id)}
+        onDelete={async (staff) => {
+          try {
+            await deleteProfiles([staff.id]);
+            toast.success("User deleted successfully");
+            queryClient.invalidateQueries({ queryKey: ["profiles"] });
+          } catch {
+            toast.error("Failed to delete user");
+          }
+        }}
+        onBulkEdit={() => setShowBulkEditModal(true)}
+        onBulkDelete={() => setShowBulkDeleteDialog(true)}
       />
 
       {/* Staff Filter Dialog */}
@@ -321,6 +394,165 @@ export default function Staff() {
         staffMembers={dialogStaffMembers}
         onEditUser={handleEditUser}
       />
+
+      {/* Create Staff Modal */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Create Staff</DialogTitle>
+          </DialogHeader>
+          <NewStaff
+            onDone={() => {
+              setShowCreateModal(false);
+              queryClient.invalidateQueries({ queryKey: ["profiles"] });
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Staff Modal */}
+      <Dialog
+        open={!!editProfileId}
+        onOpenChange={(open) => !open && setEditProfileId(null)}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Staff</DialogTitle>
+          </DialogHeader>
+          {editProfileId && (
+            <StaffEdit
+              profileId={editProfileId}
+              hideDelete={true}
+              hideBack={true}
+              redirectOnSuccess={false}
+              onDone={() => {
+                setEditProfileId(null);
+                queryClient.invalidateQueries({ queryKey: ["profiles"] });
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Edit Modal */}
+      <Dialog open={showBulkEditModal} onOpenChange={setShowBulkEditModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Edit {selectedStaffIds.length} staff
+              {selectedStaffIds.length > 1 ? "" : ""}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <Label>Role</Label>
+              <Select value={bulkRole} onValueChange={(v) => setBulkRole(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Keep existing" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__keep__">Keep existing</SelectItem>
+                  {roleOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label>Requests per day</Label>
+              <Input
+                type="number"
+                placeholder="Leave blank to keep existing; 0 to clear (unlimited)"
+                value={bulkReqPerDay}
+                onChange={(e) => setBulkReqPerDay(e.target.value)}
+                min={0}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowBulkEditModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                if (selectedStaffIds.length === 0) return;
+                const updates: Record<string, unknown> = {
+                  updatedAt: new Date().toISOString(),
+                };
+                if (bulkRole !== "__keep__") updates["role"] = bulkRole;
+                if (bulkReqPerDay !== "") {
+                  const num = Number(bulkReqPerDay);
+                  updates["reqPerDay"] = Number.isNaN(num)
+                    ? null
+                    : num === 0
+                      ? null
+                      : num;
+                }
+                try {
+                  if (Object.keys(updates).length > 0) {
+                    await updateProfiles(
+                      selectedStaffIds,
+                      updates as { [key: string]: unknown }
+                    );
+                  }
+                  toast.success("Staff updated successfully");
+                  setShowBulkEditModal(false);
+                  setSelectedStaffIds([]);
+                  setBulkRole("__keep__");
+                  setBulkReqPerDay("");
+                  queryClient.invalidateQueries({ queryKey: ["profiles"] });
+                } catch {
+                  toast.error("Failed to update staff");
+                }
+              }}
+            >
+              Apply Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Delete Confirmation */}
+      <AlertDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete {selectedStaffIds.length} staff member
+              {selectedStaffIds.length !== 1 ? "s" : ""}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={async () => {
+                try {
+                  await deleteProfiles(selectedStaffIds);
+                  toast.success("Selected staff deleted");
+                  setSelectedStaffIds([]);
+                  setShowBulkDeleteDialog(false);
+                  queryClient.invalidateQueries({ queryKey: ["profiles"] });
+                } catch {
+                  toast.error("Failed to delete selected staff");
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

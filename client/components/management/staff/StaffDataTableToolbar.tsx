@@ -1,7 +1,7 @@
 "use client";
 
 import { Table } from "@tanstack/react-table";
-import { RefreshCw, X } from "lucide-react";
+import { Plus, RefreshCw, X } from "lucide-react";
 
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
@@ -17,6 +17,10 @@ export interface StaffDataTableToolbarProps {
   lastActiveOptions: { value: string; label: string }[];
   isRefreshing: boolean;
   onRefresh: () => void;
+  selectedCount: number;
+  onBulkEdit: () => void;
+  onBulkDelete: () => void;
+  onCreate: () => void;
 }
 
 export function StaffDataTableToolbar({
@@ -27,6 +31,10 @@ export function StaffDataTableToolbar({
   lastActiveOptions,
   isRefreshing,
   onRefresh,
+  selectedCount,
+  onBulkEdit,
+  onBulkDelete,
+  onCreate,
 }: StaffDataTableToolbarProps) {
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -102,6 +110,33 @@ export function StaffDataTableToolbar({
       </div>
 
       <div className="flex items-center space-x-2 mb-2">
+        {/* Create Staff */}
+        <Button size="sm" onClick={onCreate} className="h-8">
+          <Plus className="h-4 w-4 mr-2" /> Create Staff
+        </Button>
+
+        {/* Bulk edit/delete if any selected */}
+        {selectedCount > 0 && (
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onBulkEdit}
+              className="h-8"
+            >
+              Bulk Edit ({selectedCount})
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={onBulkDelete}
+              className="h-8"
+            >
+              Delete ({selectedCount})
+            </Button>
+          </div>
+        )}
+
         <Button
           variant="outline"
           size="sm"

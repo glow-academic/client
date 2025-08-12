@@ -50,10 +50,18 @@ type FormData = {
 
 export interface StaffEditProps {
   profileId: string;
+  hideDelete?: boolean;
+  hideBack?: boolean;
+  redirectOnSuccess?: boolean;
+  onDone?: () => void;
 }
 
 // Internal business logic functions for better testability
-const useStaffEditBusinessLogic = (profileId: string) => {
+const useStaffEditBusinessLogic = (
+  profileId: string,
+  redirectOnSuccess: boolean,
+  onDone?: () => void
+) => {
   const queryClient = useQueryClient();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -93,14 +101,19 @@ const useStaffEditBusinessLogic = (profileId: string) => {
         queryClient.invalidateQueries({ queryKey: ["profiles"] });
         queryClient.invalidateQueries({ queryKey: ["profile", profileId] });
         toast.success("User updated successfully");
-        router.push("/management/staff");
+        if (redirectOnSuccess) {
+          router.push("/management/staff");
+        }
+        if (onDone) {
+          onDone();
+        }
       } catch (error) {
         logError("Error updating user:", error);
       } finally {
         setIsSubmitting(false);
       }
     },
-    [profileId, queryClient, router]
+    [profileId, queryClient, router, redirectOnSuccess, onDone]
   );
 
   const handleDelete = useCallback(async () => {
@@ -136,7 +149,13 @@ const useStaffEditBusinessLogic = (profileId: string) => {
   };
 };
 
-export default function StaffEdit({ profileId }: StaffEditProps) {
+export default function StaffEdit({
+  profileId,
+  hideDelete = false,
+  hideBack = false,
+  redirectOnSuccess = true,
+  onDone,
+}: StaffEditProps) {
   const [formData, setFormData] = useState<FormData>({});
 
   const {
@@ -150,7 +169,7 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
     handleSubmit,
     handleDelete,
     handleBackNavigation,
-  } = useStaffEditBusinessLogic(profileId);
+  } = useStaffEditBusinessLogic(profileId, redirectOnSuccess, onDone);
 
   // Initialize form data when user is loaded
   useEffect(() => {
@@ -330,55 +349,60 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
                 <Skeleton className="h-10 w-full" />
               )}
             </div>
-            <div className="space-y-2">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" disabled={isSubmitting}>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete User
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Are you absolutely sure?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will permanently delete the user account for{" "}
-                      {formData.firstName + " " + formData.lastName} (
-                      {formData.alias}@{process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
-                      ). This action cannot be undone and will remove all
-                      associated data.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isSubmitting}>
-                      Cancel
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDelete}
-                      disabled={isSubmitting}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      {isSubmitting ? "Deleting..." : "Delete User"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
+            {!hideDelete && (
+              <div className="space-y-2">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" disabled={isSubmitting}>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete User
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Are you absolutely sure?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete the user account for{" "}
+                        {formData.firstName + " " + formData.lastName} (
+                        {formData.alias}@
+                        {process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
+                        ). This action cannot be undone and will remove all
+                        associated data.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={isSubmitting}>
+                        Cancel
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        disabled={isSubmitting}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {isSubmitting ? "Deleting..." : "Delete User"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            )}
           </div>
 
           {/* Action buttons row */}
           <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleBackNavigation}
-              disabled={isSubmitting}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
+            {!hideBack && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleBackNavigation}
+                disabled={isSubmitting}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+            )}
             <Button type="submit" disabled={isSubmitting || !hasChanges}>
               {isSubmitting ? "Updating..." : "Update User"}
             </Button>

@@ -24,7 +24,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { StaffData } from "@/hooks/use-staff-columns";
+import { Edit, Eye, Trash2 } from "lucide-react";
 import { StaffDataTableToolbar } from "./StaffDataTableToolbar";
 
 export interface StaffDataTableProps {
@@ -36,6 +39,16 @@ export interface StaffDataTableProps {
   lastActiveOptions: { value: string; label: string }[];
   isRefreshing: boolean;
   onRefresh: () => void;
+  // New props for actions & selection
+  selectedStaffIds: string[];
+  onStaffSelect: (profileId: string, checked: boolean) => void;
+  onSelectAll: (checked: boolean) => void;
+  onCreate: () => void;
+  onPreview: (staff: StaffData) => void;
+  onEdit: (staff: StaffData) => void;
+  onDelete: (staff: StaffData) => void;
+  onBulkEdit: () => void;
+  onBulkDelete: () => void;
 }
 
 export function StaffDataTable({
@@ -47,6 +60,15 @@ export function StaffDataTable({
   lastActiveOptions,
   isRefreshing,
   onRefresh,
+  selectedStaffIds,
+  onStaffSelect,
+  onSelectAll,
+  onCreate,
+  onPreview,
+  onEdit,
+  onDelete,
+  onBulkEdit,
+  onBulkDelete,
 }: StaffDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -58,9 +80,97 @@ export function StaffDataTable({
     { id: "lastActive", desc: true }, // Default sort by last active descending
   ]);
 
+  // Build columns with checkbox + actions, filtering out any pre-supplied actions/select
+  const columnsWithActions = React.useMemo(() => {
+    const checkboxColumn: ColumnDef<StaffData> = {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => {
+            table.toggleAllPageRowsSelected(!!value);
+            onSelectAll(!!value);
+          }}
+          aria-label="Select all"
+          className="translate-y-[2px]"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={selectedStaffIds.includes(row.original.id)}
+          onCheckedChange={(value) => onStaffSelect(row.original.id, !!value)}
+          aria-label="Select row"
+          className="translate-y-[2px]"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    };
+
+    const actionsColumn: ColumnDef<StaffData> = {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const staff = row.original;
+        return (
+          <div className="flex items-center justify-center gap-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 w-7 p-0"
+              onClick={() => onPreview(staff)}
+              title="View Reports"
+            >
+              <Eye className="h-3 w-3" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 w-7 p-0"
+              onClick={() => onEdit(staff)}
+              title="Edit Staff"
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+              onClick={() => onDelete(staff)}
+              title="Delete Staff"
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
+    };
+
+    const filtered = columns.filter(
+      (c) => c.id !== "select" && c.id !== "actions"
+    );
+    return [checkboxColumn, ...filtered, actionsColumn];
+  }, [
+    columns,
+    onSelectAll,
+    selectedStaffIds,
+    onStaffSelect,
+    onPreview,
+    onEdit,
+    onDelete,
+  ]);
+
   const table = useReactTable({
     data,
-    columns,
+    columns: columnsWithActions,
     state: {
       sorting,
       columnVisibility,
@@ -89,6 +199,10 @@ export function StaffDataTable({
         lastActiveOptions={lastActiveOptions}
         isRefreshing={isRefreshing}
         onRefresh={onRefresh}
+        selectedCount={selectedStaffIds.length}
+        onBulkDelete={onBulkDelete}
+        onBulkEdit={onBulkEdit}
+        onCreate={onCreate}
       />
       <div className="rounded-md border overflow-x-auto">
         <Table>
@@ -142,7 +256,7 @@ export function StaffDataTable({
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length}
+                  colSpan={columnsWithActions.length}
                   className="h-24 text-center px-6"
                 >
                   No staff members found.
