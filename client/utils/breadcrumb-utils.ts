@@ -90,7 +90,7 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
 
       case "provider":
         const providerData = await getProvider(id);
-        return providerData?.name || `Provider ${id.substring(0, 8)}...`;
+        return providerData?.name || `Provider`;
 
       case "parameter":
         const parameterData = await getParameter(id);
@@ -101,7 +101,37 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
     }
   } catch (error) {
     logError(`Error fetching name for ${context} ID ${id}:`, error);
-    return id.length > 10 ? `${id.substring(0, 8)}...` : id;
+    // Fallback to generic titles for known contexts to avoid exposing raw IDs
+    switch (context) {
+      case "provider":
+        return "Provider";
+      case "model":
+        return "Model";
+      case "persona":
+        return "Persona";
+      case "agent":
+        return "Agent";
+      case "scenario":
+        return "Scenario";
+      case "simulation":
+        return "Simulation";
+      case "chat":
+        return "Chat";
+      case "profile":
+        return "Profile";
+      case "rubric":
+        return "Rubric";
+      case "cohort":
+        return "Cohort";
+      case "attempt":
+        return "Attempt";
+      case "report":
+        return "Report";
+      case "parameter":
+        return "Parameter";
+      default:
+        return id.length > 10 ? `${id.substring(0, 8)}...` : id;
+    }
   }
 };
 

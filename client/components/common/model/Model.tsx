@@ -31,12 +31,16 @@ import { useRouter } from "next/navigation";
 interface FormErrors {
   name?: string;
   description?: string;
+  inputPpm?: string;
+  outputPpm?: string;
 }
 
 interface FormData {
   name?: string;
   description?: string;
   active?: string;
+  inputPpm?: string; // USD per 1M input tokens
+  outputPpm?: string; // USD per 1M output tokens
 }
 
 export interface ModelProps {
@@ -56,8 +60,10 @@ export default function Model({ modelId, providerId }: ModelProps) {
       name: "",
       description: "",
       active: "true",
+      inputPpm: "0",
+      outputPpm: "0",
     }),
-    [],
+    []
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -80,6 +86,8 @@ export default function Model({ modelId, providerId }: ModelProps) {
         name: modelToEdit.name,
         description: modelToEdit.description,
         active: modelToEdit.active ? "true" : "false",
+        inputPpm: (modelToEdit as any).inputPpm?.toString?.() ?? "0",
+        outputPpm: (modelToEdit as any).outputPpm?.toString?.() ?? "0",
       });
     } else if (!isEditMode) {
       // We are in CREATE mode, so reset the form to its initial state
@@ -89,7 +97,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
 
   const handleInputChange = (
     field: keyof ModelType,
-    value: string | boolean | undefined,
+    value: string | boolean | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -118,6 +126,21 @@ export default function Model({ modelId, providerId }: ModelProps) {
       return;
     }
 
+    // Validate pricing fields
+    const inputPpmNum = parseFloat(formData.inputPpm ?? "0");
+    const outputPpmNum = parseFloat(formData.outputPpm ?? "0");
+    const priceErrors: FormErrors = {};
+    if (Number.isNaN(inputPpmNum) || inputPpmNum < 0) {
+      priceErrors.inputPpm = "Enter a valid non-negative number";
+    }
+    if (Number.isNaN(outputPpmNum) || outputPpmNum < 0) {
+      priceErrors.outputPpm = "Enter a valid non-negative number";
+    }
+    if (priceErrors.inputPpm || priceErrors.outputPpm) {
+      setErrors((prev) => ({ ...prev, ...priceErrors }));
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -127,6 +150,8 @@ export default function Model({ modelId, providerId }: ModelProps) {
           name: formData.name,
           description: formData.description,
           active: formData.active === "true" ? true : false,
+          inputPpm: inputPpmNum,
+          outputPpm: outputPpmNum,
           updatedAt: new Date().toISOString(),
         });
       } else {
@@ -135,6 +160,8 @@ export default function Model({ modelId, providerId }: ModelProps) {
           description: formData.description,
           providerId: providerId,
           active: formData.active === "true" ? true : false,
+          inputPpm: inputPpmNum,
+          outputPpm: outputPpmNum,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
@@ -153,12 +180,12 @@ export default function Model({ modelId, providerId }: ModelProps) {
       toast.success(
         isEditMode && modelId
           ? "Model updated successfully!"
-          : "Model created successfully!",
+          : "Model created successfully!"
       );
       router.push(`/management/providers`);
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode && modelId ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${isEditMode && modelId ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsSubmitting(false);
@@ -224,6 +251,54 @@ export default function Model({ modelId, providerId }: ModelProps) {
           ) : (
             <Skeleton className="h-10 w-full" />
           )}
+        </div>
+
+        {/* Pricing */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="inputPpm">Input price (USD per 1M tokens)</Label>
+            {formData.inputPpm !== undefined && !isLoading ? (
+              <Input
+                id="inputPpm"
+                type="number"
+                step="0.0001"
+                min="0"
+                value={formData.inputPpm}
+                onChange={(e) =>
+                  handleInputChange("inputPpm" as any, e.target.value)
+                }
+                placeholder="e.g. 3.00"
+                className={errors.inputPpm ? "border-destructive" : ""}
+              />
+            ) : (
+              <Skeleton className="h-10 w-full" />
+            )}
+            {errors.inputPpm && (
+              <p className="text-sm text-destructive">{errors.inputPpm}</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="outputPpm">Output price (USD per 1M tokens)</Label>
+            {formData.outputPpm !== undefined && !isLoading ? (
+              <Input
+                id="outputPpm"
+                type="number"
+                step="0.0001"
+                min="0"
+                value={formData.outputPpm}
+                onChange={(e) =>
+                  handleInputChange("outputPpm" as any, e.target.value)
+                }
+                placeholder="e.g. 15.00"
+                className={errors.outputPpm ? "border-destructive" : ""}
+              />
+            ) : (
+              <Skeleton className="h-10 w-full" />
+            )}
+            {errors.outputPpm && (
+              <p className="text-sm text-destructive">{errors.outputPpm}</p>
+            )}
+          </div>
         </div>
 
         {/* Submit Button */}

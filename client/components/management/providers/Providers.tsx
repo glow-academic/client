@@ -141,8 +141,11 @@ export default function Providers() {
         {providerGroup.models
           .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
           .map((model: Model) => (
-            <Card key={model.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
+            <Card
+              key={model.id}
+              className="hover:shadow-md transition-shadow flex flex-col h-full"
+            >
+              <CardHeader className="flex-0">
                 <div className="flex justify-between items-start">
                   <div className="space-y-1">
                     <CardTitle className="text-base flex items-center gap-2">
@@ -158,7 +161,7 @@ export default function Providers() {
                   </Badge>
                 </div>
               </CardHeader>
-              <CardFooter className="flex justify-end gap-2">
+              <CardFooter className="mt-auto flex justify-end gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -179,14 +182,14 @@ export default function Providers() {
 
         {/* Create New Model Card for this provider */}
         <Card
-          className="border-dashed border-2 hover:border-dashed hover:border-primary/50 transition-colors cursor-pointer"
+          className="border-dashed border-2 hover:border-dashed hover:border-primary/50 transition-colors cursor-pointer flex flex-col h-full"
           onClick={() =>
             router.push(
-              `/management/providers/p/${providerGroup.provider.id}/new`,
+              `/management/providers/p/${providerGroup.provider.id}/new`
             )
           }
         >
-          <CardContent className="flex flex-col items-center justify-center py-12">
+          <CardContent className="flex flex-col items-center justify-center py-12 grow">
             <Plus className="h-8 w-8 text-muted-foreground mb-3" />
             <h3 className="text-sm font-medium text-muted-foreground mb-1">
               Create New Model

@@ -30,6 +30,13 @@ import { useProfile } from "@/contexts/profile-context";
 import { DebugInfo } from "@/types";
 import { format } from "date-fns";
 
+const currency = (value: number) =>
+  new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 4,
+  }).format(value);
+
 export interface ModelRunRow {
   id: string;
   createdAt: string;
@@ -44,6 +51,7 @@ export interface ModelRunRow {
   inputTokens: number;
   outputTokens: number;
   debugInfo?: DebugInfo[];
+  cost: number;
 }
 
 export interface RunsDataTableProps {
@@ -140,6 +148,18 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
         cell: ({ row }) => (
           <div className="text-sm tabular-nums">
             {row.getValue("outputTokens")}
+          </div>
+        ),
+        enableSorting: true,
+      },
+      {
+        accessorKey: "cost",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Cost" />
+        ),
+        cell: ({ row }) => (
+          <div className="text-sm tabular-nums font-medium">
+            {currency(row.getValue("cost") as number)}
           </div>
         ),
         enableSorting: true,

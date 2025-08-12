@@ -48,6 +48,7 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
 
         simulation_id = data.get("simulation_id")
         profile_id = data.get("profile_id")
+        scenario_id_override = data.get("scenario_id")
         infinite = bool(data.get("infinite", False))
         infinite_time_limit = data.get("infinite_time_limit")
 
@@ -99,7 +100,15 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
             scenario_ids = simulation.scenario_ids or []
 
             # If no scenarios are configured, pick a random scenario
-            if not scenario_ids:
+            if scenario_id_override:
+                old_scenario = db_session.exec(
+                    select(Scenarios).where(Scenarios.id == scenario_id_override)
+                ).one_or_none()
+                if not old_scenario:
+                    await emit_error(sid, f"Scenario {scenario_id_override} not found")
+                    return
+                chosen_scenario_id = old_scenario.id
+            elif not scenario_ids:
                 logger.info(
                     f"No scenarios configured for simulation {simulation_id}, selecting random scenario"
                 )
@@ -116,10 +125,10 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
                     f"Selected random scenario {scenario_id} for simulation {simulation_id}"
                 )
             else:
-                scenario_id = scenario_ids[0]
+                chosen_scenario_id = scenario_ids[0]
 
             old_scenario = db_session.exec(
-                select(Scenarios).where(Scenarios.id == scenario_id)
+                select(Scenarios).where(Scenarios.id == chosen_scenario_id)
             ).one_or_none()
 
             if not old_scenario:

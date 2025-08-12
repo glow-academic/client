@@ -94,8 +94,7 @@ export default function Pricing() {
   });
 
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
-  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
-  const [selectedPersonaIds, _setSelectedPersonaIds] = useState<string[]>([]);
+  const [selectedActorIds, setSelectedActorIds] = useState<string[]>([]);
   // Grouping removed; always series by model with filters
   const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
 
@@ -138,8 +137,7 @@ export default function Pricing() {
     const includeModels = new Set(
       selectedModelIds.length ? selectedModelIds : models.map((m) => m.id)
     );
-    const includeAgents = new Set(selectedAgentIds);
-    const includePersonas = new Set(selectedPersonaIds);
+    const includeActors = new Set(selectedActorIds);
     const includeProfiles = new Set(selectedProfileIds);
 
     const byDay = new Map<
@@ -159,16 +157,12 @@ export default function Pricing() {
       const modelId = (run as unknown as { modelId?: string | null }).modelId;
 
       if (!modelId || !includeModels.has(modelId)) continue;
-      if (
-        includeAgents.size > 0 &&
-        (!runAgentId || !includeAgents.has(runAgentId))
-      )
-        continue;
-      if (
-        includePersonas.size > 0 &&
-        (!runPersonaId || !includePersonas.has(runPersonaId))
-      )
-        continue;
+      if (includeActors.size > 0) {
+        const matchesAgent = !!runAgentId && includeActors.has(runAgentId);
+        const matchesPersona =
+          !!runPersonaId && includeActors.has(runPersonaId);
+        if (!matchesAgent && !matchesPersona) continue;
+      }
       if (
         includeProfiles.size > 0 &&
         (!runProfileId || !includeProfiles.has(runProfileId))
@@ -256,8 +250,7 @@ export default function Pricing() {
     models,
     dateRange,
     selectedModelIds,
-    selectedAgentIds,
-    selectedPersonaIds,
+    selectedActorIds,
     selectedProfileIds,
     modelIdToMeta,
   ]);
@@ -294,10 +287,11 @@ export default function Pricing() {
     () => models.map((m) => ({ value: m.id, label: m.name })),
     [models]
   );
-  const agentOptions = useMemo(
-    () => agents.map((a) => ({ value: a.id, label: a.name })),
-    [agents]
-  );
+  const actorOptions = useMemo(() => {
+    const agentOpts = agents.map((a) => ({ value: a.id, label: a.name }));
+    const personaOpts = personas.map((p) => ({ value: p.id, label: p.name }));
+    return [...agentOpts, ...personaOpts];
+  }, [agents, personas]);
   const profileOptions = useMemo(() => {
     return profiles.map((p) => {
       const id = p.id as string;
@@ -318,6 +312,13 @@ export default function Pricing() {
         (run as unknown as { personaId?: string | null }).personaId || null;
       const profileId =
         (run as unknown as { profileId?: string | null }).profileId || null;
+
+      const modelMeta = modelId ? modelIdToMeta.get(modelId) : undefined;
+      const inputCost =
+        ((run.inputTokens || 0) / 1_000_000) * (modelMeta?.inputPpm || 0);
+      const outputCost =
+        ((run.outputTokens || 0) / 1_000_000) * (modelMeta?.outputPpm || 0);
+      const cost = Number((inputCost + outputCost).toFixed(6));
       return {
         id: run.id as string,
         createdAt: run.createdAt as string,
@@ -345,6 +346,7 @@ export default function Pricing() {
         inputTokens: run.inputTokens,
         outputTokens: run.outputTokens,
         debugInfo: debugInfoByRunId.get(run.id as string) || [],
+        cost,
       };
     });
   }, [
@@ -361,13 +363,13 @@ export default function Pricing() {
       {/* Faceted filters toolbar */}
       <RunsDataTableToolbar
         modelOptions={modelOptions}
-        agentOptions={agentOptions}
+        actorOptions={actorOptions}
         profileOptions={profileOptions}
         selectedModelIds={selectedModelIds}
-        selectedAgentIds={selectedAgentIds}
+        selectedActorIds={selectedActorIds}
         selectedProfileIds={selectedProfileIds}
         setSelectedModelIds={setSelectedModelIds}
-        setSelectedAgentIds={setSelectedAgentIds}
+        setSelectedActorIds={setSelectedActorIds}
         setSelectedProfileIds={setSelectedProfileIds}
         dateRange={dateRange}
         setDateRange={setDateRange}

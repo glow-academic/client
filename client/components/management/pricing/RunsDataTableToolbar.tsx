@@ -27,13 +27,13 @@ export interface OptionItem {
 
 export interface RunsDataTableToolbarProps {
   modelOptions: OptionItem[];
-  agentOptions: OptionItem[];
+  actorOptions: OptionItem[];
   profileOptions: OptionItem[];
   selectedModelIds: string[];
-  selectedAgentIds: string[];
+  selectedActorIds: string[];
   selectedProfileIds: string[];
   setSelectedModelIds: (ids: string[]) => void;
-  setSelectedAgentIds: (ids: string[]) => void;
+  setSelectedActorIds: (ids: string[]) => void;
   setSelectedProfileIds: (ids: string[]) => void;
   dateRange: DateRange | undefined;
   setDateRange: (range: DateRange | undefined) => void;
@@ -43,13 +43,13 @@ export interface RunsDataTableToolbarProps {
 
 export function RunsDataTableToolbar({
   modelOptions,
-  agentOptions,
+  actorOptions,
   profileOptions,
   selectedModelIds,
-  selectedAgentIds,
+  selectedActorIds,
   selectedProfileIds,
   setSelectedModelIds,
-  setSelectedAgentIds,
+  setSelectedActorIds,
   setSelectedProfileIds,
   dateRange,
   setDateRange,
@@ -100,28 +100,28 @@ export function RunsDataTableToolbar({
           </PopoverContent>
         </Popover>
 
-        {/* Agent filter */}
+        {/* Agent/Persona filter */}
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="h-8 border-dashed">
-              Agents
+              Agents/Personas
             </Button>
           </PopoverTrigger>
           <PopoverContent align="start" className="w-72 p-0">
             <Command>
-              <CommandInput placeholder="Search agents..." />
-              <CommandEmpty>No agents found.</CommandEmpty>
+              <CommandInput placeholder="Search agents/personas..." />
+              <CommandEmpty>No matches found.</CommandEmpty>
               <CommandList>
-                {agentOptions.map((a) => {
-                  const checked = selectedAgentIds.includes(a.value);
+                {actorOptions.map((a) => {
+                  const checked = selectedActorIds.includes(a.value);
                   return (
                     <CommandItem
                       key={a.value}
                       onSelect={() => {
-                        const next = new Set(selectedAgentIds);
+                        const next = new Set(selectedActorIds);
                         if (checked) next.delete(a.value);
                         else next.add(a.value);
-                        setSelectedAgentIds(Array.from(next));
+                        setSelectedActorIds(Array.from(next));
                       }}
                     >
                       <Checkbox checked={checked} className="mr-2" />
@@ -178,8 +178,8 @@ export function RunsDataTableToolbar({
               </Badge>
             );
           })}
-          {selectedAgentIds.slice(0, 3).map((id) => {
-            const label = agentOptions.find((o) => o.value === id)?.label ?? id;
+          {selectedActorIds.slice(0, 3).map((id) => {
+            const label = actorOptions.find((o) => o.value === id)?.label ?? id;
             return (
               <Badge key={id} variant="outline" className="font-normal">
                 {label}

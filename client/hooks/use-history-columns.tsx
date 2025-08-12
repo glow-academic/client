@@ -20,6 +20,7 @@ import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulatio
 // Removed time-based timeout logic per requirements
 import { useQuery } from "@tanstack/react-query";
 import { Column, ColumnDef, Row } from "@tanstack/react-table";
+import { Infinity as InfinityIcon } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 // Enhanced types for the data table
@@ -351,11 +352,15 @@ export function useHistoryColumns({
           const simulation = simulations?.find(
             (s) => s.id === row.getValue("simulationId")
           );
+          const isInfinite = (row.original as EnhancedAttempt).infiniteMode;
           return (
-            <div className="flex space-x-2">
+            <div className="flex items-center space-x-1">
               <span className="max-w-[500px] truncate font-medium">
                 {simulation?.title || "Unknown Simulation"}
               </span>
+              {isInfinite && (
+                <InfinityIcon className="h-3 w-3 text-muted-foreground" />
+              )}
             </div>
           );
         },
@@ -401,6 +406,7 @@ export function useHistoryColumns({
         cell: ({ row }) => {
           const chats = row.original.scenarios;
           const interactionIds = row.original.interactionIds;
+          const isInfinite = (row.original as EnhancedAttempt).infiniteMode;
 
           // Ensure chats is an array
           const chatsArray = Array.isArray(chats) ? chats : [];
@@ -414,8 +420,14 @@ export function useHistoryColumns({
 
           return (
             <div className="text-center">
-              <span className="font-medium">
-                {completedWithRubricCount}/{totalChats}
+              <span className="font-medium inline-flex items-center gap-1">
+                {completedWithRubricCount}
+                <span>/</span>
+                {isInfinite ? (
+                  <InfinityIcon className="h-3 w-3 text-muted-foreground" />
+                ) : (
+                  <span>{totalChats}</span>
+                )}
               </span>
               <div className="text-xs text-muted-foreground">completed</div>
             </div>
@@ -681,10 +693,25 @@ export function useHistoryColumns({
             <DataTableRowActions
               id={attempt.id}
               profileId={attempt.profileId || ""}
+              simulationId={(attempt as EnhancedAttempt).simulationId}
               scenarios={attempt.scenarios}
               interactionIds={attempt.interactionIds}
               isIncomplete={isIncomplete}
               isPractice={showPractice}
+              infiniteMode={
+                (attempt as EnhancedAttempt & { infiniteMode?: boolean })
+                  .infiniteMode || false
+              }
+              infiniteModeTimeLimit={
+                (
+                  attempt as EnhancedAttempt & {
+                    infiniteModeTimeLimit?: number | null;
+                  }
+                ).infiniteModeTimeLimit ?? null
+              }
+              attemptCreatedAt={
+                (attempt as EnhancedAttempt & { createdAt?: string }).createdAt
+              }
             />
           );
         },

@@ -42,6 +42,7 @@ export interface WebSocketContextType {
   emitStartSimulation: (data: {
     simulation_id: string;
     profile_id?: string | null;
+    scenario_id?: string | null;
     infinite?: boolean;
     infinite_time_limit?: number | null;
   }) => void;
@@ -1030,6 +1031,7 @@ export function WebSocketProvider({
     (data: {
       simulation_id: string;
       profile_id?: string | null;
+      scenario_id?: string | null;
       infinite?: boolean;
       infinite_time_limit?: number | null;
     }) => {
@@ -1043,6 +1045,9 @@ export function WebSocketProvider({
       const payload = {
         simulation_id: data.simulation_id,
         profile_id: data.profile_id ?? "",
+        ...(data.scenario_id !== undefined && {
+          scenario_id: data.scenario_id,
+        }),
         ...(data.infinite !== undefined && { infinite: data.infinite }),
         ...(data.infinite_time_limit !== undefined && {
           infinite_time_limit: data.infinite_time_limit,
