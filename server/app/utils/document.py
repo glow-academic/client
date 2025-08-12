@@ -1,53 +1,91 @@
+import base64
 import os
 import uuid
-from typing import List
+from typing import Any, List
 
 import pypdf  # type: ignore
 from agents.items import TResponseInputItem
 from app.extensions import UPLOAD_FOLDER
 from app.models import Documents
+from openai.types.responses.response_input_image_param import \
+    ResponseInputImageParam
+from openai.types.responses.response_input_item_param import Message
+from openai.types.responses.response_input_message_content_list_param import \
+    ResponseInputMessageContentListParam
+from openai.types.responses.response_input_text_param import \
+    ResponseInputTextParam
 from sqlmodel import Session, select
 
 
-def _read_document_content(file_path: str) -> str:
-    """Read and return textual content from a document at UPLOAD_FOLDER/file_path.
+def _read_pdf_text_pages(full_path: str) -> list[str]:
+    """Return per-page extracted text for a PDF at full_path."""
+    texts: list[str] = []
+    try:
+        with open(full_path, "rb") as file:  # noqa: PTH123
+            pdf_reader = pypdf.PdfReader(file)
+            for page in pdf_reader.pages:
+                texts.append((page.extract_text() or "").strip())
+    except Exception as e:  # pragma: no cover - surfaced to caller
+        raise ValueError(f"Error reading PDF file {full_path}: {str(e)}")
+    return texts
 
-    Supports PDFs (via pypdf) and text files with UTF-8 fallback to latin-1.
-    """
-    full_path = os.path.join(UPLOAD_FOLDER, file_path)
 
-    content = ""
-    if file_path.lower().endswith(".pdf"):
+def _read_text_file(full_path: str) -> str:
+    """Read a text file with UTF-8 fallback to latin-1."""
+    try:
+        with open(full_path, "r", encoding="utf-8") as file:  # noqa: PTH123
+            return file.read().strip()
+    except UnicodeDecodeError:
         try:
-            with open(full_path, "rb") as file:  # noqa: PTH123
-                pdf_reader = pypdf.PdfReader(file)
-                for page in pdf_reader.pages:
-                    # extract_text may return None; guard for safety
-                    page_text = page.extract_text() or ""
-                    content += page_text + "\n"
+            with open(full_path, "r", encoding="latin-1") as file:  # noqa: PTH123
+                return file.read().strip()
         except Exception as e:  # pragma: no cover - surfaced to caller
-            raise ValueError(f"Error reading PDF file {file_path}: {str(e)}")
-    else:
-        try:
-            with open(full_path, "r", encoding="utf-8") as file:  # noqa: PTH123
-                content = file.read()
-        except UnicodeDecodeError:
-            try:
-                with open(full_path, "r", encoding="latin-1") as file:  # noqa: PTH123
-                    content = file.read()
-            except Exception as e:  # pragma: no cover - surfaced to caller
-                raise ValueError(f"Error reading text file {file_path}: {str(e)}")
-        except Exception as e:  # pragma: no cover - surfaced to caller
-            raise ValueError(f"Error reading file {file_path}: {str(e)}")
-
-    return content.strip()
+            raise ValueError(f"Error reading text file {full_path}: {str(e)}")
+    except Exception as e:  # pragma: no cover - surfaced to caller
+        raise ValueError(f"Error reading file {full_path}: {str(e)}")
 
 
-def get_document_info(document_ids: List[uuid.UUID], session: Session) -> TResponseInputItem:
-    """Create a comprehensive message for the given documents in the order provided.
+def _pdf_pages_to_image_data_urls(full_path: str) -> list[str]:
+    """Best-effort conversion of each PDF page to a base64 PNG data URL.
 
-    Includes document name, MIME type, tags, and extracted textual content.
+    Tries PyMuPDF (fitz) if available. If unavailable or errors, returns [].
     """
+    try:  # Lazy import to avoid hard dependency
+        import fitz  # type: ignore
+    except Exception:
+        return []
+
+    image_urls: list[str] = []
+    try:
+        doc = fitz.open(full_path)
+        for page in doc:
+            pix = page.get_pixmap()
+            png_bytes: bytes = pix.tobytes("png")
+            b64 = base64.b64encode(png_bytes).decode("ascii")
+            image_urls.append(f"data:image/png;base64,{b64}")
+        doc.close()
+    except Exception:
+        # If rendering fails, silently fallback to no images
+        return []
+
+    return image_urls
+
+
+def get_document_info(
+    document_ids: List[uuid.UUID], show_images: bool | Session, session: Session | None = None
+) -> TResponseInputItem:
+    """Build a structured list of per-document, per-page text and optional images.
+
+    Order per document: docN-image-pageM, then docN-text-pageM. If images are
+    unavailable or disabled, only include docN-text-pageM.
+    """
+    # Back-compat: allow old signature get_document_info(document_ids, session)
+    if not isinstance(show_images, bool):
+        session = show_images  # type: ignore[assignment]
+        show_images = False
+
+    assert session is not None, "Session is required"
+
     # Fetch all requested documents, then preserve input order
     documents = session.exec(select(Documents).where(Documents.id.in_(document_ids))).all()
     if not documents:
@@ -55,26 +93,104 @@ def get_document_info(document_ids: List[uuid.UUID], session: Session) -> TRespo
 
     by_id = {doc.id: doc for doc in documents}
 
-    sections: list[str] = []
-    for idx, doc_id in enumerate(document_ids, start=1):
+    content_items: ResponseInputMessageContentListParam = []
+
+    for doc_index, doc_id in enumerate(document_ids, start=1):
         document = by_id.get(doc_id)
         if not document:
             # Skip missing docs quietly to keep order for others
             continue
 
+        full_path = os.path.join(UPLOAD_FOLDER, document.file_path)
         tags_display = ", ".join(document.tags or [])
-        content = _read_document_content(document.file_path)
+        mime_lower = (document.mime_type or "").lower()
 
-        section = (
-            f"--- Document {idx} ---\n"
-            f"Name: {document.name}\n"
-            f"File Type: {document.mime_type}\n"
-            f"Tags: {tags_display if tags_display else 'None'}\n"
-            f"Content:\n{content}\n"
+        is_pdf = document.file_path.lower().endswith(".pdf") or "pdf" in mime_lower
+        is_image = (
+            mime_lower.startswith("image/")
+            or document.file_path.lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".gif"))
         )
-        sections.append(section)
 
-    message = "The following documents are provided in order:"\
-        + ("\n" + "\n".join(sections) if sections else "\nNone")
+        if is_pdf:
+            # Per-page text via pypdf
+            text_pages = _read_pdf_text_pages(full_path)
+            # Optional images via PyMuPDF if enabled
+            image_urls = _pdf_pages_to_image_data_urls(full_path) if show_images else []
 
-    return {"role": "user", "content": message}
+            total_pages = max(len(text_pages), len(image_urls)) if show_images else len(text_pages)
+            for page_num in range(total_pages):
+                # Image first if available
+                if show_images and page_num < len(image_urls):
+                    image_item: ResponseInputImageParam = {
+                        "type": "input_image",
+                        "detail": "auto",
+                        "image_url": image_urls[page_num],
+                    }
+                    content_items.append(image_item)
+
+                # Then text for this page (include minimal header/context)
+                page_text = text_pages[page_num] if page_num < len(text_pages) else ""
+                header = (
+                    f"--- doc{doc_index}-text-page{page_num + 1} ---\n"
+                    f"Name: {document.name}\n"
+                    f"File Type: {document.mime_type}\n"
+                    f"Tags: {tags_display if tags_display else 'None'}\n"
+                    f"Content:\n"
+                )
+                text_item_page: ResponseInputTextParam = {
+                    "type": "input_text",
+                    "text": header + page_text,
+                }
+                content_items.append(text_item_page)
+        elif is_image:
+            # For image files, include the image only (no text)
+            if show_images:
+                try:
+                    with open(full_path, "rb") as img_file:  # noqa: PTH123
+                        img_bytes = img_file.read()
+                    b64 = base64.b64encode(img_bytes).decode("ascii")
+                    # Prefer MIME from record; fallback based on extension
+                    mime = document.mime_type if (document.mime_type and document.mime_type.startswith("image/")) else None
+                    if not mime:
+                        if document.file_path.lower().endswith(".png"):
+                            mime = "image/png"
+                        elif document.file_path.lower().endswith((".jpg", ".jpeg")):
+                            mime = "image/jpeg"
+                        elif document.file_path.lower().endswith(".webp"):
+                            mime = "image/webp"
+                        elif document.file_path.lower().endswith(".gif"):
+                            mime = "image/gif"
+                        else:
+                            mime = "image/png"
+                    img_item: ResponseInputImageParam = {
+                        "type": "input_image",
+                        "detail": "auto",
+                        "image_url": f"data:{mime};base64,{b64}",
+                    }
+                    content_items.append(img_item)
+                except Exception:
+                    # If reading fails, skip the image silently
+                    pass
+            # If show_images is False, we add nothing for pure image docs
+        else:
+            # Treat other files as a single-page text document
+            content = _read_text_file(full_path)
+            header = (
+                f"--- doc{doc_index}-text-page1 ---\n"
+                f"Name: {document.name}\n"
+                f"File Type: {document.mime_type}\n"
+                f"Tags: {tags_display if tags_display else 'None'}\n"
+                f"Content:\n"
+            )
+            text_item_single: ResponseInputTextParam = {
+                "type": "input_text",
+                "text": header + content,
+            }
+            content_items.append(text_item_single)
+
+    if not content_items:
+        # Fallback to a minimal text item if nothing could be built
+        content_items.append({"type": "input_text", "text": "No documents provided"})
+
+    msg: Message = {"role": "user", "content": content_items}
+    return msg

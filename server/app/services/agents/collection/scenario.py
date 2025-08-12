@@ -53,6 +53,7 @@ async def run_scenario_agent(
     # Get the agent to get its name for the agent
     if persona_id is None:
         persona_info = None
+        show_images = False
     else:
         persona = session.exec(
             select(Personas).where(Personas.id == persona_id)
@@ -60,11 +61,12 @@ async def run_scenario_agent(
         if not persona:
             raise ValueError(f"Persona with ID {persona_id} not found")
         persona_info = get_persona_info(persona.id, session)
+        show_images = persona.image_input_active
 
     if document_ids is None or len(document_ids) == 0:
         document_info = None
     else:
-        document_info = get_document_info(document_ids, session)
+        document_info = get_document_info(document_ids, show_images, session)
 
     if parameter_item_ids is None or len(parameter_item_ids) == 0:
         parameter_item_info = None

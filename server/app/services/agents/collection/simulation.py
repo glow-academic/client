@@ -99,9 +99,11 @@ async def _handle_simulation_chat(
     if not persona:
         raise ValueError(f"Persona not found for scenario {scenario.id}")
 
+    show_images = persona.image_input_active
+
     input_items: list[TResponseInputItem] = []
     if scenario.document_ids:
-        document_info = get_document_info(scenario.document_ids, session)
+        document_info = get_document_info(scenario.document_ids, show_images, session)
         input_items.append(document_info)
 
     # Get all the messages for the chat_id, order by created_at

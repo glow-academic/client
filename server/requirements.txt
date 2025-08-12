@@ -31,3 +31,4 @@ reportlab==4.0.4
 # Lightweight text similarity / fuzzy matching
 rapidfuzz==3.9.1
 textdistance==4.6.2
+pymupdf==1.24.10

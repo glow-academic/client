@@ -68,6 +68,7 @@ interface FormData {
   active?: boolean;
   defaultPersona?: boolean;
   guardrailActive?: boolean;
+  imageInputActive?: boolean;
 }
 
 export interface PersonaProps {
@@ -97,6 +98,7 @@ export default function Persona({
       active: true,
       defaultPersona: false,
       guardrailActive: false,
+      imageInputActive: false,
     }),
     []
   );
@@ -167,6 +169,7 @@ export default function Persona({
         active: persona.active ?? true,
         defaultPersona: persona.defaultPersona ?? false,
         guardrailActive: persona.guardrailActive ?? false,
+        imageInputActive: persona.imageInputActive ?? false,
       });
     } else if (!isEditMode) {
       setFormData(initialFormData);
@@ -213,6 +216,7 @@ export default function Persona({
           active: formData.active ?? true,
           defaultPersona: formData.defaultPersona ?? false,
           guardrailActive: formData.guardrailActive ?? false,
+          imageInputActive: formData.imageInputActive ?? false,
           updatedAt: new Date().toISOString(),
         });
         queryClient.invalidateQueries({ queryKey: ["personas"] });
@@ -231,6 +235,7 @@ export default function Persona({
           active: formData.active ?? true,
           defaultPersona: formData.defaultPersona ?? false,
           guardrailActive: formData.guardrailActive ?? false,
+          imageInputActive: formData.imageInputActive ?? false,
         });
         queryClient.invalidateQueries({ queryKey: ["personas"] });
         queryClient.invalidateQueries({
@@ -411,6 +416,30 @@ export default function Persona({
                       setFormData((prev) => ({
                         ...prev,
                         guardrailActive: checked,
+                      }))
+                    }
+                    disabled={isReadonly}
+                  />
+                ) : (
+                  <Skeleton className="h-6 w-11" />
+                )}
+              </div>
+            )}
+
+            {/* Image Input Active Switch - Only for superadmin */}
+            {effectiveProfile?.role === "superadmin" && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="imageInputActive" className="text-sm">
+                  Image Input Active
+                </Label>
+                {formData?.imageInputActive !== undefined && !isLoading ? (
+                  <Switch
+                    id="imageInputActive"
+                    checked={formData.imageInputActive ?? false}
+                    onCheckedChange={(checked) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        imageInputActive: checked,
                       }))
                     }
                     disabled={isReadonly}

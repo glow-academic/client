@@ -1,18 +1,52 @@
 # utils/scenario.py
 
 import logging
+import os
 import random
 import re
 import unicodedata
 import uuid
 from typing import Any, Dict, List, Optional
 
+import pypdf  # type: ignore
 from agents.items import TResponseInputItem
+from app.extensions import UPLOAD_FOLDER
 from app.models import (Documents, ParameterItems, Parameters, Personas,
                         Scenarios)
-from app.utils.document import _read_document_content
 from rapidfuzz import fuzz  # type: ignore
 from sqlmodel import Session, select
+
+
+def _read_document_content_for_similarity(file_path: str) -> str:
+    """Read textual content from a document under UPLOAD_FOLDER for similarity scoring.
+
+    - PDFs: extract per-page text via pypdf
+    - Text files: read with UTF-8, fallback to latin-1
+    """
+    full_path = os.path.join(UPLOAD_FOLDER, file_path)
+    content = ""
+    if file_path.lower().endswith(".pdf"):
+        try:
+            with open(full_path, "rb") as fh:  # noqa: PTH123
+                reader = pypdf.PdfReader(fh)
+                for page in reader.pages:
+                    content += (page.extract_text() or "") + "\n"
+        except Exception:
+            return ""
+    else:
+        try:
+            with open(full_path, "r", encoding="utf-8") as fh:  # noqa: PTH123
+                content = fh.read()
+        except UnicodeDecodeError:
+            try:
+                with open(full_path, "r", encoding="latin-1") as fh:  # noqa: PTH123
+                    content = fh.read()
+            except Exception:
+                return ""
+        except Exception:
+            return ""
+
+    return content.strip()
 
 logger = logging.getLogger(__name__)
 
@@ -370,7 +404,7 @@ def suggest_randomized_sections(
             context_tokens.add(_norm(d.type))
             # Include current document content to help parameter/persona choice
             try:
-                doc_text = _read_document_content(d.file_path)
+                doc_text = _read_document_content_for_similarity(d.file_path)
                 # Limit size for performance
                 doc_text = doc_text[:5000]
                 context_text = f"{context_text} {_norm(doc_text)}"
@@ -429,7 +463,7 @@ def suggest_randomized_sections(
                 score += 3.0
             # Content similarity (token set ratio over truncated content)
             try:
-                doc_text = _read_document_content(doc.file_path)
+                doc_text = _read_document_content_for_similarity(doc.file_path)
                 doc_text = doc_text[:5000]
                 sim = fuzz.token_set_ratio(context_text, _norm(doc_text))  # 0..100
                 score += sim * 0.15  # weight content moderately
