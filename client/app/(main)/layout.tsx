@@ -485,6 +485,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     return pathname === "/home";
   }, [pathname]);
 
+  const isReportPage = useMemo(() => {
+    return pathname.startsWith("/analytics/reports/p");
+  }, [pathname]);
+
   const canShowAnalyticsFilters = useMemo(() => {
     const allowedRoles = ["instructional", "admin", "superadmin"];
     return (
@@ -805,7 +809,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             {/* Analytics Filters - Show in top right for analytics pages */}
             {canShowAnalyticsFilters && (
               <div className="px-4">
-                <AnalyticsFilters homePage={isHomePage} />
+                <AnalyticsFilters homePage={isHomePage} reportPage={isReportPage} />
               </div>
             )}
 
