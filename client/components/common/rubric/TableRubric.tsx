@@ -84,7 +84,6 @@ export default function TableRubric({
   const [flippedCells, setFlippedCells] = React.useState<Set<string>>(
     () => new Set<string>()
   );
-  const [showCheckpoints] = React.useState<boolean>(false);
 
   // Persist voted anchors per profile to localStorage (stopgap until DB has profileId)
   React.useEffect(() => {
@@ -684,8 +683,7 @@ export default function TableRubric({
       )}
 
       {/* Checkpoints Reached (displayed only when we have a grade and checkpoints) */}
-      {/* TODO: CHECKPOINTS */}
-      {showCheckpoints && simulationChatId && chatGrade && checkpointsReached.length > 0 && (
+      {simulationChatId && chatGrade && checkpointsReached.length > 0 && (
         <div className="border rounded-md p-4 bg-card">
           <div className="text-sm font-semibold mb-3">Checkpoints reached</div>
           <CheckpointsReached
