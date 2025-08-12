@@ -11,6 +11,8 @@ from app.models import (Agents, DebugInfo, ModelRuns, Models, Providers,
                         SimulationMessages)
 from app.services.agents.generic import GenericAgent
 from app.utils.debug_info import DebugContext
+from app.utils.guest import find_default_guest_profile
+from app.utils.limit import check_rate_limit
 from fastapi import Depends
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -73,6 +75,8 @@ def get_output_guardrails(
 
             profile_id = attempt.profile_id
 
+            default_guest_profile = find_default_guest_profile(session)
+
             # Intro message before the history
             intro_message: TResponseInputItem = {
                 "role": "user",
@@ -82,11 +86,18 @@ def get_output_guardrails(
                 ),
             }
             input_items.append(intro_message)
+
+            final_profile_id = (profile_id if profile_id else (default_guest_profile.id if default_guest_profile else None))
+
+            success, error_message = check_rate_limit(final_profile_id, session)
+            if not success:
+                raise ValueError(error_message)
+            
             model_run = ModelRuns(
                 model_id=model_id,
                 input_tokens=0,
                 output_tokens=0,
-                profile_id=profile_id,
+                profile_id=final_profile_id,
                 agent_id=agent_id,
             )
             session.add(model_run)

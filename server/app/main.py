@@ -55,6 +55,10 @@ active_runs: dict[str, Any] = {}
 # Profile-based connection management (simplified)
 socket_owner: Dict[str, str] = {}  # profile_id -> socket_id
 
+# Track guest connections without restricting concurrency
+guest_connection_count: int = 0
+guest_sids: set[str] = set()
+
 
 async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -> None:
     """Clean up all connections for a profile."""
@@ -332,6 +336,33 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
         if guest_id:
             await sio.enter_room(sid, f"guest_{guest_id}")
             logger.info(f"Guest {guest_id} joined room guest_{guest_id}")
+            # Track guest connection and update default guest profile activity
+            try:
+                guest_sids.add(sid)
+                # Increment guest connection counter
+                global guest_connection_count
+                guest_connection_count += 1
+
+                from app.db import get_session
+                from app.utils.guest import find_default_guest_profile
+
+                db_session = next(get_session())
+                try:
+                    default_guest_profile = find_default_guest_profile(db_session)
+                    if default_guest_profile:
+                        default_guest_profile.active = True
+                        default_guest_profile.last_active = datetime.now(timezone.utc)
+                        db_session.add(default_guest_profile)
+                        db_session.commit()
+                        logger.info(
+                            "Marked default guest profile active (guest connection added)"
+                        )
+                    else:
+                        logger.warning("No default guest profile found to update activity")
+                finally:
+                    db_session.close()
+            except Exception as e:
+                logger.error(f"Error updating default guest profile activity on connect: {e}")
         else:
             logger.info("Anonymous guest connection with no guest_id; broadcasts only.")
 
@@ -366,6 +397,39 @@ async def disconnect(sid: str) -> None:
 
     if profile_to_cleanup:
         await cleanup_profile_connection(profile_to_cleanup, "socket disconnect")
+
+    # If this was a guest connection, update counter and default guest profile activity
+    if sid in guest_sids:
+        try:
+            guest_sids.remove(sid)
+            global guest_connection_count
+            if guest_connection_count > 0:
+                guest_connection_count -= 1
+
+            remaining_guests = guest_connection_count
+
+            from app.db import get_session
+            from app.utils.guest import find_default_guest_profile
+
+            db_session = next(get_session())
+            try:
+                default_guest_profile = find_default_guest_profile(db_session)
+                if default_guest_profile:
+                    # Always refresh last_active; set active False only when all guests are gone
+                    default_guest_profile.last_active = datetime.now(timezone.utc)
+                    if remaining_guests == 0:
+                        default_guest_profile.active = False
+                    db_session.add(default_guest_profile)
+                    db_session.commit()
+                    logger.info(
+                        f"Updated default guest profile activity on disconnect (remaining guests: {remaining_guests})"
+                    )
+                else:
+                    logger.warning("No default guest profile found to update on disconnect")
+            finally:
+                db_session.close()
+        except Exception as e:
+            logger.error(f"Error updating default guest profile activity on disconnect: {e}")
 
     # Remove from active connections
     for chat_id, connection_sid in list(active_connections.items()):

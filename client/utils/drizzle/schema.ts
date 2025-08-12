@@ -62,7 +62,8 @@ export const profiles = pgTable("profiles", {
 	role: profileRole().default('guest').notNull(),
 	defaultProfile: boolean("default_profile").default(false).notNull(),
 	active: boolean().default(false).notNull(),
-	lastActive: timestamp("last_active", { withTimezone: true, mode: 'string' }).defaultNow().notNull()}, (table) => [
+	lastActive: timestamp("last_active", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	reqPerDay: integer("req_per_day")}, (table) => [
 	foreignKey({
 			columns: [table.userId],
 			foreignColumns: [users.id],
@@ -213,7 +214,8 @@ export const personas = pgTable("personas", {
 	modelId: uuid("model_id"),
 	reasoning: reasoningEffort(),
 	active: boolean().default(false).notNull(),
-	guardrailActive: boolean("guardrail_active").default(false).notNull()}, (table) => [
+	guardrailActive: boolean("guardrail_active").default(false).notNull(),
+	imageInputActive: boolean("image_input_active").default(false).notNull()}, (table) => [
 	foreignKey({
 			columns: [table.modelId],
 			foreignColumns: [models.id],

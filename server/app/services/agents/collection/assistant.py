@@ -15,6 +15,7 @@ from app.models import (Agents, AssistantChats, AssistantMessages,
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_assistant_conversation_history
 from app.utils.debug_info import DebugContext
+from app.utils.limit import check_rate_limit
 from dotenv import load_dotenv
 from fastapi import Depends
 from openai.types.responses import (ResponseFunctionToolCall,
@@ -173,12 +174,18 @@ async def _handle_assistant_chat(
         mcp_servers=mcp_servers,
     )
 
+    final_profile_id = chat.profile_id
+
+    success, error_message = check_rate_limit(final_profile_id, session)
+    if not success:
+        raise ValueError(error_message)
+
     # create a model run
     model_run = ModelRuns(
         model_id=model.id,
         input_tokens=0,
         output_tokens=0,
-        profile_id=chat.profile_id,
+        profile_id=final_profile_id,
         agent_id=agent.id,
     )
     session.add(model_run)

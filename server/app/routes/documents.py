@@ -4,6 +4,8 @@ import logging
 import mimetypes
 import os
 import shutil
+import subprocess
+import tempfile
 import uuid
 import zipfile
 from uuid import UUID
@@ -970,13 +972,74 @@ async def generate_certificate(
             doc.addPageTemplates([page_template])
             doc.build(story)
             buffer.seek(0)
+            original_pdf_bytes = buffer.getvalue()
+            pdf_bytes_to_return = original_pdf_bytes
+
+            # Try to convert to PDF/A for archival (best-effort).
+            # PDF/A forbids encryption; this step aims for PDF/A-2b compliance using Ghostscript.
+            try:
+                def find_srgb_icc() -> str | None:
+                    candidate_paths = [
+                        "/usr/share/color/icc/ghostscript/srgb.icc",
+                        "/usr/share/color/icc/srgb.icc",
+                        "/usr/share/icc/colord/sRGB.icc",
+                        "/usr/share/ghostscript/iccprofiles/srgb.icc",
+                        "/usr/share/ghostscript/10.00.0/iccprofiles/srgb.icc",
+                        "/usr/share/ghostscript/9.56.1/iccprofiles/srgb.icc",
+                    ]
+                    for path in candidate_paths:
+                        if os.path.exists(path):
+                            return path
+                    return None
+
+                srgb_icc = find_srgb_icc()
+
+                with tempfile.NamedTemporaryFile(suffix=".pdf", delete=True) as in_file, \
+                     tempfile.NamedTemporaryFile(suffix=".pdf", delete=True) as out_file:
+                    in_file.write(original_pdf_bytes)
+                    in_file.flush()
+
+                    gs_cmd = [
+                        "gs",
+                        "-dBATCH",
+                        "-dNOPAUSE",
+                        "-sDEVICE=pdfwrite",
+                        "-dPDFSETTINGS=/prepress",
+                        "-sProcessColorModel=DeviceRGB",
+                        "-sColorConversionStrategy=sRGB",
+                        "-dUseCIEColor",
+                        # PDF/A-2b (more permissive than 1b and widely supported)
+                        "-dPDFA=2",
+                        "-dPDFACompatibilityPolicy=1",
+                        f"-sOutputFile={out_file.name}",
+                    ]
+
+                    # Include output ICC profile when available (required for strict PDF/A)
+                    if srgb_icc:
+                        gs_cmd.append(f"-sOutputICCProfile={srgb_icc}")
+
+                    gs_cmd.append(in_file.name)
+
+                    proc = subprocess.run(gs_cmd, capture_output=True, text=True)
+                    if proc.returncode == 0 and os.path.exists(out_file.name) and os.path.getsize(out_file.name) > 0:
+                        with open(out_file.name, "rb") as f_out:
+                            pdf_bytes_to_return = f_out.read()
+                    else:
+                        logger.warning(
+                            "Ghostscript PDF/A conversion failed; returning original PDF. stderr=%s", proc.stderr
+                        )
+            except FileNotFoundError:
+                # Ghostscript not installed in this environment
+                logger.info("Ghostscript not found; returning non-PDF/A PDF (original bytes)")
+            except Exception as conv_err:
+                logger.warning("PDF/A conversion error; returning original PDF: %s", str(conv_err))
             
             # Generate filename for download
             filename = f"certificate_{profile_name.replace(' ', '_')}_{uuid.uuid4().hex[:8]}.pdf"
             
             # Return PDF directly as file download
             return Response(
-                content=buffer.getvalue(),
+                content=pdf_bytes_to_return,
                 media_type="application/pdf",
                 headers={
                     "Content-Disposition": f"attachment; filename=\"{filename}\"",

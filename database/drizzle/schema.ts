@@ -70,6 +70,7 @@ export const profiles = pgTable("profiles", {
 	defaultProfile: boolean("default_profile").default(false).notNull(),
 	active: boolean().default(false).notNull(),
 	lastActive: timestamp("last_active", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	reqPerDay: integer("req_per_day"),
 }, (table) => [
 	foreignKey({
 			columns: [table.userId],
@@ -232,6 +233,7 @@ export const personas = pgTable("personas", {
 	reasoning: reasoningEffort(),
 	active: boolean().default(false).notNull(),
 	guardrailActive: boolean("guardrail_active").default(false).notNull(),
+	imageInputActive: boolean("image_input_active").default(false).notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.modelId],

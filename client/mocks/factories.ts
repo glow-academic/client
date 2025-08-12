@@ -212,6 +212,7 @@ export function createMockPersona(overrides: Partial<Persona> = {}): Persona {
     reasoning: faker.helpers.arrayElement(reasoningEffort.enumValues),
     active: faker.datatype.boolean(),
     guardrailActive: faker.datatype.boolean(),
+    imageInputActive: faker.datatype.boolean(),
   };
 
   return { ...defaults, ...overrides } as Persona;
@@ -233,6 +234,7 @@ export function createMockProfile(overrides: Partial<Profile> = {}): Profile {
     defaultProfile: faker.datatype.boolean(),
     active: faker.datatype.boolean(),
     lastActive: faker.date.past().toISOString(),
+    reqPerDay: faker.number.int({ min: 1, max: 1000 }),
   };
 
   return { ...defaults, ...overrides } as Profile;

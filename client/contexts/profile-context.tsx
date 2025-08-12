@@ -41,6 +41,7 @@ const GUEST_PROFILE: Profile = {
   lastLogin: new Date().toISOString(),
   lastActive: new Date().toISOString(),
   defaultProfile: false,
+  reqPerDay: null,
 };
 
 interface ProfileContextType {

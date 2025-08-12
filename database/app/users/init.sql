@@ -70,5 +70,6 @@ CREATE TABLE profiles (
   role       profile_role NOT NULL DEFAULT 'guest',
   default_profile BOOLEAN   NOT NULL DEFAULT FALSE,
   active     BOOLEAN     NOT NULL DEFAULT FALSE,
-  last_active TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  last_active TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  req_per_day INTEGER     NULL DEFAULT NULL -- model requests per day, null means unlimited
 );

@@ -241,6 +241,7 @@ class Personas(_Base, table=True):
     icon: str = Field(sa_column=Column('icon', Text))
     active: bool = Field(sa_column=Column('active', Boolean, default=False))
     guardrail_active: bool = Field(sa_column=Column('guardrail_active', Boolean, default=False))
+    image_input_active: bool = Field(sa_column=Column('image_input_active', Boolean, default=False))
     model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
     reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('minimal', 'low', 'medium', 'high', name='reasoning_effort')))
 
@@ -269,6 +270,7 @@ class Profiles(_Base, table=True):
     active: bool = Field(sa_column=Column('active', Boolean, default=False))
     last_active: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('last_active', DateTime(True)))
     user_id: Optional[int] = Field(default=None, sa_column=Column('user_id', Integer))
+    req_per_day: Optional[int] = Field(default=None, sa_column=Column('req_per_day', Integer))
 
     user: Optional['Users'] = Relationship(back_populates='profiles')
     app_feedback: List['AppFeedback'] = Relationship(back_populates='profile')
