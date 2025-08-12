@@ -170,11 +170,12 @@ export const calculateScenarioAttributeBreakdown = (
       (showPractice && isPractice) || (showGeneral && !isPractice);
 
     // Role filter (default to allow all when not provided)
-    const roleOk = rolesAllowed
-      ? profile?.role
-        ? rolesAllowed.includes(profile.role)
-        : false
-      : true;
+    const roleOk =
+      rolesAllowed && rolesAllowed.length > 0
+        ? profile?.role
+          ? rolesAllowed.includes(profile.role)
+          : false
+        : true;
 
     // Filter by profile if provided
     const profileMatch = profileId ? attempt?.profileId === profileId : true;
@@ -470,11 +471,12 @@ export const calculateScenarioPerformance = (
       (showPractice && isPractice) || (showGeneral && !isPractice);
 
     // Role filter
-    const roleOk = rolesAllowed
-      ? profile?.role
-        ? rolesAllowed.includes(profile.role)
-        : false
-      : true;
+    const roleOk =
+      rolesAllowed && rolesAllowed.length > 0
+        ? profile?.role
+          ? rolesAllowed.includes(profile.role)
+          : false
+        : true;
 
     // Filter by profile if provided
     const profileMatch = profileId ? attempt?.profileId === profileId : true;
@@ -741,11 +743,12 @@ export const calculateSimulationComposition = (
     const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
 
     // Role filter
-    const roleOk = rolesAllowed
-      ? profile?.role
-        ? rolesAllowed.includes(profile.role)
-        : false
-      : true;
+    const roleOk =
+      rolesAllowed && rolesAllowed.length > 0
+        ? profile?.role
+          ? rolesAllowed.includes(profile.role)
+          : false
+        : true;
 
     // Filter by profile if provided
     const profileMatch = profileId ? attempt?.profileId === profileId : true;

@@ -157,11 +157,12 @@ export const calculateAttemptImprovement = (
       (showPractice && isPractice) || (showGeneral && !isPractice);
 
     // Role filter
-    const roleOk = rolesAllowed
-      ? profile?.role
-        ? rolesAllowed.includes(profile.role)
-        : false
-      : true;
+    const roleOk =
+      rolesAllowed && rolesAllowed.length > 0
+        ? profile?.role
+          ? rolesAllowed.includes(profile.role)
+          : false
+        : true;
 
     // Filter by profile if provided
     const profileMatch = profileId ? attempt?.profileId === profileId : true;
@@ -388,11 +389,12 @@ export const calculatePlatformGrowth = (
       (showPractice && isPractice) || (showGeneral && !isPractice);
 
     // Role filter
-    const roleOk = rolesAllowed
-      ? profile?.role
-        ? rolesAllowed.includes(profile.role)
-        : false
-      : true;
+    const roleOk =
+      rolesAllowed && rolesAllowed.length > 0
+        ? profile?.role
+          ? rolesAllowed.includes(profile.role)
+          : false
+        : true;
 
     // Filter by profile if provided
     const profileMatch = profileId ? attempt?.profileId === profileId : true;
@@ -731,11 +733,12 @@ export const calculatePersonaPerformance = (
 
     // Role filter
     const profile = profiles?.find((p) => p.id === attempt?.profileId);
-    const roleOk = rolesAllowed
-      ? profile?.role
-        ? rolesAllowed.includes(profile.role)
-        : false
-      : true;
+    const roleOk =
+      rolesAllowed && rolesAllowed.length > 0
+        ? profile?.role
+          ? rolesAllowed.includes(profile.role)
+          : false
+        : true;
 
     // Filter by selected simulations
     const simulationMatch =
