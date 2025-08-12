@@ -660,13 +660,6 @@ export default function NewStaff({ onDone }: NewStaffProps) {
 
             <div className="flex items-center justify-between">
               <Button
-                onClick={handleCsvClick}
-                className="flex items-center gap-2"
-              >
-                <Upload className="h-4 w-4" />
-                Choose CSV File
-              </Button>
-              <Button
                 variant="outline"
                 onClick={downloadTemplate}
                 className="flex items-center gap-2"
@@ -674,6 +667,22 @@ export default function NewStaff({ onDone }: NewStaffProps) {
                 <Download className="h-4 w-4" />
                 Download Template
               </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handleCsvClick}
+                  className="flex items-center gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Choose CSV File
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => onDone && onDone()}
+                  aria-label="Cancel"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             {csvPreview.length > 0 && (
@@ -780,15 +789,29 @@ export default function NewStaff({ onDone }: NewStaffProps) {
                   </div>
                 )}
 
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={clearCsvPreview}>
-                    Clear All
-                  </Button>
-                  <Button onClick={handleCSVSubmit} disabled={isSubmitting}>
-                    {isSubmitting
-                      ? "Creating..."
-                      : `Create ${csvPreview.length} Staff Members`}
-                  </Button>
+                <div className="flex justify-between items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-medium">
+                      Preview ({csvPreview.length} users)
+                    </h3>
+                    <Button variant="outline" onClick={clearCsvPreview}>
+                      Clear All
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button onClick={handleCSVSubmit} disabled={isSubmitting}>
+                      {isSubmitting
+                        ? "Creating..."
+                        : `Create ${csvPreview.length} Staff Members`}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => onDone && onDone()}
+                      aria-label="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
@@ -886,20 +909,29 @@ export default function NewStaff({ onDone }: NewStaffProps) {
               </div>
             )}
 
-            <Button
-              onClick={addManualProfile}
-              disabled={
-                isValidatingAlias ||
-                !manualProfile.firstName ||
-                !manualProfile.lastName ||
-                !manualProfile.alias ||
-                !manualProfile.role
-              }
-              className="flex items-center gap-2"
-            >
-              <UserPlus className="h-4 w-4" />
-              {isValidatingAlias ? "Validating..." : "Create Profile"}
-            </Button>
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                variant="ghost"
+                onClick={() => onDone && onDone()}
+                aria-label="Cancel"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <Button
+                onClick={addManualProfile}
+                disabled={
+                  isValidatingAlias ||
+                  !manualProfile.firstName ||
+                  !manualProfile.lastName ||
+                  !manualProfile.alias ||
+                  !manualProfile.role
+                }
+                className="flex items-center gap-2"
+              >
+                <UserPlus className="h-4 w-4" />
+                {isValidatingAlias ? "Validating..." : "Create Profile"}
+              </Button>
+            </div>
           </div>
         </TabsContent>
       </Tabs>

@@ -253,18 +253,6 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         redirectTo: "/management/staff",
       },
       {
-        path: "/management/staff/new",
-        roles: ["admin", "superadmin"],
-        title: "Create Staff Member",
-        redirectTo: "/management/staff",
-      },
-      {
-        path: "/management/staff/p/[profileId]",
-        roles: ["admin", "superadmin"],
-        title: "Edit Staff Member",
-        redirectTo: "/management/staff",
-      },
-      {
         path: "/management/providers",
         roles: ["admin", "superadmin"],
         title: "Providers",
@@ -367,7 +355,7 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         roles: ["superadmin"],
         title: "System Health",
         redirectTo: "/system/health",
-      }
+      },
     ],
   },
   {
@@ -389,7 +377,7 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
 // Helper function to check if a user has access to a specific path
 export const hasRouteAccess = (
   pathname: string,
-  role: ProfileRole,
+  role: ProfileRole
 ): boolean => {
   // Handle dynamic routes by converting them to pattern matches
   const normalizedPath = normalizePathForMatching(pathname);
@@ -410,7 +398,7 @@ export const hasRouteAccess = (
 
 // Helper function to get route permission for a specific path
 export const getRoutePermission = (
-  pathname: string,
+  pathname: string
 ): RoutePermission | null => {
   const normalizedPath = normalizePathForMatching(pathname);
 
@@ -427,7 +415,7 @@ export const getRoutePermission = (
 
 // Helper function to get section permission for a specific path
 export const getSectionPermission = (
-  pathname: string,
+  pathname: string
 ): SectionPermission | null => {
   const normalizedPath = normalizePathForMatching(pathname);
 
@@ -543,7 +531,7 @@ export const getAvailableSubsectionsForRole = (role: ProfileRole): string[] => {
 // Helper function to check if a section is available for a role
 export const isSectionAvailableForRole = (
   section: string,
-  role: ProfileRole,
+  role: ProfileRole
 ): boolean => {
   return getAvailableSectionsForRole(role).includes(section);
 };

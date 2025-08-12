@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 298
+- **Total Components**: 297
 - **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 298
+- **Tests Skipped** (already implemented): 297
 
 ## Component Coverage
 
@@ -266,7 +266,6 @@
 | page | app/(main)/management/providers/p/[providerId]/page.tsx | page.test.tsx | ✅ Implemented |
 | page | app/(main)/management/providers/p/page.tsx | page.test.tsx | ✅ Implemented |
 | page | app/(main)/management/providers/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/management/staff/new/page.tsx | page.test.tsx | ✅ Implemented |
 | page | app/(main)/management/staff/p/[profileId]/page.tsx | page.test.tsx | ✅ Implemented |
 | page | app/(main)/management/staff/p/page.tsx | page.test.tsx | ✅ Implemented |
 | page | app/(main)/management/staff/page.tsx | page.test.tsx | ✅ Implemented |
@@ -667,8 +666,6 @@ __tests__/
 │   │   │   │   │   ├── page.test.tsx
 │   │   │   │   ├── page.test.tsx
 │   │   │   ├── staff/
-│   │   │   │   ├── new/
-│   │   │   │   │   ├── page.test.tsx
 │   │   │   │   ├── p/
 │   │   │   │   │   ├── [profileId]/
 │   │   │   │   │   │   ├── page.test.tsx

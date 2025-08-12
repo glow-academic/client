@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -38,6 +39,7 @@ import { Profile } from "@/types";
 import { deleteProfiles } from "@/utils/mutations/profiles/delete-profiles";
 import { updateProfiles } from "@/utils/mutations/profiles/update-profiles";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getModelRunsByProfiles } from "@/utils/queries/model_runs/get-model-runs-by-profiles";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, Shield, User as UserIcon } from "lucide-react";
@@ -56,7 +58,7 @@ export default function Staff() {
   const [dialogStaffMembers, setDialogStaffMembers] = React.useState<
     StaffData[]
   >([]);
-  const router = useRouter();
+  const _router = useRouter();
   const { effectiveProfile } = useProfile();
   const queryClient = useQueryClient();
 
@@ -73,6 +75,7 @@ export default function Staff() {
   const [showBulkEditModal, setShowBulkEditModal] = React.useState(false);
   const [bulkRole, setBulkRole] = React.useState<string>("__keep__");
   const [bulkReqPerDay, setBulkReqPerDay] = React.useState<string>("");
+  const [bulkUnlimited, setBulkUnlimited] = React.useState<boolean>(false);
 
   // Bulk delete dialog
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = React.useState(false);
@@ -88,6 +91,21 @@ export default function Staff() {
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
   });
+
+  // Fetch model runs for visible profiles to compute last-24h usage
+  const { data: recentRuns = [] } = useQuery({
+    queryKey: ["modelRuns", allProfiles.map((p: Profile) => p.id)],
+    queryFn: () =>
+      getModelRunsByProfiles(allProfiles.map((p: Profile) => p.id)),
+    enabled: allProfiles.length > 0,
+  });
+
+  // Listen for layout "Create Staff" button broadcast
+  React.useEffect(() => {
+    const openModal = () => setShowCreateModal(true);
+    window.addEventListener("openCreateStaff", openModal);
+    return () => window.removeEventListener("openCreateStaff", openModal);
+  }, []);
 
   // Filter staff users based on current user's role
   const staffUsers = React.useMemo(() => {
@@ -118,6 +136,18 @@ export default function Staff() {
         cohort.profileIds.includes(profile.id)
       );
 
+      // Compute requests in last 24h for this profile
+      const now = Date.now();
+      const dayAgo = now - 24 * 60 * 60 * 1000;
+      const used = (
+        recentRuns as Array<{ profileId?: string; createdAt?: string }>
+      ).filter(
+        (r) =>
+          r.profileId === profile.id &&
+          r.createdAt &&
+          new Date(r.createdAt).getTime() >= dayAgo
+      ).length;
+
       return {
         id: profile.id,
         firstName: profile.firstName,
@@ -131,9 +161,16 @@ export default function Staff() {
         cohortNames: userCohorts.map((cohort) => cohort.title),
         lastActiveFormatted: formatLastActive(profile.lastActive),
         roleDisplayName: getRoleDisplayName(profile.role),
+        defaultProfile: Boolean(
+          (profile as unknown as { defaultProfile?: boolean }).defaultProfile
+        ),
+        reqPerDay:
+          (profile as unknown as { reqPerDay?: number | null }).reqPerDay ??
+          null,
+        requestsInLastDay: used,
       };
     });
-  }, [staffUsers, allCohorts]);
+  }, [staffUsers, allCohorts, recentRuns]);
 
   // Get role and activity counts for summary
   const counts = React.useMemo(() => {
@@ -371,9 +408,27 @@ export default function Staff() {
           setSelectedStaffIds(checked ? staffData.map((s) => s.id) : [])
         }
         onCreate={() => setShowCreateModal(true)}
-        onPreview={(staff) => router.push(`/analytics/reports/p/${staff.id}`)}
+        onPreview={(staff) => {
+          window.open(
+            `/analytics/reports/p/${staff.id}`,
+            "_blank",
+            "noopener,noreferrer"
+          );
+        }}
         onEdit={(staff) => setEditProfileId(staff.id)}
         onDelete={async (staff) => {
+          if (staff.defaultProfile || staff.id === effectiveProfile?.id) {
+            toast.error(
+              staff.id === effectiveProfile?.id
+                ? "You cannot delete your own account."
+                : "Default profiles cannot be deleted."
+            );
+            return;
+          }
+          const confirmed = window.confirm(
+            `Delete "${staff.firstName} ${staff.lastName}" (${staff.alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]})? This action cannot be undone.`
+          );
+          if (!confirmed) return;
           try {
             await deleteProfiles([staff.id]);
             toast.success("User deleted successfully");
@@ -394,6 +449,9 @@ export default function Staff() {
         staffMembers={dialogStaffMembers}
         onEditUser={handleEditUser}
       />
+
+      {/* Listen for layout create button */}
+      {/* Hook declared normally to satisfy Rules of Hooks */}
 
       {/* Create Staff Modal */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
@@ -462,12 +520,27 @@ export default function Staff() {
             </div>
             <div className="flex flex-col gap-2">
               <Label>Requests per day</Label>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="bulk-unlimited"
+                  checked={bulkUnlimited}
+                  onCheckedChange={(checked) => {
+                    const isChecked = Boolean(checked);
+                    setBulkUnlimited(isChecked);
+                    if (isChecked) setBulkReqPerDay("");
+                  }}
+                />
+                <Label htmlFor="bulk-unlimited" className="mb-0">
+                  Unlimited
+                </Label>
+              </div>
               <Input
                 type="number"
-                placeholder="Leave blank to keep existing; 0 to clear (unlimited)"
+                placeholder="Leave blank to keep existing"
                 value={bulkReqPerDay}
                 onChange={(e) => setBulkReqPerDay(e.target.value)}
-                min={0}
+                min={1}
+                disabled={bulkUnlimited}
               />
             </div>
           </div>
@@ -485,13 +558,11 @@ export default function Staff() {
                   updatedAt: new Date().toISOString(),
                 };
                 if (bulkRole !== "__keep__") updates["role"] = bulkRole;
-                if (bulkReqPerDay !== "") {
+                if (bulkUnlimited) {
+                  updates["reqPerDay"] = null;
+                } else if (bulkReqPerDay !== "") {
                   const num = Number(bulkReqPerDay);
-                  updates["reqPerDay"] = Number.isNaN(num)
-                    ? null
-                    : num === 0
-                      ? null
-                      : num;
+                  updates["reqPerDay"] = Number.isNaN(num) ? null : num;
                 }
                 try {
                   if (Object.keys(updates).length > 0) {
@@ -538,7 +609,19 @@ export default function Staff() {
               className="bg-red-600 hover:bg-red-700 text-white"
               onClick={async () => {
                 try {
-                  await deleteProfiles(selectedStaffIds);
+                  const deletableIds = staffData
+                    .filter(
+                      (s) =>
+                        selectedStaffIds.includes(s.id) &&
+                        !s.defaultProfile &&
+                        s.id !== effectiveProfile?.id
+                    )
+                    .map((s) => s.id);
+                  if (deletableIds.length === 0) {
+                    setShowBulkDeleteDialog(false);
+                    return;
+                  }
+                  await deleteProfiles(deletableIds);
                   toast.success("Selected staff deleted");
                   setSelectedStaffIds([]);
                   setShowBulkDeleteDialog(false);

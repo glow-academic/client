@@ -1,7 +1,7 @@
 "use client";
 
 import { Table } from "@tanstack/react-table";
-import { Plus, RefreshCw, X } from "lucide-react";
+import { RefreshCw, X } from "lucide-react";
 
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
@@ -110,11 +110,7 @@ export function StaffDataTableToolbar({
       </div>
 
       <div className="flex items-center space-x-2 mb-2">
-        {/* Create Staff */}
-        <Button size="sm" onClick={onCreate} className="h-8">
-          <Plus className="h-4 w-4 mr-2" /> Create Staff
-        </Button>
-
+        {/* Create Staff moved to layout; keep bulk controls only */}
         {/* Bulk edit/delete if any selected */}
         {selectedCount > 0 && (
           <div className="flex items-center space-x-2">

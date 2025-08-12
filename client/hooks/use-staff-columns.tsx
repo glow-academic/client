@@ -22,6 +22,9 @@ export interface StaffData {
   cohortNames: string[];
   lastActiveFormatted: string;
   roleDisplayName: string;
+  defaultProfile?: boolean;
+  reqPerDay?: number | null;
+  requestsInLastDay?: number;
 }
 
 export interface UseStaffColumnsProps {
@@ -452,6 +455,28 @@ export function useStaffColumns({
           if (!value || value.length === 0) return true;
           return staff.cohortIds.some((cohortId) => value.includes(cohortId));
         },
+      },
+
+      // Requests column (x/y)
+      {
+        id: "requests",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Requests" />
+        ),
+        cell: ({ row }) => {
+          const staff = row.original;
+          const used = staff.requestsInLastDay ?? 0;
+          const limit = staff.reqPerDay ?? null;
+          return (
+            <span className="text-sm font-medium">
+              {limit === null || limit === undefined
+                ? `${used}`
+                : `${used}/${limit}`}
+            </span>
+          );
+        },
+        enableSorting: false,
+        enableColumnFilter: false,
       },
 
       // Actions column

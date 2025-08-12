@@ -18,6 +18,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -157,6 +158,7 @@ export default function StaffEdit({
   onDone,
 }: StaffEditProps) {
   const [formData, setFormData] = useState<FormData>({});
+  const [unlimited, setUnlimited] = useState<boolean>(false);
 
   const {
     targetUser,
@@ -181,6 +183,7 @@ export default function StaffEdit({
         role: targetUser.role,
         reqPerDay: targetUser.reqPerDay ?? "",
       });
+      setUnlimited(targetUser.reqPerDay == null);
     }
   }, [targetUser]);
 
@@ -315,7 +318,7 @@ export default function StaffEdit({
             <div className="space-y-2">
               <Label htmlFor="reqPerDay">Requests per day</Label>
               {formData?.reqPerDay !== undefined && !isLoading ? (
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <Input
                     id="reqPerDay"
                     type="number"
@@ -336,14 +339,27 @@ export default function StaffEdit({
                         );
                       }
                     }}
-                    placeholder="Unlimited"
+                    placeholder="e.g. 100"
                     min={1}
                     step={1}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || unlimited}
                   />
-                  <p className="text-sm text-muted-foreground">
-                    Leave blank for unlimited
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="unlimited"
+                      checked={unlimited}
+                      onCheckedChange={(checked) => {
+                        const isChecked = Boolean(checked);
+                        setUnlimited(isChecked);
+                        if (isChecked) {
+                          handleFormInputChange("reqPerDay", "");
+                        }
+                      }}
+                    />
+                    <Label htmlFor="unlimited" className="mb-0">
+                      Unlimited
+                    </Label>
+                  </div>
                 </div>
               ) : (
                 <Skeleton className="h-10 w-full" />

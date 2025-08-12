@@ -699,7 +699,12 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
     if (pathname === "/management/staff") {
       return (
-        <Button onClick={() => router.push("/management/staff/new")} size="sm">
+        <Button
+          onClick={() =>
+            window.dispatchEvent(new CustomEvent("openCreateStaff"))
+          }
+          size="sm"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Staff
         </Button>
@@ -809,7 +814,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             {/* Analytics Filters - Show in top right for analytics pages */}
             {canShowAnalyticsFilters && (
               <div className="px-4">
-                <AnalyticsFilters homePage={isHomePage} reportPage={isReportPage} />
+                <AnalyticsFilters
+                  homePage={isHomePage}
+                  reportPage={isReportPage}
+                />
               </div>
             )}
 

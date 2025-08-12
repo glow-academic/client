@@ -27,7 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StaffData } from "@/hooks/use-staff-columns";
-import { Edit, Eye, Trash2 } from "lucide-react";
+import { Edit, FileText, Trash2 } from "lucide-react";
 import { StaffDataTableToolbar } from "./StaffDataTableToolbar";
 
 export interface StaffDataTableProps {
@@ -125,7 +125,7 @@ export function StaffDataTable({
               onClick={() => onPreview(staff)}
               title="View Reports"
             >
-              <Eye className="h-3 w-3" />
+              <FileText className="h-3 w-3" />
             </Button>
             <Button
               type="button"
