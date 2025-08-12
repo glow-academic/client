@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { calculateRubricHeatmap } from "@/utils/analytics/secondary";
+import { profileRole } from "@/utils/drizzle/schema";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -56,6 +57,9 @@ export interface RubricHeatmapProps {
   };
   profileId: string | undefined;
   cohortIds: string[];
+  selectedRoles: (typeof profileRole.enumValues)[number][];
+  showPractice: boolean;
+  showNormal: boolean;
 }
 
 export default function RubricHeatmap({

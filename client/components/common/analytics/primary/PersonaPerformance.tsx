@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { calculatePersonaPerformance } from "@/utils/analytics/primary";
+import { profileRole } from "@/utils/drizzle/schema";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
@@ -63,6 +64,9 @@ export interface PersonaPerformanceProps {
   };
   profileId: string | undefined;
   cohortIds: string[];
+  selectedRoles: (typeof profileRole.enumValues)[number][];
+  showPractice: boolean;
+  showNormal: boolean;
 }
 
 export default function PersonaPerformance({
@@ -71,6 +75,8 @@ export default function PersonaPerformance({
   profileId,
   cohortIds,
   thresholds,
+  selectedRoles,
+  showPractice,
 }: PersonaPerformanceProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
     []
@@ -209,7 +215,9 @@ export default function PersonaPerformance({
       profileId,
       cohorts || [],
       cohortIds,
-      selectedSimulations.map((s) => s.id)
+      selectedSimulations.map((s) => s.id),
+      selectedRoles,
+      showPractice
     );
   }, [
     personas,
@@ -224,6 +232,8 @@ export default function PersonaPerformance({
     dateEnd,
     profileId,
     selectedSimulations,
+    selectedRoles,
+    showPractice,
     cohorts,
     cohortIds,
   ]);

@@ -32,6 +32,7 @@ import {
   calculateScenarioPerformanceWithinSimulation,
   getAvailableSimulations,
 } from "@/utils/analytics/footer";
+import { profileRole } from "@/utils/drizzle/schema";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -63,6 +64,9 @@ export interface SimulationPerformanceProps {
   };
   profileId: string | undefined;
   cohortIds: string[];
+  selectedRoles: (typeof profileRole.enumValues)[number][];
+  showPractice: boolean;
+  showNormal: boolean;
 }
 
 export default function SimulationPerformance({
@@ -71,6 +75,8 @@ export default function SimulationPerformance({
   profileId,
   cohortIds,
   thresholds,
+  selectedRoles,
+  showPractice,
 }: SimulationPerformanceProps) {
   const [selectedSimulation, setSelectedSimulation] =
     useState<Simulation | null>(null);
@@ -137,7 +143,9 @@ export default function SimulationPerformance({
       dateEnd,
       profileId,
       cohorts || [],
-      cohortIds
+      cohortIds,
+      selectedRoles,
+      showPractice
     );
   }, [
     simulations,
@@ -150,6 +158,8 @@ export default function SimulationPerformance({
     profileId,
     cohorts,
     cohortIds,
+    selectedRoles,
+    showPractice,
   ]);
 
   // Auto-select simulation if enabled and available
@@ -203,7 +213,8 @@ export default function SimulationPerformance({
       thresholds,
       profileId,
       cohorts || [],
-      cohortIds
+      cohortIds,
+      selectedRoles
     );
   }, [
     selectedSimulation,
@@ -218,6 +229,7 @@ export default function SimulationPerformance({
     profileId,
     cohorts,
     cohortIds,
+    selectedRoles,
     thresholds,
   ]);
 

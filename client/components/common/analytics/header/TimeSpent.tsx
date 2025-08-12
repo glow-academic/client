@@ -14,8 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useAnalytics } from "@/contexts/analytics-context";
 import { calculateTimeSpent } from "@/utils/analytics/header";
+import { profileRole } from "@/utils/drizzle/schema";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -44,6 +44,9 @@ export interface TimeSpentProps {
   };
   profileId: string | undefined;
   cohortIds: string[];
+  selectedRoles: (typeof profileRole.enumValues)[number][];
+  showPractice: boolean;
+  showNormal: boolean;
 }
 
 const COLOR_CONFIGS = {
@@ -81,9 +84,11 @@ export default function TimeSpent({
   profileId,
   thresholds,
   cohortIds,
+  selectedRoles,
+  showPractice,
+  showNormal,
 }: TimeSpentProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { selectedRoles, includePractice } = useAnalytics();
 
   // Fetch data
   const { data: profiles } = useQuery({
@@ -131,8 +136,9 @@ export default function TimeSpent({
       cohorts,
       cohortIds,
       selectedRoles,
-      includePractice,
-      profiles?.map((p) => ({ id: p.id, role: p.role }))
+      showPractice,
+      profiles?.map((p) => ({ id: p.id, role: p.role })),
+      showNormal
     );
   }, [
     chats,
@@ -144,7 +150,8 @@ export default function TimeSpent({
     profileId,
     cohortIds,
     selectedRoles,
-    includePractice,
+    showPractice,
+    showNormal,
     profiles,
   ]);
 

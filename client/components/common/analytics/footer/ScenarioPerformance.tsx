@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { calculateScenarioAttributeBreakdown } from "@/utils/analytics/footer";
+import { profileRole } from "@/utils/drizzle/schema";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
 import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
@@ -73,6 +74,9 @@ export interface ScenarioPerformanceProps {
   };
   profileId: string | undefined;
   cohortIds: string[];
+  selectedRoles: (typeof profileRole.enumValues)[number][];
+  showPractice: boolean;
+  showNormal: boolean;
 }
 
 interface ParameterOption {
@@ -87,6 +91,8 @@ export default function ScenarioPerformance({
   profileId,
   thresholds,
   cohortIds,
+  selectedRoles,
+  showPractice,
 }: ScenarioPerformanceProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -204,7 +210,9 @@ export default function ScenarioPerformance({
       dateEnd,
       profileId,
       cohorts || [],
-      cohortIds
+      cohortIds,
+      selectedRoles,
+      showPractice
     );
   }, [
     scenarios,
@@ -221,6 +229,8 @@ export default function ScenarioPerformance({
     profileId,
     cohorts,
     cohortIds,
+    selectedRoles,
+    showPractice,
   ]);
 
   // Calculate threshold status based on attribute performance
@@ -404,11 +414,10 @@ export default function ScenarioPerformance({
                                   {element.name}
                                 </span>
                               </DialogTrigger>
-                              <DialogContent
-                                className="max-w-2xl"
-                              >
+                              <DialogContent className="max-w-2xl">
                                 <DialogDescription hidden>
-                                  This chart shows the scenario performance over time.
+                                  This chart shows the scenario performance over
+                                  time.
                                 </DialogDescription>
                                 <DialogHeader>
                                   <DialogTitle className="flex items-center gap-2">

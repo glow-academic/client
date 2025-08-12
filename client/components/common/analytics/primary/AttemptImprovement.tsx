@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { calculateAttemptImprovement } from "@/utils/analytics/primary";
+import { profileRole } from "@/utils/drizzle/schema";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -51,6 +52,9 @@ export interface AttemptImprovementProps {
   };
   profileId: string | undefined;
   cohortIds: string[];
+  selectedRoles: (typeof profileRole.enumValues)[number][];
+  showPractice: boolean;
+  showNormal: boolean;
 }
 
 export default function AttemptImprovement({
@@ -59,6 +63,9 @@ export default function AttemptImprovement({
   profileId,
   cohortIds,
   thresholds,
+  selectedRoles,
+  showPractice,
+  showNormal,
 }: AttemptImprovementProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
     []
@@ -200,7 +207,10 @@ export default function AttemptImprovement({
       profileId,
       cohorts,
       cohortIds,
-      selectedSimulations.map((s) => s.id)
+      selectedSimulations.map((s) => s.id),
+      selectedRoles,
+      showPractice,
+      showNormal
     );
   }, [
     profiles,
@@ -215,6 +225,9 @@ export default function AttemptImprovement({
     profileId,
     cohortIds,
     selectedSimulations,
+    selectedRoles,
+    showPractice,
+    showNormal,
   ]);
 
   // Get actionable insights

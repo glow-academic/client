@@ -48,6 +48,7 @@ import { useMemo, useState } from "react";
 import SimulationCompositionPicker, {
   SimulationCompositionConfig,
 } from "../SimulationCompositionPicker";
+import { profileRole } from "@/utils/drizzle/schema";
 
 export interface SimulationCompositionProps {
   dateStart: Date;
@@ -59,6 +60,9 @@ export interface SimulationCompositionProps {
   };
   profileId: string | undefined;
   cohortIds: string[];
+  selectedRoles: (typeof profileRole.enumValues)[number][];
+  showPractice: boolean;
+  showNormal: boolean;
 }
 
 export default function SimulationComposition({
@@ -67,6 +71,8 @@ export default function SimulationComposition({
   profileId,
   cohortIds,
   thresholds,
+  selectedRoles,
+  showPractice,
 }: SimulationCompositionProps) {
   // Configuration state
   const [config, setConfig] = useState<SimulationCompositionConfig>({
@@ -176,7 +182,9 @@ export default function SimulationComposition({
       profileId,
       cohorts || [],
       cohortIds,
-      config
+      config,
+      selectedRoles,
+      showPractice
     );
   }, [
     scenarios,
@@ -195,6 +203,8 @@ export default function SimulationComposition({
     cohorts,
     cohortIds,
     config,
+    selectedRoles,
+    showPractice,
   ]);
 
   // Get method label for dialog titles
@@ -438,9 +448,7 @@ export default function SimulationComposition({
                   </div>
                 </div>
               </DialogTrigger>
-              <DialogContent
-                className="max-w-2xl"
-              >
+              <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <TrendingUp className="h-5 w-5 text-green-600" />
@@ -564,9 +572,7 @@ export default function SimulationComposition({
                   </div>
                 </div>
               </DialogTrigger>
-              <DialogContent
-                className="max-w-2xl"
-              >
+              <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <TrendingDown className="h-5 w-5 text-red-600" />

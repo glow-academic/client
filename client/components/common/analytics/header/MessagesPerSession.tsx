@@ -14,8 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useAnalytics } from "@/contexts/analytics-context";
 import { calculateMessagesPerSession } from "@/utils/analytics/header";
+import { profileRole } from "@/utils/drizzle/schema";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -45,6 +45,9 @@ export interface MessagesPerSessionProps {
   };
   profileId: string | undefined;
   cohortIds: string[];
+  selectedRoles: (typeof profileRole.enumValues)[number][];
+  showPractice: boolean;
+  showNormal: boolean;
 }
 
 const COLOR_CONFIGS = {
@@ -82,9 +85,11 @@ export default function MessagesPerSession({
   profileId,
   thresholds,
   cohortIds,
+  selectedRoles,
+  showPractice,
+  showNormal,
 }: MessagesPerSessionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { selectedRoles, includePractice } = useAnalytics();
 
   // Fetch data
   const { data: profiles } = useQuery({
@@ -139,8 +144,9 @@ export default function MessagesPerSession({
       cohorts,
       cohortIds,
       selectedRoles,
-      includePractice,
-      profiles?.map((p) => ({ id: p.id, role: p.role }))
+      showPractice,
+      profiles?.map((p) => ({ id: p.id, role: p.role })),
+      showNormal
     );
   }, [
     messages,
@@ -153,7 +159,8 @@ export default function MessagesPerSession({
     profileId,
     cohortIds,
     selectedRoles,
-    includePractice,
+    showPractice,
+    showNormal,
     profiles,
   ]);
 

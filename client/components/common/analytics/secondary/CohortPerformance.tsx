@@ -26,6 +26,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { calculateCohortPerformance } from "@/utils/analytics/secondary";
+import { profileRole } from "@/utils/drizzle/schema";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -56,6 +57,9 @@ export interface CohortPerformanceProps {
   };
   profileId: string | undefined;
   cohortIds: string[];
+  selectedRoles: (typeof profileRole.enumValues)[number][];
+  showPractice: boolean;
+  showNormal: boolean;
 }
 
 export default function CohortPerformance({
@@ -64,6 +68,9 @@ export default function CohortPerformance({
   profileId,
   thresholds,
   cohortIds,
+  selectedRoles,
+  showPractice,
+  showNormal,
 }: CohortPerformanceProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
     []
@@ -138,7 +145,10 @@ export default function CohortPerformance({
       thresholds,
       profileId,
       cohortIds,
-      selectedSimulations.map((s) => s.id)
+      selectedSimulations.map((s) => s.id),
+      selectedRoles,
+      showPractice,
+      showNormal
     );
   }, [
     allCohorts,
@@ -154,6 +164,9 @@ export default function CohortPerformance({
     cohortIds,
     selectedSimulations,
     thresholds,
+    selectedRoles,
+    showPractice,
+    showNormal,
   ]);
 
   // Get simulations that have data available
@@ -356,9 +369,7 @@ export default function CohortPerformance({
                     </div>
                   </div>
                 </DialogTrigger>
-                <DialogContent
-                  className="max-w-2xl"
-                >
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>{cohort.name} Performance Details</DialogTitle>
                     <DialogDescription hidden>

@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { calculateScenarioPerformance } from "@/utils/analytics/footer";
+import { profileRole } from "@/utils/drizzle/schema";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
@@ -69,6 +70,9 @@ export interface ScenarioStatsProps {
   };
   profileId: string | undefined;
   cohortIds: string[];
+  selectedRoles: (typeof profileRole.enumValues)[number][];
+  showPractice: boolean;
+  showNormal: boolean;
 }
 
 interface MetricOption {

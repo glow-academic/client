@@ -1435,8 +1435,8 @@ export const getAvailableSimulations = (
       // Filter by profile if provided
       const profileMatch = profileId ? attempt?.profileId === profileId : true;
 
-      // Apply cohort-based profile filtering (simplified)
-      const cohortProfileMatch = true; // Temporarily allow all profiles
+      // Cohort filtering is already applied via allowedSimulationIds
+      const cohortProfileMatch = true;
 
       return inDateRange && roleOk && profileMatch && cohortProfileMatch;
     });
@@ -1488,7 +1488,7 @@ export const calculateSimulationPerformance = (
     profileId
   );
 
-  // Filter grades by date range, exclude practice simulations, and filter by TA role
+  // Filter grades by date range and exclude practice simulations
   let filteredGrades = grades.filter((grade) => {
     const gradeDate = new Date(grade.createdAt);
     const chat = chats.find((c) => c.id === grade.simulationChatId);

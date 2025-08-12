@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { calculateSkillPerformance } from "@/utils/analytics/secondary";
+import { profileRole } from "@/utils/drizzle/schema";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -49,6 +50,9 @@ export interface SkillPerformanceProps {
   };
   profileId: string | undefined;
   cohortIds: string[];
+  selectedRoles: (typeof profileRole.enumValues)[number][];
+  showPractice: boolean;
+  showNormal: boolean;
 }
 
 export default function SkillPerformance({
@@ -57,6 +61,7 @@ export default function SkillPerformance({
   thresholds,
   profileId,
   cohortIds,
+  selectedRoles,
 }: SkillPerformanceProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<Rubric[]>([]);
 
@@ -167,7 +172,8 @@ export default function SkillPerformance({
       dateEnd,
       profileId,
       cohortIds,
-      filteredRubrics.map((r) => r.id)
+      filteredRubrics.map((r) => r.id),
+      selectedRoles
     );
   }, [
     grades,
@@ -183,6 +189,7 @@ export default function SkillPerformance({
     dateEnd,
     profileId,
     cohortIds,
+    selectedRoles,
   ]);
 
   // Calculate threshold status based on skill performance data
