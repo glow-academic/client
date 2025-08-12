@@ -77,24 +77,6 @@ function getAllowedSimulationIds(
   return Array.from(simulationIds);
 }
 
-// Helper to check cohort membership by profile with admin/superadmin bypass
-function _isProfileInSelectedCohorts(
-  profileId: string | undefined,
-  cohorts: Cohort[] = [],
-  cohortIds: string[] = [],
-  profiles?: { id: string; role: ProfileRole }[]
-): boolean {
-  if (!profileId) return true;
-  if (!cohortIds || cohortIds.length === 0) return true;
-  const isPrivileged = profiles?.some(
-    (p) => p.id === profileId && (p.role === "admin" || p.role === "superadmin")
-  );
-  if (isPrivileged) return true;
-  const selected = cohorts.filter((c) => cohortIds.includes(c.id));
-  if (selected.length === 0) return false;
-  return selected.some((c) => c.profileIds.includes(profileId));
-}
-
 // Common filtering function for date range and profile
 function filterDataByDateAndProfile<T extends { createdAt: string }>(
   data: T[],
