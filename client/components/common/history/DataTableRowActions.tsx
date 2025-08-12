@@ -37,7 +37,7 @@ export function DataTableRowActions({
   infiniteModeTimeLimit = null,
   attemptCreatedAt,
 }: DataTableRowActionsProps) {
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, activeProfile } = useProfile();
   const { isConnected, emitStartSimulation } = useWebSocket();
   const [isRetrying, setIsRetrying] = React.useState(false);
 
@@ -72,7 +72,7 @@ export function DataTableRowActions({
       ? "Continue"
       : "View";
 
-  const disabledForEmulation = effectiveProfile?.id !== profileId;
+  const disabledForEmulation = effectiveProfile?.id !== activeProfile?.id
   const buttonEl = (
     <Button
       variant="outline"

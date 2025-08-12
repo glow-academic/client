@@ -765,15 +765,34 @@ export function useHistoryColumns({
         });
       }
 
-      // Filter attempts based on cohort membership
+      // Filter attempts based on cohort membership and practice/general flags
       data = data.filter((attempt: unknown) => {
         const attemptData = attempt as Record<string, unknown>;
-        return (
-          attemptData["profileId"] &&
-          allowedProfileIds.has(attemptData["profileId"] as string) &&
-          attemptData["simulationId"] &&
-          allowedSimulationIds.has(attemptData["simulationId"] as string)
+        const attemptProfileId = attemptData["profileId"] as string | undefined;
+        const attemptSimulationId = attemptData["simulationId"] as
+          | string
+          | undefined;
+        if (!attemptProfileId || !attemptSimulationId) return false;
+
+        // Must be in allowed profiles when cohorts are selected
+        const profileOk = allowedProfileIds.has(attemptProfileId);
+        if (!profileOk) return false;
+
+        // Determine if the attempt is practice or general
+        const simulation = simulations?.find(
+          (s) => s.id === attemptSimulationId
         );
+        const isPractice = Boolean(simulation?.practiceSimulation);
+
+        // Practice attempts bypass cohort simulation restrictions
+        const practiceAllowed = showPractice && isPractice;
+        // General attempts must match allowed cohort simulations when cohorts are selected
+        const generalAllowed =
+          showGeneral &&
+          !isPractice &&
+          allowedSimulationIds.has(attemptSimulationId);
+
+        return practiceAllowed || generalAllowed;
       });
     } else {
       // No matching cohorts, show empty data
@@ -781,19 +800,21 @@ export function useHistoryColumns({
     }
   }
 
-  // Apply practice/normal filtering using combined flags
-  if (showPractice || showGeneral) {
-    data = data.filter((attempt: unknown) => {
-      const attemptData = attempt as Record<string, unknown>;
-      const simulation = simulations?.find(
-        (s) => s.id === attemptData["simulationId"]
-      );
-      const isPractice = Boolean(simulation?.practiceSimulation);
-      return (showPractice && isPractice) || (showGeneral && !isPractice);
-    });
-  } else {
-    // If both are false, show nothing
-    data = [];
+  // Apply practice/general filtering only when no cohort filtering block handled it
+  if (!cohortIds || cohortIds.length === 0) {
+    if (showPractice || showGeneral) {
+      data = data.filter((attempt: unknown) => {
+        const attemptData = attempt as Record<string, unknown>;
+        const simulation = simulations?.find(
+          (s) => s.id === attemptData["simulationId"]
+        );
+        const isPractice = Boolean(simulation?.practiceSimulation);
+        return (showPractice && isPractice) || (showGeneral && !isPractice);
+      });
+    } else {
+      // If both are false, show nothing
+      data = [];
+    }
   }
 
   // Apply role filtering if allowedRoles provided

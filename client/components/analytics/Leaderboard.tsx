@@ -33,7 +33,8 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     effectiveCohortIds,
     cohorts,
     selectedRoles,
-    includePractice,
+    showPractice,
+    showGeneral,
   } = useAnalytics();
   const router = useRouter();
 
@@ -60,8 +61,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     enforcedTARoles ??
     (selectedRoles && selectedRoles.length > 0 ? selectedRoles : undefined);
 
-  // Determine whether practice is allowed in leaderboard calculations
-  const practiceAllowed = cohortId && isTA ? false : includePractice;
+  // Practice/general are controlled by analytics filters
 
   // Check if navigation should be disabled for TAs viewing a specific cohort
   const shouldDisableNavigation = cohortId && isTA;
@@ -187,6 +187,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   ]);
 
   // Filter profiles to only include those in the selected cohorts and allowed roles
+  // Treat admins/superadmins as members of all selected cohorts
   const cohortProfiles = useMemo(() => {
     if (!allProfiles || !filteredCohorts) return [];
 
@@ -198,7 +199,9 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
 
     // Filter by membership and allowed roles (if provided)
     const filteredProfiles = allProfiles.filter((profile) => {
-      if (!allCohortProfileIds.has(profile.id)) return false;
+      const isPrivileged =
+        profile.role === "admin" || profile.role === "superadmin";
+      if (!isPrivileged && !allCohortProfileIds.has(profile.id)) return false;
       if (!effectiveAllowedRoles || effectiveAllowedRoles.length === 0) {
         return true;
       }
@@ -219,7 +222,15 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
 
     let filteredAttempts = allAttempts.filter((attempt) => {
       // Filter by cohort membership
-      if (!attempt.profileId || !cohortProfileIds.has(attempt.profileId)) {
+      const isPrivilegedAttempt = allProfiles?.some(
+        (p) =>
+          p.id === attempt.profileId &&
+          (p.role === "admin" || p.role === "superadmin")
+      );
+      if (
+        !attempt.profileId ||
+        (!isPrivilegedAttempt && !cohortProfileIds.has(attempt.profileId))
+      ) {
         return false;
       }
 
@@ -238,7 +249,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       filteredAttempts = filteredAttempts.filter((attempt) => {
         const sim = simById.get(attempt.simulationId);
         const isPractice = Boolean(sim?.practiceSimulation);
-        return practiceAllowed ? true : !isPractice;
+        return (showPractice && isPractice) || (showGeneral && !isPractice);
       });
     }
 
@@ -249,7 +260,9 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     startDate,
     endDate,
     allSimulations,
-    practiceAllowed,
+    showPractice,
+    showGeneral,
+    allProfiles,
   ]);
 
   // Filter chats to only include those from selected cohort attempts
