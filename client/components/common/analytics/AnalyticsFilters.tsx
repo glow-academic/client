@@ -24,8 +24,9 @@ import { useEffect, useMemo, useState } from "react";
 import { DateRange } from "react-day-picker";
 export interface AnalyticsFiltersProps {
   homePage?: boolean; // this means we shouldn't show the first 2 components
+  reportPage?: boolean; // this means we shouldn't show the role picker
 }
-export function AnalyticsFilters({ homePage = false }: AnalyticsFiltersProps) {
+export function AnalyticsFilters({ homePage = false, reportPage = false }: AnalyticsFiltersProps) {
   const {
     startDate,
     endDate,
@@ -179,7 +180,7 @@ export function AnalyticsFilters({ homePage = false }: AnalyticsFiltersProps) {
       )}
 
       {/* Role Picker */}
-      {!homePage && (
+      {!homePage && !reportPage && (
         <RolePicker
           roles={["superadmin", "admin", "instructional", "ta", "guest"]}
           selectedRoles={selectedRoles}
