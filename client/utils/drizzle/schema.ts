@@ -354,6 +354,7 @@ export const simulations = pgTable("simulations", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	title: text().notNull(),
+	description: text().default('No description provided').notNull(),
 	timeLimit: integer("time_limit"),
 	active: boolean().default(true).notNull(),
 	scenarioIds: uuid("scenario_ids").array().default(["RAY"]).notNull(),

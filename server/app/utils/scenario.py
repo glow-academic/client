@@ -19,24 +19,11 @@ logger = logging.getLogger(__name__)
 
 def get_checkpoints_info(checkpoints: List[str]) -> TResponseInputItem:
     """
-    Provide checkpoint information along with explicit output requirements.
-    Models MUST return a boolean array named `checkpoints` with the same length
-    and ordering as the list below (True = reached, False = not reached).
+    Get the checkpoint information for a given checkpoints.
     """
-    lines: list[str] = [
-        "CHECKPOINTS: The following checkpoints apply to this conversation.",
-        "- You MUST return a field named `checkpoints` as a boolean array.",
-        f"- The array MUST have exactly {len(checkpoints)} items.",
-        "- The array MUST be in the same order as listed below.",
-        "- Each item should be True if the checkpoint was reached, otherwise False.",
-        "",
-        "CHECKPOINT LIST (in order):",
-    ]
-    for idx, cp in enumerate(checkpoints, start=1):
-        lines.append(f"{idx}. {cp}")
     return {
         "role": "user",
-        "content": "\n".join(lines),
+        "content": "The following is the checkpoint information:\n" + "\n".join(checkpoints),
     }
 
 def get_parameter_item_info(

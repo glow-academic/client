@@ -27,7 +27,7 @@ import {
 import { useProfile } from "@/contexts/profile-context";
 import { Persona, Profile, Scenario, Simulation } from "@/types";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
-import { generateGradientFromHex, getPersonaConfig } from "@/utils/personas";
+import { generateGradientFromHex } from "@/utils/personas";
 import { FileText, Info, Timer, User, Users } from "lucide-react";
 import TableRubric from "../rubric/TableRubric";
 
@@ -75,12 +75,11 @@ export default function SimulationCard({
     : null;
 
   // Get persona configuration and icon based on persona data
-  const personaConfig = persona ? getPersonaConfig(persona.name) : null;
   const IconComponent =
     type === "default"
-      ? (persona
-          ? getPersonaIconComponent(persona.icon)
-          : personaConfig?.icon) || User
+      ? persona
+        ? getPersonaIconComponent(persona.icon)
+        : User
       : Users;
 
   // Determine gradient class based on completion status and persona color
@@ -94,7 +93,7 @@ export default function SimulationCard({
       return gradientStyle;
     }
     return type === "default"
-      ? personaConfig?.colors?.gradient || "from-blue-500 to-purple-600"
+      ? persona?.color || "from-blue-500 to-purple-600"
       : "from-blue-500 to-purple-600";
   };
 
@@ -170,9 +169,7 @@ export default function SimulationCard({
                       <p>View Rubric</p>
                     </TooltipContent>
                   </Tooltip>
-                  <DialogContent
-                    className="max-w-4xl"
-                  >
+                  <DialogContent className="max-w-4xl">
                     <DialogDescription hidden>
                       This dialog shows the rubric for the simulation.
                     </DialogDescription>
@@ -225,9 +222,7 @@ export default function SimulationCard({
               {simulation.title}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
-              {type === "default"
-                ? persona?.description
-                : `Interactive simulation with ${validScenarioIds.length} scenario${validScenarioIds.length !== 1 ? "s" : ""}`}
+              {simulation.description}
             </p>
           </div>
 

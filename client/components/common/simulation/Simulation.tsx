@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -45,6 +46,7 @@ import { useProfile } from "@/contexts/profile-context";
 import { Rubric, Scenario } from "@/types";
 import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
 import { updateSimulation } from "@/utils/mutations/simulations/update-simulation";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
 import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -63,6 +65,7 @@ export interface SimulationProps {
 
 interface FormData {
   title?: string;
+  description?: string;
   timeLimit?: number | null;
   rubricId?: string;
   cohortIds?: string[];
@@ -96,6 +99,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
   const initialFormData: FormData = useMemo(
     () => ({
       title: "",
+      description: "",
       timeLimit: 15,
       rubricId: "",
       cohortIds: [],
@@ -139,6 +143,12 @@ export default function Simulation({ simulationId }: SimulationProps) {
       queryFn: () => getAllParameterItems(),
     });
 
+  // Fetch cohorts to determine if this simulation is in use
+  const { data: cohorts = [] } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
+  });
+
   const isLoading =
     isLoadingSimulation ||
     isLoadingRubrics ||
@@ -146,10 +156,36 @@ export default function Simulation({ simulationId }: SimulationProps) {
     isLoadingParameters ||
     isLoadingParameterItems;
 
+  // Determine readonly based on permissions and usage
+  const isDefaultNonSuperadmin =
+    !!formData?.defaultSimulation && effectiveProfile?.role !== "superadmin";
+
+  const isAdmin =
+    effectiveProfile?.role === "admin" ||
+    effectiveProfile?.role === "superadmin";
+
+  const isInUse = useMemo(() => {
+    const targetId = simulationId || editingSimulationId;
+    if (!targetId) return false;
+    return cohorts.some(
+      (cohort) =>
+        cohort.simulationIds && cohort.simulationIds.includes(targetId)
+    );
+  }, [cohorts, simulationId, editingSimulationId]);
+
+  const isReadonly = useMemo(() => {
+    if (!isEditMode) return false; // creating new simulation is editable
+    if (isDefaultNonSuperadmin) return true;
+    if (isAdmin) return false;
+    // Non-admin: editable only if not in use
+    return isInUse;
+  }, [isEditMode, isDefaultNonSuperadmin, isAdmin, isInUse]);
+
   useEffect(() => {
     if (simulation && isEditMode) {
       const simulationData = {
         title: simulation.title,
+        description: simulation.description,
         timeLimit: simulation.timeLimit,
         rubricId: simulation.rubricId,
         scenarioIds: simulation.scenarioIds,
@@ -174,6 +210,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
     return (
       current.title !== original.title ||
+      current.description !== original.description ||
       current.timeLimit !== original.timeLimit ||
       current.rubricId !== original.rubricId ||
       current.active !== original.active ||
@@ -266,6 +303,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
       if (targetSimulationId) {
         result = await updateSimulation(targetSimulationId, {
           ...formData,
+          description: formData?.description ?? "",
           defaultSimulation: formData?.defaultSimulation || false,
           practiceSimulation: formData?.practiceSimulation || false,
           updatedAt: new Date().toISOString(),
@@ -274,6 +312,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
       } else {
         result = await createSimulation({
           title: formData?.title || "",
+          description: formData?.description ?? "",
           rubricId: formData?.rubricId || "",
           scenarioIds: formData?.scenarioIds || [],
           timeLimit: formData?.timeLimit || null,
@@ -413,12 +452,29 @@ export default function Simulation({ simulationId }: SimulationProps) {
               onChange={(e) => handleInputChange("title", e.target.value)}
               placeholder="Enter simulation title"
               className={errors.title ? "border-destructive" : ""}
+              disabled={isReadonly}
             />
           ) : (
             <Skeleton className="h-10 w-full" />
           )}
           {errors.title && (
             <p className="text-sm text-destructive">{errors.title}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          {formData?.description !== undefined && !isLoading ? (
+            <Textarea
+              id="description"
+              value={formData.description || ""}
+              onChange={(e) => handleInputChange("description", e.target.value)}
+              placeholder="Enter a brief description (optional)"
+              rows={3}
+              disabled={isReadonly}
+            />
+          ) : (
+            <Skeleton className="h-20 w-full" />
           )}
         </div>
 
@@ -436,6 +492,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
               }
               className={errors.timeLimit ? "border-destructive" : ""}
               placeholder="Leave empty for no time limit"
+              disabled={isReadonly}
             />
           ) : (
             <Skeleton className="h-10 w-full" />
@@ -454,6 +511,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
             >
               <SelectTrigger
                 className={errors.rubricId ? "border-destructive" : ""}
+                disabled={isReadonly}
               >
                 <SelectValue placeholder="Select a rubric..." />
               </SelectTrigger>
@@ -488,6 +546,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                 onCheckedChange={(checked) =>
                   handleInputChange("active", checked)
                 }
+                disabled={isReadonly}
               />
             ) : (
               <Skeleton className="h-6 w-11" />
@@ -507,6 +566,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                   onCheckedChange={(checked) =>
                     handleInputChange("defaultSimulation", checked)
                   }
+                  disabled={isReadonly}
                 />
               ) : (
                 <Skeleton className="h-6 w-11" />
@@ -527,6 +587,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                   onCheckedChange={(checked) =>
                     handleInputChange("practiceSimulation", checked)
                   }
+                  disabled={isReadonly}
                 />
               ) : (
                 <Skeleton className="h-6 w-11" />
@@ -582,10 +643,12 @@ export default function Simulation({ simulationId }: SimulationProps) {
                     className={`p-3 min-h-[180px] cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
                       draggedScenario === scenario.id ? "opacity-50" : ""
                     }`}
-                    draggable
-                    onDragStart={(e) => handleDragStartScenario(e, scenario.id)}
+                    draggable={!isReadonly}
+                    onDragStart={(e) =>
+                      !isReadonly && handleDragStartScenario(e, scenario.id)
+                    }
                     onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, scenario.id)}
+                    onDrop={(e) => !isReadonly && handleDrop(e, scenario.id)}
                   >
                     <div className="space-y-3 h-full flex flex-col justify-between">
                       <div>
@@ -594,30 +657,36 @@ export default function Simulation({ simulationId }: SimulationProps) {
                             {scenario.title || "Unnamed Scenario"}
                           </h4>
                           <div className="flex items-center gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => editScenario(scenario.id)}
-                              className="h-6 w-6 p-0"
-                            >
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const newSelectedScenarios =
-                                  selectedScenarios.filter(
-                                    (s) => s.id !== scenario.id
-                                  );
-                                handleScenarioSelection(newSelectedScenarios);
-                              }}
-                              className="h-6 w-6 p-0"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                            {!isReadonly && (
+                              <>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => editScenario(scenario.id)}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const newSelectedScenarios =
+                                      selectedScenarios.filter(
+                                        (s) => s.id !== scenario.id
+                                      );
+                                    handleScenarioSelection(
+                                      newSelectedScenarios
+                                    );
+                                  }}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </>
+                            )}
                             <GripVertical className="h-4 w-4 text-muted-foreground" />
                           </div>
                         </div>
@@ -684,7 +753,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
           </Button>
           <Button
             type="submit"
-            disabled={isSubmitting || (isEditMode && !hasChanges)}
+            disabled={isSubmitting || isReadonly || (isEditMode && !hasChanges)}
             className="min-w-[120px]"
           >
             {isSubmitting ? (

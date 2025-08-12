@@ -7,7 +7,7 @@
 "use client";
 import { logError, logInfo } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Edit, Timer, Trash2, Users } from "lucide-react";
+import { Copy, Edit, Eye, Timer, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -74,15 +74,29 @@ export function Simulations() {
   const isSimulationInUse = (simulationId: string) => {
     return cohorts.some(
       (cohort) =>
-        cohort.simulationIds && cohort.simulationIds.includes(simulationId),
+        cohort.simulationIds && cohort.simulationIds.includes(simulationId)
     );
   };
 
-  // Check if user can edit (admin/superadmin or simulation not in use)
+  const canDeleteSimulation = (simulation: Simulation) => {
+    if (isSimulationInUse(simulation.id)) return false;
+    if (simulation.defaultSimulation) {
+      const isSuperadmin = effectiveProfile?.role === "superadmin";
+      return isSuperadmin && !simulation.active;
+    }
+    return true;
+  };
+
+  // Only superadmins can edit default items; others can edit non-default if admin/superadmin or not in use
   const canEditSimulation = (simulationId: string) => {
     const isAdmin =
       effectiveProfile?.role === "admin" ||
       effectiveProfile?.role === "superadmin";
+    const sim = simulations.find((s) => s.id === simulationId);
+    if (!sim) return false;
+    if (sim.defaultSimulation) {
+      return effectiveProfile?.role === "superadmin";
+    }
     return isAdmin || !isSimulationInUse(simulationId);
   };
 
@@ -211,9 +225,12 @@ export function Simulations() {
                   ? `${simulation.timeLimit} minutes`
                   : "No time limit"}
               </Badge>
-              <Badge variant={simulation.active ? "default" : "secondary"}>
-                {simulation.active ? "Active" : "Inactive"}
-              </Badge>
+              {simulation.defaultSimulation && (
+                <Badge variant="default">Default</Badge>
+              )}
+              {!simulation.active && (
+                <Badge variant="secondary">Inactive</Badge>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -232,7 +249,7 @@ export function Simulations() {
                 )}
               </Button>
             )}
-            {canEditSimulation(simulation.id) && (
+            {canEditSimulation(simulation.id) ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -242,8 +259,18 @@ export function Simulations() {
               >
                 <Edit className="h-4 w-4" />
               </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid={`view-${simulation.id}`}
+                onClick={() => handleEdit(simulation.id)}
+                aria-label={`View ${simulation.title}`}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
             )}
-            {!isSimulationInUse(simulation.id) && (
+            {canDeleteSimulation(simulation) && (
               <Button
                 variant="outline"
                 size="sm"

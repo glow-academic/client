@@ -12,6 +12,7 @@ CREATE TABLE simulations (
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   title      TEXT        NOT NULL,
+  description TEXT        NOT NULL DEFAULT 'No description provided',
   time_limit INTEGER     NULL,          -- in minutes, or no time limit
   active      BOOLEAN     NOT NULL           DEFAULT TRUE,
   scenario_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[], -- references scenarios

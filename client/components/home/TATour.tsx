@@ -101,6 +101,7 @@ export default function TATour() {
     setLoadingSimulation,
     setShowGuideButton,
     setAttemptId,
+    setHasAssignedCohorts,
   } = useTour();
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -125,6 +126,16 @@ export default function TATour() {
       cohort.profileIds?.includes(effectiveProfile.id)
     );
   }, [effectiveProfile, cohorts]);
+
+  // Reflect assigned cohort availability into tour context for UI gating/tooltips
+  useEffect(() => {
+    if (effectiveProfile?.role === "ta") {
+      setHasAssignedCohorts(taCohorts.length > 0);
+    } else {
+      // not applicable
+      setHasAssignedCohorts(null);
+    }
+  }, [effectiveProfile?.role, taCohorts, setHasAssignedCohorts]);
 
   // Handle step completion with proper profile updates
   const handleStepComplete = useCallback(

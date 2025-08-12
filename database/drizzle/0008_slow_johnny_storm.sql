@@ -1,0 +1,1 @@
+ALTER TABLE "simulations" ADD COLUMN "description" text DEFAULT 'No description provided' NOT NULL;

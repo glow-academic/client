@@ -16,6 +16,11 @@ import {
   useRef,
 } from "react";
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { Profile } from "@/types";
 import { TourStep } from "@/utils/tour-steps";
@@ -31,6 +36,7 @@ export interface TourContextState {
   loadingSimulation: string | null;
   showGuideButton: boolean;
   attemptId: string | null; // Store attemptId for persistence
+  hasAssignedCohorts: boolean | null; // whether the user has assigned cohorts (used for step gating)
 }
 
 // Tour actions
@@ -47,7 +53,8 @@ type TourAction =
   | { type: "SET_NAVIGATING"; payload: boolean }
   | { type: "SET_LOADING_SIMULATION"; payload: string | null }
   | { type: "SET_SHOW_GUIDE_BUTTON"; payload: boolean }
-  | { type: "SET_ATTEMPT_ID"; payload: string | null };
+  | { type: "SET_ATTEMPT_ID"; payload: string | null }
+  | { type: "SET_HAS_ASSIGNED_COHORTS"; payload: boolean | null };
 
 // Initial state
 const initialState: TourContextState = {
@@ -59,6 +66,7 @@ const initialState: TourContextState = {
   loadingSimulation: null,
   showGuideButton: false,
   attemptId: null,
+  hasAssignedCohorts: null,
 };
 
 // Reducer
@@ -127,6 +135,11 @@ function tourReducer(
         ...state,
         attemptId: action.payload,
       };
+    case "SET_HAS_ASSIGNED_COHORTS":
+      return {
+        ...state,
+        hasAssignedCohorts: action.payload,
+      };
     default:
       return state;
   }
@@ -147,6 +160,7 @@ interface TourContextValue {
   setAttemptId: (attemptId: string | null) => void;
   openGuide: () => void;
   getGuideButtonState: () => "start" | "resume" | "hidden";
+  setHasAssignedCohorts: (hasCohorts: boolean | null) => void;
 }
 
 const TourContext = createContext<TourContextValue | undefined>(undefined);
@@ -223,6 +237,10 @@ export function TourProvider({ children }: TourProviderProps) {
     dispatch({ type: "SET_ATTEMPT_ID", payload: attemptId });
   }, []);
 
+  const setHasAssignedCohorts = useCallback((hasCohorts: boolean | null) => {
+    dispatch({ type: "SET_HAS_ASSIGNED_COHORTS", payload: hasCohorts });
+  }, []);
+
   const openGuide = useCallback(() => {
     if (!state.isOpen && state.steps.length > 0 && state.profile) {
       dispatch({
@@ -291,6 +309,7 @@ export function TourProvider({ children }: TourProviderProps) {
       setAttemptId,
       openGuide,
       getGuideButtonState,
+      setHasAssignedCohorts,
     }),
     [
       state,
@@ -306,6 +325,7 @@ export function TourProvider({ children }: TourProviderProps) {
       setAttemptId,
       openGuide,
       getGuideButtonState,
+      setHasAssignedCohorts,
     ]
   );
 
@@ -379,7 +399,6 @@ export function TourProvider({ children }: TourProviderProps) {
     const isTourCompleted =
       effectiveProfile?.viewedIntro && effectiveProfile?.viewedChat;
 
-
     const getNavigatingText = (currentStep: number) => {
       switch (currentStep) {
         case 0:
@@ -393,7 +412,7 @@ export function TourProvider({ children }: TourProviderProps) {
         default:
           return "Navigating...";
       }
-    }
+    };
     const isLastStep = state.currentStep + 1 === state.steps.length;
 
     return (
@@ -507,29 +526,55 @@ export function TourProvider({ children }: TourProviderProps) {
                 >
                   Back
                 </button>
-                <button
-                  onClick={() => {
-                    // Dispatch custom event for tour action
-                    window.dispatchEvent(
-                      new CustomEvent("tourAction", {
-                        detail: { stepIndex: state.currentStep },
-                      })
-                    );
-                    logInfo("Tour Next button clicked", {
-                      stepIndex: state.currentStep,
-                    });
-                  }}
-                  disabled={state.isNavigating || !!state.loadingSimulation}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors flex-1"
-                >
-                  {state.isNavigating
-                    ? getNavigatingText(state.currentStep)
-                    : state.loadingSimulation
-                      ? "Starting..."
-                      : isLastStep
-                        ? "Complete"
-                        : "Next"}
-                </button>
+
+                {(() => {
+                  const disableNextDueToNoCohorts =
+                    state.currentStep === 1 &&
+                    state.hasAssignedCohorts === false;
+                  const nextDisabled =
+                    disableNextDueToNoCohorts ||
+                    state.isNavigating ||
+                    !!state.loadingSimulation;
+
+                  const nextButton = (
+                    <button
+                      onClick={() => {
+                        // Dispatch custom event for tour action
+                        window.dispatchEvent(
+                          new CustomEvent("tourAction", {
+                            detail: { stepIndex: state.currentStep },
+                          })
+                        );
+                        logInfo("Tour Next button clicked", {
+                          stepIndex: state.currentStep,
+                        });
+                      }}
+                      disabled={nextDisabled}
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors flex-1"
+                    >
+                      {state.isNavigating
+                        ? getNavigatingText(state.currentStep)
+                        : state.loadingSimulation
+                          ? "Starting..."
+                          : isLastStep
+                            ? "Complete"
+                            : "Next"}
+                    </button>
+                  );
+
+                  return disableNextDueToNoCohorts ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="flex-1">{nextButton}</span>
+                      </TooltipTrigger>
+                      <TooltipContent sideOffset={6}>
+                        You currently have no cohorts.
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    nextButton
+                  );
+                })()}
               </div>
             )}
           </footer>

@@ -289,6 +289,7 @@ class Simulations(_Base, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
     title: str = Field(sa_column=Column('title', Text))
+    description: str = Field(sa_column=Column('description', Text, default=r'No description provided'))
     active: bool = Field(sa_column=Column('active', Boolean, default=True))
     scenario_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('scenario_ids', ARRAY(Uuid(as_uuid=True))))
     rubric_id: Mapped[uuid.UUID] = Field(sa_column=Column('rubric_id', Uuid(as_uuid=True)))

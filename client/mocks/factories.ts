@@ -391,6 +391,7 @@ export function createMockSimulation(overrides: Partial<Simulation> = {}): Simul
     createdAt: faker.date.past().toISOString(),
     updatedAt: faker.date.past().toISOString(),
     title: faker.lorem.words(3),
+    description: faker.lorem.paragraph(),
     timeLimit: faker.number.int({ min: 1, max: 1000 }),
     active: faker.datatype.boolean(),
     scenarioIds: [],
