@@ -273,15 +273,13 @@ export default function StaffEdit({ profileId }: StaffEditProps) {
                         Teaching Assistant
                       </div>
                     </SelectItem>
-                    {/* Display guest role if it exists but don't make it selectable */}
-                    {formData.role === "guest" && (
-                      <SelectItem value="guest" disabled>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <UserIcon className="h-4 w-4" />
-                          Guest (Read-only)
-                        </div>
-                      </SelectItem>
-                    )}
+                    {/* Allow selecting Guest role */}
+                    <SelectItem value="guest">
+                      <div className="flex items-center gap-2">
+                        <UserIcon className="h-4 w-4" />
+                        Guest
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               ) : (

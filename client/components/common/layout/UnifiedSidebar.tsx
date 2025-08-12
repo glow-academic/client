@@ -617,7 +617,7 @@ export function UnifiedSidebar({
 
   const handleLoginOrLogout = async () => {
     const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
-    if (effectiveProfile?.role === "guest" || !activeProfile) {
+    if (!activeProfile) {
       // Navigate to login page for guests or when no user
       router.push("/");
       return;
@@ -654,7 +654,7 @@ export function UnifiedSidebar({
 
   // Show skeleton while profile is loading or while we don't have a complete profile yet
   const shouldShowSkeleton =
-    isLoading || !effectiveProfile || !effectiveProfile?.role;
+    isLoading || !effectiveProfile;
 
   if (shouldShowSkeleton) {
     return <SidebarSkeleton />;
@@ -887,7 +887,7 @@ export function UnifiedSidebar({
                       style={{ outlineWidth: "1px", outlineStyle: "solid" }}
                     >
                       <AvatarFallback>
-                        {effectiveProfile.role === "guest" || !activeProfile
+                        {!activeProfile
                           ? "GU"
                           : getInitials(
                               activeProfile?.firstName +
@@ -898,14 +898,14 @@ export function UnifiedSidebar({
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
                       <span className="truncate font-semibold">
-                        {effectiveProfile.role === "guest" || !activeProfile
+                        {!activeProfile
                           ? "Guest User"
                           : activeProfile?.firstName +
                             " " +
                             activeProfile?.lastName}
                       </span>
                       <span className="truncate text-xs">
-                        {effectiveProfile.role === "guest" || !activeProfile
+                        {!activeProfile
                           ? "Not logged in"
                           : `${activeProfile?.alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}`}
                       </span>
@@ -926,7 +926,7 @@ export function UnifiedSidebar({
                         style={{ outlineWidth: "1px", outlineStyle: "solid" }}
                       >
                         <AvatarFallback>
-                          {effectiveProfile.role === "guest" || !activeProfile
+                          {!activeProfile
                             ? "GU"
                             : getInitials(
                                 activeProfile?.firstName +
@@ -937,14 +937,14 @@ export function UnifiedSidebar({
                       </Avatar>
                       <div className="grid flex-1 text-left text-sm leading-tight">
                         <span className="truncate font-semibold">
-                          {effectiveProfile.role === "guest" || !activeProfile
+                          {!activeProfile
                             ? "Guest User"
                             : activeProfile?.firstName +
                               " " +
                               activeProfile?.lastName}
                         </span>
                         <span className="truncate text-xs">
-                          {effectiveProfile.role === "guest" || !activeProfile
+                          {!activeProfile
                             ? "Not logged in"
                             : `${activeProfile?.alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}`}
                         </span>
@@ -966,7 +966,7 @@ export function UnifiedSidebar({
                         <DropdownMenuSeparator />
                       </>
                     )}
-                  {activeProfile && effectiveProfile.role !== "guest" && (
+                  {activeProfile && (
                     <>
                       <DropdownMenuItem
                         onClick={() => handleSectionChange("profile")}
@@ -987,7 +987,7 @@ export function UnifiedSidebar({
                     <LogOut className="h-4 w-4 mr-2" />
                     {isLoggingOut
                       ? "Logging out..."
-                      : effectiveProfile.role === "guest" || !activeProfile
+                      : activeProfile?.role === "guest" || !activeProfile
                         ? "Log in"
                         : "Logout"}
                   </DropdownMenuItem>
