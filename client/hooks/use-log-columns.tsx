@@ -3,13 +3,9 @@
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  formatTimestamp,
-  getLogLevelVariant,
-  truncateText,
-} from "@/utils/logs/log-utils";
+import { formatTimestamp, getLogLevelVariant } from "@/utils/logs/log-utils";
 import { ColumnDef } from "@tanstack/react-table";
-import { Eye, FileText } from "lucide-react";
+import { FileText } from "lucide-react";
 
 export interface AppLog {
   id: number;
@@ -30,9 +26,15 @@ export interface AppLog {
 
 export interface UseLogColumnsProps {
   onViewLog: (log: AppLog) => void;
+  resolveActorName?: (
+    actor: Record<string, unknown> | null | undefined
+  ) => string | null;
 }
 
-export function useLogColumns({ onViewLog }: UseLogColumnsProps) {
+export function useLogColumns({
+  onViewLog,
+  resolveActorName,
+}: UseLogColumnsProps) {
   const columns: ColumnDef<AppLog>[] = [
     {
       accessorKey: "createdAt",
@@ -107,6 +109,8 @@ export function useLogColumns({ onViewLog }: UseLogColumnsProps) {
       id: "actor",
       accessorFn: (row) => {
         const actor = (row.actor ?? null) as Record<string, unknown> | null;
+        const resolved = resolveActorName?.(actor);
+        if (resolved) return resolved;
         const profileName = actor?.["profileName"] as string | undefined;
         const profileId = actor?.["profileId"] as string | undefined;
         const userId = actor?.["userId"] as string | undefined;
@@ -137,22 +141,11 @@ export function useLogColumns({ onViewLog }: UseLogColumnsProps) {
       ),
       cell: ({ row }) => {
         const message = row.getValue("message") as string | null;
-        const truncated = truncateText(message);
-        const hasMore = message && message.length > 100;
-
         return (
-          <div className="flex items-center gap-2">
-            <span className="truncate max-w-md">{truncated}</span>
-            {hasMore && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onViewLog(row.original)}
-                className="h-6 w-6 p-0"
-              >
-                <Eye className="h-3 w-3" />
-              </Button>
-            )}
+          <div className="max-w-[200px] overflow-x-auto">
+            <span className="whitespace-nowrap text-sm">
+              {message ?? "N/A"}
+            </span>
           </div>
         );
       },
@@ -203,26 +196,7 @@ export function useLogColumns({ onViewLog }: UseLogColumnsProps) {
       },
       enableSorting: true,
     },
-    {
-      id: "hasError",
-      accessorFn: (row) => (!!row.error ? "true" : "false"),
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Error" />
-      ),
-      cell: ({ row }) => {
-        const hasError = (row.getValue("hasError") as string) === "true";
-        return hasError ? (
-          <Badge variant="destructive">Yes</Badge>
-        ) : (
-          <span className="text-muted-foreground">No</span>
-        );
-      },
-      filterFn: (row, id, value) => {
-        if (!value || value.length === 0) return true;
-        return value.includes(row.getValue(id));
-      },
-      enableSorting: true,
-    },
+    // Removed hasError column per request
     {
       accessorKey: "correlationId",
       header: ({ column }) => (

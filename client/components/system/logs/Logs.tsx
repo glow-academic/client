@@ -8,11 +8,12 @@
 
 import { log } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { AppLog, useLogColumns } from "@/hooks/use-log-columns";
 import { getAppLogs } from "@/utils/logs/get-logs";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import type { DateRange } from "react-day-picker";
 import { LogsDataTable } from "./LogsDataTable";
 
@@ -32,6 +33,12 @@ export default function Logs() {
     queryKey: ["logs"],
     queryFn: () => getAppLogs({ page: 1, limit: 1000 }), // Get logs for client-side filtering
     refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
+  const { data: profilesData } = useQuery({
+    queryKey: ["profiles", "all"],
+    queryFn: () => getAllProfiles(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const handleRefresh = async () => {
@@ -59,8 +66,38 @@ export default function Logs() {
     setSelectedLog(log);
   };
 
+  type ProfileRow = { id?: string; firstName?: string; lastName?: string };
+  const profileIdToName = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of (profilesData as unknown as ProfileRow[]) ?? []) {
+      const first = p?.firstName;
+      const last = p?.lastName;
+      const id = p?.id;
+      if (id) {
+        const full = [first, last].filter(Boolean).join(" ");
+        if (full) map.set(id, full);
+      }
+    }
+    return map;
+  }, [profilesData]);
+
+  const resolveActorName = useCallback(
+    (actor: Record<string, unknown> | null | undefined) => {
+      if (!actor) return null;
+      const explicit = actor["profileName"] as string | undefined;
+      if (explicit) return explicit;
+      const profileId = actor["profileId"] as string | undefined;
+      if (profileId && profileIdToName.has(profileId))
+        return profileIdToName.get(profileId)!;
+      const userId = actor["userId"] as string | undefined;
+      return explicit ?? profileId ?? userId ?? null;
+    },
+    [profileIdToName]
+  );
+
   const { columns, levelOptions } = useLogColumns({
     onViewLog: handleViewLog,
+    resolveActorName,
   });
 
   // Build dynamic facet options from current data
@@ -68,7 +105,6 @@ export default function Logs() {
     eventOptions,
     providerOptions,
     modelOptions,
-    errorOptions,
     actorOptions,
     componentOptions,
     functionOptions,
@@ -80,8 +116,7 @@ export default function Logs() {
     const actors = new Set<string>();
     const components = new Set<string>();
     const functions = new Set<string>();
-    let hasErrorTrue = false;
-    let hasErrorFalse = false;
+    // hasError flags removed
 
     const getContextString = (
       ctx: AppLog["context"],
@@ -98,20 +133,15 @@ export default function Logs() {
       const model = getContextString(l.context, "model");
       const component = getContextString(l.context, "component");
       const fn = getContextString(l.context, "function");
-      const actor = (() => {
-        const a = (l.actor ?? null) as Record<string, unknown> | null;
-        const profileName = a?.["profileName"] as string | undefined;
-        const profileId = a?.["profileId"] as string | undefined;
-        const userId = a?.["userId"] as string | undefined;
-        return profileName ?? profileId ?? userId;
-      })();
+      const actor = resolveActorName(
+        l.actor as Record<string, unknown> | null | undefined
+      );
       if (provider) providers.add(provider);
       if (model) models.add(model);
       if (component) components.add(component);
       if (fn) functions.add(fn);
       if (actor) actors.add(actor);
-      if (l.error) hasErrorTrue = true;
-      else hasErrorFalse = true;
+      // hasError counting removed
     }
 
     return {
@@ -133,12 +163,9 @@ export default function Logs() {
       functionOptions: Array.from(functions)
         .sort()
         .map((v) => ({ value: v, label: v })),
-      errorOptions: [
-        ...(hasErrorTrue ? [{ value: "true", label: "Yes" } as const] : []),
-        ...(hasErrorFalse ? [{ value: "false", label: "No" } as const] : []),
-      ],
+      // hasError options removed
     };
-  }, [logsData]);
+  }, [logsData, resolveActorName]);
 
   return (
     <div className="space-y-6">
@@ -149,7 +176,6 @@ export default function Logs() {
         eventOptions={eventOptions}
         providerOptions={providerOptions}
         modelOptions={modelOptions}
-        errorOptions={errorOptions}
         actorOptions={actorOptions}
         componentOptions={componentOptions}
         functionOptions={functionOptions}

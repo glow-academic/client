@@ -29,7 +29,6 @@ export interface LogsDataTableProps {
   eventOptions: { value: string; label: string }[];
   providerOptions: { value: string; label: string }[];
   modelOptions: { value: string; label: string }[];
-  errorOptions: { value: string; label: string }[];
   actorOptions: { value: string; label: string }[];
   componentOptions: { value: string; label: string }[];
   functionOptions: { value: string; label: string }[];
@@ -46,7 +45,6 @@ export function LogsDataTable({
   eventOptions,
   providerOptions,
   modelOptions,
-  errorOptions,
   actorOptions,
   componentOptions,
   functionOptions,
@@ -62,7 +60,7 @@ export function LogsDataTable({
       correlationId: false,
       provider: false,
       model: false,
-      context: false,
+      function: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -97,7 +95,6 @@ export function LogsDataTable({
       },
       columnVisibility: {
         message: false,
-        hasError: false,
         correlationId: false,
         durationMs: false,
         provider: false,
@@ -115,7 +112,6 @@ export function LogsDataTable({
         eventOptions={eventOptions}
         providerOptions={providerOptions}
         modelOptions={modelOptions}
-        errorOptions={errorOptions}
         actorOptions={actorOptions}
         componentOptions={componentOptions}
         functionOptions={functionOptions}

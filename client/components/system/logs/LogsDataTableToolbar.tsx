@@ -17,7 +17,6 @@ export interface LogsDataTableToolbarProps {
   eventOptions: { value: string; label: string }[];
   providerOptions: { value: string; label: string }[];
   modelOptions: { value: string; label: string }[];
-  errorOptions: { value: string; label: string }[];
   actorOptions: { value: string; label: string }[];
   componentOptions: { value: string; label: string }[];
   functionOptions: { value: string; label: string }[];
@@ -33,7 +32,6 @@ export function LogsDataTableToolbar({
   eventOptions,
   providerOptions,
   modelOptions,
-  errorOptions,
   actorOptions,
   componentOptions,
   functionOptions,
@@ -50,7 +48,7 @@ export function LogsDataTableToolbar({
   const eventColumn = table.getColumn("event");
   const providerColumn = table.getColumn("provider");
   const modelColumn = table.getColumn("model");
-  const errorColumn = table.getColumn("hasError");
+  // removed hasError column
   const createdAtColumn = table.getColumn("createdAt");
   const actorColumn = table.getColumn("actor");
   const componentColumn = table.getColumn("component");
@@ -134,14 +132,7 @@ export function LogsDataTableToolbar({
             />
           )}
 
-          {/* Error presence */}
-          {errorColumn && (
-            <DataTableFacetedFilter
-              column={errorColumn}
-              title="Has Error"
-              options={errorOptions}
-            />
-          )}
+          {/* hasError filter removed */}
 
           {isFiltered && (
             <Button

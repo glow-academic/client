@@ -2,7 +2,7 @@ import { badgeVariants } from "@/components/ui/badge";
 import { VariantProps } from "class-variance-authority";
 
 export const getLogLevelVariant = (
-  level: string,
+  level: string
 ): VariantProps<typeof badgeVariants>["variant"] => {
   switch (level.toLowerCase()) {
     case "error":
@@ -21,19 +21,18 @@ export const getLogLevelVariant = (
 
 export const formatTimestamp = (timestamp: string | null): string => {
   if (!timestamp) return "N/A";
-  return new Date(timestamp).toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
+  const d = new Date(timestamp);
+  if (Number.isNaN(d.getTime())) return "N/A";
+  const two = (n: number) => String(n).padStart(2, "0");
+  // Condensed: MM/DD HH:MM (24h)
+  return `${two(d.getMonth() + 1)}/${two(d.getDate())} ${two(d.getHours())}:${two(
+    d.getMinutes()
+  )}`;
 };
 
 export const truncateText = (
   text: string | null,
-  maxLength: number = 100,
+  maxLength: number = 100
 ): string => {
   if (!text) return "N/A";
   return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
