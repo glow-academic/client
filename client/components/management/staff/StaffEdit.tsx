@@ -55,6 +55,7 @@ export interface StaffEditProps {
   hideBack?: boolean;
   redirectOnSuccess?: boolean;
   onDone?: () => void;
+  canToggleDefault?: boolean;
 }
 
 // Internal business logic functions for better testability
@@ -172,8 +173,10 @@ export default function StaffEdit({
   hideBack = false,
   redirectOnSuccess = true,
   onDone,
+  canToggleDefault = false,
 }: StaffEditProps) {
   const [formData, setFormData] = useState<FormData>({});
+  const [toggleDefault, setToggleDefault] = useState<boolean | null>(null);
   const [unlimited, setUnlimited] = useState<boolean>(false);
 
   const {
@@ -200,15 +203,25 @@ export default function StaffEdit({
         reqPerDay: targetUser.reqPerDay ?? "",
       });
       setUnlimited(targetUser.reqPerDay == null);
+      setToggleDefault(targetUser.defaultProfile ?? null);
     }
   }, [targetUser]);
 
   const handleFormSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      await handleSubmit(formData);
+      // If canToggleDefault and target not default guest, pass default flag
+      const payload: FormData & { defaultProfile?: boolean } = { ...formData };
+      if (
+        canToggleDefault &&
+        targetUser &&
+        !(targetUser.role === "guest" && targetUser.defaultProfile)
+      ) {
+        if (toggleDefault !== null) payload.defaultProfile = toggleDefault;
+      }
+      await handleSubmit(payload);
     },
-    [handleSubmit, formData]
+    [handleSubmit, formData, canToggleDefault, toggleDefault, targetUser]
   );
 
   const handleFormInputChange = useCallback(
@@ -424,6 +437,20 @@ export default function StaffEdit({
 
           {/* Action buttons row */}
           <div className="flex justify-end gap-2">
+            {canToggleDefault &&
+              targetUser &&
+              !(targetUser.role === "guest" && targetUser.defaultProfile) && (
+                <div className="mr-auto flex items-center gap-2">
+                  <Label htmlFor="defaultProfile">Default Profile</Label>
+                  <Checkbox
+                    id="defaultProfile"
+                    checked={Boolean(toggleDefault)}
+                    onCheckedChange={(checked) =>
+                      setToggleDefault(Boolean(checked))
+                    }
+                  />
+                </div>
+              )}
             {!hideBack && (
               <Button
                 type="button"

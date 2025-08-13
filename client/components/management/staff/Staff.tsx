@@ -451,6 +451,21 @@ export default function Staff() {
             return !row.defaultProfile && row.id !== effectiveProfile?.id;
           }).length
         }
+        canEdit={(profileId) => {
+          const row = staffData.find((s) => s.id === profileId);
+          if (!row) return false;
+          if (effectiveProfile?.role === "superadmin") return true;
+          if (row.defaultProfile) return false;
+          if (effectiveProfile?.role === "admin") {
+            if (
+              (row.role === "admin" || row.role === "superadmin") &&
+              row.id !== effectiveProfile.id
+            ) {
+              return false;
+            }
+          }
+          return true;
+        }}
       />
 
       {/* Staff Filter Dialog */}
@@ -495,6 +510,7 @@ export default function Staff() {
               hideDelete={true}
               hideBack={true}
               redirectOnSuccess={false}
+              canToggleDefault={effectiveProfile?.role === "superadmin"}
               onDone={() => {
                 setEditProfileId(null);
                 queryClient.invalidateQueries({ queryKey: ["profiles"] });
