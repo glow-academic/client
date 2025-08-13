@@ -132,15 +132,15 @@ export default function SimulationCard({
         data-testid={
           type === "default" ? "permanent-simulation-card" : "simulation-card"
         }
-        className="group overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-white dark:bg-gray-900 border-0 shadow-lg rounded-lg flex flex-col h-full"
+        className="group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-white dark:bg-gray-900 border-0 shadow-lg rounded-lg flex flex-col h-full"
       >
         {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-5 pointer-events-none select-none">
+        <div className="absolute inset-0 opacity-5 pointer-events-none select-none rounded-lg">
           <div
-            className={`absolute inset-0 bg-gradient-to-br ${backgroundGradient}`}
+            className={`absolute inset-0 bg-gradient-to-br ${backgroundGradient} rounded-lg`}
           ></div>
           <div
-            className="absolute inset-0"
+            className="absolute inset-0 rounded-lg"
             style={{
               backgroundImage:
                 "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)",

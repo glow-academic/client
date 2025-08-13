@@ -485,8 +485,8 @@ export default function Cohorts() {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0 flex-grow flex flex-col">
-        <p className="text-sm text-muted-foreground line-clamp-2 flex-grow">
+      <CardContent className="pt-0 flex-grow flex flex-col justify-end">
+        <p className="text-sm text-muted-foreground line-clamp-2">
           {cohort.description || "No description available"}
         </p>
         <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">

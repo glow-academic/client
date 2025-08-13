@@ -120,12 +120,12 @@ export const log = {
         LogLevel,
         (message?: unknown, ...optionalParams: unknown[]) => void
       > = {
-        error: console.error,
-        warn: console.warn,
-        info: console.info,
-        debug: console.debug,
+        error: console.error, // eslint-disable-line no-console
+        warn: console.warn, // eslint-disable-line no-console
+        info: console.info, // eslint-disable-line no-console
+        debug: console.debug, // eslint-disable-line no-console
       };
-      const fn = consoleMap[entry.level] ?? console.debug;
+      const fn = consoleMap[entry.level] ?? console.debug; // eslint-disable-line no-console
       fn(label, entry);
     }
     const withCorr: LogEntry = {
