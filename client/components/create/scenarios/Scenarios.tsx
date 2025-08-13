@@ -43,6 +43,8 @@ import { useScenarioColumns } from "@/hooks/use-scenario-columns";
 import { Scenario } from "@/types";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
 import { deleteScenario } from "@/utils/mutations/scenarios/delete-scenario";
+import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
+import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { ScenariosDataTable } from "./ScenariosDataTable";
@@ -74,6 +76,17 @@ export function Scenarios() {
   const { data: simulations = [] } = useQuery({
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
+  });
+
+  // Fetch parameters and parameter items for badges
+  const { data: parameters = [] } = useQuery({
+    queryKey: ["parameters"],
+    queryFn: () => getAllParameters(),
+  });
+
+  const { data: parameterItems = [] } = useQuery({
+    queryKey: ["parameter-items"],
+    queryFn: () => getAllParameterItems(),
   });
 
   // Group scenarios by parent_id
@@ -253,6 +266,43 @@ export function Scenarios() {
     });
   };
 
+  // Build badges for a scenario's non-numerical parameters (similar to Simulation page)
+  const getScenarioParameterBadges = (scenario: Scenario) => {
+    if (!scenario.parameterItemIds || scenario.parameterItemIds.length === 0) {
+      return [] as {
+        parameterName: string;
+        value: string;
+        parameterId: string;
+      }[];
+    }
+
+    const badges: {
+      parameterName: string;
+      value: string;
+      parameterId: string;
+    }[] = [];
+
+    scenario.parameterItemIds.forEach((parameterItemId) => {
+      const parameterItem = parameterItems.find(
+        (item) => item.id === parameterItemId
+      );
+      if (parameterItem) {
+        const parameter = parameters.find(
+          (param) => param.id === parameterItem.parameterId
+        );
+        if (parameter && !parameter.numerical) {
+          badges.push({
+            parameterName: parameter.name,
+            value: parameterItem.value,
+            parameterId: parameter.id,
+          });
+        }
+      }
+    });
+
+    return badges;
+  };
+
   const renderScenarioCard = (
     scenario: Scenario,
     isChild: boolean = false,
@@ -284,7 +334,7 @@ export function Scenarios() {
                   )}
                 </Button>
               )}
-              <CardTitle className="text-base flex-1 min-w-0">
+              <CardTitle className="text-lg flex-1 min-w-0">
                 {scenario.name || "Unnamed Scenario"}
               </CardTitle>
               <div className="flex gap-1 flex-wrap flex-shrink-0">
@@ -301,6 +351,34 @@ export function Scenarios() {
                   )}
               </div>
             </div>
+            {/* Parameter badges under the title */}
+            {(() => {
+              const parameterBadges = getScenarioParameterBadges(scenario);
+              if (parameterBadges.length > 0) {
+                return (
+                  <div className="mt-2 flex items-center gap-1 flex-wrap">
+                    {parameterBadges.slice(0, 4).map((badge) => (
+                      <Tooltip key={badge.parameterId}>
+                        <TooltipTrigger asChild>
+                          <Badge variant="secondary" className="text-xs">
+                            {badge.value}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{badge.parameterName}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                    {parameterBadges.length > 4 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{parameterBadges.length - 4}
+                      </Badge>
+                    )}
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
           <div className="flex gap-2 items-center ml-4">
             {scenario.generated ? (
@@ -392,7 +470,7 @@ export function Scenarios() {
       </CardHeader>
       <CardContent className="pt-0 flex-grow flex flex-col justify-end">
         <p className="text-sm text-muted-foreground line-clamp-2">
-          {scenario.description || "No description available"}
+          {scenario.description || "Scenario will be dynamically generated."}
         </p>
         {!isChild && (
           <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
