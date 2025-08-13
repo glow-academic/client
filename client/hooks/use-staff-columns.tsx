@@ -433,7 +433,7 @@ export function useStaffColumns({
         id: "requests",
         accessorFn: (row) => row.requestsInLastDay ?? 0,
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Requests / day" />
+          <DataTableColumnHeader column={column} title="Requests / Day" />
         ),
         cell: ({ row }) => {
           const staff = row.original;

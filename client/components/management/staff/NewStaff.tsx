@@ -399,7 +399,7 @@ const useNewStaffBusinessLogic = (onDone?: () => void) => {
       return;
     }
 
-    // Check if alias already exists
+    // Check if alias already exists in existing profiles
     const existingProfile = allProfiles.find(
       (profile: Profile) =>
         profile.alias.toLowerCase() === manualProfile.alias.toLowerCase()
@@ -412,7 +412,18 @@ const useNewStaffBusinessLogic = (onDone?: () => void) => {
       return;
     }
 
-    // Validate alias uniqueness for new profile
+    // Check if alias already exists in current preview list
+    const duplicateInPreview = csvPreview.find(
+      (p) => p.alias.toLowerCase() === manualProfile.alias.toLowerCase()
+    );
+    if (duplicateInPreview) {
+      toast.error(
+        "This alias is already in your preview list. Please choose a different alias."
+      );
+      return;
+    }
+
+    // Validate alias uniqueness via API
     const isAliasAvailable = await validateAlias(manualProfile.alias.trim());
     if (!isAliasAvailable) {
       toast.error(
@@ -421,47 +432,29 @@ const useNewStaffBusinessLogic = (onDone?: () => void) => {
       return;
     }
 
-    try {
-      // Create new profile in database
-      const createdProfiles = await createProfiles([
-        {
-          firstName: manualProfile.firstName.trim(),
-          lastName: manualProfile.lastName.trim(),
-          alias: manualProfile.alias.trim(),
-          role: manualProfile.role,
-        },
-      ]);
+    // Add to preview instead of creating immediately
+    const tempId = `new-${Date.now()}`;
+    const roleValue = manualProfile.role as ProfileRole;
+    setCsvPreview((prev) => [
+      ...prev,
+      {
+        id: tempId,
+        firstName: manualProfile.firstName.trim(),
+        lastName: manualProfile.lastName.trim(),
+        alias: manualProfile.alias.trim(),
+        role: roleValue,
+        isNew: true,
+        cohortName: undefined,
+      },
+    ]);
 
-      if (createdProfiles && createdProfiles.length > 0) {
-        const createdProfile = createdProfiles[0];
-        if (createdProfile) {
-          toast.success(
-            `Successfully created new profile: ${createdProfile.firstName} ${createdProfile.lastName} (${createdProfile.alias})`
-          );
-          // Reset form
-          setManualProfile({
-            firstName: "",
-            lastName: "",
-            alias: "",
-            role: "",
-          });
-          if (onDone) {
-            onDone();
-          }
-        }
-      }
-    } catch (error) {
-      toast.error(
-        "Failed to create profile in the database. Please check your information and try again."
-      );
-      log.error("staff.create_profile.failed", {
-        message: "Error creating profile",
-        error,
-        context: { component: "NewStaff", function: "addManualProfile" },
-      });
-      return;
-    }
-  }, [manualProfile, allProfiles, validateAlias, onDone]);
+    toast.success(
+      `Added to preview: ${manualProfile.firstName} ${manualProfile.lastName} (${manualProfile.alias})`
+    );
+
+    // Reset form fields
+    setManualProfile({ firstName: "", lastName: "", alias: "", role: "" });
+  }, [manualProfile, allProfiles, validateAlias, csvPreview]);
 
   // Remove selected profile from CSV preview
   const removeSelectedProfile = useCallback((profileId: string) => {
@@ -639,14 +632,20 @@ export default function NewStaff({ onDone }: NewStaffProps) {
   }, []);
 
   return (
-    <div className="space-y-6 py-4 px-4">
+    <div className="space-y-6 py-4 px-4 max-h-[80vh] overflow-y-auto">
       <Tabs defaultValue="csv" className="space-y-4 w-full">
         <TabsList className="grid grid-cols-2 w-full mb-4">
-          <TabsTrigger value="csv" className="w-full flex items-center justify-center gap-2">
+          <TabsTrigger
+            value="csv"
+            className="w-full flex items-center justify-center gap-2"
+          >
             <Upload className="h-4 w-4" />
             CSV Import
           </TabsTrigger>
-          <TabsTrigger value="manual" className="w-full flex items-center justify-center gap-2">
+          <TabsTrigger
+            value="manual"
+            className="w-full flex items-center justify-center gap-2"
+          >
             <UserPlus className="h-4 w-4" />
             Manual Add
           </TabsTrigger>
@@ -654,13 +653,6 @@ export default function NewStaff({ onDone }: NewStaffProps) {
 
         <TabsContent value="csv">
           <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="text-sm text-muted-foreground">
-                Include the following columns in the CSV file: firstName,
-                lastName, alias, role, cohortName (optional).
-              </div>
-            </div>
-
             <div className="border-2 border-dashed rounded-lg p-6 text-center">
               <input
                 ref={csvInputRef}
@@ -712,145 +704,6 @@ export default function NewStaff({ onDone }: NewStaffProps) {
                 </Button>
               </div>
             </div>
-
-            {csvPreview.length > 0 && <Separator />}
-
-            {csvPreview.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium">
-                    Preview ({csvPreview.length} users)
-                  </h3>
-
-                  <Button
-                    variant="destructive"
-                    onClick={() => {
-                      clearCsvPreview();
-                      resetFileInput();
-                    }}
-                  >
-                    Clear All
-                  </Button>
-                </div>
-
-                <div className="rounded-md border max-h-96 overflow-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>First Name</TableHead>
-                        <TableHead>Last Name</TableHead>
-                        <TableHead>Username</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Cohort</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {csvPreview.map((user) => {
-                        const RoleIcon = getRoleIcon(user.role);
-                        return (
-                          <TableRow key={user.id}>
-                            <TableCell>{user.firstName}</TableCell>
-                            <TableCell>{user.lastName}</TableCell>
-                            <TableCell>{user.alias}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <RoleIcon className="h-4 w-4" />
-                                <Badge variant={getRoleBadgeVariant(user.role)}>
-                                  {getRoleDisplayName(user.role)}
-                                </Badge>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {user.cohortName ? (
-                                <Badge variant="secondary">
-                                  {user.cohortName}
-                                </Badge>
-                              ) : (
-                                <span className="text-muted-foreground">
-                                  No cohort
-                                </span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => removeSelectedProfile(user.id)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                {/* Cohort Assignment Summary */}
-                {csvPreview.some((p) => p.cohortName) && (
-                  <div className="space-y-2">
-                    <Label>Cohort Assignment Summary</Label>
-                    <div className="space-y-2">
-                      {Array.from(
-                        new Set(
-                          csvPreview
-                            .map((user) => user.cohortName)
-                            .filter(Boolean)
-                        )
-                      ).map((cohortName) => {
-                        const userCount = csvPreview.filter(
-                          (user) => user.cohortName === cohortName
-                        ).length;
-                        const cohort = allCohorts.find(
-                          (c) => c.title === cohortName
-                        );
-                        return (
-                          <div
-                            key={cohortName}
-                            className="p-3 bg-muted rounded-md"
-                          >
-                            <div className="flex items-center gap-2 mb-2">
-                              <Badge variant="default">{cohortName}</Badge>
-                              <span className="text-sm text-muted-foreground">
-                                ({userCount} user{userCount !== 1 ? "s" : ""})
-                              </span>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {cohort
-                                ? `Will add ${userCount} profile(s) to existing cohort "${cohortName}"`
-                                : `Cohort "${cohortName}" not found. Profiles will be created but not assigned to a cohort.`}
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex justify-end items-center gap-2">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        clearCsvPreview();
-                        resetFileInput();
-                        if (onDone) onDone();
-                      }}
-                      aria-label="Back"
-                    >
-                      Back
-                    </Button>
-                    <Button onClick={handleCSVSubmit} disabled={isSubmitting}>
-                      {isSubmitting
-                        ? "Creating..."
-                        : `Create ${csvPreview.length} Staff Members`}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </TabsContent>
 
@@ -890,10 +743,6 @@ export default function NewStaff({ onDone }: NewStaffProps) {
                   onChange={(e) => updateManualProfile("alias", e.target.value)}
                   placeholder="Alias"
                 />
-                <p className="text-sm text-muted-foreground">
-                  Will be used as {manualProfile.alias}@
-                  {process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
-                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="manualRole">Role *</Label>
@@ -965,12 +814,159 @@ export default function NewStaff({ onDone }: NewStaffProps) {
                 className="flex items-center gap-2"
               >
                 <UserPlus className="h-4 w-4" />
-                {isValidatingAlias ? "Validating..." : "Create Profile"}
+                {isValidatingAlias ? "Validating..." : "Add to Preview"}
               </Button>
             </div>
           </div>
         </TabsContent>
       </Tabs>
+      {csvPreview.length > 0 && <Separator className="my-6" />}
+      {csvPreview.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">
+              Preview ({csvPreview.length} users)
+            </h3>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                clearCsvPreview();
+                resetFileInput();
+              }}
+            >
+              Clear All
+            </Button>
+          </div>
+
+          <div className="rounded-md border max-h-96 overflow-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>First Name</TableHead>
+                  <TableHead>Last Name</TableHead>
+                  <TableHead>Username</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Cohort</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {csvPreview.map((user) => {
+                  const RoleIcon = getRoleIcon(user.role);
+                  return (
+                    <TableRow key={user.id}>
+                      <TableCell>{user.firstName}</TableCell>
+                      <TableCell>{user.lastName}</TableCell>
+                      <TableCell>{user.alias}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <RoleIcon className="h-4 w-4" />
+                          <Badge variant={getRoleBadgeVariant(user.role)}>
+                            {getRoleDisplayName(user.role)}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {user.cohortName ? (
+                          <Badge variant="secondary">{user.cohortName}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            No cohort
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => removeSelectedProfile(user.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+
+          {csvPreview.some((p) => p.cohortName) && (
+            <div className="space-y-2">
+              <Label>Cohort Assignment Summary</Label>
+              <div className="space-y-2">
+                {Array.from(
+                  new Set(
+                    csvPreview.map((user) => user.cohortName).filter(Boolean)
+                  )
+                ).map((cohortName) => {
+                  const userCount = csvPreview.filter(
+                    (user) => user.cohortName === cohortName
+                  ).length;
+                  const cohort = allCohorts.find((c) => c.title === cohortName);
+                  return (
+                    <div
+                      key={cohortName}
+                      className={
+                        cohort
+                          ? "p-3 bg-muted rounded-md"
+                          : "p-3 rounded-md border border-red-200 bg-red-50"
+                      }
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant={cohort ? "default" : "destructive"}>
+                          {cohortName}
+                        </Badge>
+                        <span
+                          className={
+                            cohort
+                              ? "text-sm text-muted-foreground"
+                              : "text-sm text-red-700"
+                          }
+                        >
+                          ({userCount} user{userCount !== 1 ? "s" : ""})
+                        </span>
+                      </div>
+                      <p
+                        className={
+                          cohort
+                            ? "text-sm text-muted-foreground"
+                            : "text-sm text-red-700"
+                        }
+                      >
+                        {cohort
+                          ? `Will add ${userCount} profile(s) to existing cohort "${cohortName}"`
+                          : `Cohort "${cohortName}" not found. Profiles will be created but not assigned to a cohort.`}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end items-center gap-2">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  clearCsvPreview();
+                  resetFileInput();
+                  if (onDone) onDone();
+                }}
+                aria-label="Back"
+              >
+                Back
+              </Button>
+              <Button onClick={handleCSVSubmit} disabled={isSubmitting}>
+                {isSubmitting
+                  ? "Creating..."
+                  : `Create ${csvPreview.length} Staff Members`}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
