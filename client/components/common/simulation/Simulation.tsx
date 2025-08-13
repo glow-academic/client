@@ -601,36 +601,29 @@ export default function Simulation({ simulationId }: SimulationProps) {
           <div className="flex justify-between items-center">
             <div>
               <Label htmlFor="scenarios">Scenarios</Label>
-              {!isLoading && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  If no scenarios are selected, a random scenario will be chosen
-                  automatically
-                </p>
-              )}
             </div>
+            {isLoading ? (
+              <Skeleton className="h-10 w-full" />
+            ) : (
+              <SimulationScenarioPicker
+                scenarios={transformedScenarios}
+                parameters={parameters}
+                parameterItems={parameterItems}
+                label=""
+                placeholder="Select scenarios..."
+                description="Choose scenarios to include in this simulation"
+                onSelect={handleScenarioSelection}
+                selectedScenarios={selectedScenarios}
+                hideSelectedChips={true}
+                showOnlyActive={true}
+                showLabel={false}
+              />
+            )}
           </div>
-
-          {isLoading ? (
-            <Skeleton className="h-10 w-full" />
-          ) : (
-            <SimulationScenarioPicker
-              scenarios={transformedScenarios}
-              parameters={parameters}
-              parameterItems={parameterItems}
-              label=""
-              placeholder="Select scenarios..."
-              description="Choose scenarios to include in this simulation"
-              onSelect={handleScenarioSelection}
-              selectedScenarios={selectedScenarios}
-              hideSelectedChips={true}
-              showOnlyActive={true}
-              showLabel={false}
-            />
-          )}
 
           {/* Display selected scenarios with preview functionality */}
           {selectedScenarios.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {selectedScenarios.map((scenario) => {
                 const originalScenario = scenarios.find(
                   (s: Scenario) => s.id === scenario.id
