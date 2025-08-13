@@ -266,14 +266,9 @@ export default function Personas() {
                     </TooltipContent>
                   </Tooltip>
                 </div>
-                {(persona.defaultPersona || !persona.active) && (
+                {!persona.active && (
                   <div className="flex items-center gap-2">
-                    {persona.defaultPersona && (
-                      <Badge variant="default">Default</Badge>
-                    )}
-                    {!persona.active && (
-                      <Badge variant="secondary">Inactive</Badge>
-                    )}
+                    <Badge variant="secondary">Inactive</Badge>
                   </div>
                 )}
               </div>

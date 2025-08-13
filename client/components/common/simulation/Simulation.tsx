@@ -206,6 +206,9 @@ export default function Simulation({ simulationId }: SimulationProps) {
     const current = formData;
     const original = originalFormData;
 
+    const currentScenarioIds = current.scenarioIds || [];
+    const originalScenarioIds = original.scenarioIds || [];
+
     return (
       current.title !== original.title ||
       current.description !== original.description ||
@@ -214,8 +217,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
       current.active !== original.active ||
       current.defaultSimulation !== original.defaultSimulation ||
       current.practiceSimulation !== original.practiceSimulation ||
-      JSON.stringify(current.scenarioIds?.sort()) !==
-        JSON.stringify(original.scenarioIds?.sort())
+      JSON.stringify(currentScenarioIds) !== JSON.stringify(originalScenarioIds)
     );
   }, [formData, originalFormData, isEditMode]);
 
@@ -250,7 +252,9 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
     if (draggedIndex !== -1 && targetIndex !== -1) {
       const [removed] = newOrder.splice(draggedIndex, 1);
-      newOrder.splice(targetIndex, 0, removed!);
+      const insertIndex =
+        draggedIndex < targetIndex ? targetIndex - 1 : targetIndex;
+      newOrder.splice(insertIndex, 0, removed!);
 
       setFormData((prev) => ({ ...prev, scenarioIds: newOrder }));
     }
@@ -385,13 +389,14 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   // Compute selected scenarios from formData
   const selectedScenarios = useMemo(() => {
-    if (!formData?.scenarioIds || scenarios.length === 0) {
+    if (!formData?.scenarioIds || transformedScenarios.length === 0) {
       return [];
     }
-    return transformedScenarios.filter((scenario) =>
-      formData.scenarioIds?.includes(scenario.id)
-    );
-  }, [formData?.scenarioIds, transformedScenarios, scenarios.length]);
+    // Preserve the order as specified in formData.scenarioIds
+    return formData.scenarioIds
+      ?.map((id) => transformedScenarios.find((s) => s.id === id))
+      .filter(Boolean) as SimulationScenario[];
+  }, [formData?.scenarioIds, transformedScenarios]);
 
   // Handle scenario selection from picker
   const handleScenarioSelection = (selectedScenarios: SimulationScenario[]) => {

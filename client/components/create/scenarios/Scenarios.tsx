@@ -288,11 +288,6 @@ export function Scenarios() {
                 {scenario.name || "Unnamed Scenario"}
               </CardTitle>
               <div className="flex gap-1 flex-wrap flex-shrink-0">
-                {scenario.defaultScenario && (
-                  <Badge variant="default" className="text-xs">
-                    Default
-                  </Badge>
-                )}
                 {scenario.practiceScenario && (
                   <Badge variant="outline" className="text-xs">
                     Practice

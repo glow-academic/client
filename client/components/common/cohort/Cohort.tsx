@@ -349,13 +349,16 @@ export default function Cohort({ cohortId }: CohortProps) {
     const current = formData;
     const original = originalFormData;
 
+    const currentSimulationIds = current.simulationIds || [];
+    const originalSimulationIds = original.simulationIds || [];
+
     return (
       current.title !== original.title ||
       current.description !== original.description ||
       current.active !== original.active ||
       current.defaultCohort !== original.defaultCohort ||
-      JSON.stringify(current.simulationIds?.sort()) !==
-        JSON.stringify(original.simulationIds?.sort()) ||
+      JSON.stringify(currentSimulationIds) !==
+        JSON.stringify(originalSimulationIds) ||
       staffProfiles.length !== (original.profileIds?.length || 0) ||
       profilesToDelete.length > 0
     );
@@ -404,7 +407,9 @@ export default function Cohort({ cohortId }: CohortProps) {
 
     if (draggedIndex !== -1 && targetIndex !== -1) {
       const [removed] = newOrder.splice(draggedIndex, 1);
-      newOrder.splice(targetIndex, 0, removed!);
+      const insertIndex =
+        draggedIndex < targetIndex ? targetIndex - 1 : targetIndex;
+      newOrder.splice(insertIndex, 0, removed!);
 
       setFormData((prev) => ({ ...prev, simulationIds: newOrder }));
     }

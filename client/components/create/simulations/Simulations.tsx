@@ -254,14 +254,9 @@ export function Simulations() {
                     : "No time limit"}
                 </Badge>
               </div>
-              {(simulation.defaultSimulation || !simulation.active) && (
+              {!simulation.active && (
                 <div className="flex items-center gap-2">
-                  {simulation.defaultSimulation && (
-                    <Badge variant="default">Default</Badge>
-                  )}
-                  {!simulation.active && (
-                    <Badge variant="secondary">Inactive</Badge>
-                  )}
+                  <Badge variant="secondary">Inactive</Badge>
                 </div>
               )}
             </div>
