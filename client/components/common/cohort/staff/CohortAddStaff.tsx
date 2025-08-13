@@ -513,7 +513,7 @@ export default function CohortAddStaff({
 
         <div className="space-y-4">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-3 mb-4">
               <TabsTrigger value="csv" className="flex items-center gap-2">
                 <Upload className="h-4 w-4" />
                 CSV Import
@@ -546,20 +546,34 @@ export default function CohortAddStaff({
 
               <div className="flex items-center justify-between">
                 <Button
-                  onClick={handleCsvClick}
-                  className="flex items-center gap-2"
-                >
-                  <Upload className="h-4 w-4" />
-                  Choose CSV File
-                </Button>
-                <Button
-                  variant="outline"
+                  variant="secondary"
                   onClick={downloadTemplate}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 border border-blue-500 text-blue-700 hover:bg-blue-50 hover:border-blue-600"
+                  style={{ boxShadow: "0 0 0 2px #a5b4fc33" }}
                 >
-                  <Download className="h-4 w-4" />
-                  Download Template
+                  <Download className="h-4 w-4 text-indigo-500" />
+                  <span className="font-semibold text-indigo-700">
+                    Download Template
+                  </span>
                 </Button>
+                <div className="flex items-center gap-2">
+                  {!(selectedProfiles.length > 0) && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsOpen(false)}
+                      aria-label="Back"
+                    >
+                      Back
+                    </Button>
+                  )}
+                  <Button
+                    onClick={handleCsvClick}
+                    className="flex items-center gap-2"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Choose CSV File
+                  </Button>
+                </div>
               </div>
             </TabsContent>
 
@@ -614,6 +628,14 @@ export default function CohortAddStaff({
                   ))
                 )}
               </div>
+
+              <div className="flex justify-end gap-2">
+                {!(selectedProfiles.length > 0) && (
+                  <Button variant="outline" onClick={() => setActiveTab("csv")}>
+                    Back
+                  </Button>
+                )}
+              </div>
             </TabsContent>
 
             <TabsContent value="manual" className="space-y-4">
@@ -662,14 +684,23 @@ export default function CohortAddStaff({
                 </div>
               </div>
 
-              <Button
-                onClick={addManualProfile}
-                disabled={isValidatingAlias}
-                className="flex items-center gap-2"
-              >
-                <UserPlus className="h-4 w-4" />
-                {isValidatingAlias ? "Validating..." : "Add Profile"}
-              </Button>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsOpen(false)}
+                  aria-label="Back"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={addManualProfile}
+                  disabled={isValidatingAlias}
+                  className="flex items-center gap-2"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  {isValidatingAlias ? "Validating..." : "Add Teaching Assistant"}
+                </Button>
+              </div>
             </TabsContent>
           </Tabs>
 
@@ -677,13 +708,21 @@ export default function CohortAddStaff({
           {selectedProfiles.length > 0 && (
             <div className="space-y-4">
               <Separator />
-              <div>
-                <h3 className="font-medium">
-                  Selected Profiles ({selectedProfiles.length})
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  These profiles will be added to the cohort
-                </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium">
+                    Selected Profiles ({selectedProfiles.length})
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    These profiles will be added to the cohort
+                  </p>
+                </div>
+                <Button
+                  variant="destructive"
+                  onClick={() => setSelectedProfiles([])}
+                >
+                  Clear All
+                </Button>
               </div>
 
               <div className="max-h-40 overflow-y-auto space-y-2">
@@ -723,9 +762,10 @@ export default function CohortAddStaff({
               <div className="flex justify-end gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => setSelectedProfiles([])}
+                  onClick={() => setIsOpen(false)}
+                  aria-label="Back"
                 >
-                  Clear All
+                  Back
                 </Button>
                 <Button
                   onClick={confirmAndAdd}
