@@ -5,7 +5,7 @@
  */
 
 import { getApiBase } from "@/lib/api-base";
-import { log } from "@/utils/logger";
+import { log } from "@/utils/server-logger";
 import type { NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {

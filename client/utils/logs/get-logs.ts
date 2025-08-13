@@ -2,7 +2,7 @@
 "use server";
 import { db } from "@/utils/drizzle/db";
 import { appLogs } from "@/utils/drizzle/schema";
-import { log } from "@/utils/logger";
+import { log } from "@/utils/server-logger";
 import { count, desc } from "drizzle-orm";
 
 interface GetAppLogsParams {
@@ -13,9 +13,15 @@ interface GetAppLogsParams {
 interface GetAppLogsResponse {
   logs: Array<{
     id: number;
+    event: string;
     level: string;
     message: string | null;
-    context: unknown;
+    correlationId?: string | null;
+    actor?: Record<string, unknown> | null;
+    subject?: Record<string, unknown> | null;
+    metrics?: Record<string, unknown> | null;
+    context: Record<string, unknown> | null;
+    error?: unknown | null;
     createdAt: string | null;
   }>;
   totalCount: number;

@@ -1,5 +1,5 @@
 // auth.ts
-import { log } from "@/utils/logger";
+import { log } from "@/utils/server-logger";
 import PostgresAdapter from "@auth/pg-adapter";
 import NextAuth from "next-auth";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";

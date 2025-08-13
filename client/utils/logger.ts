@@ -66,52 +66,9 @@ function generateCorrelationId(): string {
 
 // Legacy normalizer removed along with shim functions
 
-// --- Server transport (loaded lazily only on server) ---
-async function insertStructuredLogToDatabase(entry: LogEntry): Promise<void> {
-  // Lazy import to avoid bundling postgres in client
-  const { db_url } = await import("@/utils/drizzle/db");
-  const postgres = (await import("postgres")).default;
-  const sql = db_url ? postgres(db_url) : null;
-  if (!sql) throw new Error("PostgreSQL connection not available");
-
-  const {
-    event,
-    level,
-    message,
-    correlation,
-    actor,
-    subject,
-    metrics,
-    context,
-    error,
-  } = entry;
-
-  await sql`
-    INSERT INTO app_logs (
-      event, level, message, correlation_id, actor, subject, metrics, context, error, created_at
-    ) VALUES (
-      ${event}, ${level}, ${message ?? null}, ${correlation?.correlationId ?? null},
-      ${actor ? sql.json(actor as any) : null},
-      ${subject ? sql.json(subject as any) : null},
-      ${metrics ? sql.json(metrics as any) : null},
-      ${context ? sql.json(context as any) : null},
-      ${
-        error
-          ? sql.json(
-              error instanceof Error
-                ? {
-                    name: error.name,
-                    message: error.message,
-                    stack: error.stack,
-                  }
-                : (error as any)
-            )
-          : null
-      },
-      ${new Date()}
-    )
-  `;
-}
+// Note: We intentionally avoid any server-only imports (like "postgres") here to keep
+// this module safe to import from client bundles. All logs are sent to the server
+// via the /api/log route; the route writes to Postgres.
 
 // --- Client transport ---
 async function sendClientLog(entry: LogEntry): Promise<void> {
@@ -141,14 +98,9 @@ async function sendClientLog(entry: LogEntry): Promise<void> {
 
 type Transport = (entry: LogEntry) => Promise<void>;
 
-function getTransport(): Transport {
-  if (typeof window === "undefined") {
-    return insertStructuredLogToDatabase;
-  }
-  return sendClientLog;
-}
-
-const transport: Transport = getTransport();
+// Use a single transport that always posts to our server route. On the client, we
+// prefer sendBeacon when available; on the server, we fall back to fetch.
+const transport: Transport = sendClientLog;
 
 export const log = {
   async event(entry: LogEntry): Promise<void> {

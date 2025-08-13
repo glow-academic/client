@@ -13,9 +13,18 @@ import { Eye, FileText } from "lucide-react";
 
 export interface AppLog {
   id: number;
+  event: string;
   level: string;
   message: string | null;
-  context: unknown;
+  correlationId?: string | null;
+  actor?: Record<string, unknown> | null;
+  subject?: Record<string, unknown> | null;
+  metrics?: { durationMs?: number; size?: number; count?: number } | null;
+  context: Record<string, unknown> | null;
+  error?:
+    | { name?: string; message?: string; stack?: string; code?: string }
+    | unknown
+    | null;
   createdAt: string | null;
 }
 
@@ -26,6 +35,30 @@ export interface UseLogColumnsProps {
 export function useLogColumns({ onViewLog }: UseLogColumnsProps) {
   const columns: ColumnDef<AppLog>[] = [
     {
+      accessorKey: "createdAt",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Created At" />
+      ),
+      cell: ({ row }) => (
+        <div className="text-sm">
+          {formatTimestamp(row.getValue("createdAt"))}
+        </div>
+      ),
+      enableSorting: true,
+      // Accepts a DateRange-like value { from?: Date; to?: Date }
+      filterFn: (row, id, value) => {
+        if (!value || (!value.from && !value.to)) return true;
+        const created = row.getValue(id) as string | null;
+        if (!created) return false;
+        const createdMs = new Date(created).getTime();
+        const fromMs = value?.from ? new Date(value.from).getTime() : undefined;
+        const toMs = value?.to ? new Date(value.to).getTime() : undefined;
+        if (fromMs && createdMs < fromMs) return false;
+        if (toMs && createdMs > toMs) return false;
+        return true;
+      },
+    },
+    {
       accessorKey: "id",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="ID" />
@@ -33,6 +66,23 @@ export function useLogColumns({ onViewLog }: UseLogColumnsProps) {
       cell: ({ row }) => (
         <div className="font-medium">{row.getValue("id")}</div>
       ),
+      enableSorting: true,
+    },
+    {
+      accessorKey: "event",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Event" />
+      ),
+      cell: ({ row }) => {
+        const event = row.getValue("event") as string;
+        return <span className="truncate max-w-xs inline-block">{event}</span>;
+      },
+      // Faceted multi-select will provide an array of selected values
+      filterFn: (row, id, value) => {
+        if (!value || value.length === 0) return true;
+        const event = (row.getValue(id) as string) ?? "";
+        return value.includes(event);
+      },
       enableSorting: true,
     },
     {
@@ -50,6 +100,33 @@ export function useLogColumns({ onViewLog }: UseLogColumnsProps) {
       },
       filterFn: (row, id, value) => {
         return value.includes(row.getValue(id));
+      },
+      enableSorting: true,
+    },
+    {
+      id: "actor",
+      accessorFn: (row) => {
+        const actor = (row.actor ?? null) as Record<string, unknown> | null;
+        const profileName = actor?.["profileName"] as string | undefined;
+        const profileId = actor?.["profileId"] as string | undefined;
+        const userId = actor?.["userId"] as string | undefined;
+        return profileName ?? profileId ?? userId ?? null;
+      },
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Actor" />
+      ),
+      cell: ({ row }) => {
+        const actorLabel = (row.getValue("actor") as string | null) ?? null;
+        return actorLabel ? (
+          <span className="font-mono text-xs">{actorLabel}</span>
+        ) : (
+          <span className="text-muted-foreground">N/A</span>
+        );
+      },
+      filterFn: (row, id, value) => {
+        if (!value || value.length === 0) return true;
+        const v = (row.getValue(id) as string | null) ?? "";
+        return value.includes(v);
       },
       enableSorting: true,
     },
@@ -87,6 +164,145 @@ export function useLogColumns({ onViewLog }: UseLogColumnsProps) {
       enableSorting: true,
     },
     {
+      id: "component",
+      accessorFn: (row) =>
+        ((row.context ?? null) as Record<string, unknown> | null)?.[
+          "component"
+        ] ?? null,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Component" />
+      ),
+      cell: ({ row }) => {
+        const v = (row.getValue("component") as string | null) ?? null;
+        return v ? v : <span className="text-muted-foreground">N/A</span>;
+      },
+      filterFn: (row, id, value) => {
+        if (!value || value.length === 0) return true;
+        const v = (row.getValue(id) as string | null) ?? "";
+        return value.includes(v);
+      },
+      enableSorting: true,
+    },
+    {
+      id: "function",
+      accessorFn: (row) =>
+        ((row.context ?? null) as Record<string, unknown> | null)?.[
+          "function"
+        ] ?? null,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Function" />
+      ),
+      cell: ({ row }) => {
+        const v = (row.getValue("function") as string | null) ?? null;
+        return v ? v : <span className="text-muted-foreground">N/A</span>;
+      },
+      filterFn: (row, id, value) => {
+        if (!value || value.length === 0) return true;
+        const v = (row.getValue(id) as string | null) ?? "";
+        return value.includes(v);
+      },
+      enableSorting: true,
+    },
+    {
+      id: "hasError",
+      accessorFn: (row) => (!!row.error ? "true" : "false"),
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Error" />
+      ),
+      cell: ({ row }) => {
+        const hasError = (row.getValue("hasError") as string) === "true";
+        return hasError ? (
+          <Badge variant="destructive">Yes</Badge>
+        ) : (
+          <span className="text-muted-foreground">No</span>
+        );
+      },
+      filterFn: (row, id, value) => {
+        if (!value || value.length === 0) return true;
+        return value.includes(row.getValue(id));
+      },
+      enableSorting: true,
+    },
+    {
+      accessorKey: "correlationId",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Correlation" />
+      ),
+      cell: ({ row }) => {
+        const corr = (row.getValue("correlationId") as string | null) ?? "";
+        return (
+          <span className="font-mono text-xs truncate inline-block max-w-[160px]">
+            {corr}
+          </span>
+        );
+      },
+      enableSorting: true,
+    },
+    {
+      id: "durationMs",
+      accessorFn: (row) => row.metrics?.durationMs ?? null,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Duration (ms)" />
+      ),
+      cell: ({ row }) => {
+        const dur = row.getValue("durationMs") as number | null;
+        return dur != null ? (
+          `${dur}`
+        ) : (
+          <span className="text-muted-foreground">N/A</span>
+        );
+      },
+      enableSorting: true,
+    },
+    {
+      id: "provider",
+      accessorFn: (row) =>
+        (((row.context ?? null) as Record<string, unknown> | null)?.[
+          "provider"
+        ] as string | undefined) ?? null,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Provider" />
+      ),
+      cell: ({ row }) => {
+        const provider = (row.getValue("provider") as string | null) ?? null;
+        return provider ? (
+          provider
+        ) : (
+          <span className="text-muted-foreground">N/A</span>
+        );
+      },
+      filterFn: (row, id, value) => {
+        if (!value || value.length === 0) return true;
+        const v = (row.getValue(id) as string | null) ?? "";
+        return value.includes(v);
+      },
+      enableSorting: true,
+    },
+    {
+      id: "model",
+      accessorFn: (row) =>
+        (((row.context ?? null) as Record<string, unknown> | null)?.[
+          "model"
+        ] as string | undefined) ?? null,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Model" />
+      ),
+      cell: ({ row }) => {
+        const model = (row.getValue("model") as string | null) ?? null;
+        return model ? (
+          model
+        ) : (
+          <span className="text-muted-foreground">N/A</span>
+        );
+      },
+      filterFn: (row, id, value) => {
+        if (!value || value.length === 0) return true;
+        const v = (row.getValue(id) as string | null) ?? "";
+        return value.includes(v);
+      },
+      enableSorting: true,
+    },
+    {
       accessorKey: "context",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Context" />
@@ -107,18 +323,6 @@ export function useLogColumns({ onViewLog }: UseLogColumnsProps) {
           <span className="text-muted-foreground">None</span>
         );
       },
-      enableSorting: true,
-    },
-    {
-      accessorKey: "createdAt",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Created At" />
-      ),
-      cell: ({ row }) => (
-        <div className="text-sm">
-          {formatTimestamp(row.getValue("createdAt"))}
-        </div>
-      ),
       enableSorting: true,
     },
   ];

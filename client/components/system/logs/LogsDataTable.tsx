@@ -17,6 +17,7 @@ import * as React from "react";
 
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import { AppLog } from "@/hooks/use-log-columns";
+import type { DateRange } from "react-day-picker";
 import { LogsDataTableToolbar } from "./LogsDataTableToolbar";
 
 export interface LogsDataTableProps {
@@ -25,6 +26,15 @@ export interface LogsDataTableProps {
   levelOptions: { value: string; label: string }[];
   onRefresh: () => void;
   isRefreshing: boolean;
+  eventOptions: { value: string; label: string }[];
+  providerOptions: { value: string; label: string }[];
+  modelOptions: { value: string; label: string }[];
+  errorOptions: { value: string; label: string }[];
+  actorOptions: { value: string; label: string }[];
+  componentOptions: { value: string; label: string }[];
+  functionOptions: { value: string; label: string }[];
+  dateRange: DateRange | undefined;
+  setDateRange: (range: DateRange | undefined) => void;
 }
 
 export function LogsDataTable({
@@ -33,12 +43,29 @@ export function LogsDataTable({
   levelOptions,
   onRefresh,
   isRefreshing,
+  eventOptions,
+  providerOptions,
+  modelOptions,
+  errorOptions,
+  actorOptions,
+  componentOptions,
+  functionOptions,
+  dateRange,
+  setDateRange,
 }: LogsDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+    React.useState<VisibilityState>({
+      id: false,
+      durationMs: false,
+      hasError: false,
+      correlationId: false,
+      provider: false,
+      model: false,
+      context: false,
+    });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "createdAt", desc: true }, // Default to descending order by date
@@ -66,8 +93,17 @@ export function LogsDataTable({
     getFacetedUniqueValues: getFacetedUniqueValues(),
     initialState: {
       pagination: {
-        pageSize: 10,
+        pageSize: 20,
       },
+      columnVisibility: {
+        message: false,
+        hasError: false,
+        correlationId: false,
+        durationMs: false,
+        provider: false,
+        model: false,
+        context: false,
+      } as VisibilityState,
     },
   });
 
@@ -76,6 +112,15 @@ export function LogsDataTable({
       <LogsDataTableToolbar
         table={table}
         levelOptions={levelOptions}
+        eventOptions={eventOptions}
+        providerOptions={providerOptions}
+        modelOptions={modelOptions}
+        errorOptions={errorOptions}
+        actorOptions={actorOptions}
+        componentOptions={componentOptions}
+        functionOptions={functionOptions}
+        dateRange={dateRange}
+        setDateRange={setDateRange}
         onRefresh={onRefresh}
         isRefreshing={isRefreshing}
       />
