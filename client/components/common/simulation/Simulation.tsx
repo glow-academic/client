@@ -24,13 +24,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+// Replaced standard select with RubricPicker
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  RubricPicker,
+  Rubric as RubricPickerItem,
+} from "@/components/common/rubric/RubricPicker";
 import { Textarea } from "@/components/ui/textarea";
 
 import { Badge } from "@/components/ui/badge";
@@ -505,26 +503,60 @@ export default function Simulation({ simulationId }: SimulationProps) {
         <div className="space-y-2">
           <Label htmlFor="rubricId">Rubric</Label>
           {formData?.rubricId !== undefined && !isLoading ? (
-            <Select
-              value={formData.rubricId || ""}
-              onValueChange={(value) => handleInputChange("rubricId", value)}
-            >
-              <SelectTrigger
-                className={errors.rubricId ? "border-destructive" : ""}
-                disabled={isReadonly}
+            isReadonly ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className={`${errors.rubricId ? "border-destructive" : ""} w-full justify-between`}
+                disabled
               >
-                <SelectValue placeholder="Select a rubric..." />
-              </SelectTrigger>
-              <SelectContent>
-                {rubrics
+                <span className="truncate text-left">
+                  {(() => {
+                    const selected = rubrics.find(
+                      (r: Rubric) => r.id === formData.rubricId
+                    );
+                    return selected ? selected.name : "No rubric selected";
+                  })()}
+                </span>
+              </Button>
+            ) : (
+              <RubricPicker
+                rubrics={rubrics
                   .filter((rubric: Rubric) => rubric.active)
-                  .map((rubric: Rubric) => (
-                    <SelectItem key={rubric.id} value={rubric.id}>
-                      {rubric.name} ({rubric.points} points)
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+                  .map(
+                    (r: Rubric) =>
+                      ({
+                        id: r.id,
+                        name: r.name,
+                        description: r.description,
+                        points: r.points,
+                        active: r.active,
+                      }) as RubricPickerItem
+                  )}
+                placeholder="Select a rubric..."
+                onSelect={(selected) =>
+                  handleInputChange("rubricId", selected[0]?.id || "")
+                }
+                selectedRubrics={(() => {
+                  const selected = rubrics.find(
+                    (r: Rubric) => r.id === formData.rubricId
+                  );
+                  return selected
+                    ? [
+                        {
+                          id: selected.id,
+                          name: selected.name,
+                          description: selected.description,
+                          points: selected.points,
+                          active: selected.active,
+                        } as RubricPickerItem,
+                      ]
+                    : [];
+                })()}
+                hideSelectedChips={true}
+                buttonClassName={`${errors.rubricId ? "border-destructive" : ""}`}
+              />
+            )
           ) : (
             <Skeleton className="h-10 w-full" />
           )}
@@ -622,7 +654,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
           </div>
 
           {/* Display selected scenarios with preview functionality */}
-          {selectedScenarios.length > 0 && (
+          {selectedScenarios.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {selectedScenarios.map((scenario) => {
                 const originalScenario = scenarios.find(
@@ -731,6 +763,15 @@ export default function Simulation({ simulationId }: SimulationProps) {
                   </Card>
                 );
               })}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
+              <div>
+                <p className="font-medium mb-1">No scenarios selected</p>
+                <p className="text-sm">
+                  Use the selector above to add scenarios to this simulation
+                </p>
+              </div>
             </div>
           )}
         </div>
